@@ -24,6 +24,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ loading: true })
     
     try {
+      // Check if Supabase is properly configured
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      if (!supabaseUrl || supabaseUrl.includes('placeholder')) {
+        throw new Error('Supabase not configured. Please follow SUPABASE_SETUP_GUIDE.md to set up your database.')
+      }
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -36,10 +42,50 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       
       if (data.user) {
         set({ user: data.user as AuthUser })
+        
+        // Create user profile in the database
+        // Note: This will be triggered by the auth state change event
+        // but we can also create it explicitly here if needed
+        try {
+          const profileData = {
+            id: data.user.id,
+            email: data.user.email || email,
+            full_name: userData.full_name || '',
+            city: '', // Will be filled in onboarding
+            interests: [],
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
+          
+          // Insert profile (this might fail if triggered by auth webhook)
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert(profileData)
+          
+          // Don't throw on profile creation error as it might already exist
+          if (profileError && !profileError.message?.includes('duplicate key')) {
+            console.warn('Profile creation warning:', profileError)
+          }
+          
+        } catch (profileError) {
+          console.warn('Profile creation failed (might already exist):', profileError)
+        }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Sign up error:', error)
-      throw error
+      
+      // Transform Supabase errors to user-friendly messages
+      if (error.message?.includes('User already registered')) {
+        throw new Error('already registered')
+      } else if (error.message?.includes('Password')) {
+        throw new Error('Password does not meet requirements')
+      } else if (error.message?.includes('Invalid')) {
+        throw new Error('Invalid email address')
+      } else if (error.message?.includes('Supabase not configured')) {
+        throw error // Pass through configuration errors
+      } else {
+        throw new Error('Failed to create account. Please try again.')
+      }
     } finally {
       set({ loading: false })
     }

@@ -3,6 +3,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import Landing from './components/Landing'
 import Dashboard from './components/Dashboard'
 import Login from './components/Login'
+import SignUp from './components/SignUp'
+import Onboarding from './components/Onboarding'
 
 const queryClient = new QueryClient()
 
@@ -15,6 +17,8 @@ function App() {
             <Route path="/" element={<Landing />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/auth/login" element={<Login />} />
+            <Route path="/auth/signup" element={<SignUp />} />
+            <Route path="/onboarding" element={<Onboarding />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
