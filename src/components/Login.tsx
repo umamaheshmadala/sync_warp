@@ -1,11 +1,12 @@
 // src/pages/Auth/Login.tsx
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
+import { useLoadingTimeout, useLoadingDebug } from '../hooks/useLoadingTimeout';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -20,6 +21,21 @@ const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
+  // Force reset loading state if it gets stuck
+  const handleLoadingTimeout = useCallback(() => {
+    setAuthError('Request timed out. Please try again.');
+    // Note: We can't directly reset the store loading state from here,
+    // but the timeout handling in the store should prevent this
+  }, []);
+
+  // Add timeout protection
+  useLoadingTimeout(loading || false, handleLoadingTimeout, 45000);
+  
+  // Debug loading state in development
+  if (process.env.NODE_ENV === 'development') {
+    useLoadingDebug('Login', loading || false);
+  }
+
   const {
     register,
     handleSubmit,
@@ -32,8 +48,13 @@ const Login: React.FC = () => {
     try {
       setAuthError(null);
       await signIn(data.email, data.password);
-      navigate('/dashboard');
+      
+      // Add a small delay to ensure loading state is properly handled
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 100);
     } catch (error: any) {
+      console.error('Login error:', error);
       setAuthError(error.message || 'Login failed. Please try again.');
     }
   };

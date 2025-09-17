@@ -1,8 +1,9 @@
 // src/components/SignUp.tsx
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { Eye, EyeOff, Mail, Lock, User, CheckCircle, XCircle } from 'lucide-react'
+import { useLoadingTimeout, useLoadingDebug } from '../hooks/useLoadingTimeout'
 
 interface FormData {
   email: string
@@ -21,7 +22,7 @@ interface FormErrors {
 
 export default function SignUp() {
   const navigate = useNavigate()
-  const { signUp, loading } = useAuthStore()
+  const { signUp, loading, error: authError, clearError } = useAuthStore()
   
   const [formData, setFormData] = useState<FormData>({
     email: '',
@@ -34,6 +35,20 @@ export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Force reset loading state if it gets stuck
+  const handleLoadingTimeout = useCallback(() => {
+    setErrors({ general: 'Request timed out. Please try again.' });
+    setIsSubmitting(false);
+  }, []);
+
+  // Add timeout protection
+  useLoadingTimeout(loading || isSubmitting, handleLoadingTimeout, 45000);
+  
+  // Debug loading state in development
+  if (process.env.NODE_ENV === 'development') {
+    useLoadingDebug('SignUp', loading || isSubmitting);
+  }
 
   // Password strength validation
   const validatePassword = (password: string) => {
@@ -118,23 +133,34 @@ export default function SignUp() {
         full_name: formData.fullName
       })
       
-      // Success - redirect to onboarding
-      navigate('/onboarding')
+      // Success - redirect to onboarding with a small delay to ensure loading state updates properly
+      setTimeout(() => {
+        navigate('/onboarding')
+      }, 100)
       
     } catch (error: any) {
       console.error('Sign up error:', error)
       
-      // Handle specific Supabase errors
-      if (error.message?.includes('already registered')) {
+      // Handle specific Supabase errors and configuration issues
+      if (error.message?.includes('Supabase not configured')) {
+        setErrors({ general: 'Authentication service is not configured. Please contact support.' })
+      } else if (error.message?.includes('already registered')) {
         setErrors({ email: 'An account with this email already exists' })
       } else if (error.message?.includes('Password')) {
         setErrors({ password: 'Password does not meet requirements' })
-      } else if (error.message?.includes('Email')) {
+      } else if (error.message?.includes('Email') || error.message?.includes('email')) {
         setErrors({ email: 'Invalid email address' })
+      } else if (error.message?.includes('network') || error.message?.includes('Network')) {
+        setErrors({ general: 'Network error. Please check your connection and try again.' })
+      } else if (error.message?.includes('timeout') || error.message?.includes('Timeout')) {
+        setErrors({ general: 'Request timed out. Please check your connection and try again.' })
       } else {
-        setErrors({ general: 'Failed to create account. Please try again.' })
+        // Fallback for any other errors
+        const errorMessage = error.message || 'Failed to create account. Please try again.'
+        setErrors({ general: errorMessage })
       }
     } finally {
+      // Ensure loading state is always reset
       setIsSubmitting(false)
     }
   }
