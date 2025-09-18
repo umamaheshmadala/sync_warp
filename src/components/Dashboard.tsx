@@ -7,13 +7,10 @@ import {
   MapPin, 
   ChevronDown,
   Users,
-  Wallet,
   User,
-  Home,
   Heart,
   Star,
   TrendingUp,
-  Calendar,
   MessageCircle
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
@@ -44,7 +41,7 @@ interface OfferCard {
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { user, profile } = useAuthStore();
-  const [selectedCity, setSelectedCity] = useState(profile?.city || 'Select City');
+  const [selectedCity] = useState(profile?.city || 'Select City');
   const [showContactsSidebar, setShowContactsSidebar] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [loading, setLoading] = useState(true);

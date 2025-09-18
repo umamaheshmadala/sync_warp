@@ -203,17 +203,62 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (!user) throw new Error('No user found')
 
     try {
-      const { data, error } = await supabase
+      // First, try to update existing profile
+      const { data: updatedData, error: updateError } = await supabase
         .from('profiles')
         .update(updates)
         .eq('id', user.id)
         .select()
         .single()
 
-      if (error) throw error
+      if (updateError) {
+        // If no rows were affected (profile doesn't exist), create a new one
+        if (updateError.code === 'PGRST116') {
+          console.log('Profile not found, creating new profile...')
+          
+          // Ensure city is never empty or null
+          const safeUpdates = {
+            ...updates,
+            city: updates.city || 'Unknown'
+          }
+          
+          const profileData = {
+            id: user.id,
+            email: user.email || '',
+            full_name: user.user_metadata?.full_name,
+            role: 'customer' as const,
+            is_driver: false,
+            driver_score: 0,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            // Default values
+            interests: [],
+            // Apply safe updates (includes city)
+            ...safeUpdates
+          }
+          
+          const { data: newData, error: insertError } = await supabase
+            .from('profiles')
+            .insert(profileData)
+            .select()
+            .single()
+
+          if (insertError) {
+            console.error('Insert profile error:', insertError)
+            throw new Error(`Failed to create profile: ${insertError.message}`)
+          }
+          
+          set({ profile: newData })
+          return newData
+        } else {
+          console.error('Update profile error:', updateError)
+          throw new Error(`Failed to update profile: ${updateError.message}`)
+        }
+      }
       
-      set({ profile: data })
-    } catch (error) {
+      set({ profile: updatedData })
+      return updatedData
+    } catch (error: any) {
       console.error('Update profile error:', error)
       throw error
     }

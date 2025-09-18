@@ -25,6 +25,9 @@ export interface Profile {
   city: string
   interests: string[]
   phone?: string
+  role?: 'customer' | 'business_owner' | 'admin'
+  is_driver?: boolean
+  driver_score?: number
   created_at: string
   updated_at: string
 }
