@@ -14,7 +14,7 @@ import {
   MessageCircle
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
-import ContactsSidebar from './ContactsSidebar';
+import ContactsSidebar from './ContactsSidebarWithTabs';
 import BottomNavigation from './BottomNavigation';
 import NotificationHub from './NotificationHub';
 
