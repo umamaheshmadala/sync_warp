@@ -213,7 +213,7 @@ class NewFriendService {
   }
 
   /**
-   * Remove friend
+   * Remove friend - Works bidirectionally using database function
    */
   async removeFriend(friendId: string): Promise<boolean> {
     console.log('🗑️ Removing friend:', friendId)
@@ -222,18 +222,25 @@ class NewFriendService {
       const { data: user } = await supabase.auth.getUser()
       if (!user.user) throw new Error('Not authenticated')
       
-      const { error } = await supabase
-        .from('friend_connections')
-        .delete()
-        .or(`and(user_a_id.eq.${user.user.id},user_b_id.eq.${friendId}),and(user_a_id.eq.${friendId},user_b_id.eq.${user.user.id})`)
-        .eq('status', 'accepted')
+      const currentUserId = user.user.id
+      console.log('🔍 Removing friendship between:', currentUserId, 'and', friendId)
+      
+      // Use the database function for reliable bidirectional removal
+      const { data, error } = await supabase
+        .rpc('remove_friend', { friend_user_id: friendId })
 
       if (error) {
         console.error('❌ Remove friend error:', error)
         throw new Error(`Failed to remove friend: ${error.message}`)
       }
       
-      console.log('✅ Friend removed successfully')
+      console.log('✅ Friend removal result:', data)
+      
+      if (!data) {
+        console.warn('⚠️ No friendship found to delete - might already be removed')
+        // Still return true since the end result is what we want (no friendship)
+      }
+      
       return true
     } catch (error) {
       console.error('❌ Remove friend error:', error)

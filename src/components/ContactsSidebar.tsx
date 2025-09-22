@@ -2,16 +2,16 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
-import { X, Search, UserPlus, MessageCircle, Users, User } from 'lucide-react';
+import { X, Search, UserPlus, MessageCircle, Users, User, Share2, Trash2, Filter } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../store/authStore';
+import { useFriends } from '../hooks/useFriends';
+import { useHapticFeedback } from '../hooks/useHapticFeedback';
+import AddFriend from './AddFriend';
+import FriendRequests from './FriendRequests';
+import ShareDeal from './ShareDeal';
+import type { Friendship } from '../services/friendService';
 
-interface Friend {
-  id: string;
-  full_name: string;
-  avatar_url?: string;
-  is_online?: boolean;
-  last_active?: string;
-}
 
 interface ContactsSidebarProps {
   isOpen: boolean;
@@ -20,61 +20,83 @@ interface ContactsSidebarProps {
 
 const ContactsSidebar: React.FC<ContactsSidebarProps> = ({ isOpen, onClose }) => {
   const { user } = useAuthStore();
-  const [friends, setFriends] = useState<Friend[]>([]);
+  const {
+    friends,
+    friendRequests,
+    loading,
+    onlineFriends,
+    offlineFriends,
+    totalFriends,
+    onlineCount,
+    removeFriend,
+    shareDeal
+  } = useFriends();
+  const { triggerHaptic } = useHapticFeedback();
+  
   const [searchQuery, setSearchQuery] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [showAddFriend, setShowAddFriend] = useState(false);
+  const [showRequests, setShowRequests] = useState(false);
+  const [showShareDeal, setShowShareDeal] = useState<string | null>(null);
+  const [filterOnline, setFilterOnline] = useState(false);
 
-  // Mock friends data - Replace with real API call
-  const mockFriends: Friend[] = [
-    {
-      id: '1',
-      full_name: 'Alice Johnson',
-      avatar_url: undefined,
-      is_online: true,
-      last_active: 'now'
-    },
-    {
-      id: '2',
-      full_name: 'Bob Smith',
-      avatar_url: undefined,
-      is_online: false,
-      last_active: '2 hours ago'
-    },
-    {
-      id: '3',
-      full_name: 'Carol Davis',
-      avatar_url: undefined,
-      is_online: true,
-      last_active: 'now'
+  // Get filtered friends based on search and filter
+  const getFilteredFriends = () => {
+    let filteredFriends = friends;
+    
+    // Apply online filter
+    if (filterOnline) {
+      filteredFriends = filteredFriends.filter(f => f.friend_profile.is_online);
     }
-  ];
-
-  useEffect(() => {
-    if (isOpen && user) {
-      // Simulate loading friends
-      setTimeout(() => {
-        setFriends(mockFriends);
-        setLoading(false);
-      }, 500);
+    
+    // Apply search filter
+    if (searchQuery) {
+      filteredFriends = filteredFriends.filter(f =>
+        f.friend_profile.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (f.friend_profile.city && f.friend_profile.city.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
     }
-  }, [isOpen, user]);
+    
+    return filteredFriends;
+  };
+  
+  const filteredFriends = getFilteredFriends();
 
-  const filteredFriends = friends.filter(friend =>
-    friend.full_name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
-  const handleShareTap = (friend: Friend) => {
-    // This would typically open a coupon sharing modal
-    console.log('Share with friend:', friend.full_name);
-    onClose();
+  const handleShareTap = (friendship: Friendship) => {
+    triggerHaptic('light');
+    setShowShareDeal(friendship.friend_profile.user_id);
   };
 
-  const handleMessageTap = (friend: Friend) => {
+  const handleMessageTap = (friendship: Friendship) => {
+    triggerHaptic('light');
     // This would open a messaging interface
-    console.log('Message friend:', friend.full_name);
+    console.log('Message friend:', friendship.friend_profile.full_name);
+  };
+  
+  const handleRemoveFriend = async (friendship: Friendship) => {
+    if (confirm(`Remove ${friendship.friend_profile.full_name} from friends?`)) {
+      try {
+        await removeFriend(friendship.friend_profile.user_id);
+        triggerHaptic('success');
+      } catch (error) {
+        console.error('Error removing friend:', error);
+      }
+    }
+  };
+  
+  const formatLastActive = (lastActive: string): string => {
+    const date = new Date(lastActive);
+    const now = new Date();
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+    
+    if (diffInMinutes < 1) return 'now';
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
+    return `${Math.floor(diffInMinutes / 1440)}d ago`;
   };
 
   return (
+    <>
     <Transition.Root show={isOpen} as={Fragment}>
       <Dialog as="div" className="relative z-50" onClose={onClose}>
         <Transition.Child
@@ -120,10 +142,15 @@ const ContactsSidebar: React.FC<ContactsSidebarProps> = ({ isOpen, onClose }) =>
                           </button>
                         </div>
                       </div>
-                      <div className="mt-4">
+                      <div className="mt-4 flex items-center justify-between">
                         <p className="text-sm text-indigo-200">
-                          {friends.length} friends • {friends.filter(f => f.is_online).length} online
+                          {totalFriends} friends • {onlineCount} online
                         </p>
+                        {friendRequests.length > 0 && (
+                          <div className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                            {friendRequests.length}
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -141,16 +168,52 @@ const ContactsSidebar: React.FC<ContactsSidebarProps> = ({ isOpen, onClose }) =>
                       </div>
                     </div>
 
-                    {/* Quick Actions */}
+                    {/* Search */}
                     <div className="border-b border-gray-200 p-4">
+                      <div className="flex items-center space-x-2 mb-3">
+                        <div className="relative flex-1">
+                          <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                          <input
+                            type="text"
+                            className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-10 pr-3 text-sm placeholder-gray-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                            placeholder="Search friends..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                          />
+                        </div>
+                        <button
+                          onClick={() => setFilterOnline(!filterOnline)}
+                          className={`p-2 rounded-lg border transition-colors ${
+                            filterOnline 
+                              ? 'bg-green-100 border-green-300 text-green-700'
+                              : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                          }`}
+                          title="Filter online friends"
+                        >
+                          <Filter className="h-4 w-4" />
+                        </button>
+                      </div>
+                      
+                      {/* Quick Actions */}
                       <div className="grid grid-cols-2 gap-3">
-                        <button className="flex items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                        <button 
+                          onClick={() => setShowAddFriend(true)}
+                          className="flex items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                        >
                           <UserPlus className="mr-2 h-4 w-4" />
                           Find Friends
                         </button>
-                        <button className="flex items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                        <button 
+                          onClick={() => setShowRequests(true)}
+                          className="flex items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 relative"
+                        >
                           <Users className="mr-2 h-4 w-4" />
                           Requests
+                          {friendRequests.length > 0 && (
+                            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                              {friendRequests.length}
+                            </span>
+                          )}
                         </button>
                       </div>
                     </div>
@@ -262,6 +325,18 @@ const ContactsSidebar: React.FC<ContactsSidebarProps> = ({ isOpen, onClose }) =>
         </div>
       </Dialog>
     </Transition.Root>
+
+    {/* Modals */}
+    <AddFriend 
+      isOpen={showAddFriend}
+      onClose={() => setShowAddFriend(false)}
+    />
+    
+    <FriendRequests 
+      isOpen={showRequests}
+      onClose={() => setShowRequests(false)}
+    />
+  </>
   );
 };
 
