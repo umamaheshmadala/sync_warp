@@ -299,6 +299,37 @@ const Dashboard: React.FC = () => {
           </div>
         </section>
 
+        {/* Business Section */}
+        <section className="px-4 mb-6">
+          <div className="bg-white rounded-lg p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold text-gray-900">Business Center</h3>
+              <button 
+                onClick={() => navigate('/business/dashboard')}
+                className="text-sm text-indigo-600 hover:text-indigo-800"
+              >
+                View All
+              </button>
+            </div>
+            <div className="space-y-3">
+              <button
+                onClick={() => navigate('/business/register')}
+                className="w-full flex items-center justify-center px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              >
+                <TrendingUp className="w-5 h-5 mr-2" />
+                Register Your Business
+              </button>
+              <button
+                onClick={() => navigate('/business/dashboard')}
+                className="w-full flex items-center justify-center px-4 py-3 border border-indigo-200 text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors"
+              >
+                <Users className="w-5 h-5 mr-2" />
+                Manage Businesses
+              </button>
+            </div>
+          </div>
+        </section>
+
         {/* User Activity Card */}
         <section className="px-4 mb-6">
           <div className="bg-white rounded-lg p-4 shadow-sm">

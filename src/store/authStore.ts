@@ -16,6 +16,9 @@ interface AuthState {
   updateProfile: (updates: Partial<Profile>) => Promise<void>
   checkUser: () => Promise<void>
   clearError: () => void
+  // Password reset methods
+  forgotPassword: (email: string) => Promise<void>
+  resetPassword: (password: string) => Promise<void>
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -323,6 +326,124 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   clearError: () => {
     set({ error: null })
+  },
+
+  forgotPassword: async (email: string) => {
+    set({ loading: true })
+    
+    try {
+      // Check if Supabase is properly configured
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+      
+      if (!supabaseUrl || !supabaseAnonKey || 
+          supabaseUrl.includes('placeholder') || supabaseAnonKey.includes('placeholder')) {
+        throw new Error('Supabase not configured. Please follow SUPABASE_SETUP_GUIDE.md to set up your database.')
+      }
+      
+      // Add timeout to prevent hanging requests
+      const resetPromise = supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`
+      })
+      
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Request timeout. Please check your connection.')), 30000) // 30 second timeout
+      })
+      
+      const { error } = await Promise.race([resetPromise, timeoutPromise]) as any
+      
+      if (error) {
+        console.error('Supabase forgot password error:', error)
+        throw error
+      }
+      
+    } catch (error: any) {
+      console.error('Forgot password error:', error)
+      
+      // Transform Supabase errors to user-friendly messages
+      if (error.message?.includes('User not found') || error.message?.includes('not found')) {
+        throw new Error('No account found with this email address')
+      } else if (error.message?.includes('Invalid') || error.message?.includes('invalid')) {
+        throw new Error('Invalid email address')
+      } else if (error.message?.includes('Supabase not configured')) {
+        throw error // Pass through configuration errors
+      } else if (error.message?.includes('timeout') || error.message?.includes('network')) {
+        throw new Error('Network error. Please check your connection and try again.')
+      } else if (error.message?.includes('rate limit') || error.message?.includes('too many')) {
+        throw new Error('Too many reset requests. Please wait before trying again.')
+      } else {
+        throw new Error(error.message || 'Failed to send reset email. Please try again.')
+      }
+    } finally {
+      set({ loading: false })
+    }
+  },
+
+  resetPassword: async (password: string) => {
+    set({ loading: true })
+    
+    try {
+      // Check if Supabase is properly configured
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+      
+      if (!supabaseUrl || !supabaseAnonKey || 
+          supabaseUrl.includes('placeholder') || supabaseAnonKey.includes('placeholder')) {
+        throw new Error('Supabase not configured. Please follow SUPABASE_SETUP_GUIDE.md to set up your database.')
+      }
+      
+      // Add timeout to prevent hanging requests
+      const updatePromise = supabase.auth.updateUser({
+        password: password
+      })
+      
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Request timeout. Please check your connection.')), 30000) // 30 second timeout
+      })
+      
+      const { data, error } = await Promise.race([updatePromise, timeoutPromise]) as any
+      
+      if (error) {
+        console.error('Supabase reset password error:', error)
+        throw error
+      }
+      
+      if (data.user) {
+        set({ user: data.user as AuthUser })
+        
+        // Fetch profile after successful password reset
+        try {
+          const profilePromise = get().checkUser()
+          const profileTimeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Profile fetch timeout')), 10000) // 10 second timeout
+          })
+          
+          await Promise.race([profilePromise, profileTimeoutPromise])
+        } catch (profileError) {
+          console.warn('Profile fetch failed, but password reset was successful:', profileError)
+          // Don't fail the entire reset process for profile fetch errors
+        }
+      }
+    } catch (error: any) {
+      console.error('Reset password error:', error)
+      
+      // Transform Supabase errors to user-friendly messages
+      if (error.message?.includes('Password') || error.message?.includes('password')) {
+        throw new Error('Password does not meet security requirements')
+      } else if (error.message?.includes('token') || error.message?.includes('expired')) {
+        throw new Error('Reset link has expired. Please request a new one.')
+      } else if (error.message?.includes('Invalid') || error.message?.includes('invalid')) {
+        throw new Error('Invalid reset link. Please request a new one.')
+      } else if (error.message?.includes('Supabase not configured')) {
+        throw error // Pass through configuration errors
+      } else if (error.message?.includes('timeout') || error.message?.includes('network')) {
+        throw new Error('Network error. Please check your connection and try again.')
+      } else {
+        throw new Error(error.message || 'Failed to reset password. Please try again.')
+      }
+    } finally {
+      set({ loading: false })
+    }
   }
 }))
 

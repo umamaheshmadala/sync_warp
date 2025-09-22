@@ -73,3 +73,17 @@ temp/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# Project organization - temporary folders
+temp_cleanup/
+debug/
+archive/
+scripts/
+
+# Development artifacts
+*.log
+*.png
+*.jpg
+*.jpeg
+dev-*.txt
+job-id.txt

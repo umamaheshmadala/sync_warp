@@ -11,6 +11,16 @@ import Dashboard from '../components/Dashboard'
 import Login from '../components/Login'
 import SignUp from '../components/SignUp'
 import Onboarding from '../components/Onboarding'
+import ForgotPassword from '../components/ForgotPassword'
+import ResetPassword from '../components/ResetPassword'
+
+// Import business components
+import BusinessRegistration from '../components/business/BusinessRegistration'
+import BusinessDashboard from '../components/business/BusinessDashboard'
+import BusinessProfile from '../components/business/BusinessProfile'
+
+// Import social components
+import FriendsManagementPage from '../components/FriendsManagementPage'
 
 // Lazy load components for better performance
 const NotFound = lazy(() => import('../components/NotFound'))
@@ -23,6 +33,7 @@ const Social = lazy(() => import('../components/Social'))
 // Debug components (only in development)
 const SignUpDebug = lazy(() => import('../components/SignUpDebug'))
 const AuthStoreTest = lazy(() => import('../components/AuthStoreTest'))
+const RouteProtectionTest = lazy(() => import('../components/RouteProtectionTest'))
 
 // Route definitions
 export interface RouteConfig {
@@ -52,6 +63,18 @@ export const routes: RouteConfig[] = [
     element: <SignUp />,
     title: 'Sign Up - SynC',
     description: 'Create your account'
+  },
+  {
+    path: '/auth/forgot-password',
+    element: <ForgotPassword />,
+    title: 'Reset Password - SynC',
+    description: 'Reset your password'
+  },
+  {
+    path: '/auth/reset-password',
+    element: <ResetPassword />,
+    title: 'Set New Password - SynC',
+    description: 'Set your new password'
   },
 
   // Protected routes (require authentication)
@@ -103,6 +126,42 @@ export const routes: RouteConfig[] = [
     protected: true,
     title: 'Social - SynC',
     description: 'Connect with friends and share deals'
+  },
+  {
+    path: '/friends',
+    element: <FriendsManagementPage />,
+    protected: true,
+    title: 'Friends - SynC',
+    description: 'Manage your friends and connections'
+  },
+  // Business Routes
+  {
+    path: '/business/register',
+    element: <BusinessRegistration />,
+    protected: true,
+    title: 'Register Business - SynC',
+    description: 'Register your business on SynC'
+  },
+  {
+    path: '/business/dashboard',
+    element: <BusinessDashboard />,
+    protected: true,
+    title: 'Business Dashboard - SynC',
+    description: 'Manage your businesses on SynC'
+  },
+  {
+    path: '/business/:businessId',
+    element: <BusinessProfile />,
+    protected: true,
+    title: 'Business Profile - SynC',
+    description: 'View and manage your business profile'
+  },
+  {
+    path: '/business/:businessId/edit',
+    element: <BusinessProfile />,
+    protected: true,
+    title: 'Edit Business - SynC',
+    description: 'Edit your business profile'
   }
 ]
 
@@ -117,6 +176,11 @@ const debugRoutes: RouteConfig[] = [
     path: '/debug/auth',
     element: <Suspense fallback={<div>Loading...</div>}><AuthStoreTest /></Suspense>,
     title: 'Debug - Auth Store'
+  },
+  {
+    path: '/debug/routes',
+    element: <Suspense fallback={<div>Loading...</div>}><RouteProtectionTest /></Suspense>,
+    title: 'Debug - Route Protection Tests'
   }
 ]
 
@@ -142,12 +206,19 @@ export default function AppRouter() {
       {allRoutes.map((route) => {
         // Wrap protected routes with ProtectedRoute component
         if (route.protected) {
+          // Determine if this route requires completed onboarding
+          const requireOnboarding = !['/', '/onboarding', '/auth/login', '/auth/signup'].includes(route.path)
+          
           return (
             <Route
               key={route.path}
               path={route.path}
               element={
-                <ProtectedRoute requireAuth={true}>
+                <ProtectedRoute 
+                  requireAuth={true}
+                  requireOnboarding={requireOnboarding}
+                  debugMode={isDevelopment}
+                >
                   {route.element}
                 </ProtectedRoute>
               }
@@ -162,7 +233,10 @@ export default function AppRouter() {
               key={route.path}
               path={route.path}
               element={
-                <ProtectedRoute requireAuth={false}>
+                <ProtectedRoute 
+                  requireAuth={false}
+                  debugMode={isDevelopment}
+                >
                   {route.element}
                 </ProtectedRoute>
               }

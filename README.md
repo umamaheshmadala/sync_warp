@@ -1,261 +1,201 @@
-# 🚀 SynC - Social Coupon Sharing Platform
+# 🚀 SynC - Local Business Discovery Platform
 
-**A modern social platform for discovering, sharing, and redeeming local business coupons.**
+> **A modern React + TypeScript application for connecting local businesses with customers through deals, social features, and community engagement.**
 
-[![React](https://img.shields.io/badge/React-18.2-blue?logo=react)](https://reactjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.2-blue?logo=typescript)](https://www.typescriptlang.org/)
-[![Supabase](https://img.shields.io/badge/Supabase-Database-green?logo=supabase)](https://supabase.com/)
-[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.3-blue?logo=tailwindcss)](https://tailwindcss.com/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-
----
-
-## 🎯 **Project Overview**
-
-SynC is a comprehensive social platform that connects users with local businesses through coupon sharing and discovery. Users can find deals, share coupons with friends, and help businesses reach new customers through social engagement.
-
-### **🌟 Key Features**
-- 👥 **Social Coupon Sharing** - Share deals with friends within configurable limits
-- 🏪 **Business Discovery** - Find local businesses and trending offers
-- 📱 **Mobile-First Design** - Responsive UI optimized for mobile devices
-- 🎯 **Smart Recommendations** - Personalized coupon suggestions
-- 📊 **Admin Dashboard** - Complete business and user management
-- 🔐 **Secure Authentication** - Powered by Supabase Auth
-
----
-
-## 🏗️ **Architecture & Tech Stack**
-
-### **Frontend**
-- **React 18** with TypeScript for type-safe development
-- **Vite** for fast development and optimized builds
-- **TailwindCSS** + **Headless UI** for modern, accessible styling
-- **Zustand** for lightweight state management
-- **React Query** for server state management
-- **React Router** for client-side routing
-
-### **Backend & Database**
-- **Supabase** for authentication, database, and real-time features
-- **PostgreSQL** with PostGIS for location-based features
-- **Row Level Security (RLS)** for data protection
-- **25+ optimized database tables** supporting all platform features
-
-### **Testing & Quality**
-- **Vitest** for unit testing
-- **Playwright** for end-to-end testing
-- **ESLint** + **Prettier** for code quality
-- **TypeScript** for compile-time error catching
-
----
-
-## 🚦 **Current Status**
-
-### **📊 Progress Overview**
-- **Overall Progress**: 17/20 stories completed (85%) - Major milestone achieved!
-- **Epic 1**: ✅ **Foundation & Infrastructure** (6/6 stories - COMPLETE)
-- **Epic 2**: ✅ **User Authentication Flow** (4/5 stories - COMPLETE)
-- **Epic 2.5**: ✅ **Data & Location** (3/3 stories - COMPLETE)
-- **Epic 3**: ✅ **Navigation & UI** (4/4 stories - COMPLETE)
-- **Epic 5**: 🟢 **Social Features** (3/4 stories - 75% COMPLETE)
-
-### **✅ Completed Features**
-- ✅ Complete project setup with modern tooling
-- ✅ Supabase integration with live database  
-- ✅ User authentication & onboarding with Indian cities
-- ✅ Mobile-first responsive design with haptic feedback
-- ✅ Complete navigation system with page transitions
-- ✅ **Social Features**: Complete friend management system
-- ✅ **Friend System**: Search, add, manage friends with real-time updates
-- ✅ **Deal Sharing**: Share coupons with friends with personalized messages
-- ✅ **Real-time Updates**: Live friend status and notifications
-- ✅ **Critical Fix**: Bidirectional unfriend functionality
-- ✅ Testing infrastructure with E2E and unit tests
-- ✅ Production-ready social platform
-
-### **🔄 Current Status**
-- ✅ **Social Platform**: Ready for production use
-- ✅ **User Management**: Complete authentication and profiles
-- ✅ **Friend System**: Full friend management with bidirectional operations
-- ✅ **Real-time Features**: Live updates and notifications
-- 🎯 **Next**: Business features (Epic 4) and review system
-
----
-
-## 🛠️ **Quick Start**
-
-### **Prerequisites**
-- **Node.js** >= 18.0.0
-- **npm** >= 8.0.0
-- **Supabase Account** (for database)
-
-### **Installation**
+## 📋 Quick Start
 
 ```bash
-# Clone the repository
-git clone https://github.com/umamaheshmadala/sync_warp.git
-cd sync_warp
-
 # Install dependencies
 npm install
 
-# Set up environment variables
-cp .env.example .env
-# Edit .env with your Supabase credentials
-
-# Apply database schema
-# Copy contents of database_schema.sql to Supabase SQL Editor and run
-
 # Start development server
 npm run dev
+
+# Build for production
+npm run build
 ```
 
-### **🔧 Available Scripts**
-
-```bash
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run preview      # Preview production build
-npm run test         # Run unit tests
-npm run test:e2e     # Run end-to-end tests
-npm run lint         # Run ESLint
-npm run format       # Format code with Prettier
-```
-
----
-
-## 🗂️ **Project Structure**
+## 🏗️ Project Structure
 
 ```
 sync_warp/
-├── src/
-│   ├── components/          # React components
-│   │   ├── Landing.tsx      # Landing page
-│   │   ├── Login.tsx        # Authentication
-│   │   ├── Dashboard.tsx    # Main dashboard
-│   │   ├── BottomNavigation.tsx  # Mobile navigation
-│   │   └── ContactsSidebar.tsx   # Friends sidebar
-│   ├── lib/
-│   │   └── supabase.ts      # Supabase configuration
-│   ├── store/
-│   │   └── authStore.ts     # Authentication state
-│   └── App.tsx              # Main app component
-├── database_schema.sql      # Complete database schema
-├── EPIC_*.md               # Project tracking files
-├── PROJECT_TRACKER.md      # Main project dashboard
-└── SUPABASE_SETUP_GUIDE.md # Database setup guide
+├── 📁 src/                    # Source code
+│   ├── 📁 components/         # React components
+│   │   └── 📁 business/       # Business features ✅
+│   ├── 📁 hooks/              # Custom React hooks
+│   ├── 📁 lib/                # Utilities & config
+│   ├── 📁 store/              # State management
+│   └── 📁 router/             # App routing
+├── 📁 supabase/              # Database migrations
+├── 📁 docs/                  # Documentation
+├── 📁 scripts/               # Development scripts
+└── 📄 Config files           # package.json, etc.
 ```
 
----
+## ✨ Features Implemented
 
-## 📚 **Documentation**
+### 🏢 **Epic 4: Business Features** ✅ **PRODUCTION READY**
+- **Business Registration**: Complete 4-step registration wizard with image upload
+- **Business Dashboard**: Full management interface for business owners  
+- **Business Profiles**: Advanced view/edit with image management
+- **Image Management**: Logo, cover, gallery upload/update with live preview
+- **Operating Hours**: Advanced editor with time pickers and proper day ordering
+- **Navigation**: Breadcrumb navigation and back buttons throughout
+- **Smart Database**: Automatic synchronization between old/new schemas
+- **Business Categories**: Organized classification with 10+ categories
 
-### **Project Management**
-- 📋 **[PROJECT_TRACKER.md](PROJECT_TRACKER.md)** - Main project dashboard
-- 📖 **[Epic Files](EPIC_1_Foundation.md)** - Detailed user stories and progress
-- 🚀 **[SUPABASE_SETUP_GUIDE.md](SUPABASE_SETUP_GUIDE.md)** - Database setup instructions
+### 🔐 **Authentication System** ✅ **PRODUCTION READY**
+- User registration with email validation
+- Secure login/logout with session management
+- Password reset functionality
+- Protected routes with proper auth checks
+- Profile management with full editing
 
-### **Database**
-- 🗄️ **[database_schema.sql](database_schema.sql)** - Complete PostgreSQL schema
-- 📊 **25+ Tables** supporting users, businesses, coupons, social features
-- 🔒 **Row Level Security** policies for data protection
+### 🧭 **Navigation & UI** ✅ **PRODUCTION READY**
+- Responsive navigation system with breadcrumbs
+- Bottom navigation for mobile
+- Protected route handling
+- Clean, modern UI with Tailwind CSS
+- Intuitive back buttons and navigation flow
 
----
+### 👥 **Social Features** ✅ **PRODUCTION READY**
+- **Unified Friends Management**: Dedicated `/friends` page with tabbed interface
+- **Advanced Friend System**: Search, filter, online status indicators
+- **Real-time Updates**: Live friend status and notifications
+- **Deal Sharing**: Complete coupon sharing system with friends
+- **Friend Requests**: Send, accept, decline with real-time updates
 
-## 🎭 **Development Workflow**
+### 🖼️ **Media & Storage** ✅ **PRODUCTION READY**
+- **Supabase Storage**: Configured `business-assets` bucket
+- **Image Upload**: Logo, cover, gallery images with progress indicators
+- **RLS Security**: Row-level security policies for secure file access
+- **Live Preview**: Real-time image preview during editing
 
-This project follows an **Epic-based development approach** with detailed user stories:
+## 🛠️ Technology Stack
 
-1. **Epic 1**: ✅ Foundation & Infrastructure (COMPLETE)
-2. **Epic 2**: ✅ User Authentication Flow (COMPLETE)
-3. **Epic 2.5**: ✅ Data & Location Services (COMPLETE)
-4. **Epic 3**: ✅ Core Navigation & UI (COMPLETE)
-5. **Epic 5**: 🟢 Social Features (75% COMPLETE - Friend system with bidirectional fix)
-6. **Epic 4**: 📋 Business Features (PLANNED)
-7. **Epic 6**: 📋 Admin Panel (PLANNED)
+- **Frontend**: React 18 + TypeScript + Vite
+- **Styling**: Tailwind CSS + Lucide Icons
+- **State**: Zustand for global state management
+- **Database**: Supabase (PostgreSQL) with RLS
+- **Authentication**: Supabase Auth
+- **Animation**: Framer Motion
+- **Forms**: React Hook Form + Zod validation
+- **Testing**: Vitest + Playwright
 
-Each epic contains detailed user stories with acceptance criteria, technical tasks, and time estimates.
+## 📚 Documentation
 
----
+- **📖 [Project Structure](PROJECT_STRUCTURE.md)** - Organized directory guide
+- **🏢 [Business Implementation](docs/EPIC_4_BUSINESS_IMPLEMENTATION.md)** - Business features guide
+- **🧪 [Testing Guide](docs/BUSINESS_TESTING_GUIDE.md)** - How to test business features
+- **📊 [Project Status](docs/PROJECT_STATUS_OVERVIEW.md)** - Development progress
+- **⚙️ [Setup Guide](docs/SUPABASE_SETUP_GUIDE.md)** - Database configuration
 
-## 🧪 **Testing**
+## 🚀 Getting Started
 
-### **Unit Tests**
+### 1. Environment Setup
 ```bash
-npm run test         # Run all unit tests
-npm run test:ui      # Run tests with UI
-npm run test:coverage # Generate coverage report
+# Copy environment template
+cp .env.example .env
+
+# Configure your Supabase credentials
+# VITE_SUPABASE_URL=your_supabase_url
+# VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-### **E2E Tests**
+### 2. Database Setup
 ```bash
-npm run test:e2e     # Run end-to-end tests
-npm run test:e2e:ui  # Run with Playwright UI
+# Start Supabase (if using locally)
+npx supabase start
+
+# Run migrations
+npx supabase migration up
 ```
 
-**Test Coverage**:
-- 🧪 Component unit tests
-- 🎭 End-to-end user journey tests
-- 📱 Mobile responsiveness tests
-- ♿ Accessibility compliance tests
-
----
-
-## 🚀 **Deployment**
-
-### **Production Build**
+### 3. Development
 ```bash
-npm run build
-npm run preview  # Test production build locally
+# Start dev server
+npm run dev
+
+# Open http://localhost:5173
 ```
 
-### **Environment Variables**
-```env
-VITE_SUPABASE_URL=your-supabase-project-url
-VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
-VITE_APP_ENV=production
+## 🎯 Key Features to Test
+
+### Business Registration
+1. Navigate to `/business/register`
+2. Complete 4-step registration process
+3. Test form validation and location services
+
+### Business Management  
+1. Go to `/business/dashboard`
+2. View registered businesses
+3. Edit business profiles
+
+### Authentication Flow
+1. Test signup/login at `/auth/signup` and `/auth/login`
+2. Verify protected routes work correctly
+3. Test password reset functionality
+
+## 🗂️ Directory Organization
+
+| Directory | Purpose | Key Files |
+|-----------|---------|-----------|
+| `src/components/business/` | Business features | `BusinessRegistration.tsx`, `BusinessDashboard.tsx` |
+| `src/hooks/` | Custom hooks | `useBusiness.ts` |
+| `supabase/migrations/` | Database schema | `20241201_create_business_tables.sql` |
+| `docs/` | All documentation | Implementation guides, status reports |
+| `scripts/` | Dev automation | PowerShell development scripts |
+| `debug/` | Debug queries | SQL debugging files |
+
+## 🧪 Testing
+
+```bash
+# Unit tests
+npm run test
+
+# E2E tests
+npm run test:e2e
+
+# Type checking
+npm run type-check
 ```
 
----
+## 😦 Project Status
 
-## 🤝 **Contributing**
+| Epic | Status | Progress |
+|------|--------|---------|
+| Epic 1: Foundation | ✅ Complete | 100% |
+| Epic 2: Authentication | ✅ Complete | 100% |
+| Epic 3: Navigation | ✅ Complete | 100% |
+| **Epic 4: Business Features** | ✅ **MAJOR PROGRESS** | **66% (2/3 Core Stories Complete)** |
+| Epic 5: Social Features | ✅ Complete + Enhanced | 100% |
+| Epic 6: Admin Panel | ⏳ Planned | 0% |
 
-1. **Fork** the repository
-2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
-3. **Commit** your changes (`git commit -m 'Add amazing feature'`)
-4. **Push** to the branch (`git push origin feature/amazing-feature`)
-5. **Open** a Pull Request
+### **🎆 Major Achievements This Session:**
+- ✅ **Complete Business Registration & Management System**
+- ✅ **Advanced Image Upload & Management**
+- ✅ **Professional Business Storefronts**
+- ✅ **Smart Database Synchronization**
+- ✅ **Enhanced Navigation with Breadcrumbs**
+- ✅ **Unified Friends Management Page**
+- ✅ **Production-Ready Infrastructure**
 
-### **Development Guidelines**
-- Follow the existing code style and conventions
-- Write tests for new features
-- Update documentation as needed
-- Follow the Epic-based development approach
+## 🤝 Development Workflow
 
----
+1. **Feature Development**: Work in `src/components/[feature]/`
+2. **Database Changes**: Add migrations to `supabase/migrations/`
+3. **Documentation**: Update relevant docs in `docs/`
+4. **Testing**: Add tests in `tests/` and `e2e/`
 
-## 📜 **License**
+## 📞 Support & Resources
 
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 📞 **Contact & Support**
-
-- **Repository**: [github.com/umamaheshmadala/sync_warp](https://github.com/umamaheshmadala/sync_warp)
-- **Issues**: [Report bugs or request features](https://github.com/umamaheshmadala/sync_warp/issues)
-- **Discussions**: [Join project discussions](https://github.com/umamaheshmadala/sync_warp/discussions)
-
----
-
-## 🎉 **Acknowledgments**
-
-- **Supabase** for providing excellent backend-as-a-service
-- **Vercel** for React and development tools
-- **Tailwind Labs** for the amazing CSS framework
-- **Open Source Community** for the incredible ecosystem
+- **Documentation**: See `docs/` directory for detailed guides
+- **Issues**: Check existing documentation for troubleshooting
+- **Database**: Ensure Supabase is properly configured
+- **Clean Structure**: Use `PROJECT_STRUCTURE.md` for navigation
 
 ---
 
-**⭐ Star this repository if you find it helpful!**
+**🎉 The project is now well-organized and ready for continued development!**
 
-*Built with ❤️ for local businesses and communities*
+*This README reflects the clean, organized structure of the SynC project after the major cleanup and organization effort.*
