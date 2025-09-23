@@ -18,6 +18,7 @@ import ResetPassword from '../components/ResetPassword'
 import BusinessRegistration from '../components/business/BusinessRegistration'
 import BusinessDashboard from '../components/business/BusinessDashboard'
 import BusinessProfile from '../components/business/BusinessProfile'
+import ProductManagerPage from '../components/business/ProductManagerPage'
 
 // Import social components
 import FriendsManagementPage from '../components/FriendsManagementPage'
@@ -34,6 +35,7 @@ const Social = lazy(() => import('../components/Social'))
 const SignUpDebug = lazy(() => import('../components/SignUpDebug'))
 const AuthStoreTest = lazy(() => import('../components/AuthStoreTest'))
 const RouteProtectionTest = lazy(() => import('../components/RouteProtectionTest'))
+const ProductsDebug = lazy(() => import('../components/debug/ProductsDebug'))
 
 // Route definitions
 export interface RouteConfig {
@@ -162,6 +164,13 @@ export const routes: RouteConfig[] = [
     protected: true,
     title: 'Edit Business - SynC',
     description: 'Edit your business profile'
+  },
+  {
+    path: '/business/:businessId/products',
+    element: <ProductManagerPage />,
+    protected: true,
+    title: 'Product Catalog - SynC',
+    description: 'Manage your business product catalog'
   }
 ]
 
@@ -181,6 +190,12 @@ const debugRoutes: RouteConfig[] = [
     path: '/debug/routes',
     element: <Suspense fallback={<div>Loading...</div>}><RouteProtectionTest /></Suspense>,
     title: 'Debug - Route Protection Tests'
+  },
+  {
+    path: '/debug/products',
+    element: <Suspense fallback={<div>Loading...</div>}><ProductsDebug /></Suspense>,
+    protected: true,
+    title: 'Debug - Products & Database'
   }
 ]
 

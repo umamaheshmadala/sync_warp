@@ -2,12 +2,23 @@
 // Quick integration component to add friend management to your app
 
 import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Users, UserPlus, Activity, MessageCircle } from 'lucide-react';
 import AddFriend from './AddFriend';
 
 // Simple integration component that can be added anywhere in your app
 export const FriendIntegration: React.FC = () => {
   const [showAddFriend, setShowAddFriend] = useState(false);
+  const location = useLocation();
+  
+  // Only show on specific pages - social, friends, and dashboard
+  const allowedPages = ['/social', '/friends', '/dashboard'];
+  const shouldShow = allowedPages.some(page => location.pathname === page);
+  
+  // Don't render on other pages
+  if (!shouldShow) {
+    return null;
+  }
 
   if (showAddFriend) {
     return (

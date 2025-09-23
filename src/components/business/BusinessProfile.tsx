@@ -20,11 +20,13 @@ import {
   Tag,
   ArrowLeft,
   Home,
-  ChevronRight
+  ChevronRight,
+  Package
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
 import { toast } from 'react-hot-toast';
+import FeaturedProducts from './FeaturedProducts';
 
 // TypeScript interfaces
 interface Business {
@@ -236,11 +238,47 @@ const BusinessProfile: React.FC = () => {
 
     const uploadedUrl = await handleImageUpload(file, type);
     if (uploadedUrl) {
+      // Update edit form
+      const fieldName = type === 'cover' ? 'cover_image_url' : `${type}_url`;
       setEditForm(prev => ({
         ...prev,
-        [`${type}_url`]: uploadedUrl
+        [fieldName]: uploadedUrl
       }));
-      toast.success(`${type} image updated successfully!`);
+      
+      // Update business state immediately for visual feedback
+      setBusiness(prev => prev ? {
+        ...prev,
+        [fieldName]: uploadedUrl
+      } : null);
+      
+      // Save to database immediately
+      try {
+        const updateField = type === 'cover' ? 'cover_image_url' : `${type}_url`;
+        const { error } = await supabase
+          .from('businesses')
+          .update({ [updateField]: uploadedUrl })
+          .eq('id', businessId)
+          .eq('user_id', user?.id);
+          
+        if (error) {
+          console.error('Database update error:', error);
+          throw error;
+        }
+        
+        toast.success(`${type === 'cover' ? 'Cover' : type} image updated successfully!`);
+      } catch (error) {
+        console.error('Error saving image:', error);
+        toast.error(`Failed to save ${type === 'cover' ? 'cover' : type} image: ${error.message}`);
+        // Revert the UI changes on error
+        setEditForm(prev => ({
+          ...prev,
+          [`${type === 'cover' ? 'cover_image' : type}_url`]: business?.[`${type === 'cover' ? 'cover_image' : type}_url`] || null
+        }));
+        setBusiness(prev => prev ? {
+          ...prev,
+          [`${type === 'cover' ? 'cover_image' : type}_url`]: prev[`${type === 'cover' ? 'cover_image' : type}_url`] || null
+        } : null);
+      }
     }
   };
 
@@ -656,6 +694,15 @@ const BusinessProfile: React.FC = () => {
             ))}
           </div>
         </div>
+      )}
+
+      {/* Featured Products Section */}
+      {business && (
+        <FeaturedProducts 
+          businessId={business.id}
+          businessName={business.business_name}
+          isOwner={isOwner}
+        />
       )}
     </div>
   );

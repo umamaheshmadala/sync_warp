@@ -16,7 +16,8 @@ import {
   TrendingUp,
   Calendar,
   Phone,
-  Mail
+  Mail,
+  Package
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
@@ -261,21 +262,31 @@ const BusinessDashboard: React.FC = () => {
         </div>
 
         {/* Actions */}
-        <div className="flex space-x-2">
-          <Link
-            to={`/business/${business.id}`}
-            className="flex-1 flex items-center justify-center px-3 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
-          >
-            <Eye className="w-4 h-4 mr-1" />
-            View
-          </Link>
+        <div className="space-y-2">
+          <div className="flex space-x-2">
+            <Link
+              to={`/business/${business.id}`}
+              className="flex-1 flex items-center justify-center px-3 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+            >
+              <Eye className="w-4 h-4 mr-1" />
+              View
+            </Link>
+            
+            <Link
+              to={`/business/${business.id}/edit`}
+              className="flex-1 flex items-center justify-center px-3 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <Edit3 className="w-4 h-4 mr-1" />
+              Edit
+            </Link>
+          </div>
           
           <Link
-            to={`/business/${business.id}/edit`}
-            className="flex-1 flex items-center justify-center px-3 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+            to={`/business/${business.id}/products`}
+            className="w-full flex items-center justify-center px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
           >
-            <Edit3 className="w-4 h-4 mr-1" />
-            Edit
+            <Package className="w-4 h-4 mr-1" />
+            Manage Products
           </Link>
         </div>
       </div>
