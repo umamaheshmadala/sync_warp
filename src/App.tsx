@@ -5,13 +5,20 @@ import Layout from './components/Layout'
 import AppRouter from './router/Router'
 import { FriendIntegration } from './components/FriendIntegration'
 import { AuthDebugPanel } from './router/ProtectedRoute'
+import RouterDebugger from './components/debug/RouterDebugger'
 
 const queryClient = new QueryClient()
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router>
+      <Router 
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true
+        }}
+      >
+        <RouterDebugger enabled={true} />
         <Layout>
           <AppRouter />
           <FriendIntegration />

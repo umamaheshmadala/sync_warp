@@ -19,6 +19,7 @@ import BusinessRegistration from '../components/business/BusinessRegistration'
 import BusinessDashboard from '../components/business/BusinessDashboard'
 import BusinessProfile from '../components/business/BusinessProfile'
 import ProductManagerPage from '../components/business/ProductManagerPage'
+import CouponManagerPage from '../components/business/CouponManagerPage'
 
 // Import social components
 import FriendsManagementPage from '../components/FriendsManagementPage'
@@ -171,6 +172,13 @@ export const routes: RouteConfig[] = [
     protected: true,
     title: 'Product Catalog - SynC',
     description: 'Manage your business product catalog'
+  },
+  {
+    path: '/business/:businessId/coupons',
+    element: <CouponManagerPage />,
+    protected: true,
+    title: 'Coupon Manager - SynC',
+    description: 'Create and manage business coupons'
   }
 ]
 

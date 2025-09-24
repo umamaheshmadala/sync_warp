@@ -32,7 +32,7 @@ export default function ProtectedRoute({
   const shouldDebug = debugMode || isDevelopment
 
   useEffect(() => {
-    if (shouldDebug) {
+    if (shouldDebug && !sessionChecked) {
       console.log('[ProtectedRoute] State:', {
         path: location.pathname,
         requireAuth,
@@ -169,8 +169,8 @@ export default function ProtectedRoute({
     }
   }
 
-  // Final debug log before rendering
-  if (shouldDebug) {
+  // Final debug log before rendering (only once per session)
+  if (shouldDebug && !sessionChecked) {
     console.log('[ProtectedRoute] Rendering protected content for:', location.pathname)
   }
   

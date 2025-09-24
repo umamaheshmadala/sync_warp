@@ -6,6 +6,14 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
-    open: true
+    open: true,
+    hmr: {
+      // Prevent HMR from triggering on tab focus changes
+      overlay: false
+    }
+  },
+  // Optimize for better development experience
+  optimizeDeps: {
+    exclude: ['lucide-react']
   }
 })

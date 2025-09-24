@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Home, ChevronRight, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
-import ProductManager from './ProductManager';
-import ReloadDebugger from '../debug/ReloadDebugger';
+import CouponManager from './CouponManager';
 
 interface Business {
   id: string;
@@ -15,7 +14,7 @@ interface Business {
   verified: boolean;
 }
 
-const ProductManagerPage: React.FC = () => {
+const CouponManagerPage: React.FC = () => {
   const { businessId } = useParams<{ businessId: string }>();
   const navigate = useNavigate();
   const { user } = useAuthStore();
@@ -28,7 +27,6 @@ const ProductManagerPage: React.FC = () => {
     let isCancelled = false;
     
     const fetchBusiness = async () => {
-      // console.log('ProductManagerPage: fetchBusiness called', { businessId, user: user?.email });
       if (!businessId || !user?.id) {
         setError('Business ID or user not found');
         setLoading(false);
@@ -64,7 +62,7 @@ const ProductManagerPage: React.FC = () => {
 
         // Check if user owns this business
         if (data.user_id !== user.id) {
-          setError('You do not have permission to manage products for this business');
+          setError('You do not have permission to manage coupons for this business');
           return;
         }
 
@@ -141,7 +139,6 @@ const ProductManagerPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <ReloadDebugger pageName="ProductManagerPage" enabled={true} />
       {/* Navigation Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -175,7 +172,7 @@ const ProductManagerPage: React.FC = () => {
               
               <ChevronRight className="w-4 h-4" />
               
-              <span className="text-gray-900 font-medium">Products</span>
+              <span className="text-gray-900 font-medium">Coupons</span>
             </nav>
 
             {/* Back Button */}
@@ -192,7 +189,7 @@ const ProductManagerPage: React.FC = () => {
 
       {/* Main Content */}
       <div className="py-6">
-        <ProductManager
+        <CouponManager
           businessId={business.id}
           businessName={business.business_name}
           isOwner={true} // Already verified ownership above
@@ -202,4 +199,4 @@ const ProductManagerPage: React.FC = () => {
   );
 };
 
-export default ProductManagerPage;
+export default CouponManagerPage;

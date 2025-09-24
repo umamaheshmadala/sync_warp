@@ -16,6 +16,7 @@ import { useProducts } from '../../hooks/useProducts';
 import ProductForm from './ProductForm';
 import ProductCard from './ProductCard';
 import { toast } from 'react-hot-toast';
+import ReloadDebugger from '../debug/ReloadDebugger';
 
 interface ProductManagerProps {
   businessId: string;
@@ -23,7 +24,7 @@ interface ProductManagerProps {
   isOwner: boolean;
 }
 
-const ProductManager: React.FC<ProductManagerProps> = ({
+const ProductManager: React.FC<ProductManagerProps> = React.memo(({
   businessId,
   businessName,
   isOwner
@@ -139,6 +140,7 @@ const ProductManager: React.FC<ProductManagerProps> = ({
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <ReloadDebugger pageName="ProductManager" enabled={true} />
       {/* Header */}
       <div className="mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
@@ -408,6 +410,8 @@ const ProductManager: React.FC<ProductManagerProps> = ({
       </AnimatePresence>
     </div>
   );
-};
+});
+
+ProductManager.displayName = 'ProductManager';
 
 export default ProductManager;

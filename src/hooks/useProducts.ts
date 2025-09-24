@@ -2,7 +2,7 @@
 // Custom hook for managing product-related data and operations
 // Following the pattern established in useBusiness.ts
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import { toast } from 'react-hot-toast';
@@ -14,6 +14,8 @@ export const useProducts = (businessId?: string) => {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const initialLoadComplete = useRef(false);
+  const lastBusinessId = useRef<string | undefined>(undefined);
 
   // Fetch products for a specific business
   const fetchProducts = async (targetBusinessId?: string, filters?: ProductFilters) => {
@@ -321,12 +323,31 @@ export const useProducts = (businessId?: string) => {
     }
   };
 
-  // Load products on hook initialization
+  // Load products on hook initialization with cleanup and auto-reload prevention
   useEffect(() => {
-    if (businessId) {
-      fetchProducts(businessId);
-    }
-  }, [businessId]);
+    let isCancelled = false;
+    
+    const loadProducts = async () => {
+      // Only load if:
+      // 1. We have a businessId
+      // 2. Request wasn't cancelled
+      // 3. Either it's the first load, or businessId changed
+      if (businessId && !isCancelled && 
+          (!initialLoadComplete.current || lastBusinessId.current !== businessId)) {
+        
+        lastBusinessId.current = businessId;
+        await fetchProducts(businessId);
+        initialLoadComplete.current = true;
+      }
+    };
+    
+    loadProducts();
+    
+    return () => {
+      isCancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [businessId]); // Only re-run when businessId changes
 
   // Refresh products manually
   const refreshProducts = async () => {
