@@ -179,7 +179,7 @@ export const useNavigationPreferences = () => {
   const [preferences, setPreferences] = useState({
     enableHapticFeedback: true,
     enableAnimations: true,
-    swipeGesturesEnabled: true,
+    swipeGesturesEnabled: false, // Disabled by default to prevent text selection issues
     showNavigationBadges: true,
     navigationBarPosition: 'bottom' as 'top' | 'bottom'
   });

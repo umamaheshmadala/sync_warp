@@ -34,7 +34,7 @@ const GestureHandler: React.FC<GestureHandlerProps> = ({
   enableTabSwitching = false,
   tabRoutes = [],
   currentRoute,
-  swipeThreshold = 100,
+  swipeThreshold = 150, // Increased threshold to prevent accidental triggers
   enableHaptics = true,
   disabled = false,
   className = ''
@@ -56,10 +56,53 @@ const GestureHandler: React.FC<GestureHandlerProps> = ({
   const opacity = useTransform(x, [-300, 0, 300], [0.5, 1, 0.5]);
 
   /**
+   * Check if the event target is a text-selectable element
+   */
+  const isTextSelectable = useCallback((target: Element | null): boolean => {
+    if (!target) return false;
+    
+    const selectableElements = ['INPUT', 'TEXTAREA', 'SELECT', 'P', 'SPAN', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'A'];
+    const tagName = target.tagName;
+    
+    // Check if the element itself is text-selectable
+    if (selectableElements.includes(tagName)) return true;
+    
+    // Check if any parent element is text-selectable or has user-select CSS
+    let element = target as Element;
+    while (element && element !== document.body) {
+      const computedStyle = window.getComputedStyle(element);
+      
+      // Check for text selection CSS properties
+      if (computedStyle.userSelect !== 'none' && 
+          (computedStyle.cursor === 'text' || 
+           element.hasAttribute('contenteditable') ||
+           selectableElements.includes(element.tagName))) {
+        return true;
+      }
+      
+      // Check for data attributes that indicate text content
+      if (element.hasAttribute('data-selectable') || 
+          element.classList.contains('selectable-text')) {
+        return true;
+      }
+      
+      element = element.parentElement as Element;
+    }
+    
+    return false;
+  }, []);
+
+  /**
    * Handle pan start
    */
-  const handlePanStart = useCallback(() => {
+  const handlePanStart = useCallback((event: any) => {
     if (disabled) return;
+    
+    // Check if the pan started on a text-selectable element
+    const target = event.target;
+    if (isTextSelectable(target)) {
+      return; // Don't interfere with text selection
+    }
     
     setSwipeState(prev => ({
       ...prev,
@@ -69,13 +112,13 @@ const GestureHandler: React.FC<GestureHandlerProps> = ({
     if (enableHaptics) {
       triggerHaptic('light');
     }
-  }, [disabled, enableHaptics, triggerHaptic]);
+  }, [disabled, enableHaptics, triggerHaptic, isTextSelectable]);
 
   /**
    * Handle pan movement
    */
   const handlePan = useCallback((_event: any, info: PanInfo) => {
-    if (disabled) return;
+    if (disabled || !swipeState.isSwipeActive) return;
 
     const { offset } = info;
     const absOffsetX = Math.abs(offset.x);
@@ -84,16 +127,16 @@ const GestureHandler: React.FC<GestureHandlerProps> = ({
     // Determine primary swipe direction
     let direction: 'left' | 'right' | 'up' | 'down' | null = null;
     
-    if (absOffsetX > absOffsetY) {
-      // Horizontal swipe
-      if (Math.abs(offset.x) > 30) {
-        direction = offset.x > 0 ? 'right' : 'left';
-      }
-    } else {
-      // Vertical swipe
-      if (Math.abs(offset.y) > 30) {
-        direction = offset.y > 0 ? 'down' : 'up';
-      }
+    // Require more deliberate movement and clear directionality
+    const minimumMovement = 50; // Increased from 30
+    const directionalityRatio = 2; // Movement in primary direction must be 2x secondary
+    
+    if (absOffsetX > absOffsetY && absOffsetX > minimumMovement && absOffsetX / absOffsetY > directionalityRatio) {
+      // Horizontal swipe - must be clearly horizontal
+      direction = offset.x > 0 ? 'right' : 'left';
+    } else if (absOffsetY > absOffsetX && absOffsetY > minimumMovement && absOffsetY / absOffsetX > directionalityRatio) {
+      // Vertical swipe - must be clearly vertical
+      direction = offset.y > 0 ? 'down' : 'up';
     }
 
     const progress = direction 
@@ -116,7 +159,7 @@ const GestureHandler: React.FC<GestureHandlerProps> = ({
    * Handle pan end - execute swipe actions
    */
   const handlePanEnd = useCallback((_event: any, info: PanInfo) => {
-    if (disabled) return;
+    if (disabled || !swipeState.isSwipeActive) return;
 
     const { offset, velocity } = info;
     const absOffsetX = Math.abs(offset.x);
@@ -128,9 +171,9 @@ const GestureHandler: React.FC<GestureHandlerProps> = ({
 
     let actionTriggered = false;
 
-    // Check if swipe meets threshold (distance or velocity)
+    // Check if swipe meets threshold (distance or velocity) - more restrictive
     const meetsThreshold = (offsetVal: number, velocityVal: number) => 
-      Math.abs(offsetVal) > swipeThreshold || Math.abs(velocityVal) > 500;
+      Math.abs(offsetVal) > swipeThreshold || Math.abs(velocityVal) > 800; // Increased velocity threshold
 
     if (absOffsetX > absOffsetY) {
       // Horizontal swipe
@@ -228,18 +271,12 @@ const GestureHandler: React.FC<GestureHandlerProps> = ({
         x,
         y,
         rotateY,
-        opacity
+        opacity,
+        touchAction: 'pan-x pan-y' // Allow scrolling but capture swipes
       }}
-      drag
-      dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
-      dragElastic={0.1}
       onPanStart={handlePanStart}
       onPan={handlePan}
       onPanEnd={handlePanEnd}
-      whileDrag={{
-        scale: 0.95,
-        transition: { type: "spring", stiffness: 400, damping: 25 }
-      }}
     >
       {children}
       

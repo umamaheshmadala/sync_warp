@@ -3,10 +3,12 @@
 
 import { useState } from 'react'
 import { useAuthStore } from '../store/authStore'
-import { User, MapPin, Phone, Mail, Edit3, Camera } from 'lucide-react'
+import { useNavigationPreferences } from '../hooks/useNavigationState'
+import { User, MapPin, Phone, Mail, Edit3, Camera, Settings, Smartphone } from 'lucide-react'
 
 export default function Profile() {
   const { user, profile } = useAuthStore()
+  const { preferences, updatePreference } = useNavigationPreferences()
   const [isEditing, setIsEditing] = useState(false)
 
   return (
@@ -162,6 +164,82 @@ export default function Profile() {
                 <span className="text-gray-600">Reviews written</span>
                 <span className="font-medium">0</span>
               </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <Settings className="h-5 w-5 mr-2" />
+              Navigation Preferences
+            </h3>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <Smartphone className="h-4 w-4 text-gray-400 mr-2" />
+                  <div>
+                    <span className="text-sm font-medium text-gray-700">Swipe Gestures</span>
+                    <p className="text-xs text-gray-500">Navigate between pages with swipes</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => updatePreference('swipeGesturesEnabled', !preferences.swipeGesturesEnabled)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    preferences.swipeGesturesEnabled ? 'bg-indigo-600' : 'bg-gray-200'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
+                      preferences.swipeGesturesEnabled ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-sm font-medium text-gray-700">Haptic Feedback</span>
+                  <p className="text-xs text-gray-500">Feel vibrations during interactions</p>
+                </div>
+                <button
+                  onClick={() => updatePreference('enableHapticFeedback', !preferences.enableHapticFeedback)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    preferences.enableHapticFeedback ? 'bg-indigo-600' : 'bg-gray-200'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
+                      preferences.enableHapticFeedback ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-sm font-medium text-gray-700">Page Animations</span>
+                  <p className="text-xs text-gray-500">Enable smooth page transitions</p>
+                </div>
+                <button
+                  onClick={() => updatePreference('enableAnimations', !preferences.enableAnimations)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    preferences.enableAnimations ? 'bg-indigo-600' : 'bg-gray-200'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
+                      preferences.enableAnimations ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+            
+            {/* Information note about swipe gestures */}
+            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+              <p className="text-xs text-blue-700">
+                💡 <strong>Tip:</strong> If swipe gestures interfere with text selection, you can disable them here. 
+                You can still navigate using the bottom navigation bar.
+              </p>
             </div>
           </div>
 

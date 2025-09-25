@@ -5,10 +5,21 @@ import './index.css'
 
 // Import debug utilities for development
 import './utils/testCouponCreation'
+import searchService from './services/searchService'
+
+// Make search service available globally during development
+if (import.meta.env.DEV) {
+  (window as any).searchService = searchService;
+  // Also add simple search service for testing
+  const { simpleSearchService } = await import('./services/simpleSearchService');
+  (window as any).simpleSearchService = simpleSearchService;
+  // Add Supabase client for debugging
+  const { supabase } = await import('./lib/supabase');
+  (window as any).supabase = supabase;
+}
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  // Temporarily disabled React.StrictMode to test auto-reload issues
-  // <React.StrictMode>
+  <React.StrictMode>
     <App />
-  // </React.StrictMode>,
+  </React.StrictMode>,
 )

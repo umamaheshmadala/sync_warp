@@ -218,7 +218,7 @@ class SearchService {
       .from('business_coupons')
       .select(`
         *,
-        businesses!inner(
+        businesses(
           id, business_name, business_type, description, address, 
           latitude, longitude, rating
         )
@@ -284,7 +284,7 @@ class SearchService {
       .from('businesses')
       .select(`
         *,
-        business_coupons!inner(status, valid_until)
+        business_coupons(status, valid_until)
       `);
 
     // Apply text search
@@ -298,10 +298,9 @@ class SearchService {
       );
     }
 
-    // Only businesses with active coupons
-    supabaseQuery = supabaseQuery
-      .eq('business_coupons.status', 'active')
-      .gte('business_coupons.valid_until', new Date().toISOString());
+    // Filter businesses that have active coupons (we'll filter this in post-processing)
+    // Note: We can't directly filter by related table fields in this way
+    // Instead, we'll filter the results after fetching
 
     // Apply location filtering
     if (query.location) {
@@ -687,25 +686,15 @@ class SearchService {
   }
 
   /**
-   * Track search analytics
+   * Track search analytics (disabled until table exists)
    */
   private async trackSearchAnalytics(
     query: SearchQuery, 
     result: SearchResult, 
     userId?: string
   ): Promise<void> {
-    try {
-      await supabase.from('search_analytics').insert([{
-        user_id: userId,
-        search_query: query.q,
-        filters: JSON.stringify(query.filters),
-        results_count: result.totalCoupons + result.totalBusinesses,
-        search_time_ms: result.searchTime,
-        timestamp: new Date().toISOString()
-      }]);
-    } catch (error) {
-      console.error('Error tracking search analytics:', error);
-    }
+    // Disabled to avoid 404 errors until search_analytics table is created
+    console.log('Search analytics tracking disabled - table not found');
   }
 
   /**
@@ -743,36 +732,12 @@ class SearchService {
   }
 
   /**
-   * Get popular search terms
+   * Get popular search terms (disabled until search_analytics table exists)
    */
   async getPopularSearchTerms(limit: number = 10): Promise<string[]> {
-    try {
-      const { data } = await supabase
-        .from('search_analytics')
-        .select('search_query')
-        .not('search_query', 'is', null)
-        .order('timestamp', { ascending: false })
-        .limit(limit * 3); // Get more to dedupe
-
-      if (!data) return [];
-
-      // Count occurrences and return top terms
-      const termCounts = new Map<string, number>();
-      data.forEach(entry => {
-        if (entry.search_query && entry.search_query.length > 1) {
-          const term = entry.search_query.toLowerCase();
-          termCounts.set(term, (termCounts.get(term) || 0) + 1);
-        }
-      });
-
-      return Array.from(termCounts.entries())
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, limit)
-        .map(([term]) => term);
-    } catch (error) {
-      console.error('Error getting popular search terms:', error);
-      return [];
-    }
+    // Temporarily disabled to avoid 404 errors
+    console.log('Popular search terms disabled - search_analytics table not found');
+    return [];
   }
 }
 

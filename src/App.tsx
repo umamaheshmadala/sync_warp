@@ -18,7 +18,7 @@ function App() {
           v7_relativeSplatPath: true
         }}
       >
-        <RouterDebugger enabled={true} />
+        <RouterDebugger enabled={false} />
         <Layout>
           <AppRouter />
           <FriendIntegration />

@@ -6,6 +6,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useUserCoupons } from './useCoupons';
+// Temporarily using simple search service for testing
+import simpleSearchService from '../services/simpleSearchService';
 import searchService, { 
   SearchQuery, 
   SearchResult, 
@@ -121,8 +123,9 @@ export const useSearch = (options: UseSearchOptions = {}) => {
       pagination: searchState.pagination
     };
 
-    // Don't search empty queries
-    if (!queryToUse.q.trim() && Object.keys(queryToUse.filters).length === 0) {
+    // Don't search empty queries or only whitespace
+    if (!queryToUse.q.trim() && Object.keys(queryToUse.filters).filter(key => queryToUse.filters[key]).length === 0) {
+      console.log('🔍 Skipping search - empty query and no filters');
       setResults({
         coupons: [],
         businesses: [],
@@ -132,6 +135,7 @@ export const useSearch = (options: UseSearchOptions = {}) => {
         searchTime: 0,
         hasMore: false
       });
+      setSearchState(prev => ({ ...prev, hasSearched: false, isSearching: false }));
       return null;
     }
 
@@ -143,7 +147,34 @@ export const useSearch = (options: UseSearchOptions = {}) => {
     }));
 
     try {
-      const result = await searchService.search(queryToUse, user?.id);
+      // Temporarily using simple search service for testing
+      const simpleResult = await simpleSearchService.search({
+        q: queryToUse.q,
+        limit: queryToUse.pagination.limit
+      });
+      
+      // Convert to expected format
+      const result: SearchResult = {
+        coupons: simpleResult.coupons.map((coupon: any) => ({
+          ...coupon,
+          relevanceScore: 1,
+          business: { id: coupon.business_id, business_name: 'Test Business' },
+          isCollected: false,
+          isUsed: false
+        })),
+        businesses: simpleResult.businesses.map((business: any) => ({
+          ...business,
+          activeCouponsCount: 0,
+          relevanceScore: 1
+        })),
+        totalCoupons: simpleResult.coupons.length,
+        totalBusinesses: simpleResult.businesses.length,
+        facets: { couponTypes: [], discountRanges: [], businessTypes: [], locations: [], validityRanges: [] },
+        suggestions: [],
+        searchTime: simpleResult.searchTime,
+        hasMore: false
+      };
+      // const result = await searchService.search(queryToUse, user?.id);
       
       // Check if this search was cancelled
       if (abortControllerRef.current?.signal.aborted) {
@@ -194,12 +225,15 @@ export const useSearch = (options: UseSearchOptions = {}) => {
   }, [performSearch, debounceMs]);
 
   /**
-   * Update URL parameters with search state
+   * Update URL parameters with search state (debounced to prevent loops)
    */
   const updateUrlParams = useCallback((query: SearchQuery) => {
+    // Only update URL if we have a meaningful query
+    if (!query.q.trim()) return;
+    
     const params = new URLSearchParams();
     
-    if (query.q) params.set('q', query.q);
+    params.set('q', query.q);
     if (query.sort.field !== defaultSort.field) params.set('sort', query.sort.field);
     if (query.sort.order !== defaultSort.order) params.set('order', query.sort.order);
     if (query.pagination.page > 1) params.set('page', query.pagination.page.toString());
@@ -212,8 +246,13 @@ export const useSearch = (options: UseSearchOptions = {}) => {
       params.set('business', query.filters.businessName);
     }
 
-    setSearchParams(params);
-  }, [defaultSort, setSearchParams]);
+    // Prevent URL update loops by checking if params actually changed
+    const currentParams = searchParams.toString();
+    const newParams = params.toString();
+    if (currentParams !== newParams) {
+      setSearchParams(params, { replace: true });
+    }
+  }, [defaultSort, setSearchParams, searchParams]);
 
   /**
    * Set search query
@@ -360,19 +399,13 @@ export const useSearch = (options: UseSearchOptions = {}) => {
     if (term.length < 2) return [];
 
     try {
-      const result = await searchService.search({
-        q: term,
-        filters: { validOnly: true, isPublic: true },
-        sort: { field: 'relevance', order: 'desc' },
-        pagination: { page: 1, limit: 5 }
-      }, user?.id);
-
-      return result.suggestions;
+      const suggestions = await simpleSearchService.getSuggestions(term);
+      return suggestions.map(text => ({ text, type: 'coupon' as const, count: 1 }));
     } catch (error) {
       console.error('Error getting suggestions:', error);
       return [];
     }
-  }, [user?.id]);
+  }, []);
 
   /**
    * Navigate to business profile
@@ -388,13 +421,23 @@ export const useSearch = (options: UseSearchOptions = {}) => {
     navigate(`/coupon/${couponId}`);
   }, [navigate]);
 
-  // Auto-search when URL params change
+  // Auto-search when URL params change (with debouncing to prevent excessive updates)
   useEffect(() => {
     const urlQuery = searchParams.get('q');
     if (urlQuery && urlQuery !== searchState.query) {
-      setQuery(urlQuery);
+      // Update query state directly without triggering auto-search to prevent loops
+      setSearchState(prev => ({
+        ...prev,
+        query: urlQuery,
+        pagination: { ...prev.pagination, page: 1 }
+      }));
+      
+      // Only trigger search if auto-search is enabled and we have a valid query
+      if (autoSearch && urlQuery.trim()) {
+        debouncedSearch();
+      }
     }
-  }, [searchParams, searchState.query, setQuery]);
+  }, [searchParams, searchState.query, autoSearch, debouncedSearch]);
 
   // Cleanup on unmount
   useEffect(() => {

@@ -94,8 +94,10 @@ const BusinessDashboard: React.FC = () => {
 
   // Fetch user's businesses
   useEffect(() => {
+    let isMounted = true;
+    
     const fetchBusinesses = async () => {
-      if (!user) return;
+      if (!user?.id) return;
 
       try {
         setLoading(true);
@@ -108,6 +110,9 @@ const BusinessDashboard: React.FC = () => {
           .order('created_at', { ascending: false });
 
         if (businessError) throw businessError;
+        
+        // Only update state if component is still mounted
+        if (!isMounted) return;
 
         setBusinesses(businessData || []);
 
@@ -124,25 +129,36 @@ const BusinessDashboard: React.FC = () => {
           ? businessesWithRatings.reduce((sum, b) => sum + b.average_rating, 0) / businessesWithRatings.length 
           : 0;
 
-        setStats({
-          totalBusinesses,
-          activeBusinesses,
-          pendingBusinesses,
-          totalReviews,
-          averageRating,
-          totalCheckins
-        });
+        if (isMounted) {
+          setStats({
+            totalBusinesses,
+            activeBusinesses,
+            pendingBusinesses,
+            totalReviews,
+            averageRating,
+            totalCheckins
+          });
+        }
 
       } catch (error) {
-        console.error('Error fetching businesses:', error);
-        toast.error('Failed to load your businesses');
+        if (isMounted) {
+          console.error('Error fetching businesses:', error);
+          toast.error('Failed to load your businesses');
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchBusinesses();
-  }, [user]);
+    
+    // Cleanup function to prevent state updates on unmounted component
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id]); // Only depend on user.id, not the entire user object
 
   // Get status badge
   const getStatusBadge = (status) => {
