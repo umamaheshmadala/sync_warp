@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Search Fix Test</title>
+</head>
+<body>
+    <h2>Testing Search Query Fix</h2>
+    <p>Open browser console and run this script on http://localhost:5173/search</p>
+    
+    <script>
+        // Test script to verify search query timing fix
+        function testSearchQueryFix() {
+            console.log('🧪 Testing Search Query Timing Fix');
+            
+            // Navigate to search page first
+            if (!window.location.pathname.includes('/search')) {
+                console.log('📍 Navigating to search page...');
+                window.location.href = '/search';
+                return;
+            }
+            
+            // Wait for the page to load
+            setTimeout(() => {
+                console.log('🔍 Starting search tests...');
+                
+                // Find the search input
+                const searchInput = document.querySelector('input[type="text"]') || 
+                                  document.querySelector('input[placeholder*="Search"]') ||
+                                  document.querySelector('[data-testid="search-input"]');
+                
+                if (!searchInput) {
+                    console.error('❌ Could not find search input');
+                    return;
+                }
+                
+                console.log('✅ Found search input:', searchInput);
+                
+                // Test 1: Type "coffee" and check if search is triggered correctly
+                console.log('\n🧪 Test 1: Typing "coffee"');
+                
+                // Focus the input
+                searchInput.focus();
+                
+                // Clear existing value
+                searchInput.value = '';
+                searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+                
+                // Type each character with a delay to simulate real typing
+                const testQuery = 'coffee';
+                let charIndex = 0;
+                
+                const typeCharacter = () => {
+                    if (charIndex < testQuery.length) {
+                        const currentText = testQuery.substring(0, charIndex + 1);
+                        searchInput.value = currentText;
+                        
+                        console.log(`📝 Typed: "${currentText}"`);
+                        
+                        // Trigger input event
+                        const inputEvent = new Event('input', { bubbles: true });
+                        searchInput.dispatchEvent(inputEvent);
+                        
+                        charIndex++;
+                        setTimeout(typeCharacter, 100); // 100ms delay between characters
+                    } else {
+                        console.log('✅ Finished typing "coffee"');
+                        
+                        // Wait a bit then check results
+                        setTimeout(() => {
+                            // Check if search was performed
+                            const resultsContainer = document.querySelector('[data-testid="search-results"]') ||
+                                                    document.querySelector('.search-results') ||
+                                                    document.querySelector('.results');
+                                                    
+                            if (resultsContainer) {
+                                console.log('✅ Search results container found');
+                                
+                                // Check if any results are displayed
+                                const resultItems = document.querySelectorAll('[data-testid*="coupon"]') ||
+                                                   document.querySelectorAll('.coupon-card') ||
+                                                   document.querySelectorAll('.search-result-item');
+                                
+                                console.log(`📊 Found ${resultItems.length} result items`);
+                                
+                                // Check URL for search parameters
+                                const url = new URL(window.location);
+                                const searchParam = url.searchParams.get('q');
+                                console.log(`🔗 URL search param: "${searchParam}"`);
+                                
+                                if (searchParam === 'coffee') {
+                                    console.log('✅ URL parameter matches expected query');
+                                } else {
+                                    console.warn('⚠️ URL parameter mismatch. Expected "coffee", got:', searchParam);
+                                }
+                                
+                            } else {
+                                console.log('⚠️ No search results container found');
+                            }
+                            
+                            // Test 2: Quick typing test
+                            setTimeout(() => {
+                                console.log('\n🧪 Test 2: Quick typing test');
+                                testQuickTyping();
+                            }, 2000);
+                            
+                        }, 1500); // Wait 1.5s for search to complete
+                    }
+                };
+                
+                typeCharacter();
+                
+            }, 1000); // Wait 1 second for page to be ready
+        }
+        
+        function testQuickTyping() {
+            const searchInput = document.querySelector('input[type="text"]') || 
+                              document.querySelector('input[placeholder*="Search"]') ||
+                              document.querySelector('[data-testid="search-input"]');
+                              
+            if (!searchInput) {
+                console.error('❌ Could not find search input for quick typing test');
+                return;
+            }
+            
+            // Clear input
+            searchInput.value = '';
+            searchInput.focus();
+            
+            // Type "pizza" very quickly
+            const quickQuery = 'pizza';
+            searchInput.value = quickQuery;
+            
+            console.log(`⚡ Quickly typed: "${quickQuery}"`);
+            
+            // Trigger input event
+            const inputEvent = new Event('input', { bubbles: true });
+            searchInput.dispatchEvent(inputEvent);
+            
+            // Check results after a short delay
+            setTimeout(() => {
+                const url = new URL(window.location);
+                const searchParam = url.searchParams.get('q');
+                
+                console.log(`🔗 Quick typing URL param: "${searchParam}"`);
+                
+                if (searchParam === quickQuery) {
+                    console.log('✅ Quick typing test passed - URL matches query');
+                } else {
+                    console.warn('⚠️ Quick typing test failed. Expected "pizza", got:', searchParam);
+                }
+                
+                console.log('\n🎉 Search fix tests completed!');
+                console.log('📋 Summary:');
+                console.log('- Test proper typing sequence with delays');
+                console.log('- Test quick typing to simulate fast user input');
+                console.log('- Verify URL parameters match expected queries');
+                console.log('- Check for search result rendering');
+                
+            }, 1500);
+        }
+        
+        // Auto-start the test if on search page
+        if (window.location.pathname.includes('/search')) {
+            console.log('🔄 Auto-starting search fix test...');
+            setTimeout(testSearchQueryFix, 500);
+        } else {
+            console.log('📍 Please navigate to /search page first, then run testSearchQueryFix()');
+        }
+        
+        // Make function available globally
+        window.testSearchQueryFix = testSearchQueryFix;
+    </script>
+</body>
+</html>

@@ -67,20 +67,32 @@ export default function Search() {
   // Handle form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (localQuery.trim()) {
-      performSearch(localQuery.trim())
-    }
+    console.log('🔍 [Search] Form submitted with query:', localQuery);
+    
+    // Allow empty queries for browse mode
+    const queryToSearch = localQuery.trim();
+    console.log('🔍 [Search] Processing query (empty = browse mode):', queryToSearch || '[BROWSE MODE]');
+    performSearch(queryToSearch); // Pass empty string for browse mode
   }
 
   // Perform search and save to recent searches
   const performSearch = (query: string) => {
-    search.setQuery(query)
-    setIsSuggestionsVisible(false)
+    console.log('🔍 [Search.tsx] performSearch called with:', query || '[BROWSE MODE]');
     
-    // Save to recent searches
-    const newRecentSearches = [query, ...recentSearches.filter(term => term !== query)].slice(0, 5)
-    setRecentSearches(newRecentSearches)
-    localStorage.setItem('recentSearches', JSON.stringify(newRecentSearches))
+    // Update local query first
+    setLocalQuery(query);
+    setIsSuggestionsVisible(false);
+    
+    // Set the query in search hook (this will trigger the actual search)
+    // Empty queries are allowed for browse mode
+    search.setQuery(query);
+    
+    // Save to recent searches (only non-empty queries)
+    if (query.trim()) {
+      const newRecentSearches = [query, ...recentSearches.filter(term => term !== query)].slice(0, 5);
+      setRecentSearches(newRecentSearches);
+      localStorage.setItem('recentSearches', JSON.stringify(newRecentSearches));
+    }
   }
 
   // Handle suggestion selection
@@ -127,6 +139,14 @@ export default function Search() {
               value={localQuery}
               onChange={(e) => handleInputChange(e.target.value)}
               onFocus={() => setIsSuggestionsVisible(true)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  const queryToSearch = localQuery.trim();
+                  console.log('🔍 [Search] Enter key pressed, performing search with:', queryToSearch || '[BROWSE MODE]');
+                  performSearch(queryToSearch); // Allow empty for browse mode
+                }
+              }}
               placeholder="Search for businesses, deals, or products..."
               className="w-full px-4 py-3 pl-12 pr-20 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               autoComplete="off"
@@ -152,6 +172,20 @@ export default function Search() {
             recentSearches={recentSearches}
           />
         </form>
+        
+        {/* Browse All Button */}
+        {!search.hasSearched && (
+          <div className="mt-4 text-center">
+            <button
+              onClick={() => performSearch('')}
+              disabled={search.isSearching}
+              className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 transition-colors"
+            >
+              {search.isSearching ? 'Loading...' : 'Browse All Deals'}
+            </button>
+            <p className="text-sm text-gray-500 mt-1">Or search for specific deals above</p>
+          </div>
+        )}
       </div>
 
       {/* Filters and Controls */}

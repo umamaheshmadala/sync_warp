@@ -78,7 +78,12 @@ export const useSearch = (options: UseSearchOptions = {}) => {
 
     return {
       query: urlQuery,
-      filters: { ...defaultFilters, validOnly: true, isPublic: true },
+      filters: { 
+        ...defaultFilters, 
+        // Only apply default filters if no URL query to allow browsing
+        validOnly: true, 
+        isPublic: true 
+      },
       sort: { field: urlSort, order: urlOrder },
       pagination: { page: urlPage, limit: pageSize },
       isSearching: false,
@@ -123,20 +128,26 @@ export const useSearch = (options: UseSearchOptions = {}) => {
       pagination: searchState.pagination
     };
 
-    // Don't search empty queries or only whitespace
-    if (!queryToUse.q.trim() && Object.keys(queryToUse.filters).filter(key => queryToUse.filters[key]).length === 0) {
-      console.log('🔍 Skipping search - empty query and no filters');
-      setResults({
-        coupons: [],
-        businesses: [],
-        totalCoupons: 0,
-        totalBusinesses: 0,
-        suggestions: [],
-        searchTime: 0,
-        hasMore: false
-      });
-      setSearchState(prev => ({ ...prev, hasSearched: false, isSearching: false }));
-      return null;
+    // Check if we have meaningful search criteria
+    const hasSearchQuery = queryToUse.q.trim().length > 0;
+    const hasSignificantFilters = Object.keys(queryToUse.filters).filter(key => {
+      const value = queryToUse.filters[key];
+      // Don't count default filters as significant
+      return value && key !== 'validOnly' && key !== 'isPublic';
+    }).length > 0;
+    
+    // Debug logging
+    console.log('🔍 [useSearch] Search criteria check:', {
+      hasSearchQuery,
+      hasSignificantFilters,
+      query: queryToUse.q,
+      filters: queryToUse.filters
+    });
+    
+    // For now, allow default filter searches to proceed (browse mode)
+    // This will show all public, active coupons when no search term is provided
+    if (!hasSearchQuery && !hasSignificantFilters) {
+      console.log('🔍 [useSearch] Browse mode - showing all public active coupons');
     }
 
     setSearchState(prev => ({ 
@@ -147,11 +158,21 @@ export const useSearch = (options: UseSearchOptions = {}) => {
     }));
 
     try {
+      // Debug: Log search parameters
+      console.log('🔍 [useSearch] Executing search with:', {
+        query: queryToUse.q,
+        filters: queryToUse.filters,
+        pagination: queryToUse.pagination,
+        userId: user?.id
+      });
+      
       // Temporarily using simple search service for testing
       const simpleResult = await simpleSearchService.search({
         q: queryToUse.q,
         limit: queryToUse.pagination.limit
       });
+      
+      console.log('🔍 [useSearch] Raw search result:', simpleResult);
       
       // Convert to expected format
       const result: SearchResult = {
@@ -258,16 +279,29 @@ export const useSearch = (options: UseSearchOptions = {}) => {
    * Set search query
    */
   const setQuery = useCallback((query: string) => {
+    console.log('🔍 [useSearch] setQuery called with:', query);
+    
     setSearchState(prev => ({
       ...prev,
       query,
       pagination: { ...prev.pagination, page: 1 } // Reset to first page
     }));
 
-    if (autoSearch) {
-      debouncedSearch();
+    // Use immediate search with the NEW query value to avoid stale closures
+    if (autoSearch && query.trim()) {
+      console.log('🔍 [useSearch] Triggering immediate search with query:', query);
+      
+      // Create query object with the NEW value, not from state
+      const immediateQuery: SearchQuery = {
+        q: query, // Use the fresh query value
+        filters: searchState.filters,
+        sort: searchState.sort,
+        pagination: { page: 1, limit: searchState.pagination.limit }
+      };
+      
+      performSearch(immediateQuery, false);
     }
-  }, [autoSearch, debouncedSearch]);
+  }, [autoSearch, performSearch, searchState.filters, searchState.sort, searchState.pagination.limit]);
 
   /**
    * Update filters

@@ -3,11 +3,11 @@
 -- Run this in your Supabase SQL editor
 
 -- Insert test businesses if they don't exist
-INSERT INTO businesses (id, business_name, business_type, description, address, created_at, updated_at)
+INSERT INTO businesses (id, business_name, business_type, description, address, city, country, status, created_at, updated_at)
 VALUES 
-  ('test-business-1', 'Pizza Palace', 'restaurant', 'Best pizza in town with amazing deals', '123 Pizza Street', NOW(), NOW()),
-  ('test-business-2', 'Coffee Corner', 'cafe', 'Premium coffee and pastries', '456 Coffee Ave', NOW(), NOW()),
-  ('test-business-3', 'Burger Hub', 'restaurant', 'Gourmet burgers and fast service', '789 Burger Blvd', NOW(), NOW())
+  ('11111111-1111-1111-1111-111111111111', 'Pizza Palace', 'restaurant', 'Best pizza in town with amazing deals', '123 Pizza Street', 'New York', 'USA', 'active', NOW(), NOW()),
+  ('22222222-2222-2222-2222-222222222222', 'Coffee Corner', 'cafe', 'Premium coffee and pastries', '456 Coffee Ave', 'Seattle', 'USA', 'active', NOW(), NOW()),
+  ('33333333-3333-3333-3333-333333333333', 'Burger Hub', 'restaurant', 'Gourmet burgers and fast service', '789 Burger Blvd', 'Chicago', 'USA', 'active', NOW(), NOW())
 ON CONFLICT (id) DO NOTHING;
 
 -- Insert test coupons
@@ -18,8 +18,8 @@ INSERT INTO business_coupons (
 )
 VALUES 
   (
-    'test-coupon-1',
-    'test-business-1',
+    'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+    '11111111-1111-1111-1111-111111111111',
     '25% Off Pizza Orders',
     'Get 25% discount on all pizza orders over $20',
     'percentage',
@@ -34,8 +34,8 @@ VALUES
     NOW()
   ),
   (
-    'test-coupon-2',
-    'test-business-2',
+    'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+    '22222222-2222-2222-2222-222222222222',
     '$5 Off Coffee',
     'Save $5 on any coffee order over $15',
     'fixed_amount',
@@ -50,8 +50,8 @@ VALUES
     NOW()
   ),
   (
-    'test-coupon-3',
-    'test-business-3',
+    'cccccccc-cccc-cccc-cccc-cccccccccccc',
+    '33333333-3333-3333-3333-333333333333',
     'Buy 2 Get 1 Free Burgers',
     'Amazing BOGO deal on all burger varieties',
     'buy_x_get_y',
@@ -66,8 +66,8 @@ VALUES
     NOW()
   ),
   (
-    'test-coupon-4',
-    'test-business-1',
+    'dddddddd-dddd-dddd-dddd-dddddddddddd',
+    '11111111-1111-1111-1111-111111111111',
     'Free Dessert with Meal',
     'Complimentary dessert with any pizza order over $30',
     'free_item',
@@ -98,5 +98,5 @@ SELECT
   bc.valid_until
 FROM business_coupons bc
 JOIN businesses b ON bc.business_id = b.id
-WHERE bc.id LIKE 'test-coupon-%'
+WHERE bc.id IN ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'cccccccc-cccc-cccc-cccc-cccccccccccc', 'dddddddd-dddd-dddd-dddd-dddddddddddd')
 ORDER BY bc.title;

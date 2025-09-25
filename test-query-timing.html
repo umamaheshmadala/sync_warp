@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Search Query Fix Demo</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-container { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        input { padding: 8px; width: 200px; margin: 10px; }
+        .result { background: #f0f0f0; padding: 10px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h2>Search Query Timing Fix Demo</h2>
+    
+    <div class="test-container">
+        <h3>Test Instructions:</h3>
+        <p><strong>1. Type "coffee" slowly</strong> (with pauses between letters)</p>
+        <p><strong>2. Type "pizza" quickly</strong> (as fast as you can)</p>
+        <p>Watch the URL bar - it should always show the complete word, not partial letters.</p>
+    </div>
+    
+    <div class="test-container">
+        <p>Go to: <strong>http://localhost:5173/search</strong></p>
+        <p>Open browser DevTools (F12) and watch the Console tab</p>
+        <p>Type in the search input and observe:</p>
+        <ul>
+            <li>✅ URL should show <code>?q=coffee</code> (complete word)</li>
+            <li>❌ Before fix: URL would show <code>?q=coffe</code> (incomplete)</li>
+        </ul>
+    </div>
+    
+    <script>
+        console.log('🧪 Query Fix Test Demo');
+        console.log('Navigate to http://localhost:5173/search and test typing!');
+    </script>
+</body>
+</html>
