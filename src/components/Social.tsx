@@ -2,6 +2,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Users, MessageCircle, Share2, Heart, UserPlus, Bell } from 'lucide-react';
+import { FriendIntegration } from './FriendIntegration';
 
 const Social: React.FC = () => {
   // Sample data for demonstration
@@ -168,6 +169,9 @@ const Social: React.FC = () => {
           </motion.button>
         </div>
       </div>
+
+      {/* Friend Management Integration */}
+      <FriendIntegration />
     </div>
   );
 };

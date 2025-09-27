@@ -11,9 +11,8 @@ export const FriendIntegration: React.FC = () => {
   const [showAddFriend, setShowAddFriend] = useState(false);
   const location = useLocation();
   
-  // Only show on specific pages - social, friends, and dashboard
-  const allowedPages = ['/social', '/friends', '/dashboard'];
-  const shouldShow = allowedPages.some(page => location.pathname === page);
+  // Only show on social page
+  const shouldShow = location.pathname === '/social';
   
   // Don't render on other pages
   if (!shouldShow) {

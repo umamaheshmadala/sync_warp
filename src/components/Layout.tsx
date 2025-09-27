@@ -1,14 +1,17 @@
 // src/components/Layout.tsx
 // Main layout wrapper for the application with responsive design
 
-import { useEffect } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { routes } from '../router/Router'
 import PageTransition from './PageTransition'
 import BottomNavigation from './BottomNavigation'
 import GestureHandler from './GestureHandler'
+import ContactsSidebar from './ContactsSidebarWithTabs'
+import NotificationHub from './NotificationHub'
 import { useNavigationPreferences } from '../hooks/useNavigationState'
+import { Bell, Users, LogOut, ChevronDown, MapPin } from 'lucide-react'
 
 interface LayoutProps {
   children: React.ReactNode
@@ -16,8 +19,14 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   const location = useLocation()
-  const { user, initialized } = useAuthStore()
+  const navigate = useNavigate()
+  const { user, initialized, profile, signOut } = useAuthStore()
   const { preferences } = useNavigationPreferences()
+  
+  // State for sidebar and notifications
+  const [showContactsSidebar, setShowContactsSidebar] = useState(false)
+  const [showNotifications, setShowNotifications] = useState(false)
+  const [selectedCity] = useState(profile?.city || 'Select City')
 
   // Update page title and meta description based on current route
   useEffect(() => {
@@ -83,14 +92,14 @@ export default function Layout({ children }: LayoutProps) {
 
       {/* Header - only show on protected pages */}
       {currentRoute?.protected && (
-        <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
+        <header className="bg-white/95 backdrop-blur-sm shadow-sm border-b border-gray-200 sticky top-0 z-40">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16">
-              {/* Logo */}
+              {/* Logo and App Name */}
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
-                    <span className="text-white font-bold text-sm">S</span>
+                  <div className="w-9 h-9 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-md">
+                    <span className="text-white font-bold text-base">S</span>
                   </div>
                 </div>
                 <div className="ml-3">
@@ -98,26 +107,64 @@ export default function Layout({ children }: LayoutProps) {
                 </div>
               </div>
 
-              {/* User info */}
-              {user && (
-                <div className="flex items-center space-x-3">
-                  <span className="text-sm text-gray-700">
-                    Welcome, {user.user_metadata?.full_name || user.email?.split('@')[0]}
-                  </span>
-                  <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
-                    <span className="text-indigo-600 font-medium text-sm">
-                      {user.user_metadata?.full_name?.[0] || user.email?.[0]?.toUpperCase()}
-                    </span>
-                  </div>
+              {/* Right side actions */}
+              <div className="flex items-center space-x-2">
+                {/* City Selector - show on dashboard */}
+                {location.pathname === '/dashboard' && (
                   <button
-                    onClick={() => useAuthStore.getState().signOut()}
-                    className="text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-100 px-3 py-1 rounded-md transition-colors"
-                    title="Sign out"
+                    onClick={() => {/* Open city selector */}}
+                    className="flex items-center text-gray-700 hover:text-gray-900 bg-gray-100/50 px-3 py-2 rounded-xl transition-all duration-300 hover:bg-gray-200/50"
                   >
-                    Logout
+                    <MapPin className="w-4 h-4 mr-1" />
+                    <span className="font-medium text-sm hidden sm:inline">{selectedCity}</span>
+                    <ChevronDown className="w-4 h-4 ml-1" />
                   </button>
-                </div>
-              )}
+                )}
+                
+                {/* Contacts Sidebar Toggle */}
+                <button
+                  onClick={() => setShowContactsSidebar(true)}
+                  className="p-2.5 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all duration-300"
+                  title="Friends & Contacts"
+                >
+                  <Users className="w-5 h-5" />
+                </button>
+
+                {/* Notifications */}
+                <button
+                  onClick={() => setShowNotifications(true)}
+                  className="p-2.5 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl relative transition-all duration-300"
+                  title="Notifications"
+                >
+                  <Bell className="w-5 h-5" />
+                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-red-400 to-pink-400 rounded-full animate-pulse"></span>
+                </button>
+
+                {/* User Profile & Actions */}
+                {user && (
+                  <div className="flex items-center space-x-2">
+                    {/* Profile Avatar Button */}
+                    <button
+                      onClick={() => navigate('/profile')}
+                      className="w-9 h-9 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-xl flex items-center justify-center hover:from-indigo-200 hover:to-purple-200 transition-all duration-300"
+                      title="View Profile"
+                    >
+                      <span className="text-indigo-600 font-medium text-sm">
+                        {(profile?.full_name?.[0] || user.user_metadata?.full_name?.[0] || user.email?.[0])?.toUpperCase()}
+                      </span>
+                    </button>
+                    
+                    {/* Logout Button */}
+                    <button
+                      onClick={() => signOut()}
+                      className="p-2.5 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all duration-300"
+                      title="Sign Out"
+                    >
+                      <LogOut className="w-5 h-5" />
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </header>
@@ -165,6 +212,18 @@ export default function Layout({ children }: LayoutProps) {
       {isProtectedPage && (
         <BottomNavigation currentRoute={location.pathname} />
       )}
+      
+      {/* Contacts Sidebar */}
+      <ContactsSidebar 
+        isOpen={showContactsSidebar}
+        onClose={() => setShowContactsSidebar(false)}
+      />
+
+      {/* Notification Hub */}
+      <NotificationHub 
+        isOpen={showNotifications}
+        onClose={() => setShowNotifications(false)}
+      />
 
     </div>
   )

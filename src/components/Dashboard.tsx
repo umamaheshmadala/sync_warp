@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Search, 
   Bell, 
   MapPin, 
   ChevronDown,
@@ -113,245 +112,233 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Top App Bar */}
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
-        <div className="px-4 py-3">
-          <div className="flex items-center justify-between">
-            {/* Logo and City Selector */}
-            <div className="flex items-center">
-              <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center mr-3">
-                <span className="text-white font-bold text-sm">S</span>
-              </div>
-              <button
-                onClick={() => {/* Open city selector */}}
-                className="flex items-center text-gray-700 hover:text-gray-900"
-              >
-                <MapPin className="w-4 h-4 mr-1" />
-                <span className="font-medium text-sm">{selectedCity}</span>
-                <ChevronDown className="w-4 h-4 ml-1" />
-              </button>
-            </div>
-
-            {/* Right Actions */}
-            <div className="flex items-center space-x-3">
-              {/* Contacts Sidebar Toggle */}
-              <button
-                onClick={() => setShowContactsSidebar(true)}
-                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full"
-              >
-                <Users className="w-5 h-5" />
-              </button>
-
-              {/* Notifications */}
-              <button
-                onClick={() => setShowNotifications(true)}
-                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full relative"
-              >
-                <Bell className="w-5 h-5" />
-                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
-              </button>
-
-              {/* Profile */}
-              <button
-                onClick={() => navigate('/profile')}
-                className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center"
-              >
-                <User className="w-4 h-4 text-indigo-600" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
 
       {/* Main Content */}
-      <main className="pb-20"> {/* Extra padding for bottom nav */}
-        {/* Welcome Banner */}
-        <section className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-6">
-          <h1 className="text-2xl font-bold mb-2">
-            Welcome back, {profile?.full_name || user?.email?.split('@')[0]}! 👋
-          </h1>
-          <p className="text-indigo-100">Discover amazing deals and connect with local businesses</p>
+      <main className="pb-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Welcome Section */}
+        <section className="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 text-white rounded-3xl p-8 mb-8 relative overflow-hidden shadow-xl">
+          <div className="relative z-10">
+            <h1 className="text-xl font-bold mb-2">
+              Welcome back, {profile?.full_name || user?.email?.split('@')[0]}! 👋
+            </h1>
+            <p className="text-indigo-100 text-base opacity-90">Discover amazing deals and connect with local businesses</p>
+          </div>
+          <div className="absolute -top-8 -right-8 w-32 h-32 bg-white bg-opacity-10 rounded-full"></div>
+          <div className="absolute -bottom-8 -left-8 w-40 h-40 bg-white bg-opacity-5 rounded-full"></div>
         </section>
 
-        {/* Search Bar */}
-        <section className="px-4 -mt-6 mb-6">
-          <button
-            onClick={() => navigate('/search')}
-            className="w-full bg-white rounded-lg shadow-md p-4 flex items-center text-gray-500 hover:shadow-lg transition-shadow"
-          >
-            <Search className="w-5 h-5 mr-3" />
-            <span>Search businesses, products, or offers...</span>
-          </button>
-        </section>
+        {/* Dashboard Grid - Full Width */}
+        <section className="mb-8">
+          {/* Stats and Actions Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-6 mb-6">
+            {/* Quick Stats */}
+            <div className="bg-white rounded-2xl p-6 shadow-md hover:shadow-lg transition-shadow">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                    <Heart className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-gray-900">12</p>
+                    <p className="text-sm text-gray-600">Favorites</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-2xl p-6 shadow-md hover:shadow-lg transition-shadow">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                    <MessageCircle className="w-6 h-6 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-gray-900">5</p>
+                    <p className="text-sm text-gray-600">Reviews</p>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-        {/* Ads Carousel */}
-        <section className="px-4 mb-6">
-          <div className="bg-gradient-to-r from-orange-400 to-pink-500 rounded-lg p-6 text-white">
-            <h3 className="text-lg font-semibold mb-2">Special Weekend Offer!</h3>
-            <p className="text-orange-100 mb-3">Get up to 60% off at premium restaurants</p>
-            <button className="bg-white text-orange-500 px-4 py-2 rounded-lg font-medium hover:bg-orange-50">
-              Explore Deals
+            {/* Quick Actions */}
+            <button
+              onClick={() => navigate('/business/register')}
+              className="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white p-6 rounded-2xl shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-300"
+            >
+              <div className="text-center">
+                <TrendingUp className="w-8 h-8 mb-3 mx-auto" />
+                <p className="font-semibold text-base">Register</p>
+                <p className="text-sm opacity-90">Business</p>
+              </div>
             </button>
+            
+            <button
+              onClick={() => navigate('/business/dashboard')}
+              className="bg-white border-2 border-indigo-200 text-indigo-600 p-6 rounded-2xl shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-300"
+            >
+              <div className="text-center">
+                <Users className="w-8 h-8 mb-3 mx-auto" />
+                <p className="font-semibold text-base">Manage</p>
+                <p className="text-sm opacity-70">Business</p>
+              </div>
+            </button>
+          </div>
+
+          {/* Special Offer Banner */}
+          <div className="bg-gradient-to-r from-orange-400 to-pink-500 rounded-2xl p-6 text-white shadow-md">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-xl">Weekend Deal! 🔥</h3>
+                <p className="text-base opacity-90">Up to 60% off at premium restaurants</p>
+              </div>
+              <button 
+                onClick={() => navigate('/search')}
+                className="bg-white text-orange-500 px-6 py-3 rounded-xl font-medium hover:bg-orange-50 transition-colors text-base"
+              >
+                Explore Deals
+              </button>
+            </div>
           </div>
         </section>
 
         {/* Businesses in Spotlight */}
-        <section className="mb-6">
-          <div className="px-4 mb-4">
-            <h2 className="text-xl font-bold text-gray-900 mb-1">Businesses in Spotlight</h2>
-            <p className="text-gray-600 text-sm">Highly recommended in your area</p>
+        <section className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Spotlight Businesses</h2>
+              <p className="text-base text-gray-600">Top picks in your area</p>
+            </div>
+            <button 
+              onClick={() => navigate('/search')}
+              className="text-sm text-indigo-600 hover:text-indigo-800 font-medium bg-indigo-50 px-4 py-2 rounded-full hover:bg-indigo-100 transition-colors"
+            >
+              View All
+            </button>
           </div>
-          <div className="px-4 overflow-x-auto">
-            <div className="flex space-x-4">
-              {spotlightBusinesses.map((business) => (
-                <div
-                  key={business.id}
-                  onClick={() => navigate(`/business/${business.id}`)}
-                  className="flex-shrink-0 w-64 bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
-                >
-                  <div className="h-40 bg-gray-200 relative">
-                    {business.isPromoted && (
-                      <span className="absolute top-2 left-2 bg-yellow-400 text-yellow-900 px-2 py-1 rounded text-xs font-medium">
-                        Promoted
-                      </span>
-                    )}
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+            {spotlightBusinesses.map((business, index) => (
+              <div
+                key={business.id}
+                onClick={() => navigate(`/business/${business.id}`)}
+                className="bg-white rounded-2xl shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-105 relative"
+              >
+                {business.isPromoted && (
+                  <div className="absolute top-3 left-3 z-10">
+                    <span className="bg-gradient-to-r from-yellow-400 to-orange-400 text-white px-3 py-1 rounded-full text-xs font-medium shadow-sm">
+                      ✨ Featured
+                    </span>
                   </div>
-                  <div className="p-4">
-                    <h3 className="font-semibold text-gray-900 mb-1">{business.name}</h3>
-                    <p className="text-sm text-gray-600 mb-2">{business.category} • {business.location}</p>
+                )}
+                
+                <div className="h-32 bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 relative flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="text-4xl mb-2">{index === 0 ? '☕' : '🍰'}</div>
+                    <p className="text-sm text-gray-600 font-medium">{business.category}</p>
+                  </div>
+                </div>
+                
+                <div className="p-4">
+                  <h3 className="font-semibold text-gray-900 text-base mb-2 truncate">{business.name}</h3>
+                  <p className="text-sm text-gray-600 mb-3 truncate">{business.location}</p>
+                  <div className="flex items-center justify-between">
                     <div className="flex items-center">
                       <Star className="w-4 h-4 text-yellow-400 fill-current mr-1" />
                       <span className="text-sm font-medium">{business.rating}</span>
-                      <span className="text-sm text-gray-500 ml-1">({business.reviewCount})</span>
                     </div>
+                    <span className="text-sm text-gray-500">({business.reviewCount})</span>
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
         </section>
 
         {/* Hot Offers */}
-        <section className="mb-6">
-          <div className="px-4 mb-4">
-            <h2 className="text-xl font-bold text-gray-900 mb-1">Hot Offers</h2>
-            <p className="text-gray-600 text-sm">Limited time deals you can't miss</p>
+        <section className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Hot Offers 🔥</h2>
+              <p className="text-base text-gray-600">Limited time deals you can't miss</p>
+            </div>
+            <button 
+              onClick={() => navigate('/wallet')}
+              className="text-sm text-indigo-600 hover:text-indigo-800 font-medium bg-indigo-50 px-4 py-2 rounded-full hover:bg-indigo-100 transition-colors"
+            >
+              My Wallet
+            </button>
           </div>
-          <div className="px-4 overflow-x-auto">
-            <div className="flex space-x-4">
-              {hotOffers.map((offer) => (
-                <div
-                  key={offer.id}
-                  onClick={() => navigate(`/offer/${offer.id}`)}
-                  className="flex-shrink-0 w-72 bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
-                >
-                  <div className="h-32 bg-gradient-to-r from-red-400 to-pink-500 relative flex items-center justify-center">
-                    <div className="text-white text-center">
-                      <div className="text-3xl font-bold">{offer.discount}</div>
-                      <div className="text-sm">OFF</div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+            {hotOffers.map((offer, index) => (
+              <div
+                key={offer.id}
+                onClick={() => navigate(`/offer/${offer.id}`)}
+                className="bg-white rounded-2xl shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-105"
+              >
+                <div className="flex items-center">
+                  <div className="w-20 h-20 bg-gradient-to-br from-red-400 to-pink-500 flex items-center justify-center text-white m-4 rounded-xl">
+                    <div className="text-center">
+                      <div className="text-lg font-bold">{offer.discount}</div>
+                      <div className="text-xs opacity-90">OFF</div>
                     </div>
-                    <span className="absolute top-2 right-2 bg-white text-red-500 px-2 py-1 rounded text-xs font-medium">
-                      {offer.expiresIn} left
-                    </span>
                   </div>
-                  <div className="p-4">
-                    <h3 className="font-semibold text-gray-900 mb-1">{offer.title}</h3>
-                    <p className="text-sm text-gray-600">{offer.businessName}</p>
+                  <div className="flex-1 p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 pr-2">
+                        <h3 className="font-semibold text-gray-900 text-base mb-2 truncate">{offer.title}</h3>
+                        <p className="text-sm text-gray-600 mb-3 truncate">{offer.businessName}</p>
+                        <span className="inline-block bg-red-100 text-red-600 px-3 py-1 rounded-full text-sm font-medium">
+                          {offer.expiresIn} left
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
         </section>
 
         {/* Trending Products */}
-        <section className="mb-6">
-          <div className="px-4 mb-4">
-            <h2 className="text-xl font-bold text-gray-900 mb-1">Trending Products</h2>
-            <p className="text-gray-600 text-sm">What's popular this week</p>
+        <section className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Trending Now 📈</h2>
+              <p className="text-base text-gray-600">What's popular this week</p>
+            </div>
           </div>
-          <div className="px-4">
-            <div className="space-y-3">
-              {trendingProducts.map((product, index) => (
-                <div
-                  key={product.id}
-                  onClick={() => navigate(`/product/${product.id}`)}
-                  className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className="w-12 h-12 bg-gray-200 rounded-lg mr-3 flex items-center justify-center">
-                        <TrendingUp className="w-6 h-6 text-gray-400" />
-                      </div>
-                      <div>
-                        <h3 className="font-medium text-gray-900">{product.name}</h3>
-                        <p className="text-sm text-gray-600">{product.business}</p>
-                      </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {trendingProducts.map((product, index) => (
+              <div
+                key={product.id}
+                onClick={() => navigate(`/product/${product.id}`)}
+                className="bg-white rounded-2xl p-4 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-xl flex items-center justify-center">
+                      <span className="text-lg">{index === 0 ? '🎆' : index === 1 ? '🍰' : '🧼'}</span>
                     </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-indigo-600">{product.price}</p>
-                      <p className="text-xs text-gray-500">#{index + 1} trending</p>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-gray-900 text-base truncate">{product.name}</h3>
+                      <p className="text-sm text-gray-600 truncate">{product.business}</p>
                     </div>
                   </div>
+                  <div className="flex items-center space-x-3 ml-4">
+                    <span className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-3 py-1 rounded-full text-sm font-bold">
+                      #{index + 1}
+                    </span>
+                    <p className="font-bold text-gray-900 text-base">{product.price}</p>
+                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Business Section */}
-        <section className="px-4 mb-6">
-          <div className="bg-white rounded-lg p-4 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold text-gray-900">Business Center</h3>
-              <button 
-                onClick={() => navigate('/business/dashboard')}
-                className="text-sm text-indigo-600 hover:text-indigo-800"
-              >
-                View All
-              </button>
-            </div>
-            <div className="space-y-3">
-              <button
-                onClick={() => navigate('/business/register')}
-                className="w-full flex items-center justify-center px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-              >
-                <TrendingUp className="w-5 h-5 mr-2" />
-                Register Your Business
-              </button>
-              <button
-                onClick={() => navigate('/business/dashboard')}
-                className="w-full flex items-center justify-center px-4 py-3 border border-indigo-200 text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors"
-              >
-                <Users className="w-5 h-5 mr-2" />
-                Manage Businesses
-              </button>
-            </div>
-          </div>
-        </section>
-
-        {/* User Activity Card */}
-        <section className="px-4 mb-6">
-          <div className="bg-white rounded-lg p-4 shadow-sm">
-            <h3 className="font-semibold text-gray-900 mb-3">Your Activity This Week</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <Heart className="w-4 h-4 text-blue-600" />
-                </div>
-                <p className="text-2xl font-bold text-gray-900">12</p>
-                <p className="text-sm text-gray-600">Favorites</p>
               </div>
-              <div className="text-center">
-                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <MessageCircle className="w-4 h-4 text-green-600" />
-                </div>
-                <p className="text-2xl font-bold text-gray-900">5</p>
-                <p className="text-sm text-gray-600">Reviews</p>
-              </div>
-            </div>
+            ))}
           </div>
         </section>
+        </div>
       </main>
 
       {/* Contacts Sidebar */}
