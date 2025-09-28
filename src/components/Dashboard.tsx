@@ -184,6 +184,54 @@ const Dashboard: React.FC = () => {
               </div>
             </button>
           </div>
+          
+          {/* Additional Navigation Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+            <button
+              onClick={() => navigate('/search/advanced')}
+              className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-4 rounded-xl shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-300"
+            >
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
+                  <MapPin className="w-5 h-5" />
+                </div>
+                <div className="text-left">
+                  <p className="font-medium">Advanced Search</p>
+                  <p className="text-sm opacity-80">Filter by location & more</p>
+                </div>
+              </div>
+            </button>
+            
+            <button
+              onClick={() => navigate('/discovery')}
+              className="bg-gradient-to-br from-teal-500 to-teal-600 text-white p-4 rounded-xl shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-300"
+            >
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
+                  <Star className="w-5 h-5" />
+                </div>
+                <div className="text-left">
+                  <p className="font-medium">Discover</p>
+                  <p className="text-sm opacity-80">Trending businesses near you</p>
+                </div>
+              </div>
+            </button>
+            
+            <button
+              onClick={() => navigate('/coupons/trending')}
+              className="bg-gradient-to-br from-orange-500 to-orange-600 text-white p-4 rounded-xl shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-300"
+            >
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5" />
+                </div>
+                <div className="text-left">
+                  <p className="font-medium">Trending Coupons</p>
+                  <p className="text-sm opacity-80">Hot deals & offers</p>
+                </div>
+              </div>
+            </button>
+          </div>
 
           {/* Special Offer Banner */}
           <div className="bg-gradient-to-r from-orange-400 to-pink-500 rounded-2xl p-6 text-white shadow-md">

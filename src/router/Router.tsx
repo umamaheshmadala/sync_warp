@@ -35,12 +35,21 @@ const Wallet = lazy(() => import('../components/Wallet'))
 const Social = lazy(() => import('../components/Social'))
 const SimpleFavoritesPage = lazy(() => import('../components/favorites/SimpleFavoritesPage'))
 
+// Story 4.4 components
+const AdvancedSearchPage = lazy(() => import('../components/search/AdvancedSearchPage'))
+const BusinessDiscoveryPage = lazy(() => import('../components/discovery/BusinessDiscoveryPage'))
+const CategoryBrowserPage = lazy(() => import('../components/categories/CategoryBrowserPage'))
+const TrendingCouponsPage = lazy(() => import('../components/coupons/TrendingCouponsPage'))
+const FallbackEnhancedFavoritesPage = lazy(() => import('../components/favorites/FallbackEnhancedFavoritesPage'));
+const UnifiedFavoritesPage = lazy(() => import('../components/favorites/UnifiedFavoritesPage'));
+
 // Debug components (only in development)
 const SignUpDebug = lazy(() => import('../components/SignUpDebug'))
 const AuthStoreTest = lazy(() => import('../components/AuthStoreTest'))
 const RouteProtectionTest = lazy(() => import('../components/RouteProtectionTest'))
 const ProductsDebug = lazy(() => import('../components/debug/ProductsDebug'))
 const FavoritesLocationDebug = lazy(() => import('../components/debug/FavoritesLocationDebug'))
+const FavoritesSystemTest = lazy(() => import('../components/debug/FavoritesSystemTest'))
 
 // Route definitions
 export interface RouteConfig {
@@ -107,6 +116,34 @@ export const routes: RouteConfig[] = [
     description: 'Find businesses, products, and deals'
   },
   {
+    path: '/search/advanced',
+    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><AdvancedSearchPage /></Suspense>,
+    protected: true,
+    title: 'Advanced Search - SynC',
+    description: 'Advanced search with filters and location-based discovery'
+  },
+  {
+    path: '/discovery',
+    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><BusinessDiscoveryPage /></Suspense>,
+    protected: true,
+    title: 'Discover Businesses - SynC',
+    description: 'Explore local businesses, trending deals, and personalized recommendations'
+  },
+  {
+    path: '/categories',
+    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><CategoryBrowserPage /></Suspense>,
+    protected: true,
+    title: 'Browse Categories - SynC',
+    description: 'Explore businesses organized by category'
+  },
+  {
+    path: '/coupons/trending',
+    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><TrendingCouponsPage /></Suspense>,
+    protected: true,
+    title: 'Trending Coupons - SynC',
+    description: 'Discover the hottest deals and most popular offers'
+  },
+  {
     path: '/analytics/search',
     element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><SearchAnalyticsDashboard /></Suspense>,
     protected: true,
@@ -150,10 +187,31 @@ export const routes: RouteConfig[] = [
   },
   {
     path: '/favorites',
-    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><SimpleFavoritesPage /></Suspense>,
+    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><UnifiedFavoritesPage /></Suspense>,
     protected: true,
     title: 'Favorites - SynC',
-    description: 'Your saved businesses, coupons, and wishlist'
+    description: 'Your saved businesses, coupons, and deals with unified state management'
+  },
+  {
+    path: '/favorites/simple',
+    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><SimpleFavoritesPage /></Suspense>,
+    protected: true,
+    title: 'Simple Favorites - SynC',
+    description: 'Basic favorites management'
+  },
+  {
+    path: '/favorites/unified',
+    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><UnifiedFavoritesPage /></Suspense>,
+    protected: true,
+    title: 'Unified Favorites - SynC',
+    description: 'Advanced favorites with unified state management and real-time synchronization'
+  },
+  {
+    path: '/favorites/fallback',
+    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><FallbackEnhancedFavoritesPage /></Suspense>,
+    protected: true,
+    title: 'Fallback Favorites - SynC',
+    description: 'Fallback favorites page using the original system'
   },
   {
     path: '/friends',
@@ -235,6 +293,12 @@ const debugRoutes: RouteConfig[] = [
     element: <Suspense fallback={<div>Loading...</div>}><FavoritesLocationDebug /></Suspense>,
     protected: true,
     title: 'Debug - Favorites & Location'
+  },
+  {
+    path: '/debug/favorites/test',
+    element: <Suspense fallback={<div>Loading...</div>}><FavoritesSystemTest /></Suspense>,
+    protected: true,
+    title: 'Debug - Favorites System Test Suite'
   }
 ]
 

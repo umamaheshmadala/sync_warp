@@ -6,7 +6,7 @@ import React, { useState } from 'react';
 import { Clock, MapPin, Star, Users, Tag, Gift, CheckCircle } from 'lucide-react';
 import { SearchCoupon } from '../../services/searchService';
 import { formatDistanceToNow } from 'date-fns';
-import SaveButton from '../favorites/SaveButton';
+import { SimpleSaveButton } from '../favorites/SimpleSaveButton';
 import { formatDistance, getPreferredDistanceUnit } from '../../utils/locationUtils';
 
 interface CouponCardProps {
@@ -165,7 +165,18 @@ export const CouponCard: React.FC<CouponCardProps> = ({
           </div>
           
           <div className="flex-shrink-0 ml-3 flex items-center space-x-2">
-            <SaveButton itemId={coupon.id} itemType="coupon" variant="compact" />
+            <SimpleSaveButton 
+              itemId={coupon.id} 
+              itemType="coupon" 
+              size="sm" 
+              itemData={{
+                title: coupon.title,
+                description: coupon.description,
+                business_name: coupon.business.business_name,
+                discount_value: coupon.discount_value,
+                discount_type: coupon.discount_type
+              }}
+            />
             
             {coupon.isCollected ? (
               <div className="flex items-center text-green-600 text-xs">
@@ -241,7 +252,18 @@ export const CouponCard: React.FC<CouponCardProps> = ({
               </div>
               
               <div className="flex items-center space-x-3">
-                <SaveButton itemId={coupon.id} itemType="coupon" variant="default" />
+                <SimpleSaveButton 
+                  itemId={coupon.id} 
+                  itemType="coupon" 
+                  size="md" 
+                  itemData={{
+                    title: coupon.title,
+                    description: coupon.description,
+                    business_name: coupon.business.business_name,
+                    discount_value: coupon.discount_value,
+                    discount_type: coupon.discount_type
+                  }}
+                />
                 
                 {coupon.isCollected ? (
                   <div className="flex items-center text-green-200">
@@ -352,7 +374,18 @@ export const CouponCard: React.FC<CouponCardProps> = ({
           </div>
           
           <div className="flex items-center space-x-3">
-            <SaveButton itemId={coupon.id} itemType="coupon" variant="default" />
+            <SimpleSaveButton 
+              itemId={coupon.id} 
+              itemType="coupon" 
+              size="md" 
+              itemData={{
+                title: coupon.title,
+                description: coupon.description,
+                business_name: coupon.business.business_name,
+                discount_value: coupon.discount_value,
+                discount_type: coupon.discount_type
+              }}
+            />
             
             {coupon.usage_count > 0 && (
               <div className="text-xs text-gray-500 flex items-center">

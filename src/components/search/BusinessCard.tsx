@@ -107,7 +107,18 @@ export const BusinessCard: React.FC<BusinessCardProps> = ({
           </div>
           
           <div className="flex-shrink-0 ml-3 flex items-center space-x-2">
-            <SimpleSaveButton itemId={business.id} itemType="business" variant="compact" />
+            <SimpleSaveButton 
+              itemId={business.id} 
+              itemType="business" 
+              size="sm" 
+              itemData={{
+                business_name: business.business_name,
+                business_type: business.business_type,
+                address: business.address,
+                rating: business.rating,
+                description: business.description
+              }}
+            />
             <ChevronRight className="w-4 h-4 text-gray-400" />
           </div>
         </div>
@@ -157,7 +168,18 @@ export const BusinessCard: React.FC<BusinessCardProps> = ({
           
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <SimpleSaveButton itemId={business.id} itemType="business" variant="default" />
+              <SimpleSaveButton 
+                itemId={business.id} 
+                itemType="business" 
+                size="md" 
+                itemData={{
+                  business_name: business.business_name,
+                  business_type: business.business_type,
+                  address: business.address,
+                  rating: business.rating,
+                  description: business.description
+                }}
+              />
               
               {business.address && (
                 <div className="flex items-center text-blue-100">
@@ -200,7 +222,18 @@ export const BusinessCard: React.FC<BusinessCardProps> = ({
             />
             
             <div className="flex items-center space-x-2 flex-shrink-0 ml-2">
-              <SimpleSaveButton itemId={business.id} itemType="business" variant="compact" />
+              <SimpleSaveButton 
+                itemId={business.id} 
+                itemType="business" 
+                size="sm" 
+                itemData={{
+                  business_name: business.business_name,
+                  business_type: business.business_type,
+                  address: business.address,
+                  rating: business.rating,
+                  description: business.description
+                }}
+              />
               <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-indigo-600 transition-colors" />
             </div>
           </div>

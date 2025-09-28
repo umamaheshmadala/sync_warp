@@ -8,6 +8,7 @@ import RouterDebugger from './components/debug/RouterDebugger'
 // import FavoritesDebug from './components/debug/FavoritesDebug';
 import ComprehensiveFavoritesDebug from './components/debug/ComprehensiveFavoritesDebug';
 import HeartIconTest from './components/debug/HeartIconTest';
+import FavoritesDataDebug from './components/debug/FavoritesDataDebug';
 // import AuthDebug from './components/AuthDebug'
 
 const queryClient = new QueryClient()
@@ -27,6 +28,7 @@ function App() {
           <AuthDebugPanel />
           {/* {process.env.NODE_ENV === 'development' && <ComprehensiveFavoritesDebug />} */}
           {process.env.NODE_ENV === 'development' && <HeartIconTest />}
+          {process.env.NODE_ENV === 'development' && <FavoritesDataDebug />}
           {/* {process.env.NODE_ENV === 'development' && <FavoritesDebug />} */}
           {/* {process.env.NODE_ENV === 'development' && <AuthDebug />} */}
           <Toaster

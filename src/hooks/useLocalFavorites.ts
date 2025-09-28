@@ -19,10 +19,11 @@ export const useLocalFavorites = () => {
     try {
       const stored = localStorage.getItem('sync_favorites');
       if (stored) {
-        setFavorites(JSON.parse(stored));
+        const parsed = JSON.parse(stored);
+        setFavorites(parsed);
       }
     } catch (error) {
-      console.warn('Could not load favorites from localStorage');
+      console.warn('Could not load favorites from localStorage:', error);
     }
   }, []);
 
@@ -74,6 +75,26 @@ export const useLocalFavorites = () => {
     return favorites.filter(f => f.type === type);
   }, [favorites]);
 
+  // Debug function to seed test data
+  const seedTestData = useCallback(() => {
+    console.log('[LocalFavorites] Seeding test data...');
+    const testFavorites: LocalFavorite[] = [
+      { id: 'test-business-1', type: 'business', timestamp: Date.now() - 86400000 },
+      { id: 'test-business-2', type: 'business', timestamp: Date.now() - 172800000 },
+      { id: 'test-coupon-1', type: 'coupon', timestamp: Date.now() - 259200000 },
+      { id: 'test-coupon-2', type: 'coupon', timestamp: Date.now() - 345600000 },
+      { id: 'test-coupon-3', type: 'coupon', timestamp: Date.now() - 432000000 },
+    ];
+    setFavorites(testFavorites);
+    console.log('[LocalFavorites] Test data seeded:', testFavorites);
+  }, []);
+
+  const clearAllFavorites = useCallback(() => {
+    setFavorites([]);
+    localStorage.removeItem('sync_favorites');
+    console.log('[LocalFavorites] All favorites cleared');
+  }, []);
+
   return {
     // State
     favorites,
@@ -88,6 +109,10 @@ export const useLocalFavorites = () => {
     isFavorited,
     toggleFavorite,
     getFavoritesByType,
+    
+    // Debug methods
+    seedTestData,
+    clearAllFavorites,
     
     // Legacy compatibility
     isBusinessFavorited: (id: string) => isFavorited(id, 'business'),

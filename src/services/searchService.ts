@@ -401,20 +401,45 @@ class SearchService {
   }
 
   /**
-   * Apply location-based filtering
+   * Apply location-based filtering using nearby_businesses function
    */
   private applyLocationFilter(query: any, location: SearchQuery['location']): any {
     if (!location) return query;
 
-    // Using PostGIS extensions for distance calculations
-    // This assumes we have latitude and longitude columns on businesses
+    // Use the nearby_businesses function for precise distance calculation
     const { latitude, longitude, radius } = location;
     
-    return query.rpc('businesses_within_radius', {
+    return query.rpc('nearby_businesses', {
       lat: latitude,
       lng: longitude,
-      radius_km: radius
+      radius_km: radius,
+      result_limit: 100 // Adjust based on needs
     });
+  }
+
+  /**
+   * Get nearby businesses directly using the database function
+   */
+  async getNearbyBusinesses(
+    latitude: number,
+    longitude: number,
+    radius: number = 10,
+    limit: number = 20
+  ) {
+    try {
+      const { data, error } = await supabase.rpc('nearby_businesses', {
+        lat: latitude,
+        lng: longitude,
+        radius_km: radius,
+        result_limit: limit
+      });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching nearby businesses:', error);
+      return [];
+    }
   }
 
   /**
@@ -555,13 +580,47 @@ class SearchService {
   }
 
   /**
-   * Generate search suggestions
+   * Generate search suggestions using database function
    */
   private async generateSuggestions(searchTerm: string): Promise<SearchSuggestion[]> {
     if (!searchTerm || searchTerm.length < 2) return [];
 
     try {
-      // Get popular search terms (this would be from a search_analytics table)
+      // Use the get_business_search_suggestions function for better results
+      const { data: dbSuggestions, error } = await supabase.rpc('get_business_search_suggestions', {
+        search_input: searchTerm,
+        suggestion_limit: 8
+      });
+
+      if (error) {
+        console.error('Error calling search suggestions function:', error);
+        // Fallback to basic suggestions
+        return await this.getBasicSuggestions(searchTerm);
+      }
+
+      // Convert database results to SearchSuggestion format
+      const suggestions: SearchSuggestion[] = [];
+
+      dbSuggestions?.forEach((suggestion: any) => {
+        suggestions.push({
+          text: suggestion.suggestion_text,
+          type: suggestion.suggestion_type === 'business' ? 'business' : 'category',
+          count: suggestion.match_count || 1
+        });
+      });
+
+      return suggestions;
+    } catch (error) {
+      console.error('Error generating suggestions:', error);
+      return await this.getBasicSuggestions(searchTerm);
+    }
+  }
+
+  /**
+   * Fallback method for basic suggestions
+   */
+  private async getBasicSuggestions(searchTerm: string): Promise<SearchSuggestion[]> {
+    try {
       const suggestions: SearchSuggestion[] = [];
 
       // Add coupon title suggestions
@@ -597,7 +656,7 @@ class SearchService {
 
       return suggestions;
     } catch (error) {
-      console.error('Error generating suggestions:', error);
+      console.error('Error generating basic suggestions:', error);
       return [];
     }
   }
@@ -686,15 +745,37 @@ class SearchService {
   }
 
   /**
-   * Track search analytics (disabled until table exists)
+   * Track search analytics in the database
    */
   private async trackSearchAnalytics(
     query: SearchQuery, 
     result: SearchResult, 
     userId?: string
   ): Promise<void> {
-    // Disabled to avoid 404 errors until search_analytics table is created
-    console.log('Search analytics tracking disabled - table not found');
+    try {
+      const { error } = await supabase
+        .from('search_analytics')
+        .insert({
+          user_id: userId || null,
+          search_term: query.q,
+          filters: JSON.stringify(query.filters),
+          results_count: result.totalCoupons + result.totalBusinesses,
+          response_time_ms: result.searchTime,
+          location: query.location ? {
+            latitude: query.location.latitude,
+            longitude: query.location.longitude,
+            radius: query.location.radius
+          } : null
+        });
+
+      if (error) {
+        console.error('Error tracking search analytics:', error);
+        // Don't throw error - analytics failure shouldn't break search
+      }
+    } catch (error) {
+      console.error('Error in search analytics tracking:', error);
+      // Don't throw error - analytics failure shouldn't break search
+    }
   }
 
   /**
@@ -732,12 +813,33 @@ class SearchService {
   }
 
   /**
-   * Get popular search terms (disabled until search_analytics table exists)
+   * Get trending search terms using database function
+   */
+  async getTrendingSearchTerms(daysBack: number = 7, limit: number = 10) {
+    try {
+      const { data, error } = await supabase.rpc('get_trending_search_terms', {
+        days_back: daysBack,
+        term_limit: limit
+      });
+
+      if (error) {
+        console.error('Error fetching trending search terms:', error);
+        return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Error getting trending search terms:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get popular search terms (legacy method - kept for compatibility)
    */
   async getPopularSearchTerms(limit: number = 10): Promise<string[]> {
-    // Temporarily disabled to avoid 404 errors
-    console.log('Popular search terms disabled - search_analytics table not found');
-    return [];
+    const trending = await this.getTrendingSearchTerms(7, limit);
+    return trending.map((item: any) => item.search_term);
   }
 }
 

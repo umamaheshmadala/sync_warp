@@ -4,13 +4,15 @@
 import React, { useState } from 'react';
 import { Heart } from 'lucide-react';
 import { motion } from 'framer-motion';
-import useLocalFavorites from '../../hooks/useLocalFavorites';
+import useUnifiedFavorites from '../../hooks/useUnifiedFavorites';
 import { cn } from '../../lib/utils';
 
 interface SimpleSaveButtonProps {
   itemId: string;
   itemType: 'business' | 'coupon';
+  itemData?: any; // Optional data for enhanced features
   variant?: 'default' | 'compact' | 'large';
+  size?: 'sm' | 'md' | 'lg'; // Alternative sizing
   showLabel?: boolean;
   className?: string;
   disabled?: boolean;
@@ -22,7 +24,9 @@ interface SimpleSaveButtonProps {
 const SimpleSaveButton: React.FC<SimpleSaveButtonProps> = ({
   itemId,
   itemType,
+  itemData, // Not used in this simple version but accepted for compatibility
   variant = 'default',
+  size = 'md',
   showLabel = false,
   className,
   disabled = false,
@@ -30,7 +34,7 @@ const SimpleSaveButton: React.FC<SimpleSaveButtonProps> = ({
   savedLabel = 'Saved',
   unsavedLabel = 'Save'
 }) => {
-  const favorites = useLocalFavorites();
+  const favorites = useUnifiedFavorites();
   const [isAnimating, setIsAnimating] = useState(false);
 
   // Check if item is favorited
@@ -46,7 +50,7 @@ const SimpleSaveButton: React.FC<SimpleSaveButtonProps> = ({
     setIsAnimating(true);
 
     try {
-      const result = await favorites.toggleFavorite(itemId, itemType);
+      const result = await favorites.toggleFavorite(itemId, itemType, itemData);
       onClick?.(result);
     } catch (error) {
       console.error('Error toggling favorite:', error);
@@ -55,10 +59,24 @@ const SimpleSaveButton: React.FC<SimpleSaveButtonProps> = ({
     }
   };
 
-  // Get button styles based on variant
+  // Get button styles based on variant and size
   const getButtonStyles = () => {
     const baseStyles = "relative flex items-center justify-center transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-full";
     
+    // Handle size prop (overrides variant for sizing)
+    if (size) {
+      switch (size) {
+        case 'sm':
+          return cn(baseStyles, "w-8 h-8 text-sm");
+        case 'lg':
+          return cn(baseStyles, "w-12 h-12 text-lg");
+        case 'md':
+        default:
+          return cn(baseStyles, "w-10 h-10 text-base");
+      }
+    }
+    
+    // Fallback to variant
     switch (variant) {
       case 'compact':
         return cn(baseStyles, "w-8 h-8 text-sm");
@@ -146,3 +164,4 @@ const SimpleSaveButton: React.FC<SimpleSaveButtonProps> = ({
 };
 
 export default SimpleSaveButton;
+export { SimpleSaveButton };

@@ -96,7 +96,8 @@ export const useSearch = (options: UseSearchOptions = {}) => {
   // Search state
   const [searchState, setSearchState] = useState<SearchState>(() => {
     // Try to restore from localStorage first
-    const savedSearchState = localStorage.getItem('searchState');
+    const searchStateKey = user?.id ? `searchState_${user.id}` : 'searchState_guest';
+    const savedSearchState = localStorage.getItem(searchStateKey);
     if (savedSearchState) {
       try {
         const parsed = JSON.parse(savedSearchState);
@@ -138,7 +139,8 @@ export const useSearch = (options: UseSearchOptions = {}) => {
   // Search results with persistence
   const [results, setResults] = useState<SearchResults>(() => {
     // Try to restore search results from localStorage
-    const savedResults = localStorage.getItem('searchResults');
+    const searchResultsKey = user?.id ? `searchResults_${user.id}` : 'searchResults_guest';
+    const savedResults = localStorage.getItem(searchResultsKey);
     if (savedResults) {
       try {
         const parsed = JSON.parse(savedResults);
@@ -166,18 +168,54 @@ export const useSearch = (options: UseSearchOptions = {}) => {
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
   const lastSearchRef = useRef<string>('');
   const abortControllerRef = useRef<AbortController>();
+  
+  // Reload search state and results when user changes
+  useEffect(() => {
+    const searchStateKey = user?.id ? `searchState_${user.id}` : 'searchState_guest';
+    const searchResultsKey = user?.id ? `searchResults_${user.id}` : 'searchResults_guest';
+    
+    // Load user-specific search state
+    try {
+      const savedSearchState = localStorage.getItem(searchStateKey);
+      if (savedSearchState) {
+        const parsed = JSON.parse(savedSearchState);
+        // Only restore if saved within the last 30 minutes
+        if (parsed.timestamp && Date.now() - parsed.timestamp < 30 * 60 * 1000) {
+          setSearchState({
+            ...parsed.state,
+            isSearching: false,
+            error: null
+          });
+        }
+      }
+      
+      // Load user-specific search results
+      const savedResults = localStorage.getItem(searchResultsKey);
+      if (savedResults) {
+        const parsed = JSON.parse(savedResults);
+        // Only restore if saved within the last 30 minutes
+        if (parsed.timestamp && Date.now() - parsed.timestamp < 30 * 60 * 1000) {
+          setResults(parsed.results);
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to reload user-specific search data:', error);
+    }
+  }, [user?.id]);
 
   // Persist search state and results to localStorage
   useEffect(() => {
     if (searchState.hasSearched && !searchState.isSearching) {
       try {
-        localStorage.setItem('searchState', JSON.stringify({
+        const searchStateKey = user?.id ? `searchState_${user.id}` : 'searchState_guest';
+        localStorage.setItem(searchStateKey, JSON.stringify({
           state: searchState,
           timestamp: Date.now()
         }));
         
         if (results.coupons.length > 0 || results.businesses.length > 0) {
-          localStorage.setItem('searchResults', JSON.stringify({
+          const searchResultsKey = user?.id ? `searchResults_${user.id}` : 'searchResults_guest';
+          localStorage.setItem(searchResultsKey, JSON.stringify({
             results: results,
             timestamp: Date.now()
           }));
@@ -658,8 +696,10 @@ export const useSearch = (options: UseSearchOptions = {}) => {
    * Enable location-based search
    */
   const enableLocationSearch = useCallback(async (radius: number = 10) => {
+    console.log('📍 [useSearch] Enabling location search with radius:', radius);
     try {
       const coords = await geolocation.getCurrentPosition();
+      console.log('📍 [useSearch] Got location coordinates:', coords);
       if (coords) {
         setLocationSearch({
           enabled: true,
@@ -668,9 +708,14 @@ export const useSearch = (options: UseSearchOptions = {}) => {
           sortByDistance: false
         });
         
-        // Trigger search with location
+        console.log('📍 [useSearch] Location search enabled, autoSearch:', autoSearch);
+        // Trigger search with location after state is set
         if (autoSearch) {
-          performSearch();
+          // Use setTimeout to ensure state is updated before search
+          setTimeout(() => {
+            console.log('📍 [useSearch] Triggering search with location');
+            performSearch();
+          }, 10);
         }
         
         return true;
@@ -686,6 +731,7 @@ export const useSearch = (options: UseSearchOptions = {}) => {
    * Disable location-based search
    */
   const disableLocationSearch = useCallback(() => {
+    console.log('📍 [useSearch] Disabling location search');
     setLocationSearch({
       enabled: false,
       coords: null,
@@ -693,9 +739,14 @@ export const useSearch = (options: UseSearchOptions = {}) => {
       sortByDistance: false
     });
     
-    // Trigger search without location
+    console.log('📍 [useSearch] Location search disabled, autoSearch:', autoSearch);
+    // Trigger search without location after state is updated
     if (autoSearch) {
-      performSearch();
+      // Use setTimeout to ensure state is updated before search
+      setTimeout(() => {
+        console.log('📍 [useSearch] Triggering search without location');
+        performSearch();
+      }, 10);
     }
   }, [autoSearch, performSearch]);
   

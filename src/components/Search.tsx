@@ -3,15 +3,19 @@
 // Includes advanced filtering, suggestions, and real-time search results
 
 import { useState, useEffect, useRef } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { Search as SearchIcon, Filter, MapPin, Star, ArrowUpDown, Grid, List, Plus, Navigation, Loader2, AlertCircle } from 'lucide-react'
 import { useSearch } from '../hooks/useSearch'
 import { useSearchTracking } from '../hooks/useSearchAnalytics'
 import { CouponCard, BusinessCard, FilterPanel, SearchSuggestions } from './search/index'
 import { SearchSortField } from '../services/searchService'
+import { useAuthStore } from '../store/authStore'
 import LocationTester from './debug/LocationTester'
 
 export default function Search() {
+  const navigate = useNavigate();
+  const { user } = useAuthStore();
+  
   // Search hook with all functionality
   const search = useSearch({
     autoSearch: true,
@@ -30,19 +34,43 @@ export default function Search() {
   const [activeTab, setActiveTab] = useState<'all' | 'coupons' | 'businesses'>('all')
   const [localQuery, setLocalQuery] = useState(search.query)
   const [suggestionsLoading, setSuggestionsLoading] = useState(false)
+  const [isLocationTooltipVisible, setIsLocationTooltipVisible] = useState(false)
   const [recentSearches, setRecentSearches] = useState<string[]>(() => {
-    const saved = localStorage.getItem('recentSearches')
+    const recentSearchKey = user?.id ? `recentSearches_${user.id}` : 'recentSearches_guest'
+    const saved = localStorage.getItem(recentSearchKey)
     return saved ? JSON.parse(saved) : []
   })
 
   // Refs
   const searchInputRef = useRef<HTMLInputElement>(null)
   const suggestionsTimeoutRef = useRef<NodeJS.Timeout>()
+  const locationTooltipRef = useRef<HTMLDivElement>(null)
 
   // Update local query when search query changes
   useEffect(() => {
     setLocalQuery(search.query)
   }, [search.query])
+  
+  // Update recent searches when user changes
+  useEffect(() => {
+    const recentSearchKey = user?.id ? `recentSearches_${user.id}` : 'recentSearches_guest'
+    const saved = localStorage.getItem(recentSearchKey)
+    setRecentSearches(saved ? JSON.parse(saved) : [])
+  }, [user?.id])
+  
+  // Hide location tooltip when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (locationTooltipRef.current && !locationTooltipRef.current.contains(event.target as Node)) {
+        setIsLocationTooltipVisible(false)
+      }
+    }
+    
+    if (isLocationTooltipVisible) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isLocationTooltipVisible])
 
   // Handle input changes with debounced suggestions
   const handleInputChange = async (value: string) => {
@@ -99,7 +127,8 @@ export default function Search() {
     if (query.trim()) {
       const newRecentSearches = [query, ...recentSearches.filter(term => term !== query)].slice(0, 5);
       setRecentSearches(newRecentSearches);
-      localStorage.setItem('recentSearches', JSON.stringify(newRecentSearches));
+      const recentSearchKey = user?.id ? `recentSearches_${user.id}` : 'recentSearches_guest';
+      localStorage.setItem(recentSearchKey, JSON.stringify(newRecentSearches));
     }
     
     // Track search analytics after results are loaded
@@ -149,8 +178,26 @@ export default function Search() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Search Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">Find Local Deals</h1>
-        <p className="text-gray-600">Discover amazing businesses, products, and offers in your area</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">Find Local Deals</h1>
+            <p className="text-gray-600">Discover amazing businesses, products, and offers in your area</p>
+          </div>
+          <div className="flex flex-col space-y-2">
+            <button
+              onClick={() => navigate('/search/advanced')}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+            >
+              Advanced Search
+            </button>
+            <button
+              onClick={() => navigate('/discovery')}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+            >
+              Discover
+            </button>
+          </div>
+        </div>
       </div>
       
       {/* Debug Component - Remove in production */}
@@ -221,19 +268,35 @@ export default function Search() {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             {/* Near Me Toggle Button */}
-            <div className="relative">
+            <div className="relative" ref={locationTooltipRef}>
               <button
                 onClick={() => {
-                  if (search.location.enabled) {
+                  if (search.location.error) {
+                    setIsLocationTooltipVisible(!isLocationTooltipVisible)
+                  } else if (search.location.enabled) {
                     search.disableLocationSearch();
+                    setIsLocationTooltipVisible(false)
                   } else {
                     search.enableLocationSearch();
+                    setIsLocationTooltipVisible(false)
+                  }
+                }}
+                onMouseEnter={() => {
+                  if (!search.location.enabled && !search.location.isLoading) {
+                    setIsLocationTooltipVisible(true)
+                  }
+                }}
+                onMouseLeave={() => {
+                  if (!search.location.error) {
+                    setIsLocationTooltipVisible(false)
                   }
                 }}
                 disabled={search.location.isLoading || !search.location.isSupported}
                 className={`flex items-center space-x-2 px-4 py-2 rounded-lg border transition-colors ${
                   search.location.enabled
                     ? 'bg-blue-50 border-blue-200 text-blue-700'
+                    : search.location.error
+                    ? 'bg-red-50 border-red-200 text-red-700'
                     : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
                 } disabled:opacity-50 disabled:cursor-not-allowed`}
               >
@@ -249,6 +312,8 @@ export default function Search() {
                 <span className="text-sm font-medium">
                   {search.location.isLoading
                     ? 'Locating...'
+                    : search.location.error
+                    ? 'Location Denied'
                     : search.location.enabled
                     ? 'Near Me'
                     : 'Enable Location'
@@ -261,10 +326,39 @@ export default function Search() {
                 )}
               </button>
               
-              {/* Location Error Tooltip */}
-              {search.location.error && (
-                <div className="absolute top-full left-0 mt-2 p-2 bg-red-100 border border-red-200 rounded-lg text-xs text-red-700 whitespace-nowrap z-10">
-                  {search.location.error.message}
+              {/* Enhanced Location Tooltip */}
+              {isLocationTooltipVisible && (search.location.error || (!search.location.hasPermission && !search.location.enabled)) && (
+                <div className="absolute top-full left-0 mt-2 p-3 bg-white border border-gray-200 rounded-lg shadow-lg text-sm z-20 w-80">
+                  {search.location.error ? (
+                    <div>
+                      <div className="flex items-center space-x-2 mb-2">
+                        <AlertCircle className="h-4 w-4 text-red-500" />
+                        <span className="font-medium text-red-700">Location Access Issue</span>
+                      </div>
+                      <p className="text-red-600 text-xs mb-3">{search.location.error.message}</p>
+                      <div className="text-xs text-gray-600">
+                        <p className="mb-2"><strong>To enable location:</strong></p>
+                        <ul className="list-disc list-inside space-y-1">
+                          <li>Click the location icon in your browser's address bar</li>
+                          <li>Select "Allow" for location access</li>
+                          <li>Refresh the page and try again</li>
+                        </ul>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="flex items-center space-x-2 mb-2">
+                        <Navigation className="h-4 w-4 text-blue-500" />
+                        <span className="font-medium text-blue-700">Location Services</span>
+                      </div>
+                      <p className="text-gray-600 text-xs mb-2">
+                        Enable location to see nearby businesses and get personalized recommendations.
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Your location data stays private and is only used to improve search results.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

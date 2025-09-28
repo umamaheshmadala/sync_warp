@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import useFavorites, { FavoriteBusiness, FavoriteCoupon } from '../../hooks/useFavorites';
-import SaveButton from './SaveButton';
+import { SimpleSaveButton } from './SimpleSaveButton';
 import { cn } from '../../lib/utils';
 
 type ActiveTab = 'businesses' | 'coupons' | 'wishlist';
@@ -453,7 +453,7 @@ const BusinessCard: React.FC<{
           <h3 className="text-lg font-semibold text-gray-900 group-hover:text-indigo-600 line-clamp-2">
             {business.business_name}
           </h3>
-          <SaveButton itemId={business.business_id} itemType="business" variant="compact" />
+          <SimpleSaveButton itemId={business.business_id} itemType="business" size="sm" />
         </div>
         
         <p className="text-sm text-gray-600 mb-4">{business.business_type}</p>
@@ -510,7 +510,7 @@ const CouponCard: React.FC<{
                   onClick={() => onNavigate(coupon.coupon_id)}>
                 {coupon.title}
               </h3>
-              <SaveButton itemId={coupon.coupon_id} itemType="coupon" variant="compact" />
+              <SimpleSaveButton itemId={coupon.coupon_id} itemType="coupon" size="sm" />
             </div>
             
             <button
@@ -565,7 +565,7 @@ const CouponCard: React.FC<{
           <h3 className="text-lg font-semibold text-gray-900 group-hover:text-indigo-600 line-clamp-2">
             {coupon.title}
           </h3>
-          <SaveButton itemId={coupon.coupon_id} itemType="coupon" variant="compact" />
+          <SimpleSaveButton itemId={coupon.coupon_id} itemType="coupon" size="sm" />
         </div>
         
         <button
