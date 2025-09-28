@@ -5,6 +5,7 @@ import Layout from './components/Layout'
 import AppRouter from './router/Router'
 import { AuthDebugPanel } from './router/ProtectedRoute'
 import RouterDebugger from './components/debug/RouterDebugger'
+// import AuthDebug from './components/AuthDebug'
 
 const queryClient = new QueryClient()
 
@@ -21,6 +22,7 @@ function App() {
         <Layout>
           <AppRouter />
           <AuthDebugPanel />
+          {/* {process.env.NODE_ENV === 'development' && <AuthDebug />} */}
           <Toaster
             position="top-right"
             toastOptions={{

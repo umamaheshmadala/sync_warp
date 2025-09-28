@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus,
@@ -23,7 +23,9 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
-  XCircle
+  XCircle,
+  FileText,
+  FilePlus
 } from 'lucide-react';
 import { 
   Coupon, 
@@ -33,6 +35,7 @@ import {
   CouponAnalytics 
 } from '../../types/coupon';
 import { useCoupons } from '../../hooks/useCoupons';
+import { useCouponDrafts } from '../../hooks/useCouponDrafts';
 import CouponCreator from './CouponCreator';
 import { toast } from 'react-hot-toast';
 
@@ -48,15 +51,25 @@ const CouponManager: React.FC<CouponManagerProps> = ({
   isOwner
 }) => {
   const { coupons, loading, deleteCoupon, toggleCouponStatus, refreshCoupons, fetchCouponAnalytics } = useCoupons(businessId);
+  const { drafts, loading: draftsLoading, deleteDraft, loadDraft } = useCouponDrafts(businessId);
   
+  const [activeTab, setActiveTab] = useState<'coupons' | 'drafts'>(drafts.length > 0 ? 'drafts' : 'coupons');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showCreator, setShowCreator] = useState(false);
   const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
+  const [editingDraft, setEditingDraft] = useState<any | null>(null);
   const [filters, setFilters] = useState<CouponFilters>({});
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCoupon, setSelectedCoupon] = useState<string | null>(null);
   const [analytics, setAnalytics] = useState<Record<string, CouponAnalytics>>({});
+
+  // Auto-switch to drafts tab if there are drafts but no published coupons
+  useEffect(() => {
+    if (drafts.length > 0 && coupons.length === 0 && activeTab === 'coupons') {
+      setActiveTab('drafts');
+    }
+  }, [drafts.length, coupons.length, activeTab]);
 
   // Filter coupons based on search and filters
   const filteredCoupons = useMemo(() => {
@@ -76,7 +89,7 @@ const CouponManager: React.FC<CouponManagerProps> = ({
   const getStatsCards = () => {
     const totalCoupons = coupons.length;
     const activeCoupons = coupons.filter(c => c.status === 'active').length;
-    const expiredCoupons = coupons.filter(c => c.status === 'expired').length;
+    const totalDrafts = drafts.length;
     const totalRedemptions = coupons.reduce((sum, c) => sum + (c.usage_count || 0), 0);
     const totalCollections = coupons.reduce((sum, c) => sum + (c.collection_count || 0), 0);
 
@@ -96,18 +109,18 @@ const CouponManager: React.FC<CouponManagerProps> = ({
         trend: `${activeCoupons > 0 ? Math.round((activeCoupons / totalCoupons) * 100) : 0}% active`
       },
       {
+        title: 'Draft Coupons',
+        value: totalDrafts,
+        icon: FileText,
+        color: 'bg-orange-500',
+        trend: `${totalDrafts} in progress`
+      },
+      {
         title: 'Total Redemptions',
         value: totalRedemptions,
         icon: TrendingUp,
         color: 'bg-purple-500',
         trend: '+15% vs last month'
-      },
-      {
-        title: 'Collections',
-        value: totalCollections,
-        icon: Users,
-        color: 'bg-orange-500',
-        trend: `${totalCollections} users engaged`
       }
     ];
   };
@@ -119,8 +132,35 @@ const CouponManager: React.FC<CouponManagerProps> = ({
 
   const handleEditCoupon = (coupon: Coupon) => {
     setEditingCoupon(coupon);
+    setEditingDraft(null);
     setShowCreator(true);
   };
+
+  const handleEditDraft = (draft: any) => {
+    // Convert draft to coupon format for the creator
+    const draftAsCoupon = {
+      ...draft.form_data,
+      id: draft.id,
+      business_id: draft.business_id,
+      title: draft.form_data.title || draft.draft_name,
+      status: 'draft' as CouponStatus
+    };
+    setEditingCoupon(draftAsCoupon);
+    setEditingDraft(draft);
+    setShowCreator(true);
+  };
+
+  const handleDeleteDraft = useCallback(async (draftId: string, draftName: string) => {
+    if (!window.confirm(`Delete draft "${draftName}"?`)) return;
+    
+    try {
+      await deleteDraft(draftId);
+      toast.success('Draft deleted successfully');
+    } catch (error) {
+      toast.error('Failed to delete draft');
+      console.error(error);
+    }
+  }, [deleteDraft]);
 
   const handleDeleteCoupon = useCallback(async (couponId: string, couponTitle: string) => {
     if (!window.confirm(`Delete "${couponTitle}"?`)) return;
@@ -494,6 +534,239 @@ const CouponManager: React.FC<CouponManagerProps> = ({
     );
   };
 
+  // Draft Card Component
+  const DraftCard: React.FC<{ draft: any; isGridView: boolean }> = ({ draft, isGridView }) => {
+    const [showDropdown, setShowDropdown] = useState(false);
+
+    const getCompletionPercentage = (step: number) => {
+      return Math.round((step / 6) * 100);
+    };
+
+    const getCompletionColor = (step: number) => {
+      if (step <= 2) return 'bg-red-400';
+      if (step <= 4) return 'bg-yellow-400';
+      return 'bg-green-400';
+    };
+
+    if (isGridView) {
+      return (
+        <motion.div
+          layout
+          className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl shadow-sm border border-orange-200 overflow-hidden hover:shadow-md transition-shadow duration-200"
+        >
+          {/* Draft Header */}
+          <div className="bg-gradient-to-r from-orange-400 to-amber-400 p-4 text-white">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-xs font-medium opacity-90">Draft Coupon</div>
+              <div className="relative">
+                {isOwner && (
+                  <button
+                    onClick={() => setShowDropdown(!showDropdown)}
+                    className="p-1 hover:bg-white hover:bg-opacity-20 rounded-full transition-colors"
+                  >
+                    <MoreVertical className="w-4 h-4" />
+                  </button>
+                )}
+                
+                {showDropdown && (
+                  <div className="absolute right-0 top-8 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                    <div className="py-1">
+                      <button
+                        onClick={() => {
+                          handleEditDraft(draft);
+                          setShowDropdown(false);
+                        }}
+                        className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        <Edit3 className="w-4 h-4 mr-3" />
+                        Continue Editing
+                      </button>
+                      <hr className="my-1" />
+                      <button
+                        onClick={() => {
+                          handleDeleteDraft(draft.id, draft.draft_name);
+                          setShowDropdown(false);
+                        }}
+                        className="w-full flex items-center px-4 py-2 text-sm text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="w-4 h-4 mr-3" />
+                        Delete Draft
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="text-center">
+              <div className="text-lg font-bold mb-1">{draft.draft_name}</div>
+              <div className="text-xs opacity-90 mb-2">Step {draft.step_completed}/6 Complete</div>
+              <div className="w-full bg-white bg-opacity-20 rounded-full h-2">
+                <div 
+                  className={`h-2 rounded-full ${getCompletionColor(draft.step_completed)}`}
+                  style={{ width: `${getCompletionPercentage(draft.step_completed)}%` }}
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Draft Details */}
+          <div className="p-4">
+            <div className="text-sm text-gray-600 mb-3">
+              {draft.form_data?.title ? (
+                <div className="mb-2">
+                  <strong>Coupon Title:</strong> {draft.form_data.title}
+                </div>
+              ) : null}
+              {draft.form_data?.type ? (
+                <div className="mb-2">
+                  <strong>Type:</strong> {draft.form_data.type.replace('_', ' ').toUpperCase()}
+                </div>
+              ) : null}
+              {draft.form_data?.discount_value ? (
+                <div className="mb-2">
+                  <strong>Discount:</strong> {draft.form_data.discount_type === 'percentage' ? `${draft.form_data.discount_value}%` : `₹${draft.form_data.discount_value}`}
+                </div>
+              ) : null}
+            </div>
+
+            <div className="text-xs text-gray-500">
+              <div>Created: {new Date(draft.created_at).toLocaleDateString()}</div>
+              <div>Updated: {new Date(draft.updated_at).toLocaleDateString()}</div>
+            </div>
+
+            <button
+              onClick={() => handleEditDraft(draft)}
+              className="w-full mt-4 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium"
+            >
+              Continue Editing
+            </button>
+          </div>
+
+          {/* Click overlay to close dropdown */}
+          {showDropdown && (
+            <div
+              className="fixed inset-0 z-0"
+              onClick={() => setShowDropdown(false)}
+            />
+          )}
+        </motion.div>
+      );
+    }
+
+    // List view
+    return (
+      <motion.div
+        layout
+        className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-lg border border-orange-200 p-4 hover:shadow-md transition-shadow duration-200"
+      >
+        <div className="flex items-center space-x-4">
+          {/* Progress Circle */}
+          <div className="flex-shrink-0">
+            <div className="w-16 h-16 relative">
+              <svg className="w-16 h-16 transform -rotate-90" viewBox="0 0 36 36">
+                <path
+                  className="text-orange-200"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  fill="none"
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                />
+                <path
+                  className="text-orange-500"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  fill="none"
+                  strokeDasharray={`${getCompletionPercentage(draft.step_completed)}, 100`}
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-xs font-semibold text-orange-600">{draft.step_completed}/6</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Draft Details */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="flex items-center space-x-2 mb-1">
+                  <h3 className="text-lg font-semibold text-gray-900 truncate">{draft.draft_name}</h3>
+                  <div className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                    <FileText className="w-3 h-3 mr-1" />
+                    Draft
+                  </div>
+                </div>
+
+                {draft.form_data?.title && (
+                  <p className="text-sm text-gray-600 mb-2">Coupon: {draft.form_data.title}</p>
+                )}
+
+                <div className="flex items-center space-x-4 text-sm text-gray-500">
+                  <div className="flex items-center space-x-1">
+                    <Calendar className="w-4 h-4" />
+                    <span>Updated {new Date(draft.updated_at).toLocaleDateString()}</span>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <span>{getCompletionPercentage(draft.step_completed)}% Complete</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              {isOwner && (
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => handleEditDraft(draft)}
+                    className="px-3 py-1 bg-orange-500 text-white rounded text-sm hover:bg-orange-600 transition-colors"
+                  >
+                    Continue
+                  </button>
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowDropdown(!showDropdown)}
+                      className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
+                    >
+                      <MoreVertical className="w-4 h-4" />
+                    </button>
+
+                    {showDropdown && (
+                      <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-10">
+                        <div className="py-1">
+                          <button
+                            onClick={() => {
+                              handleEditDraft(draft);
+                              setShowDropdown(false);
+                            }}
+                            className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                          >
+                            <Edit3 className="w-4 h-4 mr-3" />
+                            Continue Editing
+                          </button>
+                          <button
+                            onClick={() => {
+                              handleDeleteDraft(draft.id, draft.draft_name);
+                              setShowDropdown(false);
+                            }}
+                            className="flex items-center px-4 py-2 text-sm text-red-700 hover:bg-red-50 w-full text-left"
+                          >
+                            <Trash2 className="w-4 h-4 mr-3" />
+                            Delete Draft
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    );
+  };
+
   if (loading && coupons.length === 0) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -553,9 +826,36 @@ const CouponManager: React.FC<CouponManagerProps> = ({
             </motion.div>
           ))}
         </div>
+
+        {/* Tabs */}
+        <div className="flex space-x-1 mt-6">
+          <button
+            onClick={() => setActiveTab('coupons')}
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+              activeTab === 'coupons'
+                ? 'bg-purple-100 text-purple-700 border border-purple-200'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+            }`}
+          >
+            <Target className="w-4 h-4 mr-2 inline" />
+            Published Coupons ({coupons.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('drafts')}
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+              activeTab === 'drafts'
+                ? 'bg-orange-100 text-orange-700 border border-orange-200'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+            }`}
+          >
+            <FileText className="w-4 h-4 mr-2 inline" />
+            Draft Coupons ({drafts.length})
+          </button>
+        </div>
       </div>
 
-      {/* Search and Filters */}
+      {/* Search and Filters - Only for Coupons tab */}
+      {activeTab === 'coupons' && (
       <div className="mb-6 space-y-4">
         <div className="flex flex-col sm:flex-row gap-4">
           {/* Search */}
@@ -677,51 +977,99 @@ const CouponManager: React.FC<CouponManagerProps> = ({
           )}
         </AnimatePresence>
       </div>
+      )}
 
-      {/* Coupons Display */}
-      {filteredCoupons.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="mx-auto h-24 w-24 text-gray-400 mb-4">
-            <Target className="w-full h-full" />
-          </div>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No coupons found</h3>
-          <p className="mt-1 text-sm text-gray-500">
-            {coupons.length === 0 
-              ? isOwner 
-                ? 'Get started by creating your first coupon.'
-                : 'This business hasn\'t created any coupons yet.'
-              : 'Try adjusting your search or filters.'
-            }
-          </p>
-          {isOwner && coupons.length === 0 && (
-            <div className="mt-6">
-              <button
-                onClick={handleCreateCoupon}
-                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Create Your First Coupon
-              </button>
+      {/* Tab Content */}
+      {activeTab === 'coupons' ? (
+        /* Coupons Display */
+        filteredCoupons.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="mx-auto h-24 w-24 text-gray-400 mb-4">
+              <Target className="w-full h-full" />
             </div>
-          )}
-        </div>
+            <h3 className="mt-2 text-sm font-medium text-gray-900">No coupons found</h3>
+            <p className="mt-1 text-sm text-gray-500">
+              {coupons.length === 0 
+                ? isOwner 
+                  ? 'Get started by creating your first coupon.'
+                  : 'This business hasn\'t created any coupons yet.'
+                : 'Try adjusting your search or filters.'
+              }
+            </p>
+            {isOwner && coupons.length === 0 && (
+              <div className="mt-6">
+                <button
+                  onClick={handleCreateCoupon}
+                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Your First Coupon
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className={`${
+            viewMode === 'grid' 
+              ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
+              : 'space-y-4'
+          }`}>
+            {filteredCoupons.map((coupon, index) => (
+              <motion.div
+                key={coupon.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+              >
+                <CouponCard coupon={coupon} isGridView={viewMode === 'grid'} />
+              </motion.div>
+            ))}
+          </div>
+        )
       ) : (
-        <div className={`${
-          viewMode === 'grid' 
-            ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
-            : 'space-y-4'
-        }`}>
-          {filteredCoupons.map((coupon, index) => (
-            <motion.div
-              key={coupon.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-            >
-              <CouponCard coupon={coupon} isGridView={viewMode === 'grid'} />
-            </motion.div>
-          ))}
-        </div>
+        /* Drafts Display */
+        drafts.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="mx-auto h-24 w-24 text-orange-400 mb-4">
+              <FileText className="w-full h-full" />
+            </div>
+            <h3 className="mt-2 text-sm font-medium text-gray-900">No draft coupons</h3>
+            <p className="mt-1 text-sm text-gray-500">
+              {isOwner 
+                ? 'Start creating a coupon to see it saved as a draft here.'
+                : 'This business doesn\'t have any coupon drafts.'
+              }
+            </p>
+            {isOwner && (
+              <div className="mt-6">
+                <button
+                  onClick={handleCreateCoupon}
+                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-orange-500 hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                >
+                  <FilePlus className="w-4 h-4 mr-2" />
+                  Start Creating Coupon
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className={`${
+            viewMode === 'grid' 
+              ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
+              : 'space-y-4'
+          }`}>
+            {drafts.map((draft, index) => (
+              <motion.div
+                key={draft.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+              >
+                <DraftCard draft={draft} isGridView={viewMode === 'grid'} />
+              </motion.div>
+            ))}
+          </div>
+        )
       )}
 
       {/* Coupon Creator Modal */}

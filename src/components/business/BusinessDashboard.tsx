@@ -17,7 +17,7 @@ import {
   Calendar,
   Phone,
   Mail,
-  Package
+  Package,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
@@ -179,6 +179,7 @@ const BusinessDashboard: React.FC = () => {
       </span>
     );
   };
+
 
   // Business card component
   const BusinessCard: React.FC<BusinessCardProps> = ({ business }) => (
@@ -417,6 +418,7 @@ const BusinessDashboard: React.FC = () => {
             />
           </div>
         )}
+
 
         {/* Business Grid */}
         {businesses.length > 0 ? (
