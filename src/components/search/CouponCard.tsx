@@ -6,6 +6,8 @@ import React, { useState } from 'react';
 import { Clock, MapPin, Star, Users, Tag, Gift, CheckCircle } from 'lucide-react';
 import { SearchCoupon } from '../../services/searchService';
 import { formatDistanceToNow } from 'date-fns';
+import SaveButton from '../favorites/SaveButton';
+import { formatDistance, getPreferredDistanceUnit } from '../../utils/locationUtils';
 
 interface CouponCardProps {
   coupon: SearchCoupon;
@@ -15,6 +17,7 @@ interface CouponCardProps {
   variant?: 'default' | 'compact' | 'featured';
   showBusiness?: boolean;
   showDistance?: boolean;
+  getFormattedDistance?: (distanceInMeters?: number) => string | null;
 }
 
 export const CouponCard: React.FC<CouponCardProps> = ({
@@ -24,7 +27,8 @@ export const CouponCard: React.FC<CouponCardProps> = ({
   onCouponClick,
   variant = 'default',
   showBusiness = true,
-  showDistance = false
+  showDistance = false,
+  getFormattedDistance
 }) => {
   const [isCollecting, setIsCollecting] = useState(false);
 
@@ -141,17 +145,28 @@ export const CouponCard: React.FC<CouponCardProps> = ({
               dangerouslySetInnerHTML={{ __html: coupon.highlightedTitle || coupon.title }}
             />
             
-            {showBusiness && (
-              <p 
-                className="text-xs text-gray-600 mt-1 cursor-pointer hover:text-indigo-600"
-                onClick={handleBusinessClick}
-              >
-                {coupon.business.business_name}
-              </p>
-            )}
+            <div className="flex items-center justify-between mt-2">
+              {showBusiness && (
+                <p 
+                  className="text-xs text-gray-600 cursor-pointer hover:text-indigo-600 truncate"
+                  onClick={handleBusinessClick}
+                >
+                  {coupon.business.business_name}
+                </p>
+              )}
+              
+              {showDistance && coupon.distance && (
+                <div className="text-xs text-gray-500 flex items-center ml-2">
+                  <MapPin className="w-3 h-3 mr-1" />
+                  {getFormattedDistance ? getFormattedDistance(coupon.distance) : formatDistance(coupon.distance, getPreferredDistanceUnit())}
+                </div>
+              )}
+            </div>
           </div>
           
-          <div className="flex-shrink-0 ml-3">
+          <div className="flex-shrink-0 ml-3 flex items-center space-x-2">
+            <SaveButton itemId={coupon.id} itemType="coupon" variant="compact" />
+            
             {coupon.isCollected ? (
               <div className="flex items-center text-green-600 text-xs">
                 <CheckCircle className="w-4 h-4 mr-1" />
@@ -209,15 +224,25 @@ export const CouponCard: React.FC<CouponCardProps> = ({
           
           {showBusiness && (
             <div className="flex items-center justify-between">
-              <div 
-                className="flex items-center cursor-pointer hover:text-indigo-200"
-                onClick={handleBusinessClick}
-              >
-                <MapPin className="w-4 h-4 mr-1" />
-                <span className="text-sm">{coupon.business.business_name}</span>
+              <div className="flex items-center space-x-3">
+                <div 
+                  className="flex items-center cursor-pointer hover:text-indigo-200"
+                  onClick={handleBusinessClick}
+                >
+                  <MapPin className="w-4 h-4 mr-1" />
+                  <span className="text-sm">{coupon.business.business_name}</span>
+                </div>
+                
+                {showDistance && coupon.distance && (
+                  <div className="text-indigo-200 text-sm flex items-center">
+                    <span>{getFormattedDistance ? getFormattedDistance(coupon.distance) : formatDistance(coupon.distance, getPreferredDistanceUnit())} away</span>
+                  </div>
+                )}
               </div>
               
-              <div>
+              <div className="flex items-center space-x-3">
+                <SaveButton itemId={coupon.id} itemType="coupon" variant="default" />
+                
                 {coupon.isCollected ? (
                   <div className="flex items-center text-green-200">
                     <CheckCircle className="w-5 h-5 mr-1" />
@@ -280,8 +305,9 @@ export const CouponCard: React.FC<CouponCardProps> = ({
           </div>
           
           {showDistance && coupon.distance && (
-            <div className="text-xs text-gray-500 mt-1">
-              {coupon.distance.toFixed(1)}km away
+            <div className="text-xs text-gray-500 mt-1 flex items-center">
+              <MapPin className="w-3 h-3 mr-1" />
+              {getFormattedDistance ? getFormattedDistance(coupon.distance) : formatDistance(coupon.distance, getPreferredDistanceUnit())} away
             </div>
           )}
         </div>
@@ -326,6 +352,8 @@ export const CouponCard: React.FC<CouponCardProps> = ({
           </div>
           
           <div className="flex items-center space-x-3">
+            <SaveButton itemId={coupon.id} itemType="coupon" variant="default" />
+            
             {coupon.usage_count > 0 && (
               <div className="text-xs text-gray-500 flex items-center">
                 <Users className="w-3 h-3 mr-1" />

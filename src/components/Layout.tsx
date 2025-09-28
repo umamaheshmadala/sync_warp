@@ -201,7 +201,7 @@ export default function Layout({ children }: LayoutProps) {
         )}
 
         {/* Page content with transitions */}
-        <div className="flex-1">
+        <div className="flex-1 pb-24 sm:pb-20"> {/* Increased bottom padding for navigation */}
           <PageTransition>
             {children}
           </PageTransition>

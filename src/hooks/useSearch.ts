@@ -20,6 +20,8 @@ import searchService, {
   SearchSortField
 } from '../services/searchService';
 import { toast } from 'react-hot-toast';
+import { useGeolocation, LocationCoords } from './useGeolocation';
+import { calculateDistance, formatDistance, getPreferredDistanceUnit, sortByDistance } from '../utils/locationUtils';
 
 // Hook configuration
 interface UseSearchOptions {
@@ -53,6 +55,14 @@ interface SearchResults {
   hasMore: boolean;
 }
 
+// Location search state
+interface LocationSearchState {
+  enabled: boolean;
+  coords: LocationCoords | null;
+  radius: number; // in km
+  sortByDistance: boolean;
+}
+
 export const useSearch = (options: UseSearchOptions = {}) => {
   const {
     autoSearch = true,
@@ -67,10 +77,43 @@ export const useSearch = (options: UseSearchOptions = {}) => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { collectCoupon } = useUserCoupons();
+  
+  // Geolocation hook
+  const geolocation = useGeolocation({
+    enableHighAccuracy: true,
+    timeout: 10000,
+    maximumAge: 300000 // 5 minutes
+  });
+  
+  // Location search state
+  const [locationSearch, setLocationSearch] = useState<LocationSearchState>({
+    enabled: false,
+    coords: null,
+    radius: 10, // 10km default
+    sortByDistance: false
+  });
 
   // Search state
   const [searchState, setSearchState] = useState<SearchState>(() => {
-    // Initialize from URL params if available
+    // Try to restore from localStorage first
+    const savedSearchState = localStorage.getItem('searchState');
+    if (savedSearchState) {
+      try {
+        const parsed = JSON.parse(savedSearchState);
+        // Only restore if saved within the last 30 minutes
+        if (parsed.timestamp && Date.now() - parsed.timestamp < 30 * 60 * 1000) {
+          return {
+            ...parsed.state,
+            isSearching: false, // Reset loading state
+            error: null // Reset error state
+          };
+        }
+      } catch (error) {
+        console.warn('Failed to restore search state:', error);
+      }
+    }
+
+    // Fallback to URL params if available
     const urlQuery = searchParams.get('q') || '';
     const urlSort = searchParams.get('sort') as SearchSortField || defaultSort.field;
     const urlOrder = searchParams.get('order') as 'asc' | 'desc' || defaultSort.order;
@@ -87,26 +130,63 @@ export const useSearch = (options: UseSearchOptions = {}) => {
       sort: { field: urlSort, order: urlOrder },
       pagination: { page: urlPage, limit: pageSize },
       isSearching: false,
-      hasSearched: false,
+      hasSearched: urlQuery.length > 0,
       error: null
     };
   });
 
-  // Search results
-  const [results, setResults] = useState<SearchResults>({
-    coupons: [],
-    businesses: [],
-    totalCoupons: 0,
-    totalBusinesses: 0,
-    suggestions: [],
-    searchTime: 0,
-    hasMore: false
+  // Search results with persistence
+  const [results, setResults] = useState<SearchResults>(() => {
+    // Try to restore search results from localStorage
+    const savedResults = localStorage.getItem('searchResults');
+    if (savedResults) {
+      try {
+        const parsed = JSON.parse(savedResults);
+        // Only restore if saved within the last 30 minutes
+        if (parsed.timestamp && Date.now() - parsed.timestamp < 30 * 60 * 1000) {
+          return parsed.results;
+        }
+      } catch (error) {
+        console.warn('Failed to restore search results:', error);
+      }
+    }
+
+    return {
+      coupons: [],
+      businesses: [],
+      totalCoupons: 0,
+      totalBusinesses: 0,
+      suggestions: [],
+      searchTime: 0,
+      hasMore: false
+    };
   });
 
   // Refs for managing state updates
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
   const lastSearchRef = useRef<string>('');
   const abortControllerRef = useRef<AbortController>();
+
+  // Persist search state and results to localStorage
+  useEffect(() => {
+    if (searchState.hasSearched && !searchState.isSearching) {
+      try {
+        localStorage.setItem('searchState', JSON.stringify({
+          state: searchState,
+          timestamp: Date.now()
+        }));
+        
+        if (results.coupons.length > 0 || results.businesses.length > 0) {
+          localStorage.setItem('searchResults', JSON.stringify({
+            results: results,
+            timestamp: Date.now()
+          }));
+        }
+      } catch (error) {
+        console.warn('Failed to persist search state:', error);
+      }
+    }
+  }, [searchState, results]);
 
   /**
    * Perform search with current state
@@ -123,6 +203,11 @@ export const useSearch = (options: UseSearchOptions = {}) => {
 
     const queryToUse: SearchQuery = customQuery || {
       q: searchState.query,
+      location: locationSearch.enabled && locationSearch.coords ? {
+        latitude: locationSearch.coords.latitude,
+        longitude: locationSearch.coords.longitude,
+        radius: locationSearch.radius
+      } : undefined,
       filters: searchState.filters,
       sort: searchState.sort,
       pagination: searchState.pagination
@@ -166,10 +251,25 @@ export const useSearch = (options: UseSearchOptions = {}) => {
         userId: user?.id
       });
       
-      // Temporarily using simple search service for testing
+      // Log the search parameters being sent
+      console.log('📍 [useSearch] Calling simpleSearchService with:', {
+        query: queryToUse.q,
+        limit: queryToUse.pagination.limit,
+        locationEnabled: locationSearch.enabled,
+        locationCoords: locationSearch.coords,
+        locationRadius: locationSearch.radius,
+        locationParam: queryToUse.location
+      });
+      
+      // Use simple search service with proper location data
       const simpleResult = await simpleSearchService.search({
         q: queryToUse.q,
-        limit: queryToUse.pagination.limit
+        limit: queryToUse.pagination.limit,
+        location: queryToUse.location ? {
+          latitude: queryToUse.location.latitude,
+          longitude: queryToUse.location.longitude,
+          radius: queryToUse.location.radius
+        } : undefined
       });
       
       console.log('🔍 [useSearch] Raw search result:', simpleResult);
@@ -211,6 +311,105 @@ export const useSearch = (options: UseSearchOptions = {}) => {
         }));
       } else {
         setResults(result);
+      }
+      
+      // Enhance results with distance calculations and apply location filtering if enabled
+      if (locationSearch.enabled && locationSearch.coords) {
+        console.log('📍 [useSearch] Applying location filtering with coords:', locationSearch.coords);
+        console.log('📍 [useSearch] Radius:', locationSearch.radius, 'km');
+        
+        setResults(prev => {
+          // First calculate distances for all items
+          const couponsWithDistance = prev.coupons.map(coupon => {
+            const distance = coupon.business?.latitude && coupon.business?.longitude
+              ? calculateDistance(
+                  locationSearch.coords!,
+                  { latitude: coupon.business.latitude, longitude: coupon.business.longitude }
+                )
+              : undefined;
+            
+            return { ...coupon, distance };
+          });
+          
+          const businessesWithDistance = prev.businesses.map(business => {
+            const distance = business.latitude && business.longitude
+              ? calculateDistance(
+                  locationSearch.coords!,
+                  { latitude: business.latitude, longitude: business.longitude }
+                )
+              : undefined;
+            
+            return { ...business, distance };
+          });
+          
+          // Then filter by radius (convert km to meters)
+          const radiusInMeters = locationSearch.radius * 1000;
+          
+          const filteredCoupons = couponsWithDistance.filter(coupon => {
+            if (coupon.distance === undefined) {
+              console.log(`⚠️ [useSearch] Coupon "${coupon.title}" has no location - excluding`);
+              return false;
+            }
+            
+            const withinRadius = coupon.distance <= radiusInMeters;
+            const distanceKm = (coupon.distance / 1000).toFixed(1);
+            
+            if (!withinRadius) {
+              console.log(`📍 [useSearch] Coupon "${coupon.title}" is ${distanceKm}km away - outside ${locationSearch.radius}km radius`);
+            } else {
+              console.log(`📍 [useSearch] Coupon "${coupon.title}" is ${distanceKm}km away - within range`);
+            }
+            
+            return withinRadius;
+          });
+          
+          const filteredBusinesses = businessesWithDistance.filter(business => {
+            if (business.distance === undefined) {
+              console.log(`⚠️ [useSearch] Business "${business.business_name}" has no location - excluding`);
+              return false;
+            }
+            
+            const withinRadius = business.distance <= radiusInMeters;
+            const distanceKm = (business.distance / 1000).toFixed(1);
+            
+            if (!withinRadius) {
+              console.log(`📍 [useSearch] Business "${business.business_name}" is ${distanceKm}km away - outside ${locationSearch.radius}km radius`);
+            } else {
+              console.log(`📍 [useSearch] Business "${business.business_name}" is ${distanceKm}km away - within range`);
+            }
+            
+            return withinRadius;
+          });
+          
+          console.log(`📍 [useSearch] Location filtering results: ${prev.coupons.length} → ${filteredCoupons.length} coupons, ${prev.businesses.length} → ${filteredBusinesses.length} businesses`);
+          
+          return {
+            ...prev,
+            coupons: filteredCoupons,
+            businesses: filteredBusinesses,
+            totalCoupons: filteredCoupons.length,
+            totalBusinesses: filteredBusinesses.length
+          };
+        });
+        
+        // Sort by distance if distance sort is selected
+        if (searchState.sort.field === 'distance') {
+          setResults(prev => ({
+            ...prev,
+            coupons: [...prev.coupons].sort((a, b) => {
+              if (a.distance === undefined && b.distance === undefined) return 0;
+              if (a.distance === undefined) return 1;
+              if (b.distance === undefined) return -1;
+              return a.distance - b.distance;
+            }),
+            businesses: [...prev.businesses].sort((a, b) => {
+              if (a.distance === undefined && b.distance === undefined) return 0;
+              if (a.distance === undefined) return 1;
+              if (b.distance === undefined) return -1;
+              return a.distance - b.distance;
+            })
+          }));
+        }
       }
 
       // Save to URL if enabled
@@ -454,6 +653,88 @@ export const useSearch = (options: UseSearchOptions = {}) => {
   const goToCoupon = useCallback((couponId: string) => {
     navigate(`/coupon/${couponId}`);
   }, [navigate]);
+  
+  /**
+   * Enable location-based search
+   */
+  const enableLocationSearch = useCallback(async (radius: number = 10) => {
+    try {
+      const coords = await geolocation.getCurrentPosition();
+      if (coords) {
+        setLocationSearch({
+          enabled: true,
+          coords,
+          radius,
+          sortByDistance: false
+        });
+        
+        // Trigger search with location
+        if (autoSearch) {
+          performSearch();
+        }
+        
+        return true;
+      }
+    } catch (error) {
+      console.error('Failed to enable location search:', error);
+      toast.error('Could not access your location');
+    }
+    return false;
+  }, [geolocation, autoSearch, performSearch]);
+  
+  /**
+   * Disable location-based search
+   */
+  const disableLocationSearch = useCallback(() => {
+    setLocationSearch({
+      enabled: false,
+      coords: null,
+      radius: 10,
+      sortByDistance: false
+    });
+    
+    // Trigger search without location
+    if (autoSearch) {
+      performSearch();
+    }
+  }, [autoSearch, performSearch]);
+  
+  /**
+   * Set search radius for location-based search
+   */
+  const setSearchRadius = useCallback((radius: number) => {
+    setLocationSearch(prev => ({
+      ...prev,
+      radius
+    }));
+    
+    if (locationSearch.enabled && autoSearch) {
+      performSearch();
+    }
+  }, [locationSearch.enabled, autoSearch, performSearch]);
+  
+  /**
+   * Toggle distance-based sorting
+   */
+  const toggleDistanceSort = useCallback(() => {
+    setLocationSearch(prev => ({
+      ...prev,
+      sortByDistance: !prev.sortByDistance
+    }));
+    
+    if (locationSearch.enabled && autoSearch) {
+      performSearch();
+    }
+  }, [locationSearch.enabled, autoSearch, performSearch]);
+  
+  /**
+   * Get formatted distance for a result
+   */
+  const getFormattedDistance = useCallback((distanceInMeters?: number): string | null => {
+    if (distanceInMeters === undefined) return null;
+    const unit = getPreferredDistanceUnit();
+    return formatDistance(distanceInMeters, unit);
+  }, []);
 
   // Auto-search when URL params change (with debouncing to prevent excessive updates)
   useEffect(() => {
@@ -472,6 +753,27 @@ export const useSearch = (options: UseSearchOptions = {}) => {
       }
     }
   }, [searchParams, searchState.query, autoSearch, debouncedSearch]);
+
+  // Update location search when geolocation changes
+  useEffect(() => {
+    if (locationSearch.enabled && geolocation.coords && !locationSearch.coords) {
+      console.log('📍 [useSearch] Updating location search coords:', geolocation.coords);
+      setLocationSearch(prev => ({
+        ...prev,
+        coords: geolocation.coords
+      }));
+    }
+  }, [geolocation.coords, locationSearch.enabled, locationSearch.coords]);
+
+  // Debug location search state changes
+  useEffect(() => {
+    console.log('📍 [useSearch] Location search state updated:', {
+      enabled: locationSearch.enabled,
+      hasCoords: !!locationSearch.coords,
+      coords: locationSearch.coords,
+      radius: locationSearch.radius
+    });
+  }, [locationSearch]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -526,9 +828,28 @@ export const useSearch = (options: UseSearchOptions = {}) => {
     collectCoupon: handleCollectCoupon,
     goToBusiness,
     goToCoupon,
+    
+    // Location actions
+    enableLocationSearch,
+    disableLocationSearch,
+    setSearchRadius,
+    toggleDistanceSort,
+    getFormattedDistance,
 
     // Computed
     activeFiltersCount,
+    
+    // Location state
+    location: {
+      enabled: locationSearch.enabled,
+      coords: locationSearch.coords,
+      radius: locationSearch.radius,
+      sortByDistance: locationSearch.sortByDistance,
+      isLoading: geolocation.loading,
+      hasPermission: geolocation.permission === 'granted',
+      isSupported: geolocation.supported,
+      error: geolocation.error
+    },
     
     // Utils
     searchState: {

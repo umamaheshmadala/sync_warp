@@ -3,8 +3,10 @@
 // Shows business details, active coupon count, ratings, and location
 
 import React from 'react';
-import { MapPin, Star, Users, Tag, ChevronRight } from 'lucide-react';
+import { MapPin, Star, Users, Tag, ChevronRight, Ticket } from 'lucide-react';
 import { SearchBusiness } from '../../services/searchService';
+import SimpleSaveButton from '../favorites/SimpleSaveButton';
+import { formatDistance, getPreferredDistanceUnit } from '../../utils/locationUtils';
 
 interface BusinessCardProps {
   business: SearchBusiness;
@@ -12,6 +14,7 @@ interface BusinessCardProps {
   variant?: 'default' | 'compact' | 'featured';
   showDistance?: boolean;
   showCouponCount?: boolean;
+  getFormattedDistance?: (distanceInMeters?: number) => string | null;
 }
 
 export const BusinessCard: React.FC<BusinessCardProps> = ({
@@ -19,7 +22,8 @@ export const BusinessCard: React.FC<BusinessCardProps> = ({
   onBusinessClick,
   variant = 'default',
   showDistance = false,
-  showCouponCount = true
+  showCouponCount = true,
+  getFormattedDistance
 }) => {
   // Handle business click
   const handleBusinessClick = () => {
@@ -44,6 +48,14 @@ export const BusinessCard: React.FC<BusinessCardProps> = ({
     if (business.activeCouponsCount === 0) return 'No active offers';
     if (business.activeCouponsCount === 1) return '1 active offer';
     return `${business.activeCouponsCount} active offers`;
+  };
+  
+  // Get coupon indicator color based on count
+  const getCouponIndicatorColor = () => {
+    if (business.activeCouponsCount === 0) return 'text-gray-400';
+    if (business.activeCouponsCount <= 2) return 'text-yellow-500';
+    if (business.activeCouponsCount <= 5) return 'text-orange-500';
+    return 'text-green-500';
   };
 
   // Compact variant for mobile or tight spaces
@@ -75,14 +87,27 @@ export const BusinessCard: React.FC<BusinessCardProps> = ({
               )}
             </div>
             
+            <div className="flex items-center justify-between mt-1">
             {showCouponCount && (
-              <div className="text-xs text-indigo-600 mt-1">
-                {getCouponCountDisplay()}
+              <div className="flex items-center space-x-1 text-xs">
+                <Ticket className={`w-3 h-3 ${getCouponIndicatorColor()}`} />
+                <span className={business.activeCouponsCount > 0 ? 'text-indigo-600' : 'text-gray-500'}>
+                  {getCouponCountDisplay()}
+                </span>
               </div>
             )}
+              
+              {showDistance && business.distance && (
+                <div className="text-xs text-gray-500 flex items-center">
+                  <MapPin className="w-3 h-3 mr-1" />
+                  {getFormattedDistance ? getFormattedDistance(business.distance) : formatDistance(business.distance, getPreferredDistanceUnit())}
+                </div>
+              )}
+            </div>
           </div>
           
-          <div className="flex-shrink-0 ml-3">
+          <div className="flex-shrink-0 ml-3 flex items-center space-x-2">
+            <SimpleSaveButton itemId={business.id} itemType="business" variant="compact" />
             <ChevronRight className="w-4 h-4 text-gray-400" />
           </div>
         </div>
@@ -131,16 +156,27 @@ export const BusinessCard: React.FC<BusinessCardProps> = ({
           )}
           
           <div className="flex items-center justify-between">
-            {business.address && (
-              <div className="flex items-center text-blue-100">
-                <MapPin className="w-4 h-4 mr-1" />
-                <span className="text-sm">{business.address}</span>
-              </div>
-            )}
+            <div className="flex items-center space-x-3">
+              <SimpleSaveButton itemId={business.id} itemType="business" variant="default" />
+              
+              {business.address && (
+                <div className="flex items-center text-blue-100">
+                  <MapPin className="w-4 h-4 mr-1" />
+                  <span className="text-sm">{business.address}</span>
+                </div>
+              )}
+              
+              {showDistance && business.distance && (
+                <div className="flex items-center text-blue-200 text-sm">
+                  <span>{getFormattedDistance ? getFormattedDistance(business.distance) : formatDistance(business.distance, getPreferredDistanceUnit())} away</span>
+                </div>
+              )}
+            </div>
             
             {showCouponCount && (
-              <div className="bg-white text-indigo-600 px-3 py-1 rounded-full text-sm font-semibold">
-                {getCouponCountDisplay()}
+              <div className="bg-white bg-opacity-20 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-semibold flex items-center space-x-1">
+                <Ticket className={`w-4 h-4 ${getCouponIndicatorColor()}`} />
+                <span>{getCouponCountDisplay()}</span>
               </div>
             )}
           </div>
@@ -163,7 +199,10 @@ export const BusinessCard: React.FC<BusinessCardProps> = ({
               dangerouslySetInnerHTML={{ __html: business.highlightedName || business.business_name }}
             />
             
-            <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-indigo-600 transition-colors flex-shrink-0 ml-2" />
+            <div className="flex items-center space-x-2 flex-shrink-0 ml-2">
+              <SimpleSaveButton itemId={business.id} itemType="business" variant="compact" />
+              <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-indigo-600 transition-colors" />
+            </div>
           </div>
           
           <div className="flex items-center space-x-4 mb-3">
@@ -185,8 +224,9 @@ export const BusinessCard: React.FC<BusinessCardProps> = ({
             )}
             
             {showDistance && business.distance && (
-              <div className="text-sm text-gray-600">
-                {business.distance.toFixed(1)}km away
+              <div className="flex items-center text-sm text-gray-600">
+                <MapPin className="w-4 h-4 mr-1" />
+                {getFormattedDistance ? getFormattedDistance(business.distance) : formatDistance(business.distance, getPreferredDistanceUnit())} away
               </div>
             )}
           </div>
@@ -210,12 +250,13 @@ export const BusinessCard: React.FC<BusinessCardProps> = ({
         </div>
         
         {showCouponCount && (
-          <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+          <div className={`px-3 py-1 rounded-full text-sm font-medium flex items-center space-x-1 ${
             business.activeCouponsCount > 0
               ? 'bg-indigo-100 text-indigo-700'
               : 'bg-gray-100 text-gray-600'
           }`}>
-            {getCouponCountDisplay()}
+            <Ticket className={`w-4 h-4 ${getCouponIndicatorColor()}`} />
+            <span>{getCouponCountDisplay()}</span>
           </div>
         )}
       </div>

@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, Search, Wallet, Users, User } from 'lucide-react';
+import { Home, Search, Heart, Wallet, Users } from 'lucide-react';
 import NavigationBadge from './NavigationBadge';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
 import { useNavigationState } from '../hooks/useNavigationState';
@@ -48,6 +48,14 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentRoute }) => 
       activeColor: 'text-green-600'
     },
     {
+      id: 'favorites',
+      label: 'Favorites',
+      icon: Heart,
+      route: '/favorites',
+      color: 'text-gray-500',
+      activeColor: 'text-red-600'
+    },
+    {
       id: 'wallet',
       label: 'Wallet',
       icon: Wallet,
@@ -63,14 +71,6 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentRoute }) => 
       route: '/social',
       color: 'text-gray-500',
       activeColor: 'text-blue-600'
-    },
-    {
-      id: 'profile',
-      label: 'Profile',
-      icon: User,
-      route: '/profile',
-      color: 'text-gray-500',
-      activeColor: 'text-orange-600'
     }
   ];
 
@@ -105,12 +105,14 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentRoute }) => 
 
   return (
     <motion.nav 
-      className="fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-lg border-t border-gray-200 safe-area-pb"
+      className="fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-lg border-t border-gray-200"
       initial={{ y: 100 }}
       animate={{ y: 0 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
     >
-      <div className="flex items-center justify-around px-2 py-1">
+      {/* Container with max width matching header */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-around py-2">
         {navItems.map((item) => {
           const IconComponent = item.icon;
           const active = isActive(item.route);
@@ -213,10 +215,16 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentRoute }) => 
             </motion.button>
           );
         })}
+        </div>
       </div>
 
-      {/* Enhanced Safe area with gradient fade */}
-      <div className="h-safe-area-inset-bottom bg-gradient-to-t from-white to-white/95" />
+      {/* Safe area padding for mobile devices */}
+      <div 
+        className="bg-white/95" 
+        style={{ 
+          paddingBottom: 'max(8px, env(safe-area-inset-bottom))' 
+        }} 
+      />
     </motion.nav>
   );
 };

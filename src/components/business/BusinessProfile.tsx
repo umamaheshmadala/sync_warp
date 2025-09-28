@@ -27,6 +27,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
 import { toast } from 'react-hot-toast';
 import FeaturedProducts from './FeaturedProducts';
+import GoogleMapsLocationPicker from '../maps/GoogleMapsLocationPicker';
 
 // TypeScript interfaces
 interface Business {
@@ -303,6 +304,8 @@ const BusinessProfile: React.FC = () => {
           city: editForm.city,
           state: editForm.state,
           postal_code: editForm.postal_code,
+          latitude: editForm.latitude,
+          longitude: editForm.longitude,
           website_url: editForm.website_url,
           social_media: editForm.social_media,
           operating_hours: editForm.operating_hours,
@@ -331,6 +334,36 @@ const BusinessProfile: React.FC = () => {
   const handleCancel = () => {
     setEditForm(business);
     setEditing(false);
+  };
+  
+  // Get current location using browser geolocation
+  const getCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by this browser');
+      return;
+    }
+    
+    setImageUploadLoading(prev => ({ ...prev, gallery: true })); // Reuse loading state
+    
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        handleFormChange('latitude', latitude);
+        handleFormChange('longitude', longitude);
+        toast.success('Location coordinates updated!');
+        setImageUploadLoading(prev => ({ ...prev, gallery: false }));
+      },
+      (error) => {
+        console.error('Geolocation error:', error);
+        toast.error('Failed to get current location. Please check your location permissions.');
+        setImageUploadLoading(prev => ({ ...prev, gallery: false }));
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 60000
+      }
+    );
   };
 
   // Format operating hours for display
@@ -426,6 +459,144 @@ const BusinessProfile: React.FC = () => {
                   onChange={(e) => handleFormChange('business_phone', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 />
+              </div>
+            </div>
+            
+            {/* Location Section */}
+            <div className="space-y-4">
+              <h4 className="text-sm font-medium text-gray-700">Location Information</h4>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Street Address</label>
+                <input
+                  type="text"
+                  value={editForm.address || ''}
+                  onChange={(e) => handleFormChange('address', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  placeholder="123 Main Street"
+                />
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
+                  <input
+                    type="text"
+                    value={editForm.city || ''}
+                    onChange={(e) => handleFormChange('city', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
+                  <input
+                    type="text"
+                    value={editForm.state || ''}
+                    onChange={(e) => handleFormChange('state', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Postal Code</label>
+                  <input
+                    type="text"
+                    value={editForm.postal_code || ''}
+                    onChange={(e) => handleFormChange('postal_code', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+              
+              {/* Location Map Picker */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-medium text-gray-700">Business Location</h4>
+                <div className="border border-gray-300 rounded-lg overflow-hidden">
+                  {import.meta.env.VITE_GOOGLE_MAPS_API_KEY ? (
+                    <GoogleMapsLocationPicker
+                      apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}
+                      initialLocation={
+                        editForm.latitude && editForm.longitude
+                          ? { lat: editForm.latitude, lng: editForm.longitude }
+                          : undefined
+                      }
+                      onLocationChange={(location, address) => {
+                        handleFormChange('latitude', location.lat);
+                        handleFormChange('longitude', location.lng);
+                        if (address) {
+                          // Parse address components
+                          const addressParts = address.split(', ');
+                          if (addressParts.length > 0) {
+                            handleFormChange('address', addressParts[0]);
+                          }
+                        }
+                      }}
+                      height="400px"
+                      className="w-full"
+                    />
+                  ) : (
+                    <div className="bg-gray-100 p-8 text-center">
+                      <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">Google Maps Not Available</h3>
+                      <p className="text-gray-600 mb-4">Please add your Google Maps API key to enable location selection.</p>
+                      
+                      {/* Fallback coordinate inputs */}
+                      <div className="max-w-md mx-auto space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Latitude</label>
+                            <input
+                              type="number"
+                              step="0.000001"
+                              value={editForm.latitude || ''}
+                              onChange={(e) => handleFormChange('latitude', parseFloat(e.target.value) || null)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                              placeholder="40.7128"
+                            />
+                          </div>
+                          
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Longitude</label>
+                            <input
+                              type="number"
+                              step="0.000001"
+                              value={editForm.longitude || ''}
+                              onChange={(e) => handleFormChange('longitude', parseFloat(e.target.value) || null)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                              placeholder="-74.0060"
+                            />
+                          </div>
+                        </div>
+                        
+                        <button
+                          type="button"
+                          onClick={getCurrentLocation}
+                          disabled={imageUploadLoading.gallery}
+                          className="flex items-center px-4 py-2 text-indigo-600 hover:bg-indigo-50 rounded-lg border border-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <MapPin className="w-4 h-4 mr-2" />
+                          {imageUploadLoading.gallery ? 'Getting Location...' : 'Use Current Location'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Current coordinates display */}
+                {editForm.latitude && editForm.longitude && (
+                  <div className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg">
+                    <p className="font-medium mb-1">Selected Coordinates:</p>
+                    <p className="font-mono">
+                      {editForm.latitude.toFixed(6)}, {editForm.longitude.toFixed(6)}
+                    </p>
+                  </div>
+                )}
+              </div>
+              
+              <div className="text-xs text-gray-500">
+                <p>You can get coordinates from Google Maps by right-clicking on your location and copying the coordinates.</p>
+                <p>Format: Latitude (North/South), Longitude (East/West)</p>
               </div>
             </div>
 
@@ -653,12 +824,33 @@ const BusinessProfile: React.FC = () => {
       {/* Location */}
       <div className="bg-white rounded-lg shadow-sm border p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Location</h3>
-        <div className="flex items-start">
-          <MapPin className="w-5 h-5 text-gray-400 mr-3 mt-0.5" />
-          <div>
-            <p className="text-gray-900">{business?.address}</p>
-            <p className="text-gray-600">{business?.city}, {business?.state} {business?.postal_code}</p>
+        <div className="space-y-3">
+          <div className="flex items-start">
+            <MapPin className="w-5 h-5 text-gray-400 mr-3 mt-0.5" />
+            <div>
+              <p className="text-gray-900">{business?.address}</p>
+              <p className="text-gray-600">{business?.city}, {business?.state} {business?.postal_code}</p>
+            </div>
           </div>
+          
+          {(business?.latitude && business?.longitude) && (
+            <div className="flex items-start pl-8">
+              <div className="text-sm text-gray-500">
+                <p>Coordinates:</p>
+                <p className="text-gray-700 font-mono">
+                  {business.latitude.toFixed(6)}, {business.longitude.toFixed(6)}
+                </p>
+                <a 
+                  href={`https://maps.google.com/?q=${business.latitude},${business.longitude}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center text-indigo-600 hover:text-indigo-800 mt-1"
+                >
+                  View on Google Maps <ExternalLink className="w-3 h-3 ml-1" />
+                </a>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

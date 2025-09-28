@@ -26,6 +26,7 @@ import {
   COUPON_LIMITS 
 } from '../../types/coupon';
 import { useCoupons } from '../../hooks/useCoupons';
+import useCouponDrafts, { DraftFormData } from '../../hooks/useCouponDrafts';
 import { useAuthStore } from '../../store/authStore';
 import { toast } from 'react-hot-toast';
 
@@ -54,9 +55,13 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
   editingCoupon
 }) => {
   const { createCoupon, updateCoupon, loading, generateCouponCode } = useCoupons();
+  const drafts = useCouponDrafts(businessId);
   const { user } = useAuthStore();
   const [currentStep, setCurrentStep] = useState(1);
   const [previewCode, setPreviewCode] = useState('');
+  const [showDrafts, setShowDrafts] = useState(false);
+  const [draftName, setDraftName] = useState('');
+  const [showSaveDraftDialog, setShowSaveDraftDialog] = useState(false);
   
   const isEditing = !!editingCoupon;
   
@@ -149,6 +154,63 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
     }
   }, [formStateKey]);
 
+  // Draft management functions
+  const saveToDrafts = useCallback(async () => {
+    const formData = watch() as DraftFormData;
+    
+    // Check if form has meaningful content
+    if (!drafts.hasFormContent(formData)) {
+      toast.error('Please fill in some form data before saving as draft');
+      return;
+    }
+    
+    // Auto-generate name if none provided
+    const finalDraftName = draftName.trim() || drafts.generateDraftName(formData);
+    setDraftName(finalDraftName);
+    
+    const draftId = await drafts.saveDraft(
+      businessId,
+      finalDraftName,
+      formData,
+      currentStep
+    );
+    
+    if (draftId) {
+      setShowSaveDraftDialog(false);
+      setDraftName('');
+    }
+  }, [watch, draftName, drafts, businessId, currentStep]);
+  
+  const loadFromDraft = useCallback((draftId: string) => {
+    const draft = drafts.loadDraft(draftId);
+    if (!draft) {
+      toast.error('Draft not found');
+      return;
+    }
+    
+    // Load form data
+    Object.entries(draft.form_data).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        setValue(key as any, value);
+      }
+    });
+    
+    // Restore step if available
+    if (draft.step_completed) {
+      setCurrentStep(draft.step_completed);
+    }
+    
+    // Update preview code if needed
+    const formData = draft.form_data as DraftFormData;
+    if (formData.type) {
+      const code = generateCouponCode(formData.type);
+      setPreviewCode(code);
+    }
+    
+    setShowDrafts(false);
+    toast.success(`Loaded draft: ${draft.draft_name}`);
+  }, [drafts, setValue, setCurrentStep, generateCouponCode]);
+
   const steps: FormStep[] = [
     {
       id: 1,
@@ -207,7 +269,7 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
         if (formData.title || formData.description || formData.type) {
           saveFormState();
         }
-      }, 15000); // Save every 15 seconds (reduced frequency)
+      }, 60000); // Save every 60 seconds (much less frequent)
       return () => clearInterval(interval);
     }
   }, [isOpen, watch, saveFormState]);
@@ -1032,12 +1094,40 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
               Step {currentStep} of {steps.length}: {steps[currentStep - 1]?.subtitle}
             </p>
           </div>
-          <button
-            onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <X className="w-6 h-6" />
-          </button>
+          
+          <div className="flex items-center space-x-3">
+            {/* Save to Drafts Button */}
+            {!isEditing && (
+              <button
+                type="button"
+                onClick={() => setShowSaveDraftDialog(true)}
+                disabled={drafts.loading || !drafts.hasFormContent(watch() as DraftFormData)}
+                className="flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <Tag className="w-4 h-4 mr-2" />
+                Save to Drafts
+              </button>
+            )}
+            
+            {/* Load Drafts Button */}
+            {!isEditing && drafts.hasDrafts && (
+              <button
+                type="button"
+                onClick={() => setShowDrafts(true)}
+                className="flex items-center px-3 py-2 text-sm font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Drafts ({drafts.draftCount})
+              </button>
+            )}
+            
+            <button
+              onClick={handleClose}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
         </div>
 
         {/* Progress Bar */}
@@ -1174,6 +1264,141 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
           </div>
         </form>
       </motion.div>
+      
+      {/* Save Draft Dialog */}
+      {showSaveDraftDialog && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+        >
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Save to Drafts
+            </h3>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Draft Name
+              </label>
+              <input
+                type="text"
+                value={draftName}
+                onChange={(e) => setDraftName(e.target.value)}
+                placeholder={drafts.generateDraftName(watch() as DraftFormData)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                Leave empty to use auto-generated name
+              </p>
+            </div>
+            
+            <div className="flex space-x-3 justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSaveDraftDialog(false);
+                  setDraftName('');
+                }}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={saveToDrafts}
+                disabled={drafts.loading}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+              >
+                {drafts.loading ? 'Saving...' : 'Save Draft'}
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      )}
+      
+      {/* Load Drafts Dialog */}
+      {showDrafts && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+        >
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Load from Drafts
+              </h3>
+              <button
+                onClick={() => setShowDrafts(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto max-h-[60vh]">
+              {drafts.loading ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              ) : drafts.drafts.length === 0 ? (
+                <div className="text-center py-8">
+                  <Tag className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-sm font-medium text-gray-900 mb-2">No drafts found</h3>
+                  <p className="text-sm text-gray-500">Start creating a coupon and save it as a draft.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {drafts.getDraftsByBusiness(businessId).map((draft) => (
+                    <div
+                      key={draft.id}
+                      className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors"
+                    >
+                      <div className="flex-1">
+                        <h4 className="text-sm font-medium text-gray-900">
+                          {draft.draft_name}
+                        </h4>
+                        <div className="flex items-center space-x-4 mt-1 text-xs text-gray-500">
+                          <span>Step {draft.step_completed} of 6</span>
+                          <span>•</span>
+                          <span>Updated {new Date(draft.updated_at).toLocaleDateString()}</span>
+                          {draft.form_data.title && (
+                            <>
+                              <span>•</span>
+                              <span>"{draft.form_data.title}"</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => loadFromDraft(draft.id)}
+                          className="px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          Load
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (window.confirm('Are you sure you want to delete this draft?')) {
+                              drafts.deleteDraft(draft.id);
+                            }
+                          }}
+                          className="px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 };

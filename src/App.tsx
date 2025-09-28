@@ -5,6 +5,9 @@ import Layout from './components/Layout'
 import AppRouter from './router/Router'
 import { AuthDebugPanel } from './router/ProtectedRoute'
 import RouterDebugger from './components/debug/RouterDebugger'
+// import FavoritesDebug from './components/debug/FavoritesDebug';
+import ComprehensiveFavoritesDebug from './components/debug/ComprehensiveFavoritesDebug';
+import HeartIconTest from './components/debug/HeartIconTest';
 // import AuthDebug from './components/AuthDebug'
 
 const queryClient = new QueryClient()
@@ -22,6 +25,9 @@ function App() {
         <Layout>
           <AppRouter />
           <AuthDebugPanel />
+          {/* {process.env.NODE_ENV === 'development' && <ComprehensiveFavoritesDebug />} */}
+          {process.env.NODE_ENV === 'development' && <HeartIconTest />}
+          {/* {process.env.NODE_ENV === 'development' && <FavoritesDebug />} */}
           {/* {process.env.NODE_ENV === 'development' && <AuthDebug />} */}
           <Toaster
             position="top-right"

@@ -28,15 +28,19 @@ import FriendsManagementPage from '../components/FriendsManagementPage'
 const NotFound = lazy(() => import('../components/NotFound'))
 const Profile = lazy(() => import('../components/Profile'))
 const Search = lazy(() => import('../components/Search'))
+const SearchAnalyticsDashboard = lazy(() => import('../components/SearchAnalyticsDashboard'))
+const LocationManager = lazy(() => import('../components/LocationManager'))
 const Settings = lazy(() => import('../components/Settings'))
 const Wallet = lazy(() => import('../components/Wallet'))
 const Social = lazy(() => import('../components/Social'))
+const SimpleFavoritesPage = lazy(() => import('../components/favorites/SimpleFavoritesPage'))
 
 // Debug components (only in development)
 const SignUpDebug = lazy(() => import('../components/SignUpDebug'))
 const AuthStoreTest = lazy(() => import('../components/AuthStoreTest'))
 const RouteProtectionTest = lazy(() => import('../components/RouteProtectionTest'))
 const ProductsDebug = lazy(() => import('../components/debug/ProductsDebug'))
+const FavoritesLocationDebug = lazy(() => import('../components/debug/FavoritesLocationDebug'))
 
 // Route definitions
 export interface RouteConfig {
@@ -103,6 +107,20 @@ export const routes: RouteConfig[] = [
     description: 'Find businesses, products, and deals'
   },
   {
+    path: '/analytics/search',
+    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><SearchAnalyticsDashboard /></Suspense>,
+    protected: true,
+    title: 'Search Analytics - SynC',
+    description: 'Search insights and analytics dashboard'
+  },
+  {
+    path: '/locations',
+    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><LocationManager /></Suspense>,
+    protected: true,
+    title: 'Location Manager - SynC',
+    description: 'Manage your saved locations and location history'
+  },
+  {
     path: '/profile',
     element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><Profile /></Suspense>,
     protected: true,
@@ -129,6 +147,13 @@ export const routes: RouteConfig[] = [
     protected: true,
     title: 'Social - SynC',
     description: 'Connect with friends and share deals'
+  },
+  {
+    path: '/favorites',
+    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><SimpleFavoritesPage /></Suspense>,
+    protected: true,
+    title: 'Favorites - SynC',
+    description: 'Your saved businesses, coupons, and wishlist'
   },
   {
     path: '/friends',
@@ -204,6 +229,12 @@ const debugRoutes: RouteConfig[] = [
     element: <Suspense fallback={<div>Loading...</div>}><ProductsDebug /></Suspense>,
     protected: true,
     title: 'Debug - Products & Database'
+  },
+  {
+    path: '/debug/favorites',
+    element: <Suspense fallback={<div>Loading...</div>}><FavoritesLocationDebug /></Suspense>,
+    protected: true,
+    title: 'Debug - Favorites & Location'
   }
 ]
 

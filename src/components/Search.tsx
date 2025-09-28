@@ -4,10 +4,12 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Search as SearchIcon, Filter, MapPin, Star, ArrowUpDown, Grid, List, Plus } from 'lucide-react'
+import { Search as SearchIcon, Filter, MapPin, Star, ArrowUpDown, Grid, List, Plus, Navigation, Loader2, AlertCircle } from 'lucide-react'
 import { useSearch } from '../hooks/useSearch'
+import { useSearchTracking } from '../hooks/useSearchAnalytics'
 import { CouponCard, BusinessCard, FilterPanel, SearchSuggestions } from './search/index'
 import { SearchSortField } from '../services/searchService'
+import LocationTester from './debug/LocationTester'
 
 export default function Search() {
   // Search hook with all functionality
@@ -17,6 +19,9 @@ export default function Search() {
     pageSize: 20,
     saveToUrl: true
   })
+  
+  // Analytics tracking
+  const { trackSearch, trackResultClick } = useSearchTracking()
 
   // Local state for UI
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false)
@@ -76,12 +81,15 @@ export default function Search() {
   }
 
   // Perform search and save to recent searches
-  const performSearch = (query: string) => {
+  const performSearch = async (query: string) => {
     console.log('🔍 [Search.tsx] performSearch called with:', query || '[BROWSE MODE]');
     
     // Update local query first
     setLocalQuery(query);
     setIsSuggestionsVisible(false);
+    
+    // Track search start time for analytics
+    const searchStartTime = Date.now();
     
     // Set the query in search hook (this will trigger the actual search)
     // Empty queries are allowed for browse mode
@@ -93,6 +101,22 @@ export default function Search() {
       setRecentSearches(newRecentSearches);
       localStorage.setItem('recentSearches', JSON.stringify(newRecentSearches));
     }
+    
+    // Track search analytics after results are loaded
+    // This will be called after the search hook completes
+    setTimeout(async () => {
+      if (query.trim()) {
+        const searchEndTime = Date.now();
+        const searchTimeMs = searchEndTime - searchStartTime;
+        
+        await trackSearch({
+          searchTerm: query,
+          filters: search.filters,
+          resultsCount: search.totalResults,
+          searchTimeMs: searchTimeMs
+        });
+      }
+    }, 100); // Small delay to ensure search results are updated
   }
 
   // Handle suggestion selection
@@ -128,6 +152,9 @@ export default function Search() {
         <h1 className="text-3xl font-bold text-gray-900 mb-4">Find Local Deals</h1>
         <p className="text-gray-600">Discover amazing businesses, products, and offers in your area</p>
       </div>
+      
+      {/* Debug Component - Remove in production */}
+      {process.env.NODE_ENV === 'development' && <LocationTester />}
 
       {/* Search Form */}
       <div className="mb-8">
@@ -193,6 +220,55 @@ export default function Search() {
         {/* Filter Controls Row */}
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
+            {/* Near Me Toggle Button */}
+            <div className="relative">
+              <button
+                onClick={() => {
+                  if (search.location.enabled) {
+                    search.disableLocationSearch();
+                  } else {
+                    search.enableLocationSearch();
+                  }
+                }}
+                disabled={search.location.isLoading || !search.location.isSupported}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg border transition-colors ${
+                  search.location.enabled
+                    ? 'bg-blue-50 border-blue-200 text-blue-700'
+                    : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
+              >
+                {search.location.isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : search.location.error ? (
+                  <AlertCircle className="h-4 w-4 text-red-500" />
+                ) : (
+                  <Navigation className={`h-4 w-4 ${
+                    search.location.enabled ? 'text-blue-600' : 'text-gray-500'
+                  }`} />
+                )}
+                <span className="text-sm font-medium">
+                  {search.location.isLoading
+                    ? 'Locating...'
+                    : search.location.enabled
+                    ? 'Near Me'
+                    : 'Enable Location'
+                  }
+                </span>
+                {search.location.enabled && search.location.coords && (
+                  <span className="text-xs text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded">
+                    {search.location.radius}km
+                  </span>
+                )}
+              </button>
+              
+              {/* Location Error Tooltip */}
+              {search.location.error && (
+                <div className="absolute top-full left-0 mt-2 p-2 bg-red-100 border border-red-200 rounded-lg text-xs text-red-700 whitespace-nowrap z-10">
+                  {search.location.error.message}
+                </div>
+              )}
+            </div>
+            
             {/* Filter Panel Toggle */}
             <FilterPanel
               filters={search.filters}
@@ -216,6 +292,9 @@ export default function Search() {
                 <option value="valid_until">Expiring Soon</option>
                 <option value="usage_count">Most Popular</option>
                 <option value="business_name">Business Name</option>
+                {search.location.enabled && search.location.coords && (
+                  <option value="distance">Nearest First</option>
+                )}
               </select>
               <ArrowUpDown className="absolute right-2 top-2.5 h-4 w-4 text-gray-400 pointer-events-none" />
             </div>
@@ -332,10 +411,31 @@ export default function Search() {
                         coupon={coupon}
                         variant={viewMode === 'grid' ? 'default' : 'compact'}
                         onCollect={search.collectCoupon}
-                        onBusinessClick={search.goToBusiness}
-                        onCouponClick={search.goToCoupon}
+                        onBusinessClick={(businessId) => {
+                          // Track click for analytics
+                          if (search.query) {
+                            trackResultClick({
+                              searchTerm: search.query,
+                              resultId: businessId,
+                              resultType: 'business'
+                            });
+                          }
+                          search.goToBusiness(businessId);
+                        }}
+                        onCouponClick={(couponId) => {
+                          // Track click for analytics
+                          if (search.query) {
+                            trackResultClick({
+                              searchTerm: search.query,
+                              resultId: couponId,
+                              resultType: 'coupon'
+                            });
+                          }
+                          search.goToCoupon(couponId);
+                        }}
                         showBusiness={true}
-                        showDistance={false}
+                        showDistance={search.location.enabled && search.location.coords}
+                        getFormattedDistance={search.getFormattedDistance}
                       />
                     ))}
                   </div>
@@ -361,9 +461,20 @@ export default function Search() {
                         key={business.id}
                         business={business}
                         variant={viewMode === 'grid' ? 'default' : 'compact'}
-                        onBusinessClick={search.goToBusiness}
-                        showDistance={false}
+                        onBusinessClick={(businessId) => {
+                          // Track click for analytics
+                          if (search.query) {
+                            trackResultClick({
+                              searchTerm: search.query,
+                              resultId: businessId,
+                              resultType: 'business'
+                            });
+                          }
+                          search.goToBusiness(businessId);
+                        }}
+                        showDistance={search.location.enabled && search.location.coords}
                         showCouponCount={true}
+                        getFormattedDistance={search.getFormattedDistance}
                       />
                     ))}
                   </div>
