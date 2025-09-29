@@ -18,6 +18,10 @@ import {
   Phone,
   Mail,
   Package,
+  BarChart3,
+  Activity,
+  Target,
+  QrCode,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
@@ -300,6 +304,14 @@ const BusinessDashboard: React.FC = () => {
           
           <div className="space-y-2">
             <Link
+              to={`/business/${business.id}/analytics`}
+              className="w-full flex items-center justify-center px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
+            >
+              <BarChart3 className="w-4 h-4 mr-1" />
+              View Analytics
+            </Link>
+            
+            <Link
               to={`/business/${business.id}/products`}
               className="w-full flex items-center justify-center px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
             >
@@ -315,6 +327,14 @@ const BusinessDashboard: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
               </svg>
               Manage Coupons
+            </Link>
+            
+            <Link
+              to={`/business/${business.id}/qr-code`}
+              className="w-full flex items-center justify-center px-3 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 transition-colors"
+            >
+              <QrCode className="w-4 h-4 mr-1" />
+              Generate QR Code
             </Link>
           </div>
         </div>

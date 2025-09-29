@@ -18,6 +18,8 @@ import ResetPassword from '../components/ResetPassword'
 import BusinessRegistration from '../components/business/BusinessRegistration'
 import BusinessDashboard from '../components/business/BusinessDashboard'
 import BusinessProfile from '../components/business/BusinessProfile'
+import BusinessAnalyticsPage from '../components/business/BusinessAnalyticsPage'
+import BusinessQRCodePage from '../components/business/BusinessQRCodePage'
 import ProductManagerPage from '../components/business/ProductManagerPage'
 import CouponManagerPage from '../components/business/CouponManagerPage'
 
@@ -42,6 +44,12 @@ const UnifiedFavoritesPage = lazy(() => import('../components/favorites/UnifiedF
 
 // Debug components (only in development) - Minimal set for essential testing
 const FavoritesSystemTest = lazy(() => import('../components/debug/FavoritesSystemTest'))
+const CheckinSystemTest = lazy(() => import('../components/debug/CheckinSystemTest'))
+const QRCodeTest = lazy(() => import('../components/debug/QRCodeTest'))
+const SimpleQRTest = lazy(() => import('../components/debug/SimpleQRTest'))
+
+// Check-in components
+const BusinessCheckinsPage = lazy(() => import('../components/checkins/BusinessCheckinsPage'))
 
 // Route definitions
 export interface RouteConfig {
@@ -191,6 +199,13 @@ export const routes: RouteConfig[] = [
     title: 'Friends - SynC',
     description: 'Manage your friends and connections'
   },
+  {
+    path: '/checkins',
+    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><BusinessCheckinsPage /></Suspense>,
+    protected: true,
+    title: 'Business Check-ins - SynC',
+    description: 'Discover nearby businesses and check in to earn rewards'
+  },
   // Business Routes
   {
     path: '/business/register',
@@ -221,6 +236,20 @@ export const routes: RouteConfig[] = [
     description: 'Edit your business profile'
   },
   {
+    path: '/business/:businessId/analytics',
+    element: <BusinessAnalyticsPage />,
+    protected: true,
+    title: 'Business Analytics - SynC',
+    description: 'View detailed business analytics and check-in statistics'
+  },
+  {
+    path: '/business/:businessId/qr-code',
+    element: <BusinessQRCodePage />,
+    protected: true,
+    title: 'QR Code Generator - SynC',
+    description: 'Generate QR codes for customer check-ins'
+  },
+  {
     path: '/business/:businessId/products',
     element: <ProductManagerPage />,
     protected: true,
@@ -243,6 +272,24 @@ const debugRoutes: RouteConfig[] = [
     element: <Suspense fallback={<div>Loading...</div>}><FavoritesSystemTest /></Suspense>,
     protected: true,
     title: 'Debug - Favorites System Test Suite'
+  },
+  {
+    path: '/debug/checkins/test',
+    element: <Suspense fallback={<div>Loading...</div>}><CheckinSystemTest /></Suspense>,
+    protected: true,
+    title: 'Debug - Check-ins System Test Suite'
+  },
+  {
+    path: '/debug/qrcode/test',
+    element: <Suspense fallback={<div>Loading...</div>}><QRCodeTest /></Suspense>,
+    protected: true,
+    title: 'Debug - QR Code Generation Test Suite'
+  },
+  {
+    path: '/debug/qrcode/simple',
+    element: <Suspense fallback={<div>Loading...</div>}><SimpleQRTest /></Suspense>,
+    protected: true,
+    title: 'Debug - Simple QR Code Test'
   }
 ]
 

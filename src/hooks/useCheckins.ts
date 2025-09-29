@@ -1,0 +1,489 @@
+// src/hooks/useCheckins.ts
+// Comprehensive hook for GPS check-in functionality
+
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '../lib/supabase';
+import { useAuthStore } from '../store/authStore';
+import { toast } from 'react-hot-toast';
+
+export interface CheckinData {
+  id: string;
+  business_id: string;
+  user_id: string;
+  user_latitude: number;
+  user_longitude: number;
+  distance_from_business: number;
+  verified: boolean;
+  verification_method: 'gps' | 'qr_code' | 'manual';
+  checked_in_at: string;
+  business?: {
+    id: string;
+    business_name: string;
+    address: string;
+    latitude: number;
+    longitude: number;
+  };
+}
+
+export interface NearbyBusiness {
+  id: string;
+  business_name: string;
+  business_type: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  distance: number;
+  total_checkins: number;
+  status: string;
+  logo_url?: string;
+}
+
+export interface LocationState {
+  latitude: number | null;
+  longitude: number | null;
+  accuracy: number | null;
+  error: string | null;
+  isLoading: boolean;
+  hasPermission: boolean;
+  isSupported: boolean;
+}
+
+export interface UseCheckinsReturn {
+  // Location state
+  location: LocationState;
+  
+  // Check-in data
+  userCheckins: CheckinData[];
+  nearbyBusinesses: NearbyBusiness[];
+  
+  // Loading states
+  isCheckingIn: boolean;
+  isLoadingCheckins: boolean;
+  isLoadingNearby: boolean;
+  
+  // Functions
+  requestLocation: () => Promise<void>;
+  performCheckin: (businessId: string) => Promise<CheckinData | null>;
+  getNearbyBusinesses: (radiusKm?: number) => Promise<NearbyBusiness[]>;
+  getUserCheckins: (limit?: number) => Promise<CheckinData[]>;
+  getBusinessCheckins: (businessId: string) => Promise<CheckinData[]>;
+  calculateDistance: (lat1: number, lon1: number, lat2: number, lon2: number) => number;
+  canCheckIn: (business: NearbyBusiness) => boolean;
+  getLastCheckin: (businessId: string) => CheckinData | null;
+}
+
+const MAX_CHECKIN_DISTANCE = 100; // meters
+const MIN_ACCURACY = process.env.NODE_ENV === 'development' ? 5000 : 200; // 5km for dev, 200m for production
+const CHECKIN_COOLDOWN = 60 * 60 * 1000; // 1 hour in milliseconds
+
+export const useCheckins = (): UseCheckinsReturn => {
+  const { user } = useAuthStore();
+  
+  // Location state
+  const [location, setLocation] = useState<LocationState>({
+    latitude: null,
+    longitude: null,
+    accuracy: null,
+    error: null,
+    isLoading: false,
+    hasPermission: false,
+    isSupported: !!navigator.geolocation,
+  });
+  
+  // Check-in data
+  const [userCheckins, setUserCheckins] = useState<CheckinData[]>([]);
+  const [nearbyBusinesses, setNearbyBusinesses] = useState<NearbyBusiness[]>([]);
+  
+  // Loading states
+  const [isCheckingIn, setIsCheckingIn] = useState(false);
+  const [isLoadingCheckins, setIsLoadingCheckins] = useState(false);
+  const [isLoadingNearby, setIsLoadingNearby] = useState(false);
+
+  // Haversine formula for distance calculation (improved accuracy)
+  const calculateDistance = useCallback((lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371000; // Earth's radius in meters
+    const φ1 = lat1 * Math.PI / 180; // φ, λ in radians
+    const φ2 = lat2 * Math.PI / 180;
+    const Δφ = (lat2 - lat1) * Math.PI / 180;
+    const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ/2) * Math.sin(Δλ/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+    return R * c; // Distance in meters
+  }, []);
+
+  // Request location permission and get current position
+  const requestLocation = useCallback(async (): Promise<void> => {
+    if (!navigator.geolocation) {
+      setLocation(prev => ({
+        ...prev,
+        error: 'Geolocation is not supported by this browser',
+        isSupported: false,
+      }));
+      return;
+    }
+
+    setLocation(prev => ({ ...prev, isLoading: true, error: null }));
+
+    return new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude, accuracy } = position.coords;
+          
+          setLocation({
+            latitude,
+            longitude,
+            accuracy,
+            error: null,
+            isLoading: false,
+            hasPermission: true,
+            isSupported: true,
+          });
+          
+          console.log('📍 [useCheckins] Location acquired:', { latitude, longitude, accuracy });
+          resolve();
+        },
+        (error) => {
+          let errorMessage = 'Failed to get location';
+          
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage = 'Location access denied. Please enable location permissions.';
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage = 'Location information unavailable.';
+              break;
+            case error.TIMEOUT:
+              errorMessage = 'Location request timeout.';
+              break;
+            default:
+              errorMessage = 'An unknown location error occurred.';
+              break;
+          }
+          
+          setLocation(prev => ({
+            ...prev,
+            error: errorMessage,
+            isLoading: false,
+            hasPermission: false,
+          }));
+          
+          console.error('📍 [useCheckins] Location error:', error);
+          reject(new Error(errorMessage));
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 15000,
+          maximumAge: 300000, // 5 minutes
+        }
+      );
+    });
+  }, []);
+
+  // Get nearby businesses within specified radius
+  const getNearbyBusinesses = useCallback(async (radiusKm: number = 5): Promise<NearbyBusiness[]> => {
+    if (!location.latitude || !location.longitude) {
+      throw new Error('Location not available');
+    }
+    
+    setIsLoadingNearby(true);
+    
+    try {
+      const { data, error } = await supabase.rpc('nearby_businesses', {
+        user_lat: location.latitude,
+        user_lng: location.longitude,
+        radius_km: radiusKm,
+        result_limit: 50,
+      });
+      
+      if (error) {
+        console.error('Error fetching nearby businesses:', error);
+        
+        // Fallback: manual distance calculation
+        const { data: businesses, error: fallbackError } = await supabase
+          .from('businesses')
+          .select(`
+            id,
+            business_name,
+            business_type,
+            address,
+            latitude,
+            longitude,
+            total_checkins,
+            status,
+            logo_url
+          `)
+          .eq('status', 'active')
+          .not('latitude', 'is', null)
+          .not('longitude', 'is', null);
+        
+        if (fallbackError) throw fallbackError;
+        
+        const nearbyWithDistance = businesses
+          .map(business => ({
+            ...business,
+            distance: calculateDistance(
+              location.latitude!,
+              location.longitude!,
+              business.latitude,
+              business.longitude
+            ),
+          }))
+          .filter(business => business.distance <= radiusKm * 1000)
+          .sort((a, b) => a.distance - b.distance);
+        
+        setNearbyBusinesses(nearbyWithDistance);
+        return nearbyWithDistance;
+      }
+      
+      // Add distance to each business
+      const businessesWithDistance = data.map(business => ({
+        ...business,
+        distance: calculateDistance(
+          location.latitude!,
+          location.longitude!,
+          business.latitude,
+          business.longitude
+        ),
+      }));
+      
+      setNearbyBusinesses(businessesWithDistance);
+      return businessesWithDistance;
+    } catch (error) {
+      console.error('Error getting nearby businesses:', error);
+      toast.error('Failed to load nearby businesses');
+      return [];
+    } finally {
+      setIsLoadingNearby(false);
+    }
+  }, [location.latitude, location.longitude, calculateDistance]);
+
+  // Check if user can check in to a business
+  const canCheckIn = useCallback((business: NearbyBusiness): boolean => {
+    // Check distance
+    if (business.distance > MAX_CHECKIN_DISTANCE) {
+      return false;
+    }
+    
+    // Check location accuracy
+    if (location.accuracy && location.accuracy > MIN_ACCURACY) {
+      return false;
+    }
+    
+    // Check cooldown period
+    const lastCheckin = getLastCheckin(business.id);
+    if (lastCheckin) {
+      const timeSinceLastCheckin = Date.now() - new Date(lastCheckin.checked_in_at).getTime();
+      if (timeSinceLastCheckin < CHECKIN_COOLDOWN) {
+        return false;
+      }
+    }
+    
+    return true;
+  }, [location.accuracy]);
+
+  // Get last check-in for a business
+  const getLastCheckin = useCallback((businessId: string): CheckinData | null => {
+    return userCheckins
+      .filter(checkin => checkin.business_id === businessId)
+      .sort((a, b) => new Date(b.checked_in_at).getTime() - new Date(a.checked_in_at).getTime())[0] || null;
+  }, [userCheckins]);
+
+  // Perform check-in
+  const performCheckin = useCallback(async (businessId: string): Promise<CheckinData | null> => {
+    if (!user?.id) {
+      toast.error('Please log in to check in');
+      return null;
+    }
+    
+    if (!location.latitude || !location.longitude) {
+      toast.error('Location not available');
+      return null;
+    }
+    
+    // Find the business
+    const business = nearbyBusinesses.find(b => b.id === businessId);
+    if (!business) {
+      toast.error('Business not found');
+      return null;
+    }
+    
+    // Check if user can check in
+    if (!canCheckIn(business)) {
+      if (business.distance > MAX_CHECKIN_DISTANCE) {
+        toast.error(`You're too far from ${business.business_name}. Please get closer to check in.`);
+      } else {
+        toast.error(`You've already checked in recently. Please wait before checking in again.`);
+      }
+      return null;
+    }
+    
+    setIsCheckingIn(true);
+    
+    try {
+      const distance = calculateDistance(
+        location.latitude,
+        location.longitude,
+        business.latitude,
+        business.longitude
+      );
+      
+      const checkinData = {
+        business_id: businessId,
+        user_id: user.id,
+        user_latitude: location.latitude,
+        user_longitude: location.longitude,
+        distance_from_business: distance,
+        verified: distance <= MAX_CHECKIN_DISTANCE,
+        verification_method: 'gps' as const,
+      };
+      
+      const { data, error } = await supabase
+        .from('business_checkins')
+        .insert([checkinData])
+        .select(`
+          *,
+          business:businesses (
+            id,
+            business_name,
+            address,
+            latitude,
+            longitude
+          )
+        `)
+        .single();
+      
+      if (error) throw error;
+      
+      // Update business check-in count
+      await supabase
+        .from('businesses')
+        .update({ 
+          total_checkins: (business.total_checkins || 0) + 1 
+        })
+        .eq('id', businessId);
+      
+      // Update local state
+      setUserCheckins(prev => [data, ...prev]);
+      setNearbyBusinesses(prev => 
+        prev.map(b => 
+          b.id === businessId 
+            ? { ...b, total_checkins: (b.total_checkins || 0) + 1 }
+            : b
+        )
+      );
+      
+      toast.success(`Successfully checked in to ${business.business_name}! 🎉`);
+      
+      // Analytics tracking
+      if (typeof gtag !== 'undefined') {
+        gtag('event', 'check_in', {
+          event_category: 'engagement',
+          event_label: business.business_name,
+          business_type: business.business_type,
+          distance: Math.round(distance),
+        });
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Check-in error:', error);
+      toast.error('Failed to check in. Please try again.');
+      return null;
+    } finally {
+      setIsCheckingIn(false);
+    }
+  }, [user?.id, location.latitude, location.longitude, nearbyBusinesses, canCheckIn, calculateDistance]);
+
+  // Get user's check-in history
+  const getUserCheckins = useCallback(async (limit: number = 20): Promise<CheckinData[]> => {
+    if (!user?.id) return [];
+    
+    setIsLoadingCheckins(true);
+    
+    try {
+      const { data, error } = await supabase
+        .from('business_checkins')
+        .select(`
+          *,
+          business:businesses (
+            id,
+            business_name,
+            address,
+            latitude,
+            longitude
+          )
+        `)
+        .eq('user_id', user.id)
+        .order('checked_in_at', { ascending: false })
+        .limit(limit);
+      
+      if (error) throw error;
+      
+      setUserCheckins(data || []);
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching user check-ins:', error);
+      toast.error('Failed to load check-in history');
+      return [];
+    } finally {
+      setIsLoadingCheckins(false);
+    }
+  }, [user?.id]);
+
+  // Get check-ins for a specific business (for business owners)
+  const getBusinessCheckins = useCallback(async (businessId: string): Promise<CheckinData[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('business_checkins')
+        .select(`
+          *,
+          business:businesses (
+            id,
+            business_name,
+            address,
+            latitude,
+            longitude
+          )
+        `)
+        .eq('business_id', businessId)
+        .order('checked_in_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching business check-ins:', error);
+      return [];
+    }
+  }, []);
+
+  // Load user check-ins on mount
+  useEffect(() => {
+    if (user?.id) {
+      getUserCheckins();
+    }
+  }, [user?.id, getUserCheckins]);
+
+  return {
+    location,
+    userCheckins,
+    nearbyBusinesses,
+    isCheckingIn,
+    isLoadingCheckins,
+    isLoadingNearby,
+    requestLocation,
+    performCheckin,
+    getNearbyBusinesses,
+    getUserCheckins,
+    getBusinessCheckins,
+    calculateDistance,
+    canCheckIn,
+    getLastCheckin,
+  };
+};
+
+export default useCheckins;
