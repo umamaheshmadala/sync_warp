@@ -33,22 +33,14 @@ const LocationManager = lazy(() => import('../components/LocationManager'))
 const Settings = lazy(() => import('../components/Settings'))
 const Wallet = lazy(() => import('../components/Wallet'))
 const Social = lazy(() => import('../components/Social'))
-const SimpleFavoritesPage = lazy(() => import('../components/favorites/SimpleFavoritesPage'))
-
 // Story 4.4 components
 const AdvancedSearchPage = lazy(() => import('../components/search/AdvancedSearchPage'))
 const BusinessDiscoveryPage = lazy(() => import('../components/discovery/BusinessDiscoveryPage'))
 const CategoryBrowserPage = lazy(() => import('../components/categories/CategoryBrowserPage'))
 const TrendingCouponsPage = lazy(() => import('../components/coupons/TrendingCouponsPage'))
-const FallbackEnhancedFavoritesPage = lazy(() => import('../components/favorites/FallbackEnhancedFavoritesPage'));
 const UnifiedFavoritesPage = lazy(() => import('../components/favorites/UnifiedFavoritesPage'));
 
-// Debug components (only in development)
-const SignUpDebug = lazy(() => import('../components/SignUpDebug'))
-const AuthStoreTest = lazy(() => import('../components/AuthStoreTest'))
-const RouteProtectionTest = lazy(() => import('../components/RouteProtectionTest'))
-const ProductsDebug = lazy(() => import('../components/debug/ProductsDebug'))
-const FavoritesLocationDebug = lazy(() => import('../components/debug/FavoritesLocationDebug'))
+// Debug components (only in development) - Minimal set for essential testing
 const FavoritesSystemTest = lazy(() => import('../components/debug/FavoritesSystemTest'))
 
 // Route definitions
@@ -193,27 +185,6 @@ export const routes: RouteConfig[] = [
     description: 'Your saved businesses, coupons, and deals with unified state management'
   },
   {
-    path: '/favorites/simple',
-    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><SimpleFavoritesPage /></Suspense>,
-    protected: true,
-    title: 'Simple Favorites - SynC',
-    description: 'Basic favorites management'
-  },
-  {
-    path: '/favorites/unified',
-    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><UnifiedFavoritesPage /></Suspense>,
-    protected: true,
-    title: 'Unified Favorites - SynC',
-    description: 'Advanced favorites with unified state management and real-time synchronization'
-  },
-  {
-    path: '/favorites/fallback',
-    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><FallbackEnhancedFavoritesPage /></Suspense>,
-    protected: true,
-    title: 'Fallback Favorites - SynC',
-    description: 'Fallback favorites page using the original system'
-  },
-  {
     path: '/friends',
     element: <FriendsManagementPage />,
     protected: true,
@@ -265,35 +236,8 @@ export const routes: RouteConfig[] = [
   }
 ]
 
-// Debug routes (only in development)
+// Debug routes (only in development) - Minimal debug routes for essential testing
 const debugRoutes: RouteConfig[] = [
-  {
-    path: '/debug/signup',
-    element: <Suspense fallback={<div>Loading...</div>}><SignUpDebug /></Suspense>,
-    title: 'Debug - Sign Up'
-  },
-  {
-    path: '/debug/auth',
-    element: <Suspense fallback={<div>Loading...</div>}><AuthStoreTest /></Suspense>,
-    title: 'Debug - Auth Store'
-  },
-  {
-    path: '/debug/routes',
-    element: <Suspense fallback={<div>Loading...</div>}><RouteProtectionTest /></Suspense>,
-    title: 'Debug - Route Protection Tests'
-  },
-  {
-    path: '/debug/products',
-    element: <Suspense fallback={<div>Loading...</div>}><ProductsDebug /></Suspense>,
-    protected: true,
-    title: 'Debug - Products & Database'
-  },
-  {
-    path: '/debug/favorites',
-    element: <Suspense fallback={<div>Loading...</div>}><FavoritesLocationDebug /></Suspense>,
-    protected: true,
-    title: 'Debug - Favorites & Location'
-  },
   {
     path: '/debug/favorites/test',
     element: <Suspense fallback={<div>Loading...</div>}><FavoritesSystemTest /></Suspense>,
