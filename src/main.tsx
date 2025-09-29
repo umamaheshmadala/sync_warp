@@ -3,8 +3,7 @@ import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 
-// Import debug utilities for development
-import './utils/testCouponCreation'
+// Import search service
 import searchService from './services/searchService'
 
 // Make search service available globally during development

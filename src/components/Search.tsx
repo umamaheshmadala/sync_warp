@@ -10,7 +10,6 @@ import { useSearchTracking } from '../hooks/useSearchAnalytics'
 import { CouponCard, BusinessCard, FilterPanel, SearchSuggestions } from './search/index'
 import { SearchSortField } from '../services/searchService'
 import { useAuthStore } from '../store/authStore'
-import LocationTester from './debug/LocationTester'
 
 export default function Search() {
   const navigate = useNavigate();
@@ -199,9 +198,6 @@ export default function Search() {
           </div>
         </div>
       </div>
-      
-      {/* Debug Component - Remove in production */}
-      {process.env.NODE_ENV === 'development' && <LocationTester />}
 
       {/* Search Form */}
       <div className="mb-8">

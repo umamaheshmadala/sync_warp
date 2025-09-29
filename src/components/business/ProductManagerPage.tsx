@@ -4,7 +4,6 @@ import { ArrowLeft, Home, ChevronRight, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
 import ProductManager from './ProductManager';
-import ReloadDebugger from '../debug/ReloadDebugger';
 
 interface Business {
   id: string;
@@ -141,7 +140,6 @@ const ProductManagerPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <ReloadDebugger pageName="ProductManagerPage" enabled={true} />
       {/* Navigation Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
