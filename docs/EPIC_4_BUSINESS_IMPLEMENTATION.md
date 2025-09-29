@@ -210,10 +210,7 @@ Updated `src/router/Router.tsx` with new business routes:
 ## Next Steps
 
 ### Epic 4 Remaining Stories
-1. **Story 4.2**: Product/Service Catalog
-2. **Story 4.3**: Coupon Management (with merchant redemption)
-3. **Story 4.4**: Search & Discovery (with favorites/wishlist)
-4. **Story 4.6**: GPS Check-in System
+1. **Story 4.6**: GPS Check-in System
 
 ### Epic 5 Integration
 - Binary review system implementation
@@ -296,12 +293,12 @@ docs/
 ✅ **COMPLETED**: Epic 4 Story 4.1 - Business Registration & Profiles  
 ✅ **COMPLETED**: Epic 4 Story 4.2 - Product Catalog Management  
 ✅ **COMPLETED**: Epic 4 Story 4.3 - Coupon Creation & Management  
+✅ **COMPLETED**: Epic 4 Story 4.4 - Search & Discovery + Favorites/Wishlist Management
 ✅ **COMPLETED**: Epic 4 Story 4.5 - Storefront Pages  
 
-**Epic 4 Progress**: 4/6 Stories Complete (67%)
+**Epic 4 Progress**: 5/6 Stories Complete (83%)
 
 **Remaining Stories**:
-- ⚪ Story 4.4 - Search & Discovery + Favorites/Wishlist Management
 - ⚪ Story 4.6 - GPS Check-in System
 
 This implementation provides a **comprehensive business platform** with registration, profiles, product management, and coupon systems. The platform is **production-ready** and suitable for real business usage.
