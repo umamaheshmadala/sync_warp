@@ -199,7 +199,7 @@ export function useRateLimitStatus(endpoint: string) {
     ...rateLimitHook,
     statusMessage,
     resetTimeFormatted,
-    shouldShowWarning: remainingRequests !== null && remainingRequests <= 5,
+    shouldShowWarning: !isRateLimited && remainingRequests !== null && remainingRequests <= 5,
     shouldShowError: isRateLimited
   };
 }

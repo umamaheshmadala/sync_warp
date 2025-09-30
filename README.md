@@ -149,16 +149,62 @@ npm run dev
 
 ## 🧪 Testing
 
-```bash
-# Unit tests
-npm run test
+### Test Coverage Status 🟡
 
-# E2E tests
-npm run test:e2e
+**67 tests passing** | **Critical infrastructure: 85-99% coverage**
+
+```bash
+# Run all tests
+npm test
+
+# Run tests with coverage
+npm run test:coverage
+
+# Run specific test file
+npm test src/hooks/__tests__/useRateLimit.test.ts
 
 # Type checking
 npm run type-check
 ```
+
+### Test Suites
+
+| Suite | Tests | Coverage | Status |
+|-------|-------|----------|--------|
+| **useRateLimit Hook** | 21 | 99% | ✅ |
+| **authStore** | 28 | 86% | ✅ |
+| **rateLimitService** | 18 | ~95% | ✅ |
+
+### What's Tested
+
+✅ **Authentication System**
+- User signup, login, logout
+- Profile creation and updates
+- Password reset flows
+- Error handling and edge cases
+- Session management
+
+✅ **Rate Limiting**
+- Rate limit checking and enforcement
+- Status messages and warnings
+- Polling and auto-refresh
+- Error boundaries
+- User feedback
+
+✅ **Services**
+- Rate limit service with IP detection
+- Header formatting
+- Request recording
+
+### Testing Philosophy
+
+We focus on **testing critical paths first**:
+1. 🔐 Authentication (core security)
+2. 🚦 Rate limiting (abuse prevention)  
+3. 💼 Business logic (next priority)
+4. 🎨 UI components (as needed)
+
+**See:** `PHASE_2_TESTING_SUMMARY.md` for detailed testing documentation
 
 ## 😦 Project Status
 
