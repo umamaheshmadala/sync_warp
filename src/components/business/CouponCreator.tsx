@@ -29,6 +29,9 @@ import { useCoupons } from '../../hooks/useCoupons';
 import useCouponDrafts, { DraftFormData } from '../../hooks/useCouponDrafts';
 import { useAuthStore } from '../../store/authStore';
 import { toast } from 'react-hot-toast';
+import { useRateLimit } from '../../hooks/useRateLimit';
+import { RateLimitBanner } from '../common/RateLimitBanner';
+import { RateLimitError } from '../../services/rateLimitService';
 
 interface CouponCreatorProps {
   businessId: string;
@@ -62,6 +65,12 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
   const [showDrafts, setShowDrafts] = useState(false);
   const [draftName, setDraftName] = useState('');
   const [showSaveDraftDialog, setShowSaveDraftDialog] = useState(false);
+  
+  // Rate limiting
+  const { enforceRateLimit, isRateLimited } = useRateLimit({
+    endpoint: isEditing ? 'coupons/update' : 'coupons/create',
+    autoCheck: true
+  });
   
   const isEditing = !!editingCoupon;
   
@@ -446,6 +455,22 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
   };
 
   const onSubmit = async (data: CouponFormData) => {
+    // Check rate limit first
+    try {
+      await enforceRateLimit();
+    } catch (error) {
+      if (error instanceof RateLimitError) {
+        const minutes = error.retryAfter ? Math.ceil(error.retryAfter / 60) : 1;
+        toast.error(
+          `Rate limit exceeded. Please try again in ${minutes} minute${minutes !== 1 ? 's' : ''}.`,
+          { duration: 5000 }
+        );
+        return;
+      }
+      // Other errors are logged but don't block submission
+      console.warn('Rate limit check failed:', error);
+    }
+    
     // Final validation before submitting
     const validationErrors = [
       ...(!data.title?.trim() ? ['Coupon title is required'] : []),
@@ -1169,6 +1194,16 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
             })}
           </div>
         </div>
+
+        {/* Rate Limit Banner */}
+        {currentStep === steps.length && (
+          <div className="px-6 pt-4">
+            <RateLimitBanner 
+              endpoint={isEditing ? 'coupons/update' : 'coupons/create'}
+              className="mb-0"
+            />
+          </div>
+        )}
 
         {/* Content */}
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col h-full">

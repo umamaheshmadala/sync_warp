@@ -31,6 +31,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
 import { toast } from 'react-hot-toast';
 import { TiltedCard, AnimatedList, MagicBento, GlassCard } from '../ui';
+import { SectionErrorBoundary, ComponentErrorBoundary } from '../error';
 
 // TypeScript interfaces
 interface Business {

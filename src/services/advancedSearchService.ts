@@ -374,7 +374,7 @@ class AdvancedSearchService {
     }
   }
 
-  // Get business categories with counts
+  // Get business categories
   async getBusinessCategories(): Promise<Array<{
     name: string;
     count: number;
@@ -382,237 +382,43 @@ class AdvancedSearchService {
     icon?: string;
   }>> {
     try {
-      const { data, error } = await supabase
-        .from('businesses')
-        .select('category')
-        .eq('status', 'active');
+      // Use real database function that returns accurate counts
+      const { data, error} = await supabase.rpc('get_business_categories_with_counts');
 
-      if (error) throw error;
-
-      if (data && data.length > 0) {
-        // Count categories
-        const categoryCounts: Record<string, number> = {};
-        data.forEach(business => {
-          categoryCounts[business.category] = (categoryCounts[business.category] || 0) + 1;
-        });
-
-        // Get category details
-        const { data: categoryDetails, error: categoryError } = await supabase
-          .from('business_categories')
-          .select('*');
-
-        if (categoryError) console.warn('Category details error:', categoryError);
-
-        // Combine counts with details
-        return Object.entries(categoryCounts)
-          .map(([name, count]) => {
-            const details = categoryDetails?.find(cat => cat.name === name);
-            return {
-              name,
-              count,
-              description: details?.description,
-              icon: details?.icon
-            };
-          })
-          .sort((a, b) => b.count - a.count);
+      if (error) {
+        console.error('Get business categories error:', error);
+        throw new Error('Failed to fetch business categories');
       }
 
-      // Fallback to mock categories
-      return this.getMockCategories();
+      // Return data or empty array if no categories found
+      return data || [];
     } catch (error) {
       console.error('Get business categories error:', error);
-      // Return mock data instead of throwing error
-      return this.getMockCategories();
+      // Return empty array instead of mock data
+      return [];
     }
-  }
-  
-  // Mock categories for fallback
-  private getMockCategories(): Array<{
-    name: string;
-    count: number;
-    description?: string;
-    icon?: string;
-  }> {
-    return [
-      {
-        name: 'Restaurant',
-        count: 1,
-        description: 'Restaurants, cafes, and dining establishments',
-        icon: '🍽️'
-      },
-      {
-        name: 'Café',
-        count: 1,
-        description: 'Coffee shops and casual dining',
-        icon: '☕'
-      },
-      {
-        name: 'Wellness',
-        count: 1,
-        description: 'Spas, salons, and wellness centers',
-        icon: '🧘'
-      },
-      {
-        name: 'Electronics',
-        count: 1,
-        description: 'Tech stores and electronics retailers',
-        icon: '📱'
-      },
-      {
-        name: 'Retail',
-        count: 0,
-        description: 'Shopping and retail stores',
-        icon: '🛍️'
-      },
-      {
-        name: 'Services',
-        count: 0,
-        description: 'Professional and personal services',
-        icon: '🔧'
-      }
-    ].sort((a, b) => b.count - a.count);
   }
 
   // Search trending coupons
   async getTrendingCoupons(limit: number = 10): Promise<CouponSearchResult[]> {
     try {
-      // Skip database query for now and use mock data directly
-      // TODO: Re-enable when database schema is fixed
-      console.log('Using mock trending coupons data');
-      return this.getMockTrendingCoupons(limit);
-      
-      /* Commented out until database schema is complete
-      const { data, error } = await supabase
-        .from('coupons')
-        .select(`
-          *,
-          businesses!inner(id, name, logo_url)
-        `)
-        .eq('status', 'active')
-        .gte('valid_until', new Date().toISOString())
-        .order('used_count', { ascending: false })
-        .limit(limit);
+      // Use real database function
+      const { data, error } = await supabase.rpc('get_trending_coupons', {
+        result_limit: limit
+      });
 
-      if (error) throw error;
-
-      if (data && data.length > 0) {
-        return (data || []).map(coupon => ({
-          ...coupon,
-          business_name: coupon.businesses.name,
-          business_logo: coupon.businesses.logo_url,
-          is_trending: true,
-          popularity_score: coupon.used_count || 0
-        }));
+      if (error) {
+        console.error('Get trending coupons error:', error);
+        throw new Error('Failed to fetch trending coupons');
       }
-      */
+
+      // Return data or empty array if no coupons found
+      return data || [];
     } catch (error) {
       console.error('Get trending coupons error:', error);
-      // Return mock data instead of throwing error
-      return this.getMockTrendingCoupons(limit);
+      // Return empty array instead of mock data
+      return [];
     }
-  }
-
-  // Mock trending coupons for fallback
-  private getMockTrendingCoupons(limit: number = 10): CouponSearchResult[] {
-    const mockCoupons: CouponSearchResult[] = [
-      {
-        id: 'mock-1',
-        title: '50% Off All Pizzas',
-        description: 'Get 50% discount on all pizza varieties. Valid for dine-in and takeout.',
-        discount_type: 'percentage',
-        discount_value: 50,
-        minimum_order_value: 500,
-        usage_limit: 100,
-        used_count: 45,
-        valid_until: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
-        status: 'active',
-        business_id: 'mock-biz-1',
-        business_name: "Mario's Pizza Palace",
-        business_logo: '/api/placeholder/100/100',
-        is_trending: true,
-        popularity_score: 45,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      },
-      {
-        id: 'mock-2',
-        title: 'Buy 2 Get 1 Free Coffee',
-        description: 'Perfect deal for coffee lovers! Buy any 2 beverages and get 1 free.',
-        discount_type: 'buy_x_get_y',
-        discount_value: 2,
-        minimum_order_value: 300,
-        usage_limit: 50,
-        used_count: 38,
-        valid_until: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days from now
-        status: 'active',
-        business_id: 'mock-biz-2',
-        business_name: 'Brew & Bean Café',
-        business_logo: '/api/placeholder/100/100',
-        is_trending: true,
-        popularity_score: 38,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      },
-      {
-        id: 'mock-3',
-        title: '₹200 Off Spa Services',
-        description: 'Relax and rejuvenate with ₹200 off on all spa and wellness treatments.',
-        discount_type: 'fixed_amount',
-        discount_value: 200,
-        minimum_order_value: 1000,
-        usage_limit: 30,
-        used_count: 22,
-        valid_until: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days from now
-        status: 'active',
-        business_id: 'mock-biz-3',
-        business_name: 'Serenity Spa & Wellness',
-        business_logo: '/api/placeholder/100/100',
-        is_trending: true,
-        popularity_score: 22,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      },
-      {
-        id: 'mock-4',
-        title: '30% Off Electronics',
-        description: 'Huge savings on smartphones, laptops, and accessories. Limited time offer!',
-        discount_type: 'percentage',
-        discount_value: 30,
-        minimum_order_value: 2000,
-        usage_limit: 25,
-        used_count: 18,
-        valid_until: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days from now
-        status: 'active',
-        business_id: 'mock-biz-4',
-        business_name: 'TechMart Electronics',
-        business_logo: '/api/placeholder/100/100',
-        is_trending: true,
-        popularity_score: 18,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      },
-      {
-        id: 'mock-5',
-        title: 'Free Dessert with Main Course',
-        description: 'Order any main course and get a complimentary dessert of your choice.',
-        discount_type: 'free_item',
-        discount_value: 0,
-        minimum_order_value: 400,
-        usage_limit: 75,
-        used_count: 35,
-        valid_until: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(), // 10 days from now
-        status: 'active',
-        business_id: 'mock-biz-5',
-        business_name: 'The Garden Restaurant',
-        business_logo: '/api/placeholder/100/100',
-        is_trending: true,
-        popularity_score: 35,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
-    ];
-
-    return mockCoupons.slice(0, Math.min(limit, mockCoupons.length));
   }
 
   // Get search suggestions
