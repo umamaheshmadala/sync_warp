@@ -5,12 +5,16 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, AlertCircle, Loader } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import ReviewCard from './ReviewCard';
 import ReviewFilters from './ReviewFilters';
 import ReviewStats from './ReviewStats';
+import ReviewResponseForm from './ReviewResponseForm';
 import { useReviews } from '../../hooks/useReviews';
 import { useReviewStats } from '../../hooks/useReviewStats';
-import type { ReviewFilters as ReviewFiltersType } from '../../types/review';
+import { useAuthStore } from '../../store/authStore';
+import { createResponse, updateResponse } from '../../services/reviewService';
+import type { ReviewFilters as ReviewFiltersType, CreateResponseInput, UpdateResponseInput } from '../../types/review';
 
 interface BusinessReviewsProps {
   businessId: string;
@@ -20,6 +24,7 @@ interface BusinessReviewsProps {
   showStats?: boolean;
   showFilters?: boolean;
   realtime?: boolean;
+  isBusinessOwner?: boolean;
 }
 
 export default function BusinessReviews({
@@ -30,10 +35,20 @@ export default function BusinessReviews({
   showStats = true,
   showFilters = true,
   realtime = true,
+  isBusinessOwner = false,
 }: BusinessReviewsProps) {
+  const { user } = useAuthStore();
   const [filters, setFilters] = useState<ReviewFiltersType>({
     sort_by: 'newest',
   });
+
+  // Response modal state
+  const [responseModal, setResponseModal] = useState<{
+    reviewId: string;
+    businessId: string;
+    existingResponse?: { id: string; response_text: string };
+  } | null>(null);
+  const [isSubmittingResponse, setIsSubmittingResponse] = useState(false);
 
   // Load reviews with filters
   const {
@@ -61,6 +76,46 @@ export default function BusinessReviews({
       onDelete?.(reviewId);
     } catch (err) {
       console.error('Delete error:', err);
+    }
+  };
+
+  // Handle opening response modal
+  const handleRespond = (
+    reviewId: string,
+    businessId: string,
+    existingResponse?: { id: string; response_text: string }
+  ) => {
+    setResponseModal({ reviewId, businessId, existingResponse });
+  };
+
+  // Handle submitting response
+  const handleResponseSubmit = async (data: CreateResponseInput | UpdateResponseInput) => {
+    if (!responseModal) return;
+
+    setIsSubmittingResponse(true);
+
+    try {
+      if (responseModal.existingResponse) {
+        // Update existing response
+        await updateResponse(
+          responseModal.existingResponse.id,
+          data as UpdateResponseInput
+        );
+        toast.success('Response updated successfully!');
+      } else {
+        // Create new response
+        await createResponse(data as CreateResponseInput);
+        toast.success('Response posted successfully!');
+      }
+
+      setResponseModal(null);
+      // Trigger refetch of reviews to show new/updated response
+      window.location.reload(); // Simple approach - can be improved with state management
+    } catch (error) {
+      console.error('Error submitting response:', error);
+      throw error; // Let the form handle error display
+    } finally {
+      setIsSubmittingResponse(false);
     }
   };
 
@@ -117,6 +172,8 @@ export default function BusinessReviews({
                 review={review}
                 onEdit={onEdit}
                 onDelete={handleDelete}
+                onRespond={handleRespond}
+                isBusinessOwner={isBusinessOwner}
               />
             ))
           ) : (
@@ -151,6 +208,30 @@ export default function BusinessReviews({
           </p>
         </div>
       )}
+
+      {/* Response Modal */}
+      <AnimatePresence>
+        {responseModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+            onClick={() => setResponseModal(null)}
+          >
+            <div onClick={(e) => e.stopPropagation()}>
+              <ReviewResponseForm
+                reviewId={responseModal.reviewId}
+                businessId={responseModal.businessId}
+                existingResponse={responseModal.existingResponse}
+                onSubmit={handleResponseSubmit}
+                onCancel={() => setResponseModal(null)}
+                loading={isSubmittingResponse}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

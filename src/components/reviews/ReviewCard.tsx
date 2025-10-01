@@ -13,28 +13,34 @@ import {
   Trash2,
   MoreVertical,
   Image as ImageIcon,
+  MessageSquare,
+  Reply,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import type { BusinessReviewWithDetails } from '../../types/review';
 import { canEditReview } from '../../services/reviewService';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuthStore } from '../../store/authStore';
 
 interface ReviewCardProps {
   review: BusinessReviewWithDetails;
   onEdit?: (review: BusinessReviewWithDetails) => void;
   onDelete?: (reviewId: string) => void;
+  onRespond?: (reviewId: string, businessId: string, existingResponse?: { id: string; response_text: string }) => void;
   showBusinessName?: boolean;
   compact?: boolean;
+  isBusinessOwner?: boolean;
 }
 
 export default function ReviewCard({
   review,
   onEdit,
   onDelete,
+  onRespond,
   showBusinessName = false,
   compact = false,
+  isBusinessOwner = false,
 }: ReviewCardProps) {
-  const { user } = useAuth();
+  const { user } = useAuthStore();
   const [showMenu, setShowMenu] = useState(false);
   const [showPhoto, setShowPhoto] = useState(false);
 
@@ -65,6 +71,15 @@ export default function ReviewCard({
         ${compact ? 'p-4' : 'p-6'}
       `}
     >
+      {/* Business Name (if showing in user profile) */}
+      {showBusinessName && review.business_name && (
+        <div className="mb-3 pb-3 border-b border-gray-200">
+          <p className="text-sm font-medium text-gray-900">
+            Review for: <span className="text-blue-600">{review.business_name}</span>
+          </p>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-start gap-3 flex-1">
@@ -216,28 +231,62 @@ export default function ReviewCard({
         </div>
       )}
 
-      {/* Business Owner Response */}
-      {review.response_text && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          className="mt-4 pt-4 border-t border-gray-200"
-        >
-          <div className="bg-blue-50 rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="px-2 py-0.5 bg-blue-600 text-white text-xs font-semibold rounded">
-                OWNER
+      {/* Business Owner Response Section */}
+      <div className="mt-4 pt-4 border-t border-gray-200">
+        {review.response_text ? (
+          // Display existing response
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+          >
+            <div className="bg-blue-50 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <div className="px-2 py-0.5 bg-blue-600 text-white text-xs font-semibold rounded">
+                    OWNER
+                  </div>
+                  <span className="text-xs text-gray-500">
+                    {formatDistanceToNow(new Date(review.response_created_at!), {
+                      addSuffix: true,
+                    })}
+                  </span>
+                </div>
+                {isBusinessOwner && onRespond && (
+                  <button
+                    onClick={() => onRespond(review.id, review.business_id, {
+                      id: review.response_id!,
+                      response_text: review.response_text!,
+                    })}
+                    className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                  >
+                    <Edit2 className="w-3 h-3" />
+                    Edit
+                  </button>
+                )}
               </div>
-              <span className="text-xs text-gray-500">
-                {formatDistanceToNow(new Date(review.response_created_at!), {
-                  addSuffix: true,
-                })}
-              </span>
+              <p className="text-sm text-gray-700">{review.response_text}</p>
             </div>
-            <p className="text-sm text-gray-700">{review.response_text}</p>
-          </div>
-        </motion.div>
-      )}
+          </motion.div>
+        ) : isBusinessOwner && onRespond ? (
+          // Show "Respond" button for business owners
+          <motion.button
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => onRespond(review.id, review.business_id)}
+            className="
+              w-full flex items-center justify-center gap-2 px-4 py-3
+              bg-blue-50 hover:bg-blue-100 text-blue-600 
+              border-2 border-dashed border-blue-200 hover:border-blue-300
+              rounded-xl font-medium transition-all
+            "
+          >
+            <Reply className="w-4 h-4" />
+            Respond to this review
+          </motion.button>
+        ) : null}
+      </div>
 
       {/* Photo Modal */}
       <AnimatePresence>

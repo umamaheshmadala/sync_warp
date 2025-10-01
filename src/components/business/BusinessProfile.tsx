@@ -21,13 +21,21 @@ import {
   ArrowLeft,
   Home,
   ChevronRight,
-  Package
+  Package,
+  MessageSquare,
+  Info
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
 import { toast } from 'react-hot-toast';
 import FeaturedProducts from './FeaturedProducts';
 import GoogleMapsLocationPicker from '../maps/GoogleMapsLocationPicker';
+import BusinessReviews from '../reviews/BusinessReviews';
+import BusinessReviewForm from '../reviews/BusinessReviewForm';
+import { useUserCheckin } from '../../hooks/useUserCheckin';
+import { useReviewStats } from '../../hooks/useReviewStats';
+import { createReview } from '../../services/reviewService';
+import type { CreateReviewInput } from '../../types/review';
 
 // TypeScript interfaces
 interface Business {
@@ -83,6 +91,24 @@ const BusinessProfile: React.FC = () => {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [editingReview, setEditingReview] = useState<any>(null);
+  const [reviewsKey, setReviewsKey] = useState(0);
+
+  // Load review stats for accurate counts
+  const { stats: reviewStats, refreshStats } = useReviewStats({
+    businessId: businessId || '',
+  });
+
+  // Check if current user owns this business
+  const isOwner = user?.id === business?.user_id;
+
+  // Check if user has checked in at this business
+  const { checkin, hasCheckin, isLoading: isLoadingCheckin } = useUserCheckin(
+    businessId,
+    !isOwner && !!user?.id // Only check if user is logged in and not the owner
+  );
 
   // Proper day ordering for operating hours
   const dayOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
@@ -148,8 +174,87 @@ const BusinessProfile: React.FC = () => {
     }
   }, [businessId, navigate]);
 
-  // Check if current user owns this business
-  const isOwner = user?.id === business?.user_id;
+  // Handle review submission
+  const handleReviewSubmit = async (reviewData: CreateReviewInput) => {
+    if (!user?.id) {
+      toast.error('Please log in to submit a review');
+      return;
+    }
+
+    // TEMP: Check-in validation bypassed for desktop testing
+    // if (!hasCheckin) {
+    //   toast.error('You must check in before writing a review');
+    //   return;
+    // }
+
+    setIsSubmittingReview(true);
+
+    try {
+      await createReview(reviewData);
+      toast.success('Review submitted successfully!');
+      setShowReviewModal(false);
+      setEditingReview(null);
+      
+      // Refresh business data to update review count
+      const { data: updatedBusiness } = await supabase
+        .from('businesses')
+        .select('*')
+        .eq('id', businessId)
+        .single();
+      
+      if (updatedBusiness) {
+        setBusiness(updatedBusiness);
+      }
+      
+      // Refresh stats and trigger re-render of reviews component
+      await refreshStats();
+      setReviewsKey(prev => prev + 1);
+    } catch (error) {
+      console.error('Error submitting review:', error);
+      throw error; // Let the form handle the error display
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
+
+  // Open review modal with validation
+  const handleOpenReviewModal = () => {
+    if (!user?.id) {
+      toast.error('Please log in to write a review');
+      navigate('/login');
+      return;
+    }
+
+    if (isOwner) {
+      toast.error('You cannot review your own business');
+      return;
+    }
+
+    // TEMP: Check-in validation bypassed for desktop testing
+    // if (!hasCheckin) {
+    //   toast.error('You must check in at this business before writing a review');
+    //   return;
+    // }
+
+    setEditingReview(null);
+    setShowReviewModal(true);
+  };
+
+  // Handle edit review
+  const handleEditReview = async (review: any) => {
+    setEditingReview(review);
+    setShowReviewModal(true);
+  };
+
+  // Handle review update success
+  const handleReviewUpdateSuccess = async () => {
+    // Refresh stats and trigger re-render of reviews
+    await refreshStats();
+    setReviewsKey(prev => prev + 1);
+    setShowReviewModal(false);
+    setEditingReview(null);
+    toast.success('Review updated successfully!');
+  };
 
   // Handle form changes
   const handleFormChange = (field, value) => {
@@ -953,6 +1058,57 @@ const BusinessProfile: React.FC = () => {
     </div>
   );
 
+  // Render reviews tab
+  const renderReviews = () => (
+    <div className="space-y-4">
+      {/* Write Review Button - Only show for non-owners */}
+      {!isOwner && user && (
+        <div className="bg-white rounded-lg shadow-sm border p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                Share Your Experience
+              </h3>
+              {/* TEMP: Check-in requirement bypassed for desktop testing */}
+              {!hasCheckin ? (
+                <div className="flex items-start space-x-2 text-sm text-blue-600">
+                  <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <p>
+                    <strong>[Testing Mode]</strong> Check-in requirement temporarily disabled for desktop testing.
+                    In production, users must check in before reviewing.
+                  </p>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-600">
+                  Checked in {checkin && new Date(checkin.checked_in_at).toLocaleDateString()}
+                </p>
+              )}
+            </div>
+            <button
+              onClick={handleOpenReviewModal}
+              disabled={isLoadingCheckin}
+              className="flex items-center px-4 py-2 rounded-lg font-medium transition-colors bg-indigo-600 text-white hover:bg-indigo-700"
+              title="Write a review"
+            >
+              <MessageSquare className="w-4 h-4 mr-2" />
+              Write Review
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Reviews List */}
+      <BusinessReviews
+        key={reviewsKey}
+        businessId={businessId!}
+        businessName={business?.business_name || ''}
+        isBusinessOwner={isOwner}
+        onEdit={handleEditReview}
+        realtime={true}
+      />
+    </div>
+  );
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -984,11 +1140,47 @@ const BusinessProfile: React.FC = () => {
 
   const tabs = [
     { id: 'overview', label: 'Overview', count: null },
-    { id: 'statistics', label: 'Statistics', count: business?.total_reviews || 0 }
+    { id: 'reviews', label: 'Reviews', count: reviewStats?.total_reviews || business?.total_reviews || 0 },
+    { id: 'statistics', label: 'Statistics', count: null }
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <>
+      {/* Review Modal */}
+      <AnimatePresence>
+        {showReviewModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+            onClick={() => setShowReviewModal(false)}
+          >
+            <div onClick={(e) => e.stopPropagation()}>
+              <BusinessReviewForm
+                businessId={businessId!}
+                businessName={business?.business_name || ''}
+                checkinId={checkin?.id || null}
+                onSubmit={handleReviewSubmit}
+                onCancel={async () => {
+                  if (editingReview) {
+                    // If we were editing, refresh the data
+                    await refreshStats();
+                    setReviewsKey(prev => prev + 1);
+                  }
+                  setShowReviewModal(false);
+                  setEditingReview(null);
+                }}
+                loading={isSubmittingReview}
+                editMode={!!editingReview}
+                existingReview={editingReview}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="min-h-screen bg-gray-50">
       {/* Breadcrumbs Navigation */}
       <div className="bg-white border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1114,11 +1306,13 @@ const BusinessProfile: React.FC = () => {
             transition={{ duration: 0.2 }}
           >
             {activeTab === 'overview' && renderOverview()}
+            {activeTab === 'reviews' && renderReviews()}
             {activeTab === 'statistics' && renderStatistics()}
           </motion.div>
         </AnimatePresence>
       </div>
     </div>
+    </>
   );
 };
 

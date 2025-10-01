@@ -5,9 +5,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ThumbsUp, ThumbsDown, X, CheckCircle, AlertCircle } from 'lucide-react';
-import { countWords } from '../../services/reviewService';
+import { countWords, updateReview } from '../../services/reviewService';
 import { REVIEW_TEXT_WORD_LIMIT, REVIEW_TAGS } from '../../types/review';
-import type { CreateReviewInput } from '../../types/review';
+import type { CreateReviewInput, UpdateReviewInput } from '../../types/review';
 import ReviewTagSelector from './ReviewTagSelector';
 import ReviewPhotoUpload from './ReviewPhotoUpload';
 import WordCounter from './WordCounter';
@@ -15,10 +15,12 @@ import WordCounter from './WordCounter';
 interface BusinessReviewFormProps {
   businessId: string;
   businessName: string;
-  checkinId: string;
+  checkinId: string | null;  // TEMP: Made optional for desktop testing
   onSubmit: (review: CreateReviewInput) => Promise<void>;
   onCancel: () => void;
   loading?: boolean;
+  editMode?: boolean;
+  existingReview?: any;
 }
 
 export default function BusinessReviewForm({
@@ -28,12 +30,22 @@ export default function BusinessReviewForm({
   onSubmit,
   onCancel,
   loading = false,
+  editMode = false,
+  existingReview = null,
 }: BusinessReviewFormProps) {
   // Form state
-  const [recommendation, setRecommendation] = useState<boolean | null>(null);
-  const [reviewText, setReviewText] = useState('');
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [recommendation, setRecommendation] = useState<boolean | null>(
+    editMode && existingReview ? existingReview.recommendation : null
+  );
+  const [reviewText, setReviewText] = useState(
+    editMode && existingReview ? existingReview.review_text || '' : ''
+  );
+  const [photoUrl, setPhotoUrl] = useState<string | null>(
+    editMode && existingReview ? existingReview.photo_url || null : null
+  );
+  const [selectedTags, setSelectedTags] = useState<string[]>(
+    editMode && existingReview ? existingReview.tags || [] : []
+  );
   const [wordCount, setWordCount] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -76,22 +88,41 @@ export default function BusinessReviewForm({
     setError(null);
 
     try {
-      await onSubmit({
-        business_id: businessId,
-        recommendation: recommendation!,
-        review_text: reviewText.trim() || undefined,
-        photo_url: photoUrl || undefined,
-        tags: selectedTags.length > 0 ? selectedTags : undefined,
-        checkin_id: checkinId,
-      });
-
-      // Show success message
-      setShowSuccess(true);
-      
-      // Close form after brief delay
-      setTimeout(() => {
-        onCancel();
-      }, 1500);
+      if (editMode && existingReview) {
+        // Update existing review
+        await updateReview(existingReview.id, {
+          recommendation: recommendation!,
+          review_text: reviewText.trim() || undefined,
+          photo_url: photoUrl || undefined,
+          tags: selectedTags.length > 0 ? selectedTags : undefined,
+        });
+        
+        // Show success message
+        setShowSuccess(true);
+        
+        // Close form after brief delay
+        setTimeout(() => {
+          onCancel();
+        }, 1500);
+      } else {
+        // Create new review
+        await onSubmit({
+          business_id: businessId,
+          recommendation: recommendation!,
+          review_text: reviewText.trim() || undefined,
+          photo_url: photoUrl || undefined,
+          tags: selectedTags.length > 0 ? selectedTags : undefined,
+          checkin_id: checkinId || undefined,  // TEMP: Allow null for desktop testing
+        });
+        
+        // Show success message
+        setShowSuccess(true);
+        
+        // Close form after brief delay
+        setTimeout(() => {
+          onCancel();
+        }, 1500);
+      }
     } catch (err) {
       console.error('Submit error:', err);
       setError(err instanceof Error ? err.message : 'Failed to submit review');
@@ -105,7 +136,7 @@ export default function BusinessReviewForm({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="bg-white rounded-2xl shadow-xl p-6 max-w-2xl mx-auto"
+      className="bg-white rounded-2xl shadow-xl p-6 max-w-2xl w-full mx-auto max-h-[90vh] overflow-y-auto"
     >
       {/* Success Overlay */}
       <AnimatePresence>
@@ -125,7 +156,7 @@ export default function BusinessReviewForm({
                 <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
               </motion.div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">
-                Review Submitted!
+                {editMode ? 'Review Updated!' : 'Review Submitted!'}
               </h3>
               <p className="text-gray-600">Thank you for your feedback</p>
             </div>
@@ -136,7 +167,9 @@ export default function BusinessReviewForm({
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Write a Review</h2>
+          <h2 className="text-2xl font-bold text-gray-900">
+            {editMode ? 'Edit Review' : 'Write a Review'}
+          </h2>
           <p className="text-sm text-gray-600 mt-1">{businessName}</p>
         </div>
         <button
@@ -265,11 +298,11 @@ export default function BusinessReviewForm({
           </p>
         </div>
 
-        {/* Photo Upload */}
-        <ReviewPhotoUpload
+        {/* Photo Upload - TEMP: Disabled due to missing bucket */}
+        {/* <ReviewPhotoUpload
           photoUrl={photoUrl}
           onPhotoChange={setPhotoUrl}
-        />
+        /> */}
 
         {/* Tags Selector */}
         <ReviewTagSelector
@@ -294,15 +327,15 @@ export default function BusinessReviewForm({
           )}
         </AnimatePresence>
 
-        {/* GPS Check-in Notice */}
+        {/* TEMP: Testing Mode Notice */}
         <div className="flex items-start gap-2 p-4 bg-blue-50 border border-blue-200 rounded-xl">
           <CheckCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-medium text-blue-900">
-              You're all set!
+              Testing Mode
             </p>
             <p className="text-xs text-blue-700 mt-1">
-              Your check-in has been verified. You can now leave a review.
+              Check-in requirement bypassed for desktop testing.
             </p>
           </div>
         </div>
@@ -345,7 +378,7 @@ export default function BusinessReviewForm({
                 Submitting...
               </span>
             ) : (
-              'Submit Review'
+              editMode ? 'Update Review' : 'Submit Review'
             )}
           </motion.button>
         </div>

@@ -147,7 +147,10 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
             
-            <div className="bg-white rounded-2xl p-6 shadow-md hover:shadow-lg transition-shadow">
+            <button
+              onClick={() => navigate('/my-reviews')}
+              className="bg-white rounded-2xl p-6 shadow-md hover:shadow-lg transition-all hover:scale-105 transform duration-300 text-left w-full"
+            >
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
@@ -155,11 +158,11 @@ const Dashboard: React.FC = () => {
                   </div>
                   <div>
                     <p className="text-2xl font-bold text-gray-900">5</p>
-                    <p className="text-sm text-gray-600">Reviews</p>
+                    <p className="text-sm text-gray-600">My Reviews</p>
                   </div>
                 </div>
               </div>
-            </div>
+            </button>
 
             {/* Quick Actions */}
             <button

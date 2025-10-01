@@ -51,6 +51,9 @@ const SimpleQRTest = lazy(() => import('../components/debug/SimpleQRTest'))
 // Check-in components
 const BusinessCheckinsPage = lazy(() => import('../components/checkins/BusinessCheckinsPage'))
 
+// Story 5.2: Review System
+const MyReviewsPage = lazy(() => import('../pages/MyReviewsPage'))
+
 // Route definitions
 export interface RouteConfig {
   path: string
@@ -130,6 +133,13 @@ export const routes: RouteConfig[] = [
     description: 'Explore local businesses, trending deals, and personalized recommendations'
   },
   {
+    path: '/businesses',
+    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><BusinessDiscoveryPage /></Suspense>,
+    protected: true,
+    title: 'Browse Businesses - SynC',
+    description: 'Browse and discover local businesses near you'
+  },
+  {
     path: '/categories',
     element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><CategoryBrowserPage /></Suspense>,
     protected: true,
@@ -205,6 +215,14 @@ export const routes: RouteConfig[] = [
     protected: true,
     title: 'Business Check-ins - SynC',
     description: 'Discover nearby businesses and check in to earn rewards'
+  },
+  // Story 5.2: My Reviews
+  {
+    path: '/my-reviews',
+    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><MyReviewsPage /></Suspense>,
+    protected: true,
+    title: 'My Reviews - SynC',
+    description: 'Manage your reviews and see your review history'
   },
   // Business Routes
   {

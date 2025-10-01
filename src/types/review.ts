@@ -66,6 +66,7 @@ export interface CreateReviewInput {
 }
 
 export interface UpdateReviewInput {
+  recommendation?: boolean; // Allow changing recommendation within 24 hours
   review_text?: string;
   photo_url?: string;
   tags?: string[];

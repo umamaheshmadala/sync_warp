@@ -4,7 +4,8 @@
 import { useState } from 'react'
 import { useAuthStore } from '../store/authStore'
 import { useNavigationPreferences } from '../hooks/useNavigationState'
-import { User, MapPin, Phone, Mail, Edit3, Camera, Settings, Smartphone } from 'lucide-react'
+import { User, MapPin, Phone, Mail, Edit3, Camera, Settings, Smartphone, MessageSquare } from 'lucide-react'
+import UserReviewsList from './reviews/UserReviewsList'
 
 export default function Profile() {
   const { user, profile } = useAuthStore()
@@ -261,6 +262,11 @@ export default function Profile() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* User Reviews Section */}
+      <div className="mt-8">
+        <UserReviewsList />
       </div>
     </div>
   )

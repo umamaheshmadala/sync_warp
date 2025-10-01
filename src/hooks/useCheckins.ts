@@ -4,7 +4,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
-import { toast } from 'react-hot-toast';
+import toast from 'react-hot-toast';
+import { notifyMerchantCheckin } from '../services/notificationService';
 
 export interface CheckinData {
   id: string;
@@ -377,6 +378,13 @@ export const useCheckins = (): UseCheckinsReturn => {
       );
       
       toast.success(`Successfully checked in to ${business.business_name}! 🎉`);
+      
+      // Send notification to merchant (non-blocking)
+      notifyMerchantCheckin(
+        businessId,
+        user.id,
+        business.business_name
+      ).catch(err => console.error('Failed to send check-in notification:', err));
       
       // Analytics tracking
       if (typeof gtag !== 'undefined') {
