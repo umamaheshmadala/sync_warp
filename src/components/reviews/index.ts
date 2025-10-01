@@ -13,3 +13,4 @@ export { default as ReviewCard } from './ReviewCard';
 export { default as BusinessReviews } from './BusinessReviews';
 export { default as ReviewFilters } from './ReviewFilters';
 export { default as ReviewStats } from './ReviewStats';
+export { default as ReviewResponseForm } from './ReviewResponseForm';
