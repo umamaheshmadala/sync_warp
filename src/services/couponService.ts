@@ -904,6 +904,57 @@ class CouponService {
     }
   }
 
+  // ==================== USER COLLECTIONS & REDEMPTIONS ====================
+
+  /**
+   * Get user's collected coupons with full coupon details
+   */
+  async getUserCollectedCoupons(userId: string): Promise<UserCouponCollection[]> {
+    try {
+      const { data, error } = await supabase
+        .from('user_coupon_collections')
+        .select(`
+          *,
+          coupon:business_coupons!inner(*)
+        `)
+        .eq('user_id', userId)
+        .order('collected_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching user collected coupons:', error);
+        throw error;
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Error in getUserCollectedCoupons:', error);
+      throw new Error('Failed to load your coupons');
+    }
+  }
+
+  /**
+   * Get user's redemption history
+   */
+  async getUserRedemptions(userId: string): Promise<CouponRedemption[]> {
+    try {
+      const { data, error } = await supabase
+        .from('coupon_redemptions')
+        .select('*')
+        .eq('user_id', userId)
+        .order('redeemed_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching user redemptions:', error);
+        throw error;
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Error in getUserRedemptions:', error);
+      return [];
+    }
+  }
+
   // ==================== CLEANUP ====================
 
   /**

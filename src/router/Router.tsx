@@ -54,6 +54,9 @@ const BusinessCheckinsPage = lazy(() => import('../components/checkins/BusinessC
 // Story 5.2: Review System
 const MyReviewsPage = lazy(() => import('../pages/MyReviewsPage'))
 
+// Story 5.5: Sharing Limits Test
+const TestSharingLimits = lazy(() => import('../pages/TestSharingLimits'))
+
 // Route definitions
 export interface RouteConfig {
   path: string
@@ -223,6 +226,14 @@ export const routes: RouteConfig[] = [
     protected: true,
     title: 'My Reviews - SynC',
     description: 'Manage your reviews and see your review history'
+  },
+  // Story 5.5: Test Sharing Limits
+  {
+    path: '/test-sharing-limits',
+    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><TestSharingLimits /></Suspense>,
+    protected: true,
+    title: 'Test Sharing Limits - SynC',
+    description: 'Test Story 5.5 Enhanced Sharing Limits functionality'
   },
   // Business Routes
   {

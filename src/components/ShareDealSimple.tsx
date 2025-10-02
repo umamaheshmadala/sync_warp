@@ -4,6 +4,9 @@ import { Dialog, Transition } from '@headlessui/react'
 import { Fragment } from 'react'
 import { X, Send, Search, Tag, Clock, Star, AlertCircle, Heart } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { useSharingLimits } from '@/hooks/useSharingLimits'
+import { SharingStatsCard } from '@/components/Sharing/SharingStatsCard'
+import { LimitExceededModal } from '@/components/Sharing/LimitExceededModal'
 
 interface ShareDealProps {
   friendId: string
@@ -36,6 +39,18 @@ const ShareDealSimple: React.FC<ShareDealProps> = ({
   const [searchQuery, setSearchQuery] = useState('')
   const [isSharing, setIsSharing] = useState(false)
   const [shareSuccess, setShareSuccess] = useState(false)
+  const [showLimitModal, setShowLimitModal] = useState(false)
+
+  // Story 5.5: Sharing limits integration
+  const {
+    stats,
+    limits,
+    permissionCheck,
+    isLoading: limitsLoading,
+    checkPermission,
+    logShare,
+    refreshStats,
+  } = useSharingLimits()
 
   // Mock deals data
   const mockDeals: MockDeal[] = [
@@ -121,6 +136,16 @@ const ShareDealSimple: React.FC<ShareDealProps> = ({
     setIsSharing(true)
 
     try {
+      // Story 5.5: Check sharing limits before sharing
+      const permission = await checkPermission(friendId)
+      
+      if (!permission.can_share) {
+        console.warn('⚠️ Sharing limit exceeded:', permission.reason)
+        setShowLimitModal(true)
+        setIsSharing(false)
+        return
+      }
+
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500))
       
@@ -131,6 +156,9 @@ const ShareDealSimple: React.FC<ShareDealProps> = ({
         dealTitle: selectedDeal.title,
         message: message.trim() || 'Check out this deal!'
       })
+
+      // Story 5.5: Log the share for limits tracking
+      await logShare(friendId, selectedDeal.id)
 
       setShareSuccess(true)
       
@@ -152,7 +180,14 @@ const ShareDealSimple: React.FC<ShareDealProps> = ({
     setSearchQuery('')
     setShareSuccess(false)
     setIsSharing(false)
+    setShowLimitModal(false)
     onClose()
+  }
+
+  const handleUpgradeClick = () => {
+    console.log('🚗 User clicked to learn about becoming a Driver')
+    // TODO: Navigate to Driver sign-up page
+    setShowLimitModal(false)
   }
 
   const formatPrice = (price: number): string => {
@@ -222,6 +257,13 @@ const ShareDealSimple: React.FC<ShareDealProps> = ({
                       </p>
                     </div>
                   </div>
+
+                  {/* Story 5.5: Sharing Stats Card (compact view) */}
+                  {stats && !shareSuccess && (
+                    <div className="mb-6">
+                      <SharingStatsCard stats={stats} isLoading={limitsLoading} compact />
+                    </div>
+                  )}
 
                   {shareSuccess ? (
                     <motion.div
@@ -409,6 +451,15 @@ const ShareDealSimple: React.FC<ShareDealProps> = ({
           </div>
         </div>
       </Dialog>
+      
+      {/* Story 5.5: Limit Exceeded Modal */}
+      <LimitExceededModal
+        open={showLimitModal}
+        onClose={() => setShowLimitModal(false)}
+        permissionCheck={permissionCheck}
+        isDriver={limits?.is_driver || false}
+        onUpgradeClick={handleUpgradeClick}
+      />
     </Transition.Root>
   )
 }

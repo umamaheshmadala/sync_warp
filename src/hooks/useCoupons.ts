@@ -5,6 +5,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
+import { couponService } from '../services/couponService';
 import { toast } from 'react-hot-toast';
 import { 
   Coupon, 
@@ -676,6 +677,66 @@ export const useUserCoupons = () => {
     }
   };
 
+  // Wrapper for couponService.getUserCollectedCoupons
+  const getUserCollectedCoupons = async (targetUserId?: string) => {
+    const userIdToUse = targetUserId || user?.id;
+    if (!userIdToUse) return [];
+    
+    return await couponService.getUserCollectedCoupons(userIdToUse);
+  };
+
+  // Redeem coupon function
+  const redeemCoupon = async (couponId: string, targetUserId?: string, targetBusinessId?: string) => {
+    const userIdToUse = targetUserId || user?.id;
+    if (!userIdToUse) {
+      toast.error('User not authenticated');
+      return false;
+    }
+
+    try {
+      // Implementation depends on your redemption logic
+      // For now, basic implementation:
+      const { error } = await supabase
+        .from('coupon_redemptions')
+        .insert([{
+          user_id: userIdToUse,
+          coupon_id: couponId,
+          business_id: targetBusinessId,
+          redemption_code: Math.random().toString(36).substring(7).toUpperCase(),
+          status: 'completed',
+          redeemed_at: new Date().toISOString()
+        }]);
+
+      if (error) throw error;
+
+      toast.success('Coupon redeemed successfully!');
+      return true;
+    } catch (err) {
+      console.error('Error redeeming coupon:', err);
+      toast.error('Failed to redeem coupon');
+      return false;
+    }
+  };
+
+  // Remove coupon from collection
+  const removeCouponCollection = async (collectionId: string) => {
+    try {
+      const { error } = await supabase
+        .from('user_coupon_collections')
+        .delete()
+        .eq('id', collectionId);
+
+      if (error) throw error;
+
+      toast.success('Coupon removed from wallet');
+      return true;
+    } catch (err) {
+      console.error('Error removing coupon:', err);
+      toast.error('Failed to remove coupon');
+      return false;
+    }
+  };
+
   useEffect(() => {
     if (user) {
       fetchUserCoupons();
@@ -687,6 +748,9 @@ export const useUserCoupons = () => {
     loading,
     error,
     fetchUserCoupons,
-    collectCoupon
+    collectCoupon,
+    getUserCollectedCoupons,
+    redeemCoupon,
+    removeCouponCollection
   };
 };

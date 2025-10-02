@@ -312,13 +312,30 @@ export const useSearch = (options: UseSearchOptions = {}) => {
       
       console.log('🔍 [useSearch] Raw search result:', simpleResult);
       
+      // Fetch user's collected coupons if user is logged in
+      let userCollectedCouponIds = new Set<string>();
+      if (user?.id) {
+        try {
+          const { data: userCollections } = await supabase
+            .from('user_coupon_collections')
+            .select('coupon_id')
+            .eq('user_id', user.id);
+          
+          if (userCollections) {
+            userCollectedCouponIds = new Set(userCollections.map(c => c.coupon_id));
+          }
+        } catch (error) {
+          console.error('Error fetching user collections:', error);
+        }
+      }
+      
       // Convert to expected format
       const result: SearchResult = {
         coupons: simpleResult.coupons.map((coupon: any) => ({
           ...coupon,
           relevanceScore: 1,
           business: { id: coupon.business_id, business_name: 'Test Business' },
-          isCollected: false,
+          isCollected: userCollectedCouponIds.has(coupon.id),
           isUsed: false
         })),
         businesses: simpleResult.businesses.map((business: any) => ({

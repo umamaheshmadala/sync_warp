@@ -35,8 +35,10 @@ import {
   CouponCategory,
   CouponRedemption
 } from '../../types/coupon';
-import { useCoupons } from '../../hooks/useCoupons';
+import { useUserCoupons } from '../../hooks/useCoupons';
 import { couponService } from '../../services/couponService';
+import { useSharingLimits } from '../../hooks/useSharingLimits';
+import ShareCouponModal from '../Sharing/ShareCouponModal';
 import { toast } from 'react-hot-toast';
 
 interface CouponWalletProps {
@@ -49,6 +51,7 @@ interface CouponWalletProps {
 interface WalletFilters {
   category: CouponCategory | 'all';
   status: 'all' | 'active' | 'expiring' | 'expired' | 'redeemed';
+  acquisition: 'all' | 'collected' | 'shared_received' | 'shareable';
   sortBy: 'added' | 'expiry' | 'value' | 'business';
   businessName: string;
 }
@@ -59,7 +62,9 @@ interface CouponWalletCardProps {
   onRedeem: (couponId: string) => void;
   onRemove: (collectionId: string) => void;
   onView: (coupon: Coupon) => void;
+  onShare: (couponId: string, collectionId: string) => void;
   isLoading?: boolean;
+  isShareable?: boolean;
 }
 
 const CouponWallet: React.FC<CouponWalletProps> = ({
@@ -80,11 +85,29 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
   const [filters, setFilters] = useState<WalletFilters>({
     category: 'all',
     status: 'all',
+    acquisition: 'all',
     sortBy: 'added',
     businessName: ''
   });
 
-  const { getUserCollectedCoupons, redeemCoupon, removeCouponCollection } = useCoupons();
+  const { getUserCollectedCoupons, redeemCoupon, removeCouponCollection } = useUserCoupons();
+  
+  // Sharing limits integration
+  const {
+    stats: sharingStats,
+    limits: sharingLimits,
+    loading: sharingLoading,
+    canShareMore,
+    refreshStats: refreshSharingStats
+  } = useSharingLimits();
+  
+  // State for share modal
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [selectedCouponForShare, setSelectedCouponForShare] = useState<{
+    couponId: string;
+    collectionId: string;
+    coupon: Coupon;
+  } | null>(null);
 
   // Load user's wallet data
   useEffect(() => {
@@ -159,6 +182,26 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
       });
     }
   };
+  
+  // Handle coupon sharing
+  const handleShareCoupon = (couponId: string, collectionId: string) => {
+    const collection = collectedCoupons.find(c => c.id === collectionId);
+    if (!collection) return;
+    
+    // Check if user can share more
+    if (!canShareMore) {
+      toast.error('You have reached your daily sharing limit');
+      return;
+    }
+    
+    // Open share modal with coupon details
+    setSelectedCouponForShare({
+      couponId,
+      collectionId,
+      coupon: collection.coupon
+    });
+    setShowShareModal(true);
+  };
 
   // Get coupon status
   const getCouponStatus = (coupon: Coupon, collection: UserCouponCollection) => {
@@ -178,6 +221,16 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
     if (coupon.status !== 'active') return 'expired';
     
     return 'active';
+  };
+  
+  // Check if coupon is shareable
+  const isCouponShareable = (collection: any) => {
+    // Check if collection has sharing-related fields
+    const isShareable = collection.is_shareable !== false;
+    const hasBeenShared = collection.has_been_shared === true;
+    const isActive = getCouponStatus(collection.coupon, collection) === 'active';
+    
+    return isShareable && !hasBeenShared && isActive;
   };
 
   // Filter and sort coupons
@@ -202,6 +255,16 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
       // Status filter
       if (filters.status !== 'all' && status !== filters.status) {
         return false;
+      }
+      
+      // Acquisition filter
+      if (filters.acquisition !== 'all') {
+        if (filters.acquisition === 'shareable') {
+          if (!isCouponShareable(collection)) return false;
+        } else {
+          const acquisitionMethod = (collection as any).acquisition_method || 'collected';
+          if (acquisitionMethod !== filters.acquisition) return false;
+        }
       }
 
       // Business name filter
@@ -243,6 +306,8 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
     const expiring = collectedCoupons.filter(c => getCouponStatus(c.coupon, c) === 'expiring').length;
     const expired = collectedCoupons.filter(c => getCouponStatus(c.coupon, c) === 'expired').length;
     const redeemed = collectedCoupons.filter(c => getCouponStatus(c.coupon, c) === 'redeemed').length;
+    const shareable = collectedCoupons.filter(c => isCouponShareable(c)).length;
+    const shared = collectedCoupons.filter(c => (c as any).acquisition_method === 'shared_received').length;
     
     const totalSavingsPotential = collectedCoupons
       .filter(c => getCouponStatus(c.coupon, c) === 'active')
@@ -254,7 +319,7 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
         return sum + coupon.value;
       }, 0);
 
-    return { total, active, expiring, expired, redeemed, totalSavingsPotential };
+    return { total, active, expiring, expired, redeemed, shareable, shared, totalSavingsPotential };
   }, [collectedCoupons, redemptions]);
 
   // Format discount display
@@ -296,7 +361,9 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
     onRedeem,
     onRemove,
     onView,
-    isLoading
+    onShare,
+    isLoading,
+    isShareable = false
   }) => {
     const status = getCouponStatus(coupon, collection);
     const isRedeemed = redemptions.some(r => r.coupon_id === coupon.id);
@@ -310,7 +377,7 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.9 }}
         whileHover={{ y: -2 }}
-        className={`bg-white rounded-xl border-2 overflow-hidden transition-all duration-300 cursor-pointer ${
+        className={`bg-white rounded-xl border-2 overflow-hidden transition-all duration-300 cursor-pointer w-full max-w-full ${
           status === 'expired' || isRedeemed 
             ? 'border-gray-200 opacity-75' 
             : status === 'expiring'
@@ -333,9 +400,11 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
           
           {/* Status and Category Badges */}
           <div className="absolute top-3 left-3 flex items-center space-x-2">
-            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(coupon.category)}`}>
-              {coupon.category.toUpperCase()}
-            </span>
+            {coupon.category && (
+              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(coupon.category)}`}>
+                {coupon.category.toUpperCase()}
+              </span>
+            )}
             <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(status)}`}>
               {status.toUpperCase()}
             </span>
@@ -368,9 +437,9 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
         </div>
 
         {/* Content */}
-        <div className="p-4 pt-8">
+        <div className="p-4 pt-8 w-full overflow-hidden">
           <div className="flex items-start justify-between mb-2">
-            <h3 className="font-semibold text-gray-900 text-lg leading-tight">{coupon.title}</h3>
+            <h3 className="font-semibold text-gray-900 text-lg leading-tight flex-1 min-w-0 truncate">{coupon.title}</h3>
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -382,12 +451,12 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
             </button>
           </div>
           
-          <p className="text-sm text-gray-600 mb-3 line-clamp-2">{coupon.description}</p>
+          <p className="text-sm text-gray-600 mb-3 line-clamp-2 break-words">{coupon.description}</p>
 
           {/* Business Info */}
-          <div className="flex items-center text-sm text-gray-500 mb-3">
-            <Store className="w-4 h-4 mr-1" />
-            <span>{coupon.business_name}</span>
+          <div className="flex items-center text-sm text-gray-500 mb-3 min-w-0">
+            <Store className="w-4 h-4 mr-1 flex-shrink-0" />
+            <span className="truncate">{coupon.business_name}</span>
             {coupon.business_rating && (
               <>
                 <div className="mx-2 w-1 h-1 bg-gray-300 rounded-full" />
@@ -437,7 +506,7 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
           </div>
 
           {/* Actions */}
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 w-full">
             {!isRedeemed && status === 'active' && (
               <button
                 onClick={(e) => {
@@ -461,24 +530,20 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
               </button>
             )}
             
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                // Generate QR code or sharing functionality
-                navigator.share?.({
-                  title: coupon.title,
-                  text: `Check out this coupon: ${formatDiscount(coupon)} at ${coupon.business_name}`,
-                  url: window.location.href
-                }).catch(() => {
-                  // Fallback: copy to clipboard
-                  navigator.clipboard.writeText(`${coupon.title} - ${formatDiscount(coupon)} at ${coupon.business_name}`);
-                  toast.success('Coupon details copied to clipboard!');
-                });
-              }}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors"
-            >
-              <Share2 className="w-4 h-4" />
-            </button>
+            {/* Share button - only show if shareable */}
+            {isShareable && !isRedeemed && status === 'active' && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onShare(coupon.id, collection.id);
+                }}
+                className="px-3 py-2 bg-blue-50 border border-blue-300 rounded-lg text-blue-600 hover:bg-blue-100 transition-colors flex items-center gap-1"
+                title="Share with a friend"
+              >
+                <Gift className="w-4 h-4" />
+                <span className="text-xs font-medium">Share</span>
+              </button>
+            )}
 
             <button
               onClick={(e) => {
@@ -550,6 +615,10 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
               <div className="text-2xl font-bold text-red-600">{walletStats.expired}</div>
               <div className="text-xs text-red-600">Expired</div>
             </div>
+            <div className="bg-blue-50 p-3 rounded-lg text-center">
+              <div className="text-2xl font-bold text-blue-600">{walletStats.shareable}</div>
+              <div className="text-xs text-blue-600">Can Share</div>
+            </div>
             <div className="bg-purple-50 p-3 rounded-lg text-center">
               <div className="text-xl font-bold text-purple-600">₹{Math.round(walletStats.totalSavingsPotential)}</div>
               <div className="text-xs text-purple-600">Potential Savings</div>
@@ -583,8 +652,9 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
               </button>
             </div>
 
-            {/* Quick Status Filters */}
+            {/* Quick Filters */}
             <div className="flex items-center space-x-2 overflow-x-auto pb-2">
+              {/* Status Filters */}
               {['all', 'active', 'expiring', 'expired', 'redeemed'].map((status) => (
                 <button
                   key={status}
@@ -604,6 +674,28 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
                         status === 'redeemed' ? walletStats.redeemed : 0})
                     </span>
                   )}
+                </button>
+              ))}
+              
+              {/* Acquisition Filters */}
+              <div className="w-px h-8 bg-gray-300" />
+              {['shareable', 'collected', 'shared_received'].map((acquisition) => (
+                <button
+                  key={acquisition}
+                  onClick={() => setFilters(prev => ({ ...prev, acquisition: acquisition as any }))}
+                  className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                    filters.acquisition === acquisition
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  {acquisition === 'shareable' ? '🎁 Can Share' : 
+                   acquisition === 'collected' ? '📥 Collected' : '🤝 Received'}
+                  <span className="ml-1 text-xs">
+                    ({acquisition === 'shareable' ? walletStats.shareable : 
+                      acquisition === 'shared_received' ? walletStats.shared : 
+                      collectedCoupons.filter(c => (c as any).acquisition_method === 'collected').length})
+                  </span>
                 </button>
               ))}
             </div>
@@ -667,6 +759,7 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
                       onClick={() => setFilters({
                         category: 'all',
                         status: 'all',
+                        acquisition: 'all',
                         sortBy: 'added',
                         businessName: ''
                       })}
@@ -706,9 +799,9 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
         ) : filteredCoupons.length > 0 ? (
           <motion.div
             layout
-            className={`grid gap-6 ${
+            className={`grid gap-6 w-full ${
               viewMode === 'grid' 
-                ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' 
+                ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr' 
                 : 'grid-cols-1'
             }`}
           >
@@ -721,7 +814,9 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
                   onRedeem={handleRedeemCoupon}
                   onRemove={handleRemoveCoupon}
                   onView={(coupon) => onCouponSelect?.(coupon)}
+                  onShare={handleShareCoupon}
                   isLoading={loadingActions.has(collection.coupon_id)}
+                  isShareable={isCouponShareable(collection)}
                 />
               ))}
             </AnimatePresence>
@@ -748,6 +843,7 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
                   setFilters({
                     category: 'all',
                     status: 'all',
+                    acquisition: 'all',
                     sortBy: 'added',
                     businessName: ''
                   });
@@ -767,6 +863,26 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
           </div>
         )}
       </div>
+      
+      {/* Share Coupon Modal */}
+      {showShareModal && selectedCouponForShare && (
+        <ShareCouponModal
+          isOpen={showShareModal}
+          onClose={() => {
+            setShowShareModal(false);
+            setSelectedCouponForShare(null);
+          }}
+          coupon={selectedCouponForShare.coupon}
+          couponId={selectedCouponForShare.couponId}
+          collectionId={selectedCouponForShare.collectionId}
+          currentUserId={userId}
+          onShareSuccess={() => {
+            // Refresh wallet after successful share
+            loadWalletData();
+            refreshSharingStats();
+          }}
+        />
+      )}
     </div>
   );
 };
