@@ -220,7 +220,7 @@ class SearchService {
         *,
         businesses(
           id, business_name, business_type, description, address, 
-          latitude, longitude, rating
+          latitude, longitude
         )
       `);
 
@@ -510,9 +510,24 @@ class SearchService {
         query.q
       );
 
+      // Debug: Log business data structure
+      console.log('🔍 [SearchService] Enhancing coupon:', {
+        couponId: coupon.id,
+        couponTitle: coupon.title,
+        businesses_field: coupon.businesses,
+        businesses_type: typeof coupon.businesses,
+        businesses_isArray: Array.isArray(coupon.businesses)
+      });
+
+      // Extract business - handle both object and potential array formats
+      const businessData = Array.isArray(coupon.businesses) 
+        ? coupon.businesses[0] 
+        : coupon.businesses;
+
       enhancedCoupons.push({
         ...coupon,
-        business: coupon.businesses,
+        business: businessData,
+        business_name: businessData?.business_name, // Add direct field as fallback
         relevanceScore,
         isCollected,
         isUsed,

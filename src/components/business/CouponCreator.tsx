@@ -66,13 +66,14 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
   const [draftName, setDraftName] = useState('');
   const [showSaveDraftDialog, setShowSaveDraftDialog] = useState(false);
   
+  // Determine if editing mode (must be before useRateLimit)
+  const isEditing = !!editingCoupon;
+  
   // Rate limiting
   const { enforceRateLimit, isRateLimited } = useRateLimit({
     endpoint: isEditing ? 'coupons/update' : 'coupons/create',
     autoCheck: true
   });
-  
-  const isEditing = !!editingCoupon;
   
   // Prevent form reset on tab switch or hot reload
   const formStateKey = `coupon-form-${businessId}-${isEditing ? editingCoupon?.id : 'new'}`;

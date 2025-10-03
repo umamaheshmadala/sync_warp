@@ -38,6 +38,7 @@ import { useCoupons } from '../../hooks/useCoupons';
 import { useCouponDrafts } from '../../hooks/useCouponDrafts';
 import CouponCreator from './CouponCreator';
 import { toast } from 'react-hot-toast';
+import { couponStatsService } from '../../services/couponStatsService';
 
 interface CouponManagerProps {
   businessId: string;
@@ -63,6 +64,7 @@ const CouponManager: React.FC<CouponManagerProps> = ({
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCoupon, setSelectedCoupon] = useState<string | null>(null);
   const [analytics, setAnalytics] = useState<Record<string, CouponAnalytics>>({});
+  const [verifyingStats, setVerifyingStats] = useState(false);
 
   // Auto-switch to drafts tab if there are drafts but no published coupons
   useEffect(() => {
@@ -200,6 +202,35 @@ const CouponManager: React.FC<CouponManagerProps> = ({
   const copyCouponCode = (code: string) => {
     navigator.clipboard.writeText(code);
     toast.success('Coupon code copied to clipboard!');
+  };
+
+  const handleVerifyStats = async () => {
+    setVerifyingStats(true);
+    try {
+      const discrepancies = await couponStatsService.verifyStats(businessId);
+      
+      if (discrepancies.length === 0) {
+        toast.success('✅ All coupon statistics are accurate!');
+      } else {
+        toast.error(`⚠️ Found ${discrepancies.length} coupon(s) with incorrect stats`, {
+          duration: 5000
+        });
+        
+        // Auto-fix the stats
+        const result = await couponStatsService.fixStats();
+        
+        if (result.success && result.fixed_count > 0) {
+          toast.success(`✅ Fixed statistics for ${result.fixed_count} coupon(s)`);
+          // Refresh coupons to show updated stats
+          refreshCoupons();
+        }
+      }
+    } catch (error) {
+      console.error('Stats verification error:', error);
+      toast.error('Failed to verify statistics');
+    } finally {
+      setVerifyingStats(false);
+    }
   };
 
   const clearFilters = () => {
@@ -791,15 +822,37 @@ const CouponManager: React.FC<CouponManagerProps> = ({
           </div>
           
           {isOwner && (
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleCreateCoupon}
-              className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Create Coupon
-            </motion.button>
+            <div className="flex gap-2 mt-4 sm:mt-0">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleVerifyStats}
+                disabled={verifyingStats}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Verify that coupon statistics are accurate"
+              >
+                {verifyingStats ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600 mr-2" />
+                    Checking...
+                  </>
+                ) : (
+                  <>
+                    <BarChart3 className="w-4 h-4 mr-2" />
+                    Verify Stats
+                  </>
+                )}
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleCreateCoupon}
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Create Coupon
+              </motion.button>
+            </div>
           )}
         </div>
 

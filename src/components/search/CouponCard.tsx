@@ -8,6 +8,7 @@ import { SearchCoupon } from '../../services/searchService';
 import { formatDistanceToNow } from 'date-fns';
 import { SimpleSaveButton } from '../favorites/SimpleSaveButton';
 import { formatDistance, getPreferredDistanceUnit } from '../../utils/locationUtils';
+import { UnifiedCouponCard } from '../common/UnifiedCouponCard';
 
 interface CouponCardProps {
   coupon: SearchCoupon;
@@ -119,7 +120,11 @@ export const CouponCard: React.FC<CouponCardProps> = ({
   if (variant === 'compact') {
     return (
       <div
-        className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 cursor-pointer hover:shadow-md transition-shadow"
+        className={`bg-white rounded-lg shadow-sm border p-4 cursor-pointer transition-all ${
+          timeRemaining.isExpired 
+            ? 'border-gray-200 opacity-60 grayscale hover:shadow-sm' 
+            : 'border-gray-200 hover:shadow-md hover:border-blue-300'
+        }`}
         onClick={handleCouponClick}
       >
         <div className="flex items-start justify-between">
@@ -202,7 +207,11 @@ export const CouponCard: React.FC<CouponCardProps> = ({
   if (variant === 'featured') {
     return (
       <div
-        className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl shadow-lg text-white p-6 cursor-pointer hover:shadow-xl transition-shadow relative overflow-hidden"
+        className={`rounded-xl shadow-lg text-white p-6 cursor-pointer transition-all relative overflow-hidden ${
+          timeRemaining.isExpired
+            ? 'bg-gradient-to-r from-gray-400 to-gray-500 opacity-70 hover:shadow-lg'
+            : 'bg-gradient-to-r from-indigo-500 to-purple-600 hover:shadow-xl'
+        }`}
         onClick={handleCouponClick}
       >
         {/* Background decoration */}
@@ -287,140 +296,46 @@ export const CouponCard: React.FC<CouponCardProps> = ({
     );
   }
 
-  // Default variant
+  // Default variant - use UnifiedCouponCard
+  // Debug: Log coupon data
+  console.log('🔍 [SearchCouponCard] Coupon data:', {
+    id: coupon.id,
+    title: coupon.title,
+    discount_type: coupon.discount_type,
+    discount_value: coupon.discount_value,
+    business: coupon.business,
+    business_name: coupon.business_name,
+    businessNameFromBusiness: coupon.business?.business_name
+  });
+
+  // Extract business name - the business info comes from the join
+  const businessName = coupon.business?.business_name || coupon.business_name || 'Unknown Business';
+  
+  console.log('🔍 [SearchCouponCard] Business name extraction:', {
+    from_business_object: coupon.business?.business_name,
+    from_direct_field: coupon.business_name,
+    resolved: businessName,
+    full_business_object: coupon.business
+  });
+
   return (
-    <div
-      className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 cursor-pointer hover:shadow-md transition-shadow relative"
+    <UnifiedCouponCard
+      coupon={{
+        id: coupon.id,
+        title: coupon.title,
+        description: coupon.description,
+        discount_type: coupon.discount_type,
+        discount_value: coupon.discount_value,
+        valid_until: coupon.valid_until,
+        business_name: businessName,
+        business: coupon.business,
+        isCollected: coupon.isCollected,
+        highlightedTitle: coupon.highlightedTitle,
+        highlightedDescription: coupon.highlightedDescription
+      }}
       onClick={handleCouponClick}
-    >
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center space-x-3">
-          <div className="bg-indigo-100 text-indigo-700 px-3 py-2 rounded-lg font-bold text-lg">
-            {discountDisplay}
-          </div>
-          
-          {coupon.type === 'buy_x_get_y' && (
-            <div className="bg-green-100 text-green-700 px-2 py-1 rounded text-sm font-medium">
-              <Gift className="inline w-3 h-3 mr-1" />
-              BOGO
-            </div>
-          )}
-          
-          {coupon.collection_count > 50 && (
-            <div className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded text-sm font-medium">
-              <Star className="inline w-3 h-3 mr-1" />
-              Popular
-            </div>
-          )}
-        </div>
-        
-        <div className="text-right">
-          <div className={`text-sm font-medium ${
-            timeRemaining.isExpired 
-              ? 'text-red-600' 
-              : timeRemaining.isUrgent 
-              ? 'text-orange-600' 
-              : 'text-gray-600'
-          }`}>
-            <Clock className="inline w-4 h-4 mr-1" />
-            {timeRemaining.text}
-          </div>
-          
-          {showDistance && coupon.distance && (
-            <div className="text-xs text-gray-500 mt-1 flex items-center">
-              <MapPin className="w-3 h-3 mr-1" />
-              {getFormattedDistance ? getFormattedDistance(coupon.distance) : formatDistance(coupon.distance, getPreferredDistanceUnit())} away
-            </div>
-          )}
-        </div>
-      </div>
-      
-      <div className="mb-4">
-        <h3 
-          className="text-lg font-semibold text-gray-900 mb-2"
-          dangerouslySetInnerHTML={{ __html: coupon.highlightedTitle || coupon.title }}
-        />
-        
-        <p 
-          className="text-gray-600 text-sm line-clamp-2"
-          dangerouslySetInnerHTML={{ __html: coupon.highlightedDescription || coupon.description }}
-        />
-      </div>
-      
-      {coupon.min_purchase_amount && (
-        <div className="mb-3 text-xs text-gray-500">
-          <Tag className="inline w-3 h-3 mr-1" />
-          Minimum purchase: ₹{coupon.min_purchase_amount}
-        </div>
-      )}
-      
-      {showBusiness && (
-        <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-          <div 
-            className="flex items-center cursor-pointer hover:text-indigo-600 transition-colors"
-            onClick={handleBusinessClick}
-          >
-            <div className="flex items-center">
-              <MapPin className="w-4 h-4 mr-1 text-gray-400" />
-              <span className="text-sm font-medium">{coupon.business.business_name}</span>
-            </div>
-            
-            {coupon.business.rating && (
-              <div className="flex items-center ml-3">
-                <Star className="w-3 h-3 text-yellow-400 fill-current" />
-                <span className="text-xs text-gray-500 ml-1">{coupon.business.rating}</span>
-              </div>
-            )}
-          </div>
-          
-          <div className="flex items-center space-x-3">
-            <SimpleSaveButton 
-              itemId={coupon.id} 
-              itemType="coupon" 
-              size="md" 
-              itemData={{
-                title: coupon.title,
-                description: coupon.description,
-                business_name: coupon.business.business_name,
-                discount_value: coupon.discount_value,
-                discount_type: coupon.discount_type
-              }}
-            />
-            
-            {coupon.usage_count > 0 && (
-              <div className="text-xs text-gray-500 flex items-center">
-                <Users className="w-3 h-3 mr-1" />
-                {coupon.usage_count} used
-              </div>
-            )}
-            
-            {coupon.isCollected ? (
-              <div className="flex items-center text-green-600">
-                <CheckCircle className="w-5 h-5 mr-1" />
-                <span className="text-sm font-medium">Collected</span>
-              </div>
-            ) : (
-              <button
-                onClick={handleCollect}
-                disabled={isCollecting || timeRemaining.isExpired}
-                className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {isCollecting ? 'Collecting...' : 'Collect'}
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-      
-      {/* Collected overlay */}
-      {coupon.isCollected && (
-        <div className="absolute top-3 right-3">
-          <div className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-            ✓ Saved
-          </div>
-        </div>
-      )}
-    </div>
+      isExpired={timeRemaining.isExpired}
+    />
   );
 };
 
