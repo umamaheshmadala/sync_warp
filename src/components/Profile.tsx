@@ -6,125 +6,129 @@ import { useAuthStore } from '../store/authStore'
 import { useNavigationPreferences } from '../hooks/useNavigationState'
 import { User, MapPin, Phone, Mail, Edit3, Camera, Settings, Smartphone, MessageSquare } from 'lucide-react'
 import UserReviewsList from './reviews/UserReviewsList'
+import { AvatarUpload, ProfileEditForm, ProfileSettings, ProfileCompletionWizard, ActivityFeed } from './profile/index'
 
 export default function Profile() {
   const { user, profile } = useAuthStore()
   const { preferences, updatePreference } = useNavigationPreferences()
   const [isEditing, setIsEditing] = useState(false)
+  const [activeTab, setActiveTab] = useState<'overview' | 'edit' | 'settings' | 'activity'>('overview')
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Profile Completion Wizard */}
+      <div className="mb-8">
+        <ProfileCompletionWizard onStepClick={() => setActiveTab('edit')} />
+      </div>
+
       {/* Profile Header */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-8">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 mb-8">
         <div className="px-6 py-8">
-          <div className="flex items-center space-x-6">
-            {/* Profile Picture */}
-            <div className="relative">
-              <div className="w-24 h-24 bg-indigo-100 rounded-full flex items-center justify-center">
-                {user?.user_metadata?.avatar_url ? (
-                  <img 
-                    src={user.user_metadata.avatar_url} 
-                    alt="Profile" 
-                    className="w-24 h-24 rounded-full object-cover"
-                  />
-                ) : (
-                  <User className="h-12 w-12 text-indigo-600" />
-                )}
-              </div>
-              <button className="absolute -bottom-1 -right-1 w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center hover:bg-indigo-700">
-                <Camera className="h-4 w-4 text-white" />
-              </button>
+          <div className="flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-6">
+            {/* Avatar Upload Component */}
+            <div className="flex-shrink-0">
+              <AvatarUpload currentAvatar={profile?.avatar_url} />
             </div>
 
             {/* User Info */}
-            <div className="flex-1">
-              <h1 className="text-2xl font-bold text-gray-900">
+            <div className="flex-1 text-center md:text-left">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
                 {profile?.full_name || user?.user_metadata?.full_name || 'User'}
               </h1>
-              <p className="text-gray-600 mt-1">{user?.email}</p>
-              <div className="flex items-center mt-2 text-sm text-gray-500">
-                <MapPin className="h-4 w-4 mr-1" />
-                {profile?.city || 'Location not set'}
+              <p className="text-gray-600 dark:text-gray-400 mt-1">{user?.email}</p>
+              {profile?.bio && (
+                <p className="text-gray-700 dark:text-gray-300 mt-3 max-w-2xl">{profile.bio}</p>
+              )}
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 mt-4 text-sm text-gray-500 dark:text-gray-400">
+                {profile?.location && (
+                  <div className="flex items-center">
+                    <MapPin className="h-4 w-4 mr-1" />
+                    {profile.location}
+                  </div>
+                )}
+                {profile?.website && (
+                  <a href={profile.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-700">
+                    🌐 Website
+                  </a>
+                )}
               </div>
             </div>
+          </div>
+        </div>
 
-            {/* Edit Button */}
-            <button
-              onClick={() => setIsEditing(!isEditing)}
-              className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-            >
-              <Edit3 className="h-4 w-4 mr-2" />
-              {isEditing ? 'Save Changes' : 'Edit Profile'}
-            </button>
+        {/* Tab Navigation */}
+        <div className="border-t border-gray-200 dark:border-gray-700">
+          <div className="flex">
+            {[
+              { id: 'overview', label: 'Overview' },
+              { id: 'edit', label: 'Edit Profile' },
+              { id: 'settings', label: 'Settings' },
+              { id: 'activity', label: 'Activity' }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`flex-1 px-6 py-4 text-sm font-medium transition-colors ${
+                  activeTab === tab.id
+                    ? 'border-b-2 border-blue-600 text-blue-600 dark:text-blue-400'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Profile Information */}
-        <div className="lg:col-span-2">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">Profile Information</h2>
+      {/* Tab Content */}
+      {activeTab === 'overview' && (
+        <div className="space-y-6">
+          {/* Profile Information Section */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 pb-3 border-b border-gray-200 dark:border-gray-700">Profile Information</h2>
             
-            <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Email */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Email Address
                 </label>
                 <div className="flex items-center">
                   <Mail className="h-5 w-5 text-gray-400 mr-3" />
-                  <span className="text-gray-900">{user?.email}</span>
+                  <span className="text-gray-900 dark:text-white">{user?.email}</span>
                 </div>
               </div>
 
               {/* Phone */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Phone Number
                 </label>
-                {isEditing ? (
-                  <input
-                    type="tel"
-                    defaultValue={profile?.phone || ''}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    placeholder="Enter your phone number"
-                  />
-                ) : (
-                  <div className="flex items-center">
-                    <Phone className="h-5 w-5 text-gray-400 mr-3" />
-                    <span className="text-gray-900">
-                      {profile?.phone || 'Not provided'}
-                    </span>
-                  </div>
-                )}
+                <div className="flex items-center">
+                  <Phone className="h-5 w-5 text-gray-400 mr-3" />
+                  <span className="text-gray-900 dark:text-white">
+                    {profile?.phone || 'Not provided'}
+                  </span>
+                </div>
               </div>
 
               {/* Location */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   City
                 </label>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    defaultValue={profile?.city || ''}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    placeholder="Enter your city"
-                  />
-                ) : (
-                  <div className="flex items-center">
-                    <MapPin className="h-5 w-5 text-gray-400 mr-3" />
-                    <span className="text-gray-900">
-                      {profile?.city || 'Not provided'}
-                    </span>
-                  </div>
-                )}
+                <div className="flex items-center">
+                  <MapPin className="h-5 w-5 text-gray-400 mr-3" />
+                  <span className="text-gray-900 dark:text-white">
+                    {profile?.city || 'Not provided'}
+                  </span>
+                </div>
               </div>
 
-              {/* Interests */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+              {/* Interests - Full width */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Interests
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -132,142 +136,139 @@ export default function Profile() {
                     profile.interests.map((interest, index) => (
                       <span
                         key={index}
-                        className="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm"
+                        className="px-3 py-1 bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 rounded-full text-sm"
                       >
                         {interest}
                       </span>
                     ))
                   ) : (
-                    <span className="text-gray-500">No interests selected</span>
+                    <span className="text-gray-500 dark:text-gray-400">No interests selected</span>
                   )}
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Account Stats */}
-        <div className="space-y-6">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Stats</h3>
-            <div className="space-y-4">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Member since</span>
-                <span className="font-medium">
-                  {user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'Recently'}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Deals saved</span>
-                <span className="font-medium">0</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Reviews written</span>
-                <span className="font-medium">0</span>
+          {/* Stats and Preferences Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Account Stats */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 pb-3 border-b border-gray-200 dark:border-gray-700">Account Stats</h3>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-gray-600 dark:text-gray-400">Member since</span>
+                  <span className="font-medium text-gray-900 dark:text-white">
+                    {user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'Recently'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-gray-600 dark:text-gray-400">Deals saved</span>
+                  <span className="font-medium text-gray-900 dark:text-white">0</span>
+                </div>
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-gray-600 dark:text-gray-400">Reviews written</span>
+                  <span className="font-medium text-gray-900 dark:text-white">0</span>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <Settings className="h-5 w-5 mr-2" />
-              Navigation Preferences
-            </h3>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <Smartphone className="h-4 w-4 text-gray-400 mr-2" />
-                  <div>
-                    <span className="text-sm font-medium text-gray-700">Swipe Gestures</span>
-                    <p className="text-xs text-gray-500">Navigate between pages with swipes</p>
+            {/* Navigation Preferences */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 pb-3 border-b border-gray-200 dark:border-gray-700 flex items-center">
+                <Settings className="h-5 w-5 mr-2" />
+                Navigation Preferences
+              </h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between py-2">
+                  <div className="flex items-center">
+                    <Smartphone className="h-4 w-4 text-gray-400 mr-2" />
+                    <div>
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Swipe Gestures</span>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Navigate between pages</p>
+                    </div>
                   </div>
-                </div>
-                <button
-                  onClick={() => updatePreference('swipeGesturesEnabled', !preferences.swipeGesturesEnabled)}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    preferences.swipeGesturesEnabled ? 'bg-indigo-600' : 'bg-gray-200'
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
-                      preferences.swipeGesturesEnabled ? 'translate-x-6' : 'translate-x-1'
+                  <button
+                    onClick={() => updatePreference('swipeGesturesEnabled', !preferences.swipeGesturesEnabled)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      preferences.swipeGesturesEnabled ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-gray-700'
                     }`}
-                  />
-                </button>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-sm font-medium text-gray-700">Haptic Feedback</span>
-                  <p className="text-xs text-gray-500">Feel vibrations during interactions</p>
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
+                        preferences.swipeGesturesEnabled ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
                 </div>
-                <button
-                  onClick={() => updatePreference('enableHapticFeedback', !preferences.enableHapticFeedback)}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    preferences.enableHapticFeedback ? 'bg-indigo-600' : 'bg-gray-200'
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
-                      preferences.enableHapticFeedback ? 'translate-x-6' : 'translate-x-1'
+                
+                <div className="flex items-center justify-between py-2">
+                  <div>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Haptic Feedback</span>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Feel vibrations</p>
+                  </div>
+                  <button
+                    onClick={() => updatePreference('enableHapticFeedback', !preferences.enableHapticFeedback)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      preferences.enableHapticFeedback ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-gray-700'
                     }`}
-                  />
-                </button>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-sm font-medium text-gray-700">Page Animations</span>
-                  <p className="text-xs text-gray-500">Enable smooth page transitions</p>
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
+                        preferences.enableHapticFeedback ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
                 </div>
-                <button
-                  onClick={() => updatePreference('enableAnimations', !preferences.enableAnimations)}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    preferences.enableAnimations ? 'bg-indigo-600' : 'bg-gray-200'
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
-                      preferences.enableAnimations ? 'translate-x-6' : 'translate-x-1'
+                
+                <div className="flex items-center justify-between py-2">
+                  <div>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Page Animations</span>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Smooth transitions</p>
+                  </div>
+                  <button
+                    onClick={() => updatePreference('enableAnimations', !preferences.enableAnimations)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      preferences.enableAnimations ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-gray-700'
                     }`}
-                  />
-                </button>
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
+                        preferences.enableAnimations ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
               </div>
-            </div>
-            
-            {/* Information note about swipe gestures */}
-            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-              <p className="text-xs text-blue-700">
-                💡 <strong>Tip:</strong> If swipe gestures interfere with text selection, you can disable them here. 
-                You can still navigate using the bottom navigation bar.
-              </p>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-            <div className="space-y-3">
-              <button className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg">
-                Change Password
-              </button>
-              <button className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg">
-                Notification Settings
-              </button>
-              <button className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg">
-                Privacy Settings
-              </button>
-              <button className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg">
-                Delete Account
-              </button>
-            </div>
+          {/* User Reviews Section */}
+          <div>
+            <UserReviewsList />
           </div>
         </div>
-      </div>
+      )}
 
-      {/* User Reviews Section */}
-      <div className="mt-8">
-        <UserReviewsList />
-      </div>
+      {/* Edit Profile Tab */}
+      {activeTab === 'edit' && (
+        <div className="max-w-4xl mx-auto">
+          <ProfileEditForm />
+        </div>
+      )}
+
+      {/* Settings Tab */}
+      {activeTab === 'settings' && (
+        <div className="max-w-4xl mx-auto">
+          <ProfileSettings />
+        </div>
+      )}
+
+      {/* Activity Tab */}
+      {activeTab === 'activity' && (
+        <div className="max-w-4xl mx-auto">
+          <ActivityFeed />
+        </div>
+      )}
     </div>
   )
 }

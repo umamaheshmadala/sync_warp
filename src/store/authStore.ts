@@ -1,6 +1,7 @@
 // src/store/authStore.ts
 import { create } from 'zustand'
 import { supabase, Profile, AuthUser } from '../lib/supabase'
+import { uploadProfilePicture, resizeImage, type UploadResult } from '../services/profileStorageService'
 
 interface AuthState {
   user: AuthUser | null
@@ -8,12 +9,14 @@ interface AuthState {
   loading: boolean
   initialized: boolean
   error: string | null
+  uploadingAvatar: boolean
   
   // Actions
   signUp: (email: string, password: string, userData?: any) => Promise<void>
   signIn: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>
-  updateProfile: (updates: Partial<Profile>) => Promise<void>
+  updateProfile: (updates: Partial<Profile>, options?: { optimistic?: boolean; retry?: boolean }) => Promise<Profile | undefined>
+  uploadAvatar: (file: File) => Promise<string>
   checkUser: () => Promise<void>
   clearError: () => void
   // Password reset methods
@@ -27,6 +30,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   loading: true,
   initialized: false,
   error: null,
+  uploadingAvatar: false,
 
   signUp: async (email: string, password: string, userData = {}) => {
     set({ loading: true })
@@ -201,15 +205,35 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  updateProfile: async (updates: Partial<Profile>) => {
-    const { user } = get()
+  updateProfile: async (
+    updates: Partial<Profile>,
+    options: { optimistic?: boolean; retry?: boolean } = { optimistic: true, retry: true }
+  ) => {
+    const { user, profile: currentProfile } = get()
     if (!user) throw new Error('No user found')
 
-    try {
+    // Optimistic update - update local state immediately
+    if (options.optimistic && currentProfile) {
+      const optimisticProfile = {
+        ...currentProfile,
+        ...updates,
+        updated_at: new Date().toISOString()
+      }
+      set({ profile: optimisticProfile })
+    }
+
+    // Helper function for the actual update
+    const performUpdate = async (): Promise<Profile> => {
+      // Prepare updates with updated_at timestamp
+      const profileUpdates = {
+        ...updates,
+        updated_at: new Date().toISOString()
+      }
+
       // First, try to update existing profile
       const { data: updatedData, error: updateError } = await supabase
         .from('profiles')
-        .update(updates)
+        .update(profileUpdates)
         .eq('id', user.id)
         .select()
         .single()
@@ -251,7 +275,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             throw new Error(`Failed to create profile: ${insertError.message}`)
           }
           
-          set({ profile: newData })
           return newData
         } else {
           console.error('Update profile error:', updateError)
@@ -259,11 +282,70 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
       }
       
-      set({ profile: updatedData })
       return updatedData
+    }
+
+    try {
+      // Attempt the update
+      const result = await performUpdate()
+      set({ profile: result })
+      return result
     } catch (error: any) {
       console.error('Update profile error:', error)
+      
+      // Retry once if enabled and it's a network error
+      if (options.retry && (error.message?.includes('network') || error.message?.includes('timeout'))) {
+        console.log('Retrying profile update...')
+        try {
+          // Wait 1 second before retry
+          await new Promise(resolve => setTimeout(resolve, 1000))
+          const result = await performUpdate()
+          set({ profile: result })
+          return result
+        } catch (retryError) {
+          console.error('Retry failed:', retryError)
+          // Revert optimistic update on retry failure
+          if (options.optimistic && currentProfile) {
+            set({ profile: currentProfile })
+          }
+          throw retryError
+        }
+      }
+      
+      // Revert optimistic update on error
+      if (options.optimistic && currentProfile) {
+        set({ profile: currentProfile })
+      }
+      
       throw error
+    }
+  },
+
+  uploadAvatar: async (file: File) => {
+    const { user, profile } = get()
+    if (!user) throw new Error('No user found')
+
+    set({ uploadingAvatar: true })
+
+    try {
+      // Resize image before upload
+      const resizedFile = await resizeImage(file, 500, 500, 0.85)
+      
+      // Upload to Supabase Storage
+      const { url } = await uploadProfilePicture(user.id, resizedFile)
+      
+      // Update profile with new avatar URL
+      await get().updateProfile(
+        { avatar_url: url },
+        { optimistic: true, retry: true }
+      )
+      
+      return url
+    } catch (error: any) {
+      console.error('Avatar upload error:', error)
+      throw error
+    } finally {
+      set({ uploadingAvatar: false })
     }
   },
 
