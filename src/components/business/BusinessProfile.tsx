@@ -32,6 +32,7 @@ import FeaturedProducts from './FeaturedProducts';
 import GoogleMapsLocationPicker from '../maps/GoogleMapsLocationPicker';
 import BusinessReviews from '../reviews/BusinessReviews';
 import BusinessReviewForm from '../reviews/BusinessReviewForm';
+import EnhancedProfileTab from './EnhancedProfileTab';
 import { useUserCheckin } from '../../hooks/useUserCheckin';
 import { useReviewStats } from '../../hooks/useReviewStats';
 import { createReview } from '../../services/reviewService';
@@ -1141,7 +1142,8 @@ const BusinessProfile: React.FC = () => {
   const tabs = [
     { id: 'overview', label: 'Overview', count: null },
     { id: 'reviews', label: 'Reviews', count: reviewStats?.total_reviews || business?.total_reviews || 0 },
-    { id: 'statistics', label: 'Statistics', count: null }
+    { id: 'statistics', label: 'Statistics', count: null },
+    { id: 'enhanced-profile', label: 'Enhanced Profile', count: null }
   ];
 
   return (
@@ -1308,6 +1310,22 @@ const BusinessProfile: React.FC = () => {
             {activeTab === 'overview' && renderOverview()}
             {activeTab === 'reviews' && renderReviews()}
             {activeTab === 'statistics' && renderStatistics()}
+            {activeTab === 'enhanced-profile' && (
+              <EnhancedProfileTab
+                businessId={businessId!}
+                business={business!}
+                isOwner={isOwner}
+                onUpdate={async () => {
+                  // Refresh business data after update
+                  const { data } = await supabase
+                    .from('businesses')
+                    .select('*')
+                    .eq('id', businessId)
+                    .single();
+                  if (data) setBusiness(data);
+                }}
+              />
+            )}
           </motion.div>
         </AnimatePresence>
       </div>
