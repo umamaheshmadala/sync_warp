@@ -340,6 +340,24 @@ export async function shareWithLimitValidation(
       throw new Error('User not authenticated');
     }
 
+    // Check how many copies recipient already has (for display count)
+    console.log('🔍 Checking how many copies recipient already has...');
+    const { count: existingCount, error: countError } = await supabase
+      .from('user_coupon_collections')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', recipientId)
+      .eq('coupon_id', couponId)
+      .in('status', ['active', 'used']); // Count active and used coupons
+
+    if (countError) {
+      console.error('❌ Error checking existing count:', countError);
+      throw new Error(`Failed to check recipient's coupons: ${countError.message}`);
+    }
+
+    const couponCount = existingCount || 0;
+    console.log(`📊 Recipient currently has ${couponCount} copies of this coupon`);
+    console.log('✅ Proceeding with share (duplicates allowed)');
+
     // Check if user is a Driver
     const isDriver = await isUserDriver(senderId);
 

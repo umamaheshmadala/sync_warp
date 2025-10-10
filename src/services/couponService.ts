@@ -103,8 +103,8 @@ class CouponService {
       // Default sorting
       if (!filters?.sort_by) {
         query = query
-          .order('status', { ascending: false })
-          .order('created_at', { ascending: false });
+          .order('status', { ascending: false });
+        query = query.order('created_at', { ascending: false });
       }
 
       const { data, error } = await query;
@@ -583,18 +583,22 @@ class CouponService {
         throw new Error('This coupon is not valid at this time');
       }
 
-      // Check if user already collected this coupon
+      // Check if user already collected this coupon (only active collections)
       const { data: existing, error: existingError } = await supabase
         .from('user_coupon_collections')
-        .select('id')
+        .select('id, status, has_been_shared')
         .eq('user_id', userId)
         .eq('coupon_id', couponId)
-        .eq('status', 'active')
+        .in('status', ['active'])  // Only check active collections
         .maybeSingle();
 
       if (existingError) throw existingError;
       
       if (existing) {
+        // If the coupon was shared, don't allow re-collection
+        if (existing.has_been_shared) {
+          throw new Error('This coupon was shared and cannot be collected again');
+        }
         throw new Error('You have already collected this coupon');
       }
 
@@ -911,23 +915,35 @@ class CouponService {
    */
   async getUserCollectedCoupons(userId: string): Promise<UserCouponCollection[]> {
     try {
+      console.log('🔍 [couponService] Getting collected coupons for user:', userId);
+      
       const { data, error } = await supabase
         .from('user_coupon_collections')
         .select(`
           *,
-          coupon:business_coupons!inner(*)
+          coupon:business_coupons!inner(
+            *,
+            business:businesses!inner(
+              id,
+              business_name,
+              address,
+              phone
+            )
+          )
         `)
         .eq('user_id', userId)
+        .eq('status', 'active') // Only fetch active coupons (exclude removed, expired, etc.)
         .order('collected_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching user collected coupons:', error);
+        console.error('❌ [couponService] Error fetching user collected coupons:', error);
         throw error;
       }
 
+      console.log('✅ [couponService] Fetched', data?.length || 0, 'active coupons');
       return data || [];
     } catch (error) {
-      console.error('Error in getUserCollectedCoupons:', error);
+      console.error('❌ [couponService] Error in getUserCollectedCoupons:', error);
       throw new Error('Failed to load your coupons');
     }
   }

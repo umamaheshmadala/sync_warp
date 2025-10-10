@@ -26,6 +26,7 @@ import {
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
 import { toast } from 'react-hot-toast';
+import { OnboardingReminderBanner } from './OnboardingReminderBanner';
 
 // TypeScript interfaces
 interface Business {
@@ -391,6 +392,11 @@ const BusinessDashboard: React.FC = () => {
             </Link>
           </div>
         </div>
+
+        {/* Onboarding Reminder - Show for first business if not completed */}
+        {businesses.length > 0 && businesses[0] && (
+          <OnboardingReminderBanner businessId={businesses[0].id} />
+        )}
 
         {/* Statistics */}
         {businesses.length > 0 && (

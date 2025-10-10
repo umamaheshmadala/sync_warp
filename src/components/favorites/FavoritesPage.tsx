@@ -9,8 +9,6 @@ import {
   Search as SearchIcon, 
   Grid, 
   List, 
-  SortDesc, 
-  Filter,
   Trash2,
   Star,
   MapPin,
@@ -22,6 +20,7 @@ import { motion } from 'framer-motion';
 import useFavorites, { FavoriteBusiness, FavoriteCoupon } from '../../hooks/useFavorites';
 import { SimpleSaveButton } from './SimpleSaveButton';
 import { cn } from '../../lib/utils';
+import { UnifiedCouponCard } from '../common/UnifiedCouponCard';
 
 type ActiveTab = 'businesses' | 'coupons' | 'wishlist';
 type ViewMode = 'grid' | 'list';
@@ -498,124 +497,29 @@ const CouponCard: React.FC<{
   onNavigate: (id: string) => void;
   onBusinessNavigate: (id: string) => void;
 }> = ({ coupon, viewMode, onNavigate, onBusinessNavigate }) => {
-  const isExpiringSoon = new Date(coupon.valid_until).getTime() - Date.now() < 7 * 24 * 60 * 60 * 1000;
+  const now = Date.now();
+  const expiryTime = new Date(coupon.valid_until).getTime();
+  const isExpired = expiryTime < now;
   
-  if (viewMode === 'list') {
-    return (
-      <div className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow p-6">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <div className="flex items-start justify-between">
-              <h3 className="text-lg font-semibold text-gray-900 hover:text-indigo-600 cursor-pointer"
-                  onClick={() => onNavigate(coupon.coupon_id)}>
-                {coupon.title}
-              </h3>
-              <SimpleSaveButton itemId={coupon.coupon_id} itemType="coupon" size="sm" />
-            </div>
-            
-            <button
-              onClick={() => onBusinessNavigate(coupon.business_id)}
-              className="text-sm text-indigo-600 hover:text-indigo-700 mt-1"
-            >
-              {coupon.business_name}
-            </button>
-            
-            {coupon.description && (
-              <p className="text-sm text-gray-600 mt-2 line-clamp-2">{coupon.description}</p>
-            )}
-            
-            <div className="flex items-center justify-between mt-4">
-              <div className="flex items-center space-x-4">
-                <div className="text-lg font-bold text-green-600">
-                  {coupon.discount_type === 'percentage' ? `${coupon.discount_value}%` : `$${coupon.discount_value}`} OFF
-                </div>
-                
-                {coupon.is_collected && (
-                  <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
-                    Collected
-                  </span>
-                )}
-                
-                {isExpiringSoon && (
-                  <span className="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full">
-                    Expires Soon
-                  </span>
-                )}
-              </div>
-              
-              <div className="text-xs text-gray-500">
-                Expires {new Date(coupon.valid_until).toLocaleDateString()}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-all cursor-pointer group"
-      onClick={() => onNavigate(coupon.coupon_id)}
     >
-      <div className="p-6">
-        <div className="flex items-start justify-between mb-3">
-          <h3 className="text-lg font-semibold text-gray-900 group-hover:text-indigo-600 line-clamp-2">
-            {coupon.title}
-          </h3>
-          <SimpleSaveButton itemId={coupon.coupon_id} itemType="coupon" size="sm" />
-        </div>
-        
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onBusinessNavigate(coupon.business_id);
-          }}
-          className="text-sm text-indigo-600 hover:text-indigo-700 mb-2"
-        >
-          {coupon.business_name}
-        </button>
-        
-        {coupon.description && (
-          <p className="text-sm text-gray-600 mb-4 line-clamp-2">{coupon.description}</p>
-        )}
-        
-        <div className="mb-4">
-          <div className="text-xl font-bold text-green-600">
-            {coupon.discount_type === 'percentage' ? `${coupon.discount_value}%` : `$${coupon.discount_value}`} OFF
-          </div>
-        </div>
-        
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            {coupon.is_collected && (
-              <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
-                Collected
-              </span>
-            )}
-            
-            {isExpiringSoon && (
-              <span className="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full">
-                Expires Soon
-              </span>
-            )}
-          </div>
-        </div>
-        
-        <div className="mt-4 pt-4 border-t border-gray-100">
-          <div className="flex items-center justify-between text-xs text-gray-500">
-            <div className="flex items-center">
-              <Calendar className="h-3 w-3 mr-1" />
-              Saved {new Date(coupon.favorited_at).toLocaleDateString()}
-            </div>
-            <div>
-              Expires {new Date(coupon.valid_until).toLocaleDateString()}
-            </div>
-          </div>
-        </div>
-      </div>
+      <UnifiedCouponCard
+        coupon={{
+          id: coupon.coupon_id,
+          title: coupon.title,
+          description: coupon.description,
+          discount_type: coupon.discount_type,
+          discount_value: coupon.discount_value,
+          valid_until: coupon.valid_until,
+          business_name: coupon.business_name,
+          isCollected: coupon.is_collected
+        }}
+        onClick={() => onNavigate(coupon.coupon_id)}
+        isExpired={isExpired}
+      />
     </motion.div>
   );
 };

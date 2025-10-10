@@ -10,8 +10,10 @@ import BottomNavigation from './BottomNavigation'
 import GestureHandler from './GestureHandler'
 import ContactsSidebar from './ContactsSidebarWithTabs'
 import NotificationHub from './NotificationHub'
+import CityPicker from './location/CityPicker'
 import { useNavigationPreferences } from '../hooks/useNavigationState'
-import { Bell, Users, LogOut, ChevronDown, MapPin } from 'lucide-react'
+import { Users, LogOut, ChevronDown, MapPin } from 'lucide-react'
+import { NotificationBell } from './notifications'
 
 interface LayoutProps {
   children: React.ReactNode
@@ -26,7 +28,8 @@ export default function Layout({ children }: LayoutProps) {
   // State for sidebar and notifications
   const [showContactsSidebar, setShowContactsSidebar] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
-  const [selectedCity] = useState(profile?.city || 'Select City')
+  const [showCityPicker, setShowCityPicker] = useState(false)
+  const selectedCity = profile?.city || 'Select City'
 
   // Update page title and meta description based on current route
   useEffect(() => {
@@ -112,7 +115,7 @@ export default function Layout({ children }: LayoutProps) {
                 {/* City Selector - show on dashboard */}
                 {location.pathname === '/dashboard' && (
                   <button
-                    onClick={() => {/* Open city selector */}}
+                    onClick={() => setShowCityPicker(true)}
                     className="flex items-center text-gray-700 hover:text-gray-900 bg-gray-100/50 px-3 py-2 rounded-xl transition-all duration-300 hover:bg-gray-200/50"
                   >
                     <MapPin className="w-4 h-4 mr-1" />
@@ -131,14 +134,7 @@ export default function Layout({ children }: LayoutProps) {
                 </button>
 
                 {/* Notifications */}
-                <button
-                  onClick={() => setShowNotifications(true)}
-                  className="p-2.5 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl relative transition-all duration-300"
-                  title="Notifications"
-                >
-                  <Bell className="w-5 h-5" />
-                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-red-400 to-pink-400 rounded-full animate-pulse"></span>
-                </button>
+                <NotificationBell />
 
                 {/* User Profile & Actions */}
                 {user && (
@@ -223,6 +219,16 @@ export default function Layout({ children }: LayoutProps) {
       <NotificationHub 
         isOpen={showNotifications}
         onClose={() => setShowNotifications(false)}
+      />
+
+      {/* City Picker Modal */}
+      <CityPicker
+        isOpen={showCityPicker}
+        onClose={() => setShowCityPicker(false)}
+        onCitySelect={(city) => {
+          console.log('City selected:', city.name);
+          // Profile update is handled automatically in CityPicker
+        }}
       />
 
     </div>

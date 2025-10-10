@@ -100,7 +100,7 @@ const FriendSelector: React.FC<FriendSelectorProps> = ({
   const canShareToFriend = async (friendId: string) => {
     try {
       const result = await checkCanShare(friendId);
-      return result.canShare;
+      return result.can_share; // Fix: use can_share (snake_case)
     } catch (err) {
       console.error('Error checking if can share:', err);
       return false;
@@ -109,20 +109,28 @@ const FriendSelector: React.FC<FriendSelectorProps> = ({
 
   // Handle user selection
   const handleSelectUser = async (user: FriendUser) => {
+    console.log('👥 [FriendSelector] User selected:', user.full_name || user.email);
     setSelectedUser(user);
     
     // Check if can share to this friend
-    const canShare = await canShareToFriend(user.id);
+    console.log('🔍 [FriendSelector] Checking sharing limits...');
+    const canShareResult = await checkCanShare(user.id);
+    console.log('✅ [FriendSelector] Can share result:', canShareResult);
     
-    if (!canShare) {
+    if (!canShareResult.can_share) { // Fix: use can_share (snake_case) not canShare
       const friendStats = getFriendSharingStats(user.id);
       const limit = sharingStats?.limits?.per_friend_limit || 3;
       const shared = friendStats?.count || 0;
       
-      toast.error(`You've already shared ${shared}/${limit} coupons with ${user.full_name || user.email} today`);
+      console.warn('⚠️ [FriendSelector] Cannot share - Reason:', canShareResult.reason);
+      
+      // Show the actual reason from the check, not a generic message
+      toast.error(canShareResult.reason || `You've already shared ${shared}/${limit} coupons with ${user.full_name || user.email} today`);
       setSelectedUser(null);
       return;
     }
+    
+    console.log('✅ [FriendSelector] User can be selected for sharing');
   };
 
   // Handle confirm selection

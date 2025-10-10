@@ -16,6 +16,8 @@ import { useAuthStore } from '../store/authStore';
 import ContactsSidebar from './ContactsSidebarWithTabs';
 import BottomNavigation from './BottomNavigation';
 import NotificationHub from './NotificationHub';
+import AdCarousel from './ads/AdCarousel';
+import { NewBusinesses } from './business';
 
 interface BusinessCard {
   id: string;
@@ -126,6 +128,11 @@ const Dashboard: React.FC = () => {
           </div>
           <div className="absolute -top-8 -right-8 w-32 h-32 bg-white bg-opacity-10 rounded-full"></div>
           <div className="absolute -bottom-8 -left-8 w-40 h-40 bg-white bg-opacity-5 rounded-full"></div>
+        </section>
+
+        {/* Ad Carousel Section */}
+        <section className="mb-8">
+          <AdCarousel />
         </section>
 
         {/* Dashboard Grid - Full Width */}
@@ -351,6 +358,13 @@ const Dashboard: React.FC = () => {
             ))}
           </div>
         </section>
+
+        {/* New Businesses Section */}
+        <NewBusinesses 
+          limit={12}
+          daysThreshold={30}
+          showLoadMore={true}
+        />
 
         {/* Trending Products */}
         <section className="mb-8">

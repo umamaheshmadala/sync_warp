@@ -17,6 +17,7 @@ import ResetPassword from '../components/ResetPassword'
 // Import business components
 import BusinessRegistration from '../components/business/BusinessRegistration'
 import BusinessDashboard from '../components/business/BusinessDashboard'
+import BusinessOnboardingPage from '../components/business/BusinessOnboardingPage'
 import BusinessProfile from '../components/business/BusinessProfile'
 import BusinessAnalyticsPage from '../components/business/BusinessAnalyticsPage'
 import BusinessQRCodePage from '../components/business/BusinessQRCodePage'
@@ -47,6 +48,7 @@ const FavoritesSystemTest = lazy(() => import('../components/debug/FavoritesSyst
 const CheckinSystemTest = lazy(() => import('../components/debug/CheckinSystemTest'))
 const QRCodeTest = lazy(() => import('../components/debug/QRCodeTest'))
 const SimpleQRTest = lazy(() => import('../components/debug/SimpleQRTest'))
+const TargetingDemo = lazy(() => import('../pages/TargetingDemoSimple'))
 
 // Check-in components
 const BusinessCheckinsPage = lazy(() => import('../components/checkins/BusinessCheckinsPage'))
@@ -251,6 +253,13 @@ export const routes: RouteConfig[] = [
     description: 'Manage your businesses on SynC'
   },
   {
+    path: '/business/onboarding',
+    element: <BusinessOnboardingPage />,
+    protected: true,
+    title: 'Business Onboarding - SynC',
+    description: 'Complete your business profile setup'
+  },
+  {
     path: '/business/:businessId',
     element: <BusinessProfile />,
     protected: true,
@@ -319,6 +328,12 @@ const debugRoutes: RouteConfig[] = [
     element: <Suspense fallback={<div>Loading...</div>}><SimpleQRTest /></Suspense>,
     protected: true,
     title: 'Debug - Simple QR Code Test'
+  },
+  {
+    path: '/demo/targeting',
+    element: <Suspense fallback={<div>Loading...</div>}><TargetingDemo /></Suspense>,
+    protected: false,
+    title: 'Phase 4 - Targeting Components Demo'
   }
 ]
 

@@ -3,39 +3,21 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search,
   Filter,
-  MapPin,
-  Clock,
-  Star,
-  Heart,
-  Share2,
-  Gift,
-  Zap,
-  Users,
-  Calendar,
   ChevronDown,
   ChevronUp,
   X,
   SlidersHorizontal,
-  Bookmark,
-  BookmarkCheck,
-  Eye,
-  ShoppingBag,
-  Percent,
-  Store,
-  Tag,
-  TrendingUp,
-  Award,
-  Globe,
-  Navigation,
-  RefreshCcw
+  RefreshCcw,
+  Gift
 } from 'lucide-react';
+import { UnifiedCouponCard } from '../common/UnifiedCouponCard';
 import { 
   Coupon, 
   CouponCategory, 
   CouponType,
   CollectionSource 
 } from '../../types/coupon';
-import { useCoupons } from '../../hooks/useCoupons';
+import { useCoupons, usePublicCoupons } from '../../hooks/useCoupons';
 import { couponService } from '../../services/couponService';
 import { toast } from 'react-hot-toast';
 
@@ -91,13 +73,8 @@ const CouponBrowser: React.FC<CouponBrowserProps> = ({
     sortBy: 'popular'
   });
 
-  const { 
-    coupons, 
-    loading, 
-    collectCoupon, 
-    fetchPublicCoupons,
-    getUserCollectedCoupons 
-  } = useCoupons();
+  const { collectCoupon, getUserCollectedCoupons } = useCoupons();
+  const { coupons, loading, fetchPublicCoupons } = usePublicCoupons();
 
   useEffect(() => {
     if (!userId) return;
@@ -174,8 +151,9 @@ const CouponBrowser: React.FC<CouponBrowserProps> = ({
         // Early returns for better performance
         if (filters.isActive && coupon.status !== 'active') return false;
         if (selectedCategory !== 'all' && coupon.category !== selectedCategory) return false;
-        if (coupon.expires_at && new Date(coupon.expires_at).getTime() < now) return false;
-        if (filters.hasStock && coupon.usage_limit && coupon.used_count >= coupon.usage_limit) return false;
+        const expiryDate = coupon.valid_until || coupon.expires_at;
+        if (expiryDate && new Date(expiryDate).getTime() < now) return false;
+        if (filters.hasStock && coupon.total_limit && coupon.usage_count >= coupon.total_limit) return false;
         
         // Text search
         if (searchTerm) {
@@ -195,9 +173,9 @@ const CouponBrowser: React.FC<CouponBrowserProps> = ({
         
         // Discount filter
         if (filters.minDiscount > 0) {
-          const discountValue = coupon.type === 'percentage' ? 
-            (coupon.value / 100) * (coupon.minimum_purchase || 1000) : 
-            coupon.value;
+          const discountValue = coupon.discount_type === 'percentage' ? 
+            (coupon.discount_value / 100) * (coupon.min_purchase_amount || 1000) : 
+            coupon.discount_value;
           if (discountValue < filters.minDiscount) return false;
         }
         
@@ -209,11 +187,13 @@ const CouponBrowser: React.FC<CouponBrowserProps> = ({
           case 'newest':
             return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
           case 'expiring':
-            if (!a.expires_at) return 1;
-            if (!b.expires_at) return -1;
-            return new Date(a.expires_at).getTime() - new Date(b.expires_at).getTime();
+            const aExpiry = a.valid_until || a.expires_at;
+            const bExpiry = b.valid_until || b.expires_at;
+            if (!aExpiry) return 1;
+            if (!bExpiry) return -1;
+            return new Date(aExpiry).getTime() - new Date(bExpiry).getTime();
           case 'discount':
-            return b.value - a.value;
+            return (b.discount_value || 0) - (a.discount_value || 0);
           case 'distance':
             if (!userLocation) return 0;
             const aDistance = calculateDistance(a.business_latitude || 0, a.business_longitude || 0);
@@ -238,19 +218,19 @@ const CouponBrowser: React.FC<CouponBrowserProps> = ({
 
   // Format discount display
   const formatDiscount = (coupon: Coupon): string => {
-    if (coupon.type === 'percentage') {
-      return `${coupon.value}% OFF`;
+    if (coupon.discount_type === 'percentage') {
+      return `${coupon.discount_value}% OFF`;
     }
-    return `₹${coupon.value} OFF`;
+    return `₹${coupon.discount_value} OFF`;
   };
 
   // Calculate savings
   const calculateSavings = (coupon: Coupon): string => {
-    if (coupon.type === 'percentage' && coupon.minimum_purchase) {
-      const maxSaving = (coupon.value / 100) * coupon.minimum_purchase;
+    if (coupon.discount_type === 'percentage' && coupon.min_purchase_amount) {
+      const maxSaving = (coupon.discount_value / 100) * coupon.min_purchase_amount;
       return `Save up to ₹${Math.round(maxSaving)}`;
     }
-    return `Save ₹${coupon.value}`;
+    return `Save ₹${coupon.discount_value}`;
   };
 
   // Get category color
@@ -275,8 +255,17 @@ const CouponBrowser: React.FC<CouponBrowserProps> = ({
     distance, 
     isLoading 
   }) => {
-    const daysUntilExpiry = coupon.expires_at ? 
-      Math.ceil((new Date(coupon.expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
+    const expiryDate = coupon.valid_until || coupon.expires_at;
+    const isExpired = expiryDate && new Date(expiryDate).getTime() < Date.now();
+
+    // Debug: Log coupon data in CouponBrowser
+    console.log('🌟 [CouponBrowser.CouponCard] Coupon data:', {
+      id: coupon.id,
+      title: coupon.title,
+      business_name: coupon.business_name,
+      business: coupon.business,
+      full_coupon: coupon
+    });
 
     return (
       <motion.div
@@ -284,147 +273,22 @@ const CouponBrowser: React.FC<CouponBrowserProps> = ({
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.9 }}
-        whileHover={{ y: -4 }}
-        className={`bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer ${
-          isCollected ? 'ring-2 ring-green-500' : ''
-        }`}
-        onClick={() => onView(coupon)}
       >
-        {/* Header */}
-        <div className="relative">
-          {coupon.image_url && (
-            <img
-              src={coupon.image_url}
-              alt={coupon.title}
-              className="w-full h-32 object-cover"
-            />
-          )}
-          <div className={`absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-medium ${getCategoryColor(coupon.category)}`}>
-            {coupon.category.toUpperCase()}
-          </div>
-          <div className="absolute top-3 right-3 bg-white bg-opacity-90 rounded-full p-1">
-            {isCollected ? (
-              <BookmarkCheck className="w-5 h-5 text-green-600" />
-            ) : (
-              <Bookmark className="w-5 h-5 text-gray-400" />
-            )}
-          </div>
-          {/* Discount Badge */}
-          <div className="absolute -bottom-4 left-4">
-            <div className="bg-gradient-to-r from-red-500 to-pink-500 text-white px-4 py-2 rounded-lg font-bold text-lg shadow-lg">
-              {formatDiscount(coupon)}
-            </div>
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="p-4 pt-8">
-          <div className="flex items-start justify-between mb-2">
-            <h3 className="font-semibold text-gray-900 text-lg leading-tight">{coupon.title}</h3>
-            {distance && distance > 0 && (
-              <div className="flex items-center text-sm text-gray-500 ml-2">
-                <MapPin className="w-4 h-4 mr-1" />
-                {distance.toFixed(1)}km
-              </div>
-            )}
-          </div>
-          
-          <p className="text-sm text-gray-600 mb-3 line-clamp-2">{coupon.description}</p>
-
-          {/* Business Info */}
-          <div className="flex items-center text-sm text-gray-500 mb-3">
-            <Store className="w-4 h-4 mr-1" />
-            <span>{coupon.business_name}</span>
-            {coupon.business_rating && (
-              <>
-                <div className="mx-2 w-1 h-1 bg-gray-300 rounded-full" />
-                <Star className="w-4 h-4 mr-1 text-yellow-500" />
-                <span>{coupon.business_rating}</span>
-              </>
-            )}
-          </div>
-
-          {/* Savings & Terms */}
-          <div className="space-y-2 mb-4">
-            <div className="text-sm font-medium text-green-600">
-              {calculateSavings(coupon)}
-            </div>
-            {coupon.minimum_purchase && (
-              <div className="text-xs text-gray-500">
-                Min. purchase: ₹{coupon.minimum_purchase}
-              </div>
-            )}
-            {coupon.usage_limit && (
-              <div className="text-xs text-gray-500">
-                {coupon.usage_limit - (coupon.used_count || 0)} left
-              </div>
-            )}
-          </div>
-
-          {/* Expiry & Actions */}
-          <div className="flex items-center justify-between">
-            <div className="text-xs text-gray-500 flex items-center">
-              <Clock className="w-3 h-3 mr-1" />
-              {daysUntilExpiry !== null ? (
-                daysUntilExpiry > 0 ? (
-                  `${daysUntilExpiry} days left`
-                ) : (
-                  <span className="text-red-500 font-medium">Expired</span>
-                )
-              ) : (
-                'No expiry'
-              )}
-            </div>
-            
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onCollect(coupon.id);
-              }}
-              disabled={isCollected || isLoading || (daysUntilExpiry !== null && daysUntilExpiry <= 0)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                isCollected
-                  ? 'bg-green-100 text-green-700 cursor-not-allowed'
-                  : isLoading
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-blue-600 text-white hover:bg-blue-700 active:scale-95'
-              }`}
-            >
-              {isLoading ? (
-                <div className="flex items-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
-                  Adding...
-                </div>
-              ) : isCollected ? (
-                <div className="flex items-center">
-                  <BookmarkCheck className="w-4 h-4 mr-1" />
-                  Collected
-                </div>
-              ) : (
-                <div className="flex items-center">
-                  <Gift className="w-4 h-4 mr-1" />
-                  Collect
-                </div>
-              )}
-            </button>
-          </div>
-
-          {/* Collection Stats */}
-          {coupon.collection_count > 0 && (
-            <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
-              <div className="flex items-center text-xs text-gray-500">
-                <Users className="w-3 h-3 mr-1" />
-                {coupon.collection_count} collected
-              </div>
-              {coupon.redemption_count && (
-                <div className="flex items-center text-xs text-gray-500">
-                  <ShoppingBag className="w-3 h-3 mr-1" />
-                  {coupon.redemption_count} used
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+        <UnifiedCouponCard
+          coupon={{
+            id: coupon.id,
+            title: coupon.title,
+            description: coupon.description,
+            discount_type: coupon.discount_type,
+            discount_value: coupon.discount_value,
+            expires_at: coupon.valid_until || coupon.expires_at,
+            business_name: coupon.business_name || coupon.business?.business_name,
+            business: coupon.business,
+            isCollected: isCollected
+          }}
+          onClick={() => onView(coupon)}
+          isExpired={isExpired || false}
+        />
       </motion.div>
     );
   };

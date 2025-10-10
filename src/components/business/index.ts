@@ -9,6 +9,10 @@ export { default as ProductManagerPage } from './ProductManagerPage';
 export { default as ProductForm } from './ProductForm';
 export { default as ProductCard } from './ProductCard';
 
+// New Businesses Section
+export { NewBusinesses } from './NewBusinesses';
+export { BusinessCard } from './BusinessCard';
+
 // Additional business components to be added later
 // export { default as ProductManager } from './ProductManager.jsx';
 // export { default as BusinessReviews } from './BusinessReviews.jsx';

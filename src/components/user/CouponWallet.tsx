@@ -4,31 +4,13 @@ import {
   Wallet,
   Search,
   Filter,
-  Clock,
-  Star,
-  MapPin,
-  Share2,
-  Gift,
-  QrCode,
-  Trash2,
-  Eye,
-  ShoppingBag,
-  Calendar,
-  Zap,
-  AlertTriangle,
-  CheckCircle,
-  X,
-  ChevronDown,
-  ChevronUp,
-  Store,
-  Tag,
-  Percent,
-  Users,
+  TrendingUp,
   RefreshCcw,
   SortAsc,
-  Heart,
-  ExternalLink
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
+import { UnifiedCouponCard } from '../common/UnifiedCouponCard';
 import { 
   UserCouponCollection,
   Coupon, 
@@ -39,6 +21,7 @@ import { useUserCoupons } from '../../hooks/useCoupons';
 import { couponService } from '../../services/couponService';
 import { useSharingLimits } from '../../hooks/useSharingLimits';
 import ShareCouponModal from '../Sharing/ShareCouponModal';
+import CouponDetailsModal from '../modals/CouponDetailsModal';
 import { toast } from 'react-hot-toast';
 
 interface CouponWalletProps {
@@ -108,6 +91,10 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
     collectionId: string;
     coupon: Coupon;
   } | null>(null);
+  
+  // State for details modal
+  const [selectedCouponForView, setSelectedCouponForView] = useState<Coupon | null>(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   // Load user's wallet data
   useEffect(() => {
@@ -168,11 +155,17 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
     setLoadingActions(prev => new Set([...prev, collectionId]));
     
     try {
-      await removeCouponCollection(collectionId);
-      setCollectedCoupons(prev => prev.filter(c => c.id !== collectionId));
-      toast.success('Coupon removed from wallet');
+      console.log('🗑️ [CouponWallet] Removing coupon collection:', collectionId);
+      const success = await removeCouponCollection(collectionId);
+      
+      if (success) {
+        // Immediately update local state for instant UI feedback
+        setCollectedCoupons(prev => prev.filter(c => c.id !== collectionId));
+        console.log('✅ [CouponWallet] Coupon removed successfully');
+        // Don't show duplicate toast - hook already shows one
+      }
     } catch (error) {
-      console.error('Error removing coupon:', error);
+      console.error('❌ [CouponWallet] Error removing coupon:', error);
       toast.error('Failed to remove coupon');
     } finally {
       setLoadingActions(prev => {
@@ -276,8 +269,20 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
       return true;
     });
 
-    // Sort coupons
+    // Sort coupons - ALWAYS move expired to bottom
     filtered.sort((a, b) => {
+      const statusA = getCouponStatus(a.coupon, a);
+      const statusB = getCouponStatus(b.coupon, b);
+      
+      // Always push expired/redeemed coupons to bottom
+      if ((statusA === 'expired' || statusA === 'redeemed') && (statusB !== 'expired' && statusB !== 'redeemed')) {
+        return 1; // a goes to bottom
+      }
+      if ((statusB === 'expired' || statusB === 'redeemed') && (statusA !== 'expired' && statusA !== 'redeemed')) {
+        return -1; // b goes to bottom
+      }
+      
+      // If both expired or both active, then apply user's sort preference
       switch (filters.sortBy) {
         case 'expiry':
           if (!a.coupon.expires_at && !b.coupon.expires_at) return 0;
@@ -367,8 +372,17 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
   }) => {
     const status = getCouponStatus(coupon, collection);
     const isRedeemed = redemptions.some(r => r.coupon_id === coupon.id);
-    const daysUntilExpiry = coupon.expires_at ? 
-      Math.ceil((new Date(coupon.expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
+    const isExpired = status === 'expired';
+
+    // Debug: Log coupon data to see what's available
+    console.log('🎫 [CouponWalletCard] Coupon data:', {
+      id: coupon.id,
+      title: coupon.title,
+      discount_type: coupon.discount_type,
+      discount_value: coupon.discount_value,
+      business: coupon.business,
+      full_coupon: coupon
+    });
 
     return (
       <motion.div
@@ -376,196 +390,27 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.9 }}
-        whileHover={{ y: -2 }}
-        className={`bg-white rounded-xl border-2 overflow-hidden transition-all duration-300 cursor-pointer w-full max-w-full ${
-          status === 'expired' || isRedeemed 
-            ? 'border-gray-200 opacity-75' 
-            : status === 'expiring'
-            ? 'border-yellow-300 shadow-md'
-            : 'border-gray-200 hover:border-blue-300 hover:shadow-lg'
-        }`}
-        onClick={() => onView(coupon)}
       >
-        {/* Header */}
-        <div className="relative">
-          {coupon.image_url && (
-            <img
-              src={coupon.image_url}
-              alt={coupon.title}
-              className={`w-full h-32 object-cover ${
-                status === 'expired' || isRedeemed ? 'grayscale' : ''
-              }`}
-            />
-          )}
-          
-          {/* Status and Category Badges */}
-          <div className="absolute top-3 left-3 flex items-center space-x-2">
-            {coupon.category && (
-              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(coupon.category)}`}>
-                {coupon.category.toUpperCase()}
-              </span>
-            )}
-            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(status)}`}>
-              {status.toUpperCase()}
-            </span>
-          </div>
-
-          {/* Discount Badge */}
-          <div className="absolute -bottom-4 left-4">
-            <div className={`px-4 py-2 rounded-lg font-bold text-lg shadow-lg ${
-              status === 'expired' || isRedeemed 
-                ? 'bg-gray-400 text-gray-600'
-                : 'bg-gradient-to-r from-red-500 to-pink-500 text-white'
-            }`}>
-              {formatDiscount(coupon)}
-            </div>
-          </div>
-
-          {/* Expiry Warning */}
-          {status === 'expiring' && (
-            <div className="absolute top-3 right-3 bg-yellow-500 text-white p-2 rounded-full">
-              <AlertTriangle className="w-4 h-4" />
-            </div>
-          )}
-
-          {/* Redeemed Check */}
-          {isRedeemed && (
-            <div className="absolute top-3 right-3 bg-green-500 text-white p-2 rounded-full">
-              <CheckCircle className="w-4 h-4" />
-            </div>
-          )}
-        </div>
-
-        {/* Content */}
-        <div className="p-4 pt-8 w-full overflow-hidden">
-          <div className="flex items-start justify-between mb-2">
-            <h3 className="font-semibold text-gray-900 text-lg leading-tight flex-1 min-w-0 truncate">{coupon.title}</h3>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onRemove(collection.id);
-              }}
-              className="text-gray-400 hover:text-red-500 transition-colors ml-2"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          </div>
-          
-          <p className="text-sm text-gray-600 mb-3 line-clamp-2 break-words">{coupon.description}</p>
-
-          {/* Business Info */}
-          <div className="flex items-center text-sm text-gray-500 mb-3 min-w-0">
-            <Store className="w-4 h-4 mr-1 flex-shrink-0" />
-            <span className="truncate">{coupon.business_name}</span>
-            {coupon.business_rating && (
-              <>
-                <div className="mx-2 w-1 h-1 bg-gray-300 rounded-full" />
-                <Star className="w-4 h-4 mr-1 text-yellow-500" />
-                <span>{coupon.business_rating}</span>
-              </>
-            )}
-          </div>
-
-          {/* Terms & Conditions */}
-          <div className="space-y-2 mb-4">
-            {coupon.minimum_purchase && (
-              <div className="text-xs text-gray-500">
-                Min. purchase: ₹{coupon.minimum_purchase}
-              </div>
-            )}
-            {coupon.maximum_discount && coupon.type === 'percentage' && (
-              <div className="text-xs text-gray-500">
-                Max. discount: ₹{coupon.maximum_discount}
-              </div>
-            )}
-            {coupon.usage_limit && (
-              <div className="text-xs text-gray-500">
-                {coupon.usage_limit - (coupon.used_count || 0)} uses remaining
-              </div>
-            )}
-          </div>
-
-          {/* Collection & Expiry Info */}
-          <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
-            <div className="flex items-center">
-              <Calendar className="w-3 h-3 mr-1" />
-              Added {new Date(collection.collected_at).toLocaleDateString()}
-            </div>
-            <div className="flex items-center">
-              <Clock className="w-3 h-3 mr-1" />
-              {daysUntilExpiry !== null ? (
-                daysUntilExpiry > 0 ? (
-                  `${daysUntilExpiry} days left`
-                ) : (
-                  <span className="text-red-500 font-medium">Expired</span>
-                )
-              ) : (
-                'No expiry'
-              )}
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="flex items-center space-x-2 w-full">
-            {!isRedeemed && status === 'active' && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onRedeem(coupon.id);
-                }}
-                disabled={isLoading}
-                className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg font-medium hover:from-green-600 hover:to-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
-              >
-                {isLoading ? (
-                  <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Redeeming...
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center">
-                    <ShoppingBag className="w-4 h-4 mr-2" />
-                    Redeem Now
-                  </div>
-                )}
-              </button>
-            )}
-            
-            {/* Share button - only show if shareable */}
-            {isShareable && !isRedeemed && status === 'active' && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onShare(coupon.id, collection.id);
-                }}
-                className="px-3 py-2 bg-blue-50 border border-blue-300 rounded-lg text-blue-600 hover:bg-blue-100 transition-colors flex items-center gap-1"
-                title="Share with a friend"
-              >
-                <Gift className="w-4 h-4" />
-                <span className="text-xs font-medium">Share</span>
-              </button>
-            )}
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onView(coupon);
-              }}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors"
-            >
-              <Eye className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Redemption Info */}
-          {isRedeemed && (
-            <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded-lg">
-              <div className="flex items-center text-sm text-green-700">
-                <CheckCircle className="w-4 h-4 mr-2" />
-                <span>Redeemed successfully</span>
-              </div>
-            </div>
-          )}
-        </div>
+        <UnifiedCouponCard
+          coupon={{
+            id: coupon.id,
+            title: coupon.title,
+            description: coupon.description,
+            discount_type: coupon.discount_type,
+            discount_value: coupon.discount_value,
+            expires_at: coupon.valid_until || coupon.expires_at,
+            business_name: coupon.business?.business_name,
+            business: coupon.business ? {
+              id: coupon.business.id,
+              business_name: coupon.business.business_name
+            } : undefined
+          }}
+          onClick={() => onView(coupon)}
+          isExpired={isExpired}
+          isRedeemed={isRedeemed}
+          showStatusBadge={true}
+          statusText={status}
+        />
       </motion.div>
     );
   };
@@ -799,9 +644,9 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
         ) : filteredCoupons.length > 0 ? (
           <motion.div
             layout
-            className={`grid gap-6 w-full ${
+            className={`grid gap-6 ${
               viewMode === 'grid' 
-                ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr' 
+                ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' 
                 : 'grid-cols-1'
             }`}
           >
@@ -813,7 +658,10 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
                   coupon={collection.coupon}
                   onRedeem={handleRedeemCoupon}
                   onRemove={handleRemoveCoupon}
-                  onView={(coupon) => onCouponSelect?.(coupon)}
+                  onView={(coupon) => {
+                    setSelectedCouponForView(coupon);
+                    setShowDetailsModal(true);
+                  }}
                   onShare={handleShareCoupon}
                   isLoading={loadingActions.has(collection.coupon_id)}
                   isShareable={isCouponShareable(collection)}
@@ -880,6 +728,40 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
             // Refresh wallet after successful share
             loadWalletData();
             refreshSharingStats();
+          }}
+        />
+      )}
+
+      {/* Coupon Details Modal */}
+      {showDetailsModal && selectedCouponForView && (
+        <CouponDetailsModal
+          coupon={selectedCouponForView}
+          isOpen={showDetailsModal}
+          onClose={() => {
+            setShowDetailsModal(false);
+            setSelectedCouponForView(null);
+          }}
+          showCollectButton={false}  // Already collected
+          showShareButton={true}
+          showRedeemButton={true}  // Show redeem in wallet
+          showRemoveButton={true}  // Show remove in wallet
+          collectionId={collectedCoupons.find(c => c.coupon_id === selectedCouponForView.id)?.id}
+          isRedeemed={redemptions.some(r => r.coupon_id === selectedCouponForView.id)}
+          onShare={(couponId) => {
+            // Find the collection for this coupon
+            const collection = collectedCoupons.find(c => c.coupon_id === couponId);
+            if (collection && isCouponShareable(collection)) {
+              handleShareCoupon(couponId, collection.id);
+              setShowDetailsModal(false);
+            } else {
+              toast.error('This coupon cannot be shared');
+            }
+          }}
+          onRedeem={(couponId) => {
+            handleRedeemCoupon(couponId);
+          }}
+          onRemove={(collectionId) => {
+            handleRemoveCoupon(collectionId);
           }}
         />
       )}

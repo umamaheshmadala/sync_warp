@@ -312,14 +312,15 @@ export const useSearch = (options: UseSearchOptions = {}) => {
       
       console.log('🔍 [useSearch] Raw search result:', simpleResult);
       
-      // Fetch user's collected coupons if user is logged in
+  // Fetch user's collected coupons if user is logged in
       let userCollectedCouponIds = new Set<string>();
       if (user?.id) {
         try {
           const { data: userCollections } = await supabase
             .from('user_coupon_collections')
-            .select('coupon_id')
-            .eq('user_id', user.id);
+            .select('coupon_id, status')
+            .eq('user_id', user.id)
+            .eq('status', 'active');  // Only fetch active collections
           
           if (userCollections) {
             userCollectedCouponIds = new Set(userCollections.map(c => c.coupon_id));
@@ -485,6 +486,36 @@ export const useSearch = (options: UseSearchOptions = {}) => {
       setSearchState(prev => ({ ...prev, isSearching: false }));
     }
   }, [searchState, user?.id, saveToUrl]);
+
+  /**
+   * Refresh collection state after collecting a coupon
+   */
+  const refreshCollectionState = useCallback(async () => {
+    if (!user?.id) return;
+    
+    try {
+      const { data: userCollections } = await supabase
+        .from('user_coupon_collections')
+        .select('coupon_id, status')
+        .eq('user_id', user.id)
+        .eq('status', 'active');
+      
+      if (userCollections) {
+        const collectedIds = new Set(userCollections.map(c => c.coupon_id));
+        
+        // Update results with new collection state
+        setResults(prev => ({
+          ...prev,
+          coupons: prev.coupons.map(coupon => ({
+            ...coupon,
+            isCollected: collectedIds.has(coupon.id)
+          }))
+        }));
+      }
+    } catch (error) {
+      console.error('Error refreshing collection state:', error);
+    }
+  }, [user?.id]);
 
   /**
    * Debounced search function
@@ -665,20 +696,30 @@ export const useSearch = (options: UseSearchOptions = {}) => {
    * Collect a coupon from search results
    */
   const handleCollectCoupon = useCallback(async (couponId: string) => {
-    const success = await collectCoupon(couponId, 'direct_search');
-    
-    if (success) {
-      // Update the coupon in results to show it's collected
-      setResults(prev => ({
-        ...prev,
-        coupons: prev.coupons.map(coupon =>
-          coupon.id === couponId ? { ...coupon, isCollected: true } : coupon
-        )
-      }));
+    if (!user?.id) {
+      toast.error('Please login to collect coupons');
+      return false;
     }
 
-    return success;
-  }, [collectCoupon]);
+    try {
+      console.log('🎫 [useSearch] Collecting coupon:', couponId);
+      // collectCoupon from useUserCoupons expects (couponId, source)
+      // Using 'direct_search' as the source (matches DB constraint)
+      const success = await collectCoupon(couponId, 'direct_search');
+      
+      if (success) {
+        // Refresh the collection state from database
+        await refreshCollectionState();
+        // Note: collectCoupon already shows success toast
+      }
+      
+      return success;
+    } catch (error: any) {
+      console.error('❌ [useSearch] Collection error:', error);
+      toast.error(error.message || 'Failed to collect coupon');
+      return false;
+    }
+  }, [user?.id, collectCoupon, refreshCollectionState]);
 
   /**
    * Get search suggestions

@@ -6,11 +6,39 @@
 
 import '@testing-library/jest-dom';
 import { cleanup } from '@testing-library/react';
-import { afterEach, vi } from 'vitest';
+import { afterEach, beforeAll, afterAll, vi } from 'vitest';
+import { setupServer } from 'msw/node';
+import { handlers } from './mocks/handlers';
 
-// Cleanup after each test
+// Setup MSW server
+export const server = setupServer(...handlers);
+
+// Start server and suppress console errors before all tests
+const originalError = console.error;
+beforeAll(() => {
+  server.listen({ onUnhandledRequest: 'warn' });
+  console.error = (...args: any[]) => {
+    if (
+      typeof args[0] === 'string' &&
+      (args[0].includes('Warning: ReactDOM.render') ||
+        args[0].includes('Not implemented: HTMLFormElement.prototype.submit'))
+    ) {
+      return;
+    }
+    originalError.call(console, ...args);
+  };
+});
+
+// Reset handlers and cleanup after each test
 afterEach(() => {
+  server.resetHandlers();
   cleanup();
+});
+
+// Close server and restore console after all tests
+afterAll(() => {
+  server.close();
+  console.error = originalError;
 });
 
 // Mock window.matchMedia
@@ -47,21 +75,3 @@ global.ResizeObserver = class ResizeObserver {
   unobserve() {}
 } as any;
 
-// Suppress console errors in tests (optional)
-const originalError = console.error;
-beforeAll(() => {
-  console.error = (...args: any[]) => {
-    if (
-      typeof args[0] === 'string' &&
-      (args[0].includes('Warning: ReactDOM.render') ||
-        args[0].includes('Not implemented: HTMLFormElement.prototype.submit'))
-    ) {
-      return;
-    }
-    originalError.call(console, ...args);
-  };
-});
-
-afterAll(() => {
-  console.error = originalError;
-});

@@ -112,12 +112,15 @@ class SimpleSearchService {
           // Use real business location data
           coupons = filteredCoupons.map((coupon) => {
             const businessData = businessMap.get(coupon.business_id);
+            const businessName = businessData?.business_name || 'Unknown Business';
             return {
               ...coupon,
+              // Add business_name at top level for easy access
+              business_name: businessName,
               // Use real business location data from database
               business: {
                 id: coupon.business_id,
-                business_name: businessData?.business_name || 'Unknown Business',
+                business_name: businessName,
                 latitude: businessData?.latitude || null,
                 longitude: businessData?.longitude || null,
                 address: businessData?.address || null,

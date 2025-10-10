@@ -20,6 +20,7 @@ import {
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
 import { toast } from 'react-hot-toast';
+import { RegistrationCompleteScreen } from './RegistrationCompleteScreen';
 
 // TypeScript interfaces
 interface OperatingHours {
@@ -76,6 +77,8 @@ const BusinessRegistration: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [businessCategories, setBusinessCategories] = useState<BusinessCategory[]>([]);
   const [selectedImages, setSelectedImages] = useState<SelectedImages>({ logo: null, cover: null, gallery: [] });
+  const [showCompletionScreen, setShowCompletionScreen] = useState(false);
+  const [registeredBusinessId, setRegisteredBusinessId] = useState<string | null>(null);
 
   // Form data state
   const [formData, setFormData] = useState<BusinessFormData>({
@@ -358,14 +361,18 @@ const BusinessRegistration: React.FC = () => {
         status: 'pending' // Will need admin approval
       };
 
-      const { error } = await supabase
+      const { data: newBusiness, error } = await supabase
         .from('businesses')
-        .insert([businessData]);
+        .insert([businessData])
+        .select('id')
+        .single();
 
       if (error) throw error;
 
-      toast.success('Business registration submitted successfully! Awaiting approval.');
-      navigate('/dashboard');
+      // Show transition screen instead of navigating directly
+      setRegisteredBusinessId(newBusiness.id);
+      setShowCompletionScreen(true);
+      toast.success('Business registration submitted successfully!');
 
     } catch (error) {
       console.error('Registration error:', error);
@@ -852,6 +859,16 @@ const BusinessRegistration: React.FC = () => {
     { number: 3, title: 'Hours', icon: Clock },
     { number: 4, title: 'Final Details', icon: Camera }
   ];
+
+  // Show completion screen if registration successful
+  if (showCompletionScreen && registeredBusinessId) {
+    return (
+      <RegistrationCompleteScreen 
+        businessId={registeredBusinessId}
+        businessName={formData.businessName}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">

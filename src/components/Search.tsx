@@ -10,6 +10,7 @@ import { useSearchTracking } from '../hooks/useSearchAnalytics'
 import { CouponCard, BusinessCard, FilterPanel, SearchSuggestions } from './search/index'
 import { SearchSortField } from '../services/searchService'
 import { useAuthStore } from '../store/authStore'
+import CouponDetailsModal from './modals/CouponDetailsModal'
 
 export default function Search() {
   const navigate = useNavigate();
@@ -34,6 +35,8 @@ export default function Search() {
   const [localQuery, setLocalQuery] = useState(search.query)
   const [suggestionsLoading, setSuggestionsLoading] = useState(false)
   const [isLocationTooltipVisible, setIsLocationTooltipVisible] = useState(false)
+  const [selectedCoupon, setSelectedCoupon] = useState<any | null>(null)
+  const [showCouponModal, setShowCouponModal] = useState(false)
   const [recentSearches, setRecentSearches] = useState<string[]>(() => {
     const recentSearchKey = user?.id ? `recentSearches_${user.id}` : 'recentSearches_guest'
     const saved = localStorage.getItem(recentSearchKey)
@@ -150,6 +153,12 @@ export default function Search() {
   // Handle suggestion selection
   const handleSuggestionSelect = (suggestion: string) => {
     performSearch(suggestion)
+  }
+
+  // Handle coupon click to show modal
+  const handleCouponClick = (coupon: any) => {
+    setSelectedCoupon(coupon)
+    setShowCouponModal(true)
   }
 
   // Handle sort change
@@ -512,17 +521,18 @@ export default function Search() {
                           }
                           search.goToBusiness(businessId);
                         }}
-                        onCouponClick={(couponId) => {
-                          // Track click for analytics
-                          if (search.query) {
-                            trackResultClick({
-                              searchTerm: search.query,
-                              resultId: couponId,
-                              resultType: 'coupon'
-                            });
-                          }
-                          search.goToCoupon(couponId);
-                        }}
+                  onCouponClick={(couponId) => {
+                    // Track click for analytics
+                    if (search.query) {
+                      trackResultClick({
+                        searchTerm: search.query,
+                        resultId: couponId,
+                        resultType: 'coupon'
+                      });
+                    }
+                    // Open coupon modal instead of navigating
+                    handleCouponClick(coupon);
+                  }}
                         showBusiness={true}
                         showDistance={search.location.enabled && search.location.coords}
                         getFormattedDistance={search.getFormattedDistance}
@@ -611,6 +621,28 @@ export default function Search() {
           <h3 className="text-lg font-medium text-gray-900 mb-2">Start your search</h3>
           <p className="text-gray-600">Enter keywords to find businesses, deals, and products</p>
         </div>
+      )}
+
+      {/* Coupon Details Modal */}
+      {showCouponModal && selectedCoupon && (
+        <CouponDetailsModal
+          coupon={selectedCoupon}
+          isOpen={showCouponModal}
+          onClose={() => {
+            setShowCouponModal(false);
+            setSelectedCoupon(null);
+          }}
+          onCollect={async (couponId) => {
+            const success = await search.collectCoupon(couponId);
+            if (success) {
+              // Update the selected coupon to reflect collected state
+              setSelectedCoupon(prev => ({ ...prev, isCollected: true }));
+            }
+            return success;
+          }}
+          showCollectButton={true}
+          showShareButton={true}
+        />
       )}
     </div>
   );
