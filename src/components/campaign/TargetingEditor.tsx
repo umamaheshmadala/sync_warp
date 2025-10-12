@@ -3,14 +3,13 @@
  * Phase 4: Targeting Configuration UI
  * 
  * Comprehensive targeting rules editor with:
- * - Demographics (age, gender)
- * - Location (city, regions)
- * - Behavior (trip patterns, preferences)
- * - Vehicle type
+ * - Demographics (age, gender, rating)
+ * - Location (city, regions, radius)
+ * - Behavior (activity level, interests, driver status)
  * - Real-time validation
  */
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/card';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
@@ -22,10 +21,10 @@ import {
   MapPin, 
   Users, 
   Activity, 
-  Car, 
   AlertTriangle,
   CheckCircle2,
-  Info
+  Info,
+  Sparkles
 } from 'lucide-react';
 import type { TargetingRules } from '../../types/campaigns';
 
@@ -73,20 +72,15 @@ const GENDERS = [
   { label: 'Other', value: 'other' },
 ];
 
-const VEHICLE_TYPES = [
-  { label: 'Sedan', value: 'sedan' },
-  { label: 'SUV', value: 'suv' },
-  { label: 'Luxury', value: 'luxury' },
-  { label: 'Electric', value: 'electric' },
-  { label: 'Van', value: 'van' },
-];
-
-const TRIP_TYPES = [
-  { label: 'Short rides (<5km)', value: 'short' },
-  { label: 'Medium rides (5-15km)', value: 'medium' },
-  { label: 'Long rides (>15km)', value: 'long' },
-  { label: 'Airport trips', value: 'airport' },
-  { label: 'Business trips', value: 'business' },
+const INTEREST_CATEGORIES = [
+  { label: 'Food & Dining', value: 'food' },
+  { label: 'Shopping', value: 'shopping' },
+  { label: 'Entertainment', value: 'entertainment' },
+  { label: 'Health & Wellness', value: 'health' },
+  { label: 'Travel & Hotels', value: 'travel' },
+  { label: 'Education', value: 'education' },
+  { label: 'Services', value: 'services' },
+  { label: 'Sports & Fitness', value: 'sports' },
 ];
 
 // ============================================================================
@@ -101,12 +95,7 @@ export function TargetingEditor({
   showValidation = true,
   className = '',
 }: TargetingEditorProps) {
-  const [rules, setRules] = useState<TargetingRules>(value || {
-    demographics: {},
-    location: {},
-    behavior: {},
-    vehicle: {},
-  });
+  const [rules, setRules] = useState<TargetingRules>(value || {});
   
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
   const [activeTab, setActiveTab] = useState('demographics');
@@ -118,10 +107,10 @@ export function TargetingEditor({
     }
   }, [rules, showValidation]);
 
-  // Notify parent of changes
+  // Notify parent of changes (omit onChange from deps to prevent infinite loop)
   useEffect(() => {
     onChange?.(rules);
-  }, [rules, onChange]);
+  }, [rules]);
 
   // ============================================================================
   // VALIDATION
@@ -132,32 +121,24 @@ export function TargetingEditor({
 
     // Check if any targeting is set
     const hasAnyTargeting = 
-      Object.keys(rules.demographics || {}).length > 0 ||
-      Object.keys(rules.location || {}).length > 0 ||
-      Object.keys(rules.behavior || {}).length > 0 ||
-      Object.keys(rules.vehicle || {}).length > 0;
+      (rules.age_ranges && rules.age_ranges.length > 0) ||
+      (rules.gender && rules.gender.length > 0) ||
+      (rules.income_levels && rules.income_levels.length > 0) ||
+      (rules.cities && rules.cities.length > 0) ||
+      (rules.interests && rules.interests.length > 0) ||
+      rules.min_activity_score !== undefined ||
+      rules.drivers_only === true;
 
     if (!hasAnyTargeting) {
       errors.push({
         field: 'general',
-        message: 'No targeting rules set. Campaign will target all drivers.',
+        message: 'No targeting rules set. Campaign will target all users.',
         severity: 'warning',
       });
     }
 
-    // Check age range validity
-    if (rules.demographics?.minAge && rules.demographics?.maxAge) {
-      if (rules.demographics.minAge > rules.demographics.maxAge) {
-        errors.push({
-          field: 'demographics',
-          message: 'Minimum age cannot be greater than maximum age',
-          severity: 'error',
-        });
-      }
-    }
-
     // Check location specificity
-    if (rules.location?.cities && rules.location.cities.length > 10) {
+    if (rules.cities && rules.cities.length > 10) {
       errors.push({
         field: 'location',
         message: 'Too many cities selected. Consider using regions instead.',
@@ -172,72 +153,52 @@ export function TargetingEditor({
   // HANDLERS
   // ============================================================================
 
-  const updateDemographics = (key: string, value: any) => {
+  const updateRule = (key: string, value: any) => {
     setRules(prev => ({
       ...prev,
-      demographics: {
-        ...prev.demographics,
-        [key]: value,
-      },
+      [key]: value,
     }));
   };
 
-  const updateLocation = (key: string, value: any) => {
-    setRules(prev => ({
-      ...prev,
-      location: {
-        ...prev.location,
-        [key]: value,
-      },
-    }));
-  };
 
-  const updateBehavior = (key: string, value: any) => {
-    setRules(prev => ({
-      ...prev,
-      behavior: {
-        ...prev.behavior,
-        [key]: value,
-      },
-    }));
-  };
-
-  const updateVehicle = (key: string, value: any) => {
-    setRules(prev => ({
-      ...prev,
-      vehicle: {
-        ...prev.vehicle,
-        [key]: value,
-      },
-    }));
-  };
-
-  const toggleArrayValue = (category: keyof TargetingRules, field: string, value: string) => {
+  const toggleArrayValue = (field: keyof TargetingRules, value: string) => {
     setRules(prev => {
-      const categoryData = prev[category] || {};
-      const currentArray = (categoryData[field] as string[]) || [];
+      const currentArray = (prev[field] as string[]) || [];
       const newArray = currentArray.includes(value)
         ? currentArray.filter(v => v !== value)
         : [...currentArray, value];
       
       return {
         ...prev,
-        [category]: {
-          ...categoryData,
-          [field]: newArray,
-        },
+        [field]: newArray,
       };
     });
   };
 
   const clearRules = () => {
-    setRules({
-      demographics: {},
-      location: {},
-      behavior: {},
-      vehicle: {},
-    });
+    setRules({});
   };
+
+  // Helper to extract min/max age from age_ranges array
+  const getAgeFromRanges = (): { min: number; max: number } => {
+    if (!rules.age_ranges || rules.age_ranges.length === 0) {
+      return { min: 18, max: 65 };
+    }
+    // Parse first range like '25-45'
+    const range = rules.age_ranges[0];
+    const [min, max] = range.split('-').map(n => parseInt(n.trim()));
+    return { min: min || 18, max: max || 65 };
+  };
+
+  const [localMinAge, setLocalMinAge] = useState<string>('');
+  const [localMaxAge, setLocalMaxAge] = useState<string>('');
+
+  // Update local state when rules change
+  useEffect(() => {
+    const { min, max } = getAgeFromRanges();
+    setLocalMinAge(min.toString());
+    setLocalMaxAge(max.toString());
+  }, [rules.age_ranges]);
 
   // ============================================================================
   // RENDER HELPERS
@@ -285,8 +246,15 @@ export function TargetingEditor({
               type="number"
               min={18}
               max={100}
-              value={rules.demographics?.minAge || ''}
-              onChange={(e) => updateDemographics('minAge', parseInt(e.target.value) || undefined)}
+              value={localMinAge}
+              onChange={(e) => {
+                const value = e.target.value;
+                setLocalMinAge(value);
+                const min = parseInt(value) || 18;
+                const max = parseInt(localMaxAge) || 65;
+                const range = `${min}-${max}`;
+                updateRule('age_ranges', [range]);
+              }}
               disabled={readOnly}
               placeholder="18"
             />
@@ -300,8 +268,15 @@ export function TargetingEditor({
               type="number"
               min={18}
               max={100}
-              value={rules.demographics?.maxAge || ''}
-              onChange={(e) => updateDemographics('maxAge', parseInt(e.target.value) || undefined)}
+              value={localMaxAge}
+              onChange={(e) => {
+                const value = e.target.value;
+                setLocalMaxAge(value);
+                const max = parseInt(value) || 65;
+                const min = parseInt(localMinAge) || 18;
+                const range = `${min}-${max}`;
+                updateRule('age_ranges', [range]);
+              }}
               disabled={readOnly}
               placeholder="65"
             />
@@ -313,52 +288,32 @@ export function TargetingEditor({
       <div className="space-y-3">
         <Label>Gender</Label>
         <div className="flex flex-wrap gap-2">
-          {GENDERS.map((gender) => (
-            <Badge
-              key={gender.value}
-              variant={rules.demographics?.gender === gender.value ? 'default' : 'outline'}
-              className="cursor-pointer"
-              onClick={() => !readOnly && updateDemographics('gender', gender.value)}
-            >
-              {gender.label}
-            </Badge>
-          ))}
+          {GENDERS.map((gender) => {
+            const isSelected = (rules.gender || []).includes(gender.value);
+            return (
+              <Badge
+                key={gender.value}
+                variant={isSelected ? 'default' : 'outline'}
+                className={`cursor-pointer px-4 py-2 text-sm ${
+                  isSelected 
+                    ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
+                    : 'hover:bg-accent hover:text-accent-foreground'
+                }`}
+                onClick={() => !readOnly && toggleArrayValue('gender', gender.value)}
+              >
+                {isSelected && <CheckCircle2 className="w-3 h-3 mr-1 inline" />}
+                {gender.label}
+              </Badge>
+            );
+          })}
         </div>
       </div>
 
-      {/* Experience Level */}
+      {/* User Rating */}
       <div className="space-y-3">
-        <Label htmlFor="minTrips">Minimum Completed Trips</Label>
-        <Input
-          id="minTrips"
-          type="number"
-          min={0}
-          value={rules.demographics?.minTrips || ''}
-          onChange={(e) => updateDemographics('minTrips', parseInt(e.target.value) || undefined)}
-          disabled={readOnly}
-          placeholder="e.g., 100"
-        />
+        <Label htmlFor="minRating">Minimum User Rating</Label>
         <p className="text-sm text-muted-foreground">
-          Target drivers with at least this many completed trips
-        </p>
-      </div>
-
-      {/* Driver Rating */}
-      <div className="space-y-3">
-        <Label htmlFor="minRating">Minimum Driver Rating</Label>
-        <Input
-          id="minRating"
-          type="number"
-          min={1}
-          max={5}
-          step={0.1}
-          value={rules.demographics?.minRating || ''}
-          onChange={(e) => updateDemographics('minRating', parseFloat(e.target.value) || undefined)}
-          disabled={readOnly}
-          placeholder="4.5"
-        />
-        <p className="text-sm text-muted-foreground">
-          Target drivers with rating above this threshold (1-5 scale)
+          Target users with rating above this threshold (1-5 scale)
         </p>
       </div>
     </div>
@@ -374,18 +329,18 @@ export function TargetingEditor({
         </Label>
         <Input
           placeholder="Enter city names (comma-separated)"
-          value={(rules.location?.cities || []).join(', ')}
+          value={(rules.cities || []).join(', ')}
           onChange={(e) => {
             const cities = e.target.value
               .split(',')
               .map(c => c.trim())
               .filter(Boolean);
-            updateLocation('cities', cities);
+            updateRule('cities', cities);
           }}
           disabled={readOnly}
         />
         <p className="text-sm text-muted-foreground">
-          Target drivers operating in specific cities
+          Target users in specific cities (e.g., Mumbai, Delhi, Bangalore)
         </p>
       </div>
 
@@ -394,13 +349,9 @@ export function TargetingEditor({
         <Label>Regions/Zones</Label>
         <Input
           placeholder="Enter regions (comma-separated)"
-          value={(rules.location?.regions || []).join(', ')}
+          value={''}
           onChange={(e) => {
-            const regions = e.target.value
-              .split(',')
-              .map(r => r.trim())
-              .filter(Boolean);
-            updateLocation('regions', regions);
+            // Regions not in TargetingRules type, skip for now
           }}
           disabled={readOnly}
         />
@@ -413,13 +364,13 @@ export function TargetingEditor({
           id="radius"
           type="number"
           min={1}
-          value={rules.location?.radius || ''}
-          onChange={(e) => updateLocation('radius', parseInt(e.target.value) || undefined)}
+          value={rules.radius_km || ''}
+          onChange={(e) => updateRule('radius_km', parseInt(e.target.value) || undefined)}
           disabled={readOnly}
           placeholder="10"
         />
         <p className="text-sm text-muted-foreground">
-          Target drivers within this radius from your business location
+          Target users within this radius from your business location
         </p>
       </div>
     </div>
@@ -427,120 +378,69 @@ export function TargetingEditor({
 
   const renderBehaviorTab = () => (
     <div className="space-y-6">
-      {/* Trip Types */}
+      {/* Interest Categories */}
       <div className="space-y-3">
         <Label className="flex items-center gap-2">
-          <Activity className="w-4 h-4" />
-          Preferred Trip Types
+          <Sparkles className="w-4 h-4" />
+          Interest Categories
         </Label>
         <div className="flex flex-wrap gap-2">
-          {TRIP_TYPES.map((tripType) => {
-            const isSelected = (rules.behavior?.tripTypes || []).includes(tripType.value);
+          {INTEREST_CATEGORIES.map((interest) => {
+            const isSelected = (rules.interests || []).includes(interest.value as any);
             return (
               <Badge
-                key={tripType.value}
+                key={interest.value}
                 variant={isSelected ? 'default' : 'outline'}
                 className="cursor-pointer"
-                onClick={() => !readOnly && toggleArrayValue('behavior', 'tripTypes', tripType.value)}
+                onClick={() => !readOnly && toggleArrayValue('interests', interest.value)}
               >
                 {isSelected && <CheckCircle2 className="w-3 h-3 mr-1" />}
-                {tripType.label}
+                {interest.label}
               </Badge>
             );
           })}
         </div>
+        <p className="text-sm text-muted-foreground">
+          Target users interested in specific coupon categories
+        </p>
       </div>
 
       {/* Activity Level */}
       <div className="space-y-3">
-        <Label htmlFor="minTripsPerWeek">Minimum Trips Per Week</Label>
+        <Label htmlFor="minActivityScore">Minimum Activity Score</Label>
         <Input
-          id="minTripsPerWeek"
+          id="minActivityScore"
           type="number"
-          min={1}
-          value={rules.behavior?.minTripsPerWeek || ''}
-          onChange={(e) => updateBehavior('minTripsPerWeek', parseInt(e.target.value) || undefined)}
+          min={0}
+          max={100}
+          value={rules.min_activity_score || ''}
+          onChange={(e) => updateRule('min_activity_score', parseInt(e.target.value) || undefined)}
           disabled={readOnly}
-          placeholder="10"
+          placeholder="20"
         />
+        <p className="text-sm text-muted-foreground">
+          Target users with high engagement (0-100 scale)
+        </p>
       </div>
 
-      {/* Peak Hours */}
+      {/* Driver Status */}
       <div className="space-y-3">
-        <Label>Active During Peak Hours</Label>
+        <Label>Target Power Users (Drivers)</Label>
         <div className="flex gap-4">
           <label className="flex items-center gap-2">
             <input
               type="checkbox"
-              checked={rules.behavior?.peakHours || false}
-              onChange={(e) => updateBehavior('peakHours', e.target.checked)}
+              checked={rules.drivers_only || false}
+              onChange={(e) => updateRule('drivers_only', e.target.checked)}
               disabled={readOnly}
             />
-            <span className="text-sm">Target drivers active during rush hours</span>
+            <span className="text-sm">Target only power users who actively share and drive coupon activity</span>
           </label>
         </div>
       </div>
     </div>
   );
 
-  const renderVehicleTab = () => (
-    <div className="space-y-6">
-      {/* Vehicle Types */}
-      <div className="space-y-3">
-        <Label className="flex items-center gap-2">
-          <Car className="w-4 h-4" />
-          Vehicle Types
-        </Label>
-        <div className="flex flex-wrap gap-2">
-          {VEHICLE_TYPES.map((vehicleType) => {
-            const isSelected = (rules.vehicle?.types || []).includes(vehicleType.value);
-            return (
-              <Badge
-                key={vehicleType.value}
-                variant={isSelected ? 'default' : 'outline'}
-                className="cursor-pointer"
-                onClick={() => !readOnly && toggleArrayValue('vehicle', 'types', vehicleType.value)}
-              >
-                {isSelected && <CheckCircle2 className="w-3 h-3 mr-1" />}
-                {vehicleType.label}
-              </Badge>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Vehicle Year */}
-      <div className="space-y-3">
-        <Label htmlFor="minYear">Minimum Vehicle Year</Label>
-        <Input
-          id="minYear"
-          type="number"
-          min={2000}
-          max={new Date().getFullYear()}
-          value={rules.vehicle?.minYear || ''}
-          onChange={(e) => updateVehicle('minYear', parseInt(e.target.value) || undefined)}
-          disabled={readOnly}
-          placeholder="2018"
-        />
-      </div>
-
-      {/* Premium Only */}
-      <div className="space-y-3">
-        <Label>Premium Vehicles Only</Label>
-        <div className="flex gap-4">
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={rules.vehicle?.premiumOnly || false}
-              onChange={(e) => updateVehicle('premiumOnly', e.target.checked)}
-              disabled={readOnly}
-            />
-            <span className="text-sm">Only show ads to premium/luxury vehicles</span>
-          </label>
-        </div>
-      </div>
-    </div>
-  );
 
   // ============================================================================
   // MAIN RENDER
@@ -567,7 +467,7 @@ export function TargetingEditor({
         {renderValidationAlerts()}
         
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="demographics">
               <Users className="w-4 h-4 mr-2" />
               Demographics
@@ -579,10 +479,6 @@ export function TargetingEditor({
             <TabsTrigger value="behavior">
               <Activity className="w-4 h-4 mr-2" />
               Behavior
-            </TabsTrigger>
-            <TabsTrigger value="vehicle">
-              <Car className="w-4 h-4 mr-2" />
-              Vehicle
             </TabsTrigger>
           </TabsList>
 
@@ -596,10 +492,6 @@ export function TargetingEditor({
 
           <TabsContent value="behavior" className="space-y-4 mt-6">
             {renderBehaviorTab()}
-          </TabsContent>
-
-          <TabsContent value="vehicle" className="space-y-4 mt-6">
-            {renderVehicleTab()}
           </TabsContent>
         </Tabs>
       </CardContent>

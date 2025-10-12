@@ -11,7 +11,7 @@
  * - Cost projections
  */
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/card';
 import { Progress } from '../ui/progress';
 import { Badge } from '../ui/badge';
@@ -26,6 +26,7 @@ import {
   Loader2
 } from 'lucide-react';
 import type { TargetingRules } from '../../types/campaigns';
+import { targetingService } from '../../services/targetingService';
 
 // ============================================================================
 // TYPES
@@ -42,18 +43,19 @@ export interface ReachEstimatorProps {
   updateInterval?: number;
   /** Custom class name */
   className?: string;
+  /** Use mock data instead of real API */
+  useMockData?: boolean;
 }
 
 interface ReachEstimate {
-  totalDrivers: number;
-  matchingDrivers: number;
+  totalUsers: number;
+  matchingUsers: number;
   reachPercentage: number;
   estimatedImpressions: number;
   estimatedCostPerImpression: number;
   breakdown: {
     byAge?: Record<string, number>;
     byLocation?: Record<string, number>;
-    byVehicleType?: Record<string, number>;
   };
   confidence: 'low' | 'medium' | 'high';
   lastUpdated: Date;
@@ -69,6 +71,7 @@ export function ReachEstimator({
   cityId,
   updateInterval = 2000,
   className = '',
+  useMockData = false,
 }: ReachEstimatorProps) {
   const [estimate, setEstimate] = useState<ReachEstimate | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -84,29 +87,51 @@ export function ReachEstimator({
         setIsLoading(true);
         setError(null);
 
-        // TODO: Replace with actual API call
-        // const response = await fetch('/api/campaigns/estimate-reach', {
-        //   method: 'POST',
-        //   headers: { 'Content-Type': 'application/json' },
-        //   body: JSON.stringify({ targetingRules, cityId }),
-        //   signal: controller.signal,
-        // });
-        // const data = await response.json();
-
-        // Simulate API call with mock data
-        await new Promise(resolve => setTimeout(resolve, 500));
+        let audienceEstimate;
+        if (useMockData) {
+          // Use mock service for demo
+          const { mockTargetingService } = await import('../../services/mockTargetingService');
+          audienceEstimate = await mockTargetingService.estimateAudienceReach({
+            targeting_rules: targetingRules,
+            city_id: cityId
+          });
+        } else {
+          // Call real targeting service
+          audienceEstimate = await targetingService.estimateAudienceReach({
+            targeting_rules: targetingRules,
+            city_id: cityId
+          });
+        }
 
         if (!isMounted) return;
 
-        // Mock estimate calculation
-        const mockEstimate = calculateMockEstimate(targetingRules);
-        setEstimate(mockEstimate);
+        // Convert to ReachEstimate format
+        const totalReach = audienceEstimate.total_reach || 0;
+        const usersCount = audienceEstimate.drivers_count || totalReach;
+        
+        const reachEstimate: ReachEstimate = {
+          totalUsers: usersCount,
+          matchingUsers: totalReach,
+          reachPercentage: usersCount > 0 
+            ? (totalReach / usersCount) * 100
+            : 100,
+          estimatedImpressions: totalReach * 15, // 15 impressions per user per month
+          estimatedCostPerImpression: 2, // ₹2 per impression
+          breakdown: {
+            byAge: audienceEstimate.breakdown_by_age,
+            byLocation: audienceEstimate.breakdown_by_city,
+          },
+          confidence: audienceEstimate.confidence_level,
+          lastUpdated: new Date(),
+        };
+
+        setEstimate(reachEstimate);
       } catch (err: any) {
         if (err.name === 'AbortError') return;
         if (!isMounted) return;
         
         console.error('Error fetching reach estimate:', err);
-        setError('Failed to estimate reach. Please try again.');
+        setError(err.message || 'Failed to estimate reach. Please try again.');
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -126,98 +151,6 @@ export function ReachEstimator({
     };
   }, [targetingRules, cityId, updateInterval]);
 
-  // ============================================================================
-  // MOCK CALCULATION (Replace with actual API)
-  // ============================================================================
-
-  const calculateMockEstimate = (rules: TargetingRules): ReachEstimate => {
-    let baseDrivers = 10000;
-    let reachFactor = 1.0;
-
-    // Apply demographic filters
-    if (rules.demographics) {
-      if (rules.demographics.minAge || rules.demographics.maxAge) {
-        reachFactor *= 0.6;
-      }
-      if (rules.demographics.gender && rules.demographics.gender !== 'all') {
-        reachFactor *= 0.5;
-      }
-      if (rules.demographics.minTrips) {
-        reachFactor *= 0.7;
-      }
-      if (rules.demographics.minRating) {
-        reachFactor *= 0.8;
-      }
-    }
-
-    // Apply location filters
-    if (rules.location) {
-      if (rules.location.cities && rules.location.cities.length > 0) {
-        reachFactor *= 0.4;
-      }
-      if (rules.location.radius) {
-        reachFactor *= 0.5;
-      }
-    }
-
-    // Apply behavior filters
-    if (rules.behavior) {
-      if (rules.behavior.tripTypes && rules.behavior.tripTypes.length > 0) {
-        reachFactor *= 0.7;
-      }
-      if (rules.behavior.minTripsPerWeek) {
-        reachFactor *= 0.75;
-      }
-    }
-
-    // Apply vehicle filters
-    if (rules.vehicle) {
-      if (rules.vehicle.types && rules.vehicle.types.length > 0) {
-        reachFactor *= 0.6;
-      }
-      if (rules.vehicle.premiumOnly) {
-        reachFactor *= 0.3;
-      }
-    }
-
-    const matchingDrivers = Math.round(baseDrivers * reachFactor);
-    const reachPercentage = (reachFactor * 100);
-    const estimatedImpressions = matchingDrivers * 15; // Assume 15 impressions per driver per month
-    const estimatedCostPerImpression = 0.05; // $0.05 per impression
-
-    // Generate confidence level
-    const confidence: 'low' | 'medium' | 'high' = 
-      reachPercentage > 50 ? 'high' :
-      reachPercentage > 20 ? 'medium' : 'low';
-
-    return {
-      totalDrivers: baseDrivers,
-      matchingDrivers,
-      reachPercentage,
-      estimatedImpressions,
-      estimatedCostPerImpression,
-      breakdown: {
-        byAge: {
-          '18-24': Math.round(matchingDrivers * 0.2),
-          '25-34': Math.round(matchingDrivers * 0.35),
-          '35-44': Math.round(matchingDrivers * 0.25),
-          '45+': Math.round(matchingDrivers * 0.2),
-        },
-        byLocation: {
-          'Urban': Math.round(matchingDrivers * 0.6),
-          'Suburban': Math.round(matchingDrivers * 0.3),
-          'Rural': Math.round(matchingDrivers * 0.1),
-        },
-        byVehicleType: {
-          'Sedan': Math.round(matchingDrivers * 0.5),
-          'SUV': Math.round(matchingDrivers * 0.3),
-          'Luxury': Math.round(matchingDrivers * 0.2),
-        },
-      },
-      confidence,
-      lastUpdated: new Date(),
-    };
-  };
 
   // ============================================================================
   // RENDER HELPERS
@@ -246,9 +179,10 @@ export function ReachEstimator({
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'INR',
+      minimumFractionDigits: 0,
     }).format(amount);
   };
 
@@ -328,13 +262,13 @@ export function ReachEstimator({
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Users className="w-4 h-4" />
-              Matching Drivers
+              Matching Users
             </div>
             <div className="text-3xl font-bold">
-              {formatNumber(estimate.matchingDrivers)}
+              {formatNumber(estimate.matchingUsers)}
             </div>
             <div className="text-sm text-muted-foreground">
-              out of {formatNumber(estimate.totalDrivers)} total
+              out of {formatNumber(estimate.totalUsers)} total
             </div>
           </div>
 
@@ -414,20 +348,6 @@ export function ReachEstimator({
               </div>
             )}
 
-            {/* By Vehicle Type */}
-            {estimate.breakdown.byVehicleType && (
-              <div className="space-y-2">
-                <div className="text-sm text-muted-foreground">By Vehicle Type</div>
-                <div className="space-y-1">
-                  {Object.entries(estimate.breakdown.byVehicleType).map(([vehicle, count]) => (
-                    <div key={vehicle} className="flex items-center justify-between text-sm">
-                      <span>{vehicle}</span>
-                      <span className="font-medium">{formatNumber(count)}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         )}
 
@@ -442,7 +362,7 @@ export function ReachEstimator({
                   {estimate.reachPercentage > 50 
                     ? 'Your targeting is broad. Consider narrowing criteria to reach more specific audiences.'
                     : estimate.reachPercentage > 20
-                    ? 'Your targeting looks balanced. You\'ll reach a good portion of relevant drivers.'
+                    ? 'Your targeting looks balanced. You\'ll reach a good portion of relevant users.'
                     : 'Your targeting is very specific. You may want to broaden criteria to increase reach.'}
                 </div>
               </div>

@@ -11,19 +11,22 @@
  * - Fix suggestions
  */
 
-import React, { useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
+import { Skeleton } from '../ui/skeleton';
 import { 
   AlertTriangle, 
   AlertCircle, 
   Info, 
   CheckCircle2,
   XCircle,
-  Lightbulb
+  Lightbulb,
+  Loader2
 } from 'lucide-react';
 import type { TargetingRules } from '../../types/campaigns';
+import { targetingService } from '../../services/targetingService';
 
 // ============================================================================
 // TYPES
@@ -38,6 +41,8 @@ export interface TargetingValidatorProps {
   errorsOnly?: boolean;
   /** Custom class name */
   className?: string;
+  /** Use mock data instead of real API */
+  useMockData?: boolean;
 }
 
 export interface ValidationIssue {
@@ -64,12 +69,106 @@ export function TargetingValidator({
   onFix,
   errorsOnly = false,
   className = '',
+  useMockData = false,
 }: TargetingValidatorProps) {
   
-  // Validate targeting rules
-  const issues = useMemo(() => {
-    return validateTargetingRules(targetingRules);
+  const [validationResult, setValidationResult] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch validation results from backend
+  useEffect(() => {
+    let isMounted = true;
+
+    const validateRules = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        let result;
+        if (useMockData) {
+          // Use mock service for demo
+          const { mockTargetingService } = await import('../../services/mockTargetingService');
+          result = mockTargetingService.validateTargeting(targetingRules);
+        } else {
+          result = await targetingService.validateTargeting(targetingRules);
+        }
+        
+        if (!isMounted) return;
+        
+        setValidationResult(result);
+      } catch (err: any) {
+        if (!isMounted) return;
+        console.error('Validation error:', err);
+        setError(err.message || 'Failed to validate targeting rules');
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    validateRules();
+
+    return () => {
+      isMounted = false;
+    };
   }, [targetingRules]);
+  
+  // Convert validation result to issues
+  const issues = useMemo(() => {
+    if (!validationResult) return [];
+
+    const validationIssues: ValidationIssue[] = [];
+
+    // Add errors
+    validationResult.errors?.forEach((error: string, index: number) => {
+      validationIssues.push({
+        id: `error-${index}`,
+        severity: 'error',
+        category: 'general',
+        title: 'Validation Error',
+        message: error,
+      });
+    });
+
+    // Add warnings
+    validationResult.warnings?.forEach((warning: string, index: number) => {
+      validationIssues.push({
+        id: `warning-${index}`,
+        severity: 'warning',
+        category: 'general',
+        title: 'Warning',
+        message: warning,
+      });
+    });
+
+    // Add suggestions as info
+    validationResult.suggestions?.forEach((suggestion: string, index: number) => {
+      validationIssues.push({
+        id: `suggestion-${index}`,
+        severity: 'info',
+        category: 'general',
+        title: 'Suggestion',
+        message: suggestion,
+      });
+    });
+
+    // Add success message if validation is successful with no warnings
+    if (validationResult.valid && 
+        (!validationResult.warnings || validationResult.warnings.length === 0) && 
+        (!validationResult.suggestions || validationResult.suggestions.length === 0)) {
+      validationIssues.push({
+        id: 'success',
+        severity: 'success',
+        category: 'general',
+        title: 'Targeting Validated',
+        message: 'Your targeting configuration is valid and well-configured.',
+      });
+    }
+
+    return validationIssues;
+  }, [validationResult]);
 
   // Filter issues based on errorsOnly prop
   const displayedIssues = useMemo(() => {
@@ -136,6 +235,32 @@ export function TargetingValidator({
   // ============================================================================
   // RENDER
   // ============================================================================
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <Alert className={className}>
+        <Loader2 className="h-5 w-5 animate-spin" />
+        <AlertTitle>Validating...</AlertTitle>
+        <AlertDescription>
+          Checking your targeting configuration...
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <Alert variant="destructive" className={className}>
+        <AlertCircle className="h-5 w-5" />
+        <AlertTitle>Unable to validate</AlertTitle>
+        <AlertDescription>
+          {error}
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
   if (displayedIssues.length === 0) {
     return (

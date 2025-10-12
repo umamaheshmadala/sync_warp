@@ -23,6 +23,8 @@ import BusinessAnalyticsPage from '../components/business/BusinessAnalyticsPage'
 import BusinessQRCodePage from '../components/business/BusinessQRCodePage'
 import ProductManagerPage from '../components/business/ProductManagerPage'
 import CouponManagerPage from '../components/business/CouponManagerPage'
+import CampaignManagerPage from '../components/business/CampaignManagerPage'
+import CampaignWizard from '../components/business/CampaignWizard'
 
 // Import social components
 import FriendsManagementPage from '../components/FriendsManagementPage'
@@ -49,6 +51,7 @@ const CheckinSystemTest = lazy(() => import('../components/debug/CheckinSystemTe
 const QRCodeTest = lazy(() => import('../components/debug/QRCodeTest'))
 const SimpleQRTest = lazy(() => import('../components/debug/SimpleQRTest'))
 const TargetingDemo = lazy(() => import('../pages/TargetingDemoSimple'))
+const CampaignTargetingDemo = lazy(() => import('../pages/CampaignTargetingDemo'))
 
 // Check-in components
 const BusinessCheckinsPage = lazy(() => import('../components/checkins/BusinessCheckinsPage'))
@@ -300,6 +303,20 @@ export const routes: RouteConfig[] = [
     protected: true,
     title: 'Coupon Manager - SynC',
     description: 'Create and manage business coupons'
+  },
+  {
+    path: '/business/:businessId/campaigns',
+    element: <CampaignManagerPage />,
+    protected: true,
+    title: 'Campaign Manager - SynC',
+    description: 'Manage marketing campaigns for your business'
+  },
+  {
+    path: '/business/:businessId/campaigns/create',
+    element: <CampaignWizard />,
+    protected: true,
+    title: 'Create Campaign - SynC',
+    description: 'Create a new marketing campaign'
   }
 ]
 
@@ -334,6 +351,12 @@ const debugRoutes: RouteConfig[] = [
     element: <Suspense fallback={<div>Loading...</div>}><TargetingDemo /></Suspense>,
     protected: false,
     title: 'Phase 4 - Targeting Components Demo'
+  },
+  {
+    path: '/demo/campaign-targeting',
+    element: <Suspense fallback={<div>Loading...</div>}><CampaignTargetingDemo /></Suspense>,
+    protected: false,
+    title: 'Campaign Targeting System - Interactive Demo'
   }
 ]
 

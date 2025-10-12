@@ -11,11 +11,12 @@
  * - Optimization tips
  */
 
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
+import { Skeleton } from '../ui/skeleton';
 import { 
   Sparkles, 
   TrendingUp, 
@@ -24,15 +25,19 @@ import {
   CheckCircle,
   ArrowRight,
   Lightbulb,
-  Zap
+  Zap,
+  AlertCircle
 } from 'lucide-react';
 import type { TargetingRules } from '../../types/campaigns';
+import { targetingService } from '../../services/targetingService';
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
 export interface RecommendationCardProps {
+  /** Business ID for fetching recommendations */
+  businessId: string;
   /** Current targeting rules */
   currentTargeting?: TargetingRules;
   /** Campaign budget for context */
@@ -43,6 +48,8 @@ export interface RecommendationCardProps {
   onApply?: (rules: TargetingRules) => void;
   /** Custom class name */
   className?: string;
+  /** Use mock data instead of real API */
+  useMockData?: boolean;
 }
 
 export interface Recommendation {
@@ -65,24 +72,12 @@ const RECOMMENDATIONS: Recommendation[] = [
   {
     id: 'balanced-urban',
     title: 'Balanced Urban Reach',
-    description: 'Target active urban drivers with good ratings. Best for general awareness campaigns.',
+    description: 'Target active urban users with good ratings. Best for general awareness campaigns.',
     type: 'balanced',
     targetingRules: {
-      demographics: {
-        minAge: 25,
-        maxAge: 54,
-        minRating: 4.0,
-        minTrips: 50,
-      },
-      location: {
-        cities: [],
-        regions: ['urban'],
-      },
-      behavior: {
-        minTripsPerWeek: 10,
-        peakHours: true,
-      },
-      vehicle: {},
+      age_ranges: ['25-34', '35-44', '45-54'],
+      min_activity_score: 50,
+      drivers_only: true,
     },
     predictedReach: 6500,
     predictedCTR: 3.2,
@@ -92,24 +87,13 @@ const RECOMMENDATIONS: Recommendation[] = [
   {
     id: 'premium-experience',
     title: 'Premium Experience',
-    description: 'Target experienced drivers with luxury vehicles. Perfect for premium brands.',
+    description: 'Target experienced power users with high activity. Perfect for premium brands.',
     type: 'premium',
     targetingRules: {
-      demographics: {
-        minAge: 30,
-        maxAge: 60,
-        minRating: 4.7,
-        minTrips: 500,
-      },
-      location: {},
-      behavior: {
-        tripTypes: ['business', 'airport'],
-      },
-      vehicle: {
-        types: ['luxury'],
-        premiumOnly: true,
-        minYear: 2020,
-      },
+      age_ranges: ['35-44', '45-54', '55-64'],
+      income_levels: ['upper_middle', 'high'],
+      min_activity_score: 80,
+      drivers_only: true,
     },
     predictedReach: 1200,
     predictedCTR: 5.8,
@@ -122,14 +106,8 @@ const RECOMMENDATIONS: Recommendation[] = [
     description: 'Broad targeting to reach the largest audience possible. Great for brand awareness.',
     type: 'broad',
     targetingRules: {
-      demographics: {
-        minAge: 21,
-        maxAge: 65,
-        minRating: 3.5,
-      },
-      location: {},
-      behavior: {},
-      vehicle: {},
+      age_ranges: ['18-24', '25-34', '35-44', '45-54', '55-64', '65+'],
+      min_activity_score: 10,
     },
     predictedReach: 9800,
     predictedCTR: 2.1,
@@ -139,20 +117,12 @@ const RECOMMENDATIONS: Recommendation[] = [
   {
     id: 'young-active',
     title: 'Young & Active',
-    description: 'Target younger, tech-savvy drivers who take many short rides. Ideal for tech products.',
+    description: 'Target younger, tech-savvy users who are very active. Ideal for tech products.',
     type: 'focused',
     targetingRules: {
-      demographics: {
-        minAge: 21,
-        maxAge: 34,
-        minRating: 4.0,
-      },
-      location: {},
-      behavior: {
-        tripTypes: ['short', 'medium'],
-        minTripsPerWeek: 15,
-      },
-      vehicle: {},
+      age_ranges: ['18-24', '25-34'],
+      min_activity_score: 60,
+      interests: ['food_dining', 'entertainment', 'shopping_retail'],
     },
     predictedReach: 3200,
     predictedCTR: 4.1,
@@ -165,18 +135,9 @@ const RECOMMENDATIONS: Recommendation[] = [
     description: 'Balanced targeting optimized for cost-efficiency. Best for limited budgets.',
     type: 'budget',
     targetingRules: {
-      demographics: {
-        minAge: 25,
-        maxAge: 45,
-        minRating: 3.8,
-      },
-      location: {
-        regions: ['suburban'],
-      },
-      behavior: {
-        minTripsPerWeek: 8,
-      },
-      vehicle: {},
+      age_ranges: ['25-34', '35-44'],
+      min_activity_score: 30,
+      exclude_existing_customers: false,
     },
     predictedReach: 4500,
     predictedCTR: 2.9,
@@ -190,26 +151,87 @@ const RECOMMENDATIONS: Recommendation[] = [
 // ============================================================================
 
 export function RecommendationCard({
+  businessId,
   currentTargeting,
-  budget,
-  businessCategory,
   onApply,
-  className = '',
+  className,
+  useMockData = false,
 }: RecommendationCardProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [recommendations, setRecommendations] = useState<Recommendation[]>(RECOMMENDATIONS);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Filter recommendations based on budget
-  const filteredRecommendations = RECOMMENDATIONS.filter(rec => {
-    if (!budget) return true;
-    
-    if (budget < 1000 && rec.type === 'premium') return false;
-    if (budget > 10000 && rec.type === 'budget') return false;
-    
-    return true;
-  });
+  // Fetch personalized recommendations from backend
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchRecommendations = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        let targetingRecs;
+        if (useMockData) {
+          // Use mock service with current targeting context
+          const { mockTargetingService } = await import('../../services/mockTargetingService');
+          targetingRecs = await mockTargetingService.getTargetingRecommendations(
+            businessId,
+            currentTargeting
+          );
+        } else {
+          // Fetch targeting recommendations based on business profile
+          targetingRecs = await targetingService.getTargetingRecommendations(
+            businessId,
+            currentTargeting
+          );
+        }
+        
+        if (!isMounted) return;
+
+        // If we got recommendations, update the mock data with real insights
+        if (targetingRecs && Object.keys(targetingRecs).length > 0) {
+          // Create a personalized recommendation based on business data
+          const personalizedRec: Recommendation = {
+            id: 'personalized',
+            title: 'Personalized for Your Business',
+            description: 'Custom targeting based on your customer demographics and business profile.',
+            type: 'balanced',
+            targetingRules: targetingRecs,
+            predictedReach: 5000, // Would need to call estimateAudienceReach for actual number
+            predictedCTR: 3.5,
+            confidence: 'high',
+            tags: ['Personalized', 'Based on Your Data', 'Recommended'],
+          };
+
+          // Add personalized recommendation at the beginning
+          setRecommendations([personalizedRec, ...RECOMMENDATIONS]);
+        } else {
+          // Use default recommendations if no business data available
+          setRecommendations(RECOMMENDATIONS);
+        }
+      } catch (err: any) {
+        if (!isMounted) return;
+        console.error('Error fetching recommendations:', err);
+        setError(err.message || 'Failed to load recommendations');
+        // Fall back to default recommendations on error
+        setRecommendations(RECOMMENDATIONS);
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchRecommendations();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [businessId, currentTargeting, useMockData]);
 
   // Get top 3 recommendations
-  const topRecommendations = filteredRecommendations.slice(0, 3);
+  const topRecommendations = recommendations.slice(0, 3);
 
   // ============================================================================
   // HELPERS
@@ -264,6 +286,34 @@ export function RecommendationCard({
   // RENDER
   // ============================================================================
 
+  // Loading state
+  if (isLoading) {
+    return (
+      <Card className={className}>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Lightbulb className="w-5 h-5 text-amber-500" />
+            <CardTitle>Smart Recommendations</CardTitle>
+          </div>
+          <CardDescription>
+            Loading personalized recommendations...
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-32 w-full" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Error state (still show default recommendations)
+  if (error) {
+    console.warn('Recommendation loading error:', error);
+    // Continue to show default recommendations rather than blocking the UI
+  }
+
   return (
     <Card className={className}>
       <CardHeader>
@@ -272,7 +322,14 @@ export function RecommendationCard({
           <CardTitle>Smart Recommendations</CardTitle>
         </div>
         <CardDescription>
-          AI-powered targeting suggestions based on successful campaigns
+          {error ? (
+            <span className="flex items-center gap-1 text-amber-600">
+              <AlertCircle className="w-3 h-3" />
+              Showing default recommendations
+            </span>
+          ) : (
+            'AI-powered targeting suggestions based on successful campaigns'
+          )}
         </CardDescription>
       </CardHeader>
 
@@ -326,39 +383,37 @@ export function RecommendationCard({
                 <div className="space-y-2 p-3 border rounded-lg bg-background">
                   <div className="text-sm font-medium">Targeting Preview:</div>
                   
-                  {rec.targetingRules.demographics && Object.keys(rec.targetingRules.demographics).length > 0 && (
+                  {rec.targetingRules.age_ranges && rec.targetingRules.age_ranges.length > 0 && (
                     <div className="text-sm">
-                      <span className="font-medium text-muted-foreground">Demographics: </span>
-                      {rec.targetingRules.demographics.minAge && rec.targetingRules.demographics.maxAge && (
-                        <span>Ages {rec.targetingRules.demographics.minAge}-{rec.targetingRules.demographics.maxAge}, </span>
-                      )}
-                      {rec.targetingRules.demographics.minRating && (
-                        <span>Rating {rec.targetingRules.demographics.minRating}+</span>
-                      )}
+                      <span className="font-medium text-muted-foreground">Age Ranges: </span>
+                      <span>{rec.targetingRules.age_ranges.join(', ')}</span>
                     </div>
                   )}
 
-                  {rec.targetingRules.location && Object.keys(rec.targetingRules.location).length > 0 && (
+                  {rec.targetingRules.income_levels && rec.targetingRules.income_levels.length > 0 && (
                     <div className="text-sm">
-                      <span className="font-medium text-muted-foreground">Location: </span>
-                      <span>{rec.targetingRules.location.regions?.join(', ') || 'All areas'}</span>
+                      <span className="font-medium text-muted-foreground">Income: </span>
+                      <span>{rec.targetingRules.income_levels.join(', ')}</span>
                     </div>
                   )}
 
-                  {rec.targetingRules.behavior && Object.keys(rec.targetingRules.behavior).length > 0 && (
+                  {rec.targetingRules.interests && rec.targetingRules.interests.length > 0 && (
                     <div className="text-sm">
-                      <span className="font-medium text-muted-foreground">Behavior: </span>
-                      {rec.targetingRules.behavior.minTripsPerWeek && (
-                        <span>{rec.targetingRules.behavior.minTripsPerWeek}+ trips/week</span>
-                      )}
+                      <span className="font-medium text-muted-foreground">Interests: </span>
+                      <span>{rec.targetingRules.interests.join(', ')}</span>
                     </div>
                   )}
 
-                  {rec.targetingRules.vehicle && Object.keys(rec.targetingRules.vehicle).length > 0 && (
+                  {rec.targetingRules.min_activity_score && (
                     <div className="text-sm">
-                      <span className="font-medium text-muted-foreground">Vehicle: </span>
-                      {rec.targetingRules.vehicle.types?.join(', ') || 'All types'}
-                      {rec.targetingRules.vehicle.premiumOnly && ' (Premium only)'}
+                      <span className="font-medium text-muted-foreground">Activity Score: </span>
+                      <span>{rec.targetingRules.min_activity_score}+</span>
+                    </div>
+                  )}
+
+                  {rec.targetingRules.drivers_only && (
+                    <div className="text-sm">
+                      <Badge variant="secondary">Power Users Only</Badge>
                     </div>
                   )}
                 </div>

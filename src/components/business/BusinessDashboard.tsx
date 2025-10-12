@@ -331,6 +331,14 @@ const BusinessDashboard: React.FC = () => {
             </Link>
             
             <Link
+              to={`/business/${business.id}/campaigns`}
+              className="w-full flex items-center justify-center px-3 py-2 bg-pink-600 text-white text-sm font-medium rounded-lg hover:bg-pink-700 transition-colors"
+            >
+              <TrendingUp className="w-4 h-4 mr-1" />
+              Campaigns
+            </Link>
+            
+            <Link
               to={`/business/${business.id}/qr-code`}
               className="w-full flex items-center justify-center px-3 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 transition-colors"
             >

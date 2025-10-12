@@ -20,7 +20,6 @@ export default function TargetingDemo() {
     demographics: {},
     location: {},
     behavior: {},
-    vehicle: {},
   });
 
   const [budget] = useState<number>(5000);
@@ -40,7 +39,6 @@ export default function TargetingDemo() {
       demographics: {},
       location: {},
       behavior: {},
-      vehicle: {},
     });
   };
 
@@ -50,21 +48,16 @@ export default function TargetingDemo() {
         minAge: 25,
         maxAge: 45,
         minRating: 4.0,
-        minTrips: 100,
         gender: 'all',
       },
       location: {
-        cities: ['New York', 'Los Angeles'],
+        cities: ['Mumbai', 'Delhi', 'Bangalore'],
         radius: 25,
       },
       behavior: {
-        minTripsPerWeek: 15,
-        peakHours: true,
-        tripTypes: ['short', 'medium'],
-      },
-      vehicle: {
-        types: ['sedan', 'suv'],
-        minYear: 2018,
+        minActivityScore: 80,
+        isDriver: true,
+        interests: ['food', 'shopping', 'entertainment'],
       },
     });
   };
@@ -157,7 +150,7 @@ export default function TargetingDemo() {
                       1. Targeting Editor
                     </h2>
                     <p className="text-sm text-muted-foreground">
-                      Configure demographic, location, behavior, and vehicle targeting
+                      Configure demographic, location, and behavioral targeting
                     </p>
                   </div>
                   <TargetingEditor
@@ -312,7 +305,7 @@ export default function TargetingDemo() {
               <div className="space-y-2">
                 <h4 className="font-semibold text-sm">TargetingEditor</h4>
                 <ul className="text-sm text-muted-foreground space-y-1">
-                  <li>✓ 4 category tabs</li>
+                  <li>✓ 3 category tabs</li>
                   <li>✓ Badge-based selection</li>
                   <li>✓ Real-time validation</li>
                   <li>✓ Clear all functionality</li>
