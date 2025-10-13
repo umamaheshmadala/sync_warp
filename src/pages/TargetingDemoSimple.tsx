@@ -133,6 +133,11 @@ export default function TargetingDemoSimple() {
               <TargetingEditor
                 value={targetingRules}
                 onChange={handleTargetingChange}
+                businessLocation={{
+                  lat: 16.5062,
+                  lng: 80.6480,
+                  address: 'Vijayawada, Andhra Pradesh'
+                }}
                 showValidation={false}
               />
             </div>

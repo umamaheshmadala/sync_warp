@@ -26,7 +26,8 @@ import {
   Info,
   Sparkles
 } from 'lucide-react';
-import type { TargetingRules } from '../../types/campaigns';
+import type { TargetingRules, CustomerSegment } from '../../types/campaigns';
+import { LocationPicker } from './LocationPicker';
 
 // ============================================================================
 // TYPES
@@ -39,6 +40,12 @@ export interface TargetingEditorProps {
   onChange?: (rules: TargetingRules) => void;
   /** Campaign ID for context */
   campaignId?: string;
+  /** Business location (for map centering) */
+  businessLocation?: {
+    lat: number;
+    lng: number;
+    address?: string;
+  };
   /** Read-only mode */
   readOnly?: boolean;
   /** Show validation errors */
@@ -91,6 +98,7 @@ export function TargetingEditor({
   value,
   onChange,
   campaignId,
+  businessLocation,
   readOnly = false,
   showValidation = true,
   className = '',
@@ -193,12 +201,14 @@ export function TargetingEditor({
   const [localMinAge, setLocalMinAge] = useState<string>('');
   const [localMaxAge, setLocalMaxAge] = useState<string>('');
 
-  // Update local state when rules change
+  // Initialize local state only once from rules
   useEffect(() => {
-    const { min, max } = getAgeFromRanges();
-    setLocalMinAge(min.toString());
-    setLocalMaxAge(max.toString());
-  }, [rules.age_ranges]);
+    if (localMinAge === '' && localMaxAge === '') {
+      const { min, max } = getAgeFromRanges();
+      setLocalMinAge(min.toString());
+      setLocalMaxAge(max.toString());
+    }
+  }, []);
 
   // ============================================================================
   // RENDER HELPERS
@@ -320,69 +330,79 @@ export function TargetingEditor({
   );
 
   const renderLocationTab = () => (
-    <div className="space-y-6">
-      {/* Cities */}
-      <div className="space-y-3">
-        <Label className="flex items-center gap-2">
-          <MapPin className="w-4 h-4" />
-          Cities
-        </Label>
-        <Input
-          placeholder="Enter city names (comma-separated)"
-          value={(rules.cities || []).join(', ')}
-          onChange={(e) => {
-            const cities = e.target.value
-              .split(',')
-              .map(c => c.trim())
-              .filter(Boolean);
-            updateRule('cities', cities);
-          }}
-          disabled={readOnly}
-        />
-        <p className="text-sm text-muted-foreground">
-          Target users in specific cities (e.g., Mumbai, Delhi, Bangalore)
-        </p>
-      </div>
-
-      {/* Regions */}
-      <div className="space-y-3">
-        <Label>Regions/Zones</Label>
-        <Input
-          placeholder="Enter regions (comma-separated)"
-          value={''}
-          onChange={(e) => {
-            // Regions not in TargetingRules type, skip for now
-          }}
-          disabled={readOnly}
-        />
-      </div>
-
-      {/* Radius Targeting */}
-      <div className="space-y-3">
-        <Label htmlFor="radius">Radius (km)</Label>
-        <Input
-          id="radius"
-          type="number"
-          min={1}
-          value={rules.radius_km || ''}
-          onChange={(e) => updateRule('radius_km', parseInt(e.target.value) || undefined)}
-          disabled={readOnly}
-          placeholder="10"
-        />
-        <p className="text-sm text-muted-foreground">
-          Target users within this radius from your business location
-        </p>
-      </div>
-    </div>
+    <LocationPicker
+      businessLocation={businessLocation}
+      center={{
+        lat: rules.center_lat || businessLocation?.lat || 16.5062,
+        lng: rules.center_lng || businessLocation?.lng || 80.6480
+      }}
+      radiusKm={rules.radius_km || 3}
+      onChange={(location) => {
+        updateRule('center_lat', location.lat);
+        updateRule('center_lng', location.lng);
+        updateRule('radius_km', location.radiusKm);
+      }}
+      apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''}
+      readOnly={readOnly}
+    />
   );
 
   const renderBehaviorTab = () => (
     <div className="space-y-6">
+      {/* Customer Segments */}
+      <div className="space-y-4">
+        <div>
+          <Label className="flex items-center gap-2 text-base">
+            <Users className="w-5 h-5" />
+            Target Customer Segments
+          </Label>
+          <p className="text-sm text-muted-foreground mt-1">
+            Select the types of customers you want to reach
+          </p>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {[
+            { value: 'new_customers', label: 'New Customers', icon: '👤', description: 'Never interacted with your business' },
+            { value: 'existing_customers', label: 'Existing Customers', icon: '🤝', description: 'Previously interacted' },
+            { value: 'power_users', label: 'Power Users', icon: '⭐', description: 'Top 10% most active (Drivers)' },
+            { value: 'checked_in', label: 'Checked-In Users', icon: '📍', description: 'Users who checked in' },
+            { value: 'nearby', label: 'Nearby Users', icon: '📡', description: 'Currently near your business' },
+          ].map((segment) => {
+            const isSelected = (rules.customer_segments || []).includes(segment.value as any);
+            return (
+              <Card
+                key={segment.value}
+                className={`cursor-pointer transition-all ${
+                  isSelected ? 'border-primary bg-primary/5 shadow-sm' : 'hover:border-primary/50 hover:shadow-sm'
+                }`}
+                onClick={() => !readOnly && toggleArrayValue('customer_segments', segment.value)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="text-2xl flex-shrink-0">{segment.icon}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-medium text-sm">{segment.label}</span>
+                        {isSelected && <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {segment.description}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Interest Categories */}
-      <div className="space-y-3">
+      <div className="space-y-3 pt-4 border-t">
         <Label className="flex items-center gap-2">
           <Sparkles className="w-4 h-4" />
-          Interest Categories
+          Interest Categories (Optional)
         </Label>
         <div className="flex flex-wrap gap-2">
           {INTEREST_CATEGORIES.map((interest) => {
@@ -401,42 +421,8 @@ export function TargetingEditor({
           })}
         </div>
         <p className="text-sm text-muted-foreground">
-          Target users interested in specific coupon categories
+          Target users interested in specific categories
         </p>
-      </div>
-
-      {/* Activity Level */}
-      <div className="space-y-3">
-        <Label htmlFor="minActivityScore">Minimum Activity Score</Label>
-        <Input
-          id="minActivityScore"
-          type="number"
-          min={0}
-          max={100}
-          value={rules.min_activity_score || ''}
-          onChange={(e) => updateRule('min_activity_score', parseInt(e.target.value) || undefined)}
-          disabled={readOnly}
-          placeholder="20"
-        />
-        <p className="text-sm text-muted-foreground">
-          Target users with high engagement (0-100 scale)
-        </p>
-      </div>
-
-      {/* Driver Status */}
-      <div className="space-y-3">
-        <Label>Target Power Users (Drivers)</Label>
-        <div className="flex gap-4">
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={rules.drivers_only || false}
-              onChange={(e) => updateRule('drivers_only', e.target.checked)}
-              disabled={readOnly}
-            />
-            <span className="text-sm">Target only power users who actively share and drive coupon activity</span>
-          </label>
-        </div>
       </div>
     </div>
   );

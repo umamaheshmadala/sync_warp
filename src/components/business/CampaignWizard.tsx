@@ -4,7 +4,7 @@
  * Integrates: TargetingEditor, ReachEstimator, TargetingValidator, RecommendationCard
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../ui/card';
 import { Button } from '../ui/button';
@@ -23,6 +23,7 @@ import { TargetingEditor } from '../campaign/TargetingEditor';
 import { ReachEstimator } from '../campaign/ReachEstimator';
 import { TargetingValidator } from '../campaign/TargetingValidator';
 import { RecommendationCard } from '../campaign/RecommendationCard';
+import { ReachSummaryCard } from '../campaign/ReachSummaryCard';
 import { supabase } from '../../lib/supabase';
 import type { TargetingRules } from '../../types/campaigns';
 
@@ -45,6 +46,8 @@ export default function CampaignWizard() {
   const [currentStep, setCurrentStep] = useState<Step>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [businessLocation, setBusinessLocation] = useState<{lat: number; lng: number; address?: string} | null>(null);
+  const [reachData, setReachData] = useState<{total: number; demographics: number; location: number; behavior: number} | null>(null);
 
   const [formData, setFormData] = useState<CampaignFormData>({
     name: '',
@@ -60,6 +63,38 @@ export default function CampaignWizard() {
     },
     target_drivers_only: false,
   });
+
+  // Fetch business location on mount
+  useEffect(() => {
+    const fetchBusinessLocation = async () => {
+      if (!businessId) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('businesses')
+          .select('latitude, longitude, city, state')
+          .eq('id', businessId)
+          .single();
+        
+        if (error) {
+          console.error('Error fetching business location:', error);
+          return;
+        }
+        
+        if (data && data.latitude && data.longitude) {
+          setBusinessLocation({
+            lat: data.latitude,
+            lng: data.longitude,
+            address: `${data.city || ''}, ${data.state || ''}`.trim()
+          });
+        }
+      } catch (err) {
+        console.error('Failed to fetch business location:', err);
+      }
+    };
+    
+    fetchBusinessLocation();
+  }, [businessId]);
 
   const updateFormData = (updates: Partial<CampaignFormData>) => {
     setFormData(prev => ({ ...prev, ...updates }));
@@ -270,25 +305,38 @@ export default function CampaignWizard() {
 
         {/* Step 2: Targeting */}
         {currentStep === 2 && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="space-y-6">
-              <TargetingEditor
-                value={formData.targeting_rules}
-                onChange={updateTargetingRules}
-                showValidation={true}
-              />
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="space-y-6">
+                <TargetingEditor
+                  value={formData.targeting_rules}
+                  onChange={updateTargetingRules}
+                  businessLocation={businessLocation || undefined}
+                  showValidation={true}
+                />
+              </div>
+              <div className="space-y-6">
+                <ReachEstimator
+                  targetingRules={formData.targeting_rules}
+                  budget={formData.total_budget_cents / 100}
+                  updateInterval={3000}
+                  useMockData={false}
+                  onReachUpdate={setReachData}
+                />
+                <TargetingValidator
+                  targetingRules={formData.targeting_rules}
+                />
+              </div>
             </div>
-            <div className="space-y-6">
-              <ReachEstimator
-                targetingRules={formData.targeting_rules}
-                budget={formData.total_budget_cents / 100}
-                updateInterval={3000}
-                useMockData={true}
-              />
-              <TargetingValidator
-                targetingRules={formData.targeting_rules}
-              />
-            </div>
+            
+            {/* Reach Summary Card - Shows filter pipeline */}
+            <ReachSummaryCard
+              targetingRules={formData.targeting_rules}
+              totalReach={reachData?.total || 0}
+              demographicsCount={reachData?.demographics}
+              locationCount={reachData?.location}
+              behaviorCount={reachData?.behavior}
+            />
           </div>
         )}
 

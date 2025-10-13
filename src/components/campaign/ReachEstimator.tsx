@@ -45,6 +45,8 @@ export interface ReachEstimatorProps {
   className?: string;
   /** Use mock data instead of real API */
   useMockData?: boolean;
+  /** Callback when reach data updates */
+  onReachUpdate?: (data: {total: number; demographics: number; location: number; behavior: number}) => void;
 }
 
 interface ReachEstimate {
@@ -72,6 +74,7 @@ export function ReachEstimator({
   updateInterval = 2000,
   className = '',
   useMockData = false,
+  onReachUpdate,
 }: ReachEstimatorProps) {
   const [estimate, setEstimate] = useState<ReachEstimate | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -126,6 +129,16 @@ export function ReachEstimator({
         };
 
         setEstimate(reachEstimate);
+        
+        // Notify parent component of reach data
+        if (onReachUpdate && audienceEstimate) {
+          onReachUpdate({
+            total: audienceEstimate.total_reach || 0,
+            demographics: audienceEstimate.demographics_count || 0,
+            location: audienceEstimate.location_count || 0,
+            behavior: audienceEstimate.behavior_count || 0
+          });
+        }
       } catch (err: any) {
         if (err.name === 'AbortError') return;
         if (!isMounted) return;

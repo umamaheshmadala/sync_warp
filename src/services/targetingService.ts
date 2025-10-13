@@ -30,8 +30,58 @@ export class TargetingServiceError extends Error {
 // ============================================================================
 
 /**
+ * Transform flat targeting rules to nested structure for database function
+ */
+function transformTargetingRules(rules: TargetingRules): any {
+  const transformed: any = {};
+
+  // Demographics
+  const demographics: any = {};
+  if (rules.age_ranges && rules.age_ranges.length > 0) {
+    demographics.ageRanges = rules.age_ranges;
+  }
+  if (rules.gender && rules.gender.length > 0) {
+    demographics.gender = rules.gender;
+  }
+  if (rules.income_levels && rules.income_levels.length > 0) {
+    demographics.incomeRanges = rules.income_levels;
+  }
+  if (Object.keys(demographics).length > 0) {
+    transformed.demographics = demographics;
+  }
+
+  // Location
+  const location: any = {};
+  if (rules.center_lat !== undefined && rules.center_lng !== undefined) {
+    location.lat = rules.center_lat;
+    location.lng = rules.center_lng;
+    location.radiusKm = rules.radius_km || 3;
+  }
+  if (Object.keys(location).length > 0) {
+    transformed.location = location;
+  }
+
+  // Behavior
+  const behavior: any = {};
+  if (rules.interests && rules.interests.length > 0) {
+    behavior.interests = rules.interests;
+  }
+  if (rules.min_purchases !== undefined) {
+    behavior.minPurchases = rules.min_purchases;
+  }
+  if (rules.drivers_only === true) {
+    behavior.isDriver = true;
+  }
+  if (Object.keys(behavior).length > 0) {
+    transformed.behavior = behavior;
+  }
+
+  return transformed;
+}
+
+/**
  * Estimate campaign reach based on targeting rules
- * This calls the database function estimate_campaign_reach()
+ * This calls the new database function calculate_campaign_reach()
  */
 export async function estimateAudienceReach(
   request: EstimateAudienceRequest
@@ -48,10 +98,17 @@ export async function estimateAudienceReach(
       );
     }
 
-    // Call database function for reach estimation
-    const { data, error } = await supabase.rpc('estimate_campaign_reach', {
-      p_targeting_rules: targeting_rules,
-      p_city_id: city_id || null
+    // Transform rules to match database function format
+    const transformedRules = transformTargetingRules(targeting_rules);
+
+    // Debug: log the transformation
+    console.log('🎯 Original targeting rules:', targeting_rules);
+    console.log('🔄 Transformed rules for database:', transformedRules);
+
+    // Call NEW database function for accurate reach calculation
+    const { data, error } = await supabase.rpc('calculate_campaign_reach', {
+      p_targeting_rules: transformedRules,
+      p_debug: true  // Enable debug to see what's being sent
     });
 
     if (error) {
@@ -62,24 +119,46 @@ export async function estimateAudienceReach(
       );
     }
 
-    const total_reach = (data as number) || 0;
-
-    // Get driver count if targeting drivers
-    let drivers_count: number | undefined;
-    if (targetsDrivers(targeting_rules)) {
-      drivers_count = await getDriversInAudience(targeting_rules, city_id);
+    // Extract results from the new function
+    const result = (data && data.length > 0) ? data[0] : null;
+    
+    // Debug: log the response
+    console.log('📊 Database response:', result);
+    if (result?.debug_info) {
+      console.log('🐛 Debug info:', result.debug_info);
+    }
+    
+    if (!result) {
+      throw new TargetingServiceError(
+        'No data returned from reach calculation',
+        'NO_DATA'
+      );
     }
 
-    // Get demographic breakdowns
-    const breakdowns = await getAudienceBreakdowns(targeting_rules, city_id);
+    const total_reach = result.total_reach || 0;
+    const demographics_count = result.demographics_count || 0;
+    const location_count = result.location_count || 0;
+    const behavior_count = result.behavior_count || 0;
+    const breakdown = result.breakdown || {};
 
     // Determine confidence level based on sample size
     const confidence_level = getConfidenceLevel(total_reach);
 
+    // Get driver count if targeting drivers
+    let drivers_count: number | undefined;
+    if (targetsDrivers(targeting_rules)) {
+      drivers_count = behavior_count;
+    }
+
     return {
       total_reach,
       drivers_count,
-      ...breakdowns,
+      demographics_count,
+      location_count,
+      behavior_count,
+      breakdown_by_age: breakdown.by_age,
+      breakdown_by_gender: breakdown.by_gender,
+      breakdown_by_city: {},
       confidence_level
     };
   } catch (error) {

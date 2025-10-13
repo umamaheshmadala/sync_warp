@@ -135,6 +135,19 @@ export interface Campaign {
 }
 
 /**
+ * Customer Segments for behavioral targeting
+ */
+export const CUSTOMER_SEGMENTS = [
+  'new_customers',      // Users who never interacted with business
+  'existing_customers', // Users who have interacted before
+  'power_users',        // Drivers (top 10% most active users)
+  'checked_in',         // Users who have checked in
+  'nearby'              // Users currently near the business
+] as const;
+
+export type CustomerSegment = typeof CUSTOMER_SEGMENTS[number];
+
+/**
  * TargetingRules
  * Defines who should see the campaign
  */
@@ -144,18 +157,24 @@ export interface TargetingRules {
   gender?: string[];
   income_levels?: IncomeLevel[];
   
-  // Location
-  cities?: string[];
+  // Location (Geo-targeting)
+  // Auto-set to business city, not manually editable
+  city_id?: string;
+  // Center point for radius targeting (lat, lng)
+  center_lat?: number;
+  center_lng?: number;
+  // Radius in kilometers (default 3km)
   radius_km?: number;
   
   // Interests
   interests?: InterestCategory[];
   
-  // Behavior
+  // Behavior (Customer Segments)
+  customer_segments?: CustomerSegment[];
+  
+  // Legacy fields (kept for backward compatibility)
   min_activity_score?: number;
   drivers_only?: boolean;
-  
-  // Advanced
   exclude_existing_customers?: boolean;
   exclude_recent_visitors?: boolean;
   include_friends_of_customers?: boolean;
@@ -342,6 +361,9 @@ export interface CampaignPerformance {
 export interface AudienceEstimate {
   total_reach: number;
   drivers_count?: number;
+  demographics_count?: number;
+  location_count?: number;
+  behavior_count?: number;
   breakdown_by_age?: Record<string, number>;
   breakdown_by_city?: Record<string, number>;
   breakdown_by_gender?: Record<string, number>;
