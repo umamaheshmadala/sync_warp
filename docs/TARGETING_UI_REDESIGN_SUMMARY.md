@@ -181,7 +181,7 @@ export interface TargetingRules {
 
 ```bash
 # Google Maps API Key
-VITE_GOOGLE_MAPS_API_KEY=AIzaSyDsiouMs138Zz_I-crgCHophPUXSCtiZy0
+VITE_GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
 
 # Supabase (from existing .env)
 # VITE_SUPABASE_URL=your_supabase_url
