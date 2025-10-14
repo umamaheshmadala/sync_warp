@@ -226,16 +226,22 @@ export function LocationPicker({
     }
   }, [map, markerPosition, radius]);
 
-  // Update when props change
+  // Only update from props on initial mount or when explicitly changed
+  // Don't auto-sync on every center change to prevent feedback loops
+  const isInitialMount = useRef(true);
+  
   useEffect(() => {
-    if (center) {
+    if (isInitialMount.current && center) {
       setMarkerPosition(center);
       setMapCenter(center);
+      isInitialMount.current = false;
     }
   }, [center]);
 
   useEffect(() => {
-    setRadius(radiusKm);
+    if (isInitialMount.current) {
+      setRadius(radiusKm);
+    }
   }, [radiusKm]);
 
 

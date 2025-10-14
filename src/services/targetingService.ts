@@ -66,6 +66,9 @@ function transformTargetingRules(rules: TargetingRules): any {
   if (rules.interests && rules.interests.length > 0) {
     behavior.interests = rules.interests;
   }
+  if (rules.customer_segments && rules.customer_segments.length > 0) {
+    behavior.customerSegments = rules.customer_segments;
+  }
   if (rules.min_purchases !== undefined) {
     behavior.minPurchases = rules.min_purchases;
   }

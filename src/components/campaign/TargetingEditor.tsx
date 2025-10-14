@@ -172,6 +172,16 @@ export function TargetingEditor({
   const toggleArrayValue = (field: keyof TargetingRules, value: string) => {
     setRules(prev => {
       const currentArray = (prev[field] as string[]) || [];
+      
+      // Special handling for gender 'all' - clear array when 'all' is selected
+      if (field === 'gender' && value === 'all') {
+        return {
+          ...prev,
+          [field]: [],  // Empty array means no gender filter
+        };
+      }
+      
+      // For other values, toggle as normal
       const newArray = currentArray.includes(value)
         ? currentArray.filter(v => v !== value)
         : [...currentArray, value];
@@ -192,23 +202,22 @@ export function TargetingEditor({
     if (!rules.age_ranges || rules.age_ranges.length === 0) {
       return { min: 18, max: 65 };
     }
-    // Parse first range like '25-45'
+    // Parse first range like '25-45' or '55+'
     const range = rules.age_ranges[0];
-    const [min, max] = range.split('-').map(n => parseInt(n.trim()));
-    return { min: min || 18, max: max || 65 };
+    const parts = range.split('-').map(n => n.replace('+', '').trim());
+    const min = parseInt(parts[0]) || 18;
+    const max = parts.length > 1 ? (parseInt(parts[1]) || 100) : 100;
+    return { min, max };
   };
 
-  const [localMinAge, setLocalMinAge] = useState<string>('');
-  const [localMaxAge, setLocalMaxAge] = useState<string>('');
-
-  // Initialize local state only once from rules
-  useEffect(() => {
-    if (localMinAge === '' && localMaxAge === '') {
-      const { min, max } = getAgeFromRanges();
-      setLocalMinAge(min.toString());
-      setLocalMaxAge(max.toString());
-    }
-  }, []);
+  const [localMinAge, setLocalMinAge] = useState<string>(() => {
+    const { min } = getAgeFromRanges();
+    return min.toString();
+  });
+  const [localMaxAge, setLocalMaxAge] = useState<string>(() => {
+    const { max } = getAgeFromRanges();
+    return max.toString();
+  });
 
   // ============================================================================
   // RENDER HELPERS
@@ -299,7 +308,11 @@ export function TargetingEditor({
         <Label>Gender</Label>
         <div className="flex flex-wrap gap-2">
           {GENDERS.map((gender) => {
-            const isSelected = (rules.gender || []).includes(gender.value);
+            // 'all' is selected when gender array is empty or undefined
+            const isSelected = gender.value === 'all' 
+              ? (!rules.gender || rules.gender.length === 0)
+              : (rules.gender || []).includes(gender.value);
+            
             return (
               <Badge
                 key={gender.value}
