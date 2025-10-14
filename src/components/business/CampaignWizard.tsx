@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -17,7 +17,8 @@ import {
   ArrowRight,
   Check,
   AlertCircle,
-  Loader2
+  Loader2,
+  Save
 } from 'lucide-react';
 import { TargetingEditor } from '../campaign/TargetingEditor';
 import { ReachEstimator } from '../campaign/ReachEstimator';
@@ -42,10 +43,14 @@ interface CampaignFormData {
 
 export default function CampaignWizard() {
   const { businessId } = useParams<{ businessId: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState<Step>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [draftId, setDraftId] = useState<string | null>(searchParams.get('draftId'));
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [businessLocation, setBusinessLocation] = useState<{lat: number; lng: number; address?: string} | null>(null);
   const [reachData, setReachData] = useState<{total: number; demographics: number; location: number; behavior: number} | null>(null);
 
@@ -64,6 +69,48 @@ export default function CampaignWizard() {
     target_drivers_only: false,
   });
 
+  // Load draft campaign if draftId is provided
+  useEffect(() => {
+    const loadDraft = async () => {
+      if (!draftId) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('campaigns')
+          .select('*')
+          .eq('id', draftId)
+          .eq('business_id', businessId)
+          .eq('status', 'draft')
+          .single();
+        
+        if (error) {
+          console.error('Error loading draft:', error);
+          setError('Failed to load draft campaign');
+          return;
+        }
+        
+        if (data) {
+          setFormData({
+            name: data.name,
+            description: data.description || '',
+            campaign_type: data.campaign_type,
+            total_budget_cents: data.total_budget_cents,
+            start_date: data.start_date,
+            end_date: data.end_date || '',
+            targeting_rules: data.targeting_rules || { demographics: {}, location: {}, behavior: {} },
+            target_drivers_only: data.target_drivers_only || false,
+          });
+          setSuccessMessage('Draft campaign loaded successfully!');
+          setTimeout(() => setSuccessMessage(null), 3000);
+        }
+      } catch (err) {
+        console.error('Failed to load draft:', err);
+      }
+    };
+    
+    loadDraft();
+  }, [draftId, businessId]);
+  
   // Fetch business location on mount
   useEffect(() => {
     const fetchBusinessLocation = async () => {
@@ -122,32 +169,100 @@ export default function CampaignWizard() {
     }
   };
 
+  const handleSaveDraft = async () => {
+    try {
+      setIsSavingDraft(true);
+      setError(null);
+      setSuccessMessage(null);
+
+      const campaignData = {
+        business_id: businessId,
+        name: formData.name || 'Untitled Campaign',
+        description: formData.description,
+        campaign_type: formData.campaign_type,
+        targeting_rules: formData.targeting_rules,
+        target_drivers_only: formData.target_drivers_only,
+        total_budget_cents: formData.total_budget_cents,
+        start_date: formData.start_date,
+        end_date: formData.end_date || null,
+        status: 'draft',
+        impressions: 0,
+        clicks: 0,
+        conversions: 0,
+      };
+
+      if (draftId) {
+        // Update existing draft
+        const { error: updateError } = await supabase
+          .from('campaigns')
+          .update(campaignData)
+          .eq('id', draftId);
+
+        if (updateError) throw updateError;
+        setSuccessMessage('Draft saved successfully!');
+      } else {
+        // Create new draft
+        const { data, error: insertError } = await supabase
+          .from('campaigns')
+          .insert(campaignData)
+          .select()
+          .single();
+
+        if (insertError) throw insertError;
+        setDraftId(data.id);
+        // Update URL with draftId without navigation
+        window.history.replaceState(null, '', `?draftId=${data.id}`);
+        setSuccessMessage('Draft saved successfully!');
+      }
+
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (err: any) {
+      console.error('Error saving draft:', err);
+      setError(err.message || 'Failed to save draft');
+    } finally {
+      setIsSavingDraft(false);
+    }
+  };
+
   const handleSubmit = async () => {
     try {
       setIsSubmitting(true);
       setError(null);
 
-      const { data, error: submitError } = await supabase
-        .from('campaigns')
-        .insert({
-          business_id: businessId,
-          name: formData.name,
-          description: formData.description,
-          campaign_type: formData.campaign_type,
-          targeting_rules: formData.targeting_rules,
-          target_drivers_only: formData.target_drivers_only,
-          total_budget_cents: formData.total_budget_cents,
-          start_date: formData.start_date,
-          end_date: formData.end_date || null,
-          status: 'draft',
-          impressions: 0,
-          clicks: 0,
-          conversions: 0,
-        })
-        .select()
-        .single();
+      const campaignData = {
+        business_id: businessId,
+        name: formData.name,
+        description: formData.description,
+        campaign_type: formData.campaign_type,
+        targeting_rules: formData.targeting_rules,
+        target_drivers_only: formData.target_drivers_only,
+        total_budget_cents: formData.total_budget_cents,
+        start_date: formData.start_date,
+        end_date: formData.end_date || null,
+        status: 'draft',
+        impressions: 0,
+        clicks: 0,
+        conversions: 0,
+      };
 
-      if (submitError) throw submitError;
+      if (draftId) {
+        // Update existing draft
+        const { error: updateError } = await supabase
+          .from('campaigns')
+          .update(campaignData)
+          .eq('id', draftId);
+
+        if (updateError) throw updateError;
+      } else {
+        // Create new campaign
+        const { data, error: insertError } = await supabase
+          .from('campaigns')
+          .insert(campaignData)
+          .select()
+          .single();
+
+        if (insertError) throw insertError;
+      }
 
       // Success! Navigate back to campaign manager
       navigate(`/business/${businessId}/campaigns`);
@@ -190,7 +305,9 @@ export default function CampaignWizard() {
             Back to Campaigns
           </Link>
 
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Create New Campaign</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            {draftId ? 'Edit Campaign Draft' : 'Create New Campaign'}
+          </h1>
           <p className="text-gray-600">
             Step {currentStep} of 4: {
               currentStep === 1 ? 'Basic Information' :
@@ -205,6 +322,18 @@ export default function CampaignWizard() {
             <Progress value={getStepProgress()} className="h-2" />
           </div>
         </div>
+
+        {/* Success Message */}
+        {successMessage && (
+          <Card className="border-green-200 bg-green-50 mb-6">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-2 text-green-600">
+                <Check className="w-5 h-5" />
+                <p>{successMessage}</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Error Display */}
         {error && (
@@ -449,6 +578,23 @@ export default function CampaignWizard() {
           </Button>
 
           <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={handleSaveDraft}
+              disabled={isSavingDraft || isSubmitting || !formData.name.trim()}
+            >
+              {isSavingDraft ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  Save Draft
+                </>
+              )}
+            </Button>
             {currentStep < 4 ? (
               <Button
                 onClick={handleNext}
@@ -471,7 +617,7 @@ export default function CampaignWizard() {
                 ) : (
                   <>
                     <Check className="w-4 h-4 mr-2" />
-                    Create Campaign
+                    {draftId ? 'Update Campaign' : 'Create Campaign'}
                   </>
                 )}
               </Button>

@@ -25,6 +25,7 @@ import ProductManagerPage from '../components/business/ProductManagerPage'
 import CouponManagerPage from '../components/business/CouponManagerPage'
 import CampaignManagerPage from '../components/business/CampaignManagerPage'
 import CampaignWizard from '../components/business/CampaignWizard'
+import CampaignAnalyticsPage from '../components/business/CampaignAnalyticsPage'
 
 // Import social components
 import FriendsManagementPage from '../components/FriendsManagementPage'
@@ -317,6 +318,13 @@ export const routes: RouteConfig[] = [
     protected: true,
     title: 'Create Campaign - SynC',
     description: 'Create a new marketing campaign'
+  },
+  {
+    path: '/business/:businessId/campaigns/:campaignId/analytics',
+    element: <CampaignAnalyticsPage />,
+    protected: true,
+    title: 'Campaign Analytics - SynC',
+    description: 'View detailed campaign performance metrics'
   }
 ]
 

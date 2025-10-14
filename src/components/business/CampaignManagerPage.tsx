@@ -94,6 +94,70 @@ export default function CampaignManagerPage() {
     return new Intl.NumberFormat('en-IN').format(num);
   };
 
+  // Handler functions
+  const handleViewAnalytics = (campaignId: string) => {
+    navigate(`/business/${businessId}/campaigns/${campaignId}/analytics`);
+  };
+
+  const handleEdit = (campaignId: string, campaign: Campaign) => {
+    // If it's a draft, navigate to wizard with draftId to resume editing
+    if (campaign.status === 'draft') {
+      navigate(`/business/${businessId}/campaigns/create?draftId=${campaignId}`);
+    } else {
+      // For active/paused campaigns, navigate to edit page (to be implemented)
+      navigate(`/business/${businessId}/campaigns/${campaignId}/edit`);
+    }
+  };
+
+  const handlePause = async (campaignId: string) => {
+    if (!confirm('Are you sure you want to pause this campaign?')) return;
+    
+    try {
+      const { error } = await supabase
+        .from('campaigns')
+        .update({ status: 'paused' })
+        .eq('id', campaignId);
+      
+      if (error) throw error;
+      fetchCampaigns(); // Refresh list
+    } catch (err: any) {
+      console.error('Error pausing campaign:', err);
+      alert('Failed to pause campaign: ' + err.message);
+    }
+  };
+
+  const handleResume = async (campaignId: string) => {
+    try {
+      const { error } = await supabase
+        .from('campaigns')
+        .update({ status: 'active' })
+        .eq('id', campaignId);
+      
+      if (error) throw error;
+      fetchCampaigns(); // Refresh list
+    } catch (err: any) {
+      console.error('Error resuming campaign:', err);
+      alert('Failed to resume campaign: ' + err.message);
+    }
+  };
+
+  const handleDelete = async (campaignId: string, campaignName: string) => {
+    if (!confirm(`Are you sure you want to delete "${campaignName}"? This action cannot be undone.`)) return;
+    
+    try {
+      const { error } = await supabase
+        .from('campaigns')
+        .delete()
+        .eq('id', campaignId);
+      
+      if (error) throw error;
+      fetchCampaigns(); // Refresh list
+    } catch (err: any) {
+      console.error('Error deleting campaign:', err);
+      alert('Failed to delete campaign: ' + err.message);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 p-6">
@@ -256,27 +320,48 @@ export default function CampaignManagerPage() {
 
                   {/* Actions */}
                   <div className="flex items-center gap-2 pt-4 border-t">
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleViewAnalytics(campaign.id)}
+                    >
                       <BarChart3 className="w-4 h-4 mr-2" />
                       View Analytics
                     </Button>
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleEdit(campaign.id, campaign)}
+                    >
                       <Edit className="w-4 h-4 mr-2" />
-                      Edit
+                      {campaign.status === 'draft' ? 'Resume' : 'Edit'}
                     </Button>
                     {campaign.status === 'active' && (
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handlePause(campaign.id)}
+                      >
                         <Pause className="w-4 h-4 mr-2" />
                         Pause
                       </Button>
                     )}
                     {campaign.status === 'paused' && (
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleResume(campaign.id)}
+                      >
                         <Play className="w-4 h-4 mr-2" />
                         Resume
                       </Button>
                     )}
-                    <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="text-red-600 hover:text-red-700"
+                      onClick={() => handleDelete(campaign.id, campaign.name)}
+                    >
                       <Trash2 className="w-4 h-4 mr-2" />
                       Delete
                     </Button>
