@@ -1,9 +1,20 @@
 // src/pages/Landing.tsx
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Search, MapPin, Star, Users } from 'lucide-react';
+import { useAuthStore } from '../store/authStore';
 
 const Landing: React.FC = () => {
+  const navigate = useNavigate();
+  const user = useAuthStore((state) => state.user);
+
+  // Redirect to dashboard if user is already logged in
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, navigate]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Header */}

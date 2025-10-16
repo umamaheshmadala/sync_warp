@@ -3,6 +3,7 @@
 // Adapted from ShareCouponModal pattern
 
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -119,7 +120,7 @@ const ProductShareModal: React.FC<ProductShareModalProps> = ({
 
   if (!isOpen) return null;
 
-  return (
+  const modalContent = (
     <AnimatePresence>
       {isOpen && (
         <>
@@ -323,6 +324,8 @@ const ProductShareModal: React.FC<ProductShareModalProps> = ({
       )}
     </AnimatePresence>
   );
+
+  return createPortal(modalContent, document.body);
 };
 
 export default ProductShareModal;
