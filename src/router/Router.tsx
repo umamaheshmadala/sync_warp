@@ -27,6 +27,9 @@ import CampaignManagerPage from '../components/business/CampaignManagerPage'
 import CampaignWizard from '../components/business/CampaignWizard'
 import CampaignAnalyticsPage from '../components/business/CampaignAnalyticsPage'
 
+// Import product components (Story 4.7)
+import { ProductDetails } from '../components/products'
+
 // Import social components
 import FriendsManagementPage from '../components/FriendsManagementPage'
 
@@ -325,6 +328,14 @@ export const routes: RouteConfig[] = [
     protected: true,
     title: 'Campaign Analytics - SynC',
     description: 'View detailed campaign performance metrics'
+  },
+  // Story 4.7: Product Detail Routes (customer-facing)
+  {
+    path: '/business/:businessId/product/:productId',
+    element: <ProductDetails />,
+    protected: true,
+    title: 'Product Details - SynC',
+    description: 'View product information and details'
   }
 ]
 
