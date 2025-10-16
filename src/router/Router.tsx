@@ -42,6 +42,7 @@ const LocationManager = lazy(() => import('../components/LocationManager'))
 const Settings = lazy(() => import('../components/Settings'))
 const Wallet = lazy(() => import('../components/Wallet'))
 const Social = lazy(() => import('../components/Social'))
+const WishlistPage = lazy(() => import('../pages/WishlistPage'))
 // Story 4.4 components
 const AdvancedSearchPage = lazy(() => import('../components/search/AdvancedSearchPage'))
 const BusinessDiscoveryPage = lazy(() => import('../components/discovery/BusinessDiscoveryPage'))
@@ -213,6 +214,13 @@ export const routes: RouteConfig[] = [
     protected: true,
     title: 'Favorites - SynC',
     description: 'Your saved businesses, coupons, and deals with unified state management'
+  },
+  {
+    path: '/wishlist',
+    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><WishlistPage /></Suspense>,
+    protected: true,
+    title: 'My Wishlist - SynC',
+    description: 'View your wishlist products'
   },
   {
     path: '/friends',
