@@ -1,7 +1,7 @@
 import { BrowserRouter as Router } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'react-hot-toast'
-import Layout from './components/Layout'
+import AppLayout from './components/layout/AppLayout'
 import AppRouter from './router/Router'
 import { AuthDebugPanel } from './router/ProtectedRoute'
 import { ErrorBoundary } from './components/error'
@@ -18,10 +18,11 @@ function App() {
             v7_relativeSplatPath: true
           }}
         >
-          <Layout>
+          <AppLayout>
             <AppRouter />
             <AuthDebugPanel />
-            <Toaster
+          </AppLayout>
+          <Toaster
               position="top-right"
               toastOptions={{
                 duration: 4000,
