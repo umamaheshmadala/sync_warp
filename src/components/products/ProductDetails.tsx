@@ -2,10 +2,13 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Heart, Share2, List, Package } from 'lucide-react';
 import { useProducts } from '../../hooks/useProducts';
+import { useProductSocial } from '../../hooks/useProductSocial';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Skeleton } from '../ui/skeleton';
 import { ProductCard } from './ProductCard';
+import ProductShareModal from './ProductShareModal';
+import { cn } from '../../lib/utils';
 
 export function ProductDetails() {
   const { businessId, productId } = useParams<{ businessId: string; productId: string }>();
@@ -15,6 +18,16 @@ export function ProductDetails() {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
   const [imageLoading, setImageLoading] = useState(true);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  
+  // Social features
+  const {
+    isFavorited,
+    isInWishlist,
+    toggleFavorite,
+    toggleWishlist,
+    isLoading: socialLoading
+  } = useProductSocial();
 
   // Fetch product and related products
   useEffect(() => {
@@ -39,9 +52,26 @@ export function ProductDetails() {
     navigate(`/business/${businessId}`);
   };
 
-  const handleActionClick = (action: 'favorite' | 'share' | 'wishlist') => {
-    console.log(`${action} clicked for product:`, product?.id);
-    // Will be implemented with hooks in Phase 4
+  const handleFavoriteClick = async () => {
+    if (!product) return;
+    try {
+      await toggleFavorite(product);
+    } catch (error) {
+      console.error('Failed to toggle favorite:', error);
+    }
+  };
+
+  const handleWishlistClick = async () => {
+    if (!product) return;
+    try {
+      await toggleWishlist(product);
+    } catch (error) {
+      console.error('Failed to toggle wishlist:', error);
+    }
+  };
+
+  const handleShareClick = () => {
+    setIsShareModalOpen(true);
   };
 
   const getCurrencySymbol = (currency: string) => {
@@ -218,17 +248,26 @@ export function ProductDetails() {
           <div className="flex flex-wrap gap-2">
             <Button
               variant="outline"
-              className="flex-1"
-              onClick={() => handleActionClick('favorite')}
+              className={cn(
+                'flex-1 transition-colors',
+                product && isFavorited(product.id) && 'border-red-500 bg-red-50 text-red-600 hover:bg-red-100'
+              )}
+              onClick={handleFavoriteClick}
+              disabled={socialLoading}
               data-testid="favorite-button"
             >
-              <Heart className="mr-2 h-4 w-4" />
-              Favorite
+              <Heart
+                className={cn(
+                  'mr-2 h-4 w-4',
+                  product && isFavorited(product.id) && 'fill-current'
+                )}
+              />
+              {product && isFavorited(product.id) ? 'Favorited' : 'Favorite'}
             </Button>
             <Button
               variant="outline"
               className="flex-1"
-              onClick={() => handleActionClick('share')}
+              onClick={handleShareClick}
               data-testid="share-button"
             >
               <Share2 className="mr-2 h-4 w-4" />
@@ -236,12 +275,21 @@ export function ProductDetails() {
             </Button>
             <Button
               variant="outline"
-              className="flex-1"
-              onClick={() => handleActionClick('wishlist')}
+              className={cn(
+                'flex-1 transition-colors',
+                product && isInWishlist(product.id) && 'border-blue-500 bg-blue-50 text-blue-600 hover:bg-blue-100'
+              )}
+              onClick={handleWishlistClick}
+              disabled={socialLoading}
               data-testid="wishlist-button"
             >
-              <List className="mr-2 h-4 w-4" />
-              Wishlist
+              <List
+                className={cn(
+                  'mr-2 h-4 w-4',
+                  product && isInWishlist(product.id) && 'fill-current'
+                )}
+              />
+              {product && isInWishlist(product.id) ? 'In Wishlist' : 'Wishlist'}
             </Button>
           </div>
 
@@ -274,6 +322,18 @@ export function ProductDetails() {
             ))}
           </div>
         </div>
+      )}
+      
+      {/* Share Modal */}
+      {product && (
+        <ProductShareModal
+          isOpen={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+          product={product}
+          onShareSuccess={() => {
+            console.log('Product shared successfully');
+          }}
+        />
       )}
     </div>
   );

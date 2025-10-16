@@ -6,6 +6,8 @@ import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { cn } from '../../lib/utils';
+import { useProductSocial } from '../../hooks/useProductSocial';
+import ProductShareModal from './ProductShareModal';
 
 interface ProductCardProps {
   product: Product;
@@ -23,6 +25,16 @@ export function ProductCard({
   const navigate = useNavigate();
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  
+  // Social features
+  const {
+    isFavorited,
+    isInWishlist,
+    toggleFavorite,
+    toggleWishlist,
+    isLoading: socialLoading
+  } = useProductSocial();
 
   // Get the first image or fallback
   const primaryImage = product.image_urls && product.image_urls.length > 0
@@ -48,10 +60,27 @@ export function ProductCard({
     }
   };
 
-  const handleActionClick = (e: React.MouseEvent, action: 'favorite' | 'share' | 'wishlist') => {
+  const handleFavoriteClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    // These will be implemented with hooks
-    console.log(`${action} clicked for product:`, product.id);
+    try {
+      await toggleFavorite(product);
+    } catch (error) {
+      console.error('Failed to toggle favorite:', error);
+    }
+  };
+
+  const handleWishlistClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await toggleWishlist(product);
+    } catch (error) {
+      console.error('Failed to toggle wishlist:', error);
+    }
+  };
+
+  const handleShareClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsShareModalOpen(true);
   };
 
   const sizeClasses = {
@@ -145,19 +174,28 @@ export function ProductCard({
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 w-8 p-0"
-                onClick={(e) => handleActionClick(e, 'favorite')}
-                aria-label="Add to favorites"
+                className={cn(
+                  'h-8 w-8 p-0 transition-colors',
+                  isFavorited(product.id) && 'text-red-500 hover:text-red-600'
+                )}
+                onClick={handleFavoriteClick}
+                disabled={socialLoading}
+                aria-label={isFavorited(product.id) ? 'Remove from favorites' : 'Add to favorites'}
                 data-testid="favorite-button"
               >
-                <Heart className="h-4 w-4" />
+                <Heart
+                  className={cn(
+                    'h-4 w-4',
+                    isFavorited(product.id) && 'fill-current'
+                  )}
+                />
               </Button>
 
               <Button
                 variant="ghost"
                 size="sm"
                 className="h-8 w-8 p-0"
-                onClick={(e) => handleActionClick(e, 'share')}
+                onClick={handleShareClick}
                 aria-label="Share product"
                 data-testid="share-button"
               >
@@ -167,17 +205,36 @@ export function ProductCard({
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 w-8 p-0"
-                onClick={(e) => handleActionClick(e, 'wishlist')}
-                aria-label="Add to wishlist"
+                className={cn(
+                  'h-8 w-8 p-0 transition-colors',
+                  isInWishlist(product.id) && 'text-blue-500 hover:text-blue-600'
+                )}
+                onClick={handleWishlistClick}
+                disabled={socialLoading}
+                aria-label={isInWishlist(product.id) ? 'Remove from wishlist' : 'Add to wishlist'}
                 data-testid="wishlist-button"
               >
-                <List className="h-4 w-4" />
+                <List
+                  className={cn(
+                    'h-4 w-4',
+                    isInWishlist(product.id) && 'fill-current'
+                  )}
+                />
               </Button>
             </div>
           )}
         </div>
       </CardContent>
+      
+      {/* Share Modal */}
+      <ProductShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        product={product}
+        onShareSuccess={() => {
+          console.log('Product shared successfully');
+        }}
+      />
     </Card>
   );
 }
