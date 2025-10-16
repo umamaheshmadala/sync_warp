@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Heart, Share2, List, Package } from 'lucide-react';
 import { useProducts } from '../../hooks/useProducts';
-import { useProductSocial } from '../../hooks/useProductSocial';
+import { useSimpleProductSocial } from '../../hooks/useSimpleProductSocial';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Skeleton } from '../ui/skeleton';
@@ -27,7 +27,7 @@ export function ProductDetails() {
     toggleFavorite,
     toggleWishlist,
     isLoading: socialLoading
-  } = useProductSocial();
+  } = useSimpleProductSocial();
 
   // Fetch product and related products
   useEffect(() => {

@@ -84,11 +84,18 @@ sync_warp/
 
 ## 📚 Documentation
 
-- **📖 [Project Structure](PROJECT_STRUCTURE.md)** - Organized directory guide
-- **🏢 [Business Implementation](docs/EPIC_4_BUSINESS_IMPLEMENTATION.md)** - Business features guide
-- **🧪 [Testing Guide](docs/BUSINESS_TESTING_GUIDE.md)** - How to test business features
-- **📊 [Project Status](docs/PROJECT_STATUS_OVERVIEW.md)** - Development progress
-- **⚙️ [Setup Guide](docs/SUPABASE_SETUP_GUIDE.md)** - Database configuration
+### 🎯 **Essential Guides** (Start Here)
+- **📖 [Quick Start](QUICK_START.md)** - Get up and running in 5 minutes
+- **📊 [Epic Status](docs/guides/EPIC_STATUS.md)** - Current development progress  
+- **🎯 [Project Brief](docs/guides/SynC_Enhanced_Project_Brief_v2.md)** - Complete project vision
+- **⚙️ [Setup Guide](docs/guides/SUPABASE_SETUP_GUIDE.md)** - Database configuration
+
+### 📂 **Organized Documentation**
+- **Epics**: `/docs/epics/` - Epic specifications (1-6)
+- **Stories**: `/docs/stories/` - Story requirements (4B.1-4B.9)
+- **Guides**: `/docs/guides/` - Implementation & setup guides
+- **Completed**: `/docs/completed/` - Finished feature documentation
+- **Archive**: `/docs/archive/` - Historical docs & reports
 
 ## 🚀 Getting Started
 

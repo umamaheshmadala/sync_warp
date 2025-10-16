@@ -6,7 +6,7 @@ import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { cn } from '../../lib/utils';
-import { useProductSocial } from '../../hooks/useProductSocial';
+import { useSimpleProductSocial } from '../../hooks/useSimpleProductSocial';
 import ProductShareModal from './ProductShareModal';
 
 interface ProductCardProps {
@@ -34,7 +34,7 @@ export function ProductCard({
     toggleFavorite,
     toggleWishlist,
     isLoading: socialLoading
-  } = useProductSocial();
+  } = useSimpleProductSocial();
 
   // Get the first image or fallback
   const primaryImage = product.image_urls && product.image_urls.length > 0
