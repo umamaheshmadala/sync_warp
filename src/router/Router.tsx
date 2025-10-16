@@ -28,7 +28,7 @@ import CampaignWizard from '../components/business/CampaignWizard'
 import CampaignAnalyticsPage from '../components/business/CampaignAnalyticsPage'
 
 // Import product components (Story 4.7)
-import { ProductDetails } from '../components/products'
+import { ProductDetails, AllProducts } from '../components/products'
 
 // Import social components
 import FriendsManagementPage from '../components/FriendsManagementPage'
@@ -336,6 +336,13 @@ export const routes: RouteConfig[] = [
     protected: true,
     title: 'Product Details - SynC',
     description: 'View product information and details'
+  },
+  {
+    path: '/business/:businessId/products/catalog',
+    element: <AllProducts />,
+    protected: true,
+    title: 'All Products - SynC',
+    description: 'Browse all products from this business'
   }
 ]
 

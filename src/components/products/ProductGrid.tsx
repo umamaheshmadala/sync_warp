@@ -25,7 +25,7 @@ export function ProductGrid({
   });
 
   const handleViewAll = () => {
-    navigate(`/business/${businessId}/products`);
+    navigate(`/business/${businessId}/products/catalog`);
   };
 
   const handleProductClick = (productId: string) => {
