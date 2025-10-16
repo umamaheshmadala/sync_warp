@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Heart, Share2, List, Package } from 'lucide-react';
 import { useProducts } from '../../hooks/useProducts';
 import { useSimpleProductSocial } from '../../hooks/useSimpleProductSocial';
+import useUnifiedFavorites from '../../hooks/useUnifiedFavorites';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Skeleton } from '../ui/skeleton';
@@ -22,12 +23,27 @@ export function ProductDetails() {
   
   // Social features
   const {
-    isFavorited,
     isInWishlist,
-    toggleFavorite,
     toggleWishlist,
     isLoading: socialLoading
   } = useSimpleProductSocial();
+  
+  // Use UnifiedFavorites for product favorites
+  const unifiedFavorites = useUnifiedFavorites();
+  
+  const isFavorited = (productId: string) => unifiedFavorites.isFavorited(productId, 'product');
+  
+  const toggleFavorite = async (product: any) => {
+    await unifiedFavorites.toggleFavorite(product.id, 'product', {
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      currency: product.currency,
+      image_url: product.image_urls?.[0],
+      category: product.category,
+      business_id: product.business_id
+    });
+  };
 
   // Fetch product and related products
   useEffect(() => {

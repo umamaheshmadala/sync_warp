@@ -17,7 +17,7 @@ const FAVORITES_UPDATED_EVENT = 'favoritesUpdated';
 
 interface UnifiedFavorite {
   id: string;
-  type: 'business' | 'coupon';
+  type: 'business' | 'coupon' | 'product';
   timestamp: number;
   synced?: boolean; // Whether it's been synced to database
   itemData?: any; // Optional cached item data
@@ -28,6 +28,7 @@ interface FavoritesState {
   counts: {
     businesses: number;
     coupons: number;
+    products: number;
     total: number;
   };
   isLoading: boolean;
@@ -64,6 +65,12 @@ const loadFromStorage = (userId?: string): UnifiedFavorite[] => {
             title: `Coupon ${migrated.id.substring(0, 8)}...`,
             description: 'Details not available',
             business_name: 'Unknown Business'
+          };
+        } else if (!migrated.itemData && migrated.type === 'product') {
+          migrated.itemData = {
+            name: `Product ${migrated.id.substring(0, 8)}...`,
+            description: 'Details not available',
+            price: 'N/A'
           };
         }
         
@@ -108,9 +115,26 @@ const syncFromDatabase = async (currentUserId?: string) => {
     console.log('[UnifiedFavorites] Syncing from database for user:', currentUserId);
     
     // Get favorites from database
-    const [businessResult, couponResult] = await Promise.all([
+    const [businessResult, couponResult, productResult] = await Promise.all([
       supabase.rpc('get_user_favorite_businesses', { user_uuid: currentUserId }),
-      supabase.rpc('get_user_favorite_coupons', { user_uuid: currentUserId })
+      supabase.rpc('get_user_favorite_coupons', { user_uuid: currentUserId }),
+      // Products are stored in the generic favorites table
+      supabase.from('favorites')
+        .select(`
+          *,
+          business_products (
+            id,
+            name,
+            description,
+            price,
+            currency,
+            image_urls,
+            category,
+            business_id
+          )
+        `)
+        .eq('user_id', currentUserId)
+        .eq('entity_type', 'product')
     ]);
 
     const dbFavorites: UnifiedFavorite[] = [];
@@ -150,6 +174,30 @@ const syncFromDatabase = async (currentUserId?: string) => {
             business_name: coupon.business_name
           }
         });
+      });
+    }
+
+    // Process product favorites from the favorites table
+    if (productResult.data && !productResult.error) {
+      productResult.data.forEach((fav: any) => {
+        const product = fav.business_products;
+        if (product) {
+          dbFavorites.push({
+            id: fav.entity_id,
+            type: 'product',
+            timestamp: new Date(fav.created_at).getTime(),
+            synced: true,
+            itemData: {
+              name: product.name,
+              description: product.description,
+              price: product.price,
+              currency: product.currency,
+              image_url: product.image_urls?.[0],
+              category: product.category,
+              business_id: product.business_id
+            }
+          });
+        }
       });
     }
 
@@ -216,10 +264,11 @@ export const useUnifiedFavorites = () => {
       (acc, fav) => {
         if (fav.type === 'business') acc.businesses++;
         else if (fav.type === 'coupon') acc.coupons++;
+        else if (fav.type === 'product') acc.products++;
         acc.total++;
         return acc;
       },
-      { businesses: 0, coupons: 0, total: 0 }
+      { businesses: 0, coupons: 0, products: 0, total: 0 }
     );
 
     return {
@@ -237,10 +286,11 @@ export const useUnifiedFavorites = () => {
         (acc, fav) => {
           if (fav.type === 'business') acc.businesses++;
           else if (fav.type === 'coupon') acc.coupons++;
+          else if (fav.type === 'product') acc.products++;
           acc.total++;
           return acc;
         },
-        { businesses: 0, coupons: 0, total: 0 }
+        { businesses: 0, coupons: 0, products: 0, total: 0 }
       );
 
       console.log('[UnifiedFavorites] State update - favorites:', favorites.length, 'counts:', counts);
@@ -260,12 +310,12 @@ export const useUnifiedFavorites = () => {
   }, []);
 
   // Check if item is favorited
-  const isFavorited = useCallback((itemId: string, type: 'business' | 'coupon'): boolean => {
+  const isFavorited = useCallback((itemId: string, type: 'business' | 'coupon' | 'product'): boolean => {
     return globalFavorites.some(fav => fav.id === itemId && fav.type === type);
   }, []);
 
   // Toggle favorite status with database sync
-  const toggleFavorite = useCallback(async (itemId: string, type: 'business' | 'coupon', itemData?: any): Promise<boolean> => {
+  const toggleFavorite = useCallback(async (itemId: string, type: 'business' | 'coupon' | 'product', itemData?: any): Promise<boolean> => {
     const isCurrentlyFavorited = isFavorited(itemId, type);
     const currentUserId = userId;
 
@@ -282,17 +332,34 @@ export const useUnifiedFavorites = () => {
         if (currentUserId && currentUserId !== 'guest') {
           setTimeout(async () => {
             try {
-              const functionName = type === 'business' ? 'toggle_business_favorite' : 'toggle_coupon_favorite';
-              const paramName = type === 'business' ? 'business_uuid' : 'coupon_uuid';
-              
-              const { error } = await supabase.rpc(functionName, {
-                [paramName]: itemId
-              });
-              
-              if (error) {
-                console.warn('Database sync error (removal):', error);
+              // Products use the generic favorites table, not RPC functions
+              if (type === 'product') {
+                const { error } = await supabase
+                  .from('favorites')
+                  .delete()
+                  .eq('user_id', currentUserId)
+                  .eq('entity_type', 'product')
+                  .eq('entity_id', itemId);
+                
+                if (error) {
+                  console.warn('Database sync error (product removal):', error);
+                } else {
+                  console.log('Successfully removed product from database');
+                }
               } else {
-                console.log('Successfully removed from database');
+                // Business and coupon use RPC functions
+                const functionName = type === 'business' ? 'toggle_business_favorite' : 'toggle_coupon_favorite';
+                const paramName = type === 'business' ? 'business_uuid' : 'coupon_uuid';
+                
+                const { error } = await supabase.rpc(functionName, {
+                  [paramName]: itemId
+                });
+                
+                if (error) {
+                  console.warn('Database sync error (removal):', error);
+                } else {
+                  console.log('Successfully removed from database');
+                }
               }
             } catch (dbError) {
               console.warn('Failed to sync removal to database:', dbError);
@@ -321,24 +388,52 @@ export const useUnifiedFavorites = () => {
         if (currentUserId && currentUserId !== 'guest') {
           setTimeout(async () => {
             try {
-              const functionName = type === 'business' ? 'toggle_business_favorite' : 'toggle_coupon_favorite';
-              const paramName = type === 'business' ? 'business_uuid' : 'coupon_uuid';
-              
-              const { data, error } = await supabase.rpc(functionName, {
-                [paramName]: itemId
-              });
-              
-              if (error) {
-                console.warn('Database sync error (addition):', error);
-              } else {
-                console.log('Successfully added to database:', data);
+              // Products use the generic favorites table, not RPC functions
+              if (type === 'product') {
+                const { data, error } = await supabase
+                  .from('favorites')
+                  .insert({
+                    user_id: currentUserId,
+                    entity_type: 'product',
+                    entity_id: itemId
+                  })
+                  .select()
+                  .single();
                 
-                // Update the favorite as synced
-                const favoriteIndex = globalFavorites.findIndex(fav => fav.id === itemId && fav.type === type);
-                if (favoriteIndex !== -1) {
-                  globalFavorites[favoriteIndex].synced = true;
-                  saveToStorage(globalFavorites, currentUserId);
-                  notifyListeners();
+                if (error) {
+                  console.warn('Database sync error (product addition):', error);
+                } else {
+                  console.log('Successfully added product to database:', data);
+                  
+                  // Update the favorite as synced
+                  const favoriteIndex = globalFavorites.findIndex(fav => fav.id === itemId && fav.type === type);
+                  if (favoriteIndex !== -1) {
+                    globalFavorites[favoriteIndex].synced = true;
+                    saveToStorage(globalFavorites, currentUserId);
+                    notifyListeners();
+                  }
+                }
+              } else {
+                // Business and coupon use RPC functions
+                const functionName = type === 'business' ? 'toggle_business_favorite' : 'toggle_coupon_favorite';
+                const paramName = type === 'business' ? 'business_uuid' : 'coupon_uuid';
+                
+                const { data, error } = await supabase.rpc(functionName, {
+                  [paramName]: itemId
+                });
+                
+                if (error) {
+                  console.warn('Database sync error (addition):', error);
+                } else {
+                  console.log('Successfully added to database:', data);
+                  
+                  // Update the favorite as synced
+                  const favoriteIndex = globalFavorites.findIndex(fav => fav.id === itemId && fav.type === type);
+                  if (favoriteIndex !== -1) {
+                    globalFavorites[favoriteIndex].synced = true;
+                    saveToStorage(globalFavorites, currentUserId);
+                    notifyListeners();
+                  }
                 }
               }
             } catch (dbError) {
@@ -357,7 +452,7 @@ export const useUnifiedFavorites = () => {
   }, [isFavorited, userId]);
 
   // Get favorites by type
-  const getFavoritesByType = useCallback((type: 'business' | 'coupon') => {
+  const getFavoritesByType = useCallback((type: 'business' | 'coupon' | 'product') => {
     return globalFavorites.filter(f => f.type === type);
   }, []);
 
@@ -498,8 +593,10 @@ export const useUnifiedFavorites = () => {
     // Legacy compatibility for existing components
     isBusinessFavorited: (id: string) => isFavorited(id, 'business'),
     isCouponFavorited: (id: string) => isFavorited(id, 'coupon'),
+    isProductFavorited: (id: string) => isFavorited(id, 'product'),
     toggleBusinessFavorite: (id: string, itemData?: any) => toggleFavorite(id, 'business', itemData),
     toggleCouponFavorite: (id: string, itemData?: any) => toggleFavorite(id, 'coupon', itemData),
+    toggleProductFavorite: (id: string, itemData?: any) => toggleFavorite(id, 'product', itemData),
     loadFavorites: refresh // No-op for compatibility
   };
 };

@@ -9,7 +9,7 @@ import { cn } from '../../lib/utils';
 
 interface SimpleSaveButtonProps {
   itemId: string;
-  itemType: 'business' | 'coupon';
+  itemType: 'business' | 'coupon' | 'product';
   itemData?: any; // Optional data for enhanced features
   variant?: 'default' | 'compact' | 'large';
   size?: 'sm' | 'md' | 'lg'; // Alternative sizing

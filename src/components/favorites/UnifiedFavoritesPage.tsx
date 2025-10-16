@@ -9,7 +9,7 @@ import useUnifiedFavorites from '../../hooks/useUnifiedFavorites';
 import { SimpleSaveButton } from './SimpleSaveButton';
 import { cn } from '../../lib/utils';
 
-type ActiveTab = 'all' | 'businesses' | 'coupons';
+type ActiveTab = 'all' | 'businesses' | 'coupons' | 'products';
 
 const UnifiedFavoritesPage: React.FC = () => {
   const navigate = useNavigate();
@@ -47,6 +47,8 @@ const UnifiedFavoritesPage: React.FC = () => {
       filtered = filtered.filter(f => f.type === 'business');
     } else if (activeTab === 'coupons') {
       filtered = filtered.filter(f => f.type === 'coupon');
+    } else if (activeTab === 'products') {
+      filtered = filtered.filter(f => f.type === 'product');
     }
 
     // Apply search filter
@@ -77,7 +79,8 @@ const UnifiedFavoritesPage: React.FC = () => {
     return {
       all: favorites.favorites.length,
       businesses: favorites.counts.businesses,
-      coupons: favorites.counts.coupons
+      coupons: favorites.counts.coupons,
+      products: favorites.counts.products || 0
     };
   }, [favorites.favorites.length, favorites.counts]);
 
@@ -106,6 +109,10 @@ const UnifiedFavoritesPage: React.FC = () => {
               <div className="text-center">
                 <div className="text-2xl font-bold text-green-600">{favorites.counts.coupons}</div>
                 <div className="text-sm text-gray-600">Coupons</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-orange-600">{favorites.counts.products || 0}</div>
+                <div className="text-sm text-gray-600">Products</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-purple-600">{favorites.counts.total}</div>
@@ -156,7 +163,8 @@ const UnifiedFavoritesPage: React.FC = () => {
               {[
                 { id: 'all', label: 'All', count: tabCounts.all },
                 { id: 'businesses', label: 'Businesses', count: tabCounts.businesses },
-                { id: 'coupons', label: 'Coupons', count: tabCounts.coupons }
+                { id: 'coupons', label: 'Coupons', count: tabCounts.coupons },
+                { id: 'products', label: 'Products', count: tabCounts.products }
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -234,6 +242,8 @@ const UnifiedFavoritesPage: React.FC = () => {
                     navigate(`/business/${id}`);
                   } else if (type === 'coupon') {
                     navigate(`/coupon/${id}`);
+                  } else if (type === 'product') {
+                    navigate(`/product/${id}`);
                   }
                 }}
               />
@@ -279,6 +289,14 @@ const EmptyState: React.FC<{
           title: 'No favorite coupons yet',
           description: 'Find amazing deals and save them for later',
           actionText: 'Browse Coupons',
+          action: onExplore
+        };
+      case 'products':
+        return {
+          icon: <Package className="h-16 w-16 text-gray-300" />,
+          title: 'No favorite products yet',
+          description: 'Browse products and add them to your favorites',
+          actionText: 'Browse Products',
           action: onExplore
         };
       default:
@@ -330,7 +348,7 @@ const EmptyState: React.FC<{
 // Individual favorite item card
 const FavoriteItemCard: React.FC<{
   item: any;
-  onNavigate: (id: string, type: 'business' | 'coupon') => void;
+  onNavigate: (id: string, type: 'business' | 'coupon' | 'product') => void;
 }> = ({ item, onNavigate }) => {
   const itemData = item.itemData;
   
@@ -424,6 +442,73 @@ const FavoriteItemCard: React.FC<{
             <p className="text-sm text-gray-600 mb-3 line-clamp-2">
               {itemData.description}
             </p>
+          )}
+          
+          <div className="flex items-center text-xs text-gray-500 mt-4">
+            <Calendar className="w-4 h-4 mr-1" />
+            <span>Added {new Date(item.timestamp).toLocaleDateString()}</span>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
+  if (item.type === 'product') {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-all cursor-pointer group relative"
+        onClick={() => onNavigate(item.id, 'product')}
+      >
+        <div className="absolute top-3 right-3 z-10">
+          <SimpleSaveButton
+            itemId={item.id}
+            itemType="product"
+            itemData={itemData}
+            size="sm"
+          />
+        </div>
+        
+        {itemData?.image_url && (
+          <div className="aspect-square overflow-hidden rounded-t-lg bg-gray-100">
+            <img 
+              src={itemData.image_url} 
+              alt={itemData.name || 'Product'} 
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+            />
+          </div>
+        )}
+        
+        <div className="p-6">
+          <h3 className="text-lg font-semibold text-gray-900 group-hover:text-indigo-600 line-clamp-2 mb-2">
+            {itemData?.name || `Product ${item.id.substring(0, 8)}...`}
+          </h3>
+          
+          {!itemData?.name && (
+            <div className="text-xs text-orange-600 mb-2 bg-orange-50 px-2 py-1 rounded">
+              ⚠️ Legacy favorite - product details not available
+            </div>
+          )}
+          
+          {itemData?.price && (
+            <div className="text-lg font-bold text-indigo-600 mb-2">
+              ${itemData.price}
+            </div>
+          )}
+          
+          {itemData?.business_name && (
+            <div className="flex items-center text-sm text-gray-600 mb-2">
+              <Package className="w-4 h-4 mr-2" />
+              <span>{itemData.business_name}</span>
+            </div>
+          )}
+          
+          {itemData?.rating && (
+            <div className="flex items-center text-sm text-gray-600 mb-2">
+              <Star className="w-4 h-4 mr-1 text-yellow-500 fill-yellow-500" />
+              <span>{itemData.rating}</span>
+            </div>
           )}
           
           <div className="flex items-center text-xs text-gray-500 mt-4">

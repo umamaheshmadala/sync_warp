@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { List, ArrowLeft, Package, Sparkles } from 'lucide-react';
+import { List, ArrowLeft, Package, Sparkles, X } from 'lucide-react';
 import { useSimpleProductSocial } from '../hooks/useSimpleProductSocial';
 import { useAuthStore } from '../store/authStore';
 import { Button } from '../components/ui/button';
@@ -26,6 +26,16 @@ export default function WishlistPage() {
     }
     loadWishlistProducts();
   }, [user, wishlistCount]);
+
+  // Listen for wishlist changes
+  useEffect(() => {
+    const handleWishlistUpdate = () => {
+      loadWishlistProducts();
+    };
+    
+    window.addEventListener('wishlistUpdated', handleWishlistUpdate);
+    return () => window.removeEventListener('wishlistUpdated', handleWishlistUpdate);
+  }, []);
 
   const loadWishlistProducts = async () => {
     try {
@@ -139,6 +149,8 @@ export default function WishlistPage() {
               product={product}
               size="medium"
               showActions={true}
+              showRemoveButton={true}
+              onRemoved={loadWishlistProducts}
             />
           ))}
         </div>

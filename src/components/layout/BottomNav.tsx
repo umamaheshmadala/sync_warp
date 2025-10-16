@@ -1,13 +1,13 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Search, List, Wallet, User } from 'lucide-react';
+import { Home, Search, Heart, Wallet, Users } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { useSimpleProductSocial } from '../../hooks/useSimpleProductSocial';
+import useUnifiedFavorites from '../../hooks/useUnifiedFavorites';
 import { Badge } from '../ui/badge';
 
 export default function BottomNav() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { wishlistCount } = useSimpleProductSocial();
+  const favorites = useUnifiedFavorites();
 
   const navItems = [
     {
@@ -18,16 +18,16 @@ export default function BottomNav() {
     },
     {
       icon: Search,
-      label: 'Discover',
-      path: '/discovery',
-      isActive: location.pathname.startsWith('/discovery') || location.pathname.startsWith('/search'),
+      label: 'Search',
+      path: '/search',
+      isActive: location.pathname.startsWith('/search') || location.pathname.startsWith('/discovery'),
     },
     {
-      icon: List,
-      label: 'Wishlist',
-      path: '/wishlist',
-      isActive: location.pathname === '/wishlist',
-      badge: wishlistCount > 0 ? wishlistCount : undefined,
+      icon: Heart,
+      label: 'Favorites',
+      path: '/favorites',
+      isActive: location.pathname === '/favorites',
+      badge: favorites.counts.total > 0 ? favorites.counts.total : undefined,
     },
     {
       icon: Wallet,
@@ -36,16 +36,16 @@ export default function BottomNav() {
       isActive: location.pathname === '/wallet',
     },
     {
-      icon: User,
-      label: 'Profile',
-      path: '/profile',
-      isActive: location.pathname === '/profile',
+      icon: Users,
+      label: 'Social',
+      path: '/social',
+      isActive: location.pathname === '/social',
     },
   ];
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background border-t">
-      <div className="flex items-center justify-around h-16 px-2">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-lg">
+      <div className="max-w-7xl mx-auto flex items-center justify-around h-16 px-4">
         {navItems.map((item) => {
           const Icon = item.icon;
           return (

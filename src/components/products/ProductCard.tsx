@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, Share2, List } from 'lucide-react';
+import { Heart, Share2, List, X } from 'lucide-react';
 import { Product } from '../../types/product';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { cn } from '../../lib/utils';
 import { useSimpleProductSocial } from '../../hooks/useSimpleProductSocial';
+import useUnifiedFavorites from '../../hooks/useUnifiedFavorites';
 import ProductShareModal from './ProductShareModal';
 
 interface ProductCardProps {
@@ -14,27 +15,33 @@ interface ProductCardProps {
   size?: 'small' | 'medium' | 'large';
   showActions?: boolean;
   onClick?: () => void;
+  showRemoveButton?: boolean;
+  onRemoved?: () => void;
 }
 
 export function ProductCard({
   product,
   size = 'medium',
   showActions = true,
-  onClick
+  onClick,
+  showRemoveButton = false,
+  onRemoved
 }: ProductCardProps) {
   const navigate = useNavigate();
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   
-  // Social features
+  // Social features - wishlist from simple social
   const {
-    isFavorited,
     isInWishlist,
-    toggleFavorite,
     toggleWishlist,
     isLoading: socialLoading
   } = useSimpleProductSocial();
+  
+  // Use UnifiedFavorites for product favorites
+  const unifiedFavorites = useUnifiedFavorites();
+  const isFavorited = (productId: string) => unifiedFavorites.isFavorited(productId, 'product');
 
   // Get the first image or fallback
   const primaryImage = product.image_urls && product.image_urls.length > 0
@@ -63,7 +70,15 @@ export function ProductCard({
   const handleFavoriteClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      await toggleFavorite(product);
+      await unifiedFavorites.toggleFavorite(product.id, 'product', {
+        name: product.name,
+        description: product.description,
+        price: product.price,
+        currency: product.currency,
+        image_url: product.image_urls?.[0],
+        category: product.category,
+        business_id: product.business_id
+      });
     } catch (error) {
       console.error('Failed to toggle favorite:', error);
     }
@@ -73,8 +88,30 @@ export function ProductCard({
     e.stopPropagation();
     try {
       await toggleWishlist(product);
+      if (onRemoved && !isInWishlist(product.id)) {
+        // Slight delay to allow toast to show
+        setTimeout(() => onRemoved(), 100);
+      }
     } catch (error) {
       console.error('Failed to toggle wishlist:', error);
+    }
+  };
+
+  const handleRemoveClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    // Show confirmation
+    if (!window.confirm('Remove this product from your wishlist?')) {
+      return;
+    }
+    
+    try {
+      await toggleWishlist(product);
+      if (onRemoved) {
+        setTimeout(() => onRemoved(), 100);
+      }
+    } catch (error) {
+      console.error('Failed to remove from wishlist:', error);
     }
   };
 
@@ -140,6 +177,19 @@ export function ProductCard({
             >
               Out of Stock
             </Badge>
+          )}
+          
+          {/* Remove Button */}
+          {showRemoveButton && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="absolute right-2 top-2 h-8 w-8 rounded-full bg-white/90 p-0 shadow-md backdrop-blur hover:bg-red-50 hover:text-red-600"
+              onClick={handleRemoveClick}
+              aria-label="Remove from wishlist"
+            >
+              <X className="h-4 w-4" />
+            </Button>
           )}
         </div>
 

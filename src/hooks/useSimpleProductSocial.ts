@@ -7,6 +7,7 @@ import { toast } from 'react-hot-toast';
 import { simpleFavoritesService, SimpleFavorite } from '../services/simpleFavoritesService';
 import type { Product } from '../types/product';
 import { useAuthStore } from '../store/authStore';
+import { supabase } from '../lib/supabase';
 
 interface UseSimpleProductSocialReturn {
   // Favorite operations
@@ -37,11 +38,11 @@ export const useSimpleProductSocial = (): UseSimpleProductSocialReturn => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load favorites on mount and when user changes
+  // Load favorites and wishlist on mount and when user changes
   useEffect(() => {
     if (user) {
       loadFavorites();
-      loadWishlist();
+      loadWishlistFromDatabase();
     } else {
       setFavorites([]);
       setWishlist(new Set());
@@ -62,21 +63,80 @@ export const useSimpleProductSocial = (): UseSimpleProductSocialReturn => {
     }
   };
 
-  const loadWishlist = () => {
+  const loadWishlistFromDatabase = async () => {
+    if (!user?.id) return;
+    
     try {
-      const stored = localStorage.getItem(`wishlist_${user?.id}`);
-      if (stored) {
-        setWishlist(new Set(JSON.parse(stored)));
+      // Load from Supabase
+      const { data, error } = await supabase
+        .from('user_wishlist_items')
+        .select('product_id')
+        .eq('user_id', user.id);
+      
+      if (error) {
+        console.error('Failed to load wishlist from database:', error);
+        // Fallback to localStorage
+        const stored = localStorage.getItem(`wishlist_${user.id}`);
+        if (stored) {
+          setWishlist(new Set(JSON.parse(stored)));
+        }
+        return;
       }
+      
+      const wishlistIds = new Set(data?.map(item => item.product_id) || []);
+      setWishlist(wishlistIds);
+      
+      // Sync to localStorage for offline access
+      localStorage.setItem(`wishlist_${user.id}`, JSON.stringify([...wishlistIds]));
     } catch (err) {
       console.error('Failed to load wishlist:', err);
     }
   };
 
-  const saveWishlist = (newWishlist: Set<string>) => {
+  const saveWishlistToDatabase = async (productId: string, add: boolean) => {
+    if (!user?.id) return;
+    
     try {
-      localStorage.setItem(`wishlist_${user?.id}`, JSON.stringify([...newWishlist]));
+      if (add) {
+        // Add to database
+        const { error } = await supabase
+          .from('user_wishlist_items')
+          .insert({
+            user_id: user.id,
+            product_id: productId
+          });
+        
+        if (error && error.code !== '23505') { // Ignore duplicate key errors
+          console.error('Failed to add to wishlist in database:', error);
+        }
+      } else {
+        // Remove from database
+        const { error } = await supabase
+          .from('user_wishlist_items')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('product_id', productId);
+        
+        if (error) {
+          console.error('Failed to remove from wishlist in database:', error);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to sync wishlist to database:', err);
+    }
+  };
+  
+  const saveWishlist = (newWishlist: Set<string>, productId: string, add: boolean) => {
+    try {
+      // Update local state
       setWishlist(newWishlist);
+      localStorage.setItem(`wishlist_${user?.id}`, JSON.stringify([...newWishlist]));
+      
+      // Sync to database in background
+      saveWishlistToDatabase(productId, add);
+      
+      // Dispatch event for other components
+      window.dispatchEvent(new CustomEvent('wishlistUpdated', { detail: { count: newWishlist.size } }));
     } catch (err) {
       console.error('Failed to save wishlist:', err);
     }
@@ -143,11 +203,11 @@ export const useSimpleProductSocial = (): UseSimpleProductSocialReturn => {
         
         if (currentlyInWishlist) {
           newWishlist.delete(product.id);
-          saveWishlist(newWishlist);
+          saveWishlist(newWishlist, product.id, false);
           toast.success('Removed from wishlist');
         } else {
           newWishlist.add(product.id);
-          saveWishlist(newWishlist);
+          saveWishlist(newWishlist, product.id, true);
           toast.success('Added to wishlist!');
         }
       } catch (error) {
