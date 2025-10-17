@@ -90,6 +90,9 @@ const AdvancedSearchPage: React.FC<AdvancedSearchPageProps> = ({ className = '' 
     loadTrendingTerms();
   }, []);
 
+  // Note: Removed visibility listener - realtime subscriptions in useUnifiedFavorites
+  // handle favorite state updates automatically without manual refresh
+
   // Handle search input changes with debounced suggestions
   useEffect(() => {
     const timer = setTimeout(() => {

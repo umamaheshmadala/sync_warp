@@ -71,46 +71,19 @@ export const useSimpleFavorites = () => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      // Load business favorites
+      // Load all favorites from unified table
       const { data: businessFavs, error: businessError } = await supabase
-        .from('user_favorites_businesses')
-        .select(`
-          id,
-          business_id,
-          created_at,
-          businesses (
-            id,
-            business_name,
-            business_type,
-            description,
-            address,
-            rating
-          )
-        `)
+        .from('favorites')
+        .select('id, entity_id, created_at')
         .eq('user_id', user.id)
+        .eq('entity_type', 'business')
         .order('created_at', { ascending: false });
 
-      // Load coupon favorites  
       const { data: couponFavs, error: couponError } = await supabase
-        .from('user_favorites_coupons')
-        .select(`
-          id,
-          coupon_id,
-          created_at,
-          business_coupons (
-            id,
-            title,
-            description,
-            discount_type,
-            discount_value,
-            valid_until,
-            business_id,
-            businesses (
-              business_name
-            )
-          )
-        `)
+        .from('favorites')
+        .select('id, entity_id, created_at')
         .eq('user_id', user.id)
+        .eq('entity_type', 'coupon')
         .order('created_at', { ascending: false });
 
       // Handle foreign key constraint errors gracefully
@@ -139,16 +112,16 @@ export const useSimpleFavorites = () => {
         ...(businessFavs || []).map(item => ({
           id: item.id,
           type: 'business' as const,
-          item_id: item.business_id,
+          item_id: item.entity_id,
           created_at: item.created_at,
-          item_data: item.businesses
+          item_data: null
         })),
         ...(couponFavs || []).map(item => ({
           id: item.id,
           type: 'coupon' as const,
-          item_id: item.coupon_id,
+          item_id: item.entity_id,
           created_at: item.created_at,
-          item_data: item.business_coupons
+          item_data: null
         }))
       ];
 
@@ -188,10 +161,11 @@ export const useSimpleFavorites = () => {
         if (isCurrentlyFavorited) {
           // Remove from favorites
           const { error } = await supabase
-            .from('user_favorites_businesses')
+            .from('favorites')
             .delete()
             .eq('user_id', user.id)
-            .eq('business_id', itemId);
+            .eq('entity_type', 'business')
+            .eq('entity_id', itemId);
           
           if (error) {
             console.error('Business favorites delete error:', error);
@@ -209,8 +183,8 @@ export const useSimpleFavorites = () => {
         } else {
           // Add to favorites
           const { error } = await supabase
-            .from('user_favorites_businesses')
-            .insert({ user_id: user.id, business_id: itemId });
+            .from('favorites')
+            .insert({ user_id: user.id, entity_type: 'business', entity_id: itemId });
           
           if (error) {
             console.error('Business favorites insert error:', error);
@@ -228,8 +202,8 @@ export const useSimpleFavorites = () => {
                 console.log('Profile created, retrying favorites insert...');
                 // Retry the favorites insert
                 const { error: retryError } = await supabase
-                  .from('user_favorites_businesses')
-                  .insert({ user_id: user.id, business_id: itemId });
+                  .from('favorites')
+                  .insert({ user_id: user.id, entity_type: 'business', entity_id: itemId });
                 
                 if (retryError) {
                   throw new Error(`Failed even after creating profile: ${retryError.message}`);
@@ -265,10 +239,11 @@ export const useSimpleFavorites = () => {
         if (isCurrentlyFavorited) {
           // Remove from favorites
           const { error } = await supabase
-            .from('user_favorites_coupons')
+            .from('favorites')
             .delete()
             .eq('user_id', user.id)
-            .eq('coupon_id', itemId);
+            .eq('entity_type', 'coupon')
+            .eq('entity_id', itemId);
           
           if (error) throw error;
           
@@ -283,8 +258,8 @@ export const useSimpleFavorites = () => {
         } else {
           // Add to favorites
           const { error } = await supabase
-            .from('user_favorites_coupons')
-            .insert({ user_id: user.id, coupon_id: itemId });
+            .from('favorites')
+            .insert({ user_id: user.id, entity_type: 'coupon', entity_id: itemId });
           
           if (error) throw error;
           

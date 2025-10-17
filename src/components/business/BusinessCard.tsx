@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import type { Business } from '../../types/business';
+import SimpleSaveButton from '../favorites/SimpleSaveButton';
 
 interface BusinessCardProps {
   business: Business;
@@ -43,9 +44,24 @@ export function BusinessCard({
         overflow-hidden
       "
     >
-      {/* New badge */}
-      {showAge && daysOld <= 7 && (
-        <div className="absolute top-3 right-3 z-10">
+      {/* Action buttons */}
+      <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
+        {/* Favorite button */}
+        <SimpleSaveButton
+          itemId={business.id}
+          itemType="business"
+          variant="compact"
+          itemData={{
+            business_name: business.name,
+            business_type: business.category,
+            description: business.description,
+            address: business.city,
+            rating: business.rating
+          }}
+        />
+        
+        {/* New badge */}
+        {showAge && daysOld <= 7 && (
           <span className="
             inline-flex items-center gap-1 px-2.5 py-1 
             bg-green-500 text-white text-xs font-semibold 
@@ -54,8 +70,8 @@ export function BusinessCard({
             <Calendar className="w-3 h-3" />
             New
           </span>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Cover Image or Placeholder */}
       <div className="relative h-32 bg-gradient-to-br from-blue-500 to-purple-600 overflow-hidden">

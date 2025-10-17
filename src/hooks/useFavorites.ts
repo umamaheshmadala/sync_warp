@@ -110,9 +110,9 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
 
     try {
       
-      // First check if tables exist by attempting a simple query
+      // First check if unified favorites table exists
       const tableCheck = await supabase
-        .from('user_favorites_businesses')
+        .from('favorites')
         .select('id', { count: 'exact' })
         .limit(0);
       
@@ -126,34 +126,26 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
       let data, error;
       
       try {
+        // Use the new unified get_user_favorites function
+        // PostgREST expects the exact parameter names from the function signature
         const result = await supabase
-          .rpc('get_user_favorite_businesses', {
-            user_uuid: user.id,
-            limit_count: limit,
-            offset_count: offset
+          .rpc('get_user_favorites', {
+            user_id_param: user.id,
+            entity_type_param: 'business'
           });
         data = result.data;
         error = result.error;
       } catch (funcError) {
-        // Fallback to direct query with better error handling
+        // Fallback to direct query on unified favorites table
         try {
           const result = await supabase
-            .from('user_favorites_businesses')
+            .from('favorites')
             .select(`
-              business_id,
-              created_at,
-              businesses!inner(
-                id,
-                business_name,
-                business_type,
-                description,
-                address,
-                latitude,
-                longitude,
-                rating
-              )
+              entity_id,
+              created_at
             `)
             .eq('user_id', user.id)
+            .eq('entity_type', 'business')
             .order('created_at', { ascending: false })
             .range(offset, offset + limit - 1);
             
@@ -161,16 +153,17 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
             return [];
           }
           
+          // Map unified favorites to business format with actual data
           data = result.data?.map(item => ({
-            business_id: item.business_id,
-            business_name: item.businesses.business_name,
-            business_type: item.businesses.business_type,
-            description: item.businesses.description,
-            address: item.businesses.address,
-            latitude: item.businesses.latitude,
-            longitude: item.businesses.longitude,
-            rating: item.businesses.rating,
-            active_coupons_count: 0, // Will be calculated separately if needed
+            business_id: item.entity_id,
+            business_name: item.business_name || 'Unknown Business',
+            business_type: item.business_type || 'Unknown',
+            description: item.business_description || '',
+            address: item.business_address || '',
+            latitude: 0,
+            longitude: 0,
+            rating: item.business_rating || 0,
+            active_coupons_count: 0,
             favorited_at: item.created_at
           }));
           error = result.error;
@@ -199,14 +192,14 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
     if (!user?.id) return [];
 
     try {
-      // First check if tables exist by attempting a simple query
+      // First check if unified favorites table exists
       const tableCheck = await supabase
-        .from('user_favorites_coupons')
+        .from('favorites')
         .select('id', { count: 'exact' })
         .limit(0);
       
       if (tableCheck.error && tableCheck.error.code === '42P01') {
-        console.warn('Favorites coupon table does not exist yet');
+        console.warn('Favorites table does not exist yet');
         return [];
       }
 
@@ -214,51 +207,41 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
       let data, error;
       
       try {
+        // Use the new unified get_user_favorites function
+        // PostgREST expects the exact parameter names from the function signature
         const result = await supabase
-          .rpc('get_user_favorite_coupons', {
-            user_uuid: user.id,
-            limit_count: limit,
-            offset_count: offset
+          .rpc('get_user_favorites', {
+            user_id_param: user.id,
+            entity_type_param: 'coupon'
           });
         data = result.data;
         error = result.error;
       } catch (funcError) {
         console.warn('Function call failed, using direct query:', funcError);
         
-        // Fallback to direct query
+        // Fallback to direct query on unified favorites table
         const result = await supabase
-          .from('user_favorites_coupons')
+          .from('favorites')
           .select(`
-            coupon_id,
-            created_at,
-            business_coupons!inner(
-              id,
-              title,
-              description,
-              discount_type,
-              discount_value,
-              valid_until,
-              business_id,
-              businesses!inner(
-                id,
-                business_name
-              )
-            )
+            entity_id,
+            created_at
           `)
           .eq('user_id', user.id)
+          .eq('entity_type', 'coupon')
           .order('created_at', { ascending: false })
           .range(offset, offset + limit - 1);
           
+        // Map unified favorites to coupon format with actual data
         data = result.data?.map(item => ({
-          coupon_id: item.coupon_id,
-          title: item.business_coupons.title,
-          description: item.business_coupons.description,
-          discount_type: item.business_coupons.discount_type,
-          discount_value: item.business_coupons.discount_value,
-          valid_until: item.business_coupons.valid_until,
-          business_id: item.business_coupons.business_id,
-          business_name: item.business_coupons.businesses.business_name,
-          is_collected: false, // Will be calculated separately if needed
+          coupon_id: item.entity_id,
+          title: item.coupon_title || 'Coupon',
+          description: item.coupon_description || '',
+          discount_type: item.coupon_discount_type || 'percentage',
+          discount_value: item.coupon_discount_value || 0,
+          valid_until: item.coupon_valid_until || '',
+          business_id: '',
+          business_name: item.coupon_business_name || 'Unknown Business',
+          is_collected: false,
           favorited_at: item.created_at
         }));
         error = result.error;
@@ -388,9 +371,9 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
       } catch (funcError) {
         console.warn('Function call failed, using direct operations:', funcError);
         
-        // Check if table exists first
+        // Check if unified favorites table exists first
         const tableCheck = await supabase
-          .from('user_favorites_businesses')
+          .from('favorites')
           .select('id', { count: 'exact' })
           .limit(0);
         
@@ -399,28 +382,30 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
           return false;
         }
         
-        // Fallback to direct database operations
+        // Fallback to direct database operations on unified table
         const { data: existing } = await supabase
-          .from('user_favorites_businesses')
+          .from('favorites')
           .select('id')
           .eq('user_id', user.id)
-          .eq('business_id', businessId)
+          .eq('entity_type', 'business')
+          .eq('entity_id', businessId)
           .maybeSingle();
           
         if (existing) {
           // Remove from favorites
           const { error } = await supabase
-            .from('user_favorites_businesses')
+            .from('favorites')
             .delete()
             .eq('user_id', user.id)
-            .eq('business_id', businessId);
+            .eq('entity_type', 'business')
+            .eq('entity_id', businessId);
           if (error) throw error;
           isFavorited = false;
         } else {
           // Add to favorites
           const { error } = await supabase
-            .from('user_favorites_businesses')
-            .insert({ user_id: user.id, business_id: businessId });
+            .from('favorites')
+            .insert({ user_id: user.id, entity_type: 'business', entity_id: businessId });
           if (error) throw error;
           isFavorited = true;
         }
@@ -503,9 +488,9 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
       } catch (funcError) {
         console.warn('Function call failed, using direct operations:', funcError);
         
-        // Check if table exists first
+        // Check if unified favorites table exists first
         const tableCheck = await supabase
-          .from('user_favorites_coupons')
+          .from('favorites')
           .select('id', { count: 'exact' })
           .limit(0);
         
@@ -514,28 +499,30 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
           return false;
         }
         
-        // Fallback to direct database operations
+        // Fallback to direct database operations on unified table
         const { data: existing } = await supabase
-          .from('user_favorites_coupons')
+          .from('favorites')
           .select('id')
           .eq('user_id', user.id)
-          .eq('coupon_id', couponId)
+          .eq('entity_type', 'coupon')
+          .eq('entity_id', couponId)
           .maybeSingle();
           
         if (existing) {
           // Remove from favorites
           const { error } = await supabase
-            .from('user_favorites_coupons')
+            .from('favorites')
             .delete()
             .eq('user_id', user.id)
-            .eq('coupon_id', couponId);
+            .eq('entity_type', 'coupon')
+            .eq('entity_id', couponId);
           if (error) throw error;
           isFavorited = false;
         } else {
           // Add to favorites
           const { error } = await supabase
-            .from('user_favorites_coupons')
-            .insert({ user_id: user.id, coupon_id: couponId });
+            .from('favorites')
+            .insert({ user_id: user.id, entity_type: 'coupon', entity_id: couponId });
           if (error) throw error;
           isFavorited = true;
         }
@@ -698,16 +685,18 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
     try {
       if (type === 'businesses' || !type) {
         await supabase
-          .from('user_favorites_businesses')
+          .from('favorites')
           .delete()
-          .eq('user_id', user.id);
+          .eq('user_id', user.id)
+          .eq('entity_type', 'business');
       }
 
       if (type === 'coupons' || !type) {
         await supabase
-          .from('user_favorites_coupons')
+          .from('favorites')
           .delete()
-          .eq('user_id', user.id);
+          .eq('user_id', user.id)
+          .eq('entity_type', 'coupon');
       }
 
       if (type === 'wishlist' || !type) {
@@ -760,27 +749,13 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
     });
     subscriptions.current = [];
 
-    // Business favorites subscription
-    const businessFavoritesChannel = supabase
-      .channel('user_favorites_businesses')
+    // Unified favorites subscription (both business and coupon)
+    const unifiedFavoritesChannel = supabase
+      .channel('favorites')
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
-        table: 'user_favorites_businesses',
-        filter: `user_id=eq.${user.id}`
-      }, () => {
-        // Reload favorites when changes occur
-        loadFavorites(false);
-      })
-      .subscribe();
-
-    // Coupon favorites subscription
-    const couponFavoritesChannel = supabase
-      .channel('user_favorites_coupons')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'user_favorites_coupons',
+        table: 'favorites',
         filter: `user_id=eq.${user.id}`
       }, () => {
         // Reload favorites when changes occur
@@ -811,7 +786,7 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
       })
       .subscribe();
 
-    subscriptions.current = [businessFavoritesChannel, couponFavoritesChannel, wishlistChannel];
+    subscriptions.current = [unifiedFavoritesChannel, wishlistChannel];
   }, [user?.id, enableRealtime, loadFavorites, loadWishlist]);
 
   // Auto-load favorites when user changes

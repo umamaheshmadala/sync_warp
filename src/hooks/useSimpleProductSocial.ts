@@ -70,8 +70,9 @@ export const useSimpleProductSocial = (): UseSimpleProductSocialReturn => {
       // Load from Supabase
       const { data, error } = await supabase
         .from('user_wishlist_items')
-        .select('product_id')
-        .eq('user_id', user.id);
+        .select('item_id')
+        .eq('user_id', user.id)
+        .eq('item_type', 'product');
       
       if (error) {
         console.error('Failed to load wishlist from database:', error);
@@ -83,7 +84,7 @@ export const useSimpleProductSocial = (): UseSimpleProductSocialReturn => {
         return;
       }
       
-      const wishlistIds = new Set(data?.map(item => item.product_id) || []);
+      const wishlistIds = new Set(data?.map(item => item.item_id) || []);
       setWishlist(wishlistIds);
       
       // Sync to localStorage for offline access
@@ -103,7 +104,8 @@ export const useSimpleProductSocial = (): UseSimpleProductSocialReturn => {
           .from('user_wishlist_items')
           .insert({
             user_id: user.id,
-            product_id: productId
+            item_type: 'product',
+            item_id: productId
           });
         
         if (error && error.code !== '23505') { // Ignore duplicate key errors
@@ -115,7 +117,8 @@ export const useSimpleProductSocial = (): UseSimpleProductSocialReturn => {
           .from('user_wishlist_items')
           .delete()
           .eq('user_id', user.id)
-          .eq('product_id', productId);
+          .eq('item_type', 'product')
+          .eq('item_id', productId);
         
         if (error) {
           console.error('Failed to remove from wishlist in database:', error);

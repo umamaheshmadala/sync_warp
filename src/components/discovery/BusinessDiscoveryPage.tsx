@@ -66,6 +66,19 @@ const BusinessDiscoveryPage: React.FC<BusinessDiscoveryPageProps> = ({ className
     loadInitialData();
   }, [currentLocation]);
 
+  // Refresh on tab visibility change
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && !isLoading) {
+        console.log('[BusinessDiscoveryPage] Tab became visible, refreshing discovery data');
+        loadInitialData();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [isLoading]);
+
   const loadInitialData = async () => {
     try {
       await loadDiscoverySections();

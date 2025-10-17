@@ -19,6 +19,9 @@ const UnifiedFavoritesPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Note: Removed periodic refresh - realtime subscriptions handle updates automatically
+  // No need for polling when we have Supabase realtime enabled
+
   // Loading and error states
   if (!favorites.isAuthenticated) {
     return (

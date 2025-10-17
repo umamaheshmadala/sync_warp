@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'react-hot-toast';
+import SimpleSaveButton from '../favorites/SimpleSaveButton';
 
 interface CouponDetailsModalProps {
   coupon: any;
@@ -494,12 +495,18 @@ export const CouponDetailsModal: React.FC<CouponDetailsModalProps> = ({
                     )}
 
                     {onAddToFavorites && (
-                      <button
-                        onClick={() => onAddToFavorites(coupon.id)}
-                        className="px-6 py-3 bg-white border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center"
-                      >
-                        <Heart className="w-5 h-5" />
-                      </button>
+                      <SimpleSaveButton
+                        itemId={coupon.id}
+                        itemType="coupon"
+                        size="lg"
+                        itemData={{
+                          title: coupon.title,
+                          description: coupon.description,
+                          discount_type: coupon.discount_type,
+                          discount_value: coupon.discount_value,
+                          business_name: businessName
+                        }}
+                      />
                     )}
 
                     {showRemoveButton && (

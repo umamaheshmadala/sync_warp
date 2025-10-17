@@ -101,6 +101,19 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
     loadWalletData();
   }, [userId]);
 
+  // Refresh on tab visibility change
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && !loading) {
+        console.log('[CouponWallet] Tab became visible, refreshing wallet');
+        loadWalletData();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [loading]);
+
   const loadWalletData = async () => {
     try {
       setLoading(true);
