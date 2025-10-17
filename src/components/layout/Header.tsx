@@ -1,9 +1,11 @@
 import { useNavigate } from 'react-router-dom';
-import { List, Bell, LogOut, User, Settings } from 'lucide-react';
+import { List, Bell, LogOut, User, Settings, Users } from 'lucide-react';
+import { useState } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { useSimpleProductSocial } from '../../hooks/useSimpleProductSocial';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
+import ContactsSidebar from '../ContactsSidebarWithTabs';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +22,7 @@ export default function Header() {
   const profile = useAuthStore((state) => state.profile);
   const signOut = useAuthStore((state) => state.signOut);
   const { wishlistCount } = useSimpleProductSocial();
+  const [showContactsSidebar, setShowContactsSidebar] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
@@ -43,8 +46,19 @@ export default function Header() {
         {/* Spacer for layout balance */}
         <div className="flex-1"></div>
 
-        {/* Right side - Wishlist, Notifications, Profile */}
+        {/* Right side - Friends, Wishlist, Notifications, Profile */}
         <div className="flex items-center space-x-2">
+          {/* Friends Sidebar Toggle */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-gray-700 hover:text-indigo-600 hover:bg-indigo-50"
+            onClick={() => setShowContactsSidebar(true)}
+            title="Friends"
+          >
+            <Users className="h-5 w-5" />
+          </Button>
+
           {/* Wishlist */}
           <Button
             variant="ghost"
@@ -120,6 +134,12 @@ export default function Header() {
           </DropdownMenu>
         </div>
       </div>
+
+      {/* Friends Sidebar */}
+      <ContactsSidebar
+        isOpen={showContactsSidebar}
+        onClose={() => setShowContactsSidebar(false)}
+      />
     </header>
   );
 }
