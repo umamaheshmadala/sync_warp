@@ -3,20 +3,21 @@
 
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, Search as SearchIcon, Star, MapPin, Calendar, Package, AlertCircle, Ticket, RefreshCw } from 'lucide-react';
+import { Heart, Search as SearchIcon, Star, MapPin, Calendar, Package, AlertCircle, Ticket, RefreshCw, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import useUnifiedFavorites from '../../hooks/useUnifiedFavorites';
 import { useFavoriteProducts } from '../../hooks/useFavoriteProducts';
 import { SimpleSaveButton } from './SimpleSaveButton';
 import { FavoriteProductButton } from '../products/FavoriteProductButton';
 import { cn } from '../../lib/utils';
+import { toast } from 'react-hot-toast';
 
 type ActiveTab = 'all' | 'businesses' | 'coupons' | 'products';
 
 const UnifiedFavoritesPage: React.FC = () => {
   const navigate = useNavigate();
   const favorites = useUnifiedFavorites();
-  const { products: favoriteProducts, loading: productsLoading, error: productsError } = useFavoriteProducts();
+  const { products: favoriteProducts, loading: productsLoading, error: productsError, removeFavorite } = useFavoriteProducts();
   
   // Local state
   const [activeTab, setActiveTab] = useState<ActiveTab>('all');
@@ -303,6 +304,15 @@ const UnifiedFavoritesPage: React.FC = () => {
                     navigate(`/product/${id}`);
                   }
                 }}
+                onRemove={async (id, type) => {
+                  if (type === 'product' && removeFavorite) {
+                    await removeFavorite(id);
+                  } else if (type === 'business') {
+                    await favorites.toggleFavorite(id, 'business');
+                  } else if (type === 'coupon') {
+                    await favorites.toggleFavorite(id, 'coupon');
+                  }
+                }}
               />
             ))}
           </div>
@@ -406,7 +416,8 @@ const EmptyState: React.FC<{
 const FavoriteItemCard: React.FC<{
   item: any;
   onNavigate: (id: string, type: 'business' | 'coupon' | 'product') => void;
-}> = ({ item, onNavigate }) => {
+  onRemove?: (id: string, type: 'business' | 'coupon' | 'product') => Promise<void>;
+}> = ({ item, onNavigate, onRemove }) => {
   const itemData = item.itemData;
   
   if (item.type === 'business') {
@@ -511,20 +522,28 @@ const FavoriteItemCard: React.FC<{
   }
 
   if (item.type === 'product') {
+    const handleRemove = async (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (onRemove) {
+        await onRemove(item.id, 'product');
+      }
+    };
+
     return (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95 }}
         className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-all cursor-pointer group relative"
         onClick={() => onNavigate(item.id, 'product')}
       >
-        <div className="absolute top-3 right-3 z-10">
-          <FavoriteProductButton
-            productId={item.id}
-            variant="icon"
-            size="md"
-          />
-        </div>
+        <button
+          onClick={handleRemove}
+          className="absolute top-3 right-3 z-10 p-2 bg-white rounded-full shadow-md hover:bg-red-50 hover:shadow-lg transition-all group/btn"
+          title="Remove from favorites"
+        >
+          <X className="w-4 h-4 text-gray-600 group-hover/btn:text-red-600 transition-colors" />
+        </button>
         
         {itemData?.image_url && (
           <div className="aspect-square overflow-hidden rounded-t-lg bg-gray-100">

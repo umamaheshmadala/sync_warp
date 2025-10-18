@@ -6,6 +6,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
+import { toast } from 'react-hot-toast';
 
 export interface FavoriteProduct {
   id: string;
@@ -112,11 +113,80 @@ export function useFavoriteProducts() {
     fetchFavorites();
   }, [fetchFavorites]);
 
+  // Set up real-time subscription for favorite_products changes
+  useEffect(() => {
+    if (!user) return;
+
+    console.log('[useFavoriteProducts] Setting up realtime subscription for user:', user.id);
+
+    const channel = supabase
+      .channel(`favorite_products_${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: 'favorite_products',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('[useFavoriteProducts] Realtime change:', payload.eventType);
+          // Refetch favorites on any change
+          fetchFavorites();
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('[useFavoriteProducts] ✅ Realtime subscription active');
+        }
+      });
+
+    return () => {
+      console.log('[useFavoriteProducts] Cleaning up realtime subscription');
+      supabase.removeChannel(channel);
+    };
+  }, [user, fetchFavorites]);
+
+  /**
+   * Remove a product from favorites
+   */
+  const removeFavorite = useCallback(async (productId: string) => {
+    if (!user) {
+      toast.error('Please log in to manage favorites');
+      return false;
+    }
+
+    try {
+      // Optimistic update - remove from local state immediately
+      setProducts(prev => prev.filter(p => p.id !== productId));
+
+      const { error: deleteError } = await supabase
+        .from('favorite_products')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('product_id', productId);
+
+      if (deleteError) {
+        // Revert optimistic update on error
+        await fetchFavorites();
+        throw deleteError;
+      }
+
+      toast.success('Removed from favorites');
+      return true;
+    } catch (err) {
+      console.error('Error removing favorite:', err);
+      toast.error('Failed to remove from favorites');
+      return false;
+    }
+  }, [user, fetchFavorites]);
+
   return {
     products,
     loading,
     error,
     refetch: fetchFavorites,
+    removeFavorite,
     count: products.length,
   };
 }
