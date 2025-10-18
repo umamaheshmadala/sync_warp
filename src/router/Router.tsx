@@ -52,6 +52,9 @@ const UnifiedFavoritesPage = lazy(() => import('../components/favorites/UnifiedF
 
 // Debug components are removed from production build
 
+// Development mode flag
+const isDevelopment = import.meta.env.MODE === 'development'
+
 // Check-in components
 const BusinessCheckinsPage = lazy(() => import('../components/checkins/BusinessCheckinsPage'))
 
