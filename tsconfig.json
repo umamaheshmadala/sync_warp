@@ -28,5 +28,23 @@
     }
   },
   "include": ["src"],
+  "exclude": [
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/**/__tests__/**",
+    "src/test/**",
+    "src/components/debug/**",
+    "src/pages/TargetingDemo.tsx",
+    "src/pages/TargetingDemoSimple.tsx",
+    "src/pages/CampaignTargetingDemo.tsx",
+    "src/pages/TestSharingLimits.tsx",
+    "src/components/campaign/TargetingValidator.tsx",
+    "src/components/campaign/TargetingEditor.tsx",
+    "src/components/business/CampaignWizard.tsx",
+    "src/services/mockTargetingService.ts",
+    "src/hooks/__tests__/**",
+    "src/services/__tests__/**",
+    "src/store/__tests__/**"
+  ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
