@@ -16,7 +16,7 @@ type ActiveTab = 'all' | 'businesses' | 'coupons' | 'products';
 const UnifiedFavoritesPage: React.FC = () => {
   const navigate = useNavigate();
   const favorites = useUnifiedFavorites();
-  const { favoriteProducts, isLoading: productsLoading, error: productsError } = useFavoriteProducts();
+  const { products: favoriteProducts, loading: productsLoading, error: productsError } = useFavoriteProducts();
   
   // Local state
   const [activeTab, setActiveTab] = useState<ActiveTab>('all');
@@ -58,20 +58,19 @@ const UnifiedFavoritesPage: React.FC = () => {
         
         if (!existsInUnified) {
           allFavorites.push({
-            id: product.product_id,
+            id: product.id,
             type: 'product' as const,
-            timestamp: new Date(product.created_at).getTime(),
+            timestamp: new Date(product.favorited_at).getTime(),
             synced: true,
             itemData: {
-              name: product.product_name,
-              description: product.product_description || '',
-              price: product.product_price,
-              currency: product.product_currency || 'INR',
-              image_url: product.product_image_urls?.[0] || '',
+              name: product.name,
+              description: product.description || '',
+              price: product.price,
+              currency: product.currency || 'INR',
+              image_url: product.image_urls?.[0] || '',
               business_name: product.business_name,
               business_id: product.business_id,
-              rating: product.product_rating,
-              stock_quantity: product.product_stock_quantity
+              is_available: product.is_available
             }
           });
         }

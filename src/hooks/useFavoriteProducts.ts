@@ -13,9 +13,9 @@ export interface FavoriteProduct {
   description: string | null;
   price: number;
   currency: string;
-  images: string[];
+  image_urls: string[];
   category: string | null;
-  in_stock: boolean;
+  is_available: boolean;
   business_id: string;
   business_name: string;
   favorited_at: string;
@@ -58,15 +58,16 @@ export function useFavoriteProducts() {
         .select(`
           id,
           created_at,
-          products (
+          product_id,
+          business_products (
             id,
             name,
             description,
             price,
             currency,
-            images,
+            image_urls,
             category,
-            in_stock,
+            is_available,
             business_id,
             businesses (
               business_name
@@ -82,18 +83,18 @@ export function useFavoriteProducts() {
 
       // Transform data to flat structure
       const transformedProducts: FavoriteProduct[] = (data || [])
-        .filter(fav => fav.products) // Filter out any null products
+        .filter(fav => fav.business_products) // Filter out any null products
         .map(fav => ({
-          id: fav.products.id,
-          name: fav.products.name,
-          description: fav.products.description,
-          price: fav.products.price,
-          currency: fav.products.currency,
-          images: fav.products.images || [],
-          category: fav.products.category,
-          in_stock: fav.products.in_stock,
-          business_id: fav.products.business_id,
-          business_name: fav.products.businesses?.business_name || 'Unknown Business',
+          id: fav.business_products.id,
+          name: fav.business_products.name,
+          description: fav.business_products.description,
+          price: fav.business_products.price,
+          currency: fav.business_products.currency || 'INR',
+          image_urls: fav.business_products.image_urls || [],
+          category: fav.business_products.category,
+          is_available: fav.business_products.is_available ?? true,
+          business_id: fav.business_products.business_id,
+          business_name: fav.business_products.businesses?.business_name || 'Unknown Business',
           favorited_at: fav.created_at,
         }));
 
