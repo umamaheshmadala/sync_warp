@@ -27,31 +27,16 @@ export default defineConfig({
     target: 'es2015',
     outDir: 'dist',
     assetsDir: 'assets',
-    sourcemap: false, // Set to true for debugging production issues
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true, // Remove console.logs in production
-        drop_debugger: true
-      }
-    },
+    sourcemap: false,
+    minify: 'esbuild', // Use esbuild instead of terser (faster and more reliable)
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
         manualChunks: {
-          // Split vendor code
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'query-vendor': ['@tanstack/react-query'],
-          'ui-vendor': ['framer-motion', 'react-hot-toast'],
-          'supabase-vendor': ['@supabase/supabase-js'],
-          'map-vendor': ['@react-google-maps/api']
-        },
-        // Optimize chunk names
-        chunkFileNames: 'assets/js/[name]-[hash].js',
-        entryFileNames: 'assets/js/[name]-[hash].js',
-        assetFileNames: 'assets/[ext]/[name]-[hash].[ext]'
+          'supabase-vendor': ['@supabase/supabase-js']
+        }
       }
-    },
-    // Chunk size warnings
-    chunkSizeWarningLimit: 1000
+    }
   }
 })
