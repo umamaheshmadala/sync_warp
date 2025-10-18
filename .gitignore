@@ -87,3 +87,6 @@ scripts/
 *.jpeg
 dev-*.txt
 job-id.txt
+
+# Local Netlify folder
+.netlify
