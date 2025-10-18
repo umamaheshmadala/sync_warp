@@ -9,7 +9,7 @@ import { Badge } from '../ui/badge';
 import { Skeleton } from '../ui/skeleton';
 import { ProductCard } from './ProductCard';
 import ProductShareModal from './ProductShareModal';
-import { ProductShareButton } from '../sharing/ProductShareButton';
+import { ProductShareButton } from '../Sharing/ProductShareButton';
 import { cn } from '../../lib/utils';
 
 export function ProductDetails() {

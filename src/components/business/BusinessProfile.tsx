@@ -37,7 +37,7 @@ import { useUserCheckin } from '../../hooks/useUserCheckin';
 import { useReviewStats } from '../../hooks/useReviewStats';
 import { createReview } from '../../services/reviewService';
 import type { CreateReviewInput } from '../../types/review';
-import { StorefrontShareButton } from '../sharing/StorefrontShareButton';
+import { StorefrontShareButton } from '../Sharing/StorefrontShareButton';
 import { ShareAnalytics } from '../analytics/ShareAnalytics';
 import { StorefrontLoadingState } from './StorefrontLoadingState';
 import { StorefrontErrorState } from './StorefrontErrorState';

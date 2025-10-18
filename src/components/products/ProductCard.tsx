@@ -9,7 +9,7 @@ import { cn } from '../../lib/utils';
 import { useSimpleProductSocial } from '../../hooks/useSimpleProductSocial';
 import useUnifiedFavorites from '../../hooks/useUnifiedFavorites';
 import ProductShareModal from './ProductShareModal';
-import { ProductShareButton } from '../sharing/ProductShareButton';
+import { ProductShareButton } from '../Sharing/ProductShareButton';
 import { FavoriteProductButton } from './FavoriteProductButton';
 
 interface ProductCardProps {
