@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Heart, Share2, List, Package } from 'lucide-react';
+import { ArrowLeft, Heart, List, Package } from 'lucide-react';
 import { useProducts } from '../../hooks/useProducts';
 import { useSimpleProductSocial } from '../../hooks/useSimpleProductSocial';
 import useUnifiedFavorites from '../../hooks/useUnifiedFavorites';
@@ -9,6 +9,7 @@ import { Badge } from '../ui/badge';
 import { Skeleton } from '../ui/skeleton';
 import { ProductCard } from './ProductCard';
 import ProductShareModal from './ProductShareModal';
+import { ProductShareButton } from '../sharing/ProductShareButton';
 import { cn } from '../../lib/utils';
 
 export function ProductDetails() {
@@ -280,15 +281,19 @@ export function ProductDetails() {
               />
               {product && isFavorited(product.id) ? 'Favorited' : 'Favorite'}
             </Button>
-            <Button
+            <ProductShareButton
+              productId={product.id}
+              productName={product.name}
+              productDescription={product.description}
               variant="outline"
+              size="default"
               className="flex-1"
-              onClick={handleShareClick}
-              data-testid="share-button"
-            >
-              <Share2 className="mr-2 h-4 w-4" />
-              Share
-            </Button>
+              showLabel={true}
+              label="Share"
+              onShareSuccess={() => {
+                console.log('Product shared from details page');
+              }}
+            />
             <Button
               variant="outline"
               className={cn(

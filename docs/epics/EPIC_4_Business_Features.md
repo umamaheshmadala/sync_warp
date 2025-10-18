@@ -2,7 +2,9 @@
 
 **Goal**: Enable businesses to create profiles, manage products, and share coupons with customers.
 
-**Progress**: ✅ **6/6 stories completed (100%)** - All stories tested and verified production-ready!
+**Progress**: 🟢 **7/11 core stories completed (64%)** - Core platform complete, enhancements in progress
+
+**Core Stories (6/6)**: ✅ Complete | **Enhancement Stories (1/4)**: ✅ Complete, 3 📝 Specified | **Engagement Story (0/1)**: 📝 Specified
 
 ---
 
@@ -114,8 +116,10 @@
 
 ---
 
-## Story 4.4: Search & Discovery + Favorites/Wishlist Management ✅ COMPLETE + TESTED
+## Story 4.4: Search & Discovery + Favorites/Wishlist Management ✅ COMPLETE + TESTED → 🔄 MERGING INTO 4.11
 **What you'll see**: Complete search system with comprehensive favorites and wishlist management.
+
+**Status**: ✅ Fully functional | 🔄 Being merged into Story 4.11 (Follow Business)
 
 **User Experience**:
 - ✅ As a user, I want to search for businesses near me
@@ -125,6 +129,7 @@
 - ✅ **As a user, I want dedicated pages to manage my favorites (businesses/coupons/products)**
 - ✅ **As a user, I want to organize my wishlist with filters and categories**
 - ✅ **As a user, I want to remove items from favorites and wishlist easily**
+- 🔄 **Being enhanced → Story 4.11: Favorites becomes "Following" with live notifications**
 
 **What was built**:
 - ✅ Advanced search with multiple filters
@@ -259,28 +264,43 @@
 
 ---
 
-## Story 4.9: Social Sharing Actions 📝 SPECIFIED - READY FOR IMPLEMENTATION
-**What you'll see**: Web Share API integration for storefronts and products.
+## Story 4.9: Social Sharing Actions ✅ COMPLETE
+**What you'll see**: Web Share API integration for storefronts and products with full analytics.
 
 **User Experience**:
-- ⚪ As a customer, I want to share business storefronts with friends
-- ⚪ As a customer, I want to share individual products
-- ⚪ As a customer, I want to use my phone's native share menu
-- ⚪ As a business owner, I want to track shares for organic reach metrics
+- ✅ As a customer, I want to share business storefronts with friends
+- ✅ As a customer, I want to share individual products
+- ✅ As a customer, I want to use my phone's native share menu
+- ✅ As a business owner, I want to track shares for organic reach metrics
+- ✅ As a business owner, I want to see share analytics in my dashboard
 
-**What will be built**:
-- ⚪ StorefrontShareButton component
-- ⚪ ProductShareButton component
-- ⚪ useWebShare hook (Web Share API + clipboard fallback)
-- ⚪ shareTracker service (analytics tracking)
-- ⚪ shares table (with referral code generation)
-- ⚪ ShareModal component (fallback for unsupported browsers)
+**What was built**:
+- ✅ StorefrontShareButton component (integrated in BusinessProfile header)
+- ✅ ProductShareButton component (integrated in ProductCard & ProductDetails)
+- ✅ useWebShare hook (Web Share API + clipboard fallback + UTM tracking)
+- ✅ shareTracker service (complete analytics tracking)
+- ✅ share_tracking table (with RLS policies and user attribution)
+- ✅ ShareAnalytics dashboard component (method breakdown, recent shares, stats)
+- ✅ ShareCount badge component
+- ✅ ProductShareModal refactored to use new hook
+- ✅ UTM parameter generation for attribution
+
+**Implementation Details**:
+- ✅ Phase 1: Foundation (useWebShare hook, shareTracker service, database schema)
+- ✅ Phase 2: Storefront Integration (StorefrontShareButton, BusinessProfile header)
+- ✅ Phase 3: Product Integration (ProductShareButton, ProductCard, ProductDetails)
+- ✅ Phase 4: Analytics & UX (ShareAnalytics, ShareCount, Statistics tab)
 
 **Mermaid Coverage**: 6/6 nodes (100%)
 - n15, T_Storefront_Shared, n12, T_Product_Shared, n31, n34
 
-**Status**: ✅ **FULLY SPECIFIED**  
-**Time Estimate**: 2 days
+**Status**: ✅ **COMPLETE** - 100% Implemented  
+**Completion Date**: January 18, 2025  
+**Time Taken**: ~11 hours (4 phases)  
+**Documentation**: 
+- ✅ Phase completion reports (4)
+- ✅ Manual testing guide
+- ✅ Bug fix documentation
 
 ---
 
@@ -312,29 +332,140 @@
 
 ---
 
+## Story 4.11: Follow Business ✨ NEW - 📝 FULLY SPECIFIED
+**What you'll see**: Transform the existing favorites system into a powerful follow system with live notifications, follower analytics, and engagement features.
+
+**Priority**: 🔴 **HIGH** - Core user engagement and business insights feature
+
+**User Experience** - Customers:
+- 📝 As a customer, I want to follow businesses I like (replacing favorites)
+- 📝 As a customer, I want to receive instant updates about new products, offers, and coupons
+- 📝 As a customer, I want to customize notification preferences per business
+- 📝 As a customer, I want to see all followed businesses in one dedicated page
+- 📝 As a customer, I want a live feed showing updates from businesses I follow
+- 📝 As a customer, I want in-app notifications (push notifications planned)
+- 📝 As a customer, I only want updates from businesses I follow (excluding ads)
+
+**User Experience** - Business Owners:
+- 📝 As a business owner, my storefront will have a "Follow" button
+- 📝 As a business owner, I can see my follower count at any time
+- 📝 As a business owner, I can view follower demographics (age, gender, city, interests)
+- 📝 As a business owner, I can access follower analytics for campaign targeting
+- 📝 As a business owner, I can target campaigns to "all followers" or filtered segments
+- 📝 As a business owner, my followers get notified when I post new content
+- 📝 As a business owner, I can report suspicious follower activity
+
+**User Experience** - Admins:
+- 📝 As an admin, I regulate all follower-related activities
+- 📝 As an admin, I approve all follower-targeted offers, coupons, and ads
+- 📝 As an admin, I can investigate reported follower activities
+
+**What will be built**:
+
+**Phase 1: Database Migration (Zero Data Loss)**
+- 📝 Rename `favorites` table → `business_followers`
+- 📝 Add `notification_preferences` JSONB column
+- 📝 Add `notification_channel` column (in_app, push, email, sms)
+- 📝 Add `last_notified_at` timestamp
+- 📝 Create new `follower_updates` table (content feed)
+- 📝 Create new `follower_notifications` table (notification queue)
+- 📝 Update `campaign_targets` with follower targeting
+- 📝 All existing favorites automatically become follows
+
+**Phase 2: UI Components**
+- 📝 `FollowButton.tsx` - Replace SimpleSaveButton with Follow/Unfollow action
+- 📝 `NotificationPreferencesModal.tsx` - Customize notification settings
+- 📝 `FollowingPage.tsx` - Replace UnifiedFavoritesPage, show all followed businesses
+- 📝 `FollowerFeed.tsx` - Live feed of updates from followed businesses
+- 📝 `FollowerAnalyticsDashboard.tsx` - Business owner analytics (demographics, growth)
+- 📝 `FollowerList.tsx` - List individual followers with basic info
+- 📝 `SuspiciousActivityReporter.tsx` - Report fake reviews/spam followers
+- 📝 `FollowerNotificationBell.tsx` - In-app notification center
+
+**Phase 3: Custom Hooks**
+- 📝 `useBusinessFollowing.ts` - Replaces useUnifiedFavorites
+  - followBusiness(), unfollowBusiness(), isFollowing()
+  - updateNotificationPreferences()
+  - Real-time subscriptions
+- 📝 `useFollowerUpdates.ts` - Update feed management
+  - Load updates from followed businesses
+  - Infinite scroll pagination
+  - Real-time new update detection
+- 📝 `useFollowerAnalytics.ts` - Business owner analytics
+  - Total followers, growth trends
+  - Demographic breakdowns
+  - Engagement metrics
+
+**Phase 4: Integration Points**
+- 📝 **Story 4B.3 Integration**: Add "Target Followers" option in campaign creation
+- 📝 **Story 4B.2 Integration**: Extend ad approval to follower-targeted content
+- 📝 **Notification System**: In-app notifications with Supabase Realtime
+- 📝 **Auto-triggers**: Create follower_updates when businesses post products/offers/coupons
+
+**Technical Features**:
+- ✅ Zero data loss migration from favorites to following
+- ✅ Backward compatible - existing favorites code still works
+- ✅ Supabase Realtime subscriptions for instant updates
+- ✅ Row Level Security (RLS) policies for privacy
+- ✅ Database functions for follower analytics and campaign targeting
+- ✅ Automatic notification queue population via triggers
+- ✅ Follower demographic filtering for targeted campaigns
+
+**Dependencies**:
+- ✅ Story 4.4 (Favorites System) - Base to be enhanced/renamed
+- 📝 Story 4B.2 (Ad Approval Workflow) - Extends approval to follower content
+- 📝 Story 4B.3 (Targeted Campaigns) - Adds follower targeting option
+- ✅ Existing notification system table
+
+**Migration Strategy**:
+1. **Database Migration** (no downtime):
+   - Run ALTER TABLE to rename favorites → business_followers
+   - Add new columns with sensible defaults
+   - All existing data preserved
+2. **UI Migration** (gradual rollout):
+   - Update component names and imports
+   - Replace "Favorites" → "Following" in UI text
+   - Update routes: /favorites → /following
+3. **Feature Enhancement**:
+   - Add notification preferences
+   - Build update feed
+   - Implement follower analytics
+
+**Status**: ✅ **FULLY SPECIFIED** - Comprehensive 1600-line specification document  
+**Priority**: 🔴 **HIGH** (Core User Engagement)  
+**Effort**: 8 days  
+**Implementation Phases**: 5 phases (Database, UI, Feed/Notifications, Business Features, Admin)  
+**Migration Impact**: Zero data loss, backward compatible, gradual rollout  
+**Document**: `docs/stories/STORY_4.11_Follow_Business.md`
+
+**Time Estimate**: 8 days (2 days DB + 2 days UI + 2 days feed + 2 days analytics)
+
+---
+
 ## Epic 4 Summary
 
-**Total Stories**: 10 stories
-**Status**: 🟡 **60% COMPLETE** - 6 core stories delivered, 4 storefront enhancement stories specified
+**Total Stories**: 11 stories (6 core + 4 enhancements + 1 engagement)
+**Status**: 🟢 **64% COMPLETE** - 6 core stories delivered, 1 enhancement complete, 4 stories specified
 **Prerequisites**: ✅ Epic 2 (Authentication) and ✅ Epic 3 (Navigation) - All met
 
-**Completed Stories (6/10)**:
+**Completed Stories (7/11)** - Core Platform + Enhancements:
 - ✅ Story 4.1: Business Registration & Profiles
 - ✅ Story 4.2: Product Catalog Management
 - ✅ Story 4.3: Coupon Creation & Management
-- ✅ Story 4.4: Search & Discovery + Favorites/Wishlist
+- ✅ Story 4.4: Search & Discovery + Favorites/Wishlist (🔄 being enhanced → 4.11)
 - ✅ Story 4.5: Storefront Pages
 - ✅ Story 4.6: GPS Check-in System
+- ✅ **Story 4.9: Social Sharing Actions** (Jan 18, 2025)
 
-**Specified Stories (4/10)** - Ready for Implementation:
+**Specified Stories (4/11)** - Ready for Implementation:
 - 📝 Story 4.7: Product Display & Detail Pages (3-4 days)
 - 📝 Story 4.8: Review Display Integration (2-3 days)
-- 📝 Story 4.9: Social Sharing Actions (2 days)
 - 📝 Story 4.10: Storefront Minor Enhancements (1 day)
+- 📝 **Story 4.11: Follow Business** ✨ NEW (8 days) - **High Priority Engagement Feature**
 
-**Completed Timeline**: 8 weeks (core stories)
-**Remaining Effort**: 8-10 days (storefront enhancements)
-**User Impact**: Complete business platform with advanced customer-facing features
+**Completed Timeline**: 8 weeks (core stories) + 1 day (Story 4.9)
+**Remaining Effort**: 14-16 days (3 storefront enhancements + 1 engagement feature)
+**User Impact**: Complete business platform with advanced customer-facing features, social sharing, and user engagement
 
 **🎆 Major Achievements**: 
 - ✅ Complete business registration and profile system (Story 4.1)
@@ -362,11 +493,14 @@
 - ✅ 26 nodes implemented (Stories 4.1-4.6)
 - 📝 18 nodes specified (Stories 4.7-4.10)
 
-**Next Steps**:
-1. Implement Story 4.7 (Product Display) - 3-4 days
-2. Implement Story 4.8 (Review Display) - 2-3 days
-3. Implement Story 4.9 (Social Sharing) - 2 days
-4. Implement Story 4.10 (Minor Enhancements) - 1 day
+**Implementation Priority** (Recommended Order):
+1. 🔴 **HIGH**: Story 4.11 (Follow Business) - 8 days - **Core engagement feature**
+2. Implement Story 4.7 (Product Display) - 3-4 days
+3. Implement Story 4.8 (Review Display) - 2-3 days
+4. ✅ ~~Story 4.9 (Social Sharing)~~ - **COMPLETE**
+5. Implement Story 4.10 (Minor Enhancements) - 1 day
+
+**Rationale**: Story 4.11 is high priority as it enhances user engagement and provides business owners with valuable follower insights for targeted campaigns (Stories 4B.2 and 4B.3).
 
 **Production Ready**: ✅ **Core features 100% production-ready** | 📝 **Enhancements fully specified and ready for development**
 

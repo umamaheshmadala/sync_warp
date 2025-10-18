@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, Share2, List, X } from 'lucide-react';
+import { Heart, List, X } from 'lucide-react';
 import { Product } from '../../types/product';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
@@ -9,6 +9,7 @@ import { cn } from '../../lib/utils';
 import { useSimpleProductSocial } from '../../hooks/useSimpleProductSocial';
 import useUnifiedFavorites from '../../hooks/useUnifiedFavorites';
 import ProductShareModal from './ProductShareModal';
+import { ProductShareButton } from '../sharing/ProductShareButton';
 
 interface ProductCardProps {
   product: Product;
@@ -241,16 +242,18 @@ export function ProductCard({
                 />
               </Button>
 
-              <Button
+              <ProductShareButton
+                productId={product.id}
+                productName={product.name}
+                productDescription={product.description}
                 variant="ghost"
                 size="sm"
                 className="h-8 w-8 p-0"
-                onClick={handleShareClick}
-                aria-label="Share product"
-                data-testid="share-button"
-              >
-                <Share2 className="h-4 w-4" />
-              </Button>
+                showLabel={false}
+                onShareSuccess={() => {
+                  console.log('Product shared from card');
+                }}
+              />
 
               <Button
                 variant="ghost"

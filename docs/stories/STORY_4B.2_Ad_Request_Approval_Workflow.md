@@ -4,7 +4,8 @@
 **Priority:** 🔴 P0 - CRITICAL (Monetization)  
 **Effort:** 8 days  
 **Status:** 📝 PLANNED  
-**Owner:** TBD
+**Owner:** TBD  
+**Related Stories:** Story 4.11 (Follow Business - follower-targeted content approval)
 
 ---
 
@@ -18,12 +19,14 @@
 3. Admins review and approve/reject with feedback
 4. Approved ads go live with billing tracking
 5. Businesses can view ad performance and billing
+6. **NEW (Story 4.11):** Approval system extends to follower-targeted offers, coupons, and content
 
 **Business Value:**
 - 💰 **PRIMARY REVENUE STREAM** for platform
 - 📈 Enables monetization strategy
 - 🎯 Drives business engagement
-- 🏗️ Foundation for ad marketplace
+- 🏭 Foundation for ad marketplace
+- ✨ **NEW:** Ensures quality control for follower-targeted content (Story 4.11)
 
 ---
 

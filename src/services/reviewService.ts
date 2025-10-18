@@ -540,22 +540,27 @@ export async function getUserBusinessReview(
     return null;
   }
 
+  // Use maybeSingle() instead of single() to avoid 406 errors
+  // maybeSingle() returns null if no rows found, doesn't throw on 0 or multiple rows
   const { data, error } = await supabase
     .from('business_reviews_with_details')
     .select('*')
     .eq('user_id', user.id)
     .eq('business_id', businessId)
-    .single();
+    .maybeSingle();
 
   if (error) {
-    if (error.code === 'PGRST116') {
-      return null;
-    }
     console.error('❌ Get user review error:', error);
-    throw new Error(`Failed to fetch user review: ${error.message}`);
+    // Return null instead of throwing to allow graceful degradation
+    return null;
   }
 
-  console.log('✅ User review found:', data);
+  if (data) {
+    console.log('✅ User review found');
+  } else {
+    console.log('ℹ️ No existing review found');
+  }
+  
   return data;
 }
 

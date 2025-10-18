@@ -1,8 +1,8 @@
 // ProductShareModal.tsx
 // Modal for sharing products with friends
-// Adapted from ShareCouponModal pattern
+// Story 4.9 - Enhanced with tracking and useWebShare hook
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -19,6 +19,8 @@ import {
 } from 'lucide-react';
 import { Product } from '../../types/product';
 import { toast } from 'react-hot-toast';
+import { useWebShare } from '../../hooks/useWebShare';
+import { buildUtmUrl } from '../../services/shareTracker';
 
 export interface ProductShareModalProps {
   isOpen: boolean;
@@ -38,61 +40,67 @@ const ProductShareModal: React.FC<ProductShareModalProps> = ({
   const [currentStep, setCurrentStep] = useState<ShareStep>('share-options');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // Use enhanced share hook with tracking
+  const { share, copyToClipboard, isSupported, isSharing } = useWebShare({
+    entityType: 'product',
+    entityId: product.id,
+    metadata: {
+      product_name: product.name,
+      price: product.price,
+      currency: product.currency,
+      category: product.category
+    },
+    onSuccess: () => {
+      setCurrentStep('success');
+      setTimeout(() => {
+        onShareSuccess?.();
+        handleCancel();
+      }, 2000);
+    },
+    onError: (error) => {
+      setErrorMessage(error.message || 'Failed to share product');
+      setCurrentStep('error');
+    }
+  });
+
+  // Reset state when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setCurrentStep('share-options');
+      setErrorMessage(null);
+    }
+  }, [isOpen]);
+
   // Handle cancel
   const handleCancel = () => {
     setCurrentStep('share-options');
     onClose();
   };
 
-  // Copy product link to clipboard
+  // Copy product link to clipboard with UTM tracking
   const handleCopyLink = async () => {
-    try {
-      const productUrl = `${window.location.origin}/products/${product.id}`;
-      await navigator.clipboard.writeText(productUrl);
-      toast.success('Link copied to clipboard!');
-    } catch (error) {
-      console.error('Failed to copy link:', error);
-      toast.error('Failed to copy link');
-    }
+    const productUrl = `${window.location.origin}/products/${product.id}`;
+    const urlWithUtm = buildUtmUrl(productUrl, 'share_button', 'copy', 'product');
+    await copyToClipboard(urlWithUtm);
   };
 
-  // Share via Web Share API
+  // Share via Web Share API with tracking
   const handleNativeShare = async () => {
-    if (!navigator.share) {
+    if (!isSupported) {
       toast.error('Sharing not supported on this device');
       return;
     }
 
-    try {
-      setCurrentStep('sharing');
-      
-      const shareData = {
-        title: product.name,
-        text: `Check out ${product.name}${product.price ? ` - ${product.currency} ${product.price}` : ''}`,
-        url: `${window.location.origin}/products/${product.id}`
-      };
-
-      await navigator.share(shareData);
-      
-      setCurrentStep('success');
-      
-      // Call success callback after a delay
-      setTimeout(() => {
-        onShareSuccess?.();
-        handleCancel();
-      }, 2000);
-      
-    } catch (error: any) {
-      // User cancelled the share
-      if (error.name === 'AbortError') {
-        setCurrentStep('share-options');
-        return;
-      }
-      
-      console.error('Error sharing product:', error);
-      setErrorMessage(error.message || 'Failed to share product');
-      setCurrentStep('error');
-    }
+    setCurrentStep('sharing');
+    
+    const productUrl = `${window.location.origin}/products/${product.id}`;
+    const shareText = `Check out ${product.name}${product.price ? ` - ${product.currency} ${product.price}` : ''}`;
+    
+    await share({
+      title: product.name,
+      text: shareText,
+      url: productUrl
+    });
   };
 
   // Format price display
@@ -219,20 +227,26 @@ const ProductShareModal: React.FC<ProductShareModalProps> = ({
                     >
                       <div className="space-y-3">
                         {/* Native Share Button */}
-                        {navigator.share && (
+                        {isSupported && (
                           <button
                             onClick={handleNativeShare}
-                            className="w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-medium hover:from-blue-700 hover:to-purple-700 transition-all shadow-md hover:shadow-lg flex items-center justify-center space-x-3"
+                            disabled={isSharing}
+                            className="w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-medium hover:from-blue-700 hover:to-purple-700 transition-all shadow-md hover:shadow-lg flex items-center justify-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            <Share2 className="w-5 h-5" />
-                            <span>Share via Apps</span>
+                            {isSharing ? (
+                              <Loader className="w-5 h-5 animate-spin" />
+                            ) : (
+                              <Share2 className="w-5 h-5" />
+                            )}
+                            <span>{isSharing ? 'Sharing...' : 'Share via Apps'}</span>
                           </button>
                         )}
 
                         {/* Copy Link Button */}
                         <button
                           onClick={handleCopyLink}
-                          className="w-full px-6 py-4 bg-white border-2 border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 hover:border-gray-400 transition-all flex items-center justify-center space-x-3"
+                          disabled={isSharing}
+                          className="w-full px-6 py-4 bg-white border-2 border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 hover:border-gray-400 transition-all flex items-center justify-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <Copy className="w-5 h-5" />
                           <span>Copy Link</span>

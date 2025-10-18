@@ -37,6 +37,8 @@ import { useUserCheckin } from '../../hooks/useUserCheckin';
 import { useReviewStats } from '../../hooks/useReviewStats';
 import { createReview } from '../../services/reviewService';
 import type { CreateReviewInput } from '../../types/review';
+import { StorefrontShareButton } from '../sharing/StorefrontShareButton';
+import { ShareAnalytics } from '../analytics/ShareAnalytics';
 
 // TypeScript interfaces
 interface Business {
@@ -1048,6 +1050,15 @@ const BusinessProfile: React.FC = () => {
         </div>
       </div>
 
+      {/* Share Analytics */}
+      {isOwner && businessId && (
+        <ShareAnalytics
+          entityId={businessId}
+          entityType="storefront"
+          title="Storefront Share Analytics"
+        />
+      )}
+
       <div className="bg-white rounded-lg shadow-sm border p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance Overview</h3>
         <div className="text-center py-12 text-gray-500">
@@ -1139,12 +1150,16 @@ const BusinessProfile: React.FC = () => {
     );
   }
 
-  const tabs = [
-    { id: 'overview', label: 'Overview', count: null },
-    { id: 'reviews', label: 'Reviews', count: reviewStats?.total_reviews || business?.total_reviews || 0 },
-    { id: 'statistics', label: 'Statistics', count: null },
-    { id: 'enhanced-profile', label: 'Enhanced Profile', count: null }
+  // Filter tabs based on ownership - only owners see Statistics and Enhanced Profile
+  const allTabs = [
+    { id: 'overview', label: 'Overview', count: null, ownerOnly: false },
+    { id: 'reviews', label: 'Reviews', count: reviewStats?.total_reviews || business?.total_reviews || 0, ownerOnly: false },
+    { id: 'statistics', label: 'Statistics', count: null, ownerOnly: true },
+    { id: 'enhanced-profile', label: 'Enhanced Profile', count: null, ownerOnly: true }
   ];
+
+  // Filter tabs: non-owners only see Overview and Reviews
+  const tabs = allTabs.filter(tab => !tab.ownerOnly || isOwner);
 
   return (
     <>
@@ -1242,7 +1257,7 @@ const BusinessProfile: React.FC = () => {
                 </div>
               </div>
               
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-3">
                 {getStatusBadge(business?.status)}
                 {business?.verified && (
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -1250,6 +1265,17 @@ const BusinessProfile: React.FC = () => {
                     Verified
                   </span>
                 )}
+                <StorefrontShareButton
+                  businessId={business.id}
+                  businessName={business.business_name}
+                  businessDescription={business.description}
+                  variant="outline"
+                  size="default"
+                  onShareSuccess={() => {
+                    // Optional: Track share success analytics
+                    console.log('Storefront shared successfully');
+                  }}
+                />
               </div>
             </div>
           </div>

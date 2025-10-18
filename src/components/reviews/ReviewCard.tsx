@@ -31,18 +31,22 @@ interface ReviewCardProps {
   isBusinessOwner?: boolean;
 }
 
-export default function ReviewCard({
-  review,
-  onEdit,
-  onDelete,
-  onRespond,
-  showBusinessName = false,
-  compact = false,
-  isBusinessOwner = false,
-}: ReviewCardProps) {
-  const { user } = useAuthStore();
-  const [showMenu, setShowMenu] = useState(false);
-  const [showPhoto, setShowPhoto] = useState(false);
+const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
+  (
+    {
+      review,
+      onEdit,
+      onDelete,
+      onRespond,
+      showBusinessName = false,
+      compact = false,
+      isBusinessOwner = false,
+    },
+    ref
+  ) => {
+    const { user } = useAuthStore();
+    const [showMenu, setShowMenu] = useState(false);
+    const [showPhoto, setShowPhoto] = useState(false);
 
   const isOwnReview = user?.id === review.user_id;
   const canEdit = isOwnReview && canEditReview(review.created_at);
@@ -60,17 +64,18 @@ export default function ReviewCard({
     }
   };
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      className={`
-        bg-white rounded-xl border border-gray-200 overflow-hidden
-        hover:shadow-md transition-shadow
-        ${compact ? 'p-4' : 'p-6'}
-      `}
-    >
+    return (
+      <motion.div
+        ref={ref}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        className={`
+          bg-white rounded-xl border border-gray-200 overflow-hidden
+          hover:shadow-md transition-shadow
+          ${compact ? 'p-4' : 'p-6'}
+        `}
+      >
       {/* Business Name (if showing in user profile) */}
       {showBusinessName && review.business_name && (
         <div className="mb-3 pb-3 border-b border-gray-200">
@@ -312,4 +317,9 @@ export default function ReviewCard({
       </AnimatePresence>
     </motion.div>
   );
-}
+  }
+);
+
+ReviewCard.displayName = 'ReviewCard';
+
+export default ReviewCard;

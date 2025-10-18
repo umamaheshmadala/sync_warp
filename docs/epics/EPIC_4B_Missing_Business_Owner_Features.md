@@ -60,7 +60,7 @@ Complete the Business Owner flow by implementing all missing features from Enhan
 **Priority:** 🔴 P0 - CRITICAL  
 **Effort:** 8 days  
 **Value:** Primary revenue stream  
-**Dependencies:** Story 4B.5 (Billing)  
+**Dependencies:** Story 4B.5 (Billing), Story 4.11 (Follow Business - follower content approval)  
 **File:** `STORY_4B.2_Ad_Request_Approval_System.md`
 
 #### **Story 4B.3:** Targeted Campaigns System ✅
@@ -68,7 +68,7 @@ Complete the Business Owner flow by implementing all missing features from Enhan
 **Effort:** 10 days  
 **Status:** ✅ **PHASE 4 COMPLETE** (2025-01-10)  
 **Value:** Core differentiation, revenue multiplier  
-**Dependencies:** Story 4B.4 (Enhanced Onboarding)  
+**Dependencies:** Story 4B.4 (Enhanced Onboarding), Story 4.11 (Follow Business - follower targeting)  
 **File:** `STORY_4B.3_Targeted_Campaigns_System.md`
 
 **Implementation Notes:**
