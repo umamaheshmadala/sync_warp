@@ -6,7 +6,9 @@ import { useNavigate } from 'react-router-dom';
 import { Heart, Search as SearchIcon, Star, MapPin, Calendar, Package, AlertCircle, Ticket, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import useUnifiedFavorites from '../../hooks/useUnifiedFavorites';
+import { useFavoriteProducts } from '../../hooks/useFavoriteProducts';
 import { SimpleSaveButton } from './SimpleSaveButton';
+import { FavoriteProductButton } from '../products/FavoriteProductButton';
 import { cn } from '../../lib/utils';
 
 type ActiveTab = 'all' | 'businesses' | 'coupons' | 'products';
@@ -14,6 +16,7 @@ type ActiveTab = 'all' | 'businesses' | 'coupons' | 'products';
 const UnifiedFavoritesPage: React.FC = () => {
   const navigate = useNavigate();
   const favorites = useUnifiedFavorites();
+  const { favoriteProducts, isLoading: productsLoading, error: productsError } = useFavoriteProducts();
   
   // Local state
   const [activeTab, setActiveTab] = useState<ActiveTab>('all');
@@ -41,9 +44,46 @@ const UnifiedFavoritesPage: React.FC = () => {
     );
   }
 
+  // Merge products from both sources (unified favorites + dedicated favorite_products table)
+  const mergedFavorites = useMemo(() => {
+    const allFavorites = [...favorites.favorites];
+    
+    // Add products from dedicated table if not already present
+    if (favoriteProducts && favoriteProducts.length > 0) {
+      for (const product of favoriteProducts) {
+        // Check if product is already in unified favorites
+        const existsInUnified = allFavorites.some(
+          f => f.type === 'product' && f.id === product.product_id
+        );
+        
+        if (!existsInUnified) {
+          allFavorites.push({
+            id: product.product_id,
+            type: 'product' as const,
+            timestamp: new Date(product.created_at).getTime(),
+            synced: true,
+            itemData: {
+              name: product.product_name,
+              description: product.product_description || '',
+              price: product.product_price,
+              currency: product.product_currency || 'INR',
+              image_url: product.product_image_urls?.[0] || '',
+              business_name: product.business_name,
+              business_id: product.business_id,
+              rating: product.product_rating,
+              stock_quantity: product.product_stock_quantity
+            }
+          });
+        }
+      }
+    }
+    
+    return allFavorites;
+  }, [favorites.favorites, favoriteProducts]);
+
   // Filter favorites based on active tab and search
   const filteredFavorites = useMemo(() => {
-    let filtered = favorites.favorites;
+    let filtered = mergedFavorites;
 
     // Filter by tab
     if (activeTab === 'businesses') {
@@ -69,23 +109,38 @@ const UnifiedFavoritesPage: React.FC = () => {
           return itemData.title?.toLowerCase().includes(query) ||
                  itemData.description?.toLowerCase().includes(query) ||
                  itemData.business_name?.toLowerCase().includes(query);
+        } else if (item.type === 'product') {
+          return itemData.name?.toLowerCase().includes(query) ||
+                 itemData.description?.toLowerCase().includes(query) ||
+                 itemData.business_name?.toLowerCase().includes(query);
         }
         return false;
       });
     }
 
     return filtered;
-  }, [favorites.favorites, activeTab, searchQuery]);
+  }, [mergedFavorites, activeTab, searchQuery]);
 
-  // Get tab counts
+  // Get tab counts from merged data
   const tabCounts = useMemo(() => {
+    const counts = mergedFavorites.reduce(
+      (acc, fav) => {
+        if (fav.type === 'business') acc.businesses++;
+        else if (fav.type === 'coupon') acc.coupons++;
+        else if (fav.type === 'product') acc.products++;
+        acc.total++;
+        return acc;
+      },
+      { businesses: 0, coupons: 0, products: 0, total: 0 }
+    );
+    
     return {
-      all: favorites.favorites.length,
-      businesses: favorites.counts.businesses,
-      coupons: favorites.counts.coupons,
-      products: favorites.counts.products || 0
+      all: counts.total,
+      businesses: counts.businesses,
+      coupons: counts.coupons,
+      products: counts.products
     };
-  }, [favorites.favorites.length, favorites.counts]);
+  }, [mergedFavorites]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -106,19 +161,19 @@ const UnifiedFavoritesPage: React.FC = () => {
             {/* Quick Stats */}
             <div className="hidden md:flex space-x-6">
               <div className="text-center">
-                <div className="text-2xl font-bold text-indigo-600">{favorites.counts.businesses}</div>
+                <div className="text-2xl font-bold text-indigo-600">{tabCounts.businesses}</div>
                 <div className="text-sm text-gray-600">Businesses</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">{favorites.counts.coupons}</div>
+                <div className="text-2xl font-bold text-green-600">{tabCounts.coupons}</div>
                 <div className="text-sm text-gray-600">Coupons</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-orange-600">{favorites.counts.products || 0}</div>
+                <div className="text-2xl font-bold text-orange-600">{tabCounts.products}</div>
                 <div className="text-sm text-gray-600">Products</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">{favorites.counts.total}</div>
+                <div className="text-2xl font-bold text-purple-600">{tabCounts.all}</div>
                 <div className="text-sm text-gray-600">Total</div>
               </div>
             </div>
@@ -209,16 +264,16 @@ const UnifiedFavoritesPage: React.FC = () => {
         </div>
 
         {/* Content */}
-        {favorites.isLoading ? (
+        {favorites.isLoading || productsLoading ? (
           <div className="flex justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
             <span className="ml-3 text-gray-600">Loading favorites...</span>
           </div>
-        ) : favorites.error ? (
+        ) : favorites.error || productsError ? (
           <div className="text-center py-12">
             <AlertCircle className="h-16 w-16 text-red-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">Error loading favorites</h3>
-            <p className="text-gray-600 mb-4">{favorites.error}</p>
+            <p className="text-gray-600 mb-4">{favorites.error || productsError}</p>
             <button
               onClick={() => favorites.refresh()}
               className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
@@ -465,11 +520,10 @@ const FavoriteItemCard: React.FC<{
         onClick={() => onNavigate(item.id, 'product')}
       >
         <div className="absolute top-3 right-3 z-10">
-          <SimpleSaveButton
-            itemId={item.id}
-            itemType="product"
-            itemData={itemData}
-            size="sm"
+          <FavoriteProductButton
+            productId={item.id}
+            variant="icon"
+            size="md"
           />
         </div>
         

@@ -10,6 +10,7 @@ import { useSimpleProductSocial } from '../../hooks/useSimpleProductSocial';
 import useUnifiedFavorites from '../../hooks/useUnifiedFavorites';
 import ProductShareModal from './ProductShareModal';
 import { ProductShareButton } from '../sharing/ProductShareButton';
+import { FavoriteProductButton } from './FavoriteProductButton';
 
 interface ProductCardProps {
   product: Product;
@@ -222,25 +223,12 @@ export function ProductCard({
           {/* Actions */}
           {showActions && (
             <div className="mt-3 flex items-center gap-1">
-              <Button
-                variant="ghost"
+              <FavoriteProductButton
+                productId={product.id}
+                variant="icon"
                 size="sm"
-                className={cn(
-                  'h-8 w-8 p-0 transition-colors',
-                  isFavorited(product.id) && 'text-red-500 hover:text-red-600'
-                )}
-                onClick={handleFavoriteClick}
-                disabled={socialLoading}
-                aria-label={isFavorited(product.id) ? 'Remove from favorites' : 'Add to favorites'}
-                data-testid="favorite-button"
-              >
-                <Heart
-                  className={cn(
-                    'h-4 w-4',
-                    isFavorited(product.id) && 'fill-current'
-                  )}
-                />
-              </Button>
+                onClick={(e) => e.stopPropagation()}
+              />
 
               <ProductShareButton
                 productId={product.id}

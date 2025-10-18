@@ -39,6 +39,11 @@ import { createReview } from '../../services/reviewService';
 import type { CreateReviewInput } from '../../types/review';
 import { StorefrontShareButton } from '../sharing/StorefrontShareButton';
 import { ShareAnalytics } from '../analytics/ShareAnalytics';
+import { StorefrontLoadingState } from './StorefrontLoadingState';
+import { StorefrontErrorState } from './StorefrontErrorState';
+import { EmptyOffersState } from '../offers/EmptyOffersState';
+import { EmptyState } from '../ui/EmptyState';
+import { AllReviews } from '../reviews/AllReviews';
 
 // TypeScript interfaces
 interface Business {
@@ -1122,31 +1127,16 @@ const BusinessProfile: React.FC = () => {
   );
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading business profile...</p>
-        </div>
-      </div>
-    );
+    return <StorefrontLoadingState />;
   }
 
   if (!business) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h1 className="text-xl font-semibold text-gray-900">Business Not Found</h1>
-          <p className="text-gray-600 mt-2">The business you're looking for doesn't exist.</p>
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-          >
-            Back to Dashboard
-          </button>
-        </div>
-      </div>
+      <StorefrontErrorState
+        message="The business you're looking for doesn't exist."
+        onRetry={() => window.location.reload()}
+        onGoBack={() => navigate('/dashboard')}
+      />
     );
   }
 
