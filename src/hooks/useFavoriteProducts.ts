@@ -54,50 +54,72 @@ export function useFavoriteProducts() {
     setError(null);
 
     try {
-      const { data, error: fetchError } = await supabase
-        .from('favorite_products')
-        .select(`
-          id,
-          created_at,
-          product_id,
-          business_products (
-            id,
-            name,
-            description,
-            price,
-            currency,
-            image_urls,
-            category,
-            is_available,
-            business_id,
-            businesses (
-              business_name
-            )
-          )
-        `)
+      // First get favorite product IDs
+      const { data: favoriteData, error: fetchError } = await supabase
+        .from('favorites')
+        .select('entity_id, created_at')
         .eq('user_id', user.id)
+        .eq('entity_type', 'product')
         .order('created_at', { ascending: false });
 
       if (fetchError) {
         throw fetchError;
       }
 
-      // Transform data to flat structure
+      if (!favoriteData || favoriteData.length === 0) {
+        setProducts([]);
+        return;
+      }
+
+      // Get product details
+      const productIds = favoriteData.map(f => f.entity_id);
+      const { data, error: productsError } = await supabase
+        .from('business_products')
+        .select(`
+          id,
+          name,
+          description,
+          price,
+          currency,
+          image_urls,
+          category,
+          is_available,
+          business_id,
+          businesses (
+            business_name
+          )
+        `)
+        .in('id', productIds);
+
+      if (productsError) {
+        throw productsError;
+      }
+
+      if (fetchError) {
+        throw fetchError;
+      }
+
+      // Create a map of product ID to favorited_at timestamp
+      const favoritedAtMap = new Map(
+        favoriteData.map(f => [f.entity_id, f.created_at])
+      );
+
+      // Transform data to flat structure and sort by favorited_at
       const transformedProducts: FavoriteProduct[] = (data || [])
-        .filter(fav => fav.business_products) // Filter out any null products
-        .map(fav => ({
-          id: fav.business_products.id,
-          name: fav.business_products.name,
-          description: fav.business_products.description,
-          price: fav.business_products.price,
-          currency: fav.business_products.currency || 'INR',
-          image_urls: fav.business_products.image_urls || [],
-          category: fav.business_products.category,
-          is_available: fav.business_products.is_available ?? true,
-          business_id: fav.business_products.business_id,
-          business_name: fav.business_products.businesses?.business_name || 'Unknown Business',
-          favorited_at: fav.created_at,
-        }));
+        .map(product => ({
+          id: product.id,
+          name: product.name,
+          description: product.description,
+          price: product.price,
+          currency: product.currency || 'INR',
+          image_urls: product.image_urls || [],
+          category: product.category,
+          is_available: product.is_available ?? true,
+          business_id: product.business_id,
+          business_name: product.businesses?.business_name || 'Unknown Business',
+          favorited_at: favoritedAtMap.get(product.id) || new Date().toISOString(),
+        }))
+        .sort((a, b) => new Date(b.favorited_at).getTime() - new Date(a.favorited_at).getTime());
 
       setProducts(transformedProducts);
     } catch (err) {
@@ -120,14 +142,14 @@ export function useFavoriteProducts() {
     console.log('[useFavoriteProducts] Setting up realtime subscription for user:', user.id);
 
     const channel = supabase
-      .channel(`favorite_products_${user.id}`)
+      .channel(`favorites_products_${user.id}`)
       .on(
         'postgres_changes',
         {
           event: '*', // Listen to INSERT, UPDATE, DELETE
           schema: 'public',
-          table: 'favorite_products',
-          filter: `user_id=eq.${user.id}`
+          table: 'favorites',
+          filter: `user_id=eq.${user.id}.and(entity_type=eq.product)`
         },
         (payload) => {
           console.log('[useFavoriteProducts] Realtime change:', payload.eventType);
@@ -161,10 +183,11 @@ export function useFavoriteProducts() {
       setProducts(prev => prev.filter(p => p.id !== productId));
 
       const { error: deleteError } = await supabase
-        .from('favorite_products')
+        .from('favorites')
         .delete()
         .eq('user_id', user.id)
-        .eq('product_id', productId);
+        .eq('entity_type', 'product')
+        .eq('entity_id', productId);
 
       if (deleteError) {
         // Revert optimistic update on error

@@ -39,10 +39,11 @@ export function useFavoriteProduct(productId: string, productName?: string) {
 
     try {
       const { data, error } = await supabase
-        .from('favorite_products')
+        .from('favorites')
         .select('id')
         .eq('user_id', user.id)
-        .eq('product_id', productId)
+        .eq('entity_type', 'product')
+        .eq('entity_id', productId)
         .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
@@ -87,10 +88,11 @@ export function useFavoriteProduct(productId: string, productName?: string) {
       if (previousState) {
         // Remove from favorites
         const { error } = await supabase
-          .from('favorite_products')
+          .from('favorites')
           .delete()
           .eq('user_id', user.id)
-          .eq('product_id', productId);
+          .eq('entity_type', 'product')
+          .eq('entity_id', productId);
 
         if (error) throw error;
 
@@ -102,10 +104,11 @@ export function useFavoriteProduct(productId: string, productName?: string) {
       } else {
         // Add to favorites
         const { error } = await supabase
-          .from('favorite_products')
+          .from('favorites')
           .insert({
             user_id: user.id,
-            product_id: productId,
+            entity_type: 'product',
+            entity_id: productId,
           });
 
         if (error) {

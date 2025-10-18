@@ -115,10 +115,12 @@ const syncFromDatabase = async (currentUserId?: string) => {
     console.log('[UnifiedFavorites] Syncing from database for user:', currentUserId);
     
     // Get ALL favorites at once from the unified favorites table
+    // EXCLUDE products - they are handled by useFavoriteProducts hook
     const { data: favorites, error } = await supabase
       .from('favorites')
       .select('*')
       .eq('user_id', currentUserId)
+      .in('entity_type', ['business', 'coupon']) // Only businesses and coupons
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -133,25 +135,20 @@ const syncFromDatabase = async (currentUserId?: string) => {
       // Group by type for efficient batch fetching
       const businessIds = favorites.filter(f => f.entity_type === 'business').map(f => f.entity_id);
       const couponIds = favorites.filter(f => f.entity_type === 'coupon').map(f => f.entity_id);
-      const productIds = favorites.filter(f => f.entity_type === 'product').map(f => f.entity_id);
 
-      // Fetch related data in parallel
-      const [businessesData, couponsData, productsData] = await Promise.all([
+      // Fetch related data in parallel (products excluded - handled by useFavoriteProducts)
+      const [businessesData, couponsData] = await Promise.all([
         businessIds.length > 0 
           ? supabase.from('businesses').select('id, business_name, business_type, description, address, average_rating').in('id', businessIds)
           : Promise.resolve({ data: [] }),
         couponIds.length > 0
           ? supabase.from('business_coupons').select('id, title, description, discount_type, discount_value, valid_until, business_id').in('id', couponIds)
-          : Promise.resolve({ data: [] }),
-        productIds.length > 0
-          ? supabase.from('business_products').select('id, name, description, price, currency, image_urls').in('id', productIds)
           : Promise.resolve({ data: [] })
       ]);
 
       // Create lookup maps
       const businessMap = new Map((businessesData.data || []).map(b => [b.id, b]));
       const couponMap = new Map((couponsData.data || []).map(c => [c.id, c]));
-      const productMap = new Map((productsData.data || []).map(p => [p.id, p]));
 
       // Build favorites with itemData
       for (const fav of favorites) {
@@ -189,26 +186,8 @@ const syncFromDatabase = async (currentUserId?: string) => {
               }
             });
           }
-        } else if (fav.entity_type === 'product') {
-          const product = productMap.get(fav.entity_id);
-          if (product) {
-            dbFavorites.push({
-              id: fav.entity_id,
-              type: 'product',
-              timestamp: new Date(fav.created_at).getTime(),
-              synced: true,
-              itemData: {
-                name: product.name || 'Unknown Product',
-                description: product.description || '',
-                price: product.price || 0,
-                currency: product.currency || 'INR',
-                image_url: product.image_urls?.[0] || '',
-                category: '',
-                business_id: ''
-              }
-            });
-          }
         }
+        // Products are excluded - handled by useFavoriteProducts hook
       }
     }
 
@@ -486,12 +465,12 @@ export const useUnifiedFavorites = () => {
     if (currentUserId && currentUserId !== 'guest') {
       setTimeout(async () => {
         try {
+          // Only clear businesses and coupons (products handled by useFavoriteProducts)
           await Promise.all([
             supabase.from('favorites').delete().eq('user_id', currentUserId).eq('entity_type', 'business'),
-            supabase.from('favorites').delete().eq('user_id', currentUserId).eq('entity_type', 'coupon'),
-            supabase.from('favorites').delete().eq('user_id', currentUserId).eq('entity_type', 'product')
+            supabase.from('favorites').delete().eq('user_id', currentUserId).eq('entity_type', 'coupon')
           ]);
-          console.log('[UnifiedFavorites] Cleared favorites from database');
+          console.log('[UnifiedFavorites] Cleared businesses and coupons from database');
         } catch (error) {
           console.warn('[UnifiedFavorites] Failed to clear database favorites:', error);
         }
