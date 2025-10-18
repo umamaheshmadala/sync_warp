@@ -50,13 +50,7 @@ const CategoryBrowserPage = lazy(() => import('../components/categories/Category
 const TrendingCouponsPage = lazy(() => import('../components/coupons/TrendingCouponsPage'))
 const UnifiedFavoritesPage = lazy(() => import('../components/favorites/UnifiedFavoritesPage'));
 
-// Debug components (only in development) - Minimal set for essential testing
-const FavoritesSystemTest = lazy(() => import('../components/debug/FavoritesSystemTest'))
-const CheckinSystemTest = lazy(() => import('../components/debug/CheckinSystemTest'))
-const QRCodeTest = lazy(() => import('../components/debug/QRCodeTest'))
-const SimpleQRTest = lazy(() => import('../components/debug/SimpleQRTest'))
-const TargetingDemo = lazy(() => import('../pages/TargetingDemoSimple'))
-const CampaignTargetingDemo = lazy(() => import('../pages/CampaignTargetingDemo'))
+// Debug components are removed from production build
 
 // Check-in components
 const BusinessCheckinsPage = lazy(() => import('../components/checkins/BusinessCheckinsPage'))
@@ -64,8 +58,7 @@ const BusinessCheckinsPage = lazy(() => import('../components/checkins/BusinessC
 // Story 5.2: Review System
 const MyReviewsPage = lazy(() => import('../pages/MyReviewsPage'))
 
-// Story 5.5: Sharing Limits Test
-const TestSharingLimits = lazy(() => import('../pages/TestSharingLimits'))
+// Story 5.5: Test Sharing Limits (excluded from production)
 
 // Route definitions
 export interface RouteConfig {
@@ -244,14 +237,6 @@ export const routes: RouteConfig[] = [
     title: 'My Reviews - SynC',
     description: 'Manage your reviews and see your review history'
   },
-  // Story 5.5: Test Sharing Limits
-  {
-    path: '/test-sharing-limits',
-    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><TestSharingLimits /></Suspense>,
-    protected: true,
-    title: 'Test Sharing Limits - SynC',
-    description: 'Test Story 5.5 Enhanced Sharing Limits functionality'
-  },
   // Business Routes
   {
     path: '/business/register',
@@ -354,45 +339,7 @@ export const routes: RouteConfig[] = [
   }
 ]
 
-// Debug routes (only in development) - Minimal debug routes for essential testing
-const debugRoutes: RouteConfig[] = [
-  {
-    path: '/debug/favorites/test',
-    element: <Suspense fallback={<div>Loading...</div>}><FavoritesSystemTest /></Suspense>,
-    protected: true,
-    title: 'Debug - Favorites System Test Suite'
-  },
-  {
-    path: '/debug/checkins/test',
-    element: <Suspense fallback={<div>Loading...</div>}><CheckinSystemTest /></Suspense>,
-    protected: true,
-    title: 'Debug - Check-ins System Test Suite'
-  },
-  {
-    path: '/debug/qrcode/test',
-    element: <Suspense fallback={<div>Loading...</div>}><QRCodeTest /></Suspense>,
-    protected: true,
-    title: 'Debug - QR Code Generation Test Suite'
-  },
-  {
-    path: '/debug/qrcode/simple',
-    element: <Suspense fallback={<div>Loading...</div>}><SimpleQRTest /></Suspense>,
-    protected: true,
-    title: 'Debug - Simple QR Code Test'
-  },
-  {
-    path: '/demo/targeting',
-    element: <Suspense fallback={<div>Loading...</div>}><TargetingDemo /></Suspense>,
-    protected: false,
-    title: 'Phase 4 - Targeting Components Demo'
-  },
-  {
-    path: '/demo/campaign-targeting',
-    element: <Suspense fallback={<div>Loading...</div>}><CampaignTargetingDemo /></Suspense>,
-    protected: false,
-    title: 'Campaign Targeting System - Interactive Demo'
-  }
-]
+// Debug routes removed for production build
 
 // Loading component for lazy-loaded routes
 const RouteLoader = ({ children }: { children: React.ReactNode }) => (
@@ -407,9 +354,8 @@ const RouteLoader = ({ children }: { children: React.ReactNode }) => (
 
 // Main router component
 export default function AppRouter() {
-  // Show debug routes only in development
-  const isDevelopment = import.meta.env.MODE === 'development'
-  const allRoutes = isDevelopment ? [...routes, ...debugRoutes] : routes
+  // Debug routes removed for production build
+  const allRoutes = routes
 
   return (
     <Routes>
