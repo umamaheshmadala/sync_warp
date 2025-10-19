@@ -79,7 +79,7 @@ npx supabase db reset
 - **State Management**: Zustand (primary) + React Query for server state
 - **Database**: Supabase (PostgreSQL) with Row Level Security (RLS)
 - **Authentication**: Supabase Auth with comprehensive error handling
-- **Testing**: Vitest (unit) + Playwright (E2E) + Testing Library
+- **Testing**: Vitest (unit) + Chrome-Devtools + Testing Library
 - **Forms**: React Hook Form + Zod validation
 
 ### Project Structure Philosophy

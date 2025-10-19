@@ -114,14 +114,13 @@ const syncFromDatabase = async (currentUserId?: string) => {
   try {
     console.log('[UnifiedFavorites] Syncing from database for user:', currentUserId);
     
-    // Get ALL favorites at once from the unified favorites table
-    // EXCLUDE products - they are handled by useFavoriteProducts hook
+    // Get ALL business followers from business_followers table
+    // Story 4.11 focuses on business following only
     const { data: favorites, error } = await supabase
-      .from('favorites')
+      .from('business_followers')
       .select('*')
       .eq('user_id', currentUserId)
-      .in('entity_type', ['business', 'coupon']) // Only businesses and coupons
-      .order('created_at', { ascending: false });
+      .order('followed_at', { ascending: false});
 
     if (error) {
       console.error('[UnifiedFavorites] Database error:', error);
@@ -130,65 +129,42 @@ const syncFromDatabase = async (currentUserId?: string) => {
 
     const dbFavorites: UnifiedFavorite[] = [];
 
-    // Process each favorite and fetch related data
+    // Process each follower and fetch related business data
     if (favorites && favorites.length > 0) {
-      // Group by type for efficient batch fetching
-      const businessIds = favorites.filter(f => f.entity_type === 'business').map(f => f.entity_id);
-      const couponIds = favorites.filter(f => f.entity_type === 'coupon').map(f => f.entity_id);
+      // All entries are businesses in business_followers table
+      // Filter out any null/undefined business_ids
+      const businessIds = favorites
+        .map(f => f.business_id)
+        .filter(id => id != null && id !== '');
 
-      // Fetch related data in parallel (products excluded - handled by useFavoriteProducts)
-      const [businessesData, couponsData] = await Promise.all([
-        businessIds.length > 0 
-          ? supabase.from('businesses').select('id, business_name, business_type, description, address, average_rating').in('id', businessIds)
-          : Promise.resolve({ data: [] }),
-        couponIds.length > 0
-          ? supabase.from('business_coupons').select('id, title, description, discount_type, discount_value, valid_until, business_id').in('id', couponIds)
-          : Promise.resolve({ data: [] })
-      ]);
+      // Fetch business data for all followed businesses
+      const businessesData = businessIds.length > 0 
+        ? await supabase.from('businesses').select('id, business_name, business_type, description, address, average_rating').in('id', businessIds)
+        : { data: [] };
 
-      // Create lookup maps
+      // Create lookup map
       const businessMap = new Map((businessesData.data || []).map(b => [b.id, b]));
-      const couponMap = new Map((couponsData.data || []).map(c => [c.id, c]));
 
-      // Build favorites with itemData
+      // Build followers with itemData
       for (const fav of favorites) {
-        if (fav.entity_type === 'business') {
-          const business = businessMap.get(fav.entity_id);
-          if (business) {
-            dbFavorites.push({
-              id: fav.entity_id,
-              type: 'business',
-              timestamp: new Date(fav.created_at).getTime(),
-              synced: true,
-              itemData: {
-                business_name: business.business_name || 'Unknown Business',
-                business_type: business.business_type || 'Unknown',
-                description: business.description || '',
-                address: business.address || '',
-                rating: business.average_rating || 0
-              }
-            });
-          }
-        } else if (fav.entity_type === 'coupon') {
-          const coupon = couponMap.get(fav.entity_id);
-          if (coupon) {
-            dbFavorites.push({
-              id: fav.entity_id,
-              type: 'coupon',
-              timestamp: new Date(fav.created_at).getTime(),
-              synced: true,
-              itemData: {
-                title: coupon.title || 'Unknown Coupon',
-                description: coupon.description || '',
-                discount_type: coupon.discount_type || 'percentage',
-                discount_value: coupon.discount_value || 0,
-                business_name: 'Business'  // Could fetch from business_id if needed
-              }
-            });
-          }
+        const business = businessMap.get(fav.business_id);
+        if (business) {
+          dbFavorites.push({
+            id: fav.business_id,
+            type: 'business',
+            timestamp: new Date(fav.followed_at).getTime(),
+            synced: true,
+            itemData: {
+              business_name: business.business_name || 'Unknown Business',
+              business_type: business.business_type || 'Unknown',
+              description: business.description || '',
+              address: business.address || '',
+              rating: business.average_rating || 0
+            }
+          });
         }
-        // Products are excluded - handled by useFavoriteProducts hook
       }
+      // Coupons and products are excluded - Story 4.11 focuses on business following
     }
 
     // DATABASE IS NOW THE SOURCE OF TRUTH
@@ -246,9 +222,9 @@ export const useUnifiedFavorites = () => {
 
     console.log('[UnifiedFavorites] Setting up realtime subscription for user:', userId);
 
-    // Subscribe to changes in favorites table for this user
+    // Subscribe to changes in business_followers table for this user
     const channel = supabase
-      .channel(`favorites_${userId}`, {
+      .channel(`business_followers_${userId}`, {
         config: {
           broadcast: { self: false }, // Don't receive our own changes
         },
@@ -258,7 +234,7 @@ export const useUnifiedFavorites = () => {
         {
           event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
           schema: 'public',
-          table: 'favorites',
+          table: 'business_followers',
           filter: `user_id=eq.${userId}`
         },
         (payload) => {
@@ -365,18 +341,22 @@ export const useUnifiedFavorites = () => {
         if (currentUserId && currentUserId !== 'guest') {
           setTimeout(async () => {
             try {
-              // All types use the unified favorites table
-              const { error } = await supabase
-                .from('favorites')
-                .delete()
-                .eq('user_id', currentUserId)
-                .eq('entity_type', type)
-                .eq('entity_id', itemId);
-              
-              if (error) {
-                console.warn('Database sync error (removal):', error);
+              // Business followers use business_followers table
+              if (type === 'business') {
+                const { error } = await supabase
+                  .from('business_followers')
+                  .delete()
+                  .eq('user_id', currentUserId)
+                  .eq('business_id', itemId);
+                
+                if (error) {
+                  console.warn('Database sync error (removal):', error);
+                } else {
+                  console.log(`Successfully unfollowed ${type} from database`);
+                }
               } else {
-                console.log(`Successfully removed ${type} from database`);
+                // Coupons/products not handled in business_followers
+                console.log(`${type} not handled in business_followers table`);
               }
             } catch (dbError) {
               console.warn('Failed to sync removal to database:', dbError);
@@ -405,29 +385,33 @@ export const useUnifiedFavorites = () => {
         if (currentUserId && currentUserId !== 'guest') {
           setTimeout(async () => {
             try {
-              // All types use the unified favorites table
-              const { data, error } = await supabase
-                .from('favorites')
-                .insert({
-                  user_id: currentUserId,
-                  entity_type: type,
-                  entity_id: itemId
-                })
-                .select()
-                .single();
-              
-              if (error) {
-                console.warn('Database sync error (addition):', error);
-              } else {
-                console.log(`Successfully added ${type} to database:`, data);
+              // Business followers use business_followers table
+              if (type === 'business') {
+                const { data, error } = await supabase
+                  .from('business_followers')
+                  .insert({
+                    user_id: currentUserId,
+                    business_id: itemId
+                  })
+                  .select()
+                  .single();
                 
-                // Update the favorite as synced
-                const favoriteIndex = globalFavorites.findIndex(fav => fav.id === itemId && fav.type === type);
-                if (favoriteIndex !== -1) {
-                  globalFavorites[favoriteIndex].synced = true;
-                  saveToStorage(globalFavorites, currentUserId);
-                  notifyListeners();
+                if (error) {
+                  console.warn('Database sync error (addition):', error);
+                } else {
+                  console.log(`Successfully followed ${type} in database:`, data);
+                  
+                  // Update the favorite as synced
+                  const favoriteIndex = globalFavorites.findIndex(fav => fav.id === itemId && fav.type === type);
+                  if (favoriteIndex !== -1) {
+                    globalFavorites[favoriteIndex].synced = true;
+                    saveToStorage(globalFavorites, currentUserId);
+                    notifyListeners();
+                  }
                 }
+              } else {
+                // Coupons/products not handled in business_followers
+                console.log(`${type} not handled in business_followers table`);
               }
             } catch (dbError) {
               console.warn('Failed to sync addition to database:', dbError);
@@ -465,14 +449,11 @@ export const useUnifiedFavorites = () => {
     if (currentUserId && currentUserId !== 'guest') {
       setTimeout(async () => {
         try {
-          // Only clear businesses and coupons (products handled by useFavoriteProducts)
-          await Promise.all([
-            supabase.from('favorites').delete().eq('user_id', currentUserId).eq('entity_type', 'business'),
-            supabase.from('favorites').delete().eq('user_id', currentUserId).eq('entity_type', 'coupon')
-          ]);
-          console.log('[UnifiedFavorites] Cleared businesses and coupons from database');
+          // Clear all business followers
+          await supabase.from('business_followers').delete().eq('user_id', currentUserId);
+          console.log('[UnifiedFavorites] Cleared business followers from database');
         } catch (error) {
-          console.warn('[UnifiedFavorites] Failed to clear database favorites:', error);
+          console.warn('[UnifiedFavorites] Failed to clear database followers:', error);
         }
       }, 100);
     }

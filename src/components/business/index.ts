@@ -13,6 +13,11 @@ export { default as ProductCard } from './ProductCard';
 export { NewBusinesses } from './NewBusinesses';
 export { BusinessCard } from './BusinessCard';
 
+// Follower management components (Story 4.11)
+export { default as FollowerAnalyticsDashboard } from './FollowerAnalyticsDashboard';
+export { default as FollowerList } from './FollowerList';
+export { default as SuspiciousActivityReporter } from './SuspiciousActivityReporter';
+
 // Additional business components to be added later
 // export { default as ProductManager } from './ProductManager.jsx';
 // export { default as BusinessReviews } from './BusinessReviews.jsx';

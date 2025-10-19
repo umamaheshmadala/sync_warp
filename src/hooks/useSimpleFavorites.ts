@@ -71,20 +71,16 @@ export const useSimpleFavorites = () => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      // Load all favorites from unified table
+      // Load all followers from business_followers table
       const { data: businessFavs, error: businessError } = await supabase
-        .from('favorites')
-        .select('id, entity_id, created_at')
+        .from('business_followers')
+        .select('id, business_id, followed_at')
         .eq('user_id', user.id)
-        .eq('entity_type', 'business')
-        .order('created_at', { ascending: false });
+        .order('followed_at', { ascending: false });
 
-      const { data: couponFavs, error: couponError } = await supabase
-        .from('favorites')
-        .select('id, entity_id, created_at')
-        .eq('user_id', user.id)
-        .eq('entity_type', 'coupon')
-        .order('created_at', { ascending: false });
+      // Coupons not handled in business_followers table
+      const couponFavs = [];
+      const couponError = null;
 
       // Handle foreign key constraint errors gracefully
       if (businessError) {
@@ -107,23 +103,17 @@ export const useSimpleFavorites = () => {
         console.warn('Coupon favorites error:', couponError);
       }
 
-      // Combine and format favorites
+      // Combine and format followers
       const allFavorites: FavoriteItem[] = [
         ...(businessFavs || []).map(item => ({
           id: item.id,
           type: 'business' as const,
-          item_id: item.entity_id,
-          created_at: item.created_at,
-          item_data: null
-        })),
-        ...(couponFavs || []).map(item => ({
-          id: item.id,
-          type: 'coupon' as const,
-          item_id: item.entity_id,
-          created_at: item.created_at,
+          item_id: item.business_id,
+          created_at: item.followed_at,
           item_data: null
         }))
       ];
+      // Coupons excluded - Story 4.11 focuses on business following
 
       // Sort by created_at
       allFavorites.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
@@ -159,16 +149,15 @@ export const useSimpleFavorites = () => {
         console.log('Attempting business favorites operation:', { isCurrentlyFavorited, itemId, userId: user.id });
         
         if (isCurrentlyFavorited) {
-          // Remove from favorites
+          // Unfollow business
           const { error } = await supabase
-            .from('favorites')
+            .from('business_followers')
             .delete()
             .eq('user_id', user.id)
-            .eq('entity_type', 'business')
-            .eq('entity_id', itemId);
+            .eq('business_id', itemId);
           
           if (error) {
-            console.error('Business favorites delete error:', error);
+            console.error('Business unfollow error:', error);
             throw error;
           }
           
@@ -181,13 +170,13 @@ export const useSimpleFavorites = () => {
           toast.success('Removed from favorites');
           return false;
         } else {
-          // Add to favorites
+          // Follow business
           const { error } = await supabase
-            .from('favorites')
-            .insert({ user_id: user.id, entity_type: 'business', entity_id: itemId });
+            .from('business_followers')
+            .insert({ user_id: user.id, business_id: itemId });
           
           if (error) {
-            console.error('Business favorites insert error:', error);
+            console.error('Business follow error:', error);
             // Try to provide more helpful error message
             if (error.code === '23503') {
               // Foreign key constraint failed - try to create profile and retry
@@ -199,17 +188,17 @@ export const useSimpleFavorites = () => {
                   .select()
                   .single();
                 
-                console.log('Profile created, retrying favorites insert...');
-                // Retry the favorites insert
+                console.log('Profile created, retrying follow insert...');
+                // Retry the follow insert
                 const { error: retryError } = await supabase
-                  .from('favorites')
-                  .insert({ user_id: user.id, entity_type: 'business', entity_id: itemId });
+                  .from('business_followers')
+                  .insert({ user_id: user.id, business_id: itemId });
                 
                 if (retryError) {
                   throw new Error(`Failed even after creating profile: ${retryError.message}`);
                 }
                 
-                console.log('Favorites insert succeeded after profile creation');
+                console.log('Follow insert succeeded after profile creation');
               } catch (profileError) {
                 throw new Error(`Profile creation failed: ${profileError}`);
               }
@@ -236,49 +225,10 @@ export const useSimpleFavorites = () => {
           return true;
         }
       } else if (type === 'coupon') {
-        if (isCurrentlyFavorited) {
-          // Remove from favorites
-          const { error } = await supabase
-            .from('favorites')
-            .delete()
-            .eq('user_id', user.id)
-            .eq('entity_type', 'coupon')
-            .eq('entity_id', itemId);
-          
-          if (error) throw error;
-          
-          // Update local state immediately
-          setState(prev => ({
-            ...prev,
-            favorites: prev.favorites.filter(f => !(f.item_id === itemId && f.type === 'coupon'))
-          }));
-          
-          toast.success('Removed from favorites');
-          return false;
-        } else {
-          // Add to favorites
-          const { error } = await supabase
-            .from('favorites')
-            .insert({ user_id: user.id, entity_type: 'coupon', entity_id: itemId });
-          
-          if (error) throw error;
-          
-          // Update local state immediately
-          const newFavorite: FavoriteItem = {
-            id: `temp-${Date.now()}`, // Temporary ID until reload
-            type: 'coupon',
-            item_id: itemId,
-            created_at: new Date().toISOString()
-          };
-          
-          setState(prev => ({
-            ...prev,
-            favorites: [newFavorite, ...prev.favorites]
-          }));
-          
-          toast.success('Added to favorites');
-          return true;
-        }
+        // Coupons not handled in business_followers table
+        // Story 4.11 only handles business following
+        toast.info('Coupon favorites not yet migrated to following system');
+        return isCurrentlyFavorited;
       }
     } catch (error) {
       console.error('Error toggling favorite:', error);

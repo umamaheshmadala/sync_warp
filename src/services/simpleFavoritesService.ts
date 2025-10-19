@@ -20,6 +20,11 @@ class SimpleFavoritesService {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return [];
 
+    // Note: Products and coupons are not migrated to business_followers in Story 4.11
+    // Business favorites should use business_followers table via useBusinessFollowing hook
+    // For now, product/coupon favorites return empty until their own tables are created
+    
+    // Check if favorites table exists by attempting a query
     let query = supabase
       .from('favorites')
       .select('*')
@@ -31,6 +36,13 @@ class SimpleFavoritesService {
     }
 
     const { data, error } = await query;
+    
+    // If table doesn't exist (PGRST205 = relation not found), return empty array
+    if (error && (error.code === 'PGRST204' || error.code === 'PGRST205')) {
+      console.warn('Favorites table does not exist yet. Products/coupons not yet migrated.');
+      return [];
+    }
+    
     if (error) throw error;
     return data || [];
   }
@@ -41,6 +53,11 @@ class SimpleFavoritesService {
   async addToFavorites(entityType: 'business' | 'product' | 'coupon', entityId: string): Promise<SimpleFavorite> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
+
+    // Note: Business favorites should use business_followers table via useBusinessFollowing hook
+    if (entityType === 'business') {
+      throw new Error('Use useBusinessFollowing hook for business favorites. Story 4.11 migrated to business_followers table.');
+    }
 
     // Check if already favorited
     const existing = await this.isFavorited(entityType, entityId);
@@ -57,6 +74,11 @@ class SimpleFavoritesService {
       })
       .select()
       .single();
+
+    // If table doesn't exist, throw informative error
+    if (error && (error.code === 'PGRST204' || error.code === 'PGRST205')) {
+      throw new Error('Product/coupon favorites not yet implemented. Coming soon!');
+    }
 
     if (error) throw error;
     return data;
@@ -105,6 +127,11 @@ class SimpleFavoritesService {
       .eq('entity_type', entityType)
       .eq('entity_id', entityId)
       .maybeSingle();
+
+    // If table doesn't exist, return null (not favorited)
+    if (error && (error.code === 'PGRST204' || error.code === 'PGRST205')) {
+      return null;
+    }
 
     if (error) throw error;
     return data;

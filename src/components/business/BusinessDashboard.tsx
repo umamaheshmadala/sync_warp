@@ -22,6 +22,7 @@ import {
   Activity,
   Target,
   QrCode,
+  UserPlus,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
@@ -344,6 +345,14 @@ const BusinessDashboard: React.FC = () => {
             >
               <QrCode className="w-4 h-4 mr-1" />
               Generate QR Code
+            </Link>
+            
+            <Link
+              to={`/business/${business.id}/followers/analytics`}
+              className="w-full flex items-center justify-center px-3 py-2 bg-cyan-600 text-white text-sm font-medium rounded-lg hover:bg-cyan-700 transition-colors"
+            >
+              <UserPlus className="w-4 h-4 mr-1" />
+              Follower Analytics
             </Link>
           </div>
         </div>

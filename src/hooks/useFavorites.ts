@@ -110,9 +110,9 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
 
     try {
       
-      // First check if unified favorites table exists
+      // First check if business_followers table exists
       const tableCheck = await supabase
-        .from('favorites')
+        .from('business_followers')
         .select('id', { count: 'exact' })
         .limit(0);
       
@@ -136,35 +136,34 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
         data = result.data;
         error = result.error;
       } catch (funcError) {
-        // Fallback to direct query on unified favorites table
+        // Fallback to direct query on business_followers table
         try {
           const result = await supabase
-            .from('favorites')
+            .from('business_followers')
             .select(`
-              entity_id,
-              created_at
+              business_id,
+              followed_at
             `)
             .eq('user_id', user.id)
-            .eq('entity_type', 'business')
-            .order('created_at', { ascending: false })
+            .order('followed_at', { ascending: false })
             .range(offset, offset + limit - 1);
             
           if (result.error) {
             return [];
           }
           
-          // Map unified favorites to business format with actual data
+          // Map business_followers to business format with actual data
           data = result.data?.map(item => ({
-            business_id: item.entity_id,
-            business_name: item.business_name || 'Unknown Business',
-            business_type: item.business_type || 'Unknown',
-            description: item.business_description || '',
-            address: item.business_address || '',
+            business_id: item.business_id,
+            business_name: 'Unknown Business',
+            business_type: 'Unknown',
+            description: '',
+            address: '',
             latitude: 0,
             longitude: 0,
-            rating: item.business_rating || 0,
+            rating: 0,
             active_coupons_count: 0,
-            favorited_at: item.created_at
+            favorited_at: item.followed_at
           }));
           error = result.error;
         } catch (directQueryError) {
@@ -192,16 +191,9 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
     if (!user?.id) return [];
 
     try {
-      // First check if unified favorites table exists
-      const tableCheck = await supabase
-        .from('favorites')
-        .select('id', { count: 'exact' })
-        .limit(0);
-      
-      if (tableCheck.error && tableCheck.error.code === '42P01') {
-        console.warn('Favorites table does not exist yet');
-        return [];
-      }
+      // Coupons are not in business_followers table, return empty
+      // Story 4.11 only handles business following, not coupon favorites
+      return [];
 
       // First try the database function, fallback to direct query
       let data, error;
@@ -219,32 +211,9 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
       } catch (funcError) {
         console.warn('Function call failed, using direct query:', funcError);
         
-        // Fallback to direct query on unified favorites table
-        const result = await supabase
-          .from('favorites')
-          .select(`
-            entity_id,
-            created_at
-          `)
-          .eq('user_id', user.id)
-          .eq('entity_type', 'coupon')
-          .order('created_at', { ascending: false })
-          .range(offset, offset + limit - 1);
-          
-        // Map unified favorites to coupon format with actual data
-        data = result.data?.map(item => ({
-          coupon_id: item.entity_id,
-          title: item.coupon_title || 'Coupon',
-          description: item.coupon_description || '',
-          discount_type: item.coupon_discount_type || 'percentage',
-          discount_value: item.coupon_discount_value || 0,
-          valid_until: item.coupon_valid_until || '',
-          business_id: '',
-          business_name: item.coupon_business_name || 'Unknown Business',
-          is_collected: false,
-          favorited_at: item.created_at
-        }));
-        error = result.error;
+        // Coupons not handled in business_followers
+        data = [];
+        error = null;
       }
 
       if (error && error.code !== '42P01') throw error;
@@ -371,41 +340,39 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
       } catch (funcError) {
         console.warn('Function call failed, using direct operations:', funcError);
         
-        // Check if unified favorites table exists first
+        // Check if business_followers table exists first
         const tableCheck = await supabase
-          .from('favorites')
+          .from('business_followers')
           .select('id', { count: 'exact' })
           .limit(0);
         
         if (tableCheck.error && tableCheck.error.code === '42P01') {
-          toast.error('Favorites feature is not available yet. Please contact support.');
+          toast.error('Follow feature is not available yet. Please contact support.');
           return false;
         }
         
-        // Fallback to direct database operations on unified table
+        // Fallback to direct database operations on business_followers table
         const { data: existing } = await supabase
-          .from('favorites')
+          .from('business_followers')
           .select('id')
           .eq('user_id', user.id)
-          .eq('entity_type', 'business')
-          .eq('entity_id', businessId)
+          .eq('business_id', businessId)
           .maybeSingle();
           
         if (existing) {
-          // Remove from favorites
+          // Unfollow
           const { error } = await supabase
-            .from('favorites')
+            .from('business_followers')
             .delete()
             .eq('user_id', user.id)
-            .eq('entity_type', 'business')
-            .eq('entity_id', businessId);
+            .eq('business_id', businessId);
           if (error) throw error;
           isFavorited = false;
         } else {
-          // Add to favorites
+          // Follow
           const { error } = await supabase
-            .from('favorites')
-            .insert({ user_id: user.id, entity_type: 'business', entity_id: businessId });
+            .from('business_followers')
+            .insert({ user_id: user.id, business_id: businessId });
           if (error) throw error;
           isFavorited = true;
         }
@@ -488,44 +455,10 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
       } catch (funcError) {
         console.warn('Function call failed, using direct operations:', funcError);
         
-        // Check if unified favorites table exists first
-        const tableCheck = await supabase
-          .from('favorites')
-          .select('id', { count: 'exact' })
-          .limit(0);
-        
-        if (tableCheck.error && tableCheck.error.code === '42P01') {
-          toast.error('Favorites feature is not available yet. Please contact support.');
-          return false;
-        }
-        
-        // Fallback to direct database operations on unified table
-        const { data: existing } = await supabase
-          .from('favorites')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('entity_type', 'coupon')
-          .eq('entity_id', couponId)
-          .maybeSingle();
-          
-        if (existing) {
-          // Remove from favorites
-          const { error } = await supabase
-            .from('favorites')
-            .delete()
-            .eq('user_id', user.id)
-            .eq('entity_type', 'coupon')
-            .eq('entity_id', couponId);
-          if (error) throw error;
-          isFavorited = false;
-        } else {
-          // Add to favorites
-          const { error } = await supabase
-            .from('favorites')
-            .insert({ user_id: user.id, entity_type: 'coupon', entity_id: couponId });
-          if (error) throw error;
-          isFavorited = true;
-        }
+        // Coupons not handled in business_followers table
+        // Story 4.11 only handles business following
+        toast.info('Coupon favorites not yet migrated to following system');
+        return false;
       }
 
       // Update cache immediately for instant UI feedback
@@ -685,18 +618,14 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
     try {
       if (type === 'businesses' || !type) {
         await supabase
-          .from('favorites')
+          .from('business_followers')
           .delete()
-          .eq('user_id', user.id)
-          .eq('entity_type', 'business');
+          .eq('user_id', user.id);
       }
 
       if (type === 'coupons' || !type) {
-        await supabase
-          .from('favorites')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('entity_type', 'coupon');
+        // Coupons not in business_followers table
+        // Skip for now
       }
 
       if (type === 'wishlist' || !type) {
@@ -749,13 +678,13 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
     });
     subscriptions.current = [];
 
-    // Unified favorites subscription (both business and coupon)
-    const unifiedFavoritesChannel = supabase
-      .channel('favorites')
+    // Business followers subscription
+    const businessFollowersChannel = supabase
+      .channel('business_followers')
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
-        table: 'favorites',
+        table: 'business_followers',
         filter: `user_id=eq.${user.id}`
       }, () => {
         // Reload favorites when changes occur
@@ -786,7 +715,7 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
       })
       .subscribe();
 
-    subscriptions.current = [unifiedFavoritesChannel, wishlistChannel];
+    subscriptions.current = [businessFollowersChannel, wishlistChannel];
   }, [user?.id, enableRealtime, loadFavorites, loadWishlist]);
 
   // Auto-load favorites when user changes

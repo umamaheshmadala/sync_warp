@@ -44,6 +44,7 @@ import { StorefrontErrorState } from './StorefrontErrorState';
 import { EmptyOffersState } from '../offers/EmptyOffersState';
 import { EmptyState } from '../ui/EmptyState';
 import { AllReviews } from '../reviews/AllReviews';
+import FollowButton from '../following/FollowButton';
 
 // TypeScript interfaces
 interface Business {
@@ -1255,6 +1256,16 @@ const BusinessProfile: React.FC = () => {
                     Verified
                   </span>
                 )}
+                
+                {/* Follow Button - Only show for non-owners */}
+                {!isOwner && user && (
+                  <FollowButton
+                    businessId={business.id}
+                    variant="default"
+                    size="default"
+                  />
+                )}
+                
                 <StorefrontShareButton
                   businessId={business.id}
                   businessName={business.business_name}

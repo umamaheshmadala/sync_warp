@@ -49,6 +49,10 @@ const BusinessDiscoveryPage = lazy(() => import('../components/discovery/Busines
 const CategoryBrowserPage = lazy(() => import('../components/categories/CategoryBrowserPage'))
 const TrendingCouponsPage = lazy(() => import('../components/coupons/TrendingCouponsPage'))
 const UnifiedFavoritesPage = lazy(() => import('../components/favorites/UnifiedFavoritesPage'));
+const FollowingPage = lazy(() => import('../components/following/FollowingPage'));
+const FollowerFeed = lazy(() => import('../components/following/FollowerFeed'));
+const FollowerAnalyticsDashboard = lazy(() => import('../components/business/FollowerAnalyticsDashboard'));
+const FollowerList = lazy(() => import('../components/business/FollowerList'));
 
 // Debug components are removed from production build
 
@@ -212,6 +216,20 @@ export const routes: RouteConfig[] = [
     description: 'Your saved businesses, coupons, and deals with unified state management'
   },
   {
+    path: '/following',
+    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><FollowingPage /></Suspense>,
+    protected: true,
+    title: 'Following - SynC',
+    description: 'Businesses you follow with instant updates and notifications'
+  },
+  {
+    path: '/following/feed',
+    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><FollowerFeed /></Suspense>,
+    protected: true,
+    title: 'Updates Feed - SynC',
+    description: 'See latest updates from businesses you follow'
+  },
+  {
     path: '/wishlist',
     element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><WishlistPage /></Suspense>,
     protected: true,
@@ -324,6 +342,20 @@ export const routes: RouteConfig[] = [
     protected: true,
     title: 'Campaign Analytics - SynC',
     description: 'View detailed campaign performance metrics'
+  },
+  {
+    path: '/business/:businessId/followers/analytics',
+    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><FollowerAnalyticsDashboard /></Suspense>,
+    protected: true,
+    title: 'Follower Analytics - SynC',
+    description: 'View follower demographics and engagement analytics'
+  },
+  {
+    path: '/business/:businessId/followers/list',
+    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><FollowerList /></Suspense>,
+    protected: true,
+    title: 'Followers - SynC',
+    description: 'View and manage your followers'
   },
   // Story 4.7: Product Detail Routes (customer-facing)
   {

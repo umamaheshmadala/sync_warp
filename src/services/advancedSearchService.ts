@@ -151,12 +151,20 @@ class AdvancedSearchService {
         };
       }
 
-      // Fallback to mock data if no businesses found in database
-      return this.getMockBusinessResults(filters);
+      // Return empty results if no businesses found
+      return {
+        businesses: [],
+        total: 0,
+        hasMore: false
+      };
     } catch (error) {
       console.error('Search businesses error:', error);
-      // Return mock data instead of throwing error
-      return this.getMockBusinessResults(filters);
+      // Return empty results instead of mock data
+      return {
+        businesses: [],
+        total: 0,
+        hasMore: false
+      };
     }
   }
   
@@ -462,12 +470,12 @@ class AdvancedSearchService {
         return suggestions.slice(0, limit);
       }
 
-      // Fallback to mock suggestions if no database results
-      return this.getMockSuggestions(query, limit);
+      // Return empty array if no suggestions found
+      return [];
     } catch (error) {
       console.error('Get search suggestions error:', error);
-      // Return mock suggestions instead of empty array
-      return this.getMockSuggestions(query, limit);
+      // Return empty array on error
+      return [];
     }
   }
   
