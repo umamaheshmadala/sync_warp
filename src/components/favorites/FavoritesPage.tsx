@@ -11,16 +11,18 @@ import {
   List, 
   Trash2,
   Star,
-  MapPin,
-  Calendar,
   Package,
   AlertCircle
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import useFavorites, { FavoriteBusiness, FavoriteCoupon } from '../../hooks/useFavorites';
-import { SimpleSaveButton } from './SimpleSaveButton';
+import { FollowButton } from '../following/FollowButton';
 import { cn } from '../../lib/utils';
 import { UnifiedCouponCard } from '../common/UnifiedCouponCard';
+import { StandardBusinessCard, type StandardBusinessCardData } from '../common';
+
+// SaveButton component for backward compatibility
+const SaveButton = FollowButton;
 
 type ActiveTab = 'businesses' | 'coupons' | 'wishlist';
 type ViewMode = 'grid' | 'list';
@@ -394,99 +396,57 @@ const BusinessCard: React.FC<{
   viewMode: ViewMode;
   onNavigate: (id: string) => void;
 }> = ({ business, viewMode, onNavigate }) => {
+  const businessData: StandardBusinessCardData = {
+    id: business.business_id,
+    business_name: business.business_name,
+    business_type: business.business_type,
+    address: business.address,
+    rating: business.rating,
+    review_count: business.review_count,
+    follower_count: business.follower_count,
+    active_coupons_count: business.active_coupons_count,
+    logo_url: business.logo_url,
+    cover_image_url: business.cover_image_url,
+    description: business.description,
+  };
+
   if (viewMode === 'list') {
     return (
-      <div className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow p-6">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <div className="flex items-start justify-between">
-              <h3 className="text-lg font-semibold text-gray-900 hover:text-indigo-600 cursor-pointer"
-                  onClick={() => onNavigate(business.business_id)}>
-                {business.business_name}
-              </h3>
-              <SaveButton itemId={business.business_id} itemType="business" variant="compact" />
-            </div>
-            
-            <p className="text-sm text-gray-600 mt-1">{business.business_type}</p>
-            
-            {business.address && (
-              <div className="flex items-center text-sm text-gray-500 mt-2">
-                <MapPin className="h-4 w-4 mr-1" />
-                {business.address}
-              </div>
-            )}
-            
-            <div className="flex items-center justify-between mt-4">
-              <div className="flex items-center space-x-4">
-                {business.rating && (
-                  <div className="flex items-center">
-                    <Star className="h-4 w-4 text-yellow-400 fill-current mr-1" />
-                    <span className="text-sm font-medium">{business.rating.toFixed(1)}</span>
-                  </div>
-                )}
-                
-                <div className="text-sm text-gray-600">
-                  {business.active_coupons_count} active coupons
-                </div>
-              </div>
-              
-              <div className="text-xs text-gray-500">
-                Saved {new Date(business.favorited_at).toLocaleDateString()}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <StandardBusinessCard
+        business={businessData}
+        onCardClick={onNavigate}
+        variant="compact"
+        showChevron={false}
+        actionButton={
+          <FollowButton
+            businessId={business.business_id}
+            businessName={business.business_name}
+            variant="ghost"
+            size="sm"
+            showLabel={false}
+            className="h-8 w-8 rounded-full bg-white/90 p-0 shadow-sm hover:bg-green-50"
+          />
+        }
+      />
     );
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-all cursor-pointer group"
-      onClick={() => onNavigate(business.business_id)}
-    >
-      <div className="p-6">
-        <div className="flex items-start justify-between mb-3">
-          <h3 className="text-lg font-semibold text-gray-900 group-hover:text-indigo-600 line-clamp-2">
-            {business.business_name}
-          </h3>
-          <SimpleSaveButton itemId={business.business_id} itemType="business" size="sm" />
-        </div>
-        
-        <p className="text-sm text-gray-600 mb-4">{business.business_type}</p>
-        
-        {business.address && (
-          <div className="flex items-center text-sm text-gray-500 mb-4">
-            <MapPin className="h-4 w-4 mr-1" />
-            <span className="line-clamp-1">{business.address}</span>
-          </div>
-        )}
-        
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            {business.rating && (
-              <div className="flex items-center">
-                <Star className="h-4 w-4 text-yellow-400 fill-current mr-1" />
-                <span className="text-sm font-medium">{business.rating.toFixed(1)}</span>
-              </div>
-            )}
-            
-            <div className="text-sm text-gray-600">
-              {business.active_coupons_count} coupons
-            </div>
-          </div>
-        </div>
-        
-        <div className="mt-4 pt-4 border-t border-gray-100">
-          <div className="text-xs text-gray-500 flex items-center">
-            <Calendar className="h-3 w-3 mr-1" />
-            Saved {new Date(business.favorited_at).toLocaleDateString()}
-          </div>
-        </div>
-      </div>
-    </motion.div>
+    <StandardBusinessCard
+      business={businessData}
+      onCardClick={onNavigate}
+      showChevron={false}
+      actionButton={
+        <FollowButton
+          businessId={business.business_id}
+          businessName={business.business_name}
+          variant="ghost"
+          size="sm"
+          showLabel={false}
+          className="h-8 w-8 rounded-full bg-white/90 p-0 shadow-md backdrop-blur hover:bg-green-50"
+        />
+      }
+    />
   );
 };
 

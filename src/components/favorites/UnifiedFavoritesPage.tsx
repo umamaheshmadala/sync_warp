@@ -3,37 +3,28 @@
 
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, Search as SearchIcon, Star, MapPin, Calendar, Package, AlertCircle, Ticket, RefreshCw, X } from 'lucide-react';
+import { Heart, Search as SearchIcon, Package, AlertCircle, RefreshCw, X, ShoppingBag } from 'lucide-react';
 import { motion } from 'framer-motion';
-import useUnifiedFavorites from '../../hooks/useUnifiedFavorites';
 import { useFavoriteProducts } from '../../hooks/useFavoriteProducts';
-import { SimpleSaveButton } from './SimpleSaveButton';
 import { FavoriteProductButton } from '../products/FavoriteProductButton';
 import { cn } from '../../lib/utils';
 import { toast } from 'react-hot-toast';
 
-type ActiveTab = 'all' | 'businesses' | 'coupons' | 'products';
-
 const UnifiedFavoritesPage: React.FC = () => {
   const navigate = useNavigate();
-  const favorites = useUnifiedFavorites();
   const { products: favoriteProducts, loading: productsLoading, error: productsError, removeFavorite } = useFavoriteProducts();
   
   // Local state
-  const [activeTab, setActiveTab] = useState<ActiveTab>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Note: Removed periodic refresh - realtime subscriptions handle updates automatically
-  // No need for polling when we have Supabase realtime enabled
-
   // Loading and error states
-  if (!favorites.isAuthenticated) {
+  if (!favoriteProducts && !productsLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <Heart className="h-16 w-16 text-gray-300 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Sign in to view favorites</h2>
-          <p className="text-gray-600 mb-6">Save your favorite businesses and coupons</p>
+          <p className="text-gray-600 mb-6">Save your favorite products</p>
           <button
             onClick={() => navigate('/auth/login')}
             className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
@@ -45,102 +36,22 @@ const UnifiedFavoritesPage: React.FC = () => {
     );
   }
 
-  // Merge products from both sources (unified favorites + dedicated favorite_products table)
-  const mergedFavorites = useMemo(() => {
-    const allFavorites = [...favorites.favorites];
+  // Filter products based on search
+  const filteredProducts = useMemo(() => {
+    if (!favoriteProducts) return [];
     
-    // Add products from dedicated table if not already present
-    if (favoriteProducts && favoriteProducts.length > 0) {
-      for (const product of favoriteProducts) {
-        // Check if product is already in unified favorites
-        const existsInUnified = allFavorites.some(
-          f => f.type === 'product' && f.id === product.product_id
-        );
-        
-        if (!existsInUnified) {
-          allFavorites.push({
-            id: product.id,
-            type: 'product' as const,
-            timestamp: new Date(product.favorited_at).getTime(),
-            synced: true,
-            itemData: {
-              name: product.name,
-              description: product.description || '',
-              price: product.price,
-              currency: product.currency || 'INR',
-              image_url: product.image_urls?.[0] || '',
-              business_name: product.business_name,
-              business_id: product.business_id,
-              is_available: product.is_available
-            }
-          });
-        }
-      }
-    }
-    
-    return allFavorites;
-  }, [favorites.favorites, favoriteProducts]);
-
-  // Filter favorites based on active tab and search
-  const filteredFavorites = useMemo(() => {
-    let filtered = mergedFavorites;
-
-    // Filter by tab
-    if (activeTab === 'businesses') {
-      filtered = filtered.filter(f => f.type === 'business');
-    } else if (activeTab === 'coupons') {
-      filtered = filtered.filter(f => f.type === 'coupon');
-    } else if (activeTab === 'products') {
-      filtered = filtered.filter(f => f.type === 'product');
+    if (!searchQuery.trim()) {
+      return favoriteProducts;
     }
 
-    // Apply search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(item => {
-        const itemData = item.itemData;
-        if (!itemData) return item.id.toLowerCase().includes(query);
-        
-        if (item.type === 'business') {
-          return itemData.business_name?.toLowerCase().includes(query) ||
-                 itemData.business_type?.toLowerCase().includes(query) ||
-                 itemData.address?.toLowerCase().includes(query);
-        } else if (item.type === 'coupon') {
-          return itemData.title?.toLowerCase().includes(query) ||
-                 itemData.description?.toLowerCase().includes(query) ||
-                 itemData.business_name?.toLowerCase().includes(query);
-        } else if (item.type === 'product') {
-          return itemData.name?.toLowerCase().includes(query) ||
-                 itemData.description?.toLowerCase().includes(query) ||
-                 itemData.business_name?.toLowerCase().includes(query);
-        }
-        return false;
-      });
-    }
-
-    return filtered;
-  }, [mergedFavorites, activeTab, searchQuery]);
-
-  // Get tab counts from merged data
-  const tabCounts = useMemo(() => {
-    const counts = mergedFavorites.reduce(
-      (acc, fav) => {
-        if (fav.type === 'business') acc.businesses++;
-        else if (fav.type === 'coupon') acc.coupons++;
-        else if (fav.type === 'product') acc.products++;
-        acc.total++;
-        return acc;
-      },
-      { businesses: 0, coupons: 0, products: 0, total: 0 }
+    const query = searchQuery.toLowerCase();
+    return favoriteProducts.filter(product => 
+      product.name.toLowerCase().includes(query) ||
+      product.description?.toLowerCase().includes(query) ||
+      product.business_name.toLowerCase().includes(query) ||
+      product.category?.toLowerCase().includes(query)
     );
-    
-    return {
-      all: counts.total,
-      businesses: counts.businesses,
-      coupons: counts.coupons,
-      products: counts.products
-    };
-  }, [mergedFavorites]);
+  }, [favoriteProducts, searchQuery]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -151,102 +62,38 @@ const UnifiedFavoritesPage: React.FC = () => {
             <div>
               <h1 className="text-3xl font-bold text-gray-900 flex items-center">
                 <Heart className="h-8 w-8 text-red-500 mr-3" />
-                My Favorites
+                Favorite Products
               </h1>
               <p className="mt-2 text-gray-600">
-                Your saved businesses and coupons
+                Your saved products • For coupons visit <button onClick={() => navigate('/wallet')} className="text-indigo-600 hover:underline">Wallet</button> • For businesses visit <button onClick={() => navigate('/following')} className="text-indigo-600 hover:underline">Following</button>
               </p>
             </div>
 
             {/* Quick Stats */}
-            <div className="hidden md:flex space-x-6">
+            <div className="hidden md:flex items-center space-x-8">
               <div className="text-center">
-                <div className="text-2xl font-bold text-indigo-600">{tabCounts.businesses}</div>
-                <div className="text-sm text-gray-600">Businesses</div>
+                <div className="text-4xl font-bold text-red-500">{favoriteProducts?.length || 0}</div>
+                <div className="text-sm text-gray-600">Favorite Products</div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">{tabCounts.coupons}</div>
-                <div className="text-sm text-gray-600">Coupons</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-orange-600">{tabCounts.products}</div>
-                <div className="text-sm text-gray-600">Products</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">{tabCounts.all}</div>
-                <div className="text-sm text-gray-600">Total</div>
+              <div className="flex flex-col space-y-2">
+                <button
+                  onClick={() => navigate('/wallet')}
+                  className="px-4 py-2 text-sm bg-yellow-50 text-yellow-700 rounded-lg hover:bg-yellow-100 transition-colors flex items-center"
+                >
+                  <Package className="h-4 w-4 mr-2" />
+                  View Coupons (Wallet)
+                </button>
+                <button
+                  onClick={() => navigate('/following')}
+                  className="px-4 py-2 text-sm bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition-colors flex items-center"
+                >
+                  <ShoppingBag className="h-4 w-4 mr-2" />
+                  View Following
+                </button>
               </div>
             </div>
           </div>
 
-          {/* Debug controls (development only) */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <span className="text-sm font-medium text-yellow-800">Debug Controls:</span>
-                <button
-                  onClick={favorites.seedTestData}
-                  className="px-3 py-1 bg-yellow-600 text-white text-sm rounded hover:bg-yellow-700"
-                >
-                  Seed Test Data
-                </button>
-                <button
-                  onClick={favorites.clearAllFavorites}
-                  className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700"
-                >
-                  Clear All
-                </button>
-                <button
-                  onClick={favorites.refresh}
-                  className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
-                >
-                  <RefreshCw className="w-4 h-4 inline mr-1" />
-                  Refresh
-                </button>
-                <button
-                  onClick={favorites.clearOldFavorites}
-                  className="px-3 py-1 bg-purple-600 text-white text-sm rounded hover:bg-purple-700"
-                >
-                  Clear Old Favorites
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Tabs */}
-        <div className="mb-8">
-          <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8">
-              {[
-                { id: 'all', label: 'All', count: tabCounts.all },
-                { id: 'businesses', label: 'Businesses', count: tabCounts.businesses },
-                { id: 'coupons', label: 'Coupons', count: tabCounts.coupons },
-                { id: 'products', label: 'Products', count: tabCounts.products }
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as ActiveTab)}
-                  className={cn(
-                    "flex items-center py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap",
-                    activeTab === tab.id
-                      ? "border-indigo-500 text-indigo-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                  )}
-                >
-                  {tab.label}
-                  <span className={cn(
-                    "ml-2 px-2.5 py-0.5 rounded-full text-xs",
-                    activeTab === tab.id
-                      ? "bg-indigo-100 text-indigo-600"
-                      : "bg-gray-100 text-gray-600"
-                  )}>
-                    {tab.count}
-                  </span>
-                </button>
-              ))}
-            </nav>
-          </div>
         </div>
 
         {/* Search */}
@@ -257,349 +104,116 @@ const UnifiedFavoritesPage: React.FC = () => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search favorites..."
+              placeholder="Search products..."
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             />
           </div>
         </div>
 
         {/* Content */}
-        {favorites.isLoading || productsLoading ? (
+        {productsLoading ? (
           <div className="flex justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-            <span className="ml-3 text-gray-600">Loading favorites...</span>
+            <span className="ml-3 text-gray-600">Loading products...</span>
           </div>
-        ) : favorites.error || productsError ? (
+        ) : productsError ? (
           <div className="text-center py-12">
             <AlertCircle className="h-16 w-16 text-red-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">Error loading favorites</h3>
-            <p className="text-gray-600 mb-4">{favorites.error || productsError}</p>
+            <p className="text-gray-600 mb-4">{productsError}</p>
+          </div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="text-center py-16">
+            <Heart className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              {searchQuery ? 'No matching products found' : 'No favorite products yet'}
+            </h3>
+            <p className="text-gray-600 mb-8">
+              {searchQuery ? 'Try adjusting your search terms' : 'Start exploring and save your favorite products'}
+            </p>
             <button
-              onClick={() => favorites.refresh()}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+              onClick={() => searchQuery ? setSearchQuery('') : navigate('/search')}
+              className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
             >
-              Try Again
+              {searchQuery ? 'Clear Search' : 'Explore Products'}
             </button>
           </div>
-        ) : filteredFavorites.length === 0 ? (
-          <EmptyState 
-            activeTab={activeTab} 
-            hasSearch={searchQuery.trim().length > 0}
-            onExplore={() => navigate('/search')} 
-            onClearSearch={() => setSearchQuery('')}
-            onSeedTestData={favorites.seedTestData}
-          />
         ) : (
           <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filteredFavorites.map((item) => (
-              <FavoriteItemCard
-                key={`${item.type}-${item.id}`}
-                item={item}
-                onNavigate={(id, type) => {
-                  if (type === 'business') {
-                    navigate(`/business/${id}`);
-                  } else if (type === 'coupon') {
-                    navigate(`/coupon/${id}`);
-                  } else if (type === 'product') {
-                    navigate(`/product/${id}`);
-                  }
-                }}
-                onRemove={async (id, type) => {
-                  if (type === 'product' && removeFavorite) {
-                    await removeFavorite(id);
-                  } else if (type === 'business') {
-                    await favorites.toggleFavorite(id, 'business');
-                  } else if (type === 'coupon') {
-                    await favorites.toggleFavorite(id, 'coupon');
-                  }
-                }}
-              />
+            {filteredProducts.map((product) => (
+              <motion.div
+                key={product.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-all overflow-hidden group cursor-pointer"
+                onClick={() => navigate(`/business/${product.business_id}/product/${product.id}`)}
+              >
+                {/* Product Image */}
+                <div className="relative h-48 bg-gray-100">
+                  {product.image_urls && product.image_urls.length > 0 ? (
+                    <img
+                      src={product.image_urls[0]}
+                      alt={product.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Package className="h-16 w-16 text-gray-300" />
+                    </div>
+                  )}
+                  
+                  {/* Favorite Button */}
+                  <div className="absolute top-2 right-2">
+                    <FavoriteProductButton
+                      productId={product.id}
+                      productName={product.name}
+                      variant="icon"
+                      size="icon"
+                      className="bg-white/90 backdrop-blur shadow-md"
+                      onClick={(e) => e?.stopPropagation()}
+                    />
+                  </div>
+                  
+                  {!product.is_available && (
+                    <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-medium">
+                      Out of Stock
+                    </div>
+                  )}
+                </div>
+                
+                {/* Product Info */}
+                <div className="p-4">
+                  <h3 className="font-semibold text-gray-900 line-clamp-2 mb-2 group-hover:text-indigo-600 transition-colors">
+                    {product.name}
+                  </h3>
+                  
+                  {product.description && (
+                    <p className="text-sm text-gray-600 line-clamp-2 mb-3">
+                      {product.description}
+                    </p>
+                  )}
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-lg font-bold text-indigo-600">
+                        {product.currency} {product.price.toLocaleString()}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {product.business_name}
+                      </div>
+                    </div>
+                    
+                    {product.category && (
+                      <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                        {product.category}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
             ))}
           </div>
         )}
-      </div>
-    </div>
-  );
-};
-
-// Empty state component
-const EmptyState: React.FC<{ 
-  activeTab: ActiveTab; 
-  hasSearch: boolean;
-  onExplore: () => void;
-  onClearSearch: () => void;
-  onSeedTestData: () => void;
-}> = ({ activeTab, hasSearch, onExplore, onClearSearch, onSeedTestData }) => {
-  const getEmptyStateContent = () => {
-    if (hasSearch) {
-      return {
-        icon: <SearchIcon className="h-16 w-16 text-gray-300" />,
-        title: 'No matching favorites found',
-        description: 'Try adjusting your search terms',
-        actionText: 'Clear Search',
-        action: onClearSearch
-      };
-    }
-
-    switch (activeTab) {
-      case 'businesses':
-        return {
-          icon: <Package className="h-16 w-16 text-gray-300" />,
-          title: 'No favorite businesses yet',
-          description: 'Start exploring and save your favorite local businesses',
-          actionText: 'Explore Businesses',
-          action: onExplore
-        };
-      case 'coupons':
-        return {
-          icon: <Ticket className="h-16 w-16 text-gray-300" />,
-          title: 'No favorite coupons yet',
-          description: 'Find amazing deals and save them for later',
-          actionText: 'Browse Coupons',
-          action: onExplore
-        };
-      case 'products':
-        return {
-          icon: <Package className="h-16 w-16 text-gray-300" />,
-          title: 'No favorite products yet',
-          description: 'Browse products and add them to your favorites',
-          actionText: 'Browse Products',
-          action: onExplore
-        };
-      default:
-        return {
-          icon: <Heart className="h-16 w-16 text-gray-300" />,
-          title: 'No favorites yet',
-          description: 'Start exploring and save businesses and coupons you love',
-          actionText: 'Start Exploring',
-          action: onExplore
-        };
-    }
-  };
-
-  const content = getEmptyStateContent();
-
-  return (
-    <div className="text-center py-16">
-      <div className="max-w-md mx-auto">
-        {content.icon}
-        <h3 className="text-lg font-semibold text-gray-900 mb-2 mt-4">
-          {content.title}
-        </h3>
-        <p className="text-gray-600 mb-8">
-          {content.description}
-        </p>
-        <div className="space-y-3">
-          <button
-            onClick={content.action}
-            className="w-full px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-          >
-            {content.actionText}
-          </button>
-          
-          {/* Show test data button in development */}
-          {process.env.NODE_ENV === 'development' && !hasSearch && (
-            <button
-              onClick={onSeedTestData}
-              className="w-full px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-            >
-              Add Test Favorites
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Individual favorite item card
-const FavoriteItemCard: React.FC<{
-  item: any;
-  onNavigate: (id: string, type: 'business' | 'coupon' | 'product') => void;
-  onRemove?: (id: string, type: 'business' | 'coupon' | 'product') => Promise<void>;
-}> = ({ item, onNavigate, onRemove }) => {
-  const itemData = item.itemData;
-  
-  if (item.type === 'business') {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-all cursor-pointer group relative"
-        onClick={() => onNavigate(item.id, 'business')}
-      >
-        <div className="absolute top-3 right-3 z-10">
-          <SimpleSaveButton
-            itemId={item.id}
-            itemType="business"
-            itemData={itemData}
-            size="sm"
-          />
-        </div>
-        
-        <div className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 group-hover:text-indigo-600 line-clamp-2 mb-2">
-            {itemData?.business_name || `Business ${item.id.substring(0, 8)}...`}
-          </h3>
-          
-          {!itemData?.business_name && (
-            <div className="text-xs text-orange-600 mb-2 bg-orange-50 px-2 py-1 rounded">
-              ⚠️ Legacy favorite - business name not available
-            </div>
-          )}
-          
-          {itemData?.business_type && (
-            <div className="flex items-center text-sm text-gray-600 mb-2">
-              <Package className="w-4 h-4 mr-2" />
-              <span>{itemData.business_type}</span>
-            </div>
-          )}
-          
-          {itemData?.address && (
-            <div className="flex items-center text-sm text-gray-600 mb-2">
-              <MapPin className="w-4 h-4 mr-2" />
-              <span className="line-clamp-1">{itemData.address}</span>
-            </div>
-          )}
-          
-          <div className="flex items-center text-xs text-gray-500 mt-4">
-            <Calendar className="w-4 h-4 mr-1" />
-            <span>Added {new Date(item.timestamp).toLocaleDateString()}</span>
-          </div>
-        </div>
-      </motion.div>
-    );
-  }
-
-  if (item.type === 'coupon') {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-all cursor-pointer group relative"
-        onClick={() => onNavigate(item.id, 'coupon')}
-      >
-        <div className="absolute top-3 right-3 z-10">
-          <SimpleSaveButton
-            itemId={item.id}
-            itemType="coupon"
-            itemData={itemData}
-            size="sm"
-          />
-        </div>
-        
-        <div className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 group-hover:text-indigo-600 line-clamp-2 mb-2">
-            {itemData?.title || `Coupon ${item.id.substring(0, 8)}...`}
-          </h3>
-          
-          {!itemData?.title && (
-            <div className="text-xs text-orange-600 mb-2 bg-orange-50 px-2 py-1 rounded">
-              ⚠️ Legacy favorite - coupon details not available
-            </div>
-          )}
-          
-          {itemData?.business_name && (
-            <div className="flex items-center text-sm text-gray-600 mb-2">
-              <Package className="w-4 h-4 mr-2" />
-              <span>{itemData.business_name}</span>
-            </div>
-          )}
-          
-          {itemData?.description && (
-            <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-              {itemData.description}
-            </p>
-          )}
-          
-          <div className="flex items-center text-xs text-gray-500 mt-4">
-            <Calendar className="w-4 h-4 mr-1" />
-            <span>Added {new Date(item.timestamp).toLocaleDateString()}</span>
-          </div>
-        </div>
-      </motion.div>
-    );
-  }
-
-  if (item.type === 'product') {
-    const handleRemove = async (e: React.MouseEvent) => {
-      e.stopPropagation();
-      if (onRemove) {
-        await onRemove(item.id, 'product');
-      }
-    };
-
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-all cursor-pointer group relative"
-        onClick={() => onNavigate(item.id, 'product')}
-      >
-        <button
-          onClick={handleRemove}
-          className="absolute top-3 right-3 z-10 p-2 bg-white rounded-full shadow-md hover:bg-red-50 hover:shadow-lg transition-all group/btn"
-          title="Remove from favorites"
-        >
-          <X className="w-4 h-4 text-gray-600 group-hover/btn:text-red-600 transition-colors" />
-        </button>
-        
-        {itemData?.image_url && (
-          <div className="aspect-square overflow-hidden rounded-t-lg bg-gray-100">
-            <img 
-              src={itemData.image_url} 
-              alt={itemData.name || 'Product'} 
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-            />
-          </div>
-        )}
-        
-        <div className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 group-hover:text-indigo-600 line-clamp-2 mb-2">
-            {itemData?.name || `Product ${item.id.substring(0, 8)}...`}
-          </h3>
-          
-          {!itemData?.name && (
-            <div className="text-xs text-orange-600 mb-2 bg-orange-50 px-2 py-1 rounded">
-              ⚠️ Legacy favorite - product details not available
-            </div>
-          )}
-          
-          {itemData?.price && (
-            <div className="text-lg font-bold text-indigo-600 mb-2">
-              ${itemData.price}
-            </div>
-          )}
-          
-          {itemData?.business_name && (
-            <div className="flex items-center text-sm text-gray-600 mb-2">
-              <Package className="w-4 h-4 mr-2" />
-              <span>{itemData.business_name}</span>
-            </div>
-          )}
-          
-          {itemData?.rating && (
-            <div className="flex items-center text-sm text-gray-600 mb-2">
-              <Star className="w-4 h-4 mr-1 text-yellow-500 fill-yellow-500" />
-              <span>{itemData.rating}</span>
-            </div>
-          )}
-          
-          <div className="flex items-center text-xs text-gray-500 mt-4">
-            <Calendar className="w-4 h-4 mr-1" />
-            <span>Added {new Date(item.timestamp).toLocaleDateString()}</span>
-          </div>
-        </div>
-      </motion.div>
-    );
-  }
-
-  // Fallback for unknown types
-  return (
-    <div className="bg-white rounded-lg shadow-sm border p-6">
-      <div className="text-gray-600">
-        Unknown favorite type: {item.type}
       </div>
     </div>
   );

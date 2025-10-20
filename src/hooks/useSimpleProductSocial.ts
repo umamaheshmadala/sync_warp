@@ -7,7 +7,7 @@ import { toast } from 'react-hot-toast';
 import { simpleFavoritesService, SimpleFavorite } from '../services/simpleFavoritesService';
 import type { Product } from '../types/product';
 import { useAuthStore } from '../store/authStore';
-import { supabase } from '../lib/supabase';
+import { supabase } from '@/lib/supabase';
 
 interface UseSimpleProductSocialReturn {
   // Favorite operations

@@ -3,11 +3,11 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UserCheck, Search as SearchIcon, MapPin, Calendar, Settings, X, Users } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { UserCheck, Search as SearchIcon, Settings, X, Users } from 'lucide-react';
 import { useBusinessFollowing } from '../../hooks/useBusinessFollowing';
 import { FollowButton } from './FollowButton';
 import NotificationPreferencesModal from './NotificationPreferencesModal';
+import { StandardBusinessCard, type StandardBusinessCardData } from '../common';
 import { cn } from '../../lib/utils';
 
 type SortBy = 'recent' | 'alphabetical' | 'most_active';
@@ -164,83 +164,48 @@ const FollowingPage: React.FC = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredBusinesses.map((follow) => (
-              <motion.div
-                key={follow.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden"
-              >
-                {/* Business Card Content */}
-                <div 
-                  className="p-6 cursor-pointer"
-                  onClick={() => navigate(`/business/${follow.business_id}`)}
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                        {follow.business?.business_name || 'Unknown Business'}
-                      </h3>
-                      {follow.business?.business_type && (
-                        <p className="text-sm text-gray-500 mb-2">
-                          {follow.business.business_type}
-                        </p>
-                      )}
-                    </div>
-                  </div>
+            {filteredBusinesses.map((follow) => {
+              // Debug: Log business data to verify image URLs
+              console.log('🔍 [FollowingPage] Business data:', {
+                business_id: follow.business_id,
+                business_name: follow.business?.business_name,
+                logo_url: follow.business?.logo_url,
+                cover_image_url: follow.business?.cover_image_url,
+                has_business: !!follow.business
+              });
 
-                  {/* Business Details */}
-                  {follow.business?.address && (
-                    <div className="flex items-center text-sm text-gray-600 mb-2">
-                      <MapPin className="h-4 w-4 mr-2 text-gray-400" />
-                      <span className="truncate">{follow.business.address}</span>
-                    </div>
-                  )}
+              const businessData: StandardBusinessCardData = {
+                id: follow.business_id,
+                business_name: follow.business?.business_name,
+                business_type: follow.business?.business_type,
+                address: follow.business?.address,
+                rating: follow.business?.rating,
+                review_count: follow.business?.review_count,
+                follower_count: follow.business?.follower_count,
+                logo_url: follow.business?.logo_url,
+                cover_image_url: follow.business?.cover_image_url,
+                description: follow.business?.description,
+              };
 
-                  <div className="flex items-center text-sm text-gray-600 mb-4">
-                    <Calendar className="h-4 w-4 mr-2 text-gray-400" />
-                    <span>
-                      Following since {new Date(follow.followed_at).toLocaleDateString()}
-                    </span>
-                  </div>
-
-                  {/* Follower Count */}
-                  {follow.business?.follower_count !== undefined && (
-                    <div className="flex items-center text-sm text-gray-600 mb-4">
-                      <Users className="h-4 w-4 mr-2 text-gray-400" />
-                      <span>
-                        {follow.business.follower_count} {follow.business.follower_count === 1 ? 'follower' : 'followers'}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Actions */}
-                <div className="px-6 py-4 bg-gray-50 border-t flex items-center justify-between">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedBusiness({
-                        id: follow.business_id,
-                        name: follow.business?.business_name || 'Business',
-                      });
-                    }}
-                    className="flex items-center text-sm text-gray-600 hover:text-indigo-600 transition-colors"
-                  >
-                    <Settings className="h-4 w-4 mr-1" />
-                    Settings
-                  </button>
-                  
-                  <FollowButton
-                    businessId={follow.business_id}
-                    businessName={follow.business?.business_name}
-                    variant="outline"
-                    size="sm"
-                    showLabel={true}
-                  />
-                </div>
-              </motion.div>
-            ))}
+              return (
+                <StandardBusinessCard
+                  key={follow.id}
+                  business={businessData}
+                  onCardClick={(id) => navigate(`/business/${id}`)}
+                  showChevron={false}
+                  actionButton={
+                    <FollowButton
+                      businessId={follow.business_id}
+                      businessName={follow.business?.business_name}
+                      variant="ghost"
+                      size="sm"
+                      showLabel={false}
+                      className="h-8 w-8 rounded-full bg-white/90 p-0 shadow-md backdrop-blur hover:bg-green-50"
+                    />
+                  }
+                />
+              );
+            })}
           </div>
         )}
       </div>

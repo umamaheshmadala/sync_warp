@@ -5,6 +5,7 @@
 import React from 'react';
 import { Clock, MapPin, Star, Heart } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { CouponCollectButton } from '../coupon/CouponCollectButton';
 
 export interface UnifiedCouponData {
   id: string;
@@ -152,6 +153,18 @@ export const UnifiedCouponCard: React.FC<UnifiedCouponCardProps> = ({
       }`}
       onClick={onClick}
     >
+      {/* Collect button - top right corner */}
+      <div className="absolute top-3 right-3 z-10">
+        <CouponCollectButton
+          couponId={coupon.id}
+          couponTitle={coupon.title}
+          variant="icon"
+          size="icon"
+          className="h-8 w-8 rounded-full bg-white/90 p-0 shadow-md backdrop-blur hover:bg-yellow-50"
+          onClick={(e) => e.stopPropagation()}
+        />
+      </div>
+
       {/* Top row: Discount badge and time remaining */}
       <div className="flex items-start justify-between mb-4">
         <div className="bg-indigo-100 text-indigo-700 px-3 py-2 rounded-lg font-bold text-lg">
@@ -219,15 +232,7 @@ export const UnifiedCouponCard: React.FC<UnifiedCouponCardProps> = ({
         )}
       </div>
 
-      {/* Collected indicator */}
-      {coupon.isCollected && !showStatusBadge && !showCouponCount && (
-        <div className="absolute top-3 right-3">
-          <div className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center">
-            <Heart className="w-3 h-3 mr-1 fill-current" />
-            Saved
-          </div>
-        </div>
-      )}
+      {/* Removed conflicting 'Saved' banner - collection state now shown via star/check icon */}
 
       {/* Coupon count badge - shows how many copies user has */}
       {showCouponCount && coupon.couponCount && coupon.couponCount > 1 && (

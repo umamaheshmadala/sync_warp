@@ -27,7 +27,11 @@ export interface FollowedBusiness {
     business_name: string;
     business_type?: string;
     logo_url?: string;
+    cover_image_url?: string;
     address?: string;
+    rating?: number;
+    review_count?: number;
+    description?: string;
     follower_count?: number;
   };
 }
@@ -94,28 +98,52 @@ export function useBusinessFollowing(): UseBusinessFollowingReturn {
       // Get business details and follower counts for each
       const businessesWithDetails = await Promise.all(
         (data || []).map(async (follow) => {
-          // Fetch business details
-          const { data: businessData } = await supabase
-            .from('businesses')
-            .select('id, business_name, business_type, logo_url, address')
-            .eq('id', follow.business_id)
-            .single();
-          
-          // Get follower count
-          const { count } = await supabase
-            .from('business_followers')
-            .select('*', { count: 'exact', head: true })
-            .eq('business_id', follow.business_id)
-            .eq('entity_type', 'business')
-            .eq('is_active', true);
-          
-          return {
-            ...follow,
-            business: businessData ? {
-              ...businessData,
-              follower_count: count || 0
-            } : undefined
-          };
+          try {
+            // Fetch business details - using * to get all available columns
+            const { data: businessData, error: businessError } = await supabase
+              .from('businesses')
+              .select('*')
+              .eq('id', follow.business_id)
+              .single();
+            
+            if (businessError) {
+              console.error(`[BusinessFollowing] Error fetching business ${follow.business_id}:`, businessError);
+              return {
+                ...follow,
+                business: undefined
+              };
+            }
+            
+            // Get follower count
+            const { count } = await supabase
+              .from('business_followers')
+              .select('*', { count: 'exact', head: true })
+              .eq('business_id', follow.business_id)
+              .eq('entity_type', 'business')
+              .eq('is_active', true);
+            
+            return {
+              ...follow,
+              business: businessData ? {
+                id: businessData.id,
+                business_name: businessData.business_name,
+                business_type: businessData.business_type,
+                logo_url: businessData.logo_url,
+                cover_image_url: businessData.cover_image_url,
+                address: businessData.address,
+                rating: businessData.rating,
+                review_count: businessData.review_count,
+                description: businessData.description,
+                follower_count: count || 0
+              } : undefined
+            };
+          } catch (err) {
+            console.error(`[BusinessFollowing] Error processing business ${follow.business_id}:`, err);
+            return {
+              ...follow,
+              business: undefined
+            };
+          }
         })
       );
 

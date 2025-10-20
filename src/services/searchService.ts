@@ -125,6 +125,10 @@ export interface SearchBusiness {
   latitude?: number;
   longitude?: number;
   rating?: number;
+  review_count?: number;
+  follower_count?: number;
+  logo_url?: string;
+  cover_image_url?: string;
   activeCouponsCount: number;
   distance?: number;
   relevanceScore: number;
@@ -571,6 +575,10 @@ class SearchService {
         latitude: business.latitude,
         longitude: business.longitude,
         rating: business.rating,
+        review_count: business.review_count,
+        follower_count: business.follower_count,
+        logo_url: business.logo_url,
+        cover_image_url: business.cover_image_url,
         activeCouponsCount: activeCoupons.length,
         relevanceScore,
         highlightedName,

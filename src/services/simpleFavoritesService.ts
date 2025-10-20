@@ -1,30 +1,28 @@
 // simpleFavoritesService.ts
-// Simple favorites service using the existing 'favorites' table
-// This replaces the enhanced favorites service that requires tables that don't exist
+// Favorites service for products, coupons, and events
+// Business following is handled separately in useBusinessFollowing hook with business_followers table
 
-import { supabase } from '../lib/supabase';
+import { supabase } from '@/lib/supabase';
 
 export interface SimpleFavorite {
   id: string;
   user_id: string;
-  entity_type: 'business' | 'product' | 'coupon';
+  entity_type: 'product' | 'coupon' | 'event';
   entity_id: string;
   created_at: string;
+  notes?: string;
+  priority?: number;
 }
 
 class SimpleFavoritesService {
   /**
    * Get all favorites for the current user
+   * Note: Business following is handled separately via business_followers table
    */
-  async getFavorites(entityType?: 'business' | 'product' | 'coupon'): Promise<SimpleFavorite[]> {
+  async getFavorites(entityType?: 'product' | 'coupon' | 'event'): Promise<SimpleFavorite[]> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return [];
 
-    // Note: Products and coupons are not migrated to business_followers in Story 4.11
-    // Business favorites should use business_followers table via useBusinessFollowing hook
-    // For now, product/coupon favorites return empty until their own tables are created
-    
-    // Check if favorites table exists by attempting a query
     let query = supabase
       .from('favorites')
       .select('*')
@@ -36,28 +34,17 @@ class SimpleFavoritesService {
     }
 
     const { data, error } = await query;
-    
-    // If table doesn't exist (PGRST205 = relation not found), return empty array
-    if (error && (error.code === 'PGRST204' || error.code === 'PGRST205')) {
-      console.warn('Favorites table does not exist yet. Products/coupons not yet migrated.');
-      return [];
-    }
-    
     if (error) throw error;
     return data || [];
   }
 
   /**
    * Add item to favorites
+   * Note: For business following, use useBusinessFollowing hook instead
    */
-  async addToFavorites(entityType: 'business' | 'product' | 'coupon', entityId: string): Promise<SimpleFavorite> {
+  async addToFavorites(entityType: 'product' | 'coupon' | 'event', entityId: string, notes?: string, priority?: number): Promise<SimpleFavorite> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
-
-    // Note: Business favorites should use business_followers table via useBusinessFollowing hook
-    if (entityType === 'business') {
-      throw new Error('Use useBusinessFollowing hook for business favorites. Story 4.11 migrated to business_followers table.');
-    }
 
     // Check if already favorited
     const existing = await this.isFavorited(entityType, entityId);
@@ -70,15 +57,12 @@ class SimpleFavoritesService {
       .insert({
         user_id: user.id,
         entity_type: entityType,
-        entity_id: entityId
+        entity_id: entityId,
+        notes,
+        priority: priority || 0
       })
       .select()
       .single();
-
-    // If table doesn't exist, throw informative error
-    if (error && (error.code === 'PGRST204' || error.code === 'PGRST205')) {
-      throw new Error('Product/coupon favorites not yet implemented. Coming soon!');
-    }
 
     if (error) throw error;
     return data;
@@ -99,7 +83,7 @@ class SimpleFavoritesService {
   /**
    * Remove by entity
    */
-  async removeByEntity(entityType: 'business' | 'product' | 'coupon', entityId: string): Promise<void> {
+  async removeByEntity(entityType: 'product' | 'coupon' | 'event', entityId: string): Promise<void> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
@@ -116,7 +100,7 @@ class SimpleFavoritesService {
   /**
    * Check if item is favorited
    */
-  async isFavorited(entityType: 'business' | 'product' | 'coupon', entityId: string): Promise<SimpleFavorite | null> {
+  async isFavorited(entityType: 'product' | 'coupon' | 'event', entityId: string): Promise<SimpleFavorite | null> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
 
@@ -128,11 +112,6 @@ class SimpleFavoritesService {
       .eq('entity_id', entityId)
       .maybeSingle();
 
-    // If table doesn't exist, return null (not favorited)
-    if (error && (error.code === 'PGRST204' || error.code === 'PGRST205')) {
-      return null;
-    }
-
     if (error) throw error;
     return data;
   }
@@ -140,7 +119,7 @@ class SimpleFavoritesService {
   /**
    * Toggle favorite status
    */
-  async toggleFavorite(entityType: 'business' | 'product' | 'coupon', entityId: string): Promise<boolean> {
+  async toggleFavorite(entityType: 'product' | 'coupon' | 'event', entityId: string): Promise<boolean> {
     const existing = await this.isFavorited(entityType, entityId);
     
     if (existing) {
@@ -155,7 +134,7 @@ class SimpleFavoritesService {
   /**
    * Get favorites count by type
    */
-  async getCountByType(entityType?: 'business' | 'product' | 'coupon'): Promise<number> {
+  async getCountByType(entityType?: 'product' | 'coupon' | 'event'): Promise<number> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return 0;
 
