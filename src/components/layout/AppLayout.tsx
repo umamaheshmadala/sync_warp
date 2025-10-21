@@ -1,6 +1,6 @@
 import { useLocation } from 'react-router-dom';
 import Header from './Header';
-import BottomNav from './BottomNav';
+import BottomNavigation from '../BottomNavigation';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
@@ -17,7 +17,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="flex flex-col min-h-screen">
       <Header />
       <main className="flex-1 pb-16 md:pb-0">{children}</main>
-      <BottomNav />
+      <BottomNavigation currentRoute={location.pathname} />
     </div>
   );
 }

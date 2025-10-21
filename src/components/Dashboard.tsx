@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import ContactsSidebar from './ContactsSidebarWithTabs';
-import BottomNavigation from './BottomNavigation';
+// BottomNavigation is now handled by AppLayout
 import NotificationHub from './NotificationHub';
 import AdCarousel from './ads/AdCarousel';
 import { NewBusinesses } from './business';
@@ -418,8 +418,7 @@ const Dashboard: React.FC = () => {
         onClose={() => setShowNotifications(false)}
       />
 
-      {/* Bottom Navigation */}
-      <BottomNavigation currentRoute="/dashboard" />
+      {/* Bottom Navigation is now handled by AppLayout */}
     </div>
   );
 };
