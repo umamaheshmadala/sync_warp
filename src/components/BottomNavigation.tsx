@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, Search, Heart, Wallet, Users } from 'lucide-react';
+import { Home, Search, Heart, UserCheck, Wallet, Users } from 'lucide-react';
 import NavigationBadge from './NavigationBadge';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
 import { useNavigationState } from '../hooks/useNavigationState';
@@ -54,6 +54,14 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentRoute }) => 
       route: '/favorites',
       color: 'text-gray-500',
       activeColor: 'text-red-600'
+    },
+    {
+      id: 'following',
+      label: 'Following',
+      icon: UserCheck,
+      route: '/following',
+      color: 'text-gray-500',
+      activeColor: 'text-green-600'
     },
     {
       id: 'wallet',
