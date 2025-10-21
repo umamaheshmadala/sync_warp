@@ -1,0 +1,79 @@
+﻿{
+    "mcps":  [
+                 {
+                     "description":  "Code analysis and intelligent navigation",
+                     "name":  "context7",
+                     "capabilities":  [
+                                          "code_explanation",
+                                          "refactoring",
+                                          "project_analysis"
+                                      ]
+                 },
+                 {
+                     "description":  "Database operations and SQL execution",
+                     "name":  "supabase",
+                     "capabilities":  [
+                                          "sql_execution",
+                                          "table_management",
+                                          "auth_policies"
+                                      ]
+                 },
+                 {
+                     "description":  "Build, deploy, and site management",
+                     "name":  "netlify",
+                     "capabilities":  [
+                                          "site_deployment",
+                                          "build_management",
+                                          "form_handling"
+                                      ]
+                 },
+                 {
+                     "description":  "Repository, issue, and PR management",
+                     "name":  "github",
+                     "capabilities":  [
+                                          "repo_management",
+                                          "issue_tracking",
+                                          "pr_reviews"
+                                      ]
+                 },
+                 {
+                     "description":  "Frontend debugging and inspection",
+                     "name":  "chrome-devtools",
+                     "capabilities":  [
+                                          "dom_inspection",
+                                          "network_monitoring",
+                                          "performance_analysis"
+                                      ]
+                 },
+                 {
+                     "description":  "Automated E2E testing",
+                     "name":  "puppeteer",
+                     "capabilities":  [
+                                          "automated_testing",
+                                          "screenshot_capture",
+                                          "form_automation"
+                                      ]
+                 },
+                 {
+                     "description":  "UI component scaffolding",
+                     "name":  "shadcn",
+                     "capabilities":  [
+                                          "component_generation",
+                                          "ui_scaffolding",
+                                          "design_system"
+                                      ]
+                 },
+                 {
+                     "description":  "Context and preference storage",
+                     "name":  "memory",
+                     "capabilities":  [
+                                          "context_storage",
+                                          "user_preferences",
+                                          "session_memory"
+                                      ]
+                 }
+             ],
+    "export_date":  "2025-10-21 08:58:57",
+    "export_version":  "1.0",
+    "project":  "sync_warp"
+}

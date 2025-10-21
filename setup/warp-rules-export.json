@@ -1,0 +1,96 @@
+﻿{
+    "export_version":  "1.0",
+    "export_date":  "2025-10-21 08:58:57",
+    "project":  "sync_warp",
+    "rules":  [
+                  {
+                      "description":  "Global development router for efficient coding",
+                      "actions":  "Route commands to appropriate MCPs",
+                      "priority":  100,
+                      "trigger_patterns":  [
+                                               ".*"
+                                           ],
+                      "document_id":  "yCm2e9oHOnrU5qbhrGa2IE",
+                      "document_type":  "RULE",
+                      "rule_name":  "All MCP Rules"
+                  },
+                  {
+                      "description":  "Route project analysis and code explanation to Context 7",
+                      "actions":  "Use Context 7 MCP for code intelligence",
+                      "priority":  100,
+                      "trigger_patterns":  [
+                                               "*explain*",
+                                               "*summarize*",
+                                               "*refactor*",
+                                               "*analyze*"
+                                           ],
+                      "document_id":  "YeMZqNNtGJHhiCDFVLBFl6",
+                      "document_type":  "RULE",
+                      "rule_name":  "Context 7 MCP"
+                  },
+                  {
+                      "description":  "Smart frontend testing tool selection",
+                      "actions":  "Route to DevTools for manual debug, Puppeteer for automation",
+                      "priority":  90,
+                      "trigger_patterns":  [
+                                               "*debug frontend*",
+                                               "*inspect*",
+                                               "*e2e*",
+                                               "*automated test*"
+                                           ],
+                      "document_id":  "IS4NiSAvhnumY2cKNCv6su",
+                      "document_type":  "RULE",
+                      "rule_name":  "Chrome DevTools vs Puppeteer MCP"
+                  },
+                  {
+                      "description":  "Route all DB operations to Supabase MCP",
+                      "actions":  "Use Supabase MCP for database interactions",
+                      "priority":  90,
+                      "trigger_patterns":  [
+                                               "*supabase*",
+                                               "*sql*",
+                                               "*database*"
+                                           ],
+                      "document_id":  "wcSakMTbr6ksUsjt43GZqZ",
+                      "document_type":  "RULE",
+                      "rule_name":  "Supabase Tables"
+                  },
+                  {
+                      "description":  "Enforce hot-reloading for dev, Netlify for build/deploy only",
+                      "actions":  "Allow only build/deploy commands to Netlify",
+                      "priority":  80,
+                      "trigger_patterns":  [
+                                               "*netlify*"
+                                           ],
+                      "document_id":  "KfaNgncA1ZiuhZwfl5KBcT",
+                      "document_type":  "RULE",
+                      "rule_name":  "Netlify vs Hot Reloading"
+                  },
+                  {
+                      "description":  "UI component scaffolding with natural language",
+                      "actions":  "Use shadcn MCP for component generation",
+                      "priority":  85,
+                      "trigger_patterns":  [
+                                               "*shadcn*",
+                                               "*component*",
+                                               "*ui*",
+                                               "*scaffold*"
+                                           ],
+                      "document_id":  "4Enbc2LgwyPs8CT7Q3m5rM",
+                      "document_type":  "RULE",
+                      "rule_name":  "Shadcn MCP"
+                  },
+                  {
+                      "description":  "Always monitor and restart dev server when needed",
+                      "actions":  "Monitor and maintain local development server",
+                      "priority":  85,
+                      "trigger_patterns":  [
+                                               "*dev*",
+                                               "*server*"
+                                           ],
+                      "document_id":  "eLYncXKBH3A0lWnWCjjm8b",
+                      "document_type":  "RULE",
+                      "rule_name":  "Keep Dev Server Running"
+                  }
+              ]
+}
