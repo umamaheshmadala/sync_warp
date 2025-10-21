@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { List, Bell, LogOut, User, Settings, Users, Heart } from 'lucide-react';
+import { List, Bell, LogOut, User, Settings, Users, UserCheck } from 'lucide-react';
 import { useState } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { useSimpleProductSocial } from '../../hooks/useSimpleProductSocial';
@@ -59,17 +59,6 @@ export default function Header() {
             <Users className="h-5 w-5" />
           </Button>
 
-          {/* Following */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-gray-700 hover:text-indigo-600 hover:bg-indigo-50"
-            onClick={() => navigate('/following')}
-            title="Following"
-          >
-            <Heart className="h-5 w-5" />
-          </Button>
-
           {/* Wishlist */}
           <Button
             variant="ghost"
@@ -85,6 +74,17 @@ export default function Header() {
                 {wishlistCount}
               </Badge>
             )}
+          </Button>
+
+          {/* Following - Adjacent to Wallet */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-gray-700 hover:text-green-600 hover:bg-green-50"
+            onClick={() => navigate('/following')}
+            title="Following"
+          >
+            <UserCheck className="h-5 w-5" />
           </Button>
 
           {/* Notifications - Placeholder */}
