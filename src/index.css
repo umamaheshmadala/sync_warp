@@ -25,3 +25,32 @@
   overflow-wrap: break-word;
   hyphens: auto;
 }
+
+/* iOS Safari fixed positioning fixes */
+html, body {
+  width: 100%;
+  overflow-x: hidden;
+  position: relative;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent iOS Safari from moving fixed elements during scroll */
+@supports (-webkit-touch-callout: none) {
+  /* iOS-specific styles */
+  .fixed {
+    position: fixed;
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+  }
+}
+
+/* Ensure bottom navigation stays fixed on iOS */
+nav[class*="bottom"] {
+  position: fixed !important;
+  bottom: 0 !important;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  will-change: transform;
+}
