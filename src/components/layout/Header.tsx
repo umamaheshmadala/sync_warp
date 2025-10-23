@@ -37,10 +37,18 @@ export default function Header() {
           className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
           onClick={() => navigate('/dashboard')}
         >
-          <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-md">
-            <span className="text-white font-bold text-xl">S</span>
-          </div>
-          <span className="font-bold text-xl bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent hidden sm:inline-block">SynC</span>
+          {/* Logo icon for mobile */}
+          <img 
+            src="/Logo/Sync Logo Transparent SVG.svg" 
+            alt="Sync Logo" 
+            className="h-10 w-10 sm:hidden"
+          />
+          {/* Logo with text for desktop */}
+          <img 
+            src="/Logo/Sync Logo Text Transparent SVG.svg" 
+            alt="Sync" 
+            className="hidden sm:block h-10"
+          />
         </div>
 
         {/* Spacer for layout balance */}
