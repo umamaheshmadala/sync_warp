@@ -15,6 +15,9 @@ export const FollowerNotificationBell: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Debug: Verify this component is rendering
+  console.log('FollowerNotificationBell rendering - notifications:', notifications.length, 'unread:', unreadCount);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

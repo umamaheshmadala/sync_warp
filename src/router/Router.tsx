@@ -66,6 +66,9 @@ const BusinessCheckinsPage = lazy(() => import('../components/checkins/BusinessC
 // Story 5.2: Review System
 const MyReviewsPage = lazy(() => import('../pages/MyReviewsPage'))
 
+// Notifications redirect page
+const NotificationsPage = lazy(() => import('../pages/NotificationsPage'))
+
 // Story 5.5: Test Sharing Limits (excluded from production)
 
 // Route definitions
@@ -124,6 +127,13 @@ export const routes: RouteConfig[] = [
     protected: true,
     title: 'Welcome - SynC',
     description: 'Complete your profile setup'
+  },
+  {
+    path: '/notifications',
+    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><NotificationsPage /></Suspense>,
+    protected: true,
+    title: 'Notifications - SynC',
+    description: 'Notification system has moved to the header bell icon'
   },
   {
     path: '/search',
