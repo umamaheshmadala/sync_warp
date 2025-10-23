@@ -86,6 +86,10 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentRoute }) => 
   ];
 
   const isActive = (route: string) => {
+    // Special case: /following/feed is independent and doesn't highlight /following
+    if (route === '/following' && currentPath === '/following/feed') {
+      return false;
+    }
     return currentPath === route || currentPath.startsWith(route + '/');
   };
 
