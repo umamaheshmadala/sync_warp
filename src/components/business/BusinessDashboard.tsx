@@ -28,6 +28,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
 import { toast } from 'react-hot-toast';
 import { OnboardingReminderBanner } from './OnboardingReminderBanner';
+import { FollowerMetricsWidget } from './FollowerMetricsWidget';
 
 // TypeScript interfaces
 interface Business {
@@ -462,6 +463,12 @@ const BusinessDashboard: React.FC = () => {
           </div>
         )}
 
+        {/* Follower Metrics Widget - Show for businesses with active status */}
+        {businesses.length > 0 && businesses.some(b => b.status === 'active') && (
+          <div className="mb-8">
+            <FollowerMetricsWidget businessId={businesses.find(b => b.status === 'active')!.id} />
+          </div>
+        )}
 
         {/* Business Grid */}
         {businesses.length > 0 ? (

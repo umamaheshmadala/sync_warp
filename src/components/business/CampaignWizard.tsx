@@ -25,6 +25,7 @@ import { ReachEstimator } from '../campaign/ReachEstimator';
 import { TargetingValidator } from '../campaign/TargetingValidator';
 import { RecommendationCard } from '../campaign/RecommendationCard';
 import { ReachSummaryCard } from '../campaign/ReachSummaryCard';
+import { FollowerTargetingEditor } from '../campaign/FollowerTargetingEditor';
 import { supabase } from '../../lib/supabase';
 import type { TargetingRules } from '../../types/campaigns';
 
@@ -435,6 +436,28 @@ export default function CampaignWizard() {
         {/* Step 2: Targeting */}
         {currentStep === 2 && (
           <div className="space-y-6">
+            {/* Follower Targeting Section */}
+            <FollowerTargetingEditor
+              businessId={businessId!}
+              value={{
+                targetFollowersOnly: formData.targeting_rules?.follower?.enabled || false,
+                minFollowDays: formData.targeting_rules?.follower?.minFollowDays,
+                engagementLevel: formData.targeting_rules?.follower?.engagementLevel || 'all',
+                includeRecentFollowers: formData.targeting_rules?.follower?.includeRecent
+              }}
+              onChange={(followerOptions) => {
+                updateTargetingRules({
+                  ...formData.targeting_rules,
+                  follower: {
+                    enabled: followerOptions.targetFollowersOnly,
+                    minFollowDays: followerOptions.minFollowDays,
+                    engagementLevel: followerOptions.engagementLevel,
+                    includeRecent: followerOptions.includeRecentFollowers
+                  }
+                });
+              }}
+            />
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="space-y-6">
                 <TargetingEditor

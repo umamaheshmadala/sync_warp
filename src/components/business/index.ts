@@ -17,6 +17,7 @@ export { BusinessCard } from './BusinessCard';
 export { default as FollowerAnalyticsDashboard } from './FollowerAnalyticsDashboard';
 export { default as FollowerList } from './FollowerList';
 export { default as SuspiciousActivityReporter } from './SuspiciousActivityReporter';
+export { FollowerInsightsDashboard } from './FollowerInsightsDashboard';
 
 // Additional business components to be added later
 // export { default as ProductManager } from './ProductManager.jsx';

@@ -53,6 +53,7 @@ const FollowingPage = lazy(() => import('../components/following/FollowingPage')
 const FollowerFeed = lazy(() => import('../components/following/FollowerFeed'));
 const FollowerAnalyticsDashboard = lazy(() => import('../components/business/FollowerAnalyticsDashboard'));
 const FollowerList = lazy(() => import('../components/business/FollowerList'));
+const FollowerTargetingDemo = lazy(() => import('../pages/FollowerTargetingDemo'));
 
 // Debug components are removed from production build
 
@@ -257,6 +258,14 @@ export const routes: RouteConfig[] = [
     protected: true,
     title: 'My Reviews - SynC',
     description: 'Manage your reviews and see your review history'
+  },
+  // Follower Targeting Demo
+  {
+    path: '/demo/follower-targeting',
+    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><FollowerTargetingDemo /></Suspense>,
+    protected: true,
+    title: 'Follower Targeting Demo - SynC',
+    description: 'Interactive demo of follower targeting and campaign features'
   },
   // Business Routes
   {

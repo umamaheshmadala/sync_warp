@@ -13,7 +13,7 @@ import NotificationHub from './NotificationHub'
 import CityPicker from './location/CityPicker'
 import { useNavigationPreferences } from '../hooks/useNavigationState'
 import { Users, LogOut, ChevronDown, MapPin } from 'lucide-react'
-import { NotificationBell } from './notifications'
+import { FollowerNotificationBell } from './following'
 
 interface LayoutProps {
   children: React.ReactNode
@@ -134,7 +134,7 @@ export default function Layout({ children }: LayoutProps) {
                 </button>
 
                 {/* Notifications */}
-                <NotificationBell />
+                <FollowerNotificationBell />
 
                 {/* User Profile & Actions */}
                 {user && (

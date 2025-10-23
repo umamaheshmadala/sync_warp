@@ -6,6 +6,7 @@ import { Home, Search, Heart, UserCheck, Wallet, Users } from 'lucide-react';
 import NavigationBadge from './NavigationBadge';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
 import { useNavigationState } from '../hooks/useNavigationState';
+import { useFollowerNotifications } from '../hooks/useFollowerNotifications';
 
 interface BottomNavigationProps {
   currentRoute?: string;
@@ -27,6 +28,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentRoute }) => 
   const currentPath = currentRoute || location.pathname;
   const { triggerHaptic } = useHapticFeedback();
   const { addToHistory } = useNavigationState();
+  const { unreadCount } = useFollowerNotifications();
   const [lastActiveTab, setLastActiveTab] = useState<string>('');
   const [isAnimating, setIsAnimating] = useState(false);
 
@@ -60,6 +62,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentRoute }) => 
       label: 'Following',
       icon: UserCheck,
       route: '/following',
+      badge: unreadCount,
       color: 'text-gray-500',
       activeColor: 'text-green-600'
     },
