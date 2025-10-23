@@ -349,23 +349,29 @@ export async function getUserReviewActivity(userId?: string): Promise<UserReview
     targetUserId = user.id;
   }
 
-  const { data, error } = await supabase
-    .from('user_review_activity')
-    .select('*')
-    .eq('user_id', targetUserId)
-    .single();
+  try {
+    const { data, error } = await supabase
+      .from('user_review_activity')
+      .select('*')
+      .eq('user_id', targetUserId)
+      .single();
 
-  if (error) {
-    // If no reviews found, return null instead of error
-    if (error.code === 'PGRST116') {
+    if (error) {
+      // If no reviews found or table doesn't exist, return null instead of error
+      if (error.code === 'PGRST116' || error.code === '42P01') {
+        console.log('⚠️ User review activity table not found or no data, returning null');
+        return null;
+      }
+      console.error('❌ Get user activity error:', error);
       return null;
     }
-    console.error('❌ Get user activity error:', error);
-    throw new Error(`Failed to fetch user activity: ${error.message}`);
-  }
 
-  console.log('✅ User activity fetched:', data);
-  return data;
+    console.log('✅ User activity fetched:', data);
+    return data;
+  } catch (err) {
+    console.error('❌ Error fetching user review activity:', err);
+    return null;
+  }
 }
 
 // =====================================================
