@@ -166,8 +166,8 @@ export default function Layout({ children }: LayoutProps) {
         </header>
       )}
 
-      {/* Main content area */}
-      <main id="main-content" className="flex-1">
+      {/* Main content area with proper spacing */}
+      <main id="main-content" className="flex-1 min-h-screen">
         {/* Breadcrumb navigation for deep pages */}
         {currentRoute?.protected && location.pathname !== '/dashboard' && (
           <nav className="bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8" aria-label="Breadcrumb">
@@ -196,8 +196,8 @@ export default function Layout({ children }: LayoutProps) {
           </nav>
         )}
 
-        {/* Page content with transitions */}
-        <div className="flex-1 pb-24 sm:pb-20"> {/* Increased bottom padding for navigation */}
+        {/* Page content with transitions and proper padding to prevent overlap */}
+        <div className="pb-32 sm:pb-28 md:pb-24"> {/* Increased bottom padding significantly for bottom navigation */}
           <PageTransition>
             {children}
           </PageTransition>

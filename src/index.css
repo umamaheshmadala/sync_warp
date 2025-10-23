@@ -54,3 +54,69 @@ nav[class*="bottom"] {
   transform: translateZ(0);
   will-change: transform;
 }
+
+/* Prevent content from being hidden behind fixed header and footer */
+#main-content {
+  /* Add top padding if header is sticky */
+  padding-top: 0;
+  /* Ensure minimum height accounts for bottom navigation */
+  min-height: calc(100vh - 64px); /* 64px is header height */
+}
+
+/* Systematic page container utility */
+.page-safe-area {
+  /* Generous bottom padding to prevent footer overlap */
+  padding-bottom: 7rem; /* 112px - enough for bottom nav + safe area */
+  min-height: calc(100vh - 64px); /* Account for header */
+}
+
+/* Ensure all main content sections have proper bottom spacing */
+main > div,
+main > section,
+.page-container,
+[class*="dashboard"] > main,
+[class*="profile"] > main,
+[class*="wallet"] > main,
+[class*="search"] > main {
+  padding-bottom: 7rem !important; /* 112px for mobile bottom nav + breathing room */
+}
+
+/* Responsive adjustments for bottom spacing */
+@media (min-width: 640px) {
+  .page-safe-area {
+    padding-bottom: 6rem; /* 96px for tablet */
+  }
+  
+  main > div,
+  main > section,
+  .page-container,
+  [class*="dashboard"] > main,
+  [class*="profile"] > main,
+  [class*="wallet"] > main,
+  [class*="search"] > main {
+    padding-bottom: 6rem !important; /* 96px for tablet */
+  }
+}
+
+@media (min-width: 768px) {
+  .page-safe-area {
+    padding-bottom: 5rem; /* 80px for desktop */
+  }
+  
+  main > div,
+  main > section,
+  .page-container,
+  [class*="dashboard"] > main,
+  [class*="profile"] > main,
+  [class*="wallet"] > main,
+  [class*="search"] > main {
+    padding-bottom: 5rem !important; /* 80px for desktop */
+  }
+}
+
+/* Ensure scrolling works properly */
+body, #root {
+  min-height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
