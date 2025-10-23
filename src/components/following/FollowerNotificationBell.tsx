@@ -40,8 +40,9 @@ export const FollowerNotificationBell: React.FC = () => {
     // Mark as read
     await markAsRead(notification.id);
 
-    // Navigate to business page
-    navigate(`/business/${notification.business_id}`);
+    // Navigate to action URL if available, otherwise business page
+    const targetUrl = notification.action_url || `/business/${notification.business_id}`;
+    navigate(targetUrl);
     setIsOpen(false);
   };
 

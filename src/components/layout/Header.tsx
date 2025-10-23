@@ -1,11 +1,12 @@
 import { useNavigate } from 'react-router-dom';
-import { List, Bell, LogOut, User, Settings, UserPlus } from 'lucide-react';
+import { List, LogOut, User, Settings, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { useSimpleProductSocial } from '../../hooks/useSimpleProductSocial';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import ContactsSidebar from '../ContactsSidebarWithTabs';
+import { FollowerNotificationBell } from '../following/FollowerNotificationBell';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -84,15 +85,10 @@ export default function Header() {
             )}
           </Button>
 
-          {/* Notifications - Placeholder */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="hidden sm:flex text-gray-700 hover:text-indigo-600 hover:bg-indigo-50"
-            onClick={() => navigate('/notifications')}
-          >
-            <Bell className="h-5 w-5" />
-          </Button>
+          {/* Notifications - Follower notifications bell */}
+          <div className="hidden sm:flex">
+            <FollowerNotificationBell />
+          </div>
 
           {/* Profile Dropdown */}
           <DropdownMenu>

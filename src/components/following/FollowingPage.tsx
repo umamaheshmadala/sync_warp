@@ -194,14 +194,32 @@ const FollowingPage: React.FC = () => {
                   onCardClick={(id) => navigate(`/business/${id}`)}
                   showChevron={false}
                   actionButton={
-                    <FollowButton
-                      businessId={follow.business_id}
-                      businessName={follow.business?.business_name}
-                      variant="ghost"
-                      size="sm"
-                      showLabel={false}
-                      className="h-8 w-8 rounded-full bg-white/90 p-0 shadow-md backdrop-blur hover:bg-green-50"
-                    />
+                    <div className="flex items-center space-x-2">
+                      {/* Settings/Notification Preferences Button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedBusiness({
+                            id: follow.business_id,
+                            name: follow.business?.business_name || 'Business'
+                          });
+                        }}
+                        className="h-8 w-8 rounded-full bg-white/90 p-0 shadow-md backdrop-blur hover:bg-indigo-50 flex items-center justify-center transition-colors"
+                        title="Notification preferences"
+                      >
+                        <Settings className="h-4 w-4 text-gray-600 hover:text-indigo-600" />
+                      </button>
+                      
+                      {/* Follow Button */}
+                      <FollowButton
+                        businessId={follow.business_id}
+                        businessName={follow.business?.business_name}
+                        variant="ghost"
+                        size="sm"
+                        showLabel={false}
+                        className="h-8 w-8 rounded-full bg-white/90 p-0 shadow-md backdrop-blur hover:bg-green-50"
+                      />
+                    </div>
                   }
                 />
               );
