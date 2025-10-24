@@ -140,10 +140,16 @@ export function useFollowerNotifications(): UseFollowerNotificationsReturn {
     }
   }, [user]);
 
+  // TEMPORARILY DISABLED: Realtime subscription causing duplication
+  // TODO: Re-enable after fixing the feedback loop issue
   // Set up realtime subscription
   useEffect(() => {
     if (!user) return;
 
+    // DISABLED: Preventing cascade/duplication in production
+    return;
+
+    /* COMMENTED OUT UNTIL FIXED:
     console.log('[FollowerNotifications] Setting up realtime subscription');
 
     const channel = supabase
@@ -185,6 +191,7 @@ export function useFollowerNotifications(): UseFollowerNotificationsReturn {
       console.log('[FollowerNotifications] Cleaning up realtime subscription');
       supabase.removeChannel(channel);
     };
+    */
   }, [user, loadNotifications]);
 
   // Initial load
