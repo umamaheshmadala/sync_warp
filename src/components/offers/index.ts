@@ -6,3 +6,4 @@ export { OffersList } from './OffersList';
 export { OfferShareModal } from './OfferShareModal';
 export { OfferAnalyticsDashboard } from './OfferAnalyticsDashboard';
 export { EmptyOffersState } from './EmptyOffersState';
+export { CreateOfferForm } from './CreateOfferForm';
