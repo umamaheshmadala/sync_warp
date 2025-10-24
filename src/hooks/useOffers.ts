@@ -2,7 +2,7 @@
 // React hook for managing Business Offers (Story 4.12)
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import { supabase } from '@/lib/supabase';
 import { 
   Offer, 
   OfferFormData, 
@@ -72,7 +72,7 @@ export const useOffers = (options: UseOffersOptions = {}): UseOffersReturn => {
     try {
       let query = supabase
         .from('offers')
-        .select('*, business:businesses(id, business_name, business_image)', { count: 'exact' });
+        .select('*, business:businesses(id, business_name)', { count: 'exact' });
 
       // Apply business filter
       if (businessId) {
@@ -132,21 +132,24 @@ export const useOffers = (options: UseOffersOptions = {}): UseOffersReturn => {
     setError(null);
 
     try {
+      // Get current user session
+      const { data: { session } } = await supabase.auth.getSession();
+      
       const { data: offer, error: createError } = await supabase
         .from('offers')
         .insert({
           business_id: businessId,
+          created_by: session?.user?.id || null,
           title: data.title,
           description: data.description,
           terms_conditions: data.terms_conditions,
           icon_image_url: data.icon_image_url,
           valid_from: data.valid_from,
           valid_until: data.valid_until,
-          status: 'draft', // New offers start as draft
+          status: 'active', // Publish as active immediately
         })
         .select()
         .single();
-
       if (createError) throw createError;
 
       // Refresh the list
@@ -165,7 +168,7 @@ export const useOffers = (options: UseOffersOptions = {}): UseOffersReturn => {
   // Update existing offer
   const updateOffer = useCallback(async (
     id: string, 
-    data: Partial<OfferFormData>
+    data: Partial<OfferFormData> & { status?: OfferStatus }
   ): Promise<Offer | null> => {
     setIsLoading(true);
     setError(null);
@@ -183,8 +186,8 @@ export const useOffers = (options: UseOffersOptions = {}): UseOffersReturn => {
 
       if (updateError) throw updateError;
 
-      // Update local state
-      setOffers(prev => prev.map(o => o.id === id ? offer : o));
+      // Refresh the list to get updated data
+      await refreshOffers();
 
       return offer;
     } catch (err: any) {
@@ -240,6 +243,31 @@ export const useOffers = (options: UseOffersOptions = {}): UseOffersReturn => {
     const result = await updateOffer(id, { status: 'archived' } as any);
     return result !== null;
   }, [updateOffer]);
+
+  // Extend offer expiry
+  const extendExpiry = useCallback(async (id: string, days: number): Promise<boolean> => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const { data, error: rpcError } = await supabase
+        .rpc('extend_offer_expiry', {
+          p_offer_id: id,
+          p_extension_days: days,
+        });
+
+      if (rpcError) throw rpcError;
+
+      await refreshOffers();
+      return true;
+    } catch (err: any) {
+      setError(err.message || 'Failed to extend offer expiry');
+      console.error('Error extending offer expiry:', err);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [refreshOffers]);
 
   // Duplicate offer
   const duplicateOffer = useCallback(async (id: string): Promise<Offer | null> => {
@@ -308,6 +336,7 @@ export const useOffers = (options: UseOffersOptions = {}): UseOffersReturn => {
     activateOffer,
     pauseOffer,
     archiveOffer,
+    extendExpiry,
     duplicateOffer,
     
     currentPage,

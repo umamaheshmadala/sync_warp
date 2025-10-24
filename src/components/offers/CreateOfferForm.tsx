@@ -18,13 +18,15 @@ import {
 import { useOfferDrafts } from '../../hooks/useOfferDrafts';
 import { useOffers } from '../../hooks/useOffers';
 import type { OfferFormData } from '../../types/offers';
+import { ImageUpload } from './ImageUpload';
+import { supabase } from '@/lib/supabase';
 
 interface CreateOfferFormProps {
   businessId: string;
   userId: string;
-  onComplete?: (offerId: string) => void;
+  onComplete?: (offerId?: string) => void;
   onCancel?: () => void;
-  draftId?: string;
+  offerId?: string; // ID of existing offer to edit
 }
 
 const STEPS = [
@@ -39,7 +41,7 @@ export function CreateOfferForm({
   userId,
   onComplete,
   onCancel,
-  draftId,
+  offerId,
 }: CreateOfferFormProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<Partial<OfferFormData>>({
@@ -63,20 +65,42 @@ export function CreateOfferForm({
     businessId,
   });
 
-  const { createOffer, isLoading: isCreating } = useOffers({
+  const { createOffer, updateOffer, isLoading: isCreating } = useOffers({
     businessId,
     autoFetch: false,
   });
 
-  // Load existing draft if draftId is provided
+  // Load existing offer if offerId is provided
   useEffect(() => {
-    if (draftId) {
-      loadDraft(draftId);
-    } else {
-      // Create new draft
-      createDraft('New Offer Draft');
-    }
-  }, [draftId]);
+    const loadExistingData = async () => {
+      if (offerId) {
+        // Load existing offer from offers table
+        const { data: offer, error } = await supabase
+          .from('offers')
+          .select('*')
+          .eq('id', offerId)
+          .single();
+        
+        if (!error && offer) {
+          setFormData({
+            title: offer.title,
+            description: offer.description || '',
+            terms_conditions: offer.terms_conditions || '',
+            icon_image_url: offer.icon_image_url,
+            valid_from: offer.valid_from,
+            valid_until: offer.valid_until,
+          });
+          // Start at step 1 so user can edit all fields
+          setCurrentStep(1);
+        }
+      } else {
+        // Create new draft for autosave
+        createDraft('New Offer Draft');
+      }
+    };
+    
+    loadExistingData();
+  }, [offerId]);
 
   // Sync form data with loaded draft
   useEffect(() => {
@@ -127,9 +151,56 @@ export function CreateOfferForm({
   const handleSubmit = async () => {
     if (!validateStep(4)) return;
 
-    const offer = await createOffer(formData as OfferFormData);
-    if (offer && onComplete) {
-      onComplete(offer.id);
+    let offer;
+    if (offerId) {
+      // Update existing offer and set to active
+      offer = await updateOffer(offerId, { 
+        ...formData as OfferFormData,
+        status: 'active' 
+      });
+    } else {
+      // Create new offer
+      offer = await createOffer(formData as OfferFormData);
+    }
+    
+    if (onComplete) {
+      onComplete(offer?.id);
+    }
+  };
+
+  const handleSaveAndExit = async () => {
+    // Save as draft offer
+    let offer;
+    if (offerId) {
+      // Update existing offer but keep as draft
+      offer = await updateOffer(offerId, { 
+        ...formData as OfferFormData,
+        status: 'draft' 
+      });
+    } else {
+      // Create new draft offer
+      const { data: { session } } = await supabase.auth.getSession();
+      const { data: newDraft, error } = await supabase
+        .from('offers')
+        .insert({
+          business_id: businessId,
+          created_by: session?.user?.id || null,
+          title: formData.title || 'Untitled Offer',
+          description: formData.description || null,
+          terms_conditions: formData.terms_conditions || null,
+          icon_image_url: formData.icon_image_url || null,
+          valid_from: formData.valid_from || new Date().toISOString(),
+          valid_until: formData.valid_until || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          status: 'draft',
+        })
+        .select()
+        .single();
+      
+      if (!error) offer = newDraft;
+    }
+    
+    if (onCancel) {
+      onCancel();
     }
   };
 
@@ -140,7 +211,7 @@ export function CreateOfferForm({
       case 2:
         return <Step2ValidityPeriod formData={formData} onChange={handleChange} />;
       case 3:
-        return <Step3Details formData={formData} onChange={handleChange} />;
+        return <Step3Details formData={formData} onChange={handleChange} businessId={businessId} />;
       case 4:
         return <Step4Review formData={formData} />;
       default:
@@ -232,6 +303,17 @@ export function CreateOfferForm({
         </div>
 
         <div className="flex gap-3">
+          {/* Save Draft & Exit button */}
+          <button
+            onClick={handleSaveAndExit}
+            disabled={isSaving}
+            className="flex items-center gap-2 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+            title="Save as draft and exit"
+          >
+            {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            Save & Exit
+          </button>
+
           {currentStep < 4 ? (
             <button
               onClick={handleNext}
@@ -372,9 +454,11 @@ function Step2ValidityPeriod({
 function Step3Details({
   formData,
   onChange,
+  businessId,
 }: {
   formData: Partial<OfferFormData>;
   onChange: (field: keyof OfferFormData, value: any) => void;
+  businessId: string;
 }) {
   return (
     <div className="space-y-6">
@@ -400,27 +484,13 @@ function Step3Details({
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Icon Image URL (Optional)
+          Icon Image (Optional)
         </label>
-        <input
-          type="url"
-          value={formData.icon_image_url || ''}
-          onChange={(e) => onChange('icon_image_url', e.target.value || null)}
-          placeholder="https://example.com/icon.png"
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+        <ImageUpload
+          value={formData.icon_image_url || null}
+          onChange={(url) => onChange('icon_image_url', url)}
+          businessId={businessId}
         />
-        {formData.icon_image_url && (
-          <div className="mt-3">
-            <img
-              src={formData.icon_image_url}
-              alt="Offer icon preview"
-              className="w-24 h-24 rounded-lg object-cover border border-gray-200"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-              }}
-            />
-          </div>
-        )}
       </div>
     </div>
   );

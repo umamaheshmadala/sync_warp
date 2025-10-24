@@ -1,140 +1,587 @@
-// src/hooks/__tests__/useOfferAnalytics.test.ts
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useOfferAnalytics } from '../useOfferAnalytics';
+import { supabase } from '@/lib/supabase';
 
-vi.mock('../../lib/supabaseClient', () => ({
+// Mock the Supabase client
+vi.mock('@/lib/supabase', () => ({
   supabase: {
     from: vi.fn(() => ({
       select: vi.fn(() => ({
         eq: vi.fn(() => ({
-          single: vi.fn(() => Promise.resolve({
-            data: mockAnalytics,
-            error: null,
-          })),
-          order: vi.fn(() => Promise.resolve({
-            data: [mockAnalytics],
-            error: null,
-          })),
+          single: vi.fn(),
         })),
       })),
+    })),
+    rpc: vi.fn(() => ({
+      eq: vi.fn(),
     })),
   },
 }));
 
-const mockAnalytics = {
-  id: 'analytics-1',
-  offer_id: 'offer-1',
-  business_id: 'business-1',
-  total_views: 100,
-  unique_viewers: 75,
-  total_shares: 20,
-  unique_sharers: 15,
-  share_channels: {
-    whatsapp: 10,
-    facebook: 5,
-    twitter: 3,
-    email: 2,
-  },
-  total_clicks: 30,
-  unique_clickers: 25,
-  click_sources: {
-    direct: 15,
-    social: 10,
-    email: 5,
-  },
-  daily_stats: [
-    { date: '2025-01-01', views: 10, shares: 2, clicks: 3 },
-    { date: '2025-01-02', views: 15, shares: 3, clicks: 5 },
-    { date: '2025-01-03', views: 20, shares: 4, clicks: 7 },
-  ],
-  created_at: '2025-01-01',
-  updated_at: '2025-01-03',
-};
-
 describe('useOfferAnalytics', () => {
+  const mockOfferId = 'offer-123';
+  const mockAnalytics = {
+    id: 'analytics-1',
+    offer_id: mockOfferId,
+    business_id: 'business-1',
+    total_views: 150,
+    unique_viewers: 100,
+    total_shares: 30,
+    unique_sharers: 25,
+    share_channels: {
+      whatsapp: 15,
+      facebook: 10,
+      in_app: 5,
+    },
+    total_clicks: 60,
+    unique_clickers: 45,
+    click_sources: {
+      direct: 40,
+      shared_link: 20,
+    },
+    daily_stats: [
+      { date: '2025-01-01', views: 50, shares: 10, clicks: 20 },
+      { date: '2025-01-02', views: 100, shares: 20, clicks: 40 },
+    ],
+    created_at: '2025-01-01T00:00:00Z',
+    updated_at: '2025-01-02T12:00:00Z',
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('should fetch analytics for single offer', async () => {
-    const { result } = renderHook(() =>
-      useOfferAnalytics({ offerId: 'offer-1', autoFetch: true })
-    );
-
-    await waitFor(() => {
-      expect(result.current.analytics).toBeDefined();
-      expect(result.current.analytics?.total_views).toBe(100);
-    });
+  afterEach(() => {
+    vi.resetAllMocks();
   });
 
-  it('should calculate summary with CTR', async () => {
-    const { result } = renderHook(() =>
-      useOfferAnalytics({ offerId: 'offer-1', autoFetch: true })
-    );
+  describe('fetchAnalytics', () => {
+    it('should fetch analytics data successfully', async () => {
+      const mockSupabaseResponse = {
+        data: mockAnalytics,
+        error: null,
+      };
 
-    await waitFor(() => {
-      expect(result.current.summary).toBeDefined();
-      expect(result.current.summary?.ctr).toBe(30); // (30/100)*100
-      expect(result.current.summary?.share_rate).toBe(20); // (20/100)*100
-    });
-  });
+      vi.mocked(supabase.from).mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue(mockSupabaseResponse),
+          }),
+        }),
+      } as any);
 
-  it('should provide views over time data', async () => {
-    const { result } = renderHook(() =>
-      useOfferAnalytics({ offerId: 'offer-1', autoFetch: true })
-    );
+      const { result } = renderHook(() => useOfferAnalytics(mockOfferId));
 
-    await waitFor(() => {
-      const viewsData = result.current.getViewsOverTime();
-      expect(viewsData).toHaveLength(3);
-      expect(viewsData[0].count).toBe(10);
-      expect(viewsData[1].count).toBe(15);
-    });
-  });
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
 
-  it('should provide share channel breakdown', async () => {
-    const { result } = renderHook(() =>
-      useOfferAnalytics({ offerId: 'offer-1', autoFetch: true })
-    );
-
-    await waitFor(() => {
-      const channelData = result.current.getShareChannelBreakdown();
-      expect(channelData).toHaveLength(4);
-      expect(channelData[0].channel).toBe('whatsapp');
-      expect(channelData[0].count).toBe(10);
-    });
-  });
-
-  it('should fetch all analytics for business', async () => {
-    const { result } = renderHook(() =>
-      useOfferAnalytics({ businessId: 'business-1', autoFetch: true })
-    );
-
-    await waitFor(() => {
-      expect(result.current.allAnalytics).toHaveLength(1);
-    });
-  });
-
-  it('should handle missing analytics gracefully', async () => {
-    vi.mocked(require('../../lib/supabaseClient').supabase.from).mockReturnValueOnce({
-      select: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          single: vi.fn(() => Promise.resolve({
-            data: null,
-            error: { code: 'PGRST116' }, // Not found
-          })),
-        })),
-      })),
+      expect(result.current.analytics).toEqual(mockAnalytics);
+      expect(result.current.error).toBeNull();
+      expect(supabase.from).toHaveBeenCalledWith('offer_analytics');
     });
 
-    const { result } = renderHook(() =>
-      useOfferAnalytics({ offerId: 'offer-1', autoFetch: true })
-    );
+    it('should handle analytics fetch error', async () => {
+      const mockError = { message: 'Failed to fetch analytics', code: '500' };
 
-    await waitFor(() => {
+      vi.mocked(supabase.from).mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue({
+              data: null,
+              error: mockError,
+            }),
+          }),
+        }),
+      } as any);
+
+      const { result } = renderHook(() => useOfferAnalytics(mockOfferId));
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
       expect(result.current.analytics).toBeNull();
-      expect(result.current.summary).toBeNull();
+      expect(result.current.error).toEqual(mockError);
+    });
+
+    it('should set loading to true initially and false after fetch', async () => {
+      const mockSupabaseResponse = {
+        data: mockAnalytics,
+        error: null,
+      };
+
+      vi.mocked(supabase.from).mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue(mockSupabaseResponse),
+          }),
+        }),
+      } as any);
+
+      const { result } = renderHook(() => useOfferAnalytics(mockOfferId));
+
+      expect(result.current.loading).toBe(true);
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+    });
+
+    it('should handle missing analytics data (new offer)', async () => {
+      const mockSupabaseResponse = {
+        data: null,
+        error: { message: 'No analytics found', code: 'PGRST116' },
+      };
+
+      vi.mocked(supabase.from).mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue(mockSupabaseResponse),
+          }),
+        }),
+      } as any);
+
+      const { result } = renderHook(() => useOfferAnalytics(mockOfferId));
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      // For a new offer with no analytics yet, we should handle gracefully
+      expect(result.current.analytics).toBeNull();
+      expect(result.current.error).toBeTruthy();
+    });
+  });
+
+  describe('calculateCTR', () => {
+    it('should calculate click-through rate correctly', async () => {
+      const mockSupabaseResponse = {
+        data: mockAnalytics,
+        error: null,
+      };
+
+      vi.mocked(supabase.from).mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue(mockSupabaseResponse),
+          }),
+        }),
+      } as any);
+
+      const { result } = renderHook(() => useOfferAnalytics(mockOfferId));
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      // CTR = (clicks / shares) * 100 = (60 / 30) * 100 = 200%
+      expect(result.current.calculateCTR()).toBe(200);
+    });
+
+    it('should return 0 CTR when there are no shares', async () => {
+      const analyticsWithNoShares = {
+        ...mockAnalytics,
+        total_shares: 0,
+        total_clicks: 10,
+      };
+
+      const mockSupabaseResponse = {
+        data: analyticsWithNoShares,
+        error: null,
+      };
+
+      vi.mocked(supabase.from).mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue(mockSupabaseResponse),
+          }),
+        }),
+      } as any);
+
+      const { result } = renderHook(() => useOfferAnalytics(mockOfferId));
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      expect(result.current.calculateCTR()).toBe(0);
+    });
+
+    it('should return 0 CTR when analytics is null', async () => {
+      const mockSupabaseResponse = {
+        data: null,
+        error: { message: 'No analytics', code: 'PGRST116' },
+      };
+
+      vi.mocked(supabase.from).mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue(mockSupabaseResponse),
+          }),
+        }),
+      } as any);
+
+      const { result } = renderHook(() => useOfferAnalytics(mockOfferId));
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      expect(result.current.calculateCTR()).toBe(0);
+    });
+  });
+
+  describe('calculateShareRate', () => {
+    it('should calculate share rate correctly', async () => {
+      const mockSupabaseResponse = {
+        data: mockAnalytics,
+        error: null,
+      };
+
+      vi.mocked(supabase.from).mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue(mockSupabaseResponse),
+          }),
+        }),
+      } as any);
+
+      const { result } = renderHook(() => useOfferAnalytics(mockOfferId));
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      // Share rate = (shares / views) * 100 = (30 / 150) * 100 = 20%
+      expect(result.current.calculateShareRate()).toBe(20);
+    });
+
+    it('should return 0 share rate when there are no views', async () => {
+      const analyticsWithNoViews = {
+        ...mockAnalytics,
+        total_views: 0,
+        total_shares: 5,
+      };
+
+      const mockSupabaseResponse = {
+        data: analyticsWithNoViews,
+        error: null,
+      };
+
+      vi.mocked(supabase.from).mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue(mockSupabaseResponse),
+          }),
+        }),
+      } as any);
+
+      const { result } = renderHook(() => useOfferAnalytics(mockOfferId));
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      expect(result.current.calculateShareRate()).toBe(0);
+    });
+
+    it('should return 0 share rate when analytics is null', async () => {
+      const mockSupabaseResponse = {
+        data: null,
+        error: { message: 'No analytics', code: 'PGRST116' },
+      };
+
+      vi.mocked(supabase.from).mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue(mockSupabaseResponse),
+          }),
+        }),
+      } as any);
+
+      const { result } = renderHook(() => useOfferAnalytics(mockOfferId));
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      expect(result.current.calculateShareRate()).toBe(0);
+    });
+  });
+
+  describe('getTopShareChannels', () => {
+    it('should return share channels sorted by count', async () => {
+      const mockSupabaseResponse = {
+        data: mockAnalytics,
+        error: null,
+      };
+
+      vi.mocked(supabase.from).mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue(mockSupabaseResponse),
+          }),
+        }),
+      } as any);
+
+      const { result } = renderHook(() => useOfferAnalytics(mockOfferId));
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      const topChannels = result.current.getTopShareChannels();
+      expect(topChannels).toEqual([
+        { channel: 'whatsapp', count: 15 },
+        { channel: 'facebook', count: 10 },
+        { channel: 'in_app', count: 5 },
+      ]);
+    });
+
+    it('should return empty array when no share channels exist', async () => {
+      const analyticsWithNoChannels = {
+        ...mockAnalytics,
+        share_channels: {},
+      };
+
+      const mockSupabaseResponse = {
+        data: analyticsWithNoChannels,
+        error: null,
+      };
+
+      vi.mocked(supabase.from).mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue(mockSupabaseResponse),
+          }),
+        }),
+      } as any);
+
+      const { result } = renderHook(() => useOfferAnalytics(mockOfferId));
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      expect(result.current.getTopShareChannels()).toEqual([]);
+    });
+
+    it('should return empty array when analytics is null', async () => {
+      const mockSupabaseResponse = {
+        data: null,
+        error: { message: 'No analytics', code: 'PGRST116' },
+      };
+
+      vi.mocked(supabase.from).mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue(mockSupabaseResponse),
+          }),
+        }),
+      } as any);
+
+      const { result } = renderHook(() => useOfferAnalytics(mockOfferId));
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      expect(result.current.getTopShareChannels()).toEqual([]);
+    });
+
+    it('should limit results to top N channels', async () => {
+      const analyticsWithManyChannels = {
+        ...mockAnalytics,
+        share_channels: {
+          whatsapp: 50,
+          facebook: 40,
+          twitter: 30,
+          in_app: 20,
+          other: 10,
+        },
+      };
+
+      const mockSupabaseResponse = {
+        data: analyticsWithManyChannels,
+        error: null,
+      };
+
+      vi.mocked(supabase.from).mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue(mockSupabaseResponse),
+          }),
+        }),
+      } as any);
+
+      const { result } = renderHook(() => useOfferAnalytics(mockOfferId));
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      const topChannels = result.current.getTopShareChannels(3);
+      expect(topChannels).toHaveLength(3);
+      expect(topChannels[0].channel).toBe('whatsapp');
+      expect(topChannels[1].channel).toBe('facebook');
+      expect(topChannels[2].channel).toBe('twitter');
+    });
+  });
+
+  describe('refreshAnalytics', () => {
+    it('should refetch analytics when refresh is called', async () => {
+      const mockSupabaseResponse = {
+        data: mockAnalytics,
+        error: null,
+      };
+
+      const selectMock = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue(mockSupabaseResponse),
+        }),
+      });
+
+      vi.mocked(supabase.from).mockReturnValue({
+        select: selectMock,
+      } as any);
+
+      const { result } = renderHook(() => useOfferAnalytics(mockOfferId));
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      expect(selectMock).toHaveBeenCalledTimes(1);
+
+      // Call refresh
+      result.current.refreshAnalytics();
+
+      await waitFor(() => {
+        expect(selectMock).toHaveBeenCalledTimes(2);
+      });
+    });
+
+    it('should update loading state during refresh', async () => {
+      const mockSupabaseResponse = {
+        data: mockAnalytics,
+        error: null,
+      };
+
+      vi.mocked(supabase.from).mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue(mockSupabaseResponse),
+          }),
+        }),
+      } as any);
+
+      const { result } = renderHook(() => useOfferAnalytics(mockOfferId));
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      result.current.refreshAnalytics();
+
+      // Loading should be true immediately after refresh call
+      expect(result.current.loading).toBe(true);
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+    });
+  });
+
+  describe('edge cases', () => {
+    it('should handle null offerId gracefully', async () => {
+      const { result } = renderHook(() => useOfferAnalytics(null as any));
+
+      expect(result.current.analytics).toBeNull();
+      expect(result.current.loading).toBe(false);
+      expect(result.current.error).toBeNull();
+    });
+
+    it('should handle empty offerId gracefully', async () => {
+      const { result } = renderHook(() => useOfferAnalytics(''));
+
+      expect(result.current.analytics).toBeNull();
+      expect(result.current.loading).toBe(false);
+    });
+
+    it('should handle network timeout', async () => {
+      const timeoutError = { message: 'Network timeout', code: 'ETIMEDOUT' };
+
+      vi.mocked(supabase.from).mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockRejectedValue(timeoutError),
+          }),
+        }),
+      } as any);
+
+      const { result } = renderHook(() => useOfferAnalytics(mockOfferId));
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      expect(result.current.error).toBeTruthy();
+    });
+  });
+
+  describe('getDailyStatsForChart', () => {
+    it('should format daily stats for chart display', async () => {
+      const mockSupabaseResponse = {
+        data: mockAnalytics,
+        error: null,
+      };
+
+      vi.mocked(supabase.from).mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue(mockSupabaseResponse),
+          }),
+        }),
+      } as any);
+
+      const { result } = renderHook(() => useOfferAnalytics(mockOfferId));
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      const chartData = result.current.getDailyStatsForChart();
+      expect(chartData).toEqual(mockAnalytics.daily_stats);
+    });
+
+    it('should return empty array when no daily stats', async () => {
+      const analyticsWithNoStats = {
+        ...mockAnalytics,
+        daily_stats: [],
+      };
+
+      const mockSupabaseResponse = {
+        data: analyticsWithNoStats,
+        error: null,
+      };
+
+      vi.mocked(supabase.from).mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue(mockSupabaseResponse),
+          }),
+        }),
+      } as any);
+
+      const { result } = renderHook(() => useOfferAnalytics(mockOfferId));
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      expect(result.current.getDailyStatsForChart()).toEqual([]);
     });
   });
 });

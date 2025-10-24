@@ -2,7 +2,7 @@
 // React hook for fetching and managing Offer Analytics (Story 4.12)
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import { supabase } from '@/lib/supabase';
 import { OfferAnalytics, OfferAnalyticsSummary } from '../types/offers';
 
 interface UseOfferAnalyticsOptions {

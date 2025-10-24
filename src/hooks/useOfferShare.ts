@@ -2,7 +2,7 @@
 // React hook for tracking Offer Shares and Clicks (Story 4.12)
 
 import { useState, useCallback } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import { supabase } from '@/lib/supabase';
 import { ShareChannel } from '../types/offers';
 
 interface UseOfferShareOptions {

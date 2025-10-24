@@ -3,7 +3,7 @@
 // Component: OfferCard - Display individual offer
 // =====================================================
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Calendar, 
@@ -14,7 +14,10 @@ import {
   Clock,
   CheckCircle,
   Pause,
-  Archive
+  Archive,
+  BarChart3,
+  Copy,
+  CalendarPlus
 } from 'lucide-react';
 import { format, formatDistanceToNow, isAfter, isBefore } from 'date-fns';
 import type { Offer } from '../../types/offers';
@@ -27,6 +30,10 @@ interface OfferCardProps {
   onPause?: (offer: Offer) => void;
   onArchive?: (offer: Offer) => void;
   onDelete?: (offer: Offer) => void;
+  onViewAnalytics?: (offer: Offer) => void;
+  onExtendExpiry?: (offer: Offer) => void;
+  onDuplicate?: (offer: Offer) => void;
+  onViewDetails?: (offer: Offer) => void;
   showActions?: boolean;
   showStats?: boolean;
 }
@@ -39,11 +46,33 @@ export function OfferCard({
   onPause,
   onArchive,
   onDelete,
+  onViewAnalytics,
+  onExtendExpiry,
+  onDuplicate,
+  onViewDetails,
   showActions = true,
   showStats = true,
 }: OfferCardProps) {
   const navigate = useNavigate();
   const [showMenu, setShowMenu] = React.useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+
+    if (showMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showMenu]);
 
   // Status badge configuration
   const statusConfig = {
@@ -77,14 +106,19 @@ export function OfferCard({
   const currentStatus = statusConfig[offer.status];
   const StatusIcon = currentStatus.icon;
 
-  // Check if offer is currently valid
+  // Check if offer is currently valid (only for active status)
   const now = new Date();
-  const isValid = isAfter(now, new Date(offer.valid_from)) && 
+  const isValid = offer.status === 'active' && 
+                  isAfter(now, new Date(offer.valid_from)) && 
                   isBefore(now, new Date(offer.valid_until));
   const isExpired = isAfter(now, new Date(offer.valid_until));
+  const isScheduled = isBefore(now, new Date(offer.valid_from));
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 hover:shadow-lg transition-shadow duration-200">
+    <div 
+      className="bg-white rounded-xl border border-gray-200 hover:shadow-lg transition-shadow duration-200 cursor-pointer"
+      onClick={() => onViewDetails && onViewDetails(offer)}
+    >
       {/* Header with Icon and Status */}
       <div className="relative p-6 border-b border-gray-100">
         <div className="flex items-start gap-4">
@@ -105,10 +139,7 @@ export function OfferCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div>
-                <h3 
-                  className="text-lg font-semibold text-gray-900 line-clamp-2 cursor-pointer hover:text-purple-600"
-                  onClick={() => navigate(`/offers/${offer.id}`)}
-                >
+                <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
                   {offer.title}
                 </h3>
                 <p className="text-sm text-gray-500 mt-1">
@@ -133,22 +164,55 @@ export function OfferCard({
 
           {/* Actions Menu */}
           {showActions && (
-            <div className="relative">
+            <div className="relative" ref={menuRef}>
               <button
-                onClick={() => setShowMenu(!showMenu)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowMenu(!showMenu);
+                }}
                 className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
               >
                 <MoreVertical className="w-5 h-5 text-gray-600" />
               </button>
 
               {showMenu && (
-                <div className="absolute right-0 top-10 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-10">
+                <div 
+                  className="absolute right-0 top-10 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-10"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {onViewAnalytics && (
+                    <button
+                      onClick={() => { onViewAnalytics(offer); setShowMenu(false); }}
+                      className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+                    >
+                      <BarChart3 className="w-4 h-4" />
+                      View Analytics
+                    </button>
+                  )}
                   {onEdit && (
                     <button
                       onClick={() => { onEdit(offer); setShowMenu(false); }}
                       className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50"
                     >
                       Edit
+                    </button>
+                  )}
+                  {onDuplicate && (
+                    <button
+                      onClick={() => { onDuplicate(offer); setShowMenu(false); }}
+                      className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+                    >
+                      <Copy className="w-4 h-4" />
+                      Duplicate
+                    </button>
+                  )}
+                  {onExtendExpiry && (offer.status === 'expired' || offer.status === 'active') && (
+                    <button
+                      onClick={() => { onExtendExpiry(offer); setShowMenu(false); }}
+                      className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+                    >
+                      <CalendarPlus className="w-4 h-4" />
+                      Extend Expiry
                     </button>
                   )}
                   {onActivate && offer.status !== 'active' && (
@@ -199,12 +263,16 @@ export function OfferCard({
               {format(new Date(offer.valid_from), 'MMM d, yyyy')} - {format(new Date(offer.valid_until), 'MMM d, yyyy')}
             </span>
           </div>
-          {isExpired ? (
+          {offer.status === 'draft' ? (
+            <span className="text-gray-500 font-medium">Draft</span>
+          ) : isExpired ? (
             <span className="text-red-600 font-medium">Expired</span>
           ) : isValid ? (
             <span className="text-green-600 font-medium">Active Now</span>
+          ) : isScheduled ? (
+            <span className="text-blue-600 font-medium">Scheduled</span>
           ) : (
-            <span className="text-gray-500">Scheduled</span>
+            <span className="text-gray-500">Inactive</span>
           )}
         </div>
       </div>

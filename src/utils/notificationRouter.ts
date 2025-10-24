@@ -124,6 +124,12 @@ export const notificationRoutes: Record<NotificationType, NotificationRouteConfi
     getIcon: () => 'Megaphone',
     getColor: () => 'text-gray-600',
   },
+  new_offer: {
+    type: 'new_offer',
+    getRoute: (metadata) => `/business/${metadata.businessId}/offers?highlight=${metadata.offer_code || metadata.offerCode || ''}`,
+    getIcon: () => 'Tag',
+    getColor: () => 'text-green-600',
+  },
 };
 
 /**
@@ -175,6 +181,7 @@ export function getNotificationTypeLabel(type: NotificationType): string {
     group_invitation: 'Group Invitation',
     group_post: 'Group Post',
     system_announcement: 'Announcement',
+    new_offer: 'New Promotion',
   };
   return labels[type] || type.replace(/_/g, ' ');
 }

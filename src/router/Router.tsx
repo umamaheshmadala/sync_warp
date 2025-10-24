@@ -23,6 +23,7 @@ import BusinessAnalyticsPage from '../components/business/BusinessAnalyticsPage'
 import BusinessQRCodePage from '../components/business/BusinessQRCodePage'
 import ProductManagerPage from '../components/business/ProductManagerPage'
 import CouponManagerPage from '../components/business/CouponManagerPage'
+import OfferManagerPage from '../components/business/OfferManagerPage'
 import CampaignManagerPage from '../components/business/CampaignManagerPage'
 import CampaignWizard from '../components/business/CampaignWizard'
 import CampaignAnalyticsPage from '../components/business/CampaignAnalyticsPage'
@@ -340,6 +341,13 @@ export const routes: RouteConfig[] = [
     protected: true,
     title: 'Coupon Manager - SynC',
     description: 'Create and manage business coupons'
+  },
+  {
+    path: '/business/:businessId/offers',
+    element: <OfferManagerPage />,
+    protected: true,
+    title: 'Offer Manager - SynC',
+    description: 'Create and manage promotional offers'
   },
   {
     path: '/business/:businessId/campaigns',

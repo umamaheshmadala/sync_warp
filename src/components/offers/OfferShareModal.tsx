@@ -20,14 +20,12 @@ import type { Offer } from '../../types/offers';
 interface OfferShareModalProps {
   offer: Offer;
   userId?: string;
-  isOpen: boolean;
   onClose: () => void;
 }
 
 export function OfferShareModal({
   offer,
   userId,
-  isOpen,
   onClose,
 }: OfferShareModalProps) {
   const [copied, setCopied] = useState(false);
@@ -46,10 +44,8 @@ export function OfferShareModal({
     userId,
   });
 
-  if (!isOpen) return null;
-
-  // Generate share URL (you'll need to update this with your actual domain)
-  const shareUrl = `${window.location.origin}/offers/${offer.id}`;
+  // Generate share URL with offer code parameter
+  const shareUrl = `${window.location.origin}/business/${offer.business_id}?offer=${offer.offer_code}`;
 
   // Generate share message
   const shareMessage = `Check out this offer: ${offer.title}\n${offer.description || ''}\nCode: ${offer.offer_code}\n${shareUrl}`;

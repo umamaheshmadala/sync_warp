@@ -2,7 +2,7 @@
 // React hook for managing Offer Drafts with auto-save (Story 4.12)
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import { supabase } from '@/lib/supabase';
 import { OfferDraft } from '../types/offers';
 
 interface UseOfferDraftsOptions {

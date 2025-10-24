@@ -15,6 +15,10 @@ interface OffersListProps {
   onCreateOffer?: () => void;
   onEditOffer?: (offerId: string) => void;
   onShareOffer?: (offerId: string) => void;
+  onViewDetails?: (offer: any) => void;
+  onViewAnalytics?: (offer: any) => void;
+  onExtendExpiry?: (offer: any) => void;
+  onDuplicate?: (offer: any) => void;
   showActions?: boolean;
 }
 
@@ -23,6 +27,10 @@ export function OffersList({
   onCreateOffer,
   onEditOffer,
   onShareOffer,
+  onViewDetails,
+  onViewAnalytics,
+  onExtendExpiry,
+  onDuplicate,
   showActions = true,
 }: OffersListProps) {
   // Filters and sorting state
@@ -115,16 +123,6 @@ export function OffersList({
             <Filter className="w-4 h-4" />
             Filters
           </button>
-
-          {onCreateOffer && (
-            <button
-              onClick={onCreateOffer}
-              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              Create Offer
-            </button>
-          )}
         </div>
       </div>
 
@@ -198,6 +196,10 @@ export function OffersList({
                 onPause={showActions ? () => pauseOffer(offer.id) : undefined}
                 onArchive={showActions ? () => archiveOffer(offer.id) : undefined}
                 onDelete={showActions ? () => deleteOffer(offer.id) : undefined}
+                onViewDetails={onViewDetails ? () => onViewDetails(offer) : undefined}
+                onViewAnalytics={onViewAnalytics ? () => onViewAnalytics(offer) : undefined}
+                onExtendExpiry={onExtendExpiry ? () => onExtendExpiry(offer) : undefined}
+                onDuplicate={onDuplicate ? () => onDuplicate(offer) : undefined}
                 showActions={showActions}
                 showStats={true}
               />
