@@ -1,7 +1,7 @@
 // src/components/business/FeaturedOffers.tsx
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Tag, ChevronRight, Calendar, TrendingUp } from 'lucide-react';
+import { Tag, ChevronRight, Calendar, TrendingUp, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import type { Offer } from '@/types/offers';
 
@@ -16,6 +16,7 @@ export default function FeaturedOffers({ businessId, businessName, isOwner }: Fe
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
+  const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
 
   useEffect(() => {
     fetchOffers();
@@ -119,7 +120,7 @@ export default function FeaturedOffers({ businessId, businessName, isOwner }: Fe
         {offers.map((offer) => (
           <div
             key={offer.id}
-            onClick={() => navigate(`/business/${businessId}/offers?highlight=${offer.offer_code}`)}
+            onClick={() => setSelectedOffer(offer)}
             className="border border-gray-200 rounded-lg p-4 hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer group"
           >
             <div className="flex items-start justify-between">
@@ -162,6 +163,78 @@ export default function FeaturedOffers({ businessId, businessName, isOwner }: Fe
         >
           View {totalCount - 4} more offer{totalCount - 4 !== 1 ? 's' : ''}
         </button>
+      )}
+
+      {/* Offer Details Modal */}
+      {selectedOffer && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-900">Offer Details</h2>
+              <button
+                onClick={() => setSelectedOffer(null)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="h-5 w-5 text-gray-600" />
+              </button>
+            </div>
+            <div className="p-6 space-y-6">
+              {/* Title and Code */}
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900">{selectedOffer.title}</h3>
+                <p className="text-sm text-gray-500 mt-2">
+                  Code: <span className="font-mono font-semibold text-purple-600">{selectedOffer.offer_code}</span>
+                </p>
+              </div>
+
+              {/* Description */}
+              {selectedOffer.description && (
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-2">Description</h4>
+                  <p className="text-gray-600">{selectedOffer.description}</p>
+                </div>
+              )}
+
+              {/* Terms & Conditions */}
+              {selectedOffer.terms_conditions && (
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-2">Terms & Conditions</h4>
+                  <p className="text-gray-600 whitespace-pre-wrap">{selectedOffer.terms_conditions}</p>
+                </div>
+              )}
+
+              {/* Validity */}
+              <div>
+                <h4 className="text-sm font-semibold text-gray-700 mb-2">Validity Period</h4>
+                <p className="text-gray-600">
+                  From: {new Date(selectedOffer.valid_from).toLocaleDateString()}<br />
+                  Until: {new Date(selectedOffer.valid_until).toLocaleDateString()}
+                </p>
+              </div>
+
+              {/* Stats */}
+              {isOwner && (
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3">Performance</h4>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="text-center p-4 bg-blue-50 rounded-lg">
+                      <p className="text-2xl font-bold text-blue-600">{selectedOffer.view_count}</p>
+                      <p className="text-xs text-gray-600 mt-1">Views</p>
+                    </div>
+                    <div className="text-center p-4 bg-purple-50 rounded-lg">
+                      <p className="text-2xl font-bold text-purple-600">{selectedOffer.share_count}</p>
+                      <p className="text-xs text-gray-600 mt-1">Shares</p>
+                    </div>
+                    <div className="text-center p-4 bg-green-50 rounded-lg">
+                      <p className="text-2xl font-bold text-green-600">{selectedOffer.click_count}</p>
+                      <p className="text-xs text-gray-600 mt-1">Clicks</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
