@@ -73,8 +73,12 @@ const Login: React.FC = () => {
 
         {/* Header */}
         <div className="text-center">
-          <div className="mx-auto w-12 h-12 bg-indigo-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-xl">S</span>
+          <div className="mx-auto flex justify-center">
+            <img 
+              src="/Logo/Sync Logo Transparent SVG.svg" 
+              alt="Sync" 
+              className="h-16 w-16"
+            />
           </div>
           <h2 className="mt-6 text-3xl font-bold text-gray-900">
             Welcome back

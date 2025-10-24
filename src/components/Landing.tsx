@@ -21,10 +21,11 @@ const Landing: React.FC = () => {
       <header className="px-4 py-6 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           <div className="flex items-center">
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">S</span>
-            </div>
-            <span className="ml-2 text-xl font-bold text-gray-900">SynC</span>
+            <img 
+              src="/Logo/Sync Logo Text Transparent SVG.svg" 
+              alt="Sync" 
+              className="h-8"
+            />
           </div>
           <div className="flex space-x-4">
             <Link 

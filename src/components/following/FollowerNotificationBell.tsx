@@ -15,6 +15,9 @@ export const FollowerNotificationBell: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Debug: Verify this component is rendering
+  console.log('FollowerNotificationBell rendering - notifications:', notifications.length, 'unread:', unreadCount);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -37,8 +40,9 @@ export const FollowerNotificationBell: React.FC = () => {
     // Mark as read
     await markAsRead(notification.id);
 
-    // Navigate to business page
-    navigate(`/business/${notification.business_id}`);
+    // Navigate to action URL if available, otherwise business page
+    const targetUrl = notification.action_url || `/business/${notification.business_id}`;
+    navigate(targetUrl);
     setIsOpen(false);
   };
 

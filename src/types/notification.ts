@@ -15,7 +15,8 @@ export type NotificationType =
   | 'marketplace_offer'
   | 'group_invitation'
   | 'group_post'
-  | 'system_announcement';
+  | 'system_announcement'
+  | 'new_offer';
 
 export interface NotificationMetadata {
   // Connection-related
@@ -36,6 +37,10 @@ export interface NotificationMetadata {
   // Business-related
   businessId?: string;
   reviewId?: string;
+  
+  // Offer-related
+  offer_code?: string;
+  offerCode?: string;
   
   // Marketplace-related
   listingId?: string;

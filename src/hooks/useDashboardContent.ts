@@ -49,26 +49,50 @@ export const useDashboardContent = () => {
 
         const userCity = profile?.city || null;
 
-        // Fetch spotlight businesses (top-rated in user's city)
+        // Fetch spotlight businesses with real ratings and review counts
         const { data: businessesData, error: businessesError } = await supabase
-          .from('businesses')
-          .select('id, name, category, city, logo_url, cover_image_url')
-          .eq('status', 'active')
-          .eq('city', userCity || 'Hyderabad') // Fallback to Hyderabad if no city
-          .order('created_at', { ascending: false })
-          .limit(6);
+          .rpc('get_businesses_with_ratings', {
+            filter_city: userCity || 'Hyderabad',
+            result_limit: 6
+          });
 
-        if (businessesError) throw businessesError;
+        if (businessesError) {
+          console.error('RPC Error:', businessesError);
+          // Fallback to simple query without ratings if RPC fails
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('businesses')
+            .select('id, name, category, city, logo_url, cover_image_url')
+            .eq('status', 'active')
+            .eq('city', userCity || 'Hyderabad')
+            .order('created_at', { ascending: false })
+            .limit(6);
 
-        // Transform and add dummy ratings (TODO: add real ratings table)
-        const businesses: SpotlightBusiness[] = (businessesData || []).map((b, idx) => ({
-          ...b,
-          rating: 4.5 + (Math.random() * 0.5), // [DUMMY] Replace with real ratings
-          review_count: Math.floor(Math.random() * 100) + 20, // [DUMMY] Replace with real review counts
-          is_promoted: idx === 0, // First business is promoted
-        }));
+          if (fallbackError) throw fallbackError;
 
-        setSpotlightBusinesses(businesses);
+          const businesses: SpotlightBusiness[] = (fallbackData || []).map((b, idx) => ({
+            ...b,
+            rating: 0,
+            review_count: 0,
+            is_promoted: idx === 0,
+          }));
+
+          setSpotlightBusinesses(businesses);
+        } else {
+          // Transform RPC results
+          const businesses: SpotlightBusiness[] = (businessesData || []).map((b: any, idx: number) => ({
+            id: b.id,
+            name: b.name,
+            category: b.category,
+            city: b.city,
+            logo_url: b.logo_url,
+            cover_image_url: b.cover_image_url,
+            rating: b.recommendation_percentage ? parseFloat(b.recommendation_percentage) / 20 : 0, // Convert 0-100% to 0-5 stars
+            review_count: b.total_reviews || 0,
+            is_promoted: idx === 0,
+          }));
+
+          setSpotlightBusinesses(businesses);
+        }
 
         // Fetch hot offers (expiring soon)
         const { data: offersData, error: offersError } = await supabase

@@ -1,11 +1,11 @@
 // src/components/following/FollowerFeed.tsx
 // Live feed of updates from followed businesses
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Package, Tag, Ticket, Megaphone, TrendingDown, RefreshCw, Filter } from 'lucide-react';
-import { useFollowerUpdates, FollowerUpdate } from '../../hooks/useFollowerUpdates';
+import { useFollowerNotifications, FollowerNotification } from '../../hooks/useFollowerNotifications';
 import { cn } from '../../lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -13,7 +13,14 @@ type UpdateFilter = 'all' | 'new_product' | 'new_offer' | 'new_coupon' | 'announ
 
 const FollowerFeed: React.FC = () => {
   const navigate = useNavigate();
-  const { updates, loading, hasMore, loadMore, refresh, error, filterByType, currentFilter } = useFollowerUpdates();
+  const { notifications, loading, error, refresh } = useFollowerNotifications();
+  const [currentFilter, setCurrentFilter] = useState<UpdateFilter>('all');
+
+  // Filter notifications by type
+  const filteredNotifications = useMemo(() => {
+    if (currentFilter === 'all') return notifications;
+    return notifications.filter(n => n.notification_type === currentFilter);
+  }, [notifications, currentFilter]);
 
   // Group updates by time period
   const groupedUpdates = useMemo(() => {
@@ -31,21 +38,21 @@ const FollowerFeed: React.FC = () => {
       older: [],
     };
 
-    updates.forEach(update => {
-      const updateDate = new Date(update.created_at);
+    filteredNotifications.forEach(notification => {
+      const updateDate = new Date(notification.created_at);
       if (updateDate >= today) {
-        groups.today.push(update);
+        groups.today.push(notification);
       } else if (updateDate >= yesterday) {
-        groups.yesterday.push(update);
+        groups.yesterday.push(notification);
       } else if (updateDate >= thisWeek) {
-        groups.thisWeek.push(update);
+        groups.thisWeek.push(notification);
       } else {
-        groups.older.push(update);
+        groups.older.push(notification);
       }
     });
 
     return groups;
-  }, [updates]);
+  }, [filteredNotifications]);
 
   // Get icon for update type
   const getUpdateIcon = (type: string) => {
@@ -103,42 +110,29 @@ const FollowerFeed: React.FC = () => {
     }
   };
 
-  // Handle update click
-  const handleUpdateClick = (update: FollowerUpdate) => {
-    // Navigate to appropriate page based on update type
-    if (update.entity_id) {
-      switch (update.update_type) {
-        case 'new_product':
-          navigate(`/products/${update.entity_id}`);
-          break;
-        case 'new_offer':
-        case 'new_coupon':
-          navigate(`/business/${update.business_id}`);
-          break;
-        default:
-          navigate(`/business/${update.business_id}`);
-      }
-    } else {
-      navigate(`/business/${update.business_id}`);
-    }
+  // Handle notification click
+  const handleNotificationClick = (notification: FollowerNotification) => {
+    // Navigate using action_url if available, otherwise business page
+    const targetUrl = notification.action_url || `/business/${notification.business_id}`;
+    navigate(targetUrl);
   };
 
-  // Render update card
-  const renderUpdateCard = (update: FollowerUpdate) => (
+  // Render notification card
+  const renderNotificationCard = (notification: FollowerNotification) => (
     <motion.div
-      key={update.id}
+      key={notification.id}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
         'border rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow',
-        getUpdateBgColor(update.update_type)
+        getUpdateBgColor(notification.notification_type)
       )}
-      onClick={() => handleUpdateClick(update)}
+      onClick={() => handleNotificationClick(notification)}
     >
       <div className="flex items-start space-x-3">
         {/* Icon */}
         <div className="flex-shrink-0 mt-1">
-          {getUpdateIcon(update.update_type)}
+          {getUpdateIcon(notification.notification_type)}
         </div>
 
         {/* Content */}
@@ -146,30 +140,30 @@ const FollowerFeed: React.FC = () => {
           {/* Business name and type */}
           <div className="flex items-center space-x-2 mb-1">
             <span className="font-semibold text-gray-900 truncate">
-              {update.business?.business_name || 'Unknown Business'}
+              {notification.business?.business_name || 'Unknown Business'}
             </span>
             <span className="text-xs px-2 py-0.5 rounded-full bg-white bg-opacity-50 font-medium">
-              {getUpdateLabel(update.update_type)}
+              {getUpdateLabel(notification.notification_type)}
             </span>
           </div>
 
           {/* Title */}
-          <h3 className="font-medium text-gray-900 mb-1">{update.title}</h3>
+          <h3 className="font-medium text-gray-900 mb-1">{notification.title}</h3>
 
-          {/* Description */}
-          {update.description && (
-            <p className="text-sm text-gray-600 line-clamp-2 mb-2">{update.description}</p>
+          {/* Message */}
+          {notification.message && (
+            <p className="text-sm text-gray-600 line-clamp-2 mb-2">{notification.message}</p>
           )}
 
           {/* Metadata */}
-          {update.metadata && (
+          {notification.metadata && (
             <div className="flex items-center space-x-4 text-sm text-gray-600">
-              {update.metadata.price && (
-                <span className="font-medium">₹{update.metadata.price}</span>
+              {notification.metadata.price && (
+                <span className="font-medium">₹{notification.metadata.price}</span>
               )}
-              {update.metadata.discount_value && (
+              {notification.metadata.discount_value && (
                 <span className="text-green-600 font-medium">
-                  {update.metadata.discount_value}% OFF
+                  {notification.metadata.discount_value}% OFF
                 </span>
               )}
             </div>
@@ -177,7 +171,7 @@ const FollowerFeed: React.FC = () => {
 
           {/* Timestamp */}
           <div className="mt-2 text-xs text-gray-500">
-            {formatDistanceToNow(new Date(update.created_at), { addSuffix: true })}
+            {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
           </div>
         </div>
       </div>
@@ -185,8 +179,8 @@ const FollowerFeed: React.FC = () => {
   );
 
   // Render time group
-  const renderTimeGroup = (title: string, updates: FollowerUpdate[]) => {
-    if (updates.length === 0) return null;
+  const renderTimeGroup = (title: string, items: FollowerNotification[]) => {
+    if (items.length === 0) return null;
 
     return (
       <div className="mb-6">
@@ -194,14 +188,14 @@ const FollowerFeed: React.FC = () => {
           {title}
         </h3>
         <div className="space-y-3">
-          {updates.map(renderUpdateCard)}
+          {items.map(renderNotificationCard)}
         </div>
       </div>
     );
   };
 
   // Loading state
-  if (loading && updates.length === 0) {
+  if (loading && notifications.length === 0) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
@@ -256,7 +250,7 @@ const FollowerFeed: React.FC = () => {
           ].map(filter => (
             <button
               key={filter.value}
-              onClick={() => filterByType(filter.value)}
+              onClick={() => setCurrentFilter(filter.value as UpdateFilter)}
               className={cn(
                 'px-3 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap',
                 currentFilter === filter.value
@@ -271,7 +265,7 @@ const FollowerFeed: React.FC = () => {
       </div>
 
       {/* Updates list */}
-      {updates.length === 0 ? (
+      {filteredNotifications.length === 0 ? (
         <div className="text-center py-12">
           <Package className="h-16 w-16 text-gray-300 mx-auto mb-4" />
           <h3 className="text-xl font-semibold text-gray-900 mb-2">No updates yet</h3>
@@ -291,19 +285,6 @@ const FollowerFeed: React.FC = () => {
           {renderTimeGroup('Yesterday', groupedUpdates.yesterday)}
           {renderTimeGroup('This Week', groupedUpdates.thisWeek)}
           {renderTimeGroup('Older', groupedUpdates.older)}
-
-          {/* Load more button */}
-          {hasMore && (
-            <div className="text-center mt-6">
-              <button
-                onClick={loadMore}
-                disabled={loading}
-                className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-wait"
-              >
-                {loading ? 'Loading...' : 'Load More'}
-              </button>
-            </div>
-          )}
         </>
       )}
     </div>

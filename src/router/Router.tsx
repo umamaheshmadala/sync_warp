@@ -23,6 +23,7 @@ import BusinessAnalyticsPage from '../components/business/BusinessAnalyticsPage'
 import BusinessQRCodePage from '../components/business/BusinessQRCodePage'
 import ProductManagerPage from '../components/business/ProductManagerPage'
 import CouponManagerPage from '../components/business/CouponManagerPage'
+import OfferManagerPage from '../components/business/OfferManagerPage'
 import CampaignManagerPage from '../components/business/CampaignManagerPage'
 import CampaignWizard from '../components/business/CampaignWizard'
 import CampaignAnalyticsPage from '../components/business/CampaignAnalyticsPage'
@@ -53,6 +54,7 @@ const FollowingPage = lazy(() => import('../components/following/FollowingPage')
 const FollowerFeed = lazy(() => import('../components/following/FollowerFeed'));
 const FollowerAnalyticsDashboard = lazy(() => import('../components/business/FollowerAnalyticsDashboard'));
 const FollowerList = lazy(() => import('../components/business/FollowerList'));
+const FollowerTargetingDemo = lazy(() => import('../pages/FollowerTargetingDemo'));
 
 // Debug components are removed from production build
 
@@ -64,6 +66,9 @@ const BusinessCheckinsPage = lazy(() => import('../components/checkins/BusinessC
 
 // Story 5.2: Review System
 const MyReviewsPage = lazy(() => import('../pages/MyReviewsPage'))
+
+// Notifications redirect page
+const NotificationsPage = lazy(() => import('../pages/NotificationsPage'))
 
 // Story 5.5: Test Sharing Limits (excluded from production)
 
@@ -123,6 +128,13 @@ export const routes: RouteConfig[] = [
     protected: true,
     title: 'Welcome - SynC',
     description: 'Complete your profile setup'
+  },
+  {
+    path: '/notifications',
+    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><NotificationsPage /></Suspense>,
+    protected: true,
+    title: 'Notifications - SynC',
+    description: 'Notification system has moved to the header bell icon'
   },
   {
     path: '/search',
@@ -258,6 +270,14 @@ export const routes: RouteConfig[] = [
     title: 'My Reviews - SynC',
     description: 'Manage your reviews and see your review history'
   },
+  // Follower Targeting Demo
+  {
+    path: '/demo/follower-targeting',
+    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><FollowerTargetingDemo /></Suspense>,
+    protected: true,
+    title: 'Follower Targeting Demo - SynC',
+    description: 'Interactive demo of follower targeting and campaign features'
+  },
   // Business Routes
   {
     path: '/business/register',
@@ -321,6 +341,13 @@ export const routes: RouteConfig[] = [
     protected: true,
     title: 'Coupon Manager - SynC',
     description: 'Create and manage business coupons'
+  },
+  {
+    path: '/business/:businessId/offers',
+    element: <OfferManagerPage />,
+    protected: true,
+    title: 'Offer Manager - SynC',
+    description: 'Create and manage promotional offers'
   },
   {
     path: '/business/:businessId/campaigns',

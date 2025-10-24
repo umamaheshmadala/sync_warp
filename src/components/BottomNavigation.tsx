@@ -6,6 +6,7 @@ import { Home, Search, Heart, UserCheck, Wallet, Users } from 'lucide-react';
 import NavigationBadge from './NavigationBadge';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
 import { useNavigationState } from '../hooks/useNavigationState';
+import { useFollowerNotifications } from '../hooks/useFollowerNotifications';
 
 interface BottomNavigationProps {
   currentRoute?: string;
@@ -27,6 +28,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentRoute }) => 
   const currentPath = currentRoute || location.pathname;
   const { triggerHaptic } = useHapticFeedback();
   const { addToHistory } = useNavigationState();
+  const { unreadCount } = useFollowerNotifications();
   const [lastActiveTab, setLastActiveTab] = useState<string>('');
   const [isAnimating, setIsAnimating] = useState(false);
 
@@ -60,6 +62,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentRoute }) => 
       label: 'Following',
       icon: UserCheck,
       route: '/following',
+      badge: unreadCount,
       color: 'text-gray-500',
       activeColor: 'text-green-600'
     },
@@ -83,6 +86,10 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentRoute }) => 
   ];
 
   const isActive = (route: string) => {
+    // Special case: /following/feed is independent and doesn't highlight /following
+    if (route === '/following' && currentPath === '/following/feed') {
+      return false;
+    }
     return currentPath === route || currentPath.startsWith(route + '/');
   };
 
@@ -113,10 +120,17 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentRoute }) => 
 
   return (
     <motion.nav 
-      className="fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-lg border-t border-gray-200"
+      className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-lg border-t border-gray-200"
       initial={{ y: 100 }}
       animate={{ y: 0 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      style={{
+        position: 'fixed',
+        bottom: 0,
+        WebkitTransform: 'translateZ(0)',
+        transform: 'translateZ(0)',
+        willChange: 'transform'
+      }}
     >
       {/* Container with max width matching header */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

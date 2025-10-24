@@ -61,7 +61,7 @@ export function useFollowerNotifications(): UseFollowerNotificationsReturn {
         .from('follower_notifications')
         .select(`
           *,
-          businesses (
+          business:businesses (
             id,
             business_name,
             logo_url

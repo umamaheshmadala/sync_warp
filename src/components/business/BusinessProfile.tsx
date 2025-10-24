@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Edit3,
@@ -29,6 +29,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
 import { toast } from 'react-hot-toast';
 import FeaturedProducts from './FeaturedProducts';
+import FeaturedOffers from './FeaturedOffers';
 import GoogleMapsLocationPicker from '../maps/GoogleMapsLocationPicker';
 import BusinessReviews from '../reviews/BusinessReviews';
 import BusinessReviewForm from '../reviews/BusinessReviewForm';
@@ -94,6 +95,7 @@ interface BusinessCategory {
 const BusinessProfile: React.FC = () => {
   const { businessId } = useParams<{ businessId: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuthStore();
   const [business, setBusiness] = useState<Business | null>(null);
   const [loading, setLoading] = useState(true);
@@ -137,6 +139,22 @@ const BusinessProfile: React.FC = () => {
     cover: false,
     gallery: false
   });
+
+  // Handle URL params (tab selection and offer code redirect)
+  useEffect(() => {
+    const offerCode = searchParams.get('offer');
+    const tab = searchParams.get('tab');
+    
+    // Handle direct tab navigation
+    if (tab && ['overview', 'reviews', 'statistics', 'enhanced-profile'].includes(tab)) {
+      setActiveTab(tab);
+    }
+    
+    // Handle offer code - redirect to offers management page
+    if (offerCode && businessId) {
+      navigate(`/business/${businessId}/offers?offer=${offerCode}`);
+    }
+  }, [searchParams, businessId, navigate]);
 
   // Load business data and categories
   useEffect(() => {
@@ -1000,6 +1018,15 @@ const BusinessProfile: React.FC = () => {
             ))}
           </div>
         </div>
+      )}
+
+      {/* Featured Offers Section */}
+      {business && (
+        <FeaturedOffers
+          businessId={business.id}
+          businessName={business.business_name}
+          isOwner={isOwner}
+        />
       )}
 
       {/* Featured Products Section */}

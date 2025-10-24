@@ -170,11 +170,18 @@ export default function SignUp() {
       <div className="max-w-md w-full space-y-8">
         {/* Header */}
         <div className="text-center">
-          <h2 className="mt-6 text-3xl font-bold text-gray-900">
+          <div className="flex justify-center mb-6">
+            <img 
+              src="/Logo/Sync Logo Transparent SVG.svg" 
+              alt="Sync" 
+              className="h-16 w-16"
+            />
+          </div>
+          <h2 className="text-3xl font-bold text-gray-900">
             Create your account
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Join SynC and start discovering amazing deals
+            Join Sync and start discovering amazing deals
           </p>
         </div>
 

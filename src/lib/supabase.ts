@@ -13,8 +13,35 @@ if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('placeholder') || s
 // Create client with fallback values to prevent errors
 export const supabase = createClient(
   supabaseUrl || 'https://placeholder.supabase.co', 
-  supabaseAnonKey || 'placeholder-key'
+  supabaseAnonKey || 'placeholder-key',
+  {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true
+    }
+  }
 )
+
+// Listen for auth errors and auto-logout on token issues
+supabase.auth.onAuthStateChange((event, session) => {
+  // Handle refresh token errors
+  if (event === 'TOKEN_REFRESHED' && !session) {
+    console.error('Token refresh failed - logging out')
+    // Clear local storage and redirect to login
+    localStorage.clear()
+    sessionStorage.clear()
+    window.location.href = '/auth/login'
+  }
+  
+  // Handle signed out event
+  if (event === 'SIGNED_OUT') {
+    console.log('User signed out')
+    // Clear all local data
+    localStorage.clear()
+    sessionStorage.clear()
+  }
+})
 
 // Database types
 export interface SocialLinks {

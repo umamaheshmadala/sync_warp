@@ -1,11 +1,12 @@
 import { useNavigate } from 'react-router-dom';
-import { List, Bell, LogOut, User, Settings, Users, UserCheck } from 'lucide-react';
+import { List, LogOut, User, Settings, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { useSimpleProductSocial } from '../../hooks/useSimpleProductSocial';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import ContactsSidebar from '../ContactsSidebarWithTabs';
+import { FollowerNotificationBell } from '../following/FollowerNotificationBell';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,10 +38,18 @@ export default function Header() {
           className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
           onClick={() => navigate('/dashboard')}
         >
-          <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-md">
-            <span className="text-white font-bold text-xl">S</span>
-          </div>
-          <span className="font-bold text-xl bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent hidden sm:inline-block">SynC</span>
+          {/* Logo icon for mobile */}
+          <img 
+            src="/Logo/Sync Logo Transparent SVG.svg" 
+            alt="Sync Logo" 
+            className="h-10 w-10 sm:hidden"
+          />
+          {/* Logo with text for desktop */}
+          <img 
+            src="/Logo/Sync Logo Text Transparent SVG.svg" 
+            alt="Sync" 
+            className="hidden sm:block h-10"
+          />
         </div>
 
         {/* Spacer for layout balance */}
@@ -56,7 +65,7 @@ export default function Header() {
             onClick={() => setShowContactsSidebar(true)}
             title="Friends"
           >
-            <Users className="h-5 w-5" />
+            <UserPlus className="h-5 w-5" />
           </Button>
 
           {/* Wishlist */}
@@ -76,26 +85,10 @@ export default function Header() {
             )}
           </Button>
 
-          {/* Following - Adjacent to Wallet */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-gray-700 hover:text-green-600 hover:bg-green-50"
-            onClick={() => navigate('/following')}
-            title="Following"
-          >
-            <UserCheck className="h-5 w-5" />
-          </Button>
-
-          {/* Notifications - Placeholder */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="hidden sm:flex text-gray-700 hover:text-indigo-600 hover:bg-indigo-50"
-            onClick={() => navigate('/notifications')}
-          >
-            <Bell className="h-5 w-5" />
-          </Button>
+          {/* Notifications - Follower notifications bell */}
+          <div className="hidden sm:flex">
+            <FollowerNotificationBell />
+          </div>
 
           {/* Profile Dropdown */}
           <DropdownMenu>

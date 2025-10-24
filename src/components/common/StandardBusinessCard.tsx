@@ -153,8 +153,8 @@ export const StandardBusinessCard: React.FC<StandardBusinessCardProps> = ({
         </div>
       )}
 
-      {/* Cover Image or Gradient */}
-      <div className="relative h-32 bg-gradient-to-br from-indigo-500 to-purple-600 overflow-hidden rounded-t-lg">
+      {/* Cover Image or Gradient - Hidden on mobile, shown on desktop */}
+      <div className="hidden md:block relative h-32 bg-gradient-to-br from-indigo-500 to-purple-600 overflow-hidden rounded-t-lg">
         {business.cover_image_url ? (
           <img
             src={business.cover_image_url}
@@ -171,26 +171,26 @@ export const StandardBusinessCard: React.FC<StandardBusinessCardProps> = ({
       </div>
 
       {/* Content */}
-      <div className="p-4 pt-0">
+      <div className="p-3 md:p-4 md:pt-0">
         {/* Logo & Title Row */}
-        <div className="flex items-start gap-3 mb-3 relative">
-          {/* Logo - positioned above cover image */}
-          <div className="flex-shrink-0 -mt-8 relative z-20">
+        <div className="flex items-start gap-2 md:gap-3 mb-2 md:mb-3 relative">
+          {/* Logo - smaller on mobile, positioned above cover on desktop */}
+          <div className="flex-shrink-0 md:-mt-8 relative z-20">
             {business.logo_url ? (
               <img
                 src={business.logo_url}
                 alt={businessName}
-                className="w-16 h-16 rounded-lg object-cover border-4 border-white shadow-lg"
+                className="w-10 h-10 md:w-16 md:h-16 rounded-lg object-cover border-2 md:border-4 border-white shadow-md md:shadow-lg"
               />
             ) : (
-              <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-bold text-xl shadow-lg border-4 border-white">
+              <div className="w-10 h-10 md:w-16 md:h-16 rounded-lg bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-bold text-sm md:text-xl shadow-md md:shadow-lg border-2 md:border-4 border-white">
                 {businessName.charAt(0).toUpperCase()}
               </div>
             )}
           </div>
 
           {/* Title & Category */}
-          <div className="flex-1 min-w-0 pt-2">
+          <div className="flex-1 min-w-0 md:pt-2">
             <h3
               className="text-base font-semibold text-gray-900 truncate group-hover:text-indigo-600 transition-colors"
               dangerouslySetInnerHTML={{ __html: displayName }}
