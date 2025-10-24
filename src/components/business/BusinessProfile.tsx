@@ -29,7 +29,6 @@ import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
 import { toast } from 'react-hot-toast';
 import FeaturedProducts from './FeaturedProducts';
-import FeaturedOffers from './FeaturedOffers';
 import GoogleMapsLocationPicker from '../maps/GoogleMapsLocationPicker';
 import BusinessReviews from '../reviews/BusinessReviews';
 import BusinessReviewForm from '../reviews/BusinessReviewForm';
@@ -1018,15 +1017,6 @@ const BusinessProfile: React.FC = () => {
             ))}
           </div>
         </div>
-      )}
-
-      {/* Featured Offers Section */}
-      {business && (
-        <FeaturedOffers
-          businessId={business.id}
-          businessName={business.business_name}
-          isOwner={isOwner}
-        />
       )}
 
       {/* Featured Products Section */}

@@ -4,7 +4,6 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Plus, X } from 'lucide-react';
 import { OffersList, CreateOfferForm, OfferAnalyticsDashboard } from '../offers';
 import { ExtendExpiryModal } from '../offers/ExtendExpiryModal';
-import BusinessOffers from './BusinessOffers';
 import { useOffers } from '@/hooks/useOffers';
 import { useAuthStore } from '@/store/authStore';
 import { supabase } from '@/lib/supabase';
@@ -185,12 +184,17 @@ export default function OfferManagerPage() {
             showActions={true}
           />
         ) : (
-          /* Customer View: Read-only with BusinessOffers (filtering) */
-          <BusinessOffers
+          /* Customer View: Read-only with OffersList (no management actions) */
+          <OffersList
+            key={refreshTrigger}
             businessId={businessId}
-            businessName={business.business_name}
-            isOwner={false}
-            highlightedOfferCode={highlightedOfferCode}
+            onCreateOffer={() => {}} 
+            onEditOffer={() => {}}
+            onViewDetails={(offer) => setViewDetailsOffer(offer)}
+            onViewAnalytics={() => {}}
+            onExtendExpiry={() => {}}
+            onDuplicate={() => {}}
+            showActions={false}
           />
         )}
       </div>
