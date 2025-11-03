@@ -7,13 +7,15 @@
 1. [Overview](#overview)
 2. [Phase 1: Setup & Preparation](#phase-1-setup--preparation)
 3. [Phase 2: Capacitor Integration](#phase-2-capacitor-integration)
-4. [Phase 3: Offline Mode](#phase-3-offline-mode)
-5. [Phase 4: Push Notifications](#phase-4-push-notifications)
-6. [Phase 5: App Store Preparation](#phase-5-app-store-preparation)
-7. [Phase 6: Testing & Deployment](#phase-6-testing--deployment)
-8. [Phase 7: Future React Native Migration](#phase-7-future-react-native-migration)
-9. [Timeline & Effort Estimates](#timeline--effort-estimates)
-10. [Troubleshooting Guide](#troubleshooting-guide)
+4. [Phase 2.5: Supabase Mobile Coordination](#phase-25-supabase-mobile-coordination)
+5. [Phase 3: Offline Mode (Enhanced)](#phase-3-offline-mode-enhanced)
+6. [Phase 4: Push Notifications](#phase-4-push-notifications)
+7. [Phase 5: App Store Preparation](#phase-5-app-store-preparation)
+8. [Phase 5.5: Environment & Build Management](#phase-55-environment--build-management)
+9. [Phase 6: Testing & Deployment](#phase-6-testing--deployment)
+10. [Phase 7: Future React Native Migration](#phase-7-future-react-native-migration)
+11. [Timeline & Effort Estimates](#timeline--effort-estimates)
+12. [Troubleshooting Guide](#troubleshooting-guide)
 
 ---
 
@@ -408,27 +410,479 @@ npm run mobile:ios
 
 ---
 
-## 💾 Phase 3: Offline Mode
-**Time Estimate: 6-8 hours**  
+## 🔗 Phase 2.5: Supabase Mobile Coordination Layer
+**Time Estimate: 3-4 hours**  
+**Difficulty: Medium** ⭐⭐
+
+> **Why this matters:** The basic Supabase config from Phase 2.7c works, but for production mobile apps you need secure token storage, proper session persistence, and coordinated push notification handling.
+
+### Step 2.5.1: Install Capacitor Secure Storage
+**What:** Store authentication tokens securely on native devices.
+
+```powershell
+npm install @capacitor/preferences
+```
+
+**What this does:** Provides encrypted storage on iOS (Keychain) and Android (EncryptedSharedPreferences).
+
+---
+
+### Step 2.5.2: Create Enhanced Supabase Client
+**What:** Replace the basic config with production-ready mobile setup.
+
+**File to edit:** `src/lib/supabase.ts`
+
+**Replace entire file with:**
+
+```typescript
+import { createClient } from '@supabase/supabase-js';
+import { Capacitor } from '@capacitor/core';
+import { Preferences } from '@capacitor/preferences';
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+// Custom storage adapter for mobile secure storage
+const CapacitorStorage = {
+  async getItem(key: string): Promise<string | null> {
+    if (!Capacitor.isNativePlatform()) {
+      return localStorage.getItem(key);
+    }
+    const { value } = await Preferences.get({ key });
+    return value;
+  },
+  async setItem(key: string, value: string): Promise<void> {
+    if (!Capacitor.isNativePlatform()) {
+      localStorage.setItem(key, value);
+      return;
+    }
+    await Preferences.set({ key, value });
+  },
+  async removeItem(key: string): Promise<void> {
+    if (!Capacitor.isNativePlatform()) {
+      localStorage.removeItem(key);
+      return;
+    }
+    await Preferences.remove({ key });
+  }
+};
+
+// Mobile-optimized Supabase configuration
+const supabaseConfig = {
+  auth: {
+    storage: CapacitorStorage,
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: !Capacitor.isNativePlatform(),
+    // Mobile-specific: Don't use URL fragments for auth
+    flowType: Capacitor.isNativePlatform() ? 'pkce' : 'implicit',
+    // Longer storage lifetime on mobile
+    storageKey: 'sb-auth-token'
+  },
+  db: {
+    schema: 'public'
+  },
+  global: {
+    headers: {
+      'x-client-platform': Capacitor.getPlatform()
+    }
+  }
+};
+
+export const supabase = createClient(supabaseUrl!, supabaseAnonKey!, supabaseConfig);
+
+// Export platform detection
+export const isNativePlatform = Capacitor.isNativePlatform();
+export const platform = Capacitor.getPlatform();
+```
+
+**Save the file.**
+
+---
+
+### Step 2.5.3: Create Push Token Registration Hook
+**What:** Automatically register device for push notifications when user logs in.
+
+**Create new file:** `src/hooks/usePushNotifications.ts`
+
+```typescript
+import { useEffect, useState } from 'react';
+import { PushNotifications } from '@capacitor/push-notifications';
+import { Capacitor } from '@capacitor/core';
+import { supabase } from '../lib/supabase';
+import { useAuthStore } from '../store/authStore';
+
+export const usePushNotifications = () => {
+  const [isRegistered, setIsRegistered] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
+  const user = useAuthStore(state => state.user);
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform() || !user?.id) {
+      return;
+    }
+
+    const registerPushToken = async () => {
+      try {
+        // Request permission
+        const permission = await PushNotifications.requestPermissions();
+        
+        if (permission.receive === 'granted') {
+          // Register with platform (FCM/APNS)
+          await PushNotifications.register();
+          
+          // Listen for token
+          PushNotifications.addListener('registration', async (tokenData) => {
+            console.log('\u2705 Push token received:', tokenData.value);
+            setToken(tokenData.value);
+            
+            // Save to Supabase
+            await supabase
+              .from('push_tokens')
+              .upsert({
+                user_id: user.id,
+                token: tokenData.value,
+                platform: Capacitor.getPlatform(),
+                updated_at: new Date().toISOString()
+              }, {
+                onConflict: 'user_id,platform'
+              });
+            
+            setIsRegistered(true);
+          });
+
+          // Listen for registration errors
+          PushNotifications.addListener('registrationError', (error) => {
+            console.error('\u274c Push registration error:', error);
+          });
+        }
+      } catch (error) {
+        console.error('\u274c Failed to register push notifications:', error);
+      }
+    };
+
+    registerPushToken();
+
+    // Cleanup
+    return () => {
+      PushNotifications.removeAllListeners();
+    };
+  }, [user?.id]);
+
+  return { isRegistered, token };
+};
+```
+
+**Save the file.**
+
+---
+
+### Step 2.5.4: Integrate Push Hook into Auth Flow
+**What:** Automatically call push registration when user logs in.
+
+**File to edit:** `src/components/Layout.tsx`
+
+**Add these imports at top:**
+
+```typescript
+import { usePushNotifications } from '../hooks/usePushNotifications';
+```
+
+**Add this line inside your component (near the top):**
+
+```typescript
+const { isRegistered } = usePushNotifications();
+```
+
+**Save the file.**
+
+---
+
+### Step 2.5.5: Test Secure Storage
+**What:** Verify tokens are stored securely.
+
+**Steps:**
+
+1. Build and run on device:
+```powershell
+npm run mobile:sync
+npm run mobile:android
+```
+
+2. Log in to your app
+
+3. Close app completely (swipe away)
+
+4. Reopen app - you should still be logged in!
+
+5. Check logs for:
+```
+✅ Push token received: [token]
+✅ Token saved to Supabase
+```
+
+---
+
+### ✅ Phase 2.5 Checkpoint
+**You should now have:**
+- ✅ Secure token storage (iOS Keychain / Android Encrypted Preferences)
+- ✅ Persistent sessions across app restarts
+- ✅ Automatic push token registration
+- ✅ Supabase client optimized for mobile
+- ✅ Platform detection utilities
+
+**Why this matters:**
+- Web localStorage is NOT secure on mobile
+- iOS requires Keychain for sensitive data (App Store requirement)
+- Automatic token registration = less code to maintain
+- PKCE flow is more secure than implicit flow on mobile
+
+---
+
+## 💾 Phase 3: Offline Mode (Enhanced)
+**Time Estimate: 8-10 hours**  
 **Difficulty: Medium-Hard** ⭐⭐⭐
+
+> **Enhanced:** This phase now includes vite-plugin-pwa for production builds AND Zustand persistence for offline data sync.
 
 ### Step 3.1: Install Required Packages
 **What:** Add tools for offline functionality.
 
 ```powershell
-npm install workbox-window workbox-webpack-plugin
+# PWA and service worker tools
+npm install vite-plugin-pwa workbox-window -D
 npm install localforage
 npm install @capacitor/network
+
+# Zustand persistence for offline data
+npm install zustand-persist
 ```
 
 **What each package does:**
-- `workbox-*`: Google's service worker tools (caching)
+- `vite-plugin-pwa`: Automatic service worker generation for production
+- `workbox-window`: Google's service worker tools (caching)
 - `localforage`: Simple offline storage (better than localStorage)
 - `@capacitor/network`: Detect online/offline status
+- `zustand-persist`: Persist Zustand store data offline
 
 ---
 
-### Step 3.2: Create Service Worker
+### Step 3.1a: Configure Vite PWA Plugin
+**What:** Automatically generate production-ready service worker.
+
+**File to edit:** `vite.config.ts`
+
+**Add import at top:**
+
+```typescript
+import { VitePWA } from 'vite-plugin-pwa';
+```
+
+**Update plugins array:**
+
+```typescript
+export default defineConfig({
+  plugins: [
+    react(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      includeAssets: ['favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
+      manifest: {
+        name: 'Sync App',
+        short_name: 'Sync',
+        description: 'Discover local businesses, reviews, and offers',
+        theme_color: '#6366f1',
+        icons: [
+          {
+            src: 'pwa-192x192.png',
+            sizes: '192x192',
+            type: 'image/png'
+          },
+          {
+            src: 'pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any maskable'
+          }
+        ]
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/.*/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'supabase-api-cache',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 // 24 hours
+              },
+              networkTimeoutSeconds: 10
+            }
+          },
+          {
+            urlPattern: /^https:\/\/.*\.supabase\.co\/storage\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'supabase-storage-cache',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+              }
+            }
+          }
+        ]
+      },
+      devOptions: {
+        enabled: false // Disable in dev for faster HMR
+      }
+    })
+  ],
+  // rest of config...
+});
+```
+
+**Save the file.**
+
+---
+
+### Step 3.1b: Add Zustand Persistence to Auth Store
+**What:** Keep user logged in even when offline.
+
+**File to edit:** `src/store/authStore.ts`
+
+**Add import at top:**
+
+```typescript
+import { persist } from 'zustand/middleware';
+```
+
+**Wrap your store with persist middleware:**
+
+**Before:**
+```typescript
+export const useAuthStore = create<AuthState>((set) => ({
+  // your state...
+}));
+```
+
+**After:**
+```typescript
+export const useAuthStore = create<AuthState>(
+  persist(
+    (set) => ({
+      // your existing state...
+    }),
+    {
+      name: 'auth-storage', // unique name for storage key
+      getStorage: () => localStorage, // or localforage for mobile
+      partialize: (state) => ({
+        user: state.user,
+        // Only persist essential data, not functions
+      })
+    }
+  )
+);
+```
+
+**Save the file.**
+
+---
+
+### Step 3.1c: Create Offline-First Zustand Store
+**What:** Example store that automatically syncs with Supabase when online.
+
+**Create new file:** `src/store/offlineBusinessStore.ts`
+
+```typescript
+import create from 'zustand';
+import { persist } from 'zustand/middleware';
+import { supabase } from '../lib/supabase';
+import localforage from 'localforage';
+
+interface Business {
+  id: string;
+  business_name: string;
+  // ... other fields
+}
+
+interface OfflineBusinessState {
+  businesses: Business[];
+  lastSync: string | null;
+  isOnline: boolean;
+  fetchBusinesses: () => Promise<void>;
+  syncToServer: () => Promise<void>;
+}
+
+export const useOfflineBusinessStore = create<OfflineBusinessState>(
+  persist(
+    (set, get) => ({
+      businesses: [],
+      lastSync: null,
+      isOnline: navigator.onLine,
+
+      fetchBusinesses: async () => {
+        try {
+          const { data, error } = await supabase
+            .from('businesses')
+            .select('*')
+            .limit(50);
+
+          if (error) throw error;
+
+          set({
+            businesses: data || [],
+            lastSync: new Date().toISOString(),
+            isOnline: true
+          });
+        } catch (error) {
+          console.log('📦 Using cached businesses (offline)');
+          set({ isOnline: false });
+        }
+      },
+
+      syncToServer: async () => {
+        // Implement sync logic here
+        console.log('🔄 Syncing local changes to server...');
+      }
+    }),
+    {
+      name: 'offline-businesses',
+      getStorage: () => localforage // Use localforage for mobile
+    }
+  )
+);
+```
+
+**Save the file.**
+
+**How to use in components:**
+
+```typescript
+import { useOfflineBusinessStore } from '../store/offlineBusinessStore';
+
+function BusinessList() {
+  const { businesses, isOnline, fetchBusinesses } = useOfflineBusinessStore();
+
+  useEffect(() => {
+    fetchBusinesses(); // Automatically uses cache if offline
+  }, []);
+
+  return (
+    <div>
+      {!isOnline && <div className="offline-banner">Viewing cached data</div>}
+      {businesses.map(business => (
+        <div key={business.id}>{business.business_name}</div>
+      ))}
+    </div>
+  );
+}
+```
+
+---
+
+### Step 3.2: Create Service Worker (Manual Fallback)
 **What:** A background script that caches your app for offline use.
 
 **Create new file:** `public/service-worker.js`
@@ -1579,9 +2033,692 @@ npm run mobile:ios
 
 ---
 
-## 🧪 Phase 6: Testing & Deployment
-**Time Estimate: 10-12 hours**  
+## ⚙️ Phase 5.5: Environment & Build Management
+**Time Estimate: 2-3 hours**  
+**Difficulty: Medium** ⭐⭐
+
+> **Why this matters:** Professional apps need different configurations for development, staging, and production. This phase sets up environment management and automated build scripts.
+
+### Step 5.5.1: Create Environment Configuration Files
+**What:** Separate config for dev, staging, and production builds.
+
+**Create these files:**
+
+**File 1:** `.env.development`
+```bash
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-dev-anon-key
+VITE_APP_ENV=development
+VITE_API_BASE_URL=http://localhost:5173
+VITE_ENABLE_ANALYTICS=false
+VITE_ENABLE_ERROR_TRACKING=false
+```
+
+**File 2:** `.env.staging`
+```bash
+VITE_SUPABASE_URL=https://your-staging-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-staging-anon-key
+VITE_APP_ENV=staging
+VITE_API_BASE_URL=https://staging.syncapp.com
+VITE_ENABLE_ANALYTICS=true
+VITE_ENABLE_ERROR_TRACKING=true
+```
+
+**File 3:** `.env.production`
+```bash
+VITE_SUPABASE_URL=https://your-prod-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-prod-anon-key
+VITE_APP_ENV=production
+VITE_API_BASE_URL=https://app.syncapp.com
+VITE_ENABLE_ANALYTICS=true
+VITE_ENABLE_ERROR_TRACKING=true
+```
+
+**⚠️ Important: Add to .gitignore!**
+
+**File to edit:** `.gitignore`
+```
+# Environment files
+.env.local
+.env.*.local
+.env.development.local
+.env.staging.local
+.env.production.local
+```
+
+**Keep .env.development, .env.staging, .env.production in git** (without sensitive keys).
+**Use .local versions for actual secrets** (never commit these).
+
+---
+
+### Step 5.5.2: Update Capacitor Config for Multiple Environments
+**What:** Dynamic config based on environment.
+
+**File to edit:** `capacitor.config.ts`
+
+**Replace with:**
+
+```typescript
+import { CapacitorConfig } from '@capacitor/core';
+
+const getConfig = (): CapacitorConfig => {
+  const env = process.env.VITE_APP_ENV || 'development';
+  
+  const baseConfig: CapacitorConfig = {
+    appId: 'com.syncapp.mobile',
+    appName: 'Sync App',
+    webDir: 'dist',
+    server: {
+      androidScheme: 'https',
+      iosScheme: 'https'
+    },
+    plugins: {
+      SplashScreen: {
+        launchShowDuration: 2000,
+        backgroundColor: '#6366f1',
+        showSpinner: false,
+        androidSpinnerStyle: 'large',
+        iosSpinnerStyle: 'small'
+      },
+      PushNotifications: {
+        presentationOptions: ['badge', 'sound', 'alert']
+      }
+    }
+  };
+
+  // Environment-specific overrides
+  if (env === 'development') {
+    baseConfig.server!.hostname = 'localhost';
+    baseConfig.server!.cleartext = true; // Allow HTTP in dev
+  } else if (env === 'staging') {
+    baseConfig.appName = 'Sync App (Staging)';
+    baseConfig.server!.hostname = 'staging.syncapp.com';
+  } else {
+    baseConfig.server!.hostname = 'app.syncapp.com';
+  }
+
+  return baseConfig;
+};
+
+export default getConfig();
+```
+
+**Save the file.**
+
+---
+
+### Step 5.5.3: Create Build Scripts for Different Environments
+**What:** One-command builds for each environment.
+
+**File to edit:** `package.json`
+
+**Add these scripts:**
+
+```json
+{
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    
+    "build:dev": "vite build --mode development",
+    "build:staging": "vite build --mode staging",
+    "build:prod": "vite build --mode production",
+    
+    "mobile:sync": "npm run build && npx cap sync",
+    "mobile:sync:dev": "npm run build:dev && npx cap sync",
+    "mobile:sync:staging": "npm run build:staging && npx cap sync",
+    "mobile:sync:prod": "npm run build:prod && npx cap sync",
+    
+    "mobile:android:dev": "npm run mobile:sync:dev && npx cap open android",
+    "mobile:android:staging": "npm run mobile:sync:staging && npx cap open android",
+    "mobile:android:prod": "npm run mobile:sync:prod && npx cap open android",
+    
+    "mobile:ios:dev": "npm run mobile:sync:dev && npx cap open ios",
+    "mobile:ios:staging": "npm run mobile:sync:staging && npx cap open ios",
+    "mobile:ios:prod": "npm run mobile:sync:prod && npx cap open ios",
+    
+    "test:mobile": "npm run test && npm run mobile:sync:dev"
+  }
+}
+```
+
+**Save the file.**
+
+---
+
+### Step 5.5.4: Configure iOS Bundle Identifiers for Environments
+**What:** Use different bundle IDs for dev/staging/prod.
+
+**In Xcode:**
+
+1. Open project: `npm run mobile:ios`
+2. Select project in navigator
+3. Go to **Build Settings** tab
+4. Search for "Bundle Identifier"
+5. Set up configurations:
+
+**Debug:** `com.syncapp.mobile.dev`  
+**Staging:** `com.syncapp.mobile.staging`  
+**Release:** `com.syncapp.mobile`
+
+**Why:** This allows you to install dev, staging, and production versions on the same device!
+
+---
+
+### Step 5.5.5: Configure Android Build Variants
+**What:** Create build flavors for different environments.
+
+**File to edit:** `android/app/build.gradle`
+
+**Add inside `android {` block:**
+
+```gradle
+flavorDimensions "version"
+productFlavors {
+    dev {
+        dimension "version"
+        applicationIdSuffix ".dev"
+        versionNameSuffix "-dev"
+        resValue "string", "app_name", "Sync Dev"
+    }
+    staging {
+        dimension "version"
+        applicationIdSuffix ".staging"
+        versionNameSuffix "-staging"
+        resValue "string", "app_name", "Sync Staging"
+    }
+    prod {
+        dimension "version"
+        resValue "string", "app_name", "Sync App"
+    }
+}
+```
+
+**Save the file.**
+
+**Now you can build:**
+```powershell
+# Development build
+cd android
+./gradlew assembleDevDebug
+
+# Staging build
+./gradlew assembleStagingRelease
+
+# Production build
+./gradlew assembleProdRelease
+```
+
+---
+
+### Step 5.5.6: Create CI/CD Preparation Script
+**What:** Script for automated deployments (future use).
+
+**Create new file:** `scripts/build-mobile.sh` (for Mac/Linux)
+
+```bash
+#!/bin/bash
+
+# Mobile build script for CI/CD
+# Usage: ./scripts/build-mobile.sh [dev|staging|prod] [ios|android]
+
+set -e # Exit on error
+
+ENV=${1:-dev}
+PLATFORM=${2:-android}
+
+echo "🏗️ Building for environment: $ENV, platform: $PLATFORM"
+
+# Build web app
+echo "📦 Building web app..."
+npm run build:$ENV
+
+# Sync with Capacitor
+echo "🔄 Syncing with Capacitor..."
+npx cap sync $PLATFORM
+
+if [ "$PLATFORM" = "android" ]; then
+  echo "🤖 Building Android app..."
+  cd android
+  if [ "$ENV" = "prod" ]; then
+    ./gradlew assembleProdRelease
+  elif [ "$ENV" = "staging" ]; then
+    ./gradlew assembleStagingRelease
+  else
+    ./gradlew assembleDevDebug
+  fi
+  cd ..
+fi
+
+if [ "$PLATFORM" = "ios" ]; then
+  echo "🍎 iOS build requires Xcode - opening project..."
+  npx cap open ios
+fi
+
+echo "✅ Build complete!"
+```
+
+**Make executable:**
+```powershell
+chmod +x scripts/build-mobile.sh
+```
+
+---
+
+### Step 5.5.7: Create PowerShell Build Script (for Windows)
+**What:** Windows-friendly build automation.
+
+**Create new file:** `scripts/Build-Mobile.ps1`
+
+```powershell
+# Mobile build script for Windows
+# Usage: .\scripts\Build-Mobile.ps1 -Env dev -Platform android
+
+param(
+    [Parameter(Mandatory=$false)]
+    [ValidateSet('dev','staging','prod')]
+    [string]$Env = 'dev',
+    
+    [Parameter(Mandatory=$false)]
+    [ValidateSet('android','ios')]
+    [string]$Platform = 'android'
+)
+
+Write-Host "🏗️ Building for environment: $Env, platform: $Platform" -ForegroundColor Cyan
+
+# Build web app
+Write-Host "📦 Building web app..." -ForegroundColor Yellow
+npm run "build:$Env"
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Build failed!"
+    exit 1
+}
+
+# Sync with Capacitor
+Write-Host "🔄 Syncing with Capacitor..." -ForegroundColor Yellow
+npx cap sync $Platform
+
+if ($Platform -eq 'android') {
+    Write-Host "🤖 Opening Android Studio..." -ForegroundColor Green
+    npx cap open android
+} elseif ($Platform -eq 'ios') {
+    Write-Host "🍎 Opening Xcode..." -ForegroundColor Green
+    npx cap open ios
+}
+
+Write-Host "✅ Build complete!" -ForegroundColor Green
+```
+
+**Usage:**
+```powershell
+# Build development for Android
+.\scripts\Build-Mobile.ps1 -Env dev -Platform android
+
+# Build staging for iOS
+.\scripts\Build-Mobile.ps1 -Env staging -Platform ios
+
+# Build production for Android
+.\scripts\Build-Mobile.ps1 -Env prod -Platform android
+```
+
+---
+
+### ✅ Phase 5.5 Checkpoint
+**You should now have:**
+- ✅ Environment configuration files (dev, staging, prod)
+- ✅ Dynamic Capacitor config
+- ✅ Build scripts for each environment
+- ✅ iOS build configurations
+- ✅ Android build flavors
+- ✅ Automated build scripts
+
+**Why this matters:**
+- Install dev, staging, and prod on same device
+- Easy testing without affecting production
+- Automated builds for CI/CD
+- Professional development workflow
+
+**Test it:**
+```powershell
+# Build and open dev version
+npm run mobile:android:dev
+
+# Build staging version
+npm run mobile:android:staging
+```
+
+You should see different app names in your device's app drawer!
+
+---
+
+## 🧪 Phase 6: Testing & Deployment (Enhanced)
+**Time Estimate: 12-15 hours**  
 **Difficulty: Medium-Hard** ⭐⭐⭐
+
+> **Enhanced:** Now includes Vitest mobile simulation and Playwright cross-platform testing.
+
+### Step 6.0a: Run Vitest in Mobile Simulation Mode
+**What:** Test your components before building mobile apps.
+
+**Why this matters:** Catch bugs early! Running tests before `npx cap copy` saves hours of debugging in Android Studio/Xcode.
+
+**File to edit:** `vitest.config.ts`
+
+**Add mobile-specific test environment:**
+
+```typescript
+import { defineConfig } from 'vitest/config';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+  plugins: [react()],
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './src/test/setup.ts',
+    // Mobile-specific settings
+    environmentOptions: {
+      jsdom: {
+        resources: 'usable'
+      }
+    }
+  }
+});
+```
+
+**Create test setup file:** `src/test/setup.ts`
+
+```typescript
+import { vi } from 'vitest';
+
+// Mock Capacitor for tests
+vi.mock('@capacitor/core', () => ({
+  Capacitor: {
+    isNativePlatform: () => false,
+    getPlatform: () => 'web',
+    isPluginAvailable: () => false
+  }
+}));
+
+// Mock Capacitor plugins
+vi.mock('@capacitor/preferences', () => ({
+  Preferences: {
+    get: vi.fn(),
+    set: vi.fn(),
+    remove: vi.fn()
+  }
+}));
+
+vi.mock('@capacitor/push-notifications', () => ({
+  PushNotifications: {
+    requestPermissions: vi.fn(),
+    register: vi.fn(),
+    addListener: vi.fn(),
+    removeAllListeners: vi.fn()
+  }
+}));
+
+// Set mobile viewport for tests
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: vi.fn().mockImplementation(query => ({
+    matches: query === '(max-width: 768px)', // Mobile breakpoint
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn()
+  }))
+});
+```
+
+**Add test command to package.json:**
+
+```json
+{
+  "scripts": {
+    "test:mobile:unit": "vitest run",
+    "test:mobile:watch": "vitest watch",
+    "test:mobile:pre-build": "vitest run && npm run build:dev"
+  }
+}
+```
+
+**Run tests before mobile build:**
+
+```powershell
+# Run unit tests
+npm run test:mobile:unit
+
+# If tests pass, build mobile app
+npm run mobile:sync:dev
+```
+
+---
+
+### Step 6.0b: Configure Playwright for Mobile WebView Testing
+**What:** Test actual mobile functionality using Playwright.
+
+**File to edit:** `playwright.config.ts`
+
+**Add mobile device configurations:**
+
+```typescript
+import { defineConfig, devices } from '@playwright/test';
+
+export default defineConfig({
+  testDir: './e2e',
+  fullyParallel: true,
+  forbidOnly: !!process.env.CI,
+  retries: process.env.CI ? 2 : 0,
+  workers: process.env.CI ? 1 : undefined,
+  reporter: 'html',
+  use: {
+    baseURL: 'http://localhost:5173',
+    trace: 'on-first-retry'
+  },
+
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] }
+    },
+    // Mobile device testing
+    {
+      name: 'Mobile Chrome',
+      use: { ...devices['Pixel 5'] }
+    },
+    {
+      name: 'Mobile Safari',
+      use: { ...devices['iPhone 12'] }
+    },
+    // Tablet testing
+    {
+      name: 'iPad',
+      use: { ...devices['iPad Pro'] }
+    }
+  ],
+
+  webServer: {
+    command: 'npm run dev',
+    url: 'http://localhost:5173',
+    reuseExistingServer: !process.env.CI
+  }
+});
+```
+
+**Create mobile-specific E2E test:** `e2e/mobile-flow.spec.ts`
+
+```typescript
+import { test, expect } from '@playwright/test';
+
+test.describe('Mobile App Flow', () => {
+  test('should work on mobile viewport', async ({ page }) => {
+    await page.goto('/');
+    
+    // Check mobile menu is visible
+    await expect(page.locator('[aria-label="Mobile menu"]')).toBeVisible();
+    
+    // Test touch interactions
+    await page.tap('[aria-label="Login"]');
+    
+    // Check offline indicator (simulate offline)
+    await page.context().setOffline(true);
+    await expect(page.locator('.offline-banner')).toBeVisible();
+    
+    // Restore connection
+    await page.context().setOffline(false);
+  });
+
+  test('should handle business profile on mobile', async ({ page }) => {
+    await page.goto('/business/your-test-business-id');
+    
+    // Check mobile-optimized layout
+    const isMobileLayout = await page.evaluate(() => {
+      return window.innerWidth <= 768;
+    });
+    
+    expect(isMobileLayout).toBeTruthy();
+    
+    // Test swipe gestures (if implemented)
+    await page.touchscreen.swipe({ x: 100, y: 100 }, { x: 300, y: 100 });
+  });
+});
+```
+
+**Run mobile tests:**
+
+```powershell
+# Test on mobile devices
+npm run test:e2e -- --project="Mobile Chrome"
+
+# Test on all mobile devices
+npm run test:e2e -- --grep mobile
+```
+
+---
+
+### Step 6.0c: Pre-Flight Check Script
+**What:** Automated checks before app store submission.
+
+**Create new file:** `scripts/preflight-check.sh`
+
+```bash
+#!/bin/bash
+
+echo "🚀 Running pre-flight checks for mobile app..."
+
+# Color codes
+GREEN='\033[0.32m'
+RED='\033[0.31m'
+NC='\033[0m' # No Color
+
+FAILED=0
+
+# Check 1: Run unit tests
+echo "\n📝 Running unit tests..."
+if npm run test:mobile:unit; then
+  echo "${GREEN}✅ Unit tests passed${NC}"
+else
+  echo "${RED}❌ Unit tests failed${NC}"
+  FAILED=1
+fi
+
+# Check 2: Run TypeScript check
+echo "\n🔍 Checking TypeScript..."
+if npm run type-check; then
+  echo "${GREEN}✅ TypeScript check passed${NC}"
+else
+  echo "${RED}❌ TypeScript errors found${NC}"
+  FAILED=1
+fi
+
+# Check 3: Run linter
+echo "\n🧹 Running linter..."
+if npm run lint; then
+  echo "${GREEN}✅ Linting passed${NC}"
+else
+  echo "${RED}❌ Linting failed${NC}"
+  FAILED=1
+fi
+
+# Check 4: Build app
+echo "\n📦 Building production app..."
+if npm run build:prod; then
+  echo "${GREEN}✅ Build successful${NC}"
+else
+  echo "${RED}❌ Build failed${NC}"
+  FAILED=1
+fi
+
+# Check 5: Verify required files
+echo "\n📂 Checking required files..."
+REQUIRED_FILES=("dist/index.html" "public/privacy-policy.html" "public/terms-of-service.html")
+for file in "${REQUIRED_FILES[@]}"; do
+  if [ -f "$file" ]; then
+    echo "${GREEN}✅ $file exists${NC}"
+  else
+    echo "${RED}❌ $file missing${NC}"
+    FAILED=1
+  fi
+done
+
+# Final report
+echo "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+if [ $FAILED -eq 0 ]; then
+  echo "${GREEN}🎉 All pre-flight checks passed!${NC}"
+  echo "You're ready to submit to app stores."
+  exit 0
+else
+  echo "${RED}⚠️  Some checks failed!${NC}"
+  echo "Please fix errors before submission."
+  exit 1
+fi
+```
+
+**Make executable:**
+```powershell
+chmod +x scripts/preflight-check.sh
+```
+
+**Run before submission:**
+```powershell
+# Linux/Mac
+./scripts/preflight-check.sh
+
+# Windows (Git Bash)
+bash scripts/preflight-check.sh
+```
+
+---
+
+### ✅ Phase 6.0 Testing Checkpoint
+**You should now have:**
+- ✅ Vitest configured for mobile simulation
+- ✅ Playwright mobile device testing
+- ✅ Pre-flight check script
+- ✅ Automated test pipeline
+
+**Best practice workflow:**
+```powershell
+# 1. Run tests
+npm run test:mobile:unit
+
+# 2. Run E2E tests
+npm run test:e2e -- --project="Mobile Chrome"
+
+# 3. Pre-flight check
+./scripts/preflight-check.sh
+
+# 4. If all pass, build mobile app
+npm run mobile:sync:prod
+```
+
+---
 
 ### Step 6.1: Build Signed Android App (Release)
 **What:** Create production-ready Android app file (.apk or .aab).
@@ -2087,11 +3224,13 @@ npm install react-native-screens react-native-safe-area-context
 |-------|-------|----------------|------------|
 | **Phase 1** | Setup & Preparation | 2-3 hours | ⭐ Easy |
 | **Phase 2** | Capacitor Integration | 4-6 hours | ⭐⭐ Medium |
-| **Phase 3** | Offline Mode | 6-8 hours | ⭐⭐⭐ Medium-Hard |
+| **Phase 2.5** | Supabase Mobile Coordination | 3-4 hours | ⭐⭐ Medium |
+| **Phase 3** | Offline Mode (Enhanced) | 8-10 hours | ⭐⭐⭐ Medium-Hard |
 | **Phase 4** | Push Notifications | 8-10 hours | ⭐⭐⭐⭐ Hard |
 | **Phase 5** | App Store Prep | 6-8 hours | ⭐⭐ Medium |
-| **Phase 6** | Testing & Deployment | 10-12 hours | ⭐⭐⭐ Medium-Hard |
-| **Total** | **Mobile App Ready** | **36-47 hours** | |
+| **Phase 5.5** | Environment & Build Mgmt | 2-3 hours | ⭐⭐ Medium |
+| **Phase 6** | Testing & Deployment (Enhanced) | 12-15 hours | ⭐⭐⭐ Medium-Hard |
+| **Total** | **Production-Ready Mobile App** | **45-59 hours** | |
 | **Phase 7** | React Native (Optional) | 40-80 hours | ⭐⭐⭐⭐ Hard |
 
 ---
@@ -2100,12 +3239,22 @@ npm install react-native-screens react-native-safe-area-context
 
 **Working 2 hours/day:**
 - Week 1-2: Phases 1-2 (Setup + Capacitor)
-- Week 3: Phase 3 (Offline)
-- Week 4-5: Phase 4 (Push Notifications)
-- Week 6: Phase 5 (App Store Prep)
-- Week 7-8: Phase 6 (Testing + Deployment)
+- Week 3: Phase 2.5 (Supabase Mobile Coordination)
+- Week 4: Phase 3 (Enhanced Offline Mode with PWA)
+- Week 5-6: Phase 4 (Push Notifications)
+- Week 7: Phase 5 (App Store Prep)
+- Week 8: Phase 5.5 (Environment & Build Management)
+- Week 9-10: Phase 6 (Enhanced Testing + Deployment)
 
-**Total: 6-8 weeks to launch**
+**Total: 8-10 weeks to production launch**
+
+**Key Enhancements Over Basic Plan:**
+- ✅ Secure token storage (iOS Keychain/Android Encrypted Storage)
+- ✅ vite-plugin-pwa for automatic service workers
+- ✅ Zustand persistence for offline data
+- ✅ Multi-environment builds (dev/staging/prod)
+- ✅ Vitest + Playwright mobile testing
+- ✅ Automated pre-flight checks
 
 ---
 
