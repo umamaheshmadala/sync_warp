@@ -4,6 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Users, TrendingUp, Calendar, Activity, Download, Target, ArrowUp, ArrowDown } from 'lucide-react';
+import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 import { motion } from 'framer-motion';
 import { useFollowerAnalytics } from '../../hooks/useFollowerAnalytics';
 import { cn } from '../../lib/utils';
@@ -14,6 +15,7 @@ const COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#3b82f6'
 const FollowerAnalyticsDashboard: React.FC = () => {
   const { businessId } = useParams<{ businessId: string }>();
   const navigate = useNavigate();
+  const { getBusinessUrl } = useBusinessUrl();
   const { analytics, loading, error, refresh } = useFollowerAnalytics(businessId || '');
   const [selectedTimeRange, setSelectedTimeRange] = useState<'week' | 'month' | 'all'>('month');
 
@@ -92,7 +94,7 @@ const FollowerAnalyticsDashboard: React.FC = () => {
               <span>Refresh</span>
             </button>
             <button
-              onClick={() => navigate(`/business/${businessId}/campaigns/create?target=followers`)}
+              onClick={() => navigate(`${getBusinessUrl(businessId!)}/campaigns/create?target=followers`)}
               className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center space-x-2"
             >
               <Target className="h-4 w-4" />
@@ -302,13 +304,13 @@ const FollowerAnalyticsDashboard: React.FC = () => {
         </p>
         <div className="flex items-center justify-center space-x-4">
           <button
-            onClick={() => navigate(`/business/${businessId}/campaigns/create?target=followers`)}
+            onClick={() => navigate(`${getBusinessUrl(businessId!)}/campaigns/create?target=followers`)}
             className="px-6 py-3 bg-white text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors font-medium"
           >
             Create Campaign for Followers
           </button>
           <button
-            onClick={() => navigate(`/business/${businessId}/followers/list`)}
+            onClick={() => navigate(`${getBusinessUrl(businessId!)}/followers/list`)}
             className="px-6 py-3 bg-indigo-700 text-white rounded-lg hover:bg-indigo-800 transition-colors font-medium"
           >
             View Follower List

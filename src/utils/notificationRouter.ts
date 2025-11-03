@@ -1,5 +1,6 @@
 // src/utils/notificationRouter.ts
 import type { NotificationType, NotificationMetadata, NotificationRouteConfig } from '../types/notification';
+import { getBusinessUrl as buildBusinessUrl } from '../utils/slugUtils';
 import {
   UserPlus,
   Users,
@@ -84,13 +85,13 @@ export const notificationRoutes: Record<NotificationType, NotificationRouteConfi
   },
   business_follow: {
     type: 'business_follow',
-    getRoute: (metadata) => `/business/${metadata.businessId || ''}`,
+    getRoute: (metadata) => buildBusinessUrl(metadata.businessId || '', metadata.businessName),
     getIcon: () => 'Briefcase',
     getColor: () => 'text-cyan-600',
   },
   business_review: {
     type: 'business_review',
-    getRoute: (metadata) => `/business/${metadata.businessId}/reviews${metadata.reviewId ? `#${metadata.reviewId}` : ''}`,
+    getRoute: (metadata) => `${buildBusinessUrl(metadata.businessId || '', metadata.businessName)}/reviews${metadata.reviewId ? `#${metadata.reviewId}` : ''}`,
     getIcon: () => 'Star',
     getColor: () => 'text-yellow-600',
   },
@@ -126,7 +127,7 @@ export const notificationRoutes: Record<NotificationType, NotificationRouteConfi
   },
   new_offer: {
     type: 'new_offer',
-    getRoute: (metadata) => `/business/${metadata.businessId}/offers?highlight=${metadata.offer_code || metadata.offerCode || ''}`,
+    getRoute: (metadata) => `${buildBusinessUrl(metadata.businessId || '', metadata.businessName)}/offers?highlight=${metadata.offer_code || metadata.offerCode || ''}`,
     getIcon: () => 'Tag',
     getColor: () => 'text-green-600',
   },

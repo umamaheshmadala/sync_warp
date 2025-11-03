@@ -6,6 +6,7 @@ import { formatDistanceToNow } from 'date-fns';
 import type { Business } from '../../types/business';
 import { FollowButton } from '../following/FollowButton';
 import { StandardBusinessCard, type StandardBusinessCardData } from '../common';
+import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 
 interface BusinessCardProps {
   business: Business;
@@ -19,6 +20,7 @@ export function BusinessCard({
   showAge = true,
 }: BusinessCardProps) {
   const navigate = useNavigate();
+  const { getBusinessUrl } = useBusinessUrl();
 
   const daysOld = Math.ceil(
     (Date.now() - new Date(business.created_at).getTime()) / (1000 * 60 * 60 * 24)
@@ -42,7 +44,7 @@ export function BusinessCard({
     <div className="relative">
       <StandardBusinessCard
         business={businessData}
-        onCardClick={(id) => navigate(`/business/${id}`)}
+        onCardClick={(id) => navigate(getBusinessUrl(id, business.name))}
         showChevron={false}
         showCouponCount={false}
         actionButton={

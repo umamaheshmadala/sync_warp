@@ -739,8 +739,11 @@ export const useSearch = (options: UseSearchOptions = {}) => {
   /**
    * Navigate to business profile
    */
-  const goToBusiness = useCallback((businessId: string) => {
-    navigate(`/business/${businessId}`);
+  const goToBusiness = useCallback((businessId: string, businessName?: string) => {
+    import('./useBusinessUrl').then(({ useBusinessUrl }) => {
+      const { getBusinessUrl } = useBusinessUrl();
+      navigate(getBusinessUrl(businessId, businessName));
+    });
   }, [navigate]);
 
   /**

@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import CouponWallet from './user/CouponWallet';
 import { supabase } from '../lib/supabase';
 import { Loader } from 'lucide-react';
+import PageDebugPanel from './PageDebugPanel';
 
 const Wallet: React.FC = () => {
   const [userId, setUserId] = useState<string | null>(null);
@@ -45,9 +46,18 @@ const Wallet: React.FC = () => {
   }
 
   return (
-    <div className="pb-20">
-      <CouponWallet userId={userId} />
-    </div>
+    <>
+      <div className="pb-20">
+        <CouponWallet userId={userId} />
+      </div>
+      <PageDebugPanel 
+        pageName="Wallet" 
+        stats={{
+          'User ID': userId?.slice(0, 8) + '...',
+          'Page': 'Wallet/Coupons'
+        }} 
+      />
+    </>
   );
 };
 

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Tag, ChevronRight, Calendar, TrendingUp, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import type { Offer } from '@/types/offers';
+import { useBusinessUrl } from '@/hooks/useBusinessUrl';
 
 interface FeaturedOffersProps {
   businessId: string;
@@ -13,6 +14,7 @@ interface FeaturedOffersProps {
 
 export default function FeaturedOffers({ businessId, businessName, isOwner }: FeaturedOffersProps) {
   const navigate = useNavigate();
+  const { getBusinessUrl } = useBusinessUrl();
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
@@ -77,7 +79,7 @@ export default function FeaturedOffers({ businessId, businessName, isOwner }: Fe
           </h3>
           {isOwner && (
             <button
-              onClick={() => navigate(`/business/${businessId}/offers`)}
+              onClick={() => navigate(`${getBusinessUrl(businessId, businessName)}/offers`)}
               className="flex items-center px-4 py-2 text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors"
             >
               Manage Offers
@@ -102,7 +104,7 @@ export default function FeaturedOffers({ businessId, businessName, isOwner }: Fe
           Current Offers {totalCount > 0 && <span className="ml-2 text-sm text-gray-500">({totalCount})</span>}
         </h3>
         <button
-          onClick={() => navigate(`/business/${businessId}/offers`)}
+          onClick={() => navigate(`${getBusinessUrl(businessId, businessName)}/offers`)}
           className="flex items-center px-4 py-2 text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors"
         >
           {totalCount > 4 ? `View All (${totalCount})` : isOwner ? 'Manage Offers' : 'View All'}
@@ -158,7 +160,7 @@ export default function FeaturedOffers({ businessId, businessName, isOwner }: Fe
 
       {totalCount > 4 && (
         <button
-          onClick={() => navigate(`/business/${businessId}/offers`)}
+          onClick={() => navigate(`${getBusinessUrl(businessId, businessName)}/offers`)}
           className="mt-4 w-full py-2 text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors"
         >
           View {totalCount - 4} more offer{totalCount - 4 !== 1 ? 's' : ''}

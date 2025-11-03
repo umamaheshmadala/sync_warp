@@ -558,7 +558,7 @@ const AdvancedSearchPage: React.FC<AdvancedSearchPageProps> = ({ className = '' 
               <div key={business.id} className="relative">
                 <BusinessCard
                   business={business}
-                  onClick={() => navigate(`/business/${business.id}`)}
+                  onClick={() => navigate(getBusinessUrl(business.id, business.name || business.business_name))}
                   viewMode={viewMode}
                   showDistance={!!currentLocation}
                   showFavoriteButton={true}

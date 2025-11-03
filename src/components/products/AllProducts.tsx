@@ -4,6 +4,7 @@ import { ArrowLeft, Search, SlidersHorizontal } from 'lucide-react';
 import { useProducts } from '../../hooks/useProducts';
 import { ProductCard } from './ProductCard';
 import { Button } from '../ui/button';
+import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Skeleton } from '../ui/skeleton';
@@ -14,6 +15,7 @@ type SortOption = 'newest' | 'price-low' | 'price-high' | 'name-asc' | 'name-des
 export function AllProducts() {
   const { businessId } = useParams<{ businessId: string }>();
   const navigate = useNavigate();
+  const { getBusinessUrl } = useBusinessUrl();
   const { products, loading, error, fetchProducts } = useProducts(businessId);
   
   const [searchTerm, setSearchTerm] = useState('');
@@ -82,7 +84,9 @@ export function AllProducts() {
   const currentProducts = filteredProducts.slice(startIndex, endIndex);
 
   const handleBack = () => {
-    navigate(`/business/${businessId}`);
+    // Extract business name from first product if available
+    const businessName = products.length > 0 ? products[0].business?.name : undefined;
+    navigate(getBusinessUrl(businessId!, businessName));
   };
 
   const handlePageChange = (newPage: number) => {

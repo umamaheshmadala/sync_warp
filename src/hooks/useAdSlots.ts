@@ -93,6 +93,8 @@ export function useAdSlots() {
 
       if (error) throw error;
 
+      // Import getBusinessUrl function directly
+      const { getBusinessUrl } = await import('../utils/slugUtils');
       return (businesses || []).map((business, index) => ({
         id: business.id,
         type: 'business' as const,
@@ -100,7 +102,7 @@ export function useAdSlots() {
         description: business.description,
         image_url: business.logo_url || business.cover_image_url,
         cta_text: 'View Business',
-        cta_url: `/business/${business.id}`,
+        cta_url: getBusinessUrl(business.id, business.business_name),
         priority: index,
       }));
     } catch (error) {

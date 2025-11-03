@@ -80,15 +80,6 @@ export default function Step1BasicInfo({ data, onUpdate, onNext, onSkip }: Step1
         </p>
       </div>
 
-      {/* Welcome Message */}
-      <div className="mb-8 p-4 bg-blue-50 rounded-lg">
-        <p className="text-blue-800">
-          <strong>Welcome, {user?.user_metadata?.full_name || user?.email}!</strong>
-          <br />
-          We're excited to help you discover amazing deals in your area.
-        </p>
-      </div>
-
       <div className="space-y-6">
         {/* Phone Number */}
         <div>
@@ -118,16 +109,6 @@ export default function Step1BasicInfo({ data, onUpdate, onNext, onSkip }: Step1
             We'll use this to send you important updates and deal alerts
           </p>
         </div>
-
-        {/* Benefits Preview */}
-        <div className="bg-gray-50 rounded-lg p-4">
-          <h4 className="font-medium text-gray-900 mb-2">What's next:</h4>
-          <ul className="text-sm text-gray-600 space-y-1">
-            <li>• Set your location preferences</li>
-            <li>• Choose your interests</li>
-            <li>• Start discovering personalized deals</li>
-          </ul>
-        </div>
       </div>
 
       {/* Action Buttons */}
@@ -146,16 +127,6 @@ export default function Step1BasicInfo({ data, onUpdate, onNext, onSkip }: Step1
         >
           <ChevronRight className="mr-2 h-4 w-4" />
           Skip for now
-        </button>
-      </div>
-
-      {/* Skip All Option */}
-      <div className="mt-4 text-center">
-        <button
-          onClick={onSkip}
-          className="text-sm text-gray-500 hover:text-gray-700 underline"
-        >
-          Skip entire onboarding
         </button>
       </div>
     </div>

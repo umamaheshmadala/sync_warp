@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { parseBusinessIdentifier } from '../../utils/slugUtils';
 import {
   Edit3,
   Save,
@@ -46,6 +47,8 @@ import { EmptyOffersState } from '../offers/EmptyOffersState';
 import { EmptyState } from '../ui/EmptyState';
 import { AllReviews } from '../reviews/AllReviews';
 import FollowButton from '../following/FollowButton';
+import { useBusinessUrl } from '../../hooks/useBusinessUrl';
+import { useMemo } from 'react';
 
 // TypeScript interfaces
 interface Business {
@@ -95,6 +98,7 @@ interface BusinessCategory {
 const BusinessProfile: React.FC = () => {
   const { businessId } = useParams<{ businessId: string }>();
   const navigate = useNavigate();
+  const { getBusinessUrl } = useBusinessUrl();
   const [searchParams] = useSearchParams();
   const { user } = useAuthStore();
   const [business, setBusiness] = useState<Business | null>(null);
@@ -107,17 +111,22 @@ const BusinessProfile: React.FC = () => {
   const [editingReview, setEditingReview] = useState<any>(null);
   const [reviewsKey, setReviewsKey] = useState(0);
 
-  // Load review stats for accurate counts
+  // Parse the business ID from slug (do this once at the top)
+  const parsedBusinessId = useMemo(() => {
+    return parseBusinessIdentifier(businessId || '');
+  }, [businessId]);
+
+  // Load review stats for accurate counts - use full business ID once loaded
   const { stats: reviewStats, refreshStats } = useReviewStats({
-    businessId: businessId || '',
+    businessId: business?.id,
   });
 
   // Check if current user owns this business
   const isOwner = user?.id === business?.user_id;
 
-  // Check if user has checked in at this business
+  // Check if user has checked in at this business - use full business ID once loaded
   const { checkin, hasCheckin, isLoading: isLoadingCheckin } = useUserCheckin(
-    businessId,
+    business?.id,
     !isOwner && !!user?.id // Only check if user is logged in and not the owner
   );
 
@@ -151,8 +160,9 @@ const BusinessProfile: React.FC = () => {
     }
     
     // Handle offer code - redirect to offers management page
-    if (offerCode && businessId) {
-      navigate(`/business/${businessId}/offers?offer=${offerCode}`);
+    if (offerCode && businessId && business) {
+      const slug = getBusinessUrl(businessId, business.business_name);
+      navigate(`${slug}/offers?offer=${offerCode}`);
     }
   }, [searchParams, businessId, navigate]);
 
@@ -162,14 +172,57 @@ const BusinessProfile: React.FC = () => {
       try {
         setLoading(true);
         
-        // Fetch business data
-        const { data: businessData, error: businessError } = await supabase
-          .from('businesses')
-          .select('*')
-          .eq('id', businessId)
-          .single();
+        console.log('🔍 BusinessProfile: Loading business from URL param:', businessId);
+        console.log('🔍 Parsed ID:', parsedBusinessId);
+        
+        // Fetch business data using short ID prefix match or full UUID
+        let businessData;
+        let businessError;
+        
+        // If it's 8 chars (short ID), use RPC function or manual filter
+        if (parsedBusinessId && parsedBusinessId.length === 8) {
+          console.log('🔍 Using short ID prefix match:', parsedBusinessId);
+          // Use filter on all businesses where the ID starts with short ID
+          const { data: allBusinesses, error: fetchError } = await supabase
+            .from('businesses')
+            .select('*');
+          
+          if (fetchError) {
+            businessError = fetchError;
+          } else {
+            // Filter in JavaScript for businesses where UUID starts with short ID
+            businessData = allBusinesses?.find(b => 
+              b.id.toLowerCase().startsWith(parsedBusinessId.toLowerCase())
+            );
+            if (!businessData) {
+              businessError = { message: 'Business not found', code: 'PGRST116' };
+            }
+          }
+        } else if (parsedBusinessId) {
+          // Full UUID - direct lookup
+          console.log('🔍 Using full UUID match:', parsedBusinessId);
+          const result = await supabase
+            .from('businesses')
+            .select('*')
+            .eq('id', parsedBusinessId)
+            .single();
+          businessData = result.data;
+          businessError = result.error;
+        } else {
+          throw new Error('Invalid business identifier');
+        }
 
-        if (businessError) throw businessError;
+        if (businessError) {
+          console.error('❌ Database error:', businessError);
+          throw businessError;
+        }
+        
+        if (!businessData) {
+          console.error('❌ No business found for ID:', parsedId);
+          throw new Error('Business not found');
+        }
+        
+        console.log('✅ Business loaded:', businessData.business_name);
         setBusiness(businessData);
         // Initialize edit form with proper operating hours structure
         setEditForm({
@@ -226,7 +279,7 @@ const BusinessProfile: React.FC = () => {
       const { data: updatedBusiness } = await supabase
         .from('businesses')
         .select('*')
-        .eq('id', businessId)
+        .eq('id', business?.id)
         .single();
       
       if (updatedBusiness) {
@@ -1145,7 +1198,7 @@ const BusinessProfile: React.FC = () => {
       {/* Reviews List */}
       <BusinessReviews
         key={reviewsKey}
-        businessId={businessId!}
+        businessId={business?.id!}
         businessName={business?.business_name || ''}
         isBusinessOwner={isOwner}
         onEdit={handleEditReview}
@@ -1193,7 +1246,7 @@ const BusinessProfile: React.FC = () => {
           >
             <div onClick={(e) => e.stopPropagation()}>
               <BusinessReviewForm
-                businessId={businessId!}
+                businessId={business?.id!}
                 businessName={business?.business_name || ''}
                 checkinId={checkin?.id || null}
                 onSubmit={handleReviewSubmit}

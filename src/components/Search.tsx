@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
-import { Search as SearchIcon, Filter, MapPin, Star, ArrowUpDown, Grid, List, Plus, Navigation, Loader2, AlertCircle } from 'lucide-react'
+import { Search as SearchIcon, Filter, MapPin, Star, ArrowUpDown, Grid, List, Plus, Navigation, Loader2, AlertCircle, Store, Tag, Package, TrendingUp } from 'lucide-react'
 import { useSearch } from '../hooks/useSearch'
 import { useSearchTracking } from '../hooks/useSearchAnalytics'
 import { CouponCard, BusinessCard, FilterPanel, SearchSuggestions } from './search/index'
@@ -182,16 +182,54 @@ export default function Search() {
   const { coupons, businesses } = getFilteredResults()
   const hasResults = coupons.length > 0 || businesses.length > 0
 
+  // Filter tabs configuration
+  const filterTabs = [
+    { id: 'all', label: 'All', icon: Grid },
+    { id: 'businesses', label: 'Businesses', icon: Store },
+    { id: 'coupons', label: 'Offers', icon: Tag },
+    { id: 'products', label: 'Products', icon: Package },
+    { id: 'trending', label: 'Trending', icon: TrendingUp },
+  ];
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      {/* LinkedIn-Style Horizontal Filter Tabs */}
+      <div className="sticky top-16 z-30 bg-white border-b border-gray-200 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-3 mb-4">
+        <div className="flex items-center space-x-2 overflow-x-auto scrollbar-hide">
+          {filterTabs.map((tab) => {
+            const IconComponent = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-full whitespace-nowrap transition-all ${
+                  isActive
+                    ? 'bg-indigo-100 text-indigo-700 font-semibold'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                <IconComponent className="w-4 h-4" />
+                <span className="text-sm">{tab.label}</span>
+                {tab.id === activeTab && (
+                  <span className="ml-1 px-2 py-0.5 bg-indigo-200 text-indigo-800 text-xs rounded-full">
+                    {search.totalResults}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Search Header */}
-      <div className="mb-8">
+      <div className="mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">Find Local Deals</h1>
-            <p className="text-gray-600">Discover amazing businesses, products, and offers in your area</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Find Local Deals</h1>
+            <p className="text-sm sm:text-base text-gray-600">Discover amazing businesses, products, and offers in your area</p>
           </div>
-          <div className="flex flex-col space-y-2">
+          <div className="hidden md:flex flex-col space-y-2">
             <button
               onClick={() => navigate('/search/advanced')}
               className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"

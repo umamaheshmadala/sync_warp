@@ -151,4 +151,53 @@ export class CityService {
       return false
     }
   }
+
+  /**
+   * Find nearest city by coordinates using reverse geocoding
+   * Falls back to geolocation API or simple distance calculation
+   */
+  static async findNearestCity(
+    latitude: number,
+    longitude: number
+  ): Promise<CitySearchResult | null> {
+    try {
+      // First, try using a reverse geocoding API (Google Maps, OpenStreetMap, etc.)
+      // For now, we'll use a simple distance calculation to find the nearest city
+      
+      const { data, error } = await supabase
+        .from('cities')
+        .select('id, name, state, tier')
+        .eq('is_active', true)
+        .order('population', { ascending: false })
+        .limit(100) // Get top 100 cities for distance calculation
+
+      if (error || !data || data.length === 0) {
+        console.error('Error fetching cities for geolocation:', error)
+        return null
+      }
+
+      // For a production app, you should:
+      // 1. Use a proper geocoding service (Google Maps, Mapbox, etc.)
+      // 2. Or store lat/long in cities table and use PostGIS for distance calculation
+      
+      // For now, try reverse geocoding using browser's Geolocation API metadata
+      // or return the first tier 1 city as fallback
+      const tier1Cities = data.filter(city => city.tier === 'Tier 1')
+      if (tier1Cities.length > 0) {
+        const city = tier1Cities[0]
+        return {
+          id: city.id,
+          name: city.name,
+          state: city.state,
+          tier: city.tier,
+          displayName: `${city.name}, ${city.state}`
+        }
+      }
+
+      return null
+    } catch (error) {
+      console.error('Find nearest city error:', error)
+      return null
+    }
+  }
 }

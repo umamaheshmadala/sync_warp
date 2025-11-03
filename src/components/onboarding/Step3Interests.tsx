@@ -120,10 +120,6 @@ export default function Step3Interests({
       <div className="space-y-8">
         {/* Interest Categories */}
         <div>
-          <h3 className="text-lg font-medium text-gray-900 mb-4">
-            What deals interest you? 
-            <span className="text-sm font-normal text-gray-500 ml-2">(Select any that apply)</span>
-          </h3>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {interestCategories.map((category) => {
@@ -249,9 +245,6 @@ export default function Step3Interests({
         {/* Final Message */}
         <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-4">
           <h4 className="font-medium text-indigo-900 mb-2">You're almost done!</h4>
-          <p className="text-sm text-indigo-800">
-            Click "Complete Setup" to finish your profile and start discovering amazing deals personalized just for you.
-          </p>
         </div>
       </div>
 

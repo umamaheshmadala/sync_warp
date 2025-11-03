@@ -846,15 +846,37 @@ class SearchService {
       });
 
       if (error) {
-        console.error('Error fetching trending search terms:', error);
-        return [];
+        // Function doesn't exist - return fallback trending terms
+        if (error.code === 'PGRST202') {
+          return this.getFallbackTrendingTerms();
+        }
+        console.warn('Error fetching trending search terms:', error.message);
+        return this.getFallbackTrendingTerms();
       }
 
-      return data || [];
+      return data || this.getFallbackTrendingTerms();
     } catch (error) {
-      console.error('Error getting trending search terms:', error);
-      return [];
+      console.warn('Error getting trending search terms:', error);
+      return this.getFallbackTrendingTerms();
     }
+  }
+
+  /**
+   * Fallback trending terms when database function is not available
+   */
+  private getFallbackTrendingTerms(): string[] {
+    return [
+      'Restaurants near me',
+      'Coffee shops',
+      'Weekend deals',
+      'Electronics sale',
+      'Fashion offers',
+      'Grocery stores',
+      'Beauty salons',
+      'Gyms and fitness',
+      'Pizza delivery',
+      'Fast food'
+    ];
   }
 
   /**
@@ -862,7 +884,11 @@ class SearchService {
    */
   async getPopularSearchTerms(limit: number = 10): Promise<string[]> {
     const trending = await this.getTrendingSearchTerms(7, limit);
-    return trending.map((item: any) => item.search_term);
+    // Handle both object array and string array
+    if (trending.length > 0 && typeof trending[0] === 'object') {
+      return trending.slice(0, limit).map((item: any) => item.search_term || item);
+    }
+    return trending.slice(0, limit);
   }
 }
 

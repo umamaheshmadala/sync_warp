@@ -4,6 +4,7 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 import { Package, Tag, Ticket, Megaphone, TrendingDown, RefreshCw, Filter } from 'lucide-react';
 import { useFollowerNotifications, FollowerNotification } from '../../hooks/useFollowerNotifications';
 import { cn } from '../../lib/utils';
@@ -13,6 +14,7 @@ type UpdateFilter = 'all' | 'new_product' | 'new_offer' | 'new_coupon' | 'announ
 
 const FollowerFeed: React.FC = () => {
   const navigate = useNavigate();
+  const { getBusinessUrl } = useBusinessUrl();
   const { notifications, loading, error, refresh } = useFollowerNotifications();
   const [currentFilter, setCurrentFilter] = useState<UpdateFilter>('all');
 
@@ -113,7 +115,10 @@ const FollowerFeed: React.FC = () => {
   // Handle notification click
   const handleNotificationClick = (notification: FollowerNotification) => {
     // Navigate using action_url if available, otherwise business page
-    const targetUrl = notification.action_url || `/business/${notification.business_id}`;
+    const targetUrl = notification.action_url || getBusinessUrl(
+      notification.business_id,
+      notification.business?.business_name
+    );
     navigate(targetUrl);
   };
 

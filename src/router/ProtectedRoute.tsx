@@ -262,6 +262,11 @@ export function AuthDebugPanel() {
       <div className="font-bold mb-2">Auth Debug Panel</div>
       <div>Path: {location.pathname}</div>
       <div>User: {user ? '✅ Logged in' : '❌ Not logged in'}</div>
+      {user && (
+        <div className="text-yellow-300 font-semibold">
+          👤 {profile?.full_name || user.user_metadata?.full_name || user.email}
+        </div>
+      )}
       <div>Profile: {profile ? '✅ Loaded' : '❌ Missing'}</div>
       <div>Initialized: {initialized ? '✅ Yes' : '❌ No'}</div>
       <div>Loading: {loading ? '⏳ Yes' : '✅ No'}</div>

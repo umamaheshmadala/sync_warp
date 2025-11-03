@@ -4,6 +4,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 import { 
   Heart, 
   Search as SearchIcon, 
@@ -303,25 +304,31 @@ const FavoritesPage: React.FC = () => {
               : "grid-cols-1"
           )}>
             {activeTab === 'businesses' && 
-              (filteredBusinesses as FavoriteBusiness[]).map((business) => (
-                <BusinessCard
-                  key={business.business_id}
-                  business={business}
-                  viewMode={viewMode}
-                  onNavigate={(id) => navigate(`/business/${id}`)}
-                />
-              ))}
+              (filteredBusinesses as FavoriteBusiness[]).map((business) => {
+                const { getBusinessUrl } = useBusinessUrl();
+                return (
+                  <BusinessCard
+                    key={business.business_id}
+                    business={business}
+                    viewMode={viewMode}
+                    onNavigate={(id) => navigate(getBusinessUrl(id, business.business_name))}
+                  />
+                );
+              })}
 
             {activeTab === 'coupons' && 
-              (filteredCoupons as FavoriteCoupon[]).map((coupon) => (
-                <CouponCard
-                  key={coupon.coupon_id}
-                  coupon={coupon}
-                  viewMode={viewMode}
-                  onNavigate={(id) => navigate(`/coupon/${id}`)}
-                  onBusinessNavigate={(id) => navigate(`/business/${id}`)}
-                />
-              ))}
+              (filteredCoupons as FavoriteCoupon[]).map((coupon) => {
+                const { getBusinessUrl } = useBusinessUrl();
+                return (
+                  <CouponCard
+                    key={coupon.coupon_id}
+                    coupon={coupon}
+                    viewMode={viewMode}
+                    onNavigate={(id) => navigate(`/coupon/${id}`)}
+                    onBusinessNavigate={(id) => navigate(getBusinessUrl(id))}
+                  />
+                );
+              })}
 
             {activeTab === 'wishlist' &&
               favorites.wishlist.map((item) => (

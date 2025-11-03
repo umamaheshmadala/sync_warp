@@ -15,6 +15,7 @@ import ProductView from './ProductView';
 import ProductForm from './ProductForm';
 import { useNavigate } from 'react-router-dom';
 import { ProductCard as CustomerProductCard } from '../products/ProductCard';
+import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 
 interface FeaturedProductsProps {
   businessId: string;
@@ -28,6 +29,7 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
   isOwner
 }) => {
   const navigate = useNavigate();
+  const { getBusinessUrl } = useBusinessUrl();
   const { products, loading, fetchProducts, refreshProducts } = useProducts(businessId);
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -65,7 +67,7 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
   };
 
   const handleManageProducts = () => {
-    navigate(`/business/${businessId}/products`);
+    navigate(`${getBusinessUrl(businessId, businessName)}/products`);
   };
 
   const handleEditProduct = (product: Product) => {
@@ -132,7 +134,7 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
                 </button>
                 
                 <button
-                  onClick={() => navigate(`/business/${businessId}/coupons`)}
+                  onClick={() => navigate(`${getBusinessUrl(businessId, businessName)}/coupons`)}
                   className="inline-flex items-center px-3 py-2 border border-purple-300 rounded-md text-sm font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 transition-colors"
                 >
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -160,7 +162,7 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
                       product={product}
                       size="medium"
                       showActions={true}
-                      onClick={() => navigate(`/business/${businessId}/product/${product.id}`)}
+                      onClick={() => navigate(`${getBusinessUrl(businessId, businessName)}/product/${product.id}`)}
                     />
                   </motion.div>
                 ) : (

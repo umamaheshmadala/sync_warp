@@ -4,6 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 import {
   ArrowLeft,
   BarChart3,
@@ -50,6 +51,7 @@ interface QuickStat {
 
 const BusinessAnalyticsPage: React.FC = () => {
   const { businessId } = useParams<{ businessId: string }>();
+  const { getBusinessUrl } = useBusinessUrl();
   const { user } = useAuthStore();
   const [business, setBusiness] = useState<Business | null>(null);
   const [loading, setLoading] = useState(true);
@@ -289,7 +291,7 @@ const BusinessAnalyticsPage: React.FC = () => {
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Link
-              to={`/business/${businessId}/edit`}
+              to={`${getBusinessUrl(businessId!, business?.business_name)}/edit`}
               className="flex items-center p-4 border rounded-lg hover:bg-gray-50 transition-colors"
             >
               <Eye className="w-5 h-5 text-blue-600 mr-3" />
@@ -300,7 +302,7 @@ const BusinessAnalyticsPage: React.FC = () => {
             </Link>
             
             <Link
-              to={`/business/${businessId}/qr`}
+              to={`${getBusinessUrl(businessId!, business?.business_name)}/qr`}
               className="flex items-center p-4 border rounded-lg hover:bg-gray-50 transition-colors"
             >
               <Target className="w-5 h-5 text-green-600 mr-3" />
@@ -311,7 +313,7 @@ const BusinessAnalyticsPage: React.FC = () => {
             </Link>
             
             <Link
-              to={`/business/${businessId}/reviews`}
+              to={`${getBusinessUrl(businessId!, business?.business_name)}/reviews`}
               className="flex items-center p-4 border rounded-lg hover:bg-gray-50 transition-colors"
             >
               <Star className="w-5 h-5 text-yellow-600 mr-3" />

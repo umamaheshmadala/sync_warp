@@ -9,10 +9,12 @@ import { useFavoriteProducts } from '../../hooks/useFavoriteProducts';
 import { FavoriteProductButton } from '../products/FavoriteProductButton';
 import { cn } from '../../lib/utils';
 import { toast } from 'react-hot-toast';
+import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 
 const UnifiedFavoritesPage: React.FC = () => {
   const navigate = useNavigate();
   const { products: favoriteProducts, loading: productsLoading, error: productsError, removeFavorite } = useFavoriteProducts();
+  const { getBusinessUrl } = useBusinessUrl();
   
   // Local state
   const [searchQuery, setSearchQuery] = useState('');
@@ -146,7 +148,7 @@ const UnifiedFavoritesPage: React.FC = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-all overflow-hidden group cursor-pointer"
-                onClick={() => navigate(`/business/${product.business_id}/product/${product.id}`)}
+                onClick={() => navigate(`${getBusinessUrl(product.business_id, product.business_name)}/product/${product.id}`)}
               >
                 {/* Product Image */}
                 <div className="relative h-48 bg-gray-100">

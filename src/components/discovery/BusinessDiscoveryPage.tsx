@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 import {
   Map,
   List,
@@ -34,6 +35,7 @@ interface BusinessDiscoveryPageProps {
 
 const BusinessDiscoveryPage: React.FC<BusinessDiscoveryPageProps> = ({ className = '' }) => {
   const navigate = useNavigate();
+  const { getBusinessUrl } = useBusinessUrl();
   const {
     discoverySections,
     isLoading,
@@ -290,7 +292,7 @@ const BusinessDiscoveryPage: React.FC<BusinessDiscoveryPageProps> = ({ className
                 center={currentLocation.coordinates}
                 zoom={12}
                 businesses={discoverySections.flatMap(section => section.businesses)}
-                onBusinessClick={(business) => navigate(`/business/${business.id}`)}
+                onBusinessClick={(business) => navigate(getBusinessUrl(business.id, business.name || business.business_name))}
               />
             </div>
           )}
@@ -386,7 +388,7 @@ const BusinessDiscoveryPage: React.FC<BusinessDiscoveryPageProps> = ({ className
                     </div>
                     
                     <button
-                      onClick={() => navigate(`/business/${business.id}`)}
+                      onClick={() => navigate(getBusinessUrl(business.id, business.name))}
                       className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium text-sm"
                     >
                       View Business
@@ -450,7 +452,7 @@ const BusinessDiscoveryPage: React.FC<BusinessDiscoveryPageProps> = ({ className
               <div key={business.id} className="relative">
                 <BusinessCard
                   business={business}
-                  onClick={() => navigate(`/business/${business.id}`)}
+                  onClick={() => navigate(getBusinessUrl(business.id, business.name || business.business_name))}
                   showDistance={!!currentLocation}
                   showFavoriteButton={true}
                 />
@@ -508,7 +510,7 @@ const BusinessDiscoveryPage: React.FC<BusinessDiscoveryPageProps> = ({ className
                 <div key={business.id} className="relative">
                   <BusinessCard
                     business={business}
-                    onClick={() => navigate(`/business/${business.id}`)}
+                    onClick={() => navigate(getBusinessUrl(business.id, business.name || business.business_name))}
                     showDistance={section.type === 'nearby' && !!currentLocation}
                     showFavoriteButton={true}
                   />
@@ -580,7 +582,7 @@ const BusinessDiscoveryPage: React.FC<BusinessDiscoveryPageProps> = ({ className
                       View Deal
                     </button>
                     <button
-                      onClick={() => navigate(`/business/${coupon.business_id}`)}
+                      onClick={() => navigate(getBusinessUrl(coupon.business_id, coupon.business_name))}
                       className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium"
                     >
                       Visit Store

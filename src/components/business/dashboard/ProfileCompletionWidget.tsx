@@ -9,6 +9,7 @@ import React from 'react';
 import { useProfileCompletion } from '@/hooks/useProfileCompletion';
 import { getProgressColor } from '@/types/business-onboarding';
 import { Link } from 'react-router-dom';
+import { useBusinessUrl } from '@/hooks/useBusinessUrl';
 
 interface ProfileCompletionWidgetProps {
   businessId: string;
@@ -20,6 +21,7 @@ export function ProfileCompletionWidget({
   className = ''
 }: ProfileCompletionWidgetProps) {
   
+  const { getBusinessUrl } = useBusinessUrl();
   const {
     percentage,
     missingFields,
@@ -275,7 +277,7 @@ export function ProfileCompletionWidget({
 
       {/* Action Button */}
       <Link
-        to={`/business/${businessId}/profile/edit`}
+        to={`${getBusinessUrl(businessId)}/profile/edit`}
         className={`block w-full text-center px-4 py-2 rounded-md font-medium transition-colors ${
           isComplete
             ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'

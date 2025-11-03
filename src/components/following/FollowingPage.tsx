@@ -9,11 +9,13 @@ import { FollowButton } from './FollowButton';
 import NotificationPreferencesModal from './NotificationPreferencesModal';
 import { StandardBusinessCard, type StandardBusinessCardData } from '../common';
 import { cn } from '../../lib/utils';
+import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 
 type SortBy = 'recent' | 'alphabetical' | 'most_active';
 
 const FollowingPage: React.FC = () => {
   const navigate = useNavigate();
+  const { getBusinessUrl } = useBusinessUrl();
   const { followedBusinesses, loading, error, totalFollowing } = useBusinessFollowing();
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -191,7 +193,7 @@ const FollowingPage: React.FC = () => {
                 <StandardBusinessCard
                   key={follow.id}
                   business={businessData}
-                  onCardClick={(id) => navigate(`/business/${id}`)}
+                  onCardClick={(id) => navigate(getBusinessUrl(id, follow.business?.business_name || 'business'))}
                   showChevron={false}
                   actionButton={
                     <div className="flex items-center space-x-2">

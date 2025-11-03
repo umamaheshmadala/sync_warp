@@ -4,6 +4,7 @@ import { ArrowLeft, Home, ChevronRight, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
 import CouponManager from './CouponManager';
+import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 
 interface Business {
   id: string;
@@ -17,6 +18,7 @@ interface Business {
 const CouponManagerPage: React.FC = () => {
   const { businessId } = useParams<{ businessId: string }>();
   const navigate = useNavigate();
+  const { getBusinessUrl } = useBusinessUrl();
   const { user } = useAuthStore();
   const [business, setBusiness] = useState<Business | null>(null);
   const [loading, setLoading] = useState(true);
@@ -87,8 +89,8 @@ const CouponManagerPage: React.FC = () => {
   }, [businessId, user?.id]); // Only depend on businessId and user.id to prevent unnecessary re-renders
 
   const handleGoBack = useCallback(() => {
-    navigate(`/business/${businessId}`);
-  }, [navigate, businessId]);
+    navigate(getBusinessUrl(businessId!, business?.business_name));
+  }, [navigate, businessId, business?.business_name, getBusinessUrl]);
 
   const handleGoHome = useCallback(() => {
     navigate('/dashboard');

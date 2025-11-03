@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Users, TrendingUp, Bell, Target } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 
 interface FollowerMetrics {
   totalFollowers: number;
@@ -12,9 +13,12 @@ interface FollowerMetrics {
 
 interface FollowerMetricsWidgetProps {
   businessId: string;
+  businessName?: string;
 }
 
-export const FollowerMetricsWidget: React.FC<FollowerMetricsWidgetProps> = ({ businessId }) => {
+export const FollowerMetricsWidget: React.FC<FollowerMetricsWidgetProps> = ({ businessId, businessName }) => {
+  const navigate = useNavigate();
+  const { getBusinessUrl } = useBusinessUrl();
   const [metrics, setMetrics] = useState<FollowerMetrics>({
     totalFollowers: 0,
     newFollowersThisWeek: 0,
@@ -108,12 +112,12 @@ export const FollowerMetricsWidget: React.FC<FollowerMetricsWidgetProps> = ({ bu
           <Users className="w-5 h-5 mr-2 text-blue-600" />
           Follower Insights
         </h3>
-        <Link
-          to={`/business/${businessId}/followers/analytics`}
+        <button
+          onClick={() => navigate(`${getBusinessUrl(businessId, businessName)}/followers/analytics`)}
           className="text-sm text-blue-600 hover:text-blue-700 font-medium"
         >
           View Details →
-        </Link>
+        </button>
       </div>
 
       <div className="grid grid-cols-2 gap-4 mb-4">
@@ -165,12 +169,12 @@ export const FollowerMetricsWidget: React.FC<FollowerMetricsWidgetProps> = ({ bu
         {/* Quick Actions */}
         <div className="bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg p-4 shadow-sm flex flex-col justify-center">
           <Bell className="w-5 h-5 text-white mb-2" />
-          <Link
-            to={`/business/${businessId}/campaigns/create`}
-            className="text-sm font-medium text-white hover:underline"
+          <button
+            onClick={() => navigate(`${getBusinessUrl(businessId, businessName)}/campaigns/create`)}
+            className="text-sm font-medium text-white hover:underline text-left"
           >
             Create Campaign →
-          </Link>
+          </button>
         </div>
       </div>
 
@@ -183,9 +187,9 @@ export const FollowerMetricsWidget: React.FC<FollowerMetricsWidgetProps> = ({ bu
       {metrics.totalFollowers > 0 && metrics.activeCampaigns === 0 && (
         <div className="bg-purple-100 border border-purple-200 rounded-lg p-3 text-sm text-purple-800">
           <strong>Ready to engage?</strong> You have {metrics.totalFollowers} follower{metrics.totalFollowers > 1 ? 's' : ''}! 
-          <Link to={`/business/${businessId}/campaigns/create`} className="font-semibold hover:underline ml-1">
+          <button onClick={() => navigate(`${getBusinessUrl(businessId, businessName)}/campaigns/create`)} className="font-semibold hover:underline ml-1">
             Launch your first campaign →
-          </Link>
+          </button>
         </div>
       )}
     </div>

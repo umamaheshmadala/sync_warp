@@ -11,6 +11,7 @@ import GestureHandler from './GestureHandler'
 import ContactsSidebar from './ContactsSidebarWithTabs'
 import NotificationHub from './NotificationHub'
 import CityPicker from './location/CityPicker'
+import MobileProfileDrawer from './MobileProfileDrawer'
 import { useNavigationPreferences } from '../hooks/useNavigationState'
 import { Users, LogOut, ChevronDown, MapPin } from 'lucide-react'
 import { FollowerNotificationBell } from './following'
@@ -29,6 +30,7 @@ export default function Layout({ children }: LayoutProps) {
   const [showContactsSidebar, setShowContactsSidebar] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
   const [showCityPicker, setShowCityPicker] = useState(false)
+  const [showMobileProfileDrawer, setShowMobileProfileDrawer] = useState(false)
   const selectedCity = profile?.city || 'Select City'
 
   // Update page title and meta description based on current route
@@ -98,15 +100,37 @@ export default function Layout({ children }: LayoutProps) {
         <header className="bg-white/95 backdrop-blur-sm shadow-sm border-b border-gray-200 sticky top-0 z-40">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16">
-              {/* Logo and App Name */}
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-9 h-9 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-md">
-                    <span className="text-white font-bold text-base">S</span>
+              {/* Left side - Profile Avatar (Mobile) or Logo (Desktop) */}
+              <div className="flex items-center space-x-3">
+                {/* Mobile: Profile Avatar */}
+                {user && (
+                  <button
+                    onClick={() => {
+                      if (window.innerWidth < 768) {
+                        setShowMobileProfileDrawer(true)
+                      } else {
+                        navigate('/profile')
+                      }
+                    }}
+                    className="md:hidden w-9 h-9 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-full flex items-center justify-center hover:from-indigo-200 hover:to-purple-200 transition-all duration-300"
+                    title="Open Profile Menu"
+                  >
+                    <span className="text-indigo-600 font-medium text-sm">
+                      {(profile?.full_name?.[0] || user.user_metadata?.full_name?.[0] || user.email?.[0])?.toUpperCase()}
+                    </span>
+                  </button>
+                )}
+                
+                {/* Logo and App Name */}
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <div className="w-9 h-9 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-md">
+                      <span className="text-white font-bold text-base">S</span>
+                    </div>
                   </div>
-                </div>
-                <div className="ml-3">
-                  <h1 className="text-xl font-semibold text-gray-900">SynC</h1>
+                  <div className="ml-3">
+                    <h1 className="text-xl font-semibold text-gray-900">SynC</h1>
+                  </div>
                 </div>
               </div>
 
@@ -136,10 +160,10 @@ export default function Layout({ children }: LayoutProps) {
                 {/* Notifications */}
                 <FollowerNotificationBell />
 
-                {/* User Profile & Actions */}
+                {/* Desktop: User Profile & Actions */}
                 {user && (
-                  <div className="flex items-center space-x-2">
-                    {/* Profile Avatar Button */}
+                  <div className="hidden md:flex items-center space-x-2">
+                    {/* Profile Avatar Button - Desktop only */}
                     <button
                       onClick={() => navigate('/profile')}
                       className="w-9 h-9 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-xl flex items-center justify-center hover:from-indigo-200 hover:to-purple-200 transition-all duration-300"
@@ -150,7 +174,7 @@ export default function Layout({ children }: LayoutProps) {
                       </span>
                     </button>
                     
-                    {/* Logout Button */}
+                    {/* Logout Button - Desktop only */}
                     <button
                       onClick={() => signOut()}
                       className="p-2.5 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all duration-300"
@@ -229,6 +253,12 @@ export default function Layout({ children }: LayoutProps) {
           console.log('City selected:', city.name);
           // Profile update is handled automatically in CityPicker
         }}
+      />
+
+      {/* Mobile Profile Drawer */}
+      <MobileProfileDrawer
+        isOpen={showMobileProfileDrawer}
+        onClose={() => setShowMobileProfileDrawer(false)}
       />
 
     </div>

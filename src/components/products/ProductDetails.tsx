@@ -4,6 +4,7 @@ import { ArrowLeft, Heart, List, Package } from 'lucide-react';
 import { useProducts } from '../../hooks/useProducts';
 import { useSimpleProductSocial } from '../../hooks/useSimpleProductSocial';
 import useUnifiedFavorites from '../../hooks/useUnifiedFavorites';
+import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Skeleton } from '../ui/skeleton';
@@ -15,6 +16,7 @@ import { cn } from '../../lib/utils';
 export function ProductDetails() {
   const { businessId, productId } = useParams<{ businessId: string; productId: string }>();
   const navigate = useNavigate();
+  const { getBusinessUrl } = useBusinessUrl();
   const { product, loading, error, fetchProduct, fetchProducts } = useProducts(businessId);
   
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -66,7 +68,9 @@ export function ProductDetails() {
   }, [product, businessId]);
 
   const handleBack = () => {
-    navigate(`/business/${businessId}`);
+    // Extract business name from product if available
+    const businessName = product?.business?.name;
+    navigate(getBusinessUrl(businessId!, businessName));
   };
 
   const handleFavoriteClick = async () => {

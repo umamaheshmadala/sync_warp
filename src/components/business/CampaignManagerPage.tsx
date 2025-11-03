@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/card';
+import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Skeleton } from '../ui/skeleton';
@@ -30,6 +31,7 @@ import type { Campaign } from '../../types/campaigns';
 export default function CampaignManagerPage() {
   const { businessId } = useParams<{ businessId: string }>();
   const navigate = useNavigate();
+  const { getBusinessUrl } = useBusinessUrl();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -96,16 +98,16 @@ export default function CampaignManagerPage() {
 
   // Handler functions
   const handleViewAnalytics = (campaignId: string) => {
-    navigate(`/business/${businessId}/campaigns/${campaignId}/analytics`);
+    navigate(`${getBusinessUrl(businessId!)}/campaigns/${campaignId}/analytics`);
   };
 
   const handleEdit = (campaignId: string, campaign: Campaign) => {
     // If it's a draft, navigate to wizard with draftId to resume editing
     if (campaign.status === 'draft') {
-      navigate(`/business/${businessId}/campaigns/create?draftId=${campaignId}`);
+      navigate(`${getBusinessUrl(businessId!)}/campaigns/create?draftId=${campaignId}`);
     } else {
       // For active/paused campaigns, navigate to edit page (to be implemented)
-      navigate(`/business/${businessId}/campaigns/${campaignId}/edit`);
+      navigate(`${getBusinessUrl(businessId!)}/campaigns/${campaignId}/edit`);
     }
   };
 
@@ -193,7 +195,7 @@ export default function CampaignManagerPage() {
               </p>
             </div>
             <Button
-              onClick={() => navigate(`/business/${businessId}/campaigns/create`)}
+              onClick={() => navigate(`${getBusinessUrl(businessId!)}/campaigns/create`)}
               className="flex items-center gap-2"
             >
               <Plus className="w-5 h-5" />
@@ -226,7 +228,7 @@ export default function CampaignManagerPage() {
                 Get started by creating your first marketing campaign
               </p>
               <Button
-                onClick={() => navigate(`/business/${businessId}/campaigns/create`)}
+                onClick={() => navigate(`${getBusinessUrl(businessId!)}/campaigns/create`)}
                 className="flex items-center gap-2 mx-auto"
               >
                 <Plus className="w-5 h-5" />

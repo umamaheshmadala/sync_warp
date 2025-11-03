@@ -1,6 +1,7 @@
 // src/pages/Dashboard/Dashboard.tsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useBusinessUrl } from '../hooks/useBusinessUrl';
 import { 
   Bell, 
   MapPin, 
@@ -42,6 +43,7 @@ interface OfferCard {
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
+  const { getBusinessUrl } = useBusinessUrl();
   const { user, profile } = useAuthStore();
   const [selectedCity] = useState(profile?.city || 'Select City');
   const [showContactsSidebar, setShowContactsSidebar] = useState(false);
@@ -166,17 +168,6 @@ const Dashboard: React.FC = () => {
       {/* Main Content */}
       <main className="pb-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome Section */}
-        <section className="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 text-white rounded-2xl px-6 py-4 mb-8 relative overflow-hidden shadow-md">
-          <div className="relative z-10">
-            <h1 className="text-lg font-semibold">
-              Welcome back, {profile?.full_name || user?.email?.split('@')[0]}! 👋
-            </h1>
-          </div>
-          <div className="absolute -top-4 -right-4 w-20 h-20 bg-white bg-opacity-10 rounded-full"></div>
-          <div className="absolute -bottom-4 -left-4 w-24 h-24 bg-white bg-opacity-5 rounded-full"></div>
-        </section>
-
         {/* Ad Carousel Section */}
         <section className="mb-8">
           <AdCarousel />
@@ -264,7 +255,7 @@ const Dashboard: React.FC = () => {
             ) : spotlightBusinesses.map((business, index) => (
               <div
                 key={business.id}
-                onClick={() => navigate(`/business/${business.id}`)}
+                onClick={() => navigate(getBusinessUrl(business.id, business.name))}
                 className="bg-white rounded-xl md:rounded-2xl shadow-sm md:shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-105 relative"
               >
                 {/* Desktop only: Show cover image */}

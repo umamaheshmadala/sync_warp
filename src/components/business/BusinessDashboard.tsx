@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 import {
   Plus,
   MapPin,
@@ -87,6 +88,7 @@ interface BusinessCardProps {
 
 const BusinessDashboard: React.FC = () => {
   const navigate = useNavigate();
+  const { getBusinessUrl } = useBusinessUrl();
   const { user } = useAuthStore();
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(true);
@@ -289,7 +291,7 @@ const BusinessDashboard: React.FC = () => {
         <div className="space-y-2">
           <div className="flex space-x-2">
             <Link
-              to={`/business/${business.id}`}
+              to={getBusinessUrl(business.id, business.business_name)}
               className="flex-1 flex items-center justify-center px-3 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
             >
               <Eye className="w-4 h-4 mr-1" />
@@ -297,7 +299,7 @@ const BusinessDashboard: React.FC = () => {
             </Link>
             
             <Link
-              to={`/business/${business.id}/edit`}
+              to={`${getBusinessUrl(business.id, business.business_name)}/edit`}
               className="flex-1 flex items-center justify-center px-3 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
             >
               <Edit3 className="w-4 h-4 mr-1" />
@@ -307,7 +309,7 @@ const BusinessDashboard: React.FC = () => {
           
           <div className="space-y-2">
             <Link
-              to={`/business/${business.id}/analytics`}
+              to={`${getBusinessUrl(business.id, business.business_name)}/analytics`}
               className="w-full flex items-center justify-center px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
             >
               <BarChart3 className="w-4 h-4 mr-1" />
@@ -315,7 +317,7 @@ const BusinessDashboard: React.FC = () => {
             </Link>
             
             <Link
-              to={`/business/${business.id}/products`}
+              to={`${getBusinessUrl(business.id, business.business_name)}/products`}
               className="w-full flex items-center justify-center px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Package className="w-4 h-4 mr-1" />
@@ -323,7 +325,7 @@ const BusinessDashboard: React.FC = () => {
             </Link>
             
             <Link
-              to={`/business/${business.id}/coupons`}
+              to={`${getBusinessUrl(business.id, business.business_name)}/coupons`}
               className="w-full flex items-center justify-center px-3 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors"
             >
               <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -333,7 +335,7 @@ const BusinessDashboard: React.FC = () => {
             </Link>
             
             <Link
-              to={`/business/${business.id}/campaigns`}
+              to={`${getBusinessUrl(business.id, business.business_name)}/campaigns`}
               className="w-full flex items-center justify-center px-3 py-2 bg-pink-600 text-white text-sm font-medium rounded-lg hover:bg-pink-700 transition-colors"
             >
               <TrendingUp className="w-4 h-4 mr-1" />
@@ -341,7 +343,7 @@ const BusinessDashboard: React.FC = () => {
             </Link>
             
             <Link
-              to={`/business/${business.id}/qr-code`}
+              to={`${getBusinessUrl(business.id, business.business_name)}/qr-code`}
               className="w-full flex items-center justify-center px-3 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 transition-colors"
             >
               <QrCode className="w-4 h-4 mr-1" />
@@ -349,7 +351,7 @@ const BusinessDashboard: React.FC = () => {
             </Link>
             
             <Link
-              to={`/business/${business.id}/followers/analytics`}
+              to={`${getBusinessUrl(business.id, business.business_name)}/followers/analytics`}
               className="w-full flex items-center justify-center px-3 py-2 bg-cyan-600 text-white text-sm font-medium rounded-lg hover:bg-cyan-700 transition-colors"
             >
               <UserPlus className="w-4 h-4 mr-1" />

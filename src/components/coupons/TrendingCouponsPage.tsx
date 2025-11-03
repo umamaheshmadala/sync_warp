@@ -27,6 +27,7 @@ import useAdvancedSearch from '../../hooks/useAdvancedSearch';
 import { useAdvancedLocation } from '../../hooks/useAdvancedLocation';
 import { CouponSearchResult } from '../../services/advancedSearchService';
 import { SimpleSaveButton } from '../favorites/SimpleSaveButton';
+import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 
 interface TrendingCouponsPageProps {
   className?: string;
@@ -34,6 +35,7 @@ interface TrendingCouponsPageProps {
 
 const TrendingCouponsPage: React.FC<TrendingCouponsPageProps> = ({ className = '' }) => {
   const navigate = useNavigate();
+  const { getBusinessUrl } = useBusinessUrl();
   const {
     getTrendingCoupons,
     isLoading,
@@ -144,8 +146,8 @@ const TrendingCouponsPage: React.FC<TrendingCouponsPageProps> = ({ className = '
     navigate(`/coupon/${coupon.id}`);
   };
 
-  const handleBusinessClick = (businessId: string) => {
-    navigate(`/business/${businessId}`);
+  const handleBusinessClick = (businessId: string, businessName?: string) => {
+    navigate(getBusinessUrl(businessId, businessName));
   };
 
   if (isLoading && trendingCoupons.length === 0) {

@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Plus, X } from 'lucide-react';
+import { useBusinessUrl } from '@/hooks/useBusinessUrl';
 import { OffersList, CreateOfferForm, OfferAnalyticsDashboard } from '../offers';
 import { ExtendExpiryModal } from '../offers/ExtendExpiryModal';
 import { useOffers } from '@/hooks/useOffers';
@@ -13,6 +14,7 @@ import toast from 'react-hot-toast';
 export default function OfferManagerPage() {
   const { businessId } = useParams<{ businessId: string}>();
   const navigate = useNavigate();
+  const { getBusinessUrl } = useBusinessUrl();
   const [searchParams] = useSearchParams();
   const { user } = useAuthStore();
   const [business, setBusiness] = useState<any>(null);
@@ -124,7 +126,7 @@ export default function OfferManagerPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => navigate(`/business/${businessId}`)}
+                onClick={() => navigate(getBusinessUrl(businessId!, business?.business_name))}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 <ArrowLeft className="h-5 w-5 text-gray-600" />
