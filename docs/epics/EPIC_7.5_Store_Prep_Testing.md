@@ -52,64 +52,205 @@
 
 ---
 
-## Story 7.5.4: Multi-Environment Build Scripts ⚪ PLANNED
-**What you'll see**: One-command builds for dev/staging/prod environments.
+## Story 7.5.4: Multi-Environment Build System ⚪ PLANNED
+**What you'll see**: Fully separated dev/staging/prod builds for iOS and Android with one-command automation.
 
 **What needs to be built**:
-- [ ] Add build:dev, build:staging, build:prod scripts
-- [ ] Add mobile:sync:dev/staging/prod scripts
-- [ ] Configure iOS build configurations
-- [ ] Configure Android build flavors
-- [ ] Create PowerShell build script (Windows)
-- [ ] Test all build variants
+- [ ] NPM scripts
+  - Add `build:dev`, `build:staging`, `build:prod`
+  - Add `mobile:sync:dev`, `mobile:sync:staging`, `mobile:sync:prod`
+  - Add convenience open commands for Android/iOS per env
+- [ ] iOS bundle identifiers per environment (Xcode)
+  - Debug: `com.syncapp.mobile.dev`
+  - Staging: `com.syncapp.mobile.staging`
+  - Release: `com.syncapp.mobile`
+  - Verify all 3 can be installed side-by-side
+- [ ] Android build flavors in `android/app/build.gradle`
+  - Add flavor dimension and product flavors (dev/staging/prod)
+  - Different app names via `resValue`
+  - Verify Gradle tasks build each flavor
+- [ ] CI/CD build scripts
+  - Bash script for Mac/Linux: `scripts/build-mobile.sh`
+  - PowerShell script for Windows: `scripts/Build-Mobile.ps1`
+  - Make bash script executable and document usage
+- [ ] Test all build variants on device/emulator
 
-**Time Estimate**: 3-4 hours
+**Android flavors snippet (build.gradle)**:
+```gradle
+flavorDimensions "version"
+productFlavors {
+    dev {
+        dimension "version"
+        applicationIdSuffix ".dev"
+        versionNameSuffix "-dev"
+        resValue "string", "app_name", "Sync Dev"
+    }
+    staging {
+        dimension "version"
+        applicationIdSuffix ".staging"
+        versionNameSuffix "-staging"
+        resValue "string", "app_name", "Sync Staging"
+    }
+    prod {
+        dimension "version"
+        resValue "string", "app_name", "Sync App"
+    }
+}
+```
+
+**Mac/Linux CI script (create `scripts/build-mobile.sh`)**:
+```bash
+#!/bin/bash
+# Usage: ./scripts/build-mobile.sh [dev|staging|prod] [ios|android]
+set -e
+ENV=${1:-dev}
+PLATFORM=${2:-android}
+npm run build:$ENV
+npx cap sync $PLATFORM
+if [ "$PLATFORM" = "android" ]; then
+  (cd android && \
+    [ "$ENV" = "prod" ] && ./gradlew assembleProdRelease || \
+    [ "$ENV" = "staging" ] && ./gradlew assembleStagingRelease || \
+    ./gradlew assembleDevDebug)
+else
+  npx cap open ios
+fi
+```
+
+**Windows CI script (create `scripts/Build-Mobile.ps1`)**:
+```powershell
+param([ValidateSet('dev','staging','prod')]$Env='dev', [ValidateSet('android','ios')]$Platform='android')
+npm run "build:$Env"
+npx cap sync $Platform
+if ($Platform -eq 'android') { npx cap open android } else { npx cap open ios }
+```
+
+**Time Estimate**: 6-8 hours
 
 ---
 
 ## Story 7.5.5: Vitest Mobile Testing Setup ⚪ PLANNED
-**What you'll see**: Unit tests configured for mobile platform simulation.
+**What you'll see**: Unit tests configured for mobile platform simulation with Capacitor mocks.
 
 **What needs to be built**:
-- [ ] Configure vitest.config.ts for mobile
-- [ ] Create test/setup.ts with Capacitor mocks
-- [ ] Mock Capacitor plugins (Preferences, PushNotifications)
-- [ ] Add mobile viewport tests
-- [ ] Add test:mobile:unit script
-- [ ] Document testing approach
+- [ ] Update `vitest.config.ts` to use jsdom and `setupFiles`
+- [ ] Create `src/test/setup.ts` with Capacitor mocks
+- [ ] Mock `@capacitor/core`, `@capacitor/preferences`, `@capacitor/push-notifications`
+- [ ] Simulate mobile viewport via `window.matchMedia`
+- [ ] Add scripts: `test:mobile:unit`, `test:mobile:watch`, `test:mobile:pre-build`
+- [ ] Create at least one sample test for a mobile hook/component
 
-**Time Estimate**: 3-4 hours
+**Setup file example (`src/test/setup.ts`)**:
+```typescript
+import { vi } from 'vitest';
+
+vi.mock('@capacitor/core', () => ({
+  Capacitor: {
+    isNativePlatform: () => false,
+    getPlatform: () => 'web',
+    isPluginAvailable: () => false
+  }
+}));
+
+vi.mock('@capacitor/preferences', () => ({
+  Preferences: { get: vi.fn(), set: vi.fn(), remove: vi.fn() }
+}));
+
+vi.mock('@capacitor/push-notifications', () => ({
+  PushNotifications: {
+    requestPermissions: vi.fn(),
+    register: vi.fn(),
+    addListener: vi.fn(),
+    removeAllListeners: vi.fn()
+  }
+}));
+
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: vi.fn().mockImplementation(q => ({
+    matches: q === '(max-width: 768px)',
+    media: q,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn()
+  }))
+});
+```
+
+**Time Estimate**: 5-7 hours
 
 ---
 
 ## Story 7.5.6: Playwright Mobile Device Testing ⚪ PLANNED
-**What you'll see**: E2E tests running on simulated mobile devices.
+**What you'll see**: E2E tests on realistic mobile device profiles with offline simulation.
 
 **What needs to be built**:
-- [ ] Update playwright.config.ts with mobile devices
-- [ ] Add Pixel 5 configuration
-- [ ] Add iPhone 12 configuration
-- [ ] Add iPad Pro configuration
-- [ ] Create mobile-specific E2E tests
-- [ ] Test offline mode with Playwright
+- [ ] Update `playwright.config.ts` with devices: Pixel 5, iPhone 12, iPad Pro
+- [ ] Configure `webServer` to reuse local dev server
+- [ ] Create `e2e/mobile-flow.spec.ts` covering menu, login tap, offline banner
+- [ ] Add scripts: `test:e2e:mobile`, `test:e2e:all-mobile`
+- [ ] Run tests on all mobile projects in CI
 
-**Time Estimate**: 4-5 hours
+**Devices config (`playwright.config.ts`)**:
+```typescript
+import { defineConfig, devices } from '@playwright/test';
+export default defineConfig({
+  projects: [
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    { name: 'Mobile Chrome', use: { ...devices['Pixel 5'] } },
+    { name: 'Mobile Safari', use: { ...devices['iPhone 12'] } },
+    { name: 'iPad', use: { ...devices['iPad Pro'] } }
+  ]
+});
+```
+
+**Sample test (`e2e/mobile-flow.spec.ts`)**:
+```typescript
+import { test, expect } from '@playwright/test';
+
+test('mobile basic flow + offline', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByLabel('Mobile menu')).toBeVisible();
+  await page.tap('[aria-label="Login"]');
+  await page.context().setOffline(true);
+  await expect(page.locator('.offline-banner')).toBeVisible();
+  await page.context().setOffline(false);
+});
+```
+
+**Time Estimate**: 6-8 hours
 
 ---
 
 ## Story 7.5.7: Pre-Flight Check Automation ⚪ PLANNED
-**What you'll see**: Automated script that validates app before submission.
+**What you'll see**: Automated script that validates quality gates before store submission.
 
 **What needs to be built**:
-- [ ] Create preflight-check.sh script
-- [ ] Check unit tests pass
-- [ ] Check TypeScript compiles
-- [ ] Check linting passes
-- [ ] Check production build succeeds
-- [ ] Verify required files exist
-- [ ] Document pre-flight checks
+- [ ] Create `scripts/preflight-check.sh` (Linux/Mac) with:
+  - Unit tests (Vitest), TypeScript, Lint, Prod build, Required files checks
+  - Color-coded output and non-zero exit on failure
+- [ ] Add `preflight` npm script to run the checker
+- [ ] Document when to run (before any store submission)
 
-**Time Estimate**: 2-3 hours
+**Script example (`scripts/preflight-check.sh`)**:
+```bash
+#!/bin/bash
+set -e
+FAILED=0
+npm run test:mobile:unit || FAILED=1
+npm run type-check || FAILED=1
+npm run lint || FAILED=1
+npm run build:prod || FAILED=1
+for f in dist/index.html public/privacy-policy.html public/terms-of-service.html; do
+  [ -f "$f" ] || FAILED=1
+done
+exit $FAILED
+```
+
+**Time Estimate**: 3-5 hours
 
 ---
 
@@ -130,15 +271,15 @@
 ## Epic 7.5 Summary
 
 **Total Stories**: 8 stories
-**Estimated Timeline**: 3-3.5 weeks (23-31 hours)
+**Estimated Timeline**: 3-3.5 weeks (27-38 hours)
 
 **Deliverables**:
 1. Professional app icons and splash screens
 2. Proper permissions configured
-3. Multi-environment build system
-4. Vitest mobile unit testing
-5. Playwright mobile E2E testing
-6. Automated pre-flight checks
+3. Multi-environment build system (with iOS bundle IDs, Android flavors)
+4. Vitest mobile unit testing (with Capacitor mocks)
+5. Playwright mobile E2E testing (mobile device configs)
+6. Automated pre-flight checks (scripted)
 7. Privacy policy and terms
 8. Complete app store preparation
 
