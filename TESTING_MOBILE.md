@@ -8,19 +8,13 @@
 
 ## 🎯 Quick Start: Test on Your Phone in 3 Steps
 
-### Step 1: Install Expo Go on Your Phone
+### Step 1: No App Installation Needed!
 
-**Android:**
-1. Open Google Play Store
-2. Search for "Expo Go"
-3. Install the app
+**Good News:** You don't need to install anything special! Just use your phone's regular web browser:
+- **Android**: Chrome, Firefox, or Samsung Internet
+- **iPhone**: Safari, Chrome, or any browser
 
-**iPhone:**
-1. Open App Store
-2. Search for "Expo Go"  
-3. Install the app
-
-✅ **Done!** That's the only app you need.
+✅ **Done!** Your phone already has everything you need.
 
 ---
 
@@ -48,17 +42,17 @@ npm run dev
 
 ---
 
-### Step 3: Open App on Your Phone
+### Step 3: Open App on Your Phone's Browser
 
-**Method 1: Same WiFi Network (Easiest)**
+**Instructions:**
 1. Make sure your phone and computer are on the **same WiFi network**
-2. On your phone, open **Expo Go** app
-3. In Expo Go, tap **"Enter URL manually"**
-4. Type the Network URL from your terminal (e.g., `http://192.168.1.100:5173/`)
-5. Tap **"Connect"**
+2. On your phone, open your **web browser** (Chrome, Safari, etc.)
+3. In the address bar, type the **Network URL** from your terminal
+   - Example: `http://192.168.1.3:5173/`
+   - Use the IP that starts with `192.168.1.x` (not 192.168.56.x)
+4. Press Go/Enter
 
-**Method 2: QR Code (Coming Soon)**
-- We'll add QR code support in a future story for even easier testing
+**Tip:** Bookmark this URL on your phone for quick access!
 
 ✅ **Done!** Your app should now load on your phone!
 
@@ -116,11 +110,18 @@ Every time you save changes in your code, the app **automatically updates on you
 
 ## 🚨 Troubleshooting
 
-### Issue: Can't connect to app
+### Issue: Can't connect to app / "This site cannot be reached"
 **Solution:**
 1. Check both phone and computer are on **same WiFi**
-2. Try using the `Local` URL instead: `http://localhost:5173/`
-3. Restart the dev server: `Ctrl+C` then `npm run dev`
+2. **Check Windows Firewall:**
+   - Press `Windows + R`, type `firewall.cpl`, press Enter
+   - Click "Allow an app through firewall"
+   - Click "Change settings" (admin required)
+   - Find "Node.js" or click "Allow another app" → Browse to `C:\Program Files\nodejs\node.exe`
+   - Make sure both **Private** and **Public** are checked
+   - Click OK
+3. Use the correct Network IP (starts with `192.168.1.x`, NOT `192.168.56.x`)
+4. Restart the dev server: `Ctrl+C` then `npm run dev`
 
 ### Issue: White screen on phone
 **Solution:**

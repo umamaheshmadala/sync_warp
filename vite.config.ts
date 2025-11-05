@@ -12,6 +12,7 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    host: '0.0.0.0', // Allow external connections (for mobile testing)
     open: true,
     hmr: {
       // Prevent HMR from triggering on tab focus changes
