@@ -2,59 +2,78 @@
 
 **For**: Non-developers who want to test the mobile app  
 **Level**: Beginner-friendly  
-**Time**: 5 minutes to setup, instant testing after
+**Time**: One-time Android Studio setup, then instant testing
 
 ---
 
-## 🎯 Quick Start: Test on Your Phone in 3 Steps
+## 🎯 Two Testing Methods
 
-### Step 1: No App Installation Needed!
+### Method 1: Desktop Browser (Immediate - No Setup)
+**Best for:** Quick UI checks, development testing
 
-**Good News:** You don't need to install anything special! Just use your phone's regular web browser:
-- **Android**: Chrome, Firefox, or Samsung Internet
-- **iPhone**: Safari, Chrome, or any browser
+1. Open your desktop browser
+2. Go to: `http://localhost:5173/`
+3. Test all features
 
-✅ **Done!** Your phone already has everything you need.
+✅ **Works right now!** No setup needed.
 
 ---
 
-### Step 2: Start the Development Server
+### Method 2: Real Android App (Recommended)
+**Best for:** Full mobile testing with native features
 
-**On Your Computer** (Windows PowerShell):
+**One-time setup** (Story 7.1.3):
+1. Install Android Studio (~30 minutes)
+2. Build Android APK (~5 minutes)
+3. Install APK on phone (~2 minutes)
 
+✅ **Then:** Test like a real user with a real mobile app!
+
+---
+
+---
+
+## 📦 Building Your Android App
+
+### Prerequisites (One-Time Setup)
+
+**Download Android Studio:**
+1. Go to: https://developer.android.com/studio
+2. Download for Windows (~1 GB)
+3. Install (choose "Standard" setup)
+4. Wait for SDK download (~10-15 minutes)
+
+✅ **Done!** Android Studio ready.
+
+---
+
+### Build the APK
+
+**In PowerShell:**
 ```powershell
-# Navigate to project folder (if not already there)
-cd C:\Users\umama\Documents\GitHub\sync_warp
+# Install Android platform
+npm install @capacitor/android
 
-# Start the development server
-npm run dev
+# Create Android project
+npx cap add android
+
+# Build web app
+npm run build
+
+# Sync to Android
+npx cap sync android
+
+# Open in Android Studio
+npx cap open android
 ```
 
-**What You'll See:**
-```
-  VITE v5.x.x  ready in 234 ms
+**In Android Studio:**
+1. Wait for Gradle sync (2-5 minutes first time)
+2. Click green **Run** button (▶️)
+3. Select your **Android phone** (USB connected) or **Emulator**
+4. Wait for install
 
-  ➜  Local:   http://localhost:5173/
-  ➜  Network: http://192.168.1.100:5173/
-```
-
-**Important:** Keep this terminal window open while testing!
-
----
-
-### Step 3: Open App on Your Phone's Browser
-
-**Instructions:**
-1. Make sure your phone and computer are on the **same WiFi network**
-2. On your phone, open your **web browser** (Chrome, Safari, etc.)
-3. In the address bar, type the **Network URL** from your terminal
-   - Example: `http://192.168.1.3:5173/`
-   - Use the IP that starts with `192.168.1.x` (not 192.168.56.x)
-4. Press Go/Enter
-
-**Tip:** Bookmark this URL on your phone for quick access!
-
-✅ **Done!** Your app should now load on your phone!
+✅ **Done!** App is now on your phone!
 
 ---
 
