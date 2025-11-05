@@ -28,7 +28,17 @@
     "install-playwright": "playwright install",
     "type-check": "tsc --noEmit",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "mobile:sync": "npm run build && npx cap sync",
+    "mobile:sync:force": "npm run build && npx cap sync --inline",
+    "mobile:copy": "npm run build && npx cap copy",
+    "mobile:update": "npx cap copy && npx cap update",
+    "mobile:ios": "npm run mobile:sync && npx cap open ios",
+    "mobile:android": "npm run mobile:sync && npx cap open android",
+    "mobile:run:ios": "npm run mobile:sync && npx cap run ios",
+    "mobile:run:android": "npm run mobile:sync && npx cap run android",
+    "mobile:live-reload": "npx cap run android --livereload --external --host=0.0.0.0",
+    "mobile:live-reload:ios": "npx cap run ios --livereload --external"
   },
   "dependencies": {
     "@capacitor/android": "^7.4.4",
