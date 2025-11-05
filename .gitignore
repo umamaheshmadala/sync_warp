@@ -90,3 +90,13 @@ job-id.txt
 
 # Local Netlify folder
 .netlify
+
+# Capacitor
+ios/App/Pods
+ios/App/public
+ios/App/Podfile.lock
+android/.idea
+android/.gradle
+android/build
+android/gradle
+android/app/build
