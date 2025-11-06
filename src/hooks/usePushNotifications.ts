@@ -31,8 +31,12 @@ export const usePushNotifications = (userId: string | null) => {
 
     const registerPushNotifications = async () => {
       try {
+        console.log('[usePushNotifications] Starting registration for user:', userId);
+        console.log('[usePushNotifications] Platform:', Capacitor.getPlatform());
+        
         // Request permission
         const permissionStatus = await PushNotifications.requestPermissions();
+        console.log('[usePushNotifications] Permission status:', permissionStatus);
         
         if (permissionStatus.receive === 'granted') {
           setState(prev => ({ ...prev, permissionGranted: true }));
