@@ -2,6 +2,7 @@
 import { create } from 'zustand'
 import { supabase, Profile, AuthUser } from '../lib/supabase'
 import { uploadProfilePicture, resizeImage, type UploadResult } from '../services/profileStorageService'
+import SecureStorage from '../lib/secureStorage'
 
 interface AuthState {
   user: AuthUser | null
@@ -195,6 +196,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   signOut: async () => {
     try {
+      // Remove push token from database before signing out
+      const pushToken = await SecureStorage.getPushToken()
+      if (pushToken) {
+        await supabase
+          .from('push_tokens')
+          .delete()
+          .eq('token', pushToken)
+        
+        // Remove from secure storage
+        await SecureStorage.remove('push.token')
+        console.log('[Auth] Push token cleaned up')
+      }
+
       const { error } = await supabase.auth.signOut()
       if (error) throw error
       

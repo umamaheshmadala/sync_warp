@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { PushNotifications, Token, PushNotificationSchema, ActionPerformed } from '@capacitor/push-notifications';
 import { Capacitor } from '@capacitor/core';
 import SecureStorage from '../lib/secureStorage';
+import { supabase } from '../lib/supabase';
 
 export interface PushNotificationState {
   isRegistered: boolean;
   token: string | null;
   permissionGranted: boolean;
   error: string | null;
+  syncedToBackend: boolean;
 }
 
 export const usePushNotifications = (userId: string | null) => {
@@ -15,7 +17,8 @@ export const usePushNotifications = (userId: string | null) => {
     isRegistered: false,
     token: null,
     permissionGranted: false,
-    error: null
+    error: null,
+    syncedToBackend: false
   });
 
   useEffect(() => {
@@ -67,6 +70,38 @@ export const usePushNotifications = (userId: string | null) => {
       }
     };
 
+    // Function to sync token with Supabase
+    const syncTokenWithSupabase = async (token: string, userId: string): Promise<boolean> => {
+      try {
+        const platform = Capacitor.getPlatform();
+        
+        console.log('[usePushNotifications] Syncing token to Supabase...');
+        
+        // Upsert token to database
+        const { error } = await supabase
+          .from('push_tokens')
+          .upsert({
+            user_id: userId,
+            token: token,
+            platform: platform,
+            updated_at: new Date().toISOString()
+          }, {
+            onConflict: 'user_id,platform'
+          });
+
+        if (error) {
+          console.error('[usePushNotifications] Sync failed:', error);
+          return false;
+        }
+
+        console.log('[usePushNotifications] Token synced successfully');
+        return true;
+      } catch (error) {
+        console.error('[usePushNotifications] Sync error:', error);
+        return false;
+      }
+    };
+
     const setupListeners = () => {
       // Token registered successfully
       PushNotifications.addListener('registration', async (token: Token) => {
@@ -75,11 +110,15 @@ export const usePushNotifications = (userId: string | null) => {
         // Store token in secure storage
         await SecureStorage.setPushToken(token.value);
         
+        // Sync token with Supabase
+        const syncSuccess = await syncTokenWithSupabase(token.value, userId!);
+        
         setState(prev => ({
           ...prev,
           isRegistered: true,
           token: token.value,
-          error: null
+          syncedToBackend: syncSuccess,
+          error: syncSuccess ? null : 'Token saved locally but sync failed'
         }));
       });
 
@@ -118,5 +157,28 @@ export const usePushNotifications = (userId: string | null) => {
     };
   }, [userId]);
 
-  return state;
+  // Function to manually remove token from database
+  const removeTokenFromDatabase = async () => {
+    if (!state.token) return;
+
+    try {
+      const { error } = await supabase
+        .from('push_tokens')
+        .delete()
+        .eq('token', state.token);
+
+      if (error) {
+        console.error('[usePushNotifications] Failed to remove token from database:', error);
+      } else {
+        console.log('[usePushNotifications] Token removed from database');
+      }
+    } catch (error) {
+      console.error('[usePushNotifications] Error removing token:', error);
+    }
+  };
+
+  return {
+    ...state,
+    removeTokenFromDatabase
+  };
 };

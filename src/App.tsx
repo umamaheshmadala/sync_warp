@@ -2,6 +2,7 @@ import { BrowserRouter as Router } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'react-hot-toast'
 import { useEffect } from 'react'
+import { Capacitor } from '@capacitor/core'
 import AppLayout from './components/layout/AppLayout'
 import AppRouter from './router/Router'
 import { AuthDebugPanel } from './router/ProtectedRoute'
@@ -17,15 +18,18 @@ function App() {
   // Automatically register push notifications when user logs in
   const pushState = usePushNotifications(user?.id ?? null)
 
-  // Optional: Log push notification status
+  // Monitor push notification status
   useEffect(() => {
-    if (pushState.isRegistered) {
-      console.log('✅ Push notifications registered')
-    }
-    if (pushState.error) {
+    if (!Capacitor.isNativePlatform()) return
+
+    if (pushState.isRegistered && pushState.syncedToBackend) {
+      console.log('✅ Push notifications fully enabled')
+    } else if (pushState.isRegistered && !pushState.syncedToBackend) {
+      console.warn('⚠️ Push token saved locally but not synced to backend')
+    } else if (pushState.error) {
       console.error('❌ Push notification error:', pushState.error)
     }
-  }, [pushState.isRegistered, pushState.error])
+  }, [pushState.isRegistered, pushState.syncedToBackend, pushState.error])
 
   return (
     <ErrorBoundary level="page">
