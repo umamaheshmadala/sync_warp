@@ -6,6 +6,10 @@ import './index.css'
 // Import search service
 import searchService from './services/searchService'
 
+// Migrate to secure storage on app startup
+import { migrateToSecureStorage } from './lib/storageMigration'
+migrateToSecureStorage().catch(console.error)
+
 // Make search service available globally during development
 if (import.meta.env.DEV) {
   (window as any).searchService = searchService;

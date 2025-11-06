@@ -1,6 +1,7 @@
 // src/lib/supabase.ts
 import { createClient } from '@supabase/supabase-js'
 import { Capacitor } from '@capacitor/core'
+import { supabaseStorage } from './supabaseStorage'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -11,15 +12,12 @@ if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('placeholder') || s
   console.warn('📋 Follow SUPABASE_SETUP_GUIDE.md to set up your database')
 }
 
-// Mobile-optimized configuration
+// Mobile-optimized configuration with secure storage
 const supabaseConfig = {
   auth: {
-    // Use native storage on mobile, localStorage on web
-    // Note: This will use browser storage for now
-    // In Story 7.2.1, we'll replace with secure CapacitorStorage
-    storage: Capacitor.isNativePlatform() 
-      ? undefined // Native storage (will be enhanced in 7.2.1)
-      : window.localStorage,
+    // Use secure storage on all platforms
+    // iOS: Keychain, Android: EncryptedSharedPreferences, Web: localStorage
+    storage: supabaseStorage,
     
     // Auto-refresh tokens before expiry
     autoRefreshToken: true,
