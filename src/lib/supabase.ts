@@ -12,7 +12,7 @@ if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('placeholder') || s
   console.warn('📋 Follow SUPABASE_SETUP_GUIDE.md to set up your database')
 }
 
-// Mobile-optimized configuration with secure storage
+// Mobile-optimized configuration with secure storage and PKCE
 const supabaseConfig = {
   auth: {
     // Use secure storage on all platforms
@@ -27,14 +27,22 @@ const supabaseConfig = {
     
     // Don't try to detect session from URL on mobile
     // (Mobile apps don't use URL-based auth flows)
-    detectSessionInUrl: !Capacitor.isNativePlatform()
+    detectSessionInUrl: !Capacitor.isNativePlatform(),
+    
+    // Enable PKCE flow (Proof Key for Code Exchange)
+    // More secure for mobile apps - protects against auth code interception
+    flowType: 'pkce',
+    
+    // Storage key for auth data
+    storageKey: 'supabase.auth.token'
   },
   
   // Add platform information to requests
   global: {
     headers: {
       'x-client-platform': Capacitor.getPlatform(),
-      'x-client-info': `capacitor-${Capacitor.getPlatform()}`
+      'x-client-info': `capacitor-${Capacitor.getPlatform()}`,
+      'x-auth-flow': 'pkce' // Indicate PKCE flow is enabled
     }
   }
 }
