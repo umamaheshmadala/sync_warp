@@ -1,7 +1,7 @@
 import { BrowserRouter as Router } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'react-hot-toast'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Capacitor } from '@capacitor/core'
 import AppLayout from './components/layout/AppLayout'
 import AppRouter from './router/Router'
@@ -13,7 +13,23 @@ import { useAuthStore } from './store/authStore'
 const queryClient = new QueryClient()
 
 function App() {
+  const [isHydrated, setIsHydrated] = useState(false)
   const user = useAuthStore(state => state.user)
+  
+  // Wait for Zustand to hydrate from storage
+  useEffect(() => {
+    const unsubscribe = useAuthStore.persist.onFinishHydration(() => {
+      setIsHydrated(true)
+      console.log('[App] State hydrated from storage')
+    })
+
+    // Check if already hydrated
+    if (useAuthStore.persist.hasHydrated()) {
+      setIsHydrated(true)
+    }
+
+    return unsubscribe
+  }, [])
   
   // Automatically register push notifications when user logs in
   const pushState = usePushNotifications(user?.id ?? null)
@@ -30,6 +46,30 @@ function App() {
       console.error('❌ Push notification error:', pushState.error)
     }
   }, [pushState.isRegistered, pushState.syncedToBackend, pushState.error])
+
+  // Show loading while hydrating
+  if (!isHydrated) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        background: '#f5f5f5'
+      }}>
+        <div style={{
+          textAlign: 'center',
+          color: '#666'
+        }}>
+          <div style={{
+            fontSize: '24px',
+            marginBottom: '10px'
+          }}>Loading...</div>
+          <div style={{ fontSize: '14px' }}>Restoring your session</div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <ErrorBoundary level="page">

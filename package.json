@@ -65,6 +65,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.23.18",
+    "localforage": "^1.10.0",
     "lucide-react": "^0.294.0",
     "motion": "^12.23.22",
     "qrcode": "^1.5.4",

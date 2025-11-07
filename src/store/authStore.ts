@@ -1,8 +1,10 @@
 // src/store/authStore.ts
 import { create } from 'zustand'
+import { persist, createJSONStorage } from 'zustand/middleware'
 import { supabase, Profile, AuthUser } from '../lib/supabase'
 import { uploadProfilePicture, resizeImage, type UploadResult } from '../services/profileStorageService'
 import SecureStorage from '../lib/secureStorage'
+import localforage from '../lib/storage'
 
 interface AuthState {
   user: AuthUser | null
@@ -25,7 +27,9 @@ interface AuthState {
   resetPassword: (password: string) => Promise<void>
 }
 
-export const useAuthStore = create<AuthState>((set, get) => ({
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set, get) => ({
   user: null,
   profile: null,
   loading: true,
@@ -212,7 +216,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const { error } = await supabase.auth.signOut()
       if (error) throw error
       
-      set({ user: null, profile: null })
+      // Clear persisted state
+      await useAuthStore.persist.clearStorage()
+      console.log('[Auth] Persisted storage cleared')
+      
+      set({ user: null, profile: null, initialized: false })
     } catch (error) {
       console.error('Sign out error:', error)
       throw error
@@ -541,7 +549,33 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ loading: false })
     }
   }
-}))
+    }),
+    {
+      name: 'auth-storage',
+      storage: createJSONStorage(() => localforage),
+      partialize: (state) => ({
+        // Only persist essential, non-sensitive data
+        user: state.user ? {
+          id: state.user.id,
+          email: state.user.email,
+          // Don't persist tokens or full user object
+        } : null,
+        profile: state.profile,
+        initialized: state.initialized
+        // Don't persist: loading, error, uploadingAvatar (temporary state)
+      }),
+      version: 1,
+      migrate: (persistedState: any, version: number) => {
+        // Migration logic for future schema changes
+        if (version === 0) {
+          // Example: migrate from old schema to new
+          return persistedState
+        }
+        return persistedState
+      }
+    }
+  )
+)
 
 // Initialize auth state on app start
 try {
