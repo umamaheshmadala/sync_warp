@@ -187,13 +187,14 @@ const Dashboard: React.FC = () => {
                 <TrendingUp className="w-5 h-5" />
                 <p className="font-semibold text-sm">Register</p>
               </div>
-              {/* Desktop: Vertical layout */}
-              <div className="hidden md:block text-center">
-                <TrendingUp className="w-8 h-8 mb-3 mx-auto" />
-                <p className="font-semibold text-base">Register</p>
-                <p className="text-sm opacity-90">Business</p>
-              </div>
-            </button>
+            {/* Desktop: Vertical layout */}
+            <div className="hidden md:block text-center">
+              <TrendingUp className="w-8 h-8 mb-3 mx-auto" />
+              <p className="font-semibold text-base">Register</p>
+              <p className="text-sm opacity-90">Business</p>
+            </div>
+          </button>
+          
             
             <button
               onClick={() => navigate('/business/dashboard')}

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Worker Test</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-card {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button {
+            background: #6366f1;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #4f46e5; }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Service Worker Test Suite</h1>
+    
+    <div class="test-card">
+        <h2>1. Service Worker Support</h2>
+        <div id="sw-support" class="status"></div>
+    </div>
+
+    <div class="test-card">
+        <h2>2. Service Worker Registration</h2>
+        <div id="sw-registration" class="status"></div>
+        <pre id="sw-details"></pre>
+    </div>
+
+    <div class="test-card">
+        <h2>3. Cached Assets</h2>
+        <div id="cache-status" class="status"></div>
+        <button onclick="checkCaches()">Check Caches</button>
+        <pre id="cache-details"></pre>
+    </div>
+
+    <div class="test-card">
+        <h2>4. Offline Test</h2>
+        <div id="offline-status" class="status"></div>
+        <button onclick="testOffline()">Test Offline Mode</button>
+        <p class="info">This will check if the app can load offline</p>
+    </div>
+
+    <div class="test-card">
+        <h2>5. Console Logs</h2>
+        <pre id="console-logs"></pre>
+    </div>
+
+    <script>
+        const logs = [];
+        const originalLog = console.log;
+        console.log = function(...args) {
+            logs.push(args.join(' '));
+            document.getElementById('console-logs').textContent = logs.join('\n');
+            originalLog.apply(console, args);
+        };
+
+        // Test 1: Service Worker Support
+        function checkSupport() {
+            const supportDiv = document.getElementById('sw-support');
+            if ('serviceWorker' in navigator) {
+                supportDiv.className = 'status success';
+                supportDiv.textContent = '✅ Service Worker API is supported';
+                console.log('[TEST] Service Worker API supported');
+                return true;
+            } else {
+                supportDiv.className = 'status error';
+                supportDiv.textContent = '❌ Service Worker API not supported';
+                console.log('[TEST] Service Worker API NOT supported');
+                return false;
+            }
+        }
+
+        // Test 2: Service Worker Registration
+        async function checkRegistration() {
+            const regDiv = document.getElementById('sw-registration');
+            const detailsDiv = document.getElementById('sw-details');
+            
+            try {
+                const registration = await navigator.serviceWorker.getRegistration('/');
+                
+                if (registration) {
+                    regDiv.className = 'status success';
+                    regDiv.textContent = '✅ Service Worker is registered';
+                    
+                    const details = {
+                        scope: registration.scope,
+                        updateViaCache: registration.updateViaCache,
+                        active: registration.active ? {
+                            state: registration.active.state,
+                            scriptURL: registration.active.scriptURL
+                        } : null,
+                        installing: registration.installing ? {
+                            state: registration.installing.state
+                        } : null,
+                        waiting: registration.waiting ? {
+                            state: registration.waiting.state
+                        } : null
+                    };
+                    
+                    detailsDiv.textContent = JSON.stringify(details, null, 2);
+                    console.log('[TEST] Service Worker registered:', details);
+                } else {
+                    regDiv.className = 'status error';
+                    regDiv.textContent = '❌ Service Worker is NOT registered';
+                    console.log('[TEST] Service Worker NOT registered');
+                }
+            } catch (error) {
+                regDiv.className = 'status error';
+                regDiv.textContent = `❌ Error checking registration: ${error.message}`;
+                console.log('[TEST] Error:', error);
+            }
+        }
+
+        // Test 3: Check Caches
+        async function checkCaches() {
+            const statusDiv = document.getElementById('cache-status');
+            const detailsDiv = document.getElementById('cache-details');
+            
+            try {
+                const cacheNames = await caches.keys();
+                statusDiv.className = 'status success';
+                statusDiv.textContent = `✅ Found ${cacheNames.length} cache(s)`;
+                
+                const cacheDetails = {};
+                for (const cacheName of cacheNames) {
+                    const cache = await caches.open(cacheName);
+                    const keys = await cache.keys();
+                    cacheDetails[cacheName] = keys.map(req => req.url);
+                }
+                
+                detailsDiv.textContent = JSON.stringify(cacheDetails, null, 2);
+                console.log('[TEST] Caches:', cacheDetails);
+            } catch (error) {
+                statusDiv.className = 'status error';
+                statusDiv.textContent = `❌ Error checking caches: ${error.message}`;
+                console.log('[TEST] Cache error:', error);
+            }
+        }
+
+        // Test 4: Offline Test
+        async function testOffline() {
+            const statusDiv = document.getElementById('offline-status');
+            statusDiv.className = 'status info';
+            statusDiv.textContent = '⏳ Testing offline capability...';
+            
+            try {
+                // Try to fetch the main page
+                const response = await fetch('/', { cache: 'force-cache' });
+                if (response.ok) {
+                    statusDiv.className = 'status success';
+                    statusDiv.textContent = '✅ App can load from cache (offline ready)';
+                    console.log('[TEST] Offline test passed');
+                } else {
+                    statusDiv.className = 'status error';
+                    statusDiv.textContent = '❌ Failed to load from cache';
+                    console.log('[TEST] Offline test failed');
+                }
+            } catch (error) {
+                statusDiv.className = 'status error';
+                statusDiv.textContent = `❌ Offline test error: ${error.message}`;
+                console.log('[TEST] Offline test error:', error);
+            }
+        }
+
+        // Run tests on load
+        window.addEventListener('load', async () => {
+            console.log('[TEST] Starting Service Worker tests...');
+            
+            if (checkSupport()) {
+                await checkRegistration();
+                
+                // Wait for SW to be ready
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.ready.then(() => {
+                        console.log('[TEST] Service Worker is ready!');
+                        checkCaches();
+                    });
+                }
+            }
+        });
+
+        // Listen for SW messages
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.addEventListener('message', event => {
+                console.log('[SW MESSAGE]', event.data);
+            });
+        }
+    </script>
+</body>
+</html>

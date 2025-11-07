@@ -19,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { SyncStatusIndicator } from '../ui/SyncStatusIndicator';
 
 export default function Header() {
   const navigate = useNavigate();
@@ -198,6 +199,11 @@ export default function Header() {
 
         {/* Right side - Notifications, Friends (Mobile) | Wishlist, Notifications, Profile (Desktop) */}
         <div className="flex items-center space-x-2">
+          {/* Sync Status - Desktop Only */}
+          <div className="hidden md:block">
+            <SyncStatusIndicator compact />
+          </div>
+          
           {/* Wishlist - Desktop Only */}
           <Button
             variant="ghost"

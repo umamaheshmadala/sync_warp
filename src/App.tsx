@@ -9,6 +9,7 @@ import { AuthDebugPanel } from './router/ProtectedRoute'
 import { ErrorBoundary } from './components/error'
 import { usePushNotifications } from './hooks/usePushNotifications'
 import { useAuthStore } from './store/authStore'
+import { OfflineBanner } from './components/ui/OfflineBanner'
 
 const queryClient = new QueryClient()
 
@@ -80,6 +81,7 @@ function App() {
             v7_relativeSplatPath: true
           }}
         >
+          <OfflineBanner />
           <AppLayout>
             <AppRouter />
             <AuthDebugPanel />

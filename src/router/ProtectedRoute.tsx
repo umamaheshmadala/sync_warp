@@ -4,6 +4,9 @@
 import { useEffect, ReactNode, useState } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
+import { usePushNotifications } from '../hooks/usePushNotifications'
+import { Capacitor } from '@capacitor/core'
+import { PushNotifications } from '@capacitor/push-notifications'
 
 interface ProtectedRouteProps {
   children: ReactNode
@@ -252,10 +255,47 @@ export function useRequireAuth(debugMode = false) {
 export function AuthDebugPanel() {
   const { user, profile, initialized, loading } = useAuthStore()
   const location = useLocation()
+  const [testResult, setTestResult] = useState<string>('Not tested')
   
-  if (import.meta.env.MODE !== 'development') {
-    return null
+  // Test push notification function
+  const testPushNotifications = async () => {
+    setTestResult('Testing...')
+    try {
+      // Check platform
+      const isNative = Capacitor.isNativePlatform()
+      setTestResult(prev => prev + '\nPlatform: ' + Capacitor.getPlatform() + ', Native: ' + isNative)
+      
+      if (!isNative) {
+        setTestResult('Platform check bypassed for development')
+        // Don't return - continue with test on native device
+      }
+      
+      // Request permission
+      const permissionStatus = await PushNotifications.requestPermissions()
+      setTestResult(prev => prev + '\nPermission status: ' + JSON.stringify(permissionStatus))
+      
+      if (permissionStatus.receive === 'granted') {
+        // Register for push notifications
+        await PushNotifications.register()
+        setTestResult(prev + prev + '\n✅ Permission granted and registered!')
+        
+        // Add listener for token
+        PushNotifications.addListener('registration', (token) => {
+          setTestResult(prev => prev + '\n✅ Token received: ' + token.value.substring(0, 20) + '...')
+        })
+        
+        PushNotifications.addListener('registrationError', (error) => {
+          setTestResult(prev + prev + '\n❌ Registration error: ' + error.error)
+        })
+      } else {
+        setTestResult('❌ Permission denied')
+      }
+    } catch (error: any) {
+      setTestResult('❌ Error: ' + error.message)
+    }
   }
+  
+  // Debug panel shown in all modes for testing
   
   return (
     <div className="fixed bottom-4 right-4 bg-black bg-opacity-80 text-white p-3 rounded text-xs z-50 max-w-sm">
@@ -277,6 +317,19 @@ export function AuthDebugPanel() {
           <div>Onboarding: {(profile.city && profile.interests?.length > 0) ? '✅ Complete' : '❌ Incomplete'}</div>
         </div>
       )}
+      
+      {/* Push notification test button */}
+      <div className="mt-3 pt-3 border-t border-white border-opacity-30">
+        <button 
+          onClick={testPushNotifications}
+          className="bg-indigo-600 text-white px-3 py-1 rounded text-xs hover:bg-indigo-700 transition-colors w-full"
+        >
+          📱 Test Push Notifications
+        </button>
+        <div className="mt-2 text-green-300 font-mono text-xs break-all whitespace-pre-wrap">
+          {testResult}
+        </div>
+      </div>
     </div>
   )
 }
