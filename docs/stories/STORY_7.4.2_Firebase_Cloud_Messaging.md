@@ -1,4 +1,4 @@
-# Story 7.4.2: Firebase Cloud Messaging Setup (Android) ⚪ PLANNED
+# Story 7.4.2: Firebase Cloud Messaging Setup (Android) ✅ COMPLETE
 
 **Epic**: EPIC 7.4 - Push Notifications Infrastructure  
 **Story Points**: 5  
@@ -19,15 +19,15 @@
 
 ## 🎯 Acceptance Criteria
 
-- [ ] Firebase project created
-- [ ] Android app added to Firebase
-- [ ] google-services.json downloaded and placed
-- [ ] Android project configured with FCM
-- [ ] FCM server key obtained
-- [ ] Test notification sent to Android device
-- [ ] Token registration verified
-- [ ] Documentation created
-- [ ] Changes committed to git
+- [x] Firebase project created
+- [x] Android app added to Firebase
+- [x] google-services.json downloaded and placed
+- [x] Android project configured with FCM
+- [x] FCM server key obtained
+- [x] Test notification sent to Android device
+- [x] Token registration verified
+- [x] Documentation created
+- [x] Changes committed to git
 
 ---
 
@@ -491,7 +491,7 @@ git push origin mobile-app-setup
 
 ---
 
-**Story Status**: ⚪ PLANNED  
+**Story Status**: ✅ COMPLETE (Completed: November 8, 2025)
 **Previous Story**: [STORY_7.4.1_Capacitor_Push_Plugin.md](./STORY_7.4.1_Capacitor_Push_Plugin.md)  
 **Next Story**: [STORY_7.4.3_Apple_Push_Notifications.md](./STORY_7.4.3_Apple_Push_Notifications.md)  
-**Epic Progress**: Story 2/6 complete (17% → 33%)
+**Epic Progress**: Story 2/6 complete (33%)
