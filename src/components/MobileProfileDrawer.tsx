@@ -106,7 +106,7 @@ export default function MobileProfileDrawer({ isOpen, onClose }: MobileProfileDr
         </button>
 
         {/* Scrollable Content */}
-        <div className="h-full overflow-y-auto">
+        <div className="h-full overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
           {/* Profile Section */}
           <div className="p-6 pb-4">
             {/* Avatar */}

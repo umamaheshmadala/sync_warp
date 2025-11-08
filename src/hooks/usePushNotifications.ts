@@ -36,30 +36,38 @@ export const usePushNotifications = (userId: string | null) => {
       try {
         console.log('[usePushNotifications] Starting registration for user:', userId);
         console.log('[usePushNotifications] Platform:', Capacitor.getPlatform());
-        console.log('[usePushNotifications] About to request permissions...');
         
-        // Request permission
-        const permissionStatus = await PushNotifications.requestPermissions();
-        console.log('[usePushNotifications] Permission status received:', permissionStatus);
-        console.log('[usePushNotifications] Permission receive:', permissionStatus.receive);
+        // Set up listeners FIRST before registering
+        setupListeners();
         
-        if (permissionStatus.receive === 'granted') {
+        // Check current permission status
+        const currentPermission = await PushNotifications.checkPermissions();
+        console.log('[usePushNotifications] Current permission status:', currentPermission);
+        
+        let finalPermissionStatus = currentPermission;
+        
+        // If permission is prompt, request it
+        if (currentPermission.receive === 'prompt') {
+          console.log('[usePushNotifications] Requesting permissions...');
+          finalPermissionStatus = await PushNotifications.requestPermissions();
+          console.log('[usePushNotifications] Permission request result:', finalPermissionStatus);
+        }
+        
+        if (finalPermissionStatus.receive === 'granted') {
           setState(prev => ({ ...prev, permissionGranted: true }));
           
+          console.log('[usePushNotifications] Permission granted, registering with FCM/APNs...');
           // Register with OS (FCM for Android, APNs for iOS)
           await PushNotifications.register();
           
-          // Set up listeners
-          setupListeners();
-          
-          console.log('[usePushNotifications] Initialized successfully');
-        } else {
+          console.log('[usePushNotifications] Registration called successfully');
+        } else if (finalPermissionStatus.receive === 'denied') {
           setState(prev => ({
             ...prev,
             permissionGranted: false,
             error: 'Push notification permission denied'
           }));
-          console.warn('[usePushNotifications] Permission denied');
+          console.warn('[usePushNotifications] Permission denied by user');
         }
       } catch (error) {
         setState(prev => ({

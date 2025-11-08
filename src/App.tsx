@@ -5,7 +5,6 @@ import { useEffect, useState } from 'react'
 import { Capacitor } from '@capacitor/core'
 import AppLayout from './components/layout/AppLayout'
 import AppRouter from './router/Router'
-import { AuthDebugPanel } from './router/ProtectedRoute'
 import { ErrorBoundary } from './components/error'
 import { usePushNotifications } from './hooks/usePushNotifications'
 import { useAuthStore } from './store/authStore'
@@ -84,7 +83,6 @@ function App() {
           <OfflineBanner />
           <AppLayout>
             <AppRouter />
-            <AuthDebugPanel />
           </AppLayout>
           <Toaster
               position="top-right"
