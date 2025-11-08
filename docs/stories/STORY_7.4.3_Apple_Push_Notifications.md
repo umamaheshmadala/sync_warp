@@ -1,4 +1,4 @@
-# Story 7.4.3: Apple Push Notification Service Setup (iOS) ⚪ PLANNED
+# Story 7.4.3: Apple Push Notification Service Setup (iOS) ⏸️ DEFERRED
 
 **Epic**: EPIC 7.4 - Push Notifications Infrastructure  
 **Story Points**: 5  
@@ -479,7 +479,9 @@ git push origin mobile-app-setup
 
 ---
 
-**Story Status**: ⚪ PLANNED  
+**Story Status**: ⏸️ DEFERRED (Awaiting Mac/Xcode/Apple Developer Account)
+**Deferred Date**: November 8, 2025
+**Reason**: Requires Mac with Xcode and Apple Developer Account ($99/year). Will be implemented when hardware/account is available.
 **Previous Story**: [STORY_7.4.2_Firebase_Cloud_Messaging.md](./STORY_7.4.2_Firebase_Cloud_Messaging.md)  
 **Next Story**: [STORY_7.4.4_Supabase_Edge_Function.md](./STORY_7.4.4_Supabase_Edge_Function.md)  
-**Epic Progress**: Story 3/6 complete (33% → 50%)
+**Epic Progress**: 2/6 stories complete (33%) - iOS deferred, proceeding with cross-platform backend
