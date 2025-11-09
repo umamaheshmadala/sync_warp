@@ -7,6 +7,8 @@ import AppLayout from './components/layout/AppLayout'
 import AppRouter from './router/Router'
 import { ErrorBoundary } from './components/error'
 import { usePushNotifications } from './hooks/usePushNotifications'
+import { useNotificationHandler } from './hooks/useNotificationHandler'
+import { NotificationToast } from './components/NotificationToast'
 import { useAuthStore } from './store/authStore'
 import { OfflineBanner } from './components/ui/OfflineBanner'
 
@@ -33,6 +35,9 @@ function App() {
   
   // Automatically register push notifications when user logs in
   const pushState = usePushNotifications(user?.id ?? null)
+
+  // Handle notification routing and foreground display
+  const { foregroundNotification, handleToastTap, handleToastDismiss } = useNotificationHandler()
 
   // Monitor push notification status
   useEffect(() => {
@@ -100,6 +105,16 @@ function App() {
                 },
               }}
             />
+          {/* Show in-app notification toast for foreground notifications */}
+          {foregroundNotification && (
+            <NotificationToast
+              title={foregroundNotification.title}
+              body={foregroundNotification.body}
+              data={foregroundNotification.data}
+              onTap={handleToastTap}
+              onDismiss={handleToastDismiss}
+            />
+          )}
         </Router>
       </QueryClientProvider>
     </ErrorBoundary>
