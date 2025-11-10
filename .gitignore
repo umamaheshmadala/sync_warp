@@ -81,7 +81,6 @@ temp/
 temp_cleanup/
 debug/
 archive/
-scripts/
 
 # Development artifacts
 *.log

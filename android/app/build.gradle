@@ -3,6 +3,7 @@ apply plugin: 'com.android.application'
 android {
     namespace "com.syncapp.mobile"
     compileSdk rootProject.ext.compileSdkVersion
+
     defaultConfig {
         applicationId "com.syncapp.mobile"
         minSdkVersion rootProject.ext.minSdkVersion
@@ -16,16 +17,53 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
+    // Product flavors for different environments
+    flavorDimensions "version"
+    productFlavors {
+        dev {
+            dimension "version"
+            applicationIdSuffix ".dev"
+            versionNameSuffix "-dev"
+            resValue "string", "app_name", "Sync Dev"
+        }
+        staging {
+            dimension "version"
+            applicationIdSuffix ".staging"
+            versionNameSuffix "-staging"
+            resValue "string", "app_name", "Sync Staging"
+        }
+        prod {
+            dimension "version"
+            resValue "string", "app_name", "Sync App"
+        }
+    }
+
+    // 🧹 Auto-clean dexBuilder output before dexing (prevents "Unable to delete directory" errors)
+    applicationVariants.all { variant ->
+        tasks.whenTaskAdded { task ->
+            if (task.name == "dexBuilder${variant.name.capitalize()}") {
+                task.doFirst {
+                    def dexOutDir = file("$buildDir/intermediates/project_dex_archive/${variant.name}/dexBuilder${variant.name.capitalize()}/out")
+                    if (dexOutDir.exists()) {
+                        println("🧹 Cleaning locked dexBuilder folder: ${dexOutDir}")
+                        delete dexOutDir
+                    }
+                }
+            }
+        }
+    }
 }
 
 repositories {
-    flatDir{
+    flatDir {
         dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
     }
 }
@@ -40,7 +78,7 @@ dependencies {
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')
-    
+
     // Firebase dependencies for push notifications
     implementation platform('com.google.firebase:firebase-bom:33.7.0')
     implementation 'com.google.firebase:firebase-messaging'
