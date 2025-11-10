@@ -14,9 +14,68 @@ import { OfflineBanner } from './components/ui/OfflineBanner'
 
 const queryClient = new QueryClient()
 
+// Component that needs Router context
+function AppContent() {
+  const user = useAuthStore(state => state.user)
+  
+  // Automatically register push notifications when user logs in
+  const pushState = usePushNotifications(user?.id ?? null)
+
+  // Handle notification routing and foreground display (needs Router context)
+  const { foregroundNotification, handleToastTap, handleToastDismiss } = useNotificationHandler()
+
+  // Monitor push notification status
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return
+
+    if (pushState.isRegistered && pushState.syncedToBackend) {
+      console.log('✅ Push notifications fully enabled')
+    } else if (pushState.isRegistered && !pushState.syncedToBackend) {
+      console.warn('⚠️ Push token saved locally but not synced to backend')
+    } else if (pushState.error) {
+      console.error('❌ Push notification error:', pushState.error)
+    }
+  }, [pushState.isRegistered, pushState.syncedToBackend, pushState.error])
+
+  return (
+    <>
+      <OfflineBanner />
+      <AppLayout>
+        <AppRouter />
+      </AppLayout>
+      <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 4000,
+            style: {
+              background: '#363636',
+              color: '#fff',
+            },
+            success: {
+              duration: 3000,
+            },
+            error: {
+              duration: 5000,
+            },
+          }}
+        />
+      {/* Show in-app notification toast for foreground notifications */}
+      {foregroundNotification && (
+        <NotificationToast
+          title={foregroundNotification.title}
+          body={foregroundNotification.body}
+          data={foregroundNotification.data}
+          onTap={handleToastTap}
+          onDismiss={handleToastDismiss}
+        />
+      )}
+    </>
+  )
+}
+
+// Main App component
 function App() {
   const [isHydrated, setIsHydrated] = useState(false)
-  const user = useAuthStore(state => state.user)
   
   // Wait for Zustand to hydrate from storage
   useEffect(() => {
@@ -32,25 +91,6 @@ function App() {
 
     return unsubscribe
   }, [])
-  
-  // Automatically register push notifications when user logs in
-  const pushState = usePushNotifications(user?.id ?? null)
-
-  // Handle notification routing and foreground display
-  const { foregroundNotification, handleToastTap, handleToastDismiss } = useNotificationHandler()
-
-  // Monitor push notification status
-  useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return
-
-    if (pushState.isRegistered && pushState.syncedToBackend) {
-      console.log('✅ Push notifications fully enabled')
-    } else if (pushState.isRegistered && !pushState.syncedToBackend) {
-      console.warn('⚠️ Push token saved locally but not synced to backend')
-    } else if (pushState.error) {
-      console.error('❌ Push notification error:', pushState.error)
-    }
-  }, [pushState.isRegistered, pushState.syncedToBackend, pushState.error])
 
   // Show loading while hydrating
   if (!isHydrated) {
@@ -85,36 +125,7 @@ function App() {
             v7_relativeSplatPath: true
           }}
         >
-          <OfflineBanner />
-          <AppLayout>
-            <AppRouter />
-          </AppLayout>
-          <Toaster
-              position="top-right"
-              toastOptions={{
-                duration: 4000,
-                style: {
-                  background: '#363636',
-                  color: '#fff',
-                },
-                success: {
-                  duration: 3000,
-                },
-                error: {
-                  duration: 5000,
-                },
-              }}
-            />
-          {/* Show in-app notification toast for foreground notifications */}
-          {foregroundNotification && (
-            <NotificationToast
-              title={foregroundNotification.title}
-              body={foregroundNotification.body}
-              data={foregroundNotification.data}
-              onTap={handleToastTap}
-              onDismiss={handleToastDismiss}
-            />
-          )}
+          <AppContent />
         </Router>
       </QueryClientProvider>
     </ErrorBoundary>
