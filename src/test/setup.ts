@@ -75,3 +75,83 @@ global.ResizeObserver = class ResizeObserver {
   unobserve() {}
 } as any;
 
+// ============================================
+// CAPACITOR MOCKS FOR MOBILE TESTING
+// ============================================
+
+// Mock @capacitor/core
+vi.mock('@capacitor/core', () => ({
+  Capacitor: {
+    isNativePlatform: () => false,
+    getPlatform: () => 'web',
+    isPluginAvailable: () => false,
+    convertFileSrc: (path: string) => path,
+  },
+  registerPlugin: () => ({}),
+}));
+
+// Mock @capacitor/preferences
+vi.mock('@capacitor/preferences', () => ({
+  Preferences: {
+    get: vi.fn().mockResolvedValue({ value: null }),
+    set: vi.fn().mockResolvedValue(undefined),
+    remove: vi.fn().mockResolvedValue(undefined),
+    clear: vi.fn().mockResolvedValue(undefined),
+    keys: vi.fn().mockResolvedValue({ keys: [] }),
+    migrate: vi.fn().mockResolvedValue(undefined),
+    removeOld: vi.fn().mockResolvedValue(undefined),
+  },
+}));
+
+// Mock @capacitor/push-notifications
+vi.mock('@capacitor/push-notifications', () => ({
+  PushNotifications: {
+    requestPermissions: vi.fn().mockResolvedValue({ receive: 'granted' }),
+    register: vi.fn().mockResolvedValue(undefined),
+    getDeliveredNotifications: vi.fn().mockResolvedValue({ notifications: [] }),
+    removeDeliveredNotifications: vi.fn().mockResolvedValue(undefined),
+    removeAllDeliveredNotifications: vi.fn().mockResolvedValue(undefined),
+    createChannel: vi.fn().mockResolvedValue(undefined),
+    deleteChannel: vi.fn().mockResolvedValue(undefined),
+    listChannels: vi.fn().mockResolvedValue({ channels: [] }),
+    checkPermissions: vi.fn().mockResolvedValue({ receive: 'granted' }),
+    addListener: vi.fn((eventName, callback) => {
+      return {
+        remove: vi.fn(),
+      };
+    }),
+    removeAllListeners: vi.fn().mockResolvedValue(undefined),
+  },
+}));
+
+// Mock @capacitor/network
+vi.mock('@capacitor/network', () => ({
+  Network: {
+    getStatus: vi.fn().mockResolvedValue({
+      connected: true,
+      connectionType: 'wifi',
+    }),
+    addListener: vi.fn((eventName, callback) => {
+      return {
+        remove: vi.fn(),
+      };
+    }),
+    removeAllListeners: vi.fn().mockResolvedValue(undefined),
+  },
+}));
+
+// Mock mobile viewport for testing responsive components
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: vi.fn().mockImplementation(query => ({
+    matches: query === '(max-width: 768px)', // Simulate mobile viewport
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+});
+
