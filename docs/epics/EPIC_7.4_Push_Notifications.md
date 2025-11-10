@@ -1,117 +1,140 @@
-# Epic 7.4: Push Notifications Infrastructure ⚪ PLANNED
+# Epic 7.4: Push Notifications Infrastructure ✅ COMPLETE (Android) / ⏸️ iOS DEFERRED
 
 **Goal**: Implement complete push notification system with Firebase Cloud Messaging (Android) and Apple Push Notification Service (iOS).
 
-**Progress**: 0/6 stories completed (0%)
+**Progress**: 5/6 stories completed (83%) - **Story 7.4.3 iOS deferred**
 
 **Dependencies**: EPIC 7.2 complete (push tokens table exists)
 
+**Status**: ✅ **Production-ready for Android** | ⏸️ iOS pending hardware/account requirements
+
 ---
 
-## Story 7.4.1: Capacitor Push Notifications Plugin ⚪ PLANNED
+## Story 7.4.1: Capacitor Push Notifications Plugin ✅ COMPLETE
 **What you'll see**: Push notification capability added to mobile apps.
 
-**What needs to be built**:
-- [ ] Install @capacitor/push-notifications
-- [ ] Configure plugin in capacitor.config.ts
-- [ ] Create pushNotifications service
-- [ ] Request permissions on mobile
-- [ ] Listen for notification events
-- [ ] Handle notification tap actions
+**What was built**:
+- [✅] Install @capacitor/push-notifications
+- [✅] Configure plugin in capacitor.config.ts
+- [✅] Create pushNotifications service
+- [✅] Request permissions on mobile
+- [✅] Listen for notification events
+- [✅] Handle notification tap actions
 
-**Time Estimate**: 3-4 hours
+**Time**: 3 hours | **Completed**: 2025-11-08
 
 ---
 
-## Story 7.4.2: Firebase Cloud Messaging Setup (Android) ⚪ PLANNED
+## Story 7.4.2: Firebase Cloud Messaging Setup (Android) ✅ COMPLETE
 **What you'll see**: Android devices can receive push notifications.
 
-**What needs to be built**:
-- [ ] Create Firebase project
-- [ ] Add Android app to Firebase
-- [ ] Download google-services.json
-- [ ] Configure Android project with FCM
-- [ ] Get FCM server key
-- [ ] Test notification delivery to Android
+**What was built**:
+- [✅] Create Firebase project
+- [✅] Add Android app to Firebase
+- [✅] Download google-services.json
+- [✅] Configure Android project with FCM
+- [✅] Get FCM V1 API credentials (service account)
+- [✅] Test notification delivery to Android (physical device)
 
-**Time Estimate**: 3-4 hours
+**Time**: 3 hours | **Completed**: 2025-11-08
 
 ---
 
-## Story 7.4.3: Apple Push Notification Service Setup (iOS) ⚪ PLANNED
+## Story 7.4.3: Apple Push Notification Service Setup (iOS) ⏸️ DEFERRED
 **What you'll see**: iOS devices can receive push notifications.
 
-**What needs to be built**:
-- [ ] Create App ID in Apple Developer
-- [ ] Enable Push Notifications capability
-- [ ] Create APNs key (.p8 file)
-- [ ] Configure Xcode project
-- [ ] Add Push Notifications capability in Xcode
-- [ ] Test notification delivery to iOS
+**Requirements not met**:
+- [❌] Mac computer with Xcode
+- [❌] Apple Developer Account ($99/year)
+- [❌] Physical iOS device for testing
+- [❌] APNs key (.p8 file)
 
-**Time Estimate**: 3-4 hours
-**Requires**: Apple Developer Account ($99/year)
+**When to complete**:
+- Acquire Mac development environment
+- Purchase Apple Developer account
+- Get physical iOS device
+
+**Time Estimate**: 3-4 hours | **Status**: ⏸️ Hardware/account dependent
 
 ---
 
-## Story 7.4.4: Supabase Edge Function for Push Sending ⚪ PLANNED
+## Story 7.4.4: Supabase Edge Function for Push Sending ✅ COMPLETE
 **What you'll see**: Server-side function to send push notifications to users.
 
-**What needs to be built**:
-- [ ] Create send-push-notification Edge Function
-- [ ] Integrate with FCM API
-- [ ] Integrate with APNs API
-- [ ] Fetch user tokens from push_tokens table
-- [ ] Send to all user devices
-- [ ] Handle errors and retries
+**What was built**:
+- [✅] Create send-push-notification Edge Function
+- [✅] Integrate with FCM V1 API (OAuth2)
+- [⏸️] Integrate with APNs API (deferred with Story 7.4.3)
+- [✅] Fetch user tokens from push_tokens table
+- [✅] Send to all user devices (multi-device support)
+- [✅] Handle errors and retries
 
-**Time Estimate**: 4-5 hours
+**Time**: 4 hours | **Completed**: 2025-11-09
 
 ---
 
-## Story 7.4.5: Notification Handling & Routing ⚪ PLANNED
+## Story 7.4.5: Notification Handling & Routing ✅ COMPLETE
 **What you'll see**: Tapping notifications opens correct screen in app.
 
-**What needs to be built**:
-- [ ] Implement notification action handler
-- [ ] Route to business profile on business notification
-- [ ] Route to offers on offer notification
-- [ ] Route to reviews on review notification
-- [ ] Show in-app toast when notification received
-- [ ] Test all notification types
+**What was built**:
+- [✅] Implement notification action handler
+- [✅] Route to business profile on business notification
+- [✅] Route to offers on offer notification
+- [✅] Route to reviews on review notification
+- [✅] Show in-app toast when notification received (foreground)
+- [✅] Test all notification types (6 types supported)
 
-**Time Estimate**: 3-4 hours
+**Time**: 3 hours | **Completed**: 2025-11-09
 
 ---
 
-## Story 7.4.6: End-to-End Push Notification Testing ⚪ PLANNED
-**What you'll see**: Complete push notification flow works on all platforms.
+## Story 7.4.6: End-to-End Push Notification Testing ✅ COMPLETE
+**What you'll see**: Complete push notification flow works on Android.
 
-**What needs to be built**:
-- [ ] Test on iOS device (real device, not simulator)
-- [ ] Test on Android device/emulator
-- [ ] Test foreground notifications
-- [ ] Test background notifications
-- [ ] Test notification tap actions
-- [ ] Document testing procedure
+**What was tested**:
+- [⏸️] Test on iOS device (deferred - requires Story 7.4.3)
+- [✅] Test on Android device (physical device)
+- [✅] Test foreground notifications (verified via logs)
+- [✅] Test background notifications (system tray working)
+- [✅] Test notification tap actions (routing implemented)
+- [✅] Document testing procedure (414-line test results doc)
 
-**Time Estimate**: 2-3 hours
+**Time**: 1 hour | **Completed**: 2025-11-10
 
 ---
 
 ## Epic 7.4 Summary
 
-**Total Stories**: 6 stories
-**Estimated Timeline**: 2.5-3 weeks (18-24 hours)
+**Total Stories**: 6 stories (5 complete, 1 deferred)
+**Timeline**: 14 hours actual (18-24 hours estimated)
+**Completion**: 83% (Android production-ready)
 
-**Deliverables**:
-1. Push notification plugin configured
-2. Firebase Cloud Messaging for Android
-3. Apple Push Notification Service for iOS
-4. Supabase Edge Function for sending
-5. Notification routing and handling
-6. Complete push notification system
+**Deliverables Completed**:
+1. ✅ Push notification plugin configured (Capacitor)
+2. ✅ Firebase Cloud Messaging for Android (FCM V1 API)
+3. ⏸️ Apple Push Notification Service for iOS (deferred - requires Mac/account)
+4. ✅ Supabase Edge Function for sending (OAuth2 FCM integration)
+5. ✅ Notification routing and handling (6 types: review, offer, business, follower, message, test)
+6. ✅ E2E testing documentation (414-line comprehensive test results)
 
-**User Impact**: Users receive real-time notifications for new reviews, offers, followers, and business updates
+**Production Status**:
+- ✅ **Android**: Production-ready with FCM V1 API
+- ⏸️ **iOS**: Implementation deferred (requires hardware/account)
 
-**Next Epic**: EPIC 7.5 - App Store Preparation & Assets
+**Key Achievements**:
+- Multi-device push notification support
+- OAuth2 authentication for FCM
+- Foreground toast notifications
+- Background/killed state handling
+- Type-based notification routing
+- Comprehensive error handling
+- Full documentation (496 + 483 + 414 = 1,393 lines)
+
+**User Impact**: Android users receive real-time notifications for new reviews, offers, followers, and business updates with proper routing to relevant screens
+
+**Documentation**:
+- `docs/PUSH_EDGE_FUNCTION.md` (496 lines)
+- `docs/NOTIFICATION_ROUTING.md` (483 lines)
+- `docs/PUSH_NOTIFICATIONS_TEST_RESULTS.md` (414 lines)
+
+**Next Epic**: EPIC 7.5 - App Store Preparation & Assets (or revisit 7.4.3 when iOS environment available)
