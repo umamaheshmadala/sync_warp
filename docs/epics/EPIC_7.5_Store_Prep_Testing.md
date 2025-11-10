@@ -1,8 +1,8 @@
-# Epic 7.5: App Store Preparation, Testing & Environment Management ⚪ PLANNED
+# Epic 7.5: App Store Preparation, Testing & Environment Management 🟢 IN PROGRESS
 
 **Goal**: Prepare professional app store assets, configure multi-environment builds, and implement comprehensive testing before app store submission.
 
-**Progress**: 0/8 stories completed (0%)
+**Progress**: 4/8 stories completed (50%)
 
 **Dependencies**: EPIC 7.1-7.4 substantially complete
 
@@ -23,57 +23,57 @@
 
 ---
 
-## Story 7.5.2: App Permissions Configuration ⚪ PLANNED
+## Story 7.5.2: App Permissions Configuration ✅ COMPLETE
 **What you'll see**: Proper permissions declared for iOS and Android.
 
 **What needs to be built**:
-- [ ] Add Android permissions to AndroidManifest.xml
-- [ ] Add iOS permission descriptions to Info.plist
-- [ ] Document why each permission is needed
-- [ ] Test permission requests
-- [ ] Handle permission denial gracefully
+- [x] Add Android permissions to AndroidManifest.xml
+- [x] Add iOS permission descriptions to Info.plist
+- [x] Document why each permission is needed
+- [x] Test permission requests
+- [x] Handle permission denial gracefully
 
 **Time Estimate**: 2-3 hours
 
 ---
 
-## Story 7.5.3: Environment Configuration Files ⚪ PLANNED
+## Story 7.5.3: Environment Configuration Files ✅ COMPLETE
 **What you'll see**: Separate configs for development, staging, and production.
 
 **What needs to be built**:
-- [ ] Create .env.development
-- [ ] Create .env.staging
-- [ ] Create .env.production
-- [ ] Update capacitor.config.ts for dynamic environments
-- [ ] Add environment to .gitignore
-- [ ] Document environment setup
+- [x] Create .env.development
+- [x] Create .env.staging
+- [x] Create .env.production
+- [x] Update capacitor.config.ts for dynamic environments
+- [x] Add environment to .gitignore
+- [x] Document environment setup
 
 **Time Estimate**: 2-3 hours
 
 ---
 
-## Story 7.5.4: Multi-Environment Build System ⚪ PLANNED
+## Story 7.5.4: Multi-Environment Build System ✅ COMPLETE
 **What you'll see**: Fully separated dev/staging/prod builds for iOS and Android with one-command automation.
 
 **What needs to be built**:
-- [ ] NPM scripts
+- [x] NPM scripts
   - Add `build:dev`, `build:staging`, `build:prod`
   - Add `mobile:sync:dev`, `mobile:sync:staging`, `mobile:sync:prod`
   - Add convenience open commands for Android/iOS per env
-- [ ] iOS bundle identifiers per environment (Xcode)
+- [x] iOS bundle identifiers per environment (Xcode)
   - Debug: `com.syncapp.mobile.dev`
   - Staging: `com.syncapp.mobile.staging`
   - Release: `com.syncapp.mobile`
   - Verify all 3 can be installed side-by-side
-- [ ] Android build flavors in `android/app/build.gradle`
+- [x] Android build flavors in `android/app/build.gradle`
   - Add flavor dimension and product flavors (dev/staging/prod)
   - Different app names via `resValue`
   - Verify Gradle tasks build each flavor
-- [ ] CI/CD build scripts
+- [x] CI/CD build scripts
   - Bash script for Mac/Linux: `scripts/build-mobile.sh`
   - PowerShell script for Windows: `scripts/Build-Mobile.ps1`
   - Make bash script executable and document usage
-- [ ] Test all build variants on device/emulator
+- [x] Test all build variants on device/emulator
 
 **Android flavors snippet (build.gradle)**:
 ```gradle
@@ -129,16 +129,16 @@ if ($Platform -eq 'android') { npx cap open android } else { npx cap open ios }
 
 ---
 
-## Story 7.5.5: Vitest Mobile Testing Setup ⚪ PLANNED
+## Story 7.5.5: Vitest Mobile Testing Setup ✅ COMPLETE
 **What you'll see**: Unit tests configured for mobile platform simulation with Capacitor mocks.
 
 **What needs to be built**:
-- [ ] Update `vitest.config.ts` to use jsdom and `setupFiles`
-- [ ] Create `src/test/setup.ts` with Capacitor mocks
-- [ ] Mock `@capacitor/core`, `@capacitor/preferences`, `@capacitor/push-notifications`
-- [ ] Simulate mobile viewport via `window.matchMedia`
-- [ ] Add scripts: `test:mobile:unit`, `test:mobile:watch`, `test:mobile:pre-build`
-- [ ] Create at least one sample test for a mobile hook/component
+- [x] Update `vitest.config.ts` to use jsdom and `setupFiles`
+- [x] Create `src/test/setup.ts` with Capacitor mocks
+- [x] Mock `@capacitor/core`, `@capacitor/preferences`, `@capacitor/push-notifications`
+- [x] Simulate mobile viewport via `window.matchMedia`
+- [x] Add scripts: `test:mobile:unit`, `test:mobile:watch`, `test:mobile:pre-build`
+- [x] Create at least one sample test for a mobile hook/component
 
 **Setup file example (`src/test/setup.ts`)**:
 ```typescript
