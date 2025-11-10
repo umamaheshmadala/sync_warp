@@ -1,16 +1,59 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
-const config: CapacitorConfig = {
-  appId: 'com.syncapp.mobile',
-  appName: 'Sync App',
-  webDir: 'dist',
-  server: {
-    androidScheme: 'https',
-    iosScheme: 'https',
+// Load environment-specific configuration
+const isDevelopment = process.env.VITE_APP_ENV === 'development';
+const isStaging = process.env.VITE_APP_ENV === 'staging';
+const isProduction = process.env.VITE_APP_ENV === 'production';
+
+// App ID changes per environment for side-by-side installation
+const getAppId = () => {
+  if (isDevelopment) return 'com.syncapp.mobile.dev';
+  if (isStaging) return 'com.syncapp.mobile.staging';
+  return 'com.syncapp.mobile';
+};
+
+// App name changes per environment
+const getAppName = () => {
+  if (isDevelopment) return 'Sync Dev';
+  if (isStaging) return 'Sync Staging';
+  return 'Sync App';
+};
+
+// Server configuration per environment
+const getServerConfig = () => {
+  const baseConfig = {
+    androidScheme: 'https' as const,
+    iosScheme: 'https' as const,
+  };
+
+  if (isDevelopment) {
+    return {
+      ...baseConfig,
+      hostname: 'localhost',
+      cleartext: true, // Allow HTTP in development
+    };
+  }
+
+  if (isStaging) {
+    return {
+      ...baseConfig,
+      hostname: 'staging.syncapp.com',
+      cleartext: false,
+    };
+  }
+
+  return {
+    ...baseConfig,
     hostname: 'app.syncapp.com',
-    // Allow cleartext in development (remove in production)
-    cleartext: true
-  },
+    cleartext: false,
+  };
+};
+
+const config: CapacitorConfig = {
+  appId: getAppId(),
+  appName: getAppName(),
+  webDir: 'dist',
+  server: getServerConfig(),
   plugins: {
     SplashScreen: {
       launchShowDuration: 2000,
