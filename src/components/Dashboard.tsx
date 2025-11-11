@@ -1,6 +1,7 @@
 // src/pages/Dashboard/Dashboard.tsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useBusinessUrl } from '../hooks/useBusinessUrl';
 import { 
   Bell, 
@@ -105,50 +106,46 @@ const Dashboard: React.FC = () => {
   const [selectedCity] = useState(profile?.city || 'Select City');
   const [showContactsSidebar, setShowContactsSidebar] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [loading, setLoading] = useState(false); // Start with false to show cached data immediately
-  const [stats, setStats] = useState<DashboardStats>({
+  // Use React Query for automatic caching and background updates
+  const { data: dashboardData, isLoading } = useQuery({
+    queryKey: ['dashboard', user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      
+      const [statsData, businessesData, offersData, productsData] = await Promise.all([
+        dashboardService.getDashboardStats(user.id),
+        dashboardService.getSpotlightBusinesses(3),
+        dashboardService.getHotOffers(2),
+        dashboardService.getTrendingProducts(3),
+      ]);
+      
+      return { statsData, businessesData, offersData, productsData };
+    },
+    enabled: !!user, // Only run query if user is logged in
+    staleTime: 1000 * 60 * 5, // Consider data fresh for 5 minutes
+    gcTime: 1000 * 60 * 60 * 24, // Keep in cache for 24 hours
+    placeholderData: (previousData) => previousData, // Keep showing old data while fetching
+  });
+  
+  // Use cached data or fallback to dummy data
+  const spotlightBusinesses = dashboardData?.businessesData?.length > 0 
+    ? dashboardData.businessesData 
+    : dummySpotlightBusinesses;
+  
+  const hotOffers = dashboardData?.offersData?.length > 0 
+    ? dashboardData.offersData 
+    : dummyHotOffers;
+  
+  const trendingProducts = dashboardData?.productsData?.length > 0 
+    ? dashboardData.productsData 
+    : dummyTrendingProducts;
+  
+  const stats = dashboardData?.statsData || {
     favoritesCount: 0,
     reviewsCount: 0,
     collectedCouponsCount: 0,
     followingCount: 0,
-  });
-  // Initialize with dummy data immediately for optimistic UI
-  const [spotlightBusinesses, setSpotlightBusinesses] = useState<SpotlightBusiness[]>(dummySpotlightBusinesses);
-  const [hotOffers, setHotOffers] = useState<HotOffer[]>(dummyHotOffers);
-  const [trendingProducts, setTrendingProducts] = useState<TrendingProduct[]>(dummyTrendingProducts);
-
-  useEffect(() => {
-    const loadDashboardData = async () => {
-      if (!user) return;
-      
-      // Don't show loading - use cached data or dummy data immediately
-      // setLoading(true); // Removed to prevent white screen
-      
-      try {
-        // Fetch real data from Supabase
-        const [statsData, businessesData, offersData, productsData] = await Promise.all([
-          dashboardService.getDashboardStats(user.id),
-          dashboardService.getSpotlightBusinesses(3),
-          dashboardService.getHotOffers(2),
-          dashboardService.getTrendingProducts(3),
-        ]);
-
-        setStats(statsData);
-        
-        // Use real data if available, keep dummy data if no real data
-        if (businessesData.length > 0) setSpotlightBusinesses(businessesData);
-        if (offersData.length > 0) setHotOffers(offersData);
-        if (productsData.length > 0) setTrendingProducts(productsData);
-      } catch (error) {
-        console.error('Error loading dashboard data:', error);
-        // Keep existing dummy data on error (don't reset)
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadDashboardData();
-  }, [user]);
+  };
 
   // Don't show loading screen - splash screen handles initial load
   // Dashboard will show with loading states for individual sections

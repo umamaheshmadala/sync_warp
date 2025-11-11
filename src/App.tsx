@@ -1,5 +1,7 @@
 import { BrowserRouter as Router } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
+import { experimental_createQueryPersister as createQueryPersister } from '@tanstack/query-persist-client-core'
 import { Toaster } from 'react-hot-toast'
 import { useEffect, useState } from 'react'
 import { Capacitor } from '@capacitor/core'
@@ -12,7 +14,26 @@ import { NotificationToast } from './components/NotificationToast'
 import { useAuthStore } from './store/authStore'
 import { OfflineBanner } from './components/ui/OfflineBanner'
 
-const queryClient = new QueryClient()
+// Configure React Query with optimistic updates and caching
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      gcTime: 1000 * 60 * 60 * 24, // 24 hours cache time (formerly cacheTime)
+      staleTime: 1000 * 60 * 5, // Consider data fresh for 5 minutes
+      refetchOnWindowFocus: true, // Refetch when tab becomes active
+      refetchOnReconnect: true, // Refetch when reconnecting
+      retry: 2, // Retry failed requests twice
+    },
+  },
+})
+
+// Create persister for localStorage
+const persister = createQueryPersister({
+  storage: window.localStorage,
+  maxAge: 1000 * 60 * 60 * 24, // 24 hours
+  serialize: (data) => JSON.stringify(data),
+  deserialize: (data) => JSON.parse(data),
+})
 
 // Component that needs Router context
 function AppContent() {
@@ -97,7 +118,14 @@ function App() {
 
   return (
     <ErrorBoundary level="page">
-      <QueryClientProvider client={queryClient}>
+      <PersistQueryClientProvider
+        client={queryClient}
+        persistOptions={{ persister }}
+        onSuccess={() => {
+          // Hydration complete - cached data is now available
+          console.log('[React Query] Cache hydrated from storage')
+        }}
+      >
         <Router 
           future={{
             v7_startTransition: true,
@@ -106,7 +134,7 @@ function App() {
         >
           <AppContent />
         </Router>
-      </QueryClientProvider>
+      </PersistQueryClientProvider>
     </ErrorBoundary>
   )
 }
