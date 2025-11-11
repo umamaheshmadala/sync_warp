@@ -48,7 +48,7 @@ const Dashboard: React.FC = () => {
   const [selectedCity] = useState(profile?.city || 'Select City');
   const [showContactsSidebar, setShowContactsSidebar] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Start with false to show cached data immediately
   const [stats, setStats] = useState<DashboardStats>({
     favoritesCount: 0,
     reviewsCount: 0,
@@ -120,7 +120,8 @@ const Dashboard: React.FC = () => {
     const loadDashboardData = async () => {
       if (!user) return;
       
-      setLoading(true);
+      // Don't show loading - use cached data or dummy data immediately
+      // setLoading(true); // Removed to prevent white screen
       
       try {
         // Fetch real data from Supabase
@@ -151,30 +152,22 @@ const Dashboard: React.FC = () => {
     loadDashboardData();
   }, [user]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your dashboard...</p>
-        </div>
-      </div>
-    );
-  }
+  // Don't show loading screen - splash screen handles initial load
+  // Dashboard will show with loading states for individual sections
 
   return (
     <div className="min-h-screen bg-gray-50">
 
       {/* Main Content */}
-      <main className="pb-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 pb-2">
         {/* Ad Carousel Section */}
-        <section className="mb-8">
+        <section className="mb-4">
           <AdCarousel />
         </section>
 
         {/* Dashboard Grid - Full Width */}
-        <section className="mb-8">
+        <section className="mb-4">
           {/* Stats and Actions Grid */}
           <div className="grid grid-cols-2 gap-3 md:gap-6 mb-4 md:mb-6">
             {/* Quick Actions */}
@@ -232,8 +225,8 @@ const Dashboard: React.FC = () => {
         </section>
 
         {/* Businesses in Spotlight */}
-        <section className="mb-8">
-          <div className="flex items-center justify-between mb-6">
+        <section className="mb-4">
+          <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-2xl font-bold text-gray-900">Spotlight Businesses</h2>
               <p className="text-base text-gray-600">Top picks in your area</p>
@@ -304,8 +297,8 @@ const Dashboard: React.FC = () => {
         </section>
 
         {/* Hot Offers */}
-        <section className="mb-8">
-          <div className="flex items-center justify-between mb-6">
+        <section className="mb-4">
+          <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-2xl font-bold text-gray-900">Hot Offers 🔥</h2>
               <p className="text-base text-gray-600">Limited time deals you can't miss</p>
@@ -374,8 +367,8 @@ const Dashboard: React.FC = () => {
         />
 
         {/* Trending Products */}
-        <section className="mb-8">
-          <div className="flex items-center justify-between mb-6">
+        <section className="mb-4">
+          <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-2xl font-bold text-gray-900">Trending Now 📈</h2>
               <p className="text-base text-gray-600">What's popular this week</p>
@@ -383,7 +376,7 @@ const Dashboard: React.FC = () => {
           </div>
           
           {/* Mobile: 2-column compact grid, Desktop: 3-column horizontal cards */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6 mb-2">
             {trendingProducts.length === 0 ? (
               <div className="col-span-2 md:col-span-3 text-center py-8 text-gray-500">
                 <p className="text-lg font-medium">No trending products yet</p>

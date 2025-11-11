@@ -82,12 +82,13 @@ export interface RouteConfig {
 }
 
 export const routes: RouteConfig[] = [
-  // Public routes
+  // Redirect root to dashboard (mobile-first approach)
   {
     path: '/',
-    element: <Landing />,
-    title: 'SynC - Find Local Deals & Connect',
-    description: 'Discover amazing deals and connect with local businesses'
+    element: <Dashboard />,
+    protected: true,
+    title: 'Dashboard - SynC',
+    description: 'Your personal dashboard with deals and recommendations'
   },
   {
     path: '/auth/login',
@@ -444,8 +445,8 @@ export default function AppRouter() {
           )
         }
         
-        // For public routes, wrap auth pages to redirect if already logged in
-        if (route.path.startsWith('/auth/')) {
+        // For public routes, wrap auth pages and landing to redirect if already logged in
+        if (route.path.startsWith('/auth/') || route.path === '/') {
           return (
             <Route
               key={route.path}

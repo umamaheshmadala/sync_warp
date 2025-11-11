@@ -76,33 +76,15 @@ export default function ProtectedRoute({
     checkUserSession()
   }, [initialized, loading, retryCount, sessionChecked, checkUser, shouldDebug])
 
-  // Show loading while checking authentication
+  // Show loading while checking authentication - use minimal loading
   if (!initialized || loading || !sessionChecked) {
     // Use custom fallback component if provided
     if (fallbackComponent) {
       return <>{fallbackComponent}</>
     }
     
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-blue-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-indigo-600 mx-auto mb-4"></div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            {retryCount > 0 ? `Retrying authentication... (${retryCount}/3)` : 'Checking authentication...'}
-          </h2>
-          <p className="text-gray-600">
-            {retryCount > 0 ? 'Having trouble connecting. Please wait...' : 'Please wait while we verify your access'}
-          </p>
-          {shouldDebug && (
-            <div className="mt-4 text-xs text-gray-500 bg-gray-100 p-2 rounded">
-              <p>Debug: initialized={String(initialized)}, loading={String(loading)}, sessionChecked={String(sessionChecked)}</p>
-              <p>Path: {location.pathname}</p>
-              <p>Retry: {retryCount}/3</p>
-            </div>
-          )}
-        </div>
-      </div>
-    )
+    // Return minimal loading - splash screen handles initial load
+    return null;
   }
 
   // If authentication is required but user is not logged in

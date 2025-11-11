@@ -128,7 +128,7 @@ export default function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-gray-200 bg-white shadow-sm">
+    <header className="fixed top-0 left-0 right-0 z-40 w-full border-b border-gray-200 bg-white shadow-sm">
       <div className="max-w-7xl mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Left side - Profile Avatar (Mobile) or Logo (Desktop) */}
         <div className="flex items-center space-x-3">
@@ -233,7 +233,7 @@ export default function Header() {
             onClick={() => setShowContactsSidebar(true)}
             title="Friends"
           >
-            <UserPlus className="h-5 w-5" />
+            <UserPlus className="h-6 w-6" />
           </Button>
 
           {/* Profile Dropdown - Desktop Only */}

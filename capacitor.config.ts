@@ -56,11 +56,13 @@ const config: CapacitorConfig = {
   server: getServerConfig(),
   plugins: {
     SplashScreen: {
-      launchShowDuration: 2000,
-      backgroundColor: '#6366f1', // Indigo-600 from your theme
+      launchShowDuration: 1500,
+      backgroundColor: '#ffffff', // White background like LinkedIn
       showSpinner: false,
       androidSpinnerStyle: 'large',
-      iosSpinnerStyle: 'small'
+      iosSpinnerStyle: 'small',
+      launchAutoHide: true,
+      androidScaleType: 'CENTER_INSIDE' // Prevents logo from being cut off
     },
     PushNotifications: {
       presentationOptions: ['badge', 'sound', 'alert']
