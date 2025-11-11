@@ -92,29 +92,8 @@ function App() {
     return unsubscribe
   }, [])
 
-  // Show loading while hydrating
-  if (!isHydrated) {
-    return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh',
-        background: '#f5f5f5'
-      }}>
-        <div style={{
-          textAlign: 'center',
-          color: '#666'
-        }}>
-          <div style={{
-            fontSize: '24px',
-            marginBottom: '10px'
-          }}>Loading...</div>
-          <div style={{ fontSize: '14px' }}>Restoring your session</div>
-        </div>
-      </div>
-    )
-  }
+  // Don't block on hydration - show app immediately with default state
+  // Hydration will happen in background
 
   return (
     <ErrorBoundary level="page">

@@ -61,9 +61,9 @@ const UnifiedFavoritesPage: React.FC = () => {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-                <Heart className="h-8 w-8 text-red-500 mr-3" />
+            <div className="flex items-center">
+              <h1 className="text-xl md:text-2xl font-bold text-gray-900 flex items-center">
+                <Heart className="h-6 w-6 text-red-500 mr-2" />
                 Favorite Products
               </h1>
               <p className="mt-2 text-gray-600">

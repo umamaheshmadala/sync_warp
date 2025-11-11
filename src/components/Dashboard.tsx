@@ -41,6 +41,63 @@ interface OfferCard {
   imageUrl: string;
 }
 
+// Dummy data as fallback - defined outside component for immediate initialization
+const dummySpotlightBusinesses: SpotlightBusiness[] = [
+  {
+    id: 'dummy-1',
+    name: '[Demo] Urban Coffee Roasters',
+    category: 'Cafe',
+    location: 'Banjara Hills',
+    rating: 4.8,
+    reviewCount: 124,
+    imageUrl: null,
+    isPromoted: true,
+    city: 'Hyderabad'
+  },
+  {
+    id: 'dummy-2',
+    name: '[Demo] Artisan Bakery',
+    category: 'Bakery',
+    location: 'Jubilee Hills',
+    rating: 4.6,
+    reviewCount: 89,
+    imageUrl: null,
+    isPromoted: false,
+    city: 'Hyderabad'
+  }
+];
+
+const dummyHotOffers: HotOffer[] = [
+  {
+    id: 'dummy-offer-1',
+    title: '[Demo] 50% off on Weekend Brunch',
+    businessName: 'Breakfast Club',
+    discount: '50%',
+    expiresIn: '2 days',
+    imageUrl: null,
+    validUntil: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+    discountValue: 50,
+    businessId: 'dummy-business-1'
+  },
+  {
+    id: 'dummy-offer-2',
+    title: '[Demo] Buy 2 Get 1 Free Pizza',
+    businessName: 'Pizza Corner',
+    discount: 'BOGO',
+    expiresIn: '5 days',
+    imageUrl: null,
+    validUntil: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+    discountValue: 0,
+    businessId: 'dummy-business-2'
+  }
+];
+
+const dummyTrendingProducts: TrendingProduct[] = [
+  { id: 'dummy-prod-1', name: '[Demo] Artisan Coffee Beans', business: 'Urban Coffee', price: '₹450', category: 'Food', isTrending: true },
+  { id: 'dummy-prod-2', name: '[Demo] Chocolate Croissant', business: 'French Bakery', price: '₹120', category: 'Food', isTrending: true },
+  { id: 'dummy-prod-3', name: '[Demo] Handmade Soap', business: 'Natural Care', price: '₹85', category: 'Beauty', isTrending: true }
+];
+
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { getBusinessUrl } = useBusinessUrl();
@@ -55,66 +112,10 @@ const Dashboard: React.FC = () => {
     collectedCouponsCount: 0,
     followingCount: 0,
   });
-  const [spotlightBusinesses, setSpotlightBusinesses] = useState<SpotlightBusiness[]>([]);
-  const [hotOffers, setHotOffers] = useState<HotOffer[]>([]);
-  const [trendingProducts, setTrendingProducts] = useState<TrendingProduct[]>([]);
-
-  // Dummy data as fallback
-  const dummySpotlightBusinesses: SpotlightBusiness[] = [
-    {
-      id: 'dummy-1',
-      name: '[Demo] Urban Coffee Roasters',
-      category: 'Cafe',
-      location: 'Banjara Hills',
-      rating: 4.8,
-      reviewCount: 124,
-      imageUrl: null,
-      isPromoted: true,
-      city: 'Hyderabad'
-    },
-    {
-      id: 'dummy-2',
-      name: '[Demo] Artisan Bakery',
-      category: 'Bakery',
-      location: 'Jubilee Hills',
-      rating: 4.6,
-      reviewCount: 89,
-      imageUrl: null,
-      isPromoted: false,
-      city: 'Hyderabad'
-    }
-  ];
-
-  const dummyHotOffers: HotOffer[] = [
-    {
-      id: 'dummy-offer-1',
-      title: '[Demo] 50% off on Weekend Brunch',
-      businessName: 'Breakfast Club',
-      discount: '50%',
-      expiresIn: '2 days',
-      imageUrl: null,
-      validUntil: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
-      discountValue: 50,
-      businessId: 'dummy-business-1'
-    },
-    {
-      id: 'dummy-offer-2',
-      title: '[Demo] Buy 2 Get 1 Free Pizza',
-      businessName: 'Pizza Corner',
-      discount: 'BOGO',
-      expiresIn: '5 days',
-      imageUrl: null,
-      validUntil: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-      discountValue: 0,
-      businessId: 'dummy-business-2'
-    }
-  ];
-
-  const dummyTrendingProducts: TrendingProduct[] = [
-    { id: 'dummy-prod-1', name: '[Demo] Artisan Coffee Beans', business: 'Urban Coffee', price: '₹450', category: 'Food', isTrending: true },
-    { id: 'dummy-prod-2', name: '[Demo] Chocolate Croissant', business: 'French Bakery', price: '₹120', category: 'Food', isTrending: true },
-    { id: 'dummy-prod-3', name: '[Demo] Handmade Soap', business: 'Natural Care', price: '₹85', category: 'Beauty', isTrending: true }
-  ];
+  // Initialize with dummy data immediately for optimistic UI
+  const [spotlightBusinesses, setSpotlightBusinesses] = useState<SpotlightBusiness[]>(dummySpotlightBusinesses);
+  const [hotOffers, setHotOffers] = useState<HotOffer[]>(dummyHotOffers);
+  const [trendingProducts, setTrendingProducts] = useState<TrendingProduct[]>(dummyTrendingProducts);
 
   useEffect(() => {
     const loadDashboardData = async () => {
@@ -134,16 +135,13 @@ const Dashboard: React.FC = () => {
 
         setStats(statsData);
         
-        // Use real data if available, otherwise use dummy data with [Demo] prefix
-        setSpotlightBusinesses(businessesData.length > 0 ? businessesData : dummySpotlightBusinesses);
-        setHotOffers(offersData.length > 0 ? offersData : dummyHotOffers);
-        setTrendingProducts(productsData.length > 0 ? productsData : dummyTrendingProducts);
+        // Use real data if available, keep dummy data if no real data
+        if (businessesData.length > 0) setSpotlightBusinesses(businessesData);
+        if (offersData.length > 0) setHotOffers(offersData);
+        if (productsData.length > 0) setTrendingProducts(productsData);
       } catch (error) {
         console.error('Error loading dashboard data:', error);
-        // Use dummy data on error
-        setSpotlightBusinesses(dummySpotlightBusinesses);
-        setHotOffers(dummyHotOffers);
-        setTrendingProducts(dummyTrendingProducts);
+        // Keep existing dummy data on error (don't reset)
       } finally {
         setLoading(false);
       }

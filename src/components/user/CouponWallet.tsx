@@ -434,8 +434,8 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <Wallet className="w-7 h-7 text-blue-600" />
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <Wallet className="w-6 h-6 text-blue-600" />
               My Coupon Wallet
             </h1>
             <div className="flex items-center space-x-2">

@@ -89,9 +89,9 @@ const FollowingPage: React.FC = () => {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-                <UserCheck className="h-8 w-8 text-indigo-600 mr-3" />
+            <div className="flex items-center">
+              <h1 className="text-xl md:text-2xl font-bold text-gray-900 flex items-center">
+                <UserCheck className="h-6 w-6 text-indigo-600 mr-2" />
                 Following
               </h1>
               <p className="mt-2 text-gray-600">
