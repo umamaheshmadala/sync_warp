@@ -433,8 +433,8 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
       {/* Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-xl md:text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <div className="flex items-center justify-center mb-4">
+            <h1 className="text-xs font-bold text-gray-900 flex items-center gap-2">
               <Wallet className="w-6 h-6 text-blue-600" />
               My Coupon Wallet
             </h1>
@@ -452,34 +452,6 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
               >
                 <SortAsc className="w-5 h-5" />
               </button>
-            </div>
-          </div>
-
-          {/* Wallet Statistics */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
-            <div className="bg-blue-50 p-3 rounded-lg text-center">
-              <div className="text-2xl font-bold text-blue-600">{walletStats.total}</div>
-              <div className="text-xs text-blue-600">Total</div>
-            </div>
-            <div className="bg-green-50 p-3 rounded-lg text-center">
-              <div className="text-2xl font-bold text-green-600">{walletStats.active}</div>
-              <div className="text-xs text-green-600">Active</div>
-            </div>
-            <div className="bg-yellow-50 p-3 rounded-lg text-center">
-              <div className="text-2xl font-bold text-yellow-600">{walletStats.expiring}</div>
-              <div className="text-xs text-yellow-600">Expiring</div>
-            </div>
-            <div className="bg-red-50 p-3 rounded-lg text-center">
-              <div className="text-2xl font-bold text-red-600">{walletStats.expired}</div>
-              <div className="text-xs text-red-600">Expired</div>
-            </div>
-            <div className="bg-blue-50 p-3 rounded-lg text-center">
-              <div className="text-2xl font-bold text-blue-600">{walletStats.shareable}</div>
-              <div className="text-xs text-blue-600">Can Share</div>
-            </div>
-            <div className="bg-purple-50 p-3 rounded-lg text-center">
-              <div className="text-xl font-bold text-purple-600">₹{Math.round(walletStats.totalSavingsPotential)}</div>
-              <div className="text-xs text-purple-600">Potential Savings</div>
             </div>
           </div>
 

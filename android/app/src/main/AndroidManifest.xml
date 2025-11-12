@@ -16,6 +16,8 @@
             android:theme="@style/AppTheme.NoActionBarLaunch"
             android:launchMode="singleTask"
             android:exported="true">
+            <!-- Ensure splash uses our custom image -->
+            <meta-data android:name="android.util.SplashScreen" android:value="true" />
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

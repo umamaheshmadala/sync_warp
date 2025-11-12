@@ -56,13 +56,9 @@ const config: CapacitorConfig = {
   server: getServerConfig(),
   plugins: {
     SplashScreen: {
-      launchShowDuration: 1500,
-      backgroundColor: '#ffffff', // White background like LinkedIn
+      launchShowDuration: 0, // Disable Capacitor splash
       showSpinner: false,
-      androidSpinnerStyle: 'large',
-      iosSpinnerStyle: 'small',
-      launchAutoHide: true,
-      androidScaleType: 'CENTER_INSIDE' // Prevents logo from being cut off
+      launchAutoHide: false
     },
     PushNotifications: {
       presentationOptions: ['badge', 'sound', 'alert']

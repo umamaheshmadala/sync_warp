@@ -88,24 +88,11 @@ const FollowingPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <h1 className="text-xl md:text-2xl font-bold text-gray-900 flex items-center">
-                <UserCheck className="h-6 w-6 text-indigo-600 mr-2" />
-                Following
-              </h1>
-              <p className="mt-2 text-gray-600">
-                {totalFollowing} {totalFollowing === 1 ? 'business' : 'businesses'}
-              </p>
-            </div>
-
-            {/* Quick Stats */}
-            <div className="hidden md:flex items-center space-x-6">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-indigo-600">{totalFollowing}</div>
-                <div className="text-sm text-gray-600">Following</div>
-              </div>
-            </div>
+          <div className="flex items-center justify-center">
+            <h1 className="text-xs font-bold text-gray-900 flex items-center">
+              <UserCheck className="h-6 w-6 text-indigo-600 mr-2" />
+              Following
+            </h1>
           </div>
         </div>
 

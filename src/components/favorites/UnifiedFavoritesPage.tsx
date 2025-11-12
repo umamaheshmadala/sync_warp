@@ -60,42 +60,12 @@ const UnifiedFavoritesPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <h1 className="text-xl md:text-2xl font-bold text-gray-900 flex items-center">
-                <Heart className="h-6 w-6 text-red-500 mr-2" />
-                Favorite Products
-              </h1>
-              <p className="mt-2 text-gray-600">
-                Your saved products • For coupons visit <button onClick={() => navigate('/wallet')} className="text-indigo-600 hover:underline">Wallet</button> • For businesses visit <button onClick={() => navigate('/following')} className="text-indigo-600 hover:underline">Following</button>
-              </p>
-            </div>
-
-            {/* Quick Stats */}
-            <div className="hidden md:flex items-center space-x-8">
-              <div className="text-center">
-                <div className="text-4xl font-bold text-red-500">{favoriteProducts?.length || 0}</div>
-                <div className="text-sm text-gray-600">Favorite Products</div>
-              </div>
-              <div className="flex flex-col space-y-2">
-                <button
-                  onClick={() => navigate('/wallet')}
-                  className="px-4 py-2 text-sm bg-yellow-50 text-yellow-700 rounded-lg hover:bg-yellow-100 transition-colors flex items-center"
-                >
-                  <Package className="h-4 w-4 mr-2" />
-                  View Coupons (Wallet)
-                </button>
-                <button
-                  onClick={() => navigate('/following')}
-                  className="px-4 py-2 text-sm bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition-colors flex items-center"
-                >
-                  <ShoppingBag className="h-4 w-4 mr-2" />
-                  View Following
-                </button>
-              </div>
-            </div>
+          <div className="flex items-center justify-center">
+            <h1 className="text-xs font-bold text-gray-900 flex items-center">
+              <Heart className="h-6 w-6 text-red-500 mr-2" />
+              Favorite Products
+            </h1>
           </div>
-
         </div>
 
         {/* Search */}
