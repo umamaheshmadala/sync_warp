@@ -10,26 +10,35 @@
 
 ## 🎯 **Story Goal**
 
-Implement **video upload** to enable users to share short video clips in messages. Videos are uploaded to Supabase Storage with progress tracking, size validation (max 25MB), and automatic thumbnail extraction for previews.
+Implement **video upload** to enable users to share short video clips in messages **on web browsers, iOS, and Android native apps**. Videos are uploaded to Supabase Storage with progress tracking, size validation (max 25MB), and automatic thumbnail extraction for previews.
+
+**Platform Support:**
+- ✅ **Web**: Browser file picker for video files
+- ✅ **iOS**: Capacitor Camera plugin (record video or select from library)
+- ✅ **Android**: Capacitor Camera plugin (record video or select from library)
 
 ---
 
 ## 📖 **User Stories**
 
 ### As a user, I want to:
-1. Select and upload video files from my device
-2. See upload progress while video is being sent
-3. Be notified if video exceeds size limit (25MB)
-4. Have a thumbnail preview generated for the video
-5. See the video player in the conversation
+1. **Web**: Select video files from file picker
+2. **iOS/Android**: Record video with camera OR select from video library
+3. See upload progress while video is being sent
+4. Be notified if video exceeds size limit (25MB)
+5. Have a thumbnail preview generated for the video
+6. See the video player in the conversation
 
 ### Acceptance Criteria:
-- ✅ Supports MP4, MOV, WebM formats
-- ✅ Max file size: 25MB
-- ✅ Upload progress shows percentage
-- ✅ Video upload completes in < 10s for 25MB file
-- ✅ Thumbnail generated from first frame
-- ✅ Upload cancellation supported
+- ✅ **Web**: Supports MP4, MOV, WebM formats
+- ✅ **iOS**: Supports MOV (native), MP4
+- ✅ **Android**: Supports MP4 (native), WebM
+- ✅ **iOS/Android**: Native camera video recording permissions
+- ✅ Max file size: 25MB (all platforms)
+- ✅ Upload progress shows percentage (all platforms)
+- ✅ Video upload completes in < 10s for 25MB file (all platforms)
+- ✅ Thumbnail generated from first frame (all platforms)
+- ✅ Upload cancellation supported (all platforms)
 
 ---
 
@@ -37,12 +46,54 @@ Implement **video upload** to enable users to share short video clips in message
 
 ### **Phase 1: Video Upload Service** (0.5 days)
 
-#### Task 1.1: Extend mediaUploadService for Videos
+#### Task 1.1: Install Dependencies (if not already from Story 8.3.1)
+```bash
+# Capacitor Camera plugin (supports video recording)
+npm install @capacitor/camera @capacitor/filesystem
+npx cap sync
+```
+
+**Permissions** (same as Story 8.3.1, camera permission covers video):
+- iOS: `NSCameraUsageDescription`, `NSPhotoLibraryUsageDescription`, `NSMicrophoneUsageDescription` (for audio)
+- Android: `CAMERA`, `READ_MEDIA_VIDEO`, `RECORD_AUDIO`
+
+#### Task 1.2: Extend mediaUploadService for Videos
 ```typescript
 // src/services/mediaUploadService.ts (extend existing service)
+import { Camera, CameraResultType, CameraSource, CameraMediaType } from '@capacitor/camera'  // 📱 Mobile
+import { Capacitor } from '@capacitor/core'
 
 class MediaUploadService {
   private readonly MAX_VIDEO_SIZE = 25 * 1024 * 1024 // 25MB
+  
+  /**
+   * 📱 Platform-conditional video picker
+   * Web: Returns File from input
+   * iOS/Android: Opens native camera or video library
+   */
+  async pickVideo(source: 'camera' | 'gallery' = 'gallery'): Promise<File | null> {
+    if (Capacitor.isNativePlatform()) {
+      // MOBILE: Use Capacitor Camera plugin for video
+      try {
+        const video = await Camera.getPhoto({
+          resultType: CameraResultType.Uri,
+          source: source === 'camera' ? CameraSource.Camera : CameraSource.Photos,
+          quality: 90,
+          // 📱 KEY DIFFERENCE: Specify video media type
+          mediaType: CameraMediaType.Video
+        })
+        
+        // Convert URI to File
+        return await this.uriToFile(video.webPath!, video.format || 'mp4')
+      } catch (error) {
+        console.error('❌ Camera video access failed:', error)
+        return null
+      }
+    } else {
+      // WEB: Return null, handled by file input
+      return null
+    }
+  }
 
   /**
    * Generate video thumbnail from first frame
@@ -395,7 +446,7 @@ export function VideoUploadButton({
 
 ## 🧪 **Testing Checklist**
 
-### Unit Tests
+### Unit Tests (All Platforms)
 - [ ] Test video file validation (type and size)
 - [ ] Test thumbnail generation from video first frame
 - [ ] Test video upload with valid file succeeds
@@ -403,6 +454,8 @@ export function VideoUploadButton({
 - [ ] Test upload with invalid file type fails
 - [ ] Test video duration extraction
 - [ ] Test upload cancellation
+- [ ] 📱 Test `pickVideo()` returns null on web (file input used instead)
+- [ ] 📱 Test `pickVideo()` with `mediaType: Video` on mobile
 
 ### Integration Tests with Supabase MCP
 ```bash
@@ -435,14 +488,91 @@ warp mcp run supabase "execute_sql
 
 ### Performance Tests with Chrome DevTools MCP
 ```bash
-# Monitor video upload performance
+# Monitor video upload performance (Web)
 warp mcp run chrome-devtools "open Network tab, upload 25MB video, measure upload time"
 
-# Check thumbnail generation performance
+# Check thumbnail generation performance (Web)
 warp mcp run chrome-devtools "profile video thumbnail generation, verify < 2s"
 
-# Monitor memory usage during upload
+# Monitor memory usage during upload (Web)
 warp mcp run chrome-devtools "open Memory tab, upload large video, check for memory leaks"
+```
+
+### 📱 Mobile Testing (iOS/Android)
+
+**Manual Testing Required:**
+
+#### iOS Testing (Xcode Simulator + Physical Device)
+1. **Permissions Test:**
+   - [ ] App requests camera permission on first video record
+   - [ ] App requests microphone permission for video audio
+   - [ ] App requests photo library permission for video selection
+   
+2. **Video Recording Test:**
+   - [ ] Tap video button → Opens native camera in video mode
+   - [ ] Record 10s video → Shows preview
+   - [ ] Accept video → Uploads successfully
+   - [ ] Video appears in conversation with thumbnail
+   
+3. **Video Library Test:**
+   - [ ] Long-press video button → Shows camera/library options
+   - [ ] Select "Video Library" → Opens native video picker
+   - [ ] Select video → Uploads successfully
+   - [ ] Video appears in conversation
+   
+4. **Size Validation Test:**
+   - [ ] Select 30MB video → Shows error (max 25MB)
+   - [ ] Select 20MB video → Upload succeeds
+   
+5. **Thumbnail Test:**
+   - [ ] Upload video → Thumbnail extracted from frame
+   - [ ] Verify thumbnail shows in message list
+
+#### Android Testing (Emulator + Physical Device)
+1. **Permissions Test:**
+   - [ ] App requests camera permission on first video record
+   - [ ] App requests audio recording permission
+   - [ ] App requests storage/media permission for video selection (Android 13+)
+   
+2. **Video Recording Test:**
+   - [ ] Tap video button → Opens native camera in video mode
+   - [ ] Record 10s video → Shows preview
+   - [ ] Accept video → Uploads successfully
+   - [ ] Video appears in conversation with thumbnail
+   
+3. **Video Library Test:**
+   - [ ] Long-press video button → Shows bottom sheet with options
+   - [ ] Select "Gallery" → Opens native video picker
+   - [ ] Select video → Uploads successfully
+   - [ ] Video appears in conversation
+   
+4. **Size Validation Test:**
+   - [ ] Select 30MB video → Shows error (max 25MB)
+   - [ ] Select 20MB video → Upload succeeds
+   
+5. **Format Test:**
+   - [ ] Android native videos (MP4) → Upload succeeds
+   - [ ] iOS shared videos (MOV) → Convert to MP4 if needed
+
+#### Cross-Platform Edge Cases
+- [ ] 📱 **Long video**: Record 60s video → Duration detected correctly
+- [ ] 📱 **Network switching**: Upload starts on WiFi, switches to cellular → Upload completes
+- [ ] 📱 **App backgrounding**: Upload in progress, user switches apps → Upload continues
+- [ ] 📱 **Low storage**: Device storage < 100MB → Shows error before upload
+- [ ] 📱 **Permission denied**: User denies camera → Shows settings prompt
+- [ ] 📱 **Thumbnail extraction**: Works on mobile (Canvas API via WebView)
+
+**Testing Commands:**
+```bash
+# Build and run on iOS simulator
+npx cap run ios
+
+# Build and run on Android emulator
+npx cap run android
+
+# Open native IDEs for debugging
+npx cap open ios
+npx cap open android
 ```
 
 ### E2E Tests with Puppeteer MCP
@@ -460,11 +590,19 @@ warp mcp run puppeteer "try to upload oversized video, verify error message appe
 
 | Metric | Target | Verification Method |
 |--------|--------|-------------------|
-| **Upload Time** | < 10s for 25MB | Chrome DevTools Network tab |
-| **Thumbnail Generation** | < 2s | Chrome DevTools Performance |
-| **Upload Success Rate** | > 99% | Production monitoring |
-| **Supported Formats** | MP4, MOV, WebM | Manual testing |
-| **Max File Size** | 25MB | Validation logic |
+| **Upload Time (Web, WiFi)** | < 10s for 25MB | Chrome DevTools Network tab |
+| **Upload Time (Mobile, WiFi)** | < 10s for 25MB | Manual testing |
+| **Upload Time (Mobile, Cellular)** | < 15s for 25MB | Manual testing on device |
+| **Thumbnail Generation (Web)** | < 2s | Chrome DevTools Performance |
+| **Thumbnail Generation (Mobile)** | < 3s | Manual testing (Canvas via WebView) |
+| **Upload Success Rate** | > 99% (all platforms) | Production monitoring |
+| **Supported Formats (Web)** | MP4, MOV, WebM | Manual testing |
+| **Supported Formats (iOS)** | MOV (native), MP4 | Manual testing |
+| **Supported Formats (Android)** | MP4 (native), WebM | Manual testing |
+| **Max File Size** | 25MB (all platforms) | Validation logic |
+| **Video Duration Detection** | Accurate ±1s (all platforms) | Manual testing |
+| **Camera Permission Grant** | 100% if granted | iOS/Android analytics |
+| **Native Camera Launch** | < 500ms (iOS/Android) | Manual testing |
 
 ---
 
