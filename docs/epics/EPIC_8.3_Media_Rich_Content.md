@@ -9,12 +9,68 @@
 
 ## 🎯 **Epic Goal**
 
-Enable users to share **rich media content** in messages:
+Enable users to share **rich media content** in messages **on web browsers, iOS, and Android native apps**:
 - Upload and display images/videos
+- **Native camera capture on iOS/Android** (Capacitor Camera plugin)
+- **Native file picker on iOS/Android** (Capacitor Filesystem plugin)
 - Generate link previews for URLs
+- **Native share sheets on iOS/Android** (Capacitor Share plugin)
 - **Tightly integrate coupon/deal sharing** (your key USP!)
-- Compress media before upload
-- Generate thumbnails automatically
+- Compress media before upload (web + mobile)
+- Generate thumbnails automatically (web + mobile)
+
+---
+
+## 📱 **Platform Support**
+
+**Target Platforms:**
+- ✅ **Web Browsers** (Chrome, Firefox, Safari, Edge)
+- ✅ **iOS Native App** (via Capacitor framework)
+- ✅ **Android Native App** (via Capacitor framework)
+
+**Cross-Platform Media Handling:**
+
+| Feature | Web Implementation | iOS/Android Implementation |
+|---------|-------------------|---------------------------|
+| **Image Upload** | `<input type="file">` | `@capacitor/camera` - Camera.getPhoto() |
+| **Video Upload** | `<input type="file" accept="video/*">` | `@capacitor/camera` - Camera.getPhoto({source: 'PHOTOS'}) |
+| **Camera Capture** | `<input capture="camera">` (limited) | `@capacitor/camera` - Native camera UI |
+| **File Picker** | `<input type="file">` | `@capacitor/filesystem` - Native file picker |
+| **Image Compression** | `browser-image-compression` (web worker) | `browser-image-compression` (same library) |
+| **Thumbnail Generation** | Canvas API | Canvas API (via WebView) |
+| **Share** | Web Share API (if supported) | `@capacitor/share` - Native share sheet |
+
+**Required Capacitor Plugins:**
+```json
+{
+  "@capacitor/camera": "^5.0.0",       // Native camera & photo library
+  "@capacitor/filesystem": "^5.0.0",   // File system access
+  "@capacitor/share": "^5.0.0"         // Native share sheet
+}
+```
+
+**Platform-Specific Permissions:**
+
+**iOS (Info.plist):**
+```xml
+<key>NSCameraUsageDescription</key>
+<string>SynC needs camera access to capture and share photos in messages</string>
+
+<key>NSPhotoLibraryUsageDescription</key>
+<string>SynC needs photo library access to share images in messages</string>
+
+<key>NSPhotoLibraryAddUsageDescription</key>
+<string>SynC needs to save images you receive in messages</string>
+```
+
+**Android (AndroidManifest.xml):**
+```xml
+<uses-permission android:name="android.permission.CAMERA" />
+<uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+<uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+                 android:maxSdkVersion="28" />
+```
 
 ---
 
@@ -22,11 +78,15 @@ Enable users to share **rich media content** in messages:
 
 | Objective | Target |
 |-----------|--------|
-| **Image Upload Success** | > 99% |
-| **Compression Ratio** | Reduce file size by 60-80% |
-| **Upload Speed** | < 3s for 5MB image |
+| **Image Upload Success (Web)** | > 99% |
+| **Image Upload Success (iOS)** | > 99% |
+| **Image Upload Success (Android)** | > 99% |
+| **Native Camera Capture** | Works on iOS/Android with permissions |
+| **Compression Ratio** | Reduce file size by 60-80% (all platforms) |
+| **Upload Speed** | < 3s for 5MB image (all platforms) |
 | **Link Preview Generation** | < 1s |
-|| **Coupon Share Tracking** | 100% tracked in shares table |
+| **Native Share Sheet** | Works on iOS/Android for coupon/deal sharing |
+|| **Coupon Share Tracking** | 100% tracked in shares table (all platforms) |
 
 ---
 
@@ -85,21 +145,53 @@ Enable users to share **rich media content** in messages:
 // src/services/mediaUploadService.ts
 import { supabase } from '../lib/supabase'
 import imageCompression from 'browser-image-compression'
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera'
+import { Filesystem, Directory } from '@capacitor/filesystem'
+import { Capacitor } from '@capacitor/core'
 
 class MediaUploadService {
   /**
-   * Compress and upload image
+   * Pick and upload image
+   * 📱 Supports Web + iOS + Android
    * 🛢 Uses storage bucket from Epic 8.1
    */
-  async uploadImage(file: File, conversationId: string): Promise<string> {
-    // Compress image
+  async uploadImage(
+    fileOrUri: File | string,  // File (web) or URI (mobile)
+    conversationId: string,
+    source: 'camera' | 'gallery' = 'gallery'
+  ): Promise<string> {
+    let file: File
+    
+    // 📱 Platform-conditional logic
+    if (Capacitor.isNativePlatform()) {
+      // MOBILE: Use Capacitor Camera plugin
+      const photo = await Camera.getPhoto({
+        resultType: CameraResultType.Uri,
+        source: source === 'camera' ? CameraSource.Camera : CameraSource.Photos,
+        quality: 90,
+        allowEditing: true,
+        width: 1920,
+        height: 1920
+      })
+      
+      // Convert URI to File
+      file = await this.uriToFile(photo.webPath!, photo.format)
+    } else {
+      // WEB: Use browser File API
+      if (typeof fileOrUri === 'string') {
+        throw new Error('Web platform requires File object')
+      }
+      file = fileOrUri
+    }
+
+    // Compress image (works on both web and mobile)
     const compressed = await imageCompression(file, {
       maxSizeMB: 1,
       maxWidthOrHeight: 1920,
-      useWebWorker: true
+      useWebWorker: !Capacitor.isNativePlatform()  // Disable web worker on mobile
     })
 
-    // Generate thumbnail
+    // Generate thumbnail (works on both web and mobile)
     const thumbnail = await this.generateThumbnail(compressed)
 
     const userId = (await supabase.auth.getUser()).data.user!.id
@@ -122,12 +214,24 @@ class MediaUploadService {
 
   /**
    * Generate thumbnail (max 300px)
+   * Works on both web and mobile
    */
   private async generateThumbnail(file: File): Promise<Blob> {
     return await imageCompression(file, {
       maxSizeMB: 0.1,
-      maxWidthOrHeight: 300
+      maxWidthOrHeight: 300,
+      useWebWorker: !Capacitor.isNativePlatform()  // Disable web worker on mobile
     })
+  }
+  
+  /**
+   * 📱 MOBILE ONLY: Convert native file URI to File object
+   */
+  private async uriToFile(uri: string, format: string): Promise<File> {
+    const response = await fetch(uri)
+    const blob = await response.blob()
+    const fileName = `capture-${Date.now()}.${format}`
+    return new File([blob], fileName, { type: `image/${format}` })
   }
 
   /**

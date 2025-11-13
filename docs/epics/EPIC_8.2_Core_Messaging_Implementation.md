@@ -17,8 +17,62 @@ Build a **fully functional 1:1 messaging experience** that enables SynC users to
 - View conversation list sorted by recent activity
 - Navigate between conversations seamlessly
 - Experience smooth, responsive UI with proper loading states
+- **Work seamlessly on web browsers, iOS native app, and Android native app**
 
 This epic delivers the **core user-facing messaging features** that users will interact with daily.
+
+---
+
+## 📱 **Platform Support**
+
+**Target Platforms:**
+- ✅ **Web Browsers** (Chrome, Firefox, Safari, Edge)
+- ✅ **iOS Native App** (via Capacitor framework)
+- ✅ **Android Native App** (via Capacitor framework)
+
+**Cross-Platform Implementation Strategy:**
+
+**1. Platform Detection:**
+All components use the `usePlatform` hook (from Epic 7.1) to detect platform:
+```typescript
+import { usePlatform } from '../hooks/usePlatform'
+
+const { platform, isWeb, isIOS, isAndroid, isNative } = usePlatform()
+// platform: 'web' | 'ios' | 'android'
+// Use this to conditionally apply platform-specific code
+```
+
+**2. UI Considerations:**
+- **Web**: Standard browser UI patterns, mouse/keyboard interactions
+- **iOS**: Native iOS design patterns (SwiftUI-like), haptic feedback, safe area insets
+- **Android**: Material Design patterns, native navigation gestures
+- **Mobile**: Touch-optimized UI (larger tap targets, swipe gestures)
+
+**3. Keyboard Handling:**
+- **Web**: Standard browser keyboard events
+- **iOS/Android**: Capacitor Keyboard plugin for native keyboard show/hide events
+  - Auto-scroll message list when keyboard opens
+  - Adjust chat composer height for keyboard
+  - Handle safe area insets on iOS
+
+**4. Network & Realtime:**
+- Supabase Realtime works identically on web and mobile (WebSocket)
+- Mobile apps handle background/foreground state transitions
+- Reconnection logic for mobile network switching (WiFi ↔ Cellular)
+
+**5. Navigation:**
+- **Web**: Browser-based routing (React Router)
+- **Mobile**: Capacitor App plugin for native back button handling (Android)
+- **iOS**: Swipe-back gesture support
+
+**Required Capacitor Plugins:**
+```json
+{
+  "@capacitor/keyboard": "^5.0.0",  // Native keyboard events
+  "@capacitor/haptics": "^5.0.0",   // Haptic feedback for interactions
+  "@capacitor/app": "^5.0.0"        // App state (foreground/background)
+}
+```
 
 ---
 
@@ -26,14 +80,17 @@ This epic delivers the **core user-facing messaging features** that users will i
 
 | Objective | KPI / Target |
 |-----------|--------------|
-| **Message Delivery Speed** | Messages delivered in < 300ms |
-| **UI Responsiveness** | No janky scrolling, 60fps animations |
-| **Realtime Updates** | Messages appear instantly for recipient |
-| **Conversation Load Time** | < 500ms to load conversation history |
+| **Message Delivery Speed** | Messages delivered in < 300ms (web + mobile) |
+| **UI Responsiveness** | No janky scrolling, 60fps animations (all platforms) |
+| **Realtime Updates** | Messages appear instantly for recipient (web + mobile) |
+| **Conversation Load Time** | < 500ms to load conversation history (web + mobile) |
 | **Error Handling** | Clear user feedback for all error states |
-| **Mobile Responsive** | Perfect UX on 320px to 1920px screens |
+| **Web Responsive** | Perfect UX on 320px to 1920px screens |
+| **iOS Native UX** | Smooth scrolling, haptic feedback, safe area insets |
+| **Android Native UX** | Material Design, back button support, gesture navigation |
+| **Keyboard Handling** | Auto-scroll on keyboard show (iOS/Android) |
 | **Accessibility** | WCAG 2.1 AA compliant |
-|| **State Management** | Zero memory leaks, efficient re-renders |
+|| **State Management** | Zero memory leaks, efficient re-renders (all platforms) |
 
 ---
 

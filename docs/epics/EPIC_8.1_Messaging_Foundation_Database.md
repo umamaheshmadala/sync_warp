@@ -17,9 +17,34 @@ Build a **robust, scalable, and secure database foundation** for SynC's messagin
 - Message status tracking (sent/delivered/read)
 - Offline message queueing
 - Integration with existing friends and coupon sharing systems
+- **Cross-platform support: Web browsers + Native iOS/Android apps (Capacitor)**
 - Future extensibility for group chats (v2)
 
 This epic establishes the **data layer** that all messaging features will depend on.
+
+---
+
+## 📱 **Platform Support**
+
+**Target Platforms:**
+- ✅ **Web Browsers** (Chrome, Firefox, Safari, Edge)
+- ✅ **iOS Native App** (via Capacitor framework)
+- ✅ **Android Native App** (via Capacitor framework)
+
+**Architecture Foundation:**
+This Epic establishes the **backend database and storage infrastructure** that serves all platforms (web + mobile).
+- **Database**: Platform-agnostic - Supabase Postgres accessible from web and native mobile apps
+- **Storage**: Configured for both browser file uploads AND native mobile file system integration
+- **Realtime**: Supabase Realtime works on web and mobile via WebSocket connections
+- **Authentication**: Mobile apps use Capacitor Storage adapter (configured in Epic 7.2)
+
+**Mobile-Specific Considerations:**
+- Storage bucket RLS policies support native file URI paths (iOS/Android)
+- Push token tracking for FCM (Android) and APNs (iOS) in `user_push_tokens` table
+- Database functions optimized for mobile network conditions (intermittent connectivity)
+- Storage bucket CORS configured for native mobile app origins
+
+**Note:** Frontend implementations for web vs mobile are handled in subsequent Epics (8.2+), which use platform detection via the `usePlatform` hook (from Epic 7.1) to conditionally use browser APIs vs Capacitor plugins.
 
 ---
 
@@ -444,7 +469,7 @@ CREATE INDEX idx_blocked_users_blocked ON blocked_users(blocked_id);
 
 #### **2.1 Message Attachments Bucket**
 
-**Purpose:** Store images and videos sent in messages
+**Purpose:** Store images and videos sent in messages from **web browsers AND native iOS/Android apps**
 
 **Configuration:**
 ```sql
@@ -462,18 +487,38 @@ VALUES (
     'image/webp',
     'video/mp4',
     'video/quicktime',
-    'video/webm'
+    'video/webm',
+    'video/x-m4v' -- iOS native camera recordings
   ]
 );
 ```
+
+**📱 Mobile App Considerations:**
+- **iOS**: Supports native camera captures (MOV, HEIC/HEIF converted to JPEG)
+- **Android**: Supports native camera captures (MP4, JPEG)
+- **Storage bucket accepts uploads from Capacitor Filesystem plugin**
+- **CORS configured to allow native app origins** (see CORS configuration below)
 
 **File Path Structure:**
 ```
 message-attachments/
   {user_id}/
     {conversation_id}/
-      {timestamp}-{filename}
-      {timestamp}-{filename}_thumb.jpg  ← thumbnails
+      {timestamp}-{filename}             ← Original file (web or mobile)
+      {timestamp}-{filename}_thumb.jpg   ← Thumbnail (generated on upload)
+      
+  # Mobile-specific paths (optional, same structure)
+  # Capacitor apps upload to same paths as web
+```
+
+**CORS Configuration for Mobile Apps:**
+```sql
+-- Allow native mobile apps to access storage bucket
+-- Configure via Supabase Dashboard: Storage > Settings > CORS
+-- Allowed Origins:
+--   - https://*.supabase.co (web)
+--   - capacitor://localhost (iOS)
+--   - http://localhost (Android)
 ```
 
 **RLS Policies for Storage:**
@@ -1286,14 +1331,30 @@ warp mcp run supabase "execute_sql SELECT * FROM storage.objects WHERE bucket_id
 # Note: Signed URLs are generated in application code, not SQL
 ```
 
+**📱 Mobile App Testing:**
+```bash
+# Test storage upload from iOS simulator
+# (Manual test via Capacitor Camera plugin in Epic 8.3)
+
+# Test storage upload from Android emulator
+# (Manual test via Capacitor Camera plugin in Epic 8.3)
+
+# Verify CORS for native origins
+warp mcp run supabase "execute_sql SELECT * FROM storage.buckets WHERE name = 'message-attachments';"
+# Check CORS via Supabase Dashboard: Storage > Settings > CORS
+```
+
 **Acceptance Criteria:**
 - ✅ Bucket created and configured
-- ✅ File uploads work from web and mobile
+- ✅ File uploads work from **web browsers**
+- ✅ File uploads work from **iOS native app (Capacitor)**
+- ✅ File uploads work from **Android native app (Capacitor)**
 - ✅ RLS prevents unauthorized access
 - ✅ Signed URLs expire correctly
 - ✅ File size limits enforced
+- ✅ CORS configured for native mobile origins
 
-**Estimated Effort:** 2 days
+**Estimated Effort:** 2-3 days (includes mobile testing)
 
 ---
 
