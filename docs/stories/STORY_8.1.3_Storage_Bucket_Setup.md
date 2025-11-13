@@ -15,6 +15,69 @@ Set up a secure Supabase storage bucket for message attachments (images/videos) 
 
 ---
 
+## 📱 **Platform Support**
+
+| Platform | Support | Implementation Notes |
+|----------|---------|---------------------|
+| **Web** | ✅ Full | File uploads via browser File API + supabase-js |
+| **iOS** | ✅ Full | File uploads via Capacitor Camera/Filesystem + supabase-js |
+| **Android** | ✅ Full | File uploads via Capacitor Camera/Filesystem + supabase-js |
+
+### Architecture Notes
+**Storage bucket serves all platforms with platform-specific file paths.**
+
+- **Bucket**: Single `message-attachments` bucket for all platforms
+- **Upload Method**: All platforms use supabase-js `storage.from().upload()`
+- **File Sources**:
+  - Web: File input, drag-drop, clipboard
+  - iOS: Camera plugin, Photo Library, Documents
+  - Android: Camera plugin, Gallery, File Manager
+
+### Mobile-Specific Storage Considerations
+
+1. **CORS Configuration** (CRITICAL for mobile):
+   ```json
+   {
+     "allowedOrigins": [
+       "https://yourdomain.com",
+       "http://localhost:*",
+       "capacitor://localhost",  // iOS
+       "http://localhost"         // Android
+     ],
+     "allowedMethods": ["GET", "POST", "PUT", "DELETE"],
+     "allowedHeaders": ["*"],
+     "maxAge": 3600
+   }
+   ```
+   - Configure in Supabase Dashboard → Storage → CORS
+
+2. **Native File URI Handling**:
+   - iOS: `file:///var/mobile/Containers/...`
+   - Android: `content://media/external/...`
+   - Must convert to Blob/File before upload (Epic 8.3.1)
+
+3. **File Path Structure** (same for all platforms):
+   ```
+   message-attachments/
+     {user_id}/
+       {conversation_id}/
+         {timestamp}-{filename}
+   ```
+
+4. **Signed URLs**:
+   - Work identically on web and mobile
+   - 1-hour expiration (configurable)
+   - Mobile apps cache signed URLs temporarily
+
+5. **Upload Optimization**:
+   - Mobile: Compress images before upload (Epic 8.3.1)
+   - Mobile: Use thumbnail URLs for list views
+   - Mobile: Queue uploads when offline (Epic 8.4)
+
+**Required for mobile**: CORS configuration for Capacitor origins.
+
+---
+
 ## 📝 **User Story**
 
 **As a** backend developer  

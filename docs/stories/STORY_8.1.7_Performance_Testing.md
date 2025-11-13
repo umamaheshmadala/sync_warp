@@ -15,6 +15,197 @@ Conduct comprehensive performance testing on the messaging database infrastructu
 
 ---
 
+## 📱 **Platform Support**
+
+### **Web + iOS + Android (Performance Testing)**
+
+Performance testing for the messaging system must validate behavior across **all three platforms**, as mobile devices introduce unique performance constraints not present on web. Mobile testing is **critical** due to:
+
+#### **Mobile-Specific Performance Considerations**
+
+**1. Network Conditions Testing**
+- **Mobile Networks**: 3G, 4G, 5G, WiFi have vastly different latency/bandwidth
+  - **Test Environments**:
+    - Slow 3G: 400ms RTT, 400 Kbps down, 400 Kbps up
+    - Fast 3G: 300ms RTT, 1.6 Mbps down, 750 Kbps up
+    - 4G: 170ms RTT, 10 Mbps down, 5 Mbps up
+    - 5G: 10ms RTT, 100 Mbps down, 50 Mbps up
+  - **Chrome DevTools MCP**: Use network throttling to simulate mobile conditions
+    ```bash
+    # Simulate Slow 3G network
+    warp mcp run chrome-devtools "emulate network=Slow 3G"
+    
+    # Run performance tests under network constraint
+    warp mcp run supabase "execute_sql SELECT run_performance_tests();"
+    
+    # Reset to no throttling
+    warp mcp run chrome-devtools "emulate network=No emulation"
+    ```
+
+**2. Device Performance Benchmarks**
+- **CPU Throttling**: Mobile CPUs are slower than desktop
+  - **Test on Real Devices**:
+    - Low-end Android (2019, SD 665, 4GB RAM)
+    - Mid-range Android (2021, SD 778G, 6GB RAM)
+    - iPhone 11 (A13 Bionic)
+    - iPhone 14 (A15 Bionic)
+  - **Chrome DevTools CPU Throttling**: Simulate slower mobile CPUs
+    ```bash
+    # Simulate 4x CPU slowdown (typical mobile)
+    warp mcp run chrome-devtools "emulate cpuThrottlingRate=4"
+    
+    # Test React rendering performance
+    warp mcp run puppeteer "run performance test on conversation list rendering"
+    ```
+
+**3. Realtime Subscription Latency (Mobile)**
+- **WebSocket Connection**: Mobile devices frequently lose/regain network
+  - **Target Latencies**:
+    - Web: < 100ms message delivery
+    - Mobile (WiFi): < 300ms message delivery
+    - Mobile (4G): < 500ms message delivery
+    - Mobile (3G): < 1000ms message delivery
+  - **Test Reconnection**:
+    ```typescript
+    // Test mobile reconnection scenario
+    await simulateNetworkDisconnect(5000) // 5 seconds offline
+    const reconnectStart = Date.now()
+    await waitForRealtimeReconnect()
+    const reconnectTime = Date.now() - reconnectStart
+    
+    // Target: < 2 seconds to reconnect and sync
+    expect(reconnectTime).toBeLessThan(2000)
+    ```
+
+**4. Storage Upload/Download Performance (Mobile)**
+- **Image/Video Upload**: Mobile uploads slower due to network + compression
+  - **Test Cases**:
+    - Upload 1MB image over 4G: target < 3 seconds
+    - Upload 10MB video over 4G: target < 30 seconds
+    - Download 1MB image: target < 2 seconds
+    - Download 10MB video: target < 20 seconds
+  - **Mobile Optimization**:
+    - Compress images before upload (iOS: `ImageOptim`, Android: `Compressor`)
+    - Use Capacitor `@capacitor/filesystem` to check file size before upload
+    - Show upload progress with `@capacitor/upload`
+
+**5. Database Query Performance (Client-Side)**
+- **Local SQLite Queries**: Mobile apps use local cache (SQLite)
+  - **Test Cases**:
+    - Fetch 50 messages from local cache: target < 50ms
+    - Search messages in local cache: target < 200ms
+    - Load conversation list (50 items): target < 100ms
+  - **Indexing**: Ensure local SQLite has proper indexes:
+    ```sql
+    -- Local cache indexes (SQLite)
+    CREATE INDEX idx_local_messages_conversation_created 
+    ON local_messages(conversation_id, created_at DESC);
+    
+    CREATE INDEX idx_local_messages_search 
+    ON local_messages(content); -- or FTS5 virtual table
+    ```
+
+**6. Memory Usage (Mobile)**
+- **RAM Constraints**: Mobile devices have limited memory (2-8GB vs 16-32GB desktop)
+  - **Test Memory Usage**:
+    - Load 100 conversations: target < 50MB RAM increase
+    - Load 1000 messages: target < 100MB RAM increase
+    - Monitor for memory leaks over 5-minute test
+  - **Puppeteer MCP**: Use memory profiling
+    ```bash
+    # Take memory snapshot before test
+    warp mcp run puppeteer "take memory snapshot before-messages-load"
+    
+    # Load messages
+    warp mcp run puppeteer "click selector=[data-testid=load-messages]"
+    
+    # Take memory snapshot after test
+    warp mcp run puppeteer "take memory snapshot after-messages-load"
+    
+    # Compare snapshots
+    warp mcp run puppeteer "compare memory snapshots"
+    ```
+
+**7. Battery Impact Testing**
+- **Background Sync**: Realtime subscriptions drain battery
+  - **Optimization Strategies**:
+    - Use `@capacitor/app` to detect background state
+    - Disconnect Realtime when app backgrounded > 1 minute
+    - Use push notifications instead of persistent connection
+    - Re-connect when app returns to foreground
+  - **Test Battery Drain**:
+    - Run app for 1 hour with active messaging
+    - Measure battery drop (target: < 10% per hour)
+
+#### **Mobile Performance Testing Checklist**
+
+- [ ] **Network Simulation**: Test under Slow 3G, Fast 3G, 4G, 5G
+- [ ] **CPU Throttling**: Test with 4x CPU slowdown
+- [ ] **Real Device Testing**: Test on low-end Android + iPhone 11
+- [ ] **Realtime Latency**: Verify message delivery < 500ms on 4G
+- [ ] **Reconnection Speed**: Verify reconnect < 2 seconds after disconnect
+- [ ] **Upload Performance**: 1MB image upload < 3s on 4G
+- [ ] **Download Performance**: 1MB image download < 2s on 4G
+- [ ] **Local Cache Performance**: 50 messages load < 50ms from SQLite
+- [ ] **Memory Usage**: Load 100 conversations < 50MB RAM increase
+- [ ] **Memory Leaks**: No leaks over 5-minute test
+- [ ] **Battery Impact**: < 10% battery drain per hour
+- [ ] **Background Behavior**: Realtime disconnects after 1 minute in background
+
+#### **Performance Targets by Platform**
+
+| Metric | Web (Desktop) | iOS/Android (WiFi) | iOS/Android (4G) |
+|--------|---------------|--------------------|-----------------|
+| **Message Delivery (Realtime)** | < 100ms | < 300ms | < 500ms |
+| **Conversation List Load** | < 50ms | < 100ms | < 200ms |
+| **Message Search** | < 200ms | < 300ms | < 500ms |
+| **Image Upload (1MB)** | < 1s | < 2s | < 3s |
+| **Image Download (1MB)** | < 500ms | < 1s | < 2s |
+| **Reconnect After Disconnect** | < 1s | < 2s | < 3s |
+| **Local Cache Query (50 msgs)** | N/A | < 50ms | < 50ms |
+| **Memory Usage (100 convos)** | < 100MB | < 50MB | < 50MB |
+| **Battery Drain (1 hour)** | N/A | < 10% | < 10% |
+
+#### **Testing Tools (MCP Integration)**
+
+```bash
+# 1. Network throttling tests
+warp mcp run chrome-devtools "emulate network=Slow 3G"
+warp mcp run supabase "execute_sql SELECT run_performance_tests();"
+
+# 2. CPU throttling tests
+warp mcp run chrome-devtools "emulate cpuThrottlingRate=4"
+warp mcp run puppeteer "run load test with 100 concurrent users"
+
+# 3. Memory profiling
+warp mcp run puppeteer "take memory snapshot before-load"
+warp mcp run puppeteer "click selector=[data-testid=load-messages]"
+warp mcp run puppeteer "take memory snapshot after-load"
+
+# 4. Performance trace (Web Vitals)
+warp mcp run chrome-devtools "performance_start_trace reload=true autoStop=true"
+warp mcp run chrome-devtools "performance_stop_trace"
+
+# 5. Mobile device testing (real devices)
+# Connect iOS device, enable remote debugging
+# Connect Android device, enable USB debugging
+warp mcp run puppeteer "navigate http://192.168.1.100:5173 allowDangerous=true"
+warp mcp run puppeteer "run e2e test suite on mobile device"
+```
+
+#### **Key Differences from Web**
+
+| Aspect | Web (Desktop) | iOS/Android |
+|--------|---------------|-------------|
+| **Network** | Stable, high-speed | Intermittent, variable speed |
+| **CPU** | Powerful (4-16 cores) | Limited (4-8 cores, slower) |
+| **Memory** | Abundant (16-32GB) | Constrained (2-8GB) |
+| **Battery** | Unlimited (plugged in) | Limited (need to optimize) |
+| **Local Cache** | IndexedDB (browser-managed) | SQLite (app-managed, faster) |
+| **Testing Tools** | Chrome DevTools, Jest | Xcode Instruments, Android Profiler |
+
+---
+
 ## 📝 **User Story**
 
 **As a** QA engineer  

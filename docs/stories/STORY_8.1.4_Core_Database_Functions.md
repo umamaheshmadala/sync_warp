@@ -15,6 +15,55 @@ Implement core database functions and triggers that provide atomic operations fo
 
 ---
 
+## 📱 **Platform Support**
+
+| Platform | Support | Implementation Notes |
+|----------|---------|---------------------|
+| **Web** | ✅ Full | Functions called via supabase-js `.rpc()` method |
+| **iOS** | ✅ Full | Same functions via supabase-js (no native changes needed) |
+| **Android** | ✅ Full | Same functions via supabase-js (no native changes needed) |
+
+### Architecture Notes
+**Database functions are server-side - platform-agnostic by design.**
+
+- **Execution**: Postgres functions run server-side
+- **Invocation**: All platforms use `supabase.rpc('function_name', params)`
+- **Atomicity**: Transactions ensure consistency across platforms
+
+### Mobile-Specific Function Considerations
+
+1. **Network Optimization**:
+   - Functions reduce round trips (atomic operations)
+   - Single RPC call vs multiple queries
+   - Especially beneficial for mobile networks (high latency)
+
+2. **Offline Message Sending** (Epic 8.4):
+   ```typescript
+   // Mobile: Queue for later if offline
+   if (Capacitor.isNativePlatform() && !navigator.onLine) {
+     await queueMessageLocally(messageData)
+   } else {
+     await supabase.rpc('send_message', messageData)
+   }
+   ```
+
+3. **Error Handling**:
+   - Mobile: Retry logic for intermittent connectivity
+   - Handle timeout errors gracefully
+   - Show user feedback during slow operations
+
+4. **Function Parameters**:
+   - Same parameter format for all platforms
+   - Mobile uses native file URIs in media_urls (converted to storage paths)
+
+5. **Receipt Generation**:
+   - Auto-receipt creation works identically on all platforms
+   - Mobile apps listen to receipts via Realtime subscriptions
+
+**No Capacitor plugins required** - functions are pure server-side.
+
+---
+
 ## 📝 **User Story**
 
 **As a** backend developer  

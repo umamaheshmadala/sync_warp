@@ -14,6 +14,58 @@ Create the foundational database schema for SynC's messaging system, including a
 
 ---
 
+## 📱 **Platform Support**
+
+| Platform | Support | Implementation Notes |
+|----------|---------|---------------------|
+| **Web** | ✅ Full | Supabase Postgres accessible via supabase-js client |
+| **iOS** | ✅ Full | Same database via Capacitor + supabase-js (no native changes needed) |
+| **Android** | ✅ Full | Same database via Capacitor + supabase-js (no native changes needed) |
+
+### Architecture Notes
+**This is a backend/database story - platform-agnostic by design.**
+
+- **Database Layer**: Supabase Postgres serves all platforms identically
+- **Access Method**: All platforms use supabase-js library over HTTPS/WebSocket
+- **Authentication**: Uses Supabase Auth with platform-specific token storage:
+  - Web: LocalStorage
+  - iOS/Android: Capacitor SecureStorage (configured in Epic 7.2)
+
+### Mobile-Specific Database Considerations
+
+1. **Push Notification Tokens** (future enhancement):
+   - Add `user_push_tokens` table in future story for FCM (Android) and APNs (iOS)
+   - Not required for MVP database schema
+
+2. **Metadata Column Usage**:
+   ```json
+   // conversations.metadata can store mobile-specific data
+   {
+     "last_read_mobile": "2025-01-13T18:00:00Z",
+     "notification_enabled": true,
+     "ringtone": "default"  // iOS/Android custom ringtone
+   }
+   ```
+
+3. **Media URLs**:
+   - `messages.media_urls` supports both web blob URLs AND native file URIs
+   - iOS: `file:///var/mobile/Containers/...`
+   - Android: `content://media/external/...`
+   - Storage transformation handled by Epic 8.1.3
+
+4. **Realtime Subscriptions**:
+   - WebSocket connections work identically on web and mobile
+   - Mobile apps handle background/foreground state transitions (Epic 7.1)
+
+5. **Offline Support**:
+   - Database schema supports offline message queuing via `status` field
+   - Mobile apps can queue messages locally with `status: 'sending'`
+   - Sync when connection restored (Epic 8.4)
+
+**No Capacitor plugins required for this story** - database access is pure JavaScript.
+
+---
+
 ## 📝 **User Story**
 
 **As a** backend developer  

@@ -15,6 +15,47 @@ Implement comprehensive Row Level Security (RLS) policies for all messaging tabl
 
 ---
 
+## 📱 **Platform Support**
+
+| Platform | Support | Implementation Notes |
+|----------|---------|---------------------|
+| **Web** | ✅ Full | RLS enforced server-side for all supabase-js queries |
+| **iOS** | ✅ Full | Same RLS policies via supabase-js (no native changes needed) |
+| **Android** | ✅ Full | Same RLS policies via supabase-js (no native changes needed) |
+
+### Architecture Notes
+**RLS is server-side security - platform-agnostic by design.**
+
+- **Enforcement**: Postgres RLS policies enforced at database level
+- **Authentication**: Uses `auth.uid()` from Supabase Auth JWT token
+- **Mobile Tokens**: 
+  - Web: JWT stored in LocalStorage
+  - iOS/Android: JWT stored in Capacitor SecureStorage (Epic 7.2)
+  - All platforms send JWT in Authorization header
+
+### Mobile-Specific RLS Considerations
+
+1. **Token Persistence**:
+   - Mobile apps maintain session across app restarts via SecureStorage
+   - RLS policies work identically - JWT token provides user identity
+
+2. **Offline Behavior**:
+   - RLS checks cannot run offline (database is unreachable)
+   - Mobile apps should cache allowed data locally
+   - Re-validate on reconnection (Epic 8.4 offline support)
+
+3. **Background Sync**:
+   - iOS/Android background processes use same JWT token
+   - RLS policies enforce same rules for background queries
+
+4. **Push Notifications**:
+   - Backend push service runs with service role (bypasses RLS)
+   - Client-side RLS still enforces on message retrieval
+
+**No Capacitor plugins required** - RLS is pure server-side security.
+
+---
+
 ## 📝 **User Story**
 
 **As a** security engineer  

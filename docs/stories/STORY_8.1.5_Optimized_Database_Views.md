@@ -15,6 +15,62 @@ Create optimized database views and indexes to improve query performance for com
 
 ---
 
+## 📱 **Platform Support**
+
+| Platform | Support | Implementation Notes |
+|----------|---------|---------------------|
+| **Web** | ✅ Full | Views queried via supabase-js SELECT queries |
+| **iOS** | ✅ Full | Same views via supabase-js (no native changes needed) |
+| **Android** | ✅ Full | Same views via supabase-js (no native changes needed) |
+
+### Architecture Notes
+**Database views are server-side query optimizations - platform-agnostic.**
+
+- **Views**: Postgres views accessible via standard SELECT queries
+- **Indexes**: Server-side performance improvements for all clients
+- **Full-Text Search**: Works identically on web and mobile
+
+### Mobile-Specific View Optimization Considerations
+
+1. **Data Payload Minimization**:
+   - Mobile benefits most from optimized views (reduces data transfer)
+   - `conversation_list` view pre-joins frequently accessed data
+   - Single query vs multiple round trips = faster mobile experience
+
+2. **Network Performance**:
+   - Mobile networks (3G/4G/5G) have higher latency than WiFi
+   - Optimized indexes reduce query time from 500ms to <100ms
+   - Critical for responsive mobile UX
+
+3. **Pagination**:
+   ```typescript
+   // Mobile: Always use pagination for lists
+   const { data } = await supabase
+     .from('conversation_list')
+     .select('*')
+     .order('last_message_at', { ascending: false })
+     .range(0, 19) // Load 20 at a time on mobile
+   ```
+
+4. **Full-Text Search**:
+   - Mobile keyboards may have autocorrect/suggestions
+   - Search results load quickly via GIN index
+   - Same search syntax for all platforms
+
+5. **Materialized View Refresh**:
+   - Happens server-side on schedule
+   - Mobile clients always get fresh stats
+   - No client-side refresh logic needed
+
+6. **Unread Count Performance**:
+   - Critical for mobile notification badges
+   - Optimized subquery in `conversation_list` view
+   - Avoids N+1 query problem on mobile
+
+**No Capacitor plugins required** - views are pure database optimizations.
+
+---
+
 ## 📝 **User Story**
 
 **As a** backend developer  

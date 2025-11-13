@@ -15,6 +15,135 @@ Implement automated data retention and cleanup mechanisms to maintain database p
 
 ---
 
+## 📱 **Platform Support**
+
+### **Web + iOS + Android (Unified Backend)**
+
+Data retention and cleanup is a **server-side operation** that runs identically across all platforms. However, mobile apps have specific cache and offline data considerations:
+
+#### **Mobile-Specific Cleanup Considerations**
+
+**1. Client-Side Cache Cleanup**
+- **Local Message Cache**: Mobile apps cache messages locally using SQLite/IndexedDB
+  - iOS: SQLite via `@capacitor/preferences` or `@capacitor-community/sqlite`
+  - Android: SQLite or IndexedDB
+  - Need client-side cleanup logic matching server retention policy (90 days)
+
+**2. Offline Message Queue**
+- **Pending Messages**: Mobile apps queue messages during offline periods
+  - Archived messages on server should be marked as stale if still in local queue
+  - Cleanup function must handle edge case where user sends message to archived conversation
+  - Implement client-side check: "This conversation has been archived" before sending
+
+**3. Local File Storage Cleanup**
+- **Downloaded Media**: iOS/Android cache images/videos locally
+  - iOS: `Documents/` folder via `@capacitor/filesystem`
+  - Android: `files/` or Gallery via `@capacitor/filesystem`
+  - Cleanup should sync with server: delete local files if server file deleted
+  - Implement background sync: Check server storage, clean orphaned local files
+
+**4. Storage Capacity Monitoring**
+- **Mobile Constraints**: Devices have limited storage compared to cloud
+  - More aggressive cleanup on mobile (e.g., 30 days vs 90 days for server)
+  - Provide user-facing storage management UI showing cache size
+  - Option: "Clear old messages older than 30/60/90 days"
+
+**5. Background Sync After Cleanup**
+- **Realtime Sync Issues**: If server archives messages while app offline
+  - When app reconnects, Realtime may try to deliver archived message events
+  - Client should handle `message.archived` event gracefully
+  - Update local cache to mark messages as archived (hide from UI)
+
+**6. Notification Cleanup**
+- **Push Notifications**: Old notifications for archived messages should be cleared
+  - iOS: Use `@capacitor/push-notifications` to clear delivered notifications
+  - Android: Use `@capacitor/push-notifications` to cancel notifications
+  - Match notification cleanup with server archive timeline
+
+#### **Implementation Notes**
+
+```typescript
+// Client-side cleanup (mobile app)
+import { Filesystem, Directory } from '@capacitor/filesystem'
+import { PushNotifications } from '@capacitor/push-notifications'
+
+// 1. Clean local cached messages older than 90 days
+export async function cleanupLocalMessageCache() {
+  const retentionDate = Date.now() - (90 * 24 * 60 * 60 * 1000)
+  
+  // Using local SQLite
+  await db.execute(
+    `DELETE FROM local_messages WHERE created_at < ? AND is_synced = true`,
+    [retentionDate]
+  )
+}
+
+// 2. Clean local media files for deleted server files
+export async function cleanupOrphanedLocalFiles() {
+  // Get list of local files
+  const localFiles = await Filesystem.readdir({
+    path: 'message-attachments',
+    directory: Directory.Documents
+  })
+  
+  // Check each file against server
+  for (const file of localFiles.files) {
+    const { data, error } = await supabase.storage
+      .from('message-attachments')
+      .download(file.name)
+    
+    if (error && error.message.includes('not found')) {
+      // File deleted on server, clean up locally
+      await Filesystem.deleteFile({
+        path: `message-attachments/${file.name}`,
+        directory: Directory.Documents
+      })
+    }
+  }
+}
+
+// 3. Clear notifications for archived messages
+export async function clearArchivedMessageNotifications(
+  archivedMessageIds: string[]
+) {
+  const { notifications } = await PushNotifications.getDeliveredNotifications()
+  
+  for (const notification of notifications) {
+    const messageId = notification.data?.message_id
+    if (messageId && archivedMessageIds.includes(messageId)) {
+      // iOS: Remove notification from tray
+      // Android: Cancel notification
+      // (Capacitor handles platform differences)
+    }
+  }
+}
+```
+
+#### **Testing Checklist (Mobile-Specific)**
+
+- [ ] **Local Cache Cleanup**: Verify messages older than 90 days removed from SQLite
+- [ ] **Offline Queue Handling**: Test sending message to archived conversation shows error
+- [ ] **Local File Cleanup**: Verify orphaned files deleted after server cleanup runs
+- [ ] **Storage Monitoring**: Test storage usage UI shows accurate cache size
+- [ ] **Background Sync**: Verify local cache updates when server archives messages
+- [ ] **Notification Cleanup**: Verify push notifications cleared for archived messages
+- [ ] **iOS Specifics**: Test cleanup in background with `@capacitor/background-task`
+- [ ] **Android Specifics**: Test cleanup with `WorkManager` integration
+- [ ] **Cross-Platform**: Run cleanup on both iOS and Android, verify consistency
+
+#### **Key Differences from Web**
+
+| Aspect | Web | iOS/Android |
+|--------|-----|-------------|
+| **Local Cache** | IndexedDB (browser-managed) | SQLite (app-managed) |
+| **Cleanup Trigger** | Automatic browser policy | Manual via background task |
+| **Storage Limits** | Browser quota (~50MB-1GB) | Device storage (user-controlled) |
+| **Offline Data** | Limited by quota | Can be larger, needs manual cleanup |
+| **Background Execution** | Service Workers | Background tasks (iOS), WorkManager (Android) |
+| **File Storage** | Browser cache | App-specific directories |
+
+---
+
 ## 📝 **User Story**
 
 **As a** system administrator  

@@ -15,6 +15,371 @@ Integrate the messaging system with existing SynC platform components (Friendshi
 
 ---
 
+## 📱 **Platform Support**
+
+### **Web + iOS + Android (System Integration)**
+
+System integration is **primarily backend** (database triggers, RLS policies, Edge Functions), so it works identically across all platforms. However, mobile apps require special integration points for native features:
+
+#### **Mobile-Specific Integration Points**
+
+**1. Friendships Integration (Mobile)**
+- **Friend Invitation from Contacts**:
+  - iOS: Use `@capacitor/contacts` to access device contacts
+  - Android: Use `@capacitor/contacts` with runtime permission request
+  - Feature: "Invite contacts who aren't on SynC yet"
+  - Backend: `can_message_user()` checks friendship status
+
+```typescript
+// Mobile: Check if can message before showing "Send Message" button
+import { Capacitor } from '@capacitor/core'
+
+export async function canMessageUser(targetUserId: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc('can_message_user', {
+    p_target_user_id: targetUserId
+  })
+  
+  if (error || !data) {
+    return false
+  }
+  
+  return data // true if friends, false otherwise
+}
+
+// Show "Add Friend" vs "Send Message" button
+if (await canMessageUser(userId)) {
+  // Show "Send Message" button
+} else {
+  // Show "Add Friend" button
+}
+```
+
+**2. Shares Integration (Mobile)**
+- **Native Share Sheet**:
+  - iOS: Use `@capacitor/share` for native share UI
+  - Android: Use `@capacitor/share` for Android share sheet
+  - Share coupon/deal via message with single tap
+
+```typescript
+// Mobile: Share coupon via native share sheet
+import { Share } from '@capacitor/share'
+import { Haptics, ImpactStyle } from '@capacitor/haptics'
+
+export async function shareCouponViaMessage(
+  couponId: string,
+  recipientUserId: string
+) {
+  // Haptic feedback on share initiation
+  await Haptics.impact({ style: ImpactStyle.Medium })
+  
+  // Get conversation with recipient
+  const { data: conversation } = await supabase.rpc('get_or_create_conversation', {
+    p_participant_id: recipientUserId
+  })
+  
+  if (!conversation) {
+    throw new Error('Cannot create conversation: not friends')
+  }
+  
+  // Send message with shared coupon
+  const { data: message } = await supabase.rpc('send_message', {
+    p_conversation_id: conversation.id,
+    p_content: 'Check out this coupon!',
+    p_type: 'text',
+    p_shared_coupon_id: couponId
+  })
+  
+  // Track share in shares table (handled by send_message function)
+  // Success haptic feedback
+  await Haptics.notification({ type: 'success' })
+  
+  return message
+}
+```
+
+**3. Notifications Integration (Mobile)**
+- **Push Notifications**:
+  - iOS: Use `@capacitor/push-notifications` + APNs
+  - Android: Use `@capacitor/push-notifications` + FCM
+  - **4 New Notification Types**:
+    1. `message_received`: New message from friend
+    2. `message_reply`: Reply to your message
+    3. `coupon_shared_message`: Friend shared a coupon
+    4. `deal_shared_message`: Friend shared a deal
+
+```typescript
+// Mobile: Register for push notifications
+import { PushNotifications } from '@capacitor/push-notifications'
+import { App } from '@capacitor/app'
+
+export async function registerPushNotifications() {
+  // Request permission (iOS/Android)
+  let permission = await PushNotifications.requestPermissions()
+  
+  if (permission.receive !== 'granted') {
+    console.warn('Push notification permission denied')
+    return
+  }
+  
+  // Register for push
+  await PushNotifications.register()
+  
+  // Handle registration
+  PushNotifications.addListener('registration', async (token) => {
+    console.log('Push registration success, token: ' + token.value)
+    
+    // Store token in Supabase
+    await supabase.from('push_tokens').upsert({
+      user_id: supabase.auth.user()?.id,
+      token: token.value,
+      platform: Capacitor.getPlatform() // 'ios' or 'android'
+    })
+  })
+  
+  // Handle push notification received (app in foreground)
+  PushNotifications.addListener('pushNotificationReceived', (notification) => {
+    console.log('Push notification received: ', notification)
+    
+    // Show in-app notification banner
+    // (Capacitor handles system notification when app in background)
+  })
+  
+  // Handle push notification action (user tapped notification)
+  PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
+    console.log('Push notification action: ', action)
+    
+    const data = action.notification.data
+    
+    // Navigate to appropriate screen based on notification type
+    if (data.type === 'message_received' || data.type === 'message_reply') {
+      // Navigate to conversation
+      navigateToConversation(data.conversation_id)
+    } else if (data.type === 'coupon_shared_message') {
+      // Navigate to coupon detail
+      navigateToCoupon(data.shared_coupon_id)
+    } else if (data.type === 'deal_shared_message') {
+      // Navigate to deal detail
+      navigateToDeal(data.shared_deal_id)
+    }
+  })
+}
+```
+
+**4. Blocked Users Integration (Mobile)**
+- **Block Action from Message Screen**:
+  - iOS: Show action sheet with "Block User" option
+  - Android: Show bottom sheet with "Block User" option
+  - Bidirectional blocking handled by backend
+
+```typescript
+// Mobile: Block user from conversation screen
+import { ActionSheet } from '@capacitor/action-sheet'
+import { Haptics } from '@capacitor/haptics'
+
+export async function showBlockUserActionSheet(userId: string, userName: string) {
+  const result = await ActionSheet.showActions({
+    title: 'Block ' + userName + '?',
+    message: 'Blocked users cannot send you messages',
+    options: [
+      { title: 'Block User' },
+      { title: 'Cancel', style: 'cancel' }
+    ]
+  })
+  
+  if (result.index === 0) {
+    // User confirmed block
+    await Haptics.impact({ style: ImpactStyle.Medium })
+    
+    // Insert into blocked_users table
+    const { error } = await supabase.from('blocked_users').insert({
+      blocker_id: supabase.auth.user()?.id,
+      blocked_id: userId
+    })
+    
+    if (!error) {
+      // Success feedback
+      await Haptics.notification({ type: 'success' })
+      
+      // Navigate back to conversation list
+      navigateBack()
+    }
+  }
+}
+```
+
+**5. Auth Integration (Mobile)**
+- **Biometric Authentication**:
+  - iOS: Face ID / Touch ID
+  - Android: Fingerprint / Face Unlock
+  - Use for quick app unlock (secure messaging)
+
+```typescript
+// Mobile: Biometric authentication for app unlock
+import { NativeBiometric } from '@capgo/capacitor-native-biometric'
+
+export async function authenticateWithBiometrics(): Promise<boolean> {
+  // Check if biometrics available
+  const available = await NativeBiometric.isAvailable()
+  
+  if (!available.isAvailable) {
+    console.warn('Biometric authentication not available')
+    return false
+  }
+  
+  try {
+    // Verify user
+    await NativeBiometric.verifyIdentity({
+      reason: 'Authenticate to access messages',
+      title: 'Unlock SynC',
+      subtitle: 'Use biometrics to unlock',
+      description: 'Your messages are secured'
+    })
+    
+    return true // Authentication success
+  } catch (error) {
+    console.error('Biometric authentication failed:', error)
+    return false
+  }
+}
+
+// Use in App.tsx on app launch
+App.addListener('appStateChange', async ({ isActive }) => {
+  if (isActive) {
+    // App came to foreground, require auth
+    const authenticated = await authenticateWithBiometrics()
+    
+    if (!authenticated) {
+      // Show PIN entry screen as fallback
+      navigateToAuthScreen()
+    }
+  }
+})
+```
+
+**6. Deep Linking (Mobile)**
+- **Open Conversation from Notification**:
+  - iOS: Universal Links (`https://sync.app/conversation/{id}`)
+  - Android: App Links (`https://sync.app/conversation/{id}`)
+  - Handle deep link on app launch
+
+```typescript
+// Mobile: Handle deep links
+import { App } from '@capacitor/app'
+
+export function setupDeepLinking() {
+  App.addListener('appUrlOpen', (data) => {
+    console.log('App opened with URL: ' + data.url)
+    
+    // Parse URL: https://sync.app/conversation/123e4567-e89b-12d3-a456-426614174000
+    const conversationMatch = data.url.match(/\/conversation\/([a-f0-9-]+)/i)
+    
+    if (conversationMatch) {
+      const conversationId = conversationMatch[1]
+      navigateToConversation(conversationId)
+    }
+  })
+}
+
+// iOS: Configure in Info.plist
+// <key>CFBundleURLTypes</key>
+// <array>
+//   <dict>
+//     <key>CFBundleURLSchemes</key>
+//     <array>
+//       <string>sync</string>
+//     </array>
+//   </dict>
+// </array>
+
+// Android: Configure in AndroidManifest.xml
+// <intent-filter android:autoVerify="true">
+//   <action android:name="android.intent.action.VIEW" />
+//   <category android:name="android.intent.category.DEFAULT" />
+//   <category android:name="android.intent.category.BROWSABLE" />
+//   <data android:scheme="https" android:host="sync.app" />
+// </intent-filter>
+```
+
+#### **Mobile E2E Testing (Integration Tests)**
+
+```bash
+# Test friendships integration
+warp mcp run puppeteer "navigate http://localhost:5173"
+warp mcp run puppeteer "fill selector=[data-testid=search-friends] value=TestUser"
+warp mcp run puppeteer "click selector=[data-testid=send-message-btn]"
+warp mcp run puppeteer "verify selector=[data-testid=conversation-input] exists"
+
+# Test shares integration (coupon via message)
+warp mcp run puppeteer "navigate http://localhost:5173/coupons/123"
+warp mcp run puppeteer "click selector=[data-testid=share-via-message-btn]"
+warp mcp run puppeteer "click selector=[data-testid=friend-TestUser]"
+warp mcp run puppeteer "verify message sent with coupon"
+
+# Test notifications integration
+warp mcp run puppeteer "send test push notification"
+warp mcp run puppeteer "verify notification appears in system tray"
+warp mcp run puppeteer "click notification"
+warp mcp run puppeteer "verify navigated to conversation"
+
+# Test blocked users integration
+warp mcp run puppeteer "navigate http://localhost:5173/conversation/123"
+warp mcp run puppeteer "click selector=[data-testid=user-menu-btn]"
+warp mcp run puppeteer "click selector=[data-testid=block-user-btn]"
+warp mcp run puppeteer "click selector=[data-testid=confirm-block-btn]"
+warp mcp run puppeteer "verify conversation hidden"
+```
+
+#### **Testing Checklist (Mobile-Specific)**
+
+- [ ] **Friendships**: "Send Message" button only shown to friends
+- [ ] **Friendships**: "Add Friend" button shown to non-friends
+- [ ] **Friendships**: Conversation archived when friendship removed
+- [ ] **Shares**: Native share sheet opens for coupon/deal sharing
+- [ ] **Shares**: Shared coupon tracked in `shares` table
+- [ ] **Shares**: Haptic feedback on share success
+- [ ] **Notifications**: Push notifications work on iOS (APNs)
+- [ ] **Notifications**: Push notifications work on Android (FCM)
+- [ ] **Notifications**: Tapping notification opens correct screen
+- [ ] **Notifications**: In-app banner shown when app in foreground
+- [ ] **Blocked Users**: Action sheet shows block option
+- [ ] **Blocked Users**: Blocked user cannot send messages
+- [ ] **Blocked Users**: Blocked conversations hidden from list
+- [ ] **Auth**: Biometric authentication works on app launch
+- [ ] **Auth**: Fallback to PIN when biometrics fail
+- [ ] **Deep Linking**: Opening notification deep link navigates to conversation
+- [ ] **Deep Linking**: iOS Universal Links configured
+- [ ] **Deep Linking**: Android App Links configured
+
+#### **Key Differences from Web**
+
+| Aspect | Web | iOS/Android |
+|--------|-----|-------------|
+| **Friendships UI** | Button click | Contacts integration |
+| **Share Action** | Web Share API | Native share sheet + haptics |
+| **Notifications** | Web Push API | APNs (iOS), FCM (Android) |
+| **Block Action** | Dropdown menu | Action sheet / bottom sheet |
+| **Auth** | Password | Biometric (Face ID, Touch ID) |
+| **Deep Linking** | URL params | Universal Links / App Links |
+| **Background Behavior** | Service Worker | Background tasks + push |
+
+#### **Required Capacitor Plugins**
+
+```json
+{
+  "dependencies": {
+    "@capacitor/contacts": "^6.0.0",
+    "@capacitor/share": "^6.0.0",
+    "@capacitor/haptics": "^6.0.0",
+    "@capacitor/push-notifications": "^6.0.0",
+    "@capacitor/app": "^6.0.0",
+    "@capacitor/action-sheet": "^6.0.0",
+    "@capgo/capacitor-native-biometric": "^6.0.0"
+  }
+}
+```
+
+---
+
 ## 📝 **User Story**
 
 **As a** backend developer  
