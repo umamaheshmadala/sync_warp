@@ -14,6 +14,69 @@ Implement **link preview generation** to automatically detect URLs in messages a
 
 ---
 
+## 📱 **Platform Support**
+
+| Platform | Support | Implementation Notes |
+|----------|---------|---------------------|
+| **Web** | ✅ Full | Standard link preview with Open Graph metadata |
+| **iOS** | ✅ Full | In-app browser via Capacitor Browser, deep linking via Universal Links |
+| **Android** | ✅ Full | In-app browser via Capacitor Browser, deep linking via App Links |
+
+### Required Capacitor Plugins
+```bash
+# Install for mobile app support
+npm install @capacitor/browser@^5.0.0
+npm install @capacitor/app@^5.0.0
+```
+
+### iOS Configuration
+
+**1. Add URL scheme to `ios/App/Info.plist`:**
+```xml
+<key>CFBundleURLTypes</key>
+<array>
+  <dict>
+    <key>CFBundleURLSchemes</key>
+    <array>
+      <string>sync</string>
+    </array>
+  </dict>
+</array>
+
+<!-- Universal Links support -->
+<key>com.apple.developer.associated-domains</key>
+<array>
+  <string>applinks:sync.app</string>
+</array>
+```
+
+### Android Configuration
+
+**1. Add intent filters to `android/app/src/main/AndroidManifest.xml`:**
+```xml
+<activity>
+  <!-- Existing activity config -->
+  
+  <!-- Deep linking support -->
+  <intent-filter android:autoVerify="true">
+    <action android:name="android.intent.action.VIEW" />
+    <category android:name="android.intent.category.DEFAULT" />
+    <category android:name="android.intent.category.BROWSABLE" />
+    <data android:scheme="https" android:host="sync.app" />
+  </intent-filter>
+  
+  <!-- Custom URL scheme -->
+  <intent-filter>
+    <action android:name="android.intent.action.VIEW" />
+    <category android:name="android.intent.category.DEFAULT" />
+    <category android:name="android.intent.category.BROWSABLE" />
+    <data android:scheme="sync" />
+  </intent-filter>
+</activity>
+```
+
+---
+
 ## 📖 **User Stories**
 
 ### As a user, I want to:
@@ -349,6 +412,8 @@ export function useLinkPreview(text: string) {
 import React from 'react'
 import { X, Gift, Tag, ExternalLink } from 'lucide-react'
 import { LinkPreview } from '../../services/linkPreviewService'
+import { Browser } from '@capacitor/browser'
+import { Capacitor } from '@capacitor/core'
 
 interface Props {
   preview: LinkPreview
@@ -357,6 +422,27 @@ interface Props {
 }
 
 export function LinkPreviewCard({ preview, onRemove, showRemoveButton = true }: Props) {
+  /**
+   * Open link in platform-appropriate way
+   * - Mobile: In-app browser (better UX, keeps user in app)
+   * - Web: New tab
+   */
+  const handleLinkClick = async (e: React.MouseEvent, url: string) => {
+    e.preventDefault()
+    
+    if (Capacitor.isNativePlatform()) {
+      // Mobile: Open in in-app browser
+      await Browser.open({ 
+        url,
+        presentationStyle: 'popover',  // iOS: Shows close button
+        toolbarColor: '#ffffff'         // Android: White toolbar
+      })
+    } else {
+      // Web: Open in new tab
+      window.open(url, '_blank', 'noopener,noreferrer')
+    }
+  }
+  
   const renderSyncCouponPreview = () => (
     <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-3 flex gap-3">
       <div className="flex-shrink-0">
@@ -460,15 +546,13 @@ export function LinkPreviewCard({ preview, onRemove, showRemoveButton = true }: 
                 {preview.description}
               </p>
             )}
-            <a 
-              href={preview.url}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={(e) => handleLinkClick(e, preview.url)}
               className="text-xs text-blue-600 hover:underline mt-1 inline-flex items-center gap-1"
             >
               {new URL(preview.url).hostname}
               <ExternalLink className="w-3 h-3" />
-            </a>
+            </button>
           </div>
           {showRemoveButton && onRemove && (
             <button
@@ -537,6 +621,97 @@ export function MessageComposer({ conversationId }: { conversationId: string }) 
 
 ---
 
+### **Phase 4: Mobile Deep Linking Service** (0.25 days)
+
+#### Task 4.1: Create Deep Linking Handler
+```typescript
+// src/services/deepLinkingService.ts
+import { App } from '@capacitor/app'
+import { Capacitor } from '@capacitor/core'
+import { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+
+/**
+ * Initialize deep linking listener for SynC coupon/deal links
+ * Handles iOS Universal Links and Android App Links
+ */
+export function useDeepLinking() {
+  const navigate = useNavigate()
+  
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return
+    
+    // Listen for app URL opens (deep links)
+    const listener = App.addListener('appUrlOpen', (event) => {
+      const url = event.url
+      console.log('Deep link received:', url)
+      
+      try {
+        // Parse URL: sync.app/coupons/{id} or sync.app/offers/{id}
+        const urlObj = new URL(url)
+        
+        if (urlObj.hostname === 'sync.app' || urlObj.protocol === 'sync:') {
+          const path = urlObj.pathname
+          
+          // Match coupon URL
+          const couponMatch = path.match(/\/coupons?\/([a-zA-Z0-9-]+)/)
+          if (couponMatch) {
+            const couponId = couponMatch[1]
+            navigate(`/coupons/${couponId}`)
+            return
+          }
+          
+          // Match deal/offer URL
+          const dealMatch = path.match(/\/offers?\/([a-zA-Z0-9-]+)/)
+          if (dealMatch) {
+            const dealId = dealMatch[1]
+            navigate(`/offers/${dealId}`)
+            return
+          }
+          
+          // Fallback: navigate to home if pattern doesn't match
+          console.warn('Deep link pattern not recognized:', url)
+          navigate('/')
+        }
+      } catch (error) {
+        console.error('Failed to parse deep link:', error)
+        navigate('/')
+      }
+    })
+    
+    return () => {
+      listener.remove()
+    }
+  }, [navigate])
+}
+```
+
+#### Task 4.2: Integrate Deep Linking into App
+```typescript
+// src/App.tsx (add to root component)
+import { useDeepLinking } from './services/deepLinkingService'
+
+export function App() {
+  // Initialize deep linking
+  useDeepLinking()
+  
+  return (
+    // ... existing app structure ...
+  )
+}
+```
+
+**🧠 Context7 MCP Testing:**
+```bash
+# Analyze deep link security
+warp mcp run context7 "review useDeepLinking for URL injection vulnerabilities"
+
+# Check navigation safety
+warp mcp run context7 "verify deep link handler prevents open redirects"
+```
+
+---
+
 ## 🧪 **Testing Checklist**
 
 ### Unit Tests
@@ -582,17 +757,84 @@ warp mcp run puppeteer "paste sync.app/coupons/test-id, verify enhanced coupon c
 warp mcp run puppeteer "generate preview, click remove button, verify preview disappears"
 ```
 
+### 📱 Mobile Testing (iOS/Android)
+
+**Manual Testing Required - Capacitor plugins cannot be fully automated**
+
+#### iOS Testing (Xcode Simulator + Physical Device)
+
+1. **In-App Browser Test:**
+   - [ ] Tap external link in message → Opens in-app browser (not Safari)
+   - [ ] In-app browser shows close button in top-left
+   - [ ] Tap close button → Returns to app without crash
+   - [ ] Browser shows correct page title in toolbar
+   
+2. **Long-Press Link Test:**
+   - [ ] Long-press on link preview → Shows iOS action sheet
+   - [ ] Action sheet shows "Open", "Copy Link", "Share" options
+   - [ ] "Copy Link" → Link copied to clipboard
+   - [ ] "Share" → Opens native share sheet
+
+3. **Deep Linking Test (Universal Links):**
+   - [ ] Share `https://sync.app/coupons/test-id` from Safari → Prompts to open in SynC app
+   - [ ] Tap "Open" → App launches and navigates to coupon detail page
+   - [ ] Deep link when app is closed → App launches and navigates correctly
+   - [ ] Deep link when app is backgrounded → App resumes and navigates
+   - [ ] Invalid coupon ID in deep link → Shows error gracefully
+
+4. **Custom URL Scheme Test:**
+   - [ ] Open `sync://coupons/test-id` from Notes app → Opens SynC app
+   - [ ] Opens `sync://offers/test-id` → Navigates to deal page
+
+#### Android Testing (Android Emulator + Physical Device)
+
+1. **In-App Browser Test:**
+   - [ ] Tap external link in message → Opens in-app browser (not Chrome)
+   - [ ] In-app browser shows close/back button in toolbar
+   - [ ] Tap back button → Returns to app without crash
+   - [ ] Browser toolbar color matches app theme (white)
+
+2. **Long-Press Link Test:**
+   - [ ] Long-press on link preview → Shows Android bottom sheet
+   - [ ] Bottom sheet shows "Open", "Copy Link", "Share" options
+   - [ ] "Copy Link" → Link copied to clipboard
+   - [ ] "Share" → Opens native share sheet
+
+3. **Deep Linking Test (App Links):**
+   - [ ] Share `https://sync.app/coupons/test-id` from Chrome → Prompts to open in SynC app
+   - [ ] Tap "Open in SynC" → App launches and navigates to coupon page
+   - [ ] Deep link when app is closed → App launches and navigates
+   - [ ] Deep link when app is backgrounded → App resumes and navigates
+   - [ ] Invalid deal ID in deep link → Shows error gracefully
+
+4. **Custom URL Scheme Test:**
+   - [ ] Open `sync://coupons/test-id` from browser → Opens SynC app
+   - [ ] Opens `sync://offers/test-id` → Navigates to deal page
+
+#### Cross-Platform Mobile Edge Cases
+- [ ] 📱 Tap link → In-app browser opens → User closes → Returns to app (no crash)
+- [ ] 📱 Tap link → In-app browser opens → User backgrounds app → Resume works
+- [ ] 📱 Deep link with malformed URL → Shows "Invalid link" error
+- [ ] 📱 Deep link when offline → Queues navigation, opens when online
+- [ ] 📱 Multiple rapid deep links → Only last link is processed
+- [ ] 📱 Link preview generation on mobile takes < 1s (same as web)
+- [ ] 📱 SynC coupon/deal previews work same as web
+- [ ] 📱 Preview removal works with tap (mobile-friendly)
+
 ---
 
 ## 📊 **Success Metrics**
 
 | Metric | Target | Verification Method |
 |--------|--------|-------------------|
-| **Preview Generation Time** | < 1s | Chrome DevTools Network timing |
+| **Preview Generation Time** | < 1s (all platforms) | Chrome DevTools (Web), Xcode Instruments (iOS), Android Profiler (Android) |
 | **URL Detection Accuracy** | > 95% | Unit tests |
 | **SynC URL Recognition** | 100% | Regex pattern tests |
 | **Preview Removal** | Instant | UI interaction testing |
 | **Fallback Handling** | 100% | Error simulation tests |
+| **📱 In-App Browser Launch** | < 500ms | Mobile device testing |
+| **📱 Deep Link Navigation** | < 1s | iOS/Android deep link testing |
+| **📱 Platform Detection** | 100% | Capacitor.isNativePlatform() unit tests |
 
 ---
 
@@ -622,11 +864,15 @@ warp mcp run supabase "execute_sql SELECT id, name, logo_url FROM brands LIMIT 5
 
 1. ✅ `src/services/linkPreviewService.ts` - Link preview service
 2. ✅ `src/hooks/useLinkPreview.ts` - Link preview hook
-3. ✅ `src/components/messaging/LinkPreviewCard.tsx` - Preview card component
-4. ✅ MessageComposer integration with link previews
-5. ✅ Backend API endpoint for Open Graph scraping (documented)
-6. ✅ Unit tests for URL detection and preview generation
-7. ✅ Supabase MCP test commands
+3. ✅ `src/components/messaging/LinkPreviewCard.tsx` - Preview card component with mobile support
+4. ✅ `src/services/deepLinkingService.ts` - Deep linking handler for iOS/Android
+5. ✅ MessageComposer integration with link previews
+6. ✅ Backend API endpoint for Open Graph scraping (documented)
+7. ✅ iOS configuration (`Info.plist`) with Universal Links support
+8. ✅ Android configuration (`AndroidManifest.xml`) with App Links support
+9. ✅ Unit tests for URL detection and preview generation
+10. ✅ Mobile testing checklist (iOS + Android)
+11. ✅ Supabase MCP test commands
 
 ---
 
@@ -668,5 +914,5 @@ warp mcp run puppeteer "type URL, wait for preview, verify card appears"
 ---
 
 **Story Status:** 📋 **Ready for Implementation**  
-**Estimated Completion:** 2 days  
-**Risk Level:** Medium (external API dependency, CORS handling)
+**Estimated Completion:** 2.25 days (includes mobile support)  
+**Risk Level:** Medium (external API dependency, CORS handling, deep linking configuration)
