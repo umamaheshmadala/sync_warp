@@ -14,6 +14,42 @@ Implement **rich media display components** for rendering images and videos in m
 
 ---
 
+## 📱 **Platform Support**
+
+| Platform | Support | Implementation Notes |
+|----------|---------|---------------------|
+| **Web** | ✅ Full | Standard image viewer with lightbox, HTML5 video player |
+| **iOS** | ✅ Full | Native gestures (pinch-to-zoom), haptic feedback, action sheets, fullscreen video with orientation lock |
+| **Android** | ✅ Full | Native gestures (pinch-to-zoom), haptic feedback, bottom sheets, fullscreen video with orientation lock |
+
+### Required Capacitor Plugins
+```bash
+# Install for mobile app support
+npm install @capacitor/haptics@^5.0.0              # Haptic feedback for interactions
+npm install @capacitor/filesystem@^5.0.0           # Save images to device
+npm install @capacitor/screen-orientation@^5.0.0   # Lock orientation for fullscreen video
+npm install @capacitor/share@^5.0.0                # Share images/videos
+```
+
+### iOS Configuration
+
+**1. Add Photo Library permissions to `ios/App/Info.plist`:**
+```xml
+<key>NSPhotoLibraryAddUsageDescription</key>
+<string>Save images from messages to your photo library</string>
+```
+
+### Android Configuration
+
+**1. Add storage permissions to `android/app/src/main/AndroidManifest.xml`:**
+```xml
+<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" 
+                 android:maxSdkVersion="28" />
+<uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+```
+
+---
+
 ## 📖 **User Stories**
 
 ### As a user, I want to:
@@ -100,16 +136,25 @@ export function ImageMessage({ imageUrl, thumbnailUrl, alt = '', onImageClick }:
 
 ### **Phase 2: Image Lightbox Component** (0.25 days)
 
-#### Task 2.1: Create ImageLightbox Component (Using Shadcn MCP)
+#### Task 2.1: Install Dependencies for Mobile Gestures
 ```bash
 # Install Shadcn Dialog component for lightbox
 warp mcp run shadcn "add dialog"
+
+# Install pinch-to-zoom library for mobile
+npm install react-zoom-pan-pinch
 ```
 
+#### Task 2.2: Create ImageLightbox Component with Mobile Support
 ```typescript
 // src/components/messaging/ImageLightbox.tsx
 import React from 'react'
-import { X, Download, ChevronLeft, ChevronRight } from 'lucide-react'
+import { X, Download, ChevronLeft, ChevronRight, Share2, Save } from 'lucide-react'
+import { Capacitor } from '@capacitor/core'
+import { Haptics, ImpactStyle } from '@capacitor/haptics'
+import { Filesystem, Directory } from '@capacitor/filesystem'
+import { Share } from '@capacitor/share'
+import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch'
 import {
   Dialog,
   DialogContent,
@@ -125,9 +170,12 @@ interface Props {
 
 export function ImageLightbox({ images, initialIndex = 0, isOpen, onClose }: Props) {
   const [currentIndex, setCurrentIndex] = React.useState(initialIndex)
+  const [showMobileActions, setShowMobileActions] = React.useState(false)
+  const longPressTimer = React.useRef<NodeJS.Timeout | null>(null)
 
   const currentImage = images[currentIndex]
   const hasMultiple = images.length > 1
+  const isMobile = Capacitor.isNativePlatform()
 
   const goToPrevious = () => {
     setCurrentIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1))
@@ -137,22 +185,97 @@ export function ImageLightbox({ images, initialIndex = 0, isOpen, onClose }: Pro
     setCurrentIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1))
   }
 
-  const handleDownload = async () => {
+  /**
+   * Save image to device (mobile) or download (web)
+   */
+  const handleSaveImage = async () => {
     try {
-      const response = await fetch(currentImage)
-      const blob = await response.blob()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `image-${currentIndex + 1}.jpg`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
+      if (isMobile) {
+        // Mobile: Save to device storage
+        await Haptics.impact({ style: ImpactStyle.Light })
+        
+        const response = await fetch(currentImage)
+        const blob = await response.blob()
+        const reader = new FileReader()
+        
+        reader.onloadend = async () => {
+          const base64 = reader.result as string
+          const base64Data = base64.split(',')[1]
+          
+          await Filesystem.writeFile({
+            path: `sync-image-${Date.now()}.jpg`,
+            data: base64Data,
+            directory: Directory.Documents
+          })
+          
+          // Show success feedback (implement toast/alert)
+          console.log('✅ Image saved to device')
+        }
+        
+        reader.readAsDataURL(blob)
+      } else {
+        // Web: Traditional download
+        const response = await fetch(currentImage)
+        const blob = await response.blob()
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `image-${currentIndex + 1}.jpg`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+      }
     } catch (error) {
-      console.error('Download failed:', error)
+      console.error('Save/download failed:', error)
     }
   }
+  
+  /**
+   * Share image via native share sheet (mobile) or Web Share API
+   */
+  const handleShareImage = async () => {
+    try {
+      if (isMobile) {
+        await Haptics.impact({ style: ImpactStyle.Light })
+        
+        await Share.share({
+          title: 'Share Image',
+          url: currentImage,
+          dialogTitle: 'Share this image'
+        })
+      } else if (navigator.share) {
+        await navigator.share({
+          title: 'Share Image',
+          url: currentImage
+        })
+      }
+    } catch (error) {
+      console.log('Share cancelled or failed:', error)
+    }
+  }
+  
+  /**
+   * Handle long-press on mobile to show actions
+   */
+  const handleTouchStart = () => {
+    if (!isMobile) return
+    
+    longPressTimer.current = setTimeout(async () => {
+      await Haptics.impact({ style: ImpactStyle.Medium })
+      setShowMobileActions(true)
+    }, 500) // 500ms long-press
+  }
+  
+  const handleTouchEnd = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current)
+      longPressTimer.current = null
+    }
+  }
+  
+  // Legacy download method for web
+  const handleDownload = handleSaveImage
 
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -220,14 +343,71 @@ export function ImageLightbox({ images, initialIndex = 0, isOpen, onClose }: Pro
             </button>
           )}
 
-          {/* Image */}
-          <div className="flex items-center justify-center w-full h-full p-8">
-            <img
-              src={currentImage}
-              alt={`Image ${currentIndex + 1}`}
-              className="max-w-full max-h-full object-contain"
-            />
+          {/* Image with Pinch-to-Zoom (Mobile) */}
+          <div 
+            className="flex items-center justify-center w-full h-full p-8"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
+            {isMobile ? (
+              <TransformWrapper
+                initialScale={1}
+                minScale={0.5}
+                maxScale={4}
+                doubleClick={{ disabled: false, step: 0.5 }}  // Double-tap to zoom
+                wheel={{ disabled: true }}  // Disable mouse wheel on mobile
+                pinch={{ disabled: false }}  // Enable pinch-to-zoom
+              >
+                <TransformComponent>
+                  <img
+                    src={currentImage}
+                    alt={`Image ${currentIndex + 1}`}
+                    className="max-w-full max-h-full object-contain"
+                  />
+                </TransformComponent>
+              </TransformWrapper>
+            ) : (
+              <img
+                src={currentImage}
+                alt={`Image ${currentIndex + 1}`}
+                className="max-w-full max-h-full object-contain"
+              />
+            )}
           </div>
+          
+          {/* Mobile Action Sheet */}
+          {showMobileActions && isMobile && (
+            <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl p-4 animate-slide-up">
+              <button
+                onClick={() => {
+                  handleSaveImage()
+                  setShowMobileActions(false)
+                }}
+                className="w-full flex items-center gap-3 p-4 hover:bg-gray-100 rounded-lg"
+              >
+                <Save className="w-5 h-5" />
+                <span className="font-medium">Save Image</span>
+              </button>
+              
+              <button
+                onClick={() => {
+                  handleShareImage()
+                  setShowMobileActions(false)
+                }}
+                className="w-full flex items-center gap-3 p-4 hover:bg-gray-100 rounded-lg"
+              >
+                <Share2 className="w-5 h-5" />
+                <span className="font-medium">Share</span>
+              </button>
+              
+              <button
+                onClick={() => setShowMobileActions(false)}
+                className="w-full flex items-center justify-center p-4 text-red-600 font-medium"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
@@ -239,11 +419,14 @@ export function ImageLightbox({ images, initialIndex = 0, isOpen, onClose }: Pro
 
 ### **Phase 3: Video Message Component** (0.25 days)
 
-#### Task 3.1: Create VideoMessage Component
+#### Task 3.1: Create VideoMessage Component with Mobile Fullscreen Support
 ```typescript
 // src/components/messaging/VideoMessage.tsx
-import React, { useRef, useState } from 'react'
+import React, { useRef, useState, useEffect } from 'react'
 import { Play, Pause, Volume2, VolumeX, Maximize, Loader2 } from 'lucide-react'
+import { Capacitor } from '@capacitor/core'
+import { ScreenOrientation, OrientationType } from '@capacitor/screen-orientation'
+import { Haptics, ImpactStyle } from '@capacitor/haptics'
 
 interface Props {
   videoUrl: string
@@ -258,9 +441,15 @@ export function VideoMessage({ videoUrl, thumbnailUrl, duration }: Props) {
   const [currentTime, setCurrentTime] = useState(0)
   const [isLoaded, setIsLoaded] = useState(false)
   const [hasError, setHasError] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const isMobile = Capacitor.isNativePlatform()
 
-  const togglePlay = () => {
+  const togglePlay = async () => {
     if (videoRef.current) {
+      if (isMobile) {
+        await Haptics.impact({ style: ImpactStyle.Light })
+      }
+      
       if (isPlaying) {
         videoRef.current.pause()
       } else {
@@ -270,22 +459,73 @@ export function VideoMessage({ videoUrl, thumbnailUrl, duration }: Props) {
     }
   }
 
-  const toggleMute = () => {
+  const toggleMute = async () => {
     if (videoRef.current) {
+      if (isMobile) {
+        await Haptics.impact({ style: ImpactStyle.Light })
+      }
       videoRef.current.muted = !isMuted
       setIsMuted(!isMuted)
     }
   }
 
-  const toggleFullscreen = () => {
+  /**
+   * Toggle fullscreen with orientation lock on mobile
+   */
+  const toggleFullscreen = async () => {
     if (videoRef.current) {
-      if (document.fullscreenElement) {
-        document.exitFullscreen()
+      if (isMobile) {
+        await Haptics.impact({ style: ImpactStyle.Medium })
+      }
+      
+      if (document.fullscreenElement || isFullscreen) {
+        // Exit fullscreen
+        if (document.exitFullscreen) {
+          await document.exitFullscreen()
+        }
+        
+        // Unlock orientation on mobile
+        if (isMobile) {
+          await ScreenOrientation.unlock()
+        }
+        
+        setIsFullscreen(false)
       } else {
-        videoRef.current.requestFullscreen()
+        // Enter fullscreen
+        if (videoRef.current.requestFullscreen) {
+          await videoRef.current.requestFullscreen()
+        }
+        
+        // Lock to landscape on mobile
+        if (isMobile) {
+          await ScreenOrientation.lock({ orientation: OrientationType.LANDSCAPE })
+        }
+        
+        setIsFullscreen(true)
       }
     }
   }
+  
+  // Handle fullscreen change events
+  useEffect(() => {
+    const handleFullscreenChange = async () => {
+      const isNowFullscreen = !!document.fullscreenElement
+      setIsFullscreen(isNowFullscreen)
+      
+      if (isMobile) {
+        if (isNowFullscreen) {
+          await ScreenOrientation.lock({ orientation: OrientationType.LANDSCAPE })
+        } else {
+          await ScreenOrientation.unlock()
+        }
+      }
+    }
+    
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange)
+    }
+  }, [isMobile])
 
   const handleTimeUpdate = () => {
     if (videoRef.current) {
@@ -500,7 +740,118 @@ warp mcp run chrome-devtools "open Device Mode, test image/video rendering on mo
 
 ### E2E Tests with Puppeteer MCP
 ```bash
-# Test image lightbox
+# Test image lightbox (web only)
+warp mcp run puppeteer "click image, verify lightbox opens, navigate with arrows"
+
+# Test video playback
+warp mcp run puppeteer "click play button, verify video plays, test seek bar"
+```
+
+### 📱 Mobile Testing (iOS/Android)
+
+**Manual Testing Required - Native gestures and orientation cannot be fully automated**
+
+#### iOS Testing (Xcode Simulator + Physical Device)
+
+1. **Image Viewer Tests:**
+   - [ ] Tap image thumbnail → Opens fullscreen viewer
+   - [ ] Pinch to zoom in → Zooms smoothly at 60fps
+   - [ ] Pinch to zoom out → Zooms out smoothly
+   - [ ] Double-tap → Zooms to 2x instantly
+   - [ ] Double-tap again → Zooms back to 1x
+   - [ ] Swipe left/right → Navigates between images (if multiple)
+   
+2. **Long-Press Action Sheet:**
+   - [ ] Long-press image (500ms) → Haptic feedback (medium)
+   - [ ] Action sheet appears with "Save Image", "Share", "Cancel"
+   - [ ] Tap "Save Image" → Haptic feedback + saves to Documents folder
+   - [ ] Verify saved: Check iOS Files app → "On My iPhone" → Sync folder
+   - [ ] Tap "Share" → Native share sheet with iOS apps
+   - [ ] Tap "Cancel" → Action sheet dismisses
+
+3. **Video Player Tests:**
+   - [ ] Tap video thumbnail → Video loads with poster image
+   - [ ] Tap play button → Haptic feedback + video plays inline
+   - [ ] Tap pause button → Haptic feedback + video pauses
+   - [ ] Tap fullscreen button → Haptic feedback (medium) + enters fullscreen
+   - [ ] **Orientation lock**: Fullscreen → Screen rotates to landscape automatically
+   - [ ] Rotate device manually in fullscreen → Stays landscape (locked)
+   - [ ] Exit fullscreen → Returns to portrait + orientation unlocks
+   - [ ] Tap mute button → Haptic feedback + audio mutes
+   
+4. **Performance Tests:**
+   - [ ] Load image gallery (10 images) → Scrolling is smooth (60fps)
+   - [ ] Zoom large image (5MB+) → No lag, loads progressively
+   - [ ] Play video → No dropped frames in Xcode Instruments
+   - [ ] Switch between images quickly → No memory warnings
+
+#### Android Testing (Android Emulator + Physical Device)
+
+1. **Image Viewer Tests:**
+   - [ ] Tap image thumbnail → Opens fullscreen viewer
+   - [ ] Pinch to zoom in → Zooms smoothly at 60fps
+   - [ ] Pinch to zoom out → Zooms out smoothly
+   - [ ] Double-tap → Zooms to 2x instantly
+   - [ ] Double-tap again → Zooms back to 1x
+   - [ ] Swipe left/right → Navigates between images (if multiple)
+
+2. **Long-Press Bottom Sheet:**
+   - [ ] Long-press image (500ms) → Haptic feedback (medium)
+   - [ ] Bottom sheet slides up with "Save Image", "Share", "Cancel"
+   - [ ] Tap "Save Image" → Haptic feedback + saves to Gallery
+   - [ ] Verify saved: Open Android Gallery app → Check "Sync" folder
+   - [ ] Tap "Share" → Native share sheet with Android apps
+   - [ ] Tap "Cancel" → Bottom sheet dismisses
+
+3. **Video Player Tests:**
+   - [ ] Tap video thumbnail → Video loads with poster image
+   - [ ] Tap play button → Haptic feedback + video plays inline
+   - [ ] Tap pause button → Haptic feedback + video pauses
+   - [ ] Tap fullscreen button → Haptic feedback (medium) + enters fullscreen
+   - [ ] **Orientation lock**: Fullscreen → Screen rotates to landscape automatically
+   - [ ] Rotate device manually in fullscreen → Stays landscape (locked)
+   - [ ] Exit fullscreen → Returns to portrait + orientation unlocks
+   - [ ] Tap mute button → Haptic feedback + audio mutes
+
+4. **Performance Tests:**
+   - [ ] Load image gallery (10 images) → Scrolling is smooth (60fps)
+   - [ ] Zoom large image (5MB+) → No lag, loads progressively
+   - [ ] Play video → No dropped frames in Android Profiler
+   - [ ] Switch between images quickly → No ANR (Application Not Responding)
+
+#### Cross-Platform Mobile Edge Cases
+- [ ] 📱 **Permissions**: First "Save Image" → Requests storage permission (Android)
+- [ ] 📱 **Permissions denied**: Deny storage → Shows "Permission required" message
+- [ ] 📱 **Orientation lock**: Enter fullscreen → Lock landscape → Exit → Unlock portrait
+- [ ] 📱 **Gesture conflicts**: Pinch-to-zoom doesn't trigger swipe-to-dismiss
+- [ ] 📱 **Low memory**: View large images → App doesn't crash, shows loading state
+- [ ] 📱 **Background/Resume**: Enter fullscreen → Background app → Resume → Stays fullscreen
+- [ ] 📱 **Video orientation**: Fullscreen video → Home button → Resume → Orientation unlocked
+- [ ] 📱 **Haptic feedback**: All interactive elements trigger appropriate haptics
+- [ ] 📱 **Share from fullscreen**: Long-press in fullscreen → Share works correctly
+- [ ] 📱 **Memory management**: Load 50+ images → Old images unloaded, no crash
+
+#### Platform-Specific Testing
+```bash
+# Test storage permissions (Android)
+adb shell pm revoke com.sync.app android.permission.WRITE_EXTERNAL_STORAGE
+# Then try saving image in app -> Should request permission
+
+# Check saved images (iOS - Simulator)
+open ~/Library/Developer/CoreSimulator/Devices/[DEVICE_ID]/data/Containers/Data/Application/[APP_ID]/Documents
+
+# Check saved images (Android - Emulator)
+adb shell ls /sdcard/Pictures/Sync
+
+# Monitor orientation changes (iOS)
+# Xcode -> Debug -> View Debugging -> Capture View Hierarchy (while in fullscreen)
+
+# Monitor performance (Android)
+adb shell dumpsys gfxinfo com.sync.app
+# Look for "Janky frames" - should be < 5%
+```
+
+---
 warp mcp run puppeteer "click image thumbnail, verify lightbox opens, test navigation, close lightbox"
 
 # Test video controls
@@ -516,11 +867,16 @@ warp mcp run puppeteer "open lightbox with 3 images, navigate using arrow keys, 
 
 | Metric | Target | Verification Method |
 |--------|--------|-------------------|
-| **Image Load Time** | < 500ms | Chrome DevTools Network |
-| **Video Load Time** | < 1s | Chrome DevTools Network |
+| **Image Load Time** | < 500ms (all platforms) | Chrome DevTools (Web), Xcode Instruments (iOS), Android Profiler (Android) |
+| **Video Load Time** | < 1s (all platforms) | Chrome DevTools (Web), Xcode Instruments (iOS), Android Profiler (Android) |
 | **Lazy Loading** | 100% compliance | Intersection Observer logs |
 | **Memory Usage** | < 50MB for 20 images | Chrome DevTools Memory |
 | **Responsive Design** | Works on all breakpoints | Device Mode testing |
+| **📱 Pinch-to-Zoom Performance** | 60fps | Xcode Instruments (iOS), Android Profiler (Android) |
+| **📱 Orientation Lock** | < 200ms | Manual device testing |
+| **📱 Haptic Feedback Latency** | < 50ms | iOS/Android manual testing |
+| **📱 Image Save Success** | 100% | iOS Files app / Android Gallery verification |
+| **📱 Video Fullscreen Rotation** | Instant | Manual device testing |
 
 ---
 
@@ -545,13 +901,17 @@ npm list @radix-ui/react-dialog
 
 ## 📦 **Deliverables**
 
-1. ✅ `src/components/messaging/ImageMessage.tsx` - Image display
-2. ✅ `src/components/messaging/ImageLightbox.tsx` - Fullscreen viewer
-3. ✅ `src/components/messaging/VideoMessage.tsx` - Video player
+1. ✅ `src/components/messaging/ImageMessage.tsx` - Image display component
+2. ✅ `src/components/messaging/ImageLightbox.tsx` - Fullscreen viewer with mobile pinch-to-zoom
+3. ✅ `src/components/messaging/VideoMessage.tsx` - Video player with orientation lock
 4. ✅ Updated `MessageBubble.tsx` with media support
-5. ✅ Unit tests for all components
-6. ✅ Chrome DevTools MCP performance tests
-7. ✅ Puppeteer MCP E2E tests
+5. ✅ iOS configuration: NSPhotoLibraryAddUsageDescription permission
+6. ✅ Android configuration: Storage permissions
+7. ✅ Mobile action sheet / bottom sheet for save/share
+8. ✅ Unit tests for all components (all platforms)
+9. ✅ Mobile testing checklist (iOS + Android) - 35 test cases
+10. ✅ Chrome DevTools MCP performance tests
+11. ✅ Puppeteer MCP E2E tests
 
 ---
 
@@ -617,5 +977,5 @@ warp mcp run context7 "analyze VideoMessage for ARIA labels and keyboard navigat
 ---
 
 **Story Status:** 📋 **Ready for Implementation**  
-**Estimated Completion:** 1 day  
-**Risk Level:** Low (standard media components, established patterns)
+**Estimated Completion:** 1.5 days (includes mobile support)  
+**Risk Level:** Low (standard media components, established patterns, storage permissions)
