@@ -26,7 +26,52 @@ Enable users to share **rich media content** in messages:
 | **Compression Ratio** | Reduce file size by 60-80% |
 | **Upload Speed** | < 3s for 5MB image |
 | **Link Preview Generation** | < 1s |
-| **Coupon Share Tracking** | 100% tracked in shares table |
+|| **Coupon Share Tracking** | 100% tracked in shares table |
+
+---
+
+## 🎯 **MCP Integration Strategy**
+
+**This epic follows the global MCP routing rule** (`rule:yCm2e9oHOnrU5qbhrGa2IE`) to maximize development efficiency:
+
+### **Primary MCP Servers Used:**
+
+1. **🛢 Supabase MCP** (Heavy usage)
+   - Execute SQL queries for storage bucket management
+   - Test RLS policies on `message_attachments` table
+   - Monitor storage.objects for upload tracking
+   - Test signed URL generation
+
+2. **🌐 Chrome DevTools MCP** (Heavy usage)
+   - Debug media upload progress indicators
+   - Monitor network requests for upload failures
+   - Test image compression performance
+   - Profile thumbnail generation speed
+   - Debug link preview rendering
+
+3. **🧠 Context7 MCP** (Medium usage)
+   - Analyze upload service architecture
+   - Find security vulnerabilities in file handling
+   - Suggest compression optimization strategies
+   - Review coupon/deal link detection logic
+
+4. **🤖 Puppeteer MCP** (For testing)
+   - Automate end-to-end media upload flows
+   - Test link preview generation for various URLs
+   - Verify thumbnail display across devices
+
+5. **🎨 Shadcn MCP** (UI scaffolding)
+   - Scaffold media preview components
+   - Generate attachment cards for coupons/deals
+   - Build image gallery components
+
+**🔄 Automatic Routing:** Per global MCP rule, commands automatically route to appropriate servers based on keywords:
+- SQL/database queries → Supabase MCP
+- inspect/debug → Chrome DevTools MCP
+- explain/analyze → Context7 MCP
+- e2e test → Puppeteer MCP
+
+**📖 Each story below includes specific MCP commands for implementation.**
 
 ---
 

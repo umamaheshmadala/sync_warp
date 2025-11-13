@@ -28,7 +28,47 @@
 | **Messages Archived** | 100% of 90+ day old messages soft-deleted |
 | **Storage Cleanup** | Media files older than 90 days removed |
 | **Zero Downtime** | Cleanup runs without affecting users |
-| **Monitoring** | Logs cleanup operations with metrics |
+|| **Monitoring** | Logs cleanup operations with metrics |
+
+---
+
+## 🎯 **MCP Integration Strategy**
+
+**This epic follows the global MCP routing rule** (`rule:yCm2e9oHOnrU5qbhrGa2IE`) to maximize development efficiency:
+
+### **Primary MCP Servers Used:**
+
+1. **🛢 Supabase MCP** (Heavy usage)
+   - Deploy cleanup edge function with cron schedule
+   - Test `archive_old_messages` and `cleanup_orphaned_data` RPC functions
+   - Monitor storage bucket cleanup operations
+   - Verify cron job execution logs
+   - Test admin logging for cleanup operations
+
+2. **🧠 Context7 MCP** (Low usage)
+   - Review cleanup logic for edge cases
+   - Suggest storage optimization strategies
+   - Analyze cleanup performance impact
+
+3. **🌐 Chrome DevTools MCP** (Low usage)
+   - Debug cron job trigger issues (if web-based)
+   - Monitor edge function execution logs
+
+4. **🤖 Puppeteer MCP** (For testing)
+   - Automate cleanup verification flows
+   - Test admin dashboard cleanup metrics display
+
+5. **🎨 Shadcn MCP** (Low usage)
+   - Scaffold admin cleanup dashboard
+   - Generate cleanup logs viewer
+
+**🔄 Automatic Routing:** Per global MCP rule, commands automatically route to appropriate servers based on keywords:
+- SQL/edge functions/cron → Supabase MCP
+- explain/analyze/optimize → Context7 MCP
+- inspect/debug → Chrome DevTools MCP
+- e2e test → Puppeteer MCP
+
+**📖 Each story below includes specific MCP commands for implementation.**
 
 ---
 

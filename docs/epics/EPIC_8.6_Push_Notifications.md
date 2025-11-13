@@ -26,7 +26,52 @@ Implement **push notifications** so users never miss a message:
 | **Notification Delivery Rate** | > 95% |
 | **Notification Latency** | < 3s from message send |
 | **Token Registration Success** | > 99% |
-| **Tap-to-Conversation Navigation** | 100% |
+|| **Tap-to-Conversation Navigation** | 100% |
+
+---
+
+## 🎯 **MCP Integration Strategy**
+
+**This epic follows the global MCP routing rule** (`rule:yCm2e9oHOnrU5qbhrGa2IE`) to maximize development efficiency:
+
+### **Primary MCP Servers Used:**
+
+1. **🛢 Supabase MCP** (Heavy usage)
+   - Deploy edge functions for FCM/APNs notification sending
+   - Test RLS policies on `user_push_tokens` table
+   - Monitor token registration queries
+   - Test notification trigger logic on message insert
+   - Verify device token deduplication
+
+2. **🧠 Context7 MCP** (Medium usage)
+   - Analyze push notification service architecture
+   - Review Capacitor integration best practices
+   - Suggest notification payload optimization
+   - Find security vulnerabilities in token handling
+
+3. **🌐 Chrome DevTools MCP** (Medium usage)
+   - Debug notification permission flow
+   - Monitor FCM/APNs registration requests
+   - Test notification tap navigation
+   - Profile notification delivery latency
+
+4. **🤖 Puppeteer MCP** (For testing)
+   - Automate notification tap-to-conversation flows
+   - Test token registration across devices
+   - Verify notification display end-to-end
+
+5. **🎨 Shadcn MCP** (UI scaffolding)
+   - Scaffold notification permission UI
+   - Build notification settings page
+   - Generate in-app notification banners
+
+**🔄 Automatic Routing:** Per global MCP rule, commands automatically route to appropriate servers based on keywords:
+- SQL/database/edge functions → Supabase MCP
+- explain/analyze/review → Context7 MCP
+- inspect/debug → Chrome DevTools MCP
+- e2e test → Puppeteer MCP
+
+**📖 Each story below includes specific MCP commands for implementation.**
 
 ---
 

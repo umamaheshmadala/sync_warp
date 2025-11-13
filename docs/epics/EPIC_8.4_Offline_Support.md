@@ -26,7 +26,51 @@ Enable seamless messaging even when users are offline:
 | **Sync Success Rate** | > 99% |
 | **Sync Latency** | < 2s after reconnection |
 | **Cache Hit Rate** | > 90% for recent messages |
-| **Conflict Resolution** | Zero duplicate messages |
+|| **Conflict Resolution** | Zero duplicate messages |
+
+---
+
+## 🎯 **MCP Integration Strategy**
+
+**This epic follows the global MCP routing rule** (`rule:yCm2e9oHOnrU5qbhrGa2IE`) to maximize development efficiency:
+
+### **Primary MCP Servers Used:**
+
+1. **🌐 Chrome DevTools MCP** (Heavy usage)
+   - Simulate offline/online network conditions
+   - Test message queue behavior during reconnection
+   - Monitor IndexedDB storage usage
+   - Profile sync performance after reconnection
+   - Debug conflict resolution logic
+
+2. **🧠 Context7 MCP** (Heavy usage)
+   - Analyze offline queue service architecture
+   - Review IndexedDB schema and indexing strategies
+   - Suggest conflict resolution algorithms
+   - Find race condition vulnerabilities in sync logic
+
+3. **🛢 Supabase MCP** (Medium usage)
+   - Test RLS policies during sync operations
+   - Monitor message deduplication queries
+   - Verify realtime subscription recovery
+
+4. **🤖 Puppeteer MCP** (For testing)
+   - Automate offline → online transition flows
+   - Test message sync across multiple tabs
+   - Verify conflict resolution end-to-end
+
+5. **🎨 Shadcn MCP** (UI scaffolding)
+   - Scaffold offline indicator components
+   - Build sync status badges
+   - Generate retry/failed message UI
+
+**🔄 Automatic Routing:** Per global MCP rule, commands automatically route to appropriate servers based on keywords:
+- inspect/debug/network → Chrome DevTools MCP
+- explain/analyze/refactor → Context7 MCP
+- SQL/database queries → Supabase MCP
+- e2e test → Puppeteer MCP
+
+**📖 Each story below includes specific MCP commands for implementation.**
 
 ---
 

@@ -27,7 +27,54 @@ Implement **game-changing advanced features** that differentiate SynC from compe
 | **Edit Success Rate** | > 99% within 15min window |
 | **Delete Success Rate** | > 99% within 15min window |
 | **Search Performance** | < 200ms for keyword search |
-| **Reaction Latency** | < 500ms |
+|| **Reaction Latency** | < 500ms |
+
+---
+
+## 🎯 **MCP Integration Strategy**
+
+**This epic follows the global MCP routing rule** (`rule:yCm2e9oHOnrU5qbhrGa2IE`) to maximize development efficiency:
+
+### **Primary MCP Servers Used:**
+
+1. **🛢 Supabase MCP** (Heavy usage)
+   - Test edit/delete RLS policies and 15-minute window validation
+   - Monitor read receipt tracking queries
+   - Test message reaction storage and deduplication
+   - Verify search performance with full-text indexes
+   - Deploy edge functions for reaction aggregation
+
+2. **🧠 Context7 MCP** (Medium usage)
+   - Analyze edit/delete service architecture
+   - Review reaction system implementation patterns
+   - Suggest search optimization strategies
+   - Find race condition vulnerabilities in edit conflicts
+
+3. **🌐 Chrome DevTools MCP** (Medium usage)
+   - Debug read receipt UI rendering
+   - Monitor reaction animation performance
+   - Profile search query latency
+   - Test edit/delete UI state transitions
+
+4. **🤖 Puppeteer MCP** (For testing)
+   - Automate edit/delete flows with time window validation
+   - Test read receipts across multiple users
+   - Verify reaction deduplication end-to-end
+   - Test search functionality across edge cases
+
+5. **🎨 Shadcn MCP** (UI scaffolding)
+   - Scaffold reaction picker components
+   - Build edit/delete action menus
+   - Generate search input with autocomplete
+   - Create read receipt indicator badges
+
+**🔄 Automatic Routing:** Per global MCP rule, commands automatically route to appropriate servers based on keywords:
+- SQL/database/RLS queries → Supabase MCP
+- explain/analyze/refactor → Context7 MCP
+- inspect/debug → Chrome DevTools MCP
+- e2e test → Puppeteer MCP
+
+**📖 Each story below includes specific MCP commands for implementation.**
 
 ---
 

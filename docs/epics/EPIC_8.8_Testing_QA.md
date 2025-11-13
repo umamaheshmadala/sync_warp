@@ -26,7 +26,54 @@ Ensure **bullet-proof quality** of the messaging system through comprehensive te
 | **Unit Test Pass Rate** | 100% |
 | **Integration Test Pass Rate** | 100% |
 | **E2E Test Pass Rate** | 100% |
-| **Critical Bugs** | 0 |
+|| **Critical Bugs** | 0 |
+
+---
+
+## 🎯 **MCP Integration Strategy**
+
+**This epic follows the global MCP routing rule** (`rule:yCm2e9oHOnrU5qbhrGa2IE`) to maximize development efficiency:
+
+### **Primary MCP Servers Used:**
+
+1. **🤖 Puppeteer MCP** (Heavy usage)
+   - Automate all E2E test flows
+   - Test critical user journeys end-to-end
+   - Verify cross-browser compatibility
+   - Generate screenshots for test documentation
+   - Record test execution videos
+
+2. **🛢 Supabase MCP** (Heavy usage)
+   - Test all RLS policies with different user contexts
+   - Verify edge function behavior under load
+   - Test database triggers and constraints
+   - Monitor query performance during tests
+   - Execute integration test SQL scripts
+
+3. **🧠 Context7 MCP** (Heavy usage)
+   - Analyze test coverage gaps
+   - Suggest additional test scenarios
+   - Review test architecture and patterns
+   - Find untested edge cases
+   - Optimize test performance
+
+4. **🌐 Chrome DevTools MCP** (Medium usage)
+   - Debug failing E2E tests
+   - Monitor network requests during tests
+   - Profile test execution performance
+   - Capture console errors during tests
+
+5. **🎨 Shadcn MCP** (Low usage)
+   - Scaffold test utility components
+   - Generate mock data providers
+
+**🔄 Automatic Routing:** Per global MCP rule, commands automatically route to appropriate servers based on keywords:
+- e2e/automated test → Puppeteer MCP
+- SQL/RLS/database test → Supabase MCP
+- explain/analyze/coverage → Context7 MCP
+- inspect/debug test → Chrome DevTools MCP
+
+**📖 Each story below includes specific MCP commands for implementation.**
 
 ---
 

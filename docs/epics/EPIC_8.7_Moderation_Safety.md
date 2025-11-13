@@ -27,7 +27,55 @@ Implement **safety and moderation features** to protect users:
 | **Block Success Rate** | 100% |
 | **Report Submission Rate** | 100% |
 | **Link Validation Rate** | 100% |
-| **False Positive Rate** | < 5% |
+|| **False Positive Rate** | < 5% |
+
+---
+
+## 🎯 **MCP Integration Strategy**
+
+**This epic follows the global MCP routing rule** (`rule:yCm2e9oHOnrU5qbhrGa2IE`) to maximize development efficiency:
+
+### **Primary MCP Servers Used:**
+
+1. **🛢 Supabase MCP** (Heavy usage)
+   - Test RLS policies on `blocked_users` and `message_reports` tables
+   - Deploy edge functions for spam detection algorithms
+   - Monitor report submission queries
+   - Verify link validation logic
+   - Test rate limiting enforcement
+
+2. **🧠 Context7 MCP** (Heavy usage)
+   - Analyze spam detection algorithms
+   - Review blocking service architecture
+   - Suggest phishing detection patterns
+   - Find security vulnerabilities in report handling
+   - Optimize rate limiting strategies
+
+3. **🌐 Chrome DevTools MCP** (Medium usage)
+   - Debug block/unblock UI interactions
+   - Monitor report submission forms
+   - Test rate limiting feedback UX
+   - Profile spam detection performance
+
+4. **🤖 Puppeteer MCP** (For testing)
+   - Automate block/unblock flows
+   - Test report submission end-to-end
+   - Verify spam detection across edge cases
+   - Test link validation with various URLs
+
+5. **🎨 Shadcn MCP** (UI scaffolding)
+   - Scaffold block user confirmation dialogs
+   - Build report submission forms
+   - Generate admin moderation dashboard
+   - Create spam warning banners
+
+**🔄 Automatic Routing:** Per global MCP rule, commands automatically route to appropriate servers based on keywords:
+- SQL/database/RLS queries → Supabase MCP
+- explain/analyze/security → Context7 MCP
+- inspect/debug → Chrome DevTools MCP
+- e2e test → Puppeteer MCP
+
+**📖 Each story below includes specific MCP commands for implementation.**
 
 ---
 
