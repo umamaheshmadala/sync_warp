@@ -10,26 +10,35 @@
 
 ## 🎯 **Story Goal**
 
-Implement **image upload with compression** to enable users to share photos in messages. Images are automatically compressed to reduce bandwidth, thumbnails are generated for quick loading, and files are uploaded to Supabase Storage with proper RLS policies.
+Implement **image upload with compression** to enable users to share photos in messages **on web browsers, iOS, and Android native apps**. Images are automatically compressed to reduce bandwidth, thumbnails are generated for quick loading, and files are uploaded to Supabase Storage with proper RLS policies.
+
+**Platform Support:**
+- ✅ **Web**: Browser file picker (`<input type="file">`)
+- ✅ **iOS**: Capacitor Camera plugin (native camera + photo library)
+- ✅ **Android**: Capacitor Camera plugin (native camera + photo library)
 
 ---
 
 ## 📖 **User Stories**
 
 ### As a user, I want to:
-1. Select and upload images from my device
-2. See a preview of the image before sending
-3. Have images automatically compressed to save bandwidth
-4. See upload progress while image is being sent
-5. Have the image appear in the conversation once uploaded
+1. **Web**: Select images from file picker OR drag-and-drop
+2. **iOS/Android**: Capture photo with camera OR select from photo library
+3. See a preview of the image before sending
+4. Have images automatically compressed to save bandwidth
+5. See upload progress while image is being sent
+6. Have the image appear in the conversation once uploaded
 
 ### Acceptance Criteria:
-- ✅ Images compressed to < 1MB (60-80% file size reduction)
-- ✅ Thumbnails generated (max 300px) for previews
-- ✅ Upload completes in < 3s for 5MB image
-- ✅ Upload success rate > 99%
+- ✅ **Web**: File picker works for JPG, PNG, WEBP, GIF
+- ✅ **iOS**: Camera + photo library access with permissions
+- ✅ **Android**: Camera + photo library access with permissions
+- ✅ Images compressed to < 1MB (60-80% file size reduction) on **all platforms**
+- ✅ Thumbnails generated (max 300px) for previews on **all platforms**
+- ✅ Upload completes in < 3s for 5MB image on **all platforms**
+- ✅ Upload success rate > 99% on **all platforms**
 - ✅ Progress indicator shows during upload
-- ✅ Supports common formats: JPG, PNG, WEBP, GIF
+- ✅ Supports common formats: JPG, PNG, WEBP, GIF (web + mobile)
 
 ---
 
@@ -37,10 +46,33 @@ Implement **image upload with compression** to enable users to share photos in m
 
 ### **Phase 1: Install Dependencies & Setup** (0.5 days)
 
-#### Task 1.1: Install Image Compression Library
+#### Task 1.1: Install Image Compression Library & Capacitor Plugins
 ```bash
+# Image compression (works on web + mobile)
 npm install browser-image-compression
 npm install --save-dev @types/browser-image-compression
+
+# 📱 Capacitor plugins for mobile
+npm install @capacitor/camera @capacitor/filesystem
+
+# Sync native projects
+npx cap sync
+```
+
+#### Task 1.2: Configure Mobile Permissions
+
+**iOS (ios/App/Info.plist):**
+```xml
+<key>NSCameraUsageDescription</key>
+<string>SynC needs camera access to capture and share photos in messages</string>
+<key>NSPhotoLibraryUsageDescription</key>
+<string>SynC needs photo library access to share images in messages</string>
+```
+
+**Android (android/app/src/main/AndroidManifest.xml):**
+```xml
+<uses-permission android:name="android.permission.CAMERA" />
+<uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
 ```
 
 #### Task 1.2: Verify Storage Bucket Setup
@@ -61,6 +93,8 @@ warp mcp run supabase "execute_sql SELECT * FROM storage.objects WHERE bucket_id
 // src/services/mediaUploadService.ts
 import { supabase } from '../lib/supabase'
 import imageCompression from 'browser-image-compression'
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera'  // 📱 Mobile
+import { Capacitor } from '@capacitor/core'
 
 interface UploadProgress {
   loaded: number
@@ -72,8 +106,49 @@ class MediaUploadService {
   private uploadCallbacks: Map<string, (progress: UploadProgress) => void> = new Map()
 
   /**
+   * 📱 Platform-conditional image picker
+   * Web: Returns File from input
+   * iOS/Android: Opens native camera or photo library
+   */
+  async pickImage(source: 'camera' | 'gallery' = 'gallery'): Promise<File | null> {
+    if (Capacitor.isNativePlatform()) {
+      // MOBILE: Use Capacitor Camera plugin
+      try {
+        const photo = await Camera.getPhoto({
+          resultType: CameraResultType.Uri,
+          source: source === 'camera' ? CameraSource.Camera : CameraSource.Photos,
+          quality: 90,
+          allowEditing: true,
+          width: 1920,
+          height: 1920
+        })
+        
+        // Convert URI to File
+        return await this.uriToFile(photo.webPath!, photo.format)
+      } catch (error) {
+        console.error('❌ Camera access failed:', error)
+        return null
+      }
+    } else {
+      // WEB: Return null, handled by file input
+      return null
+    }
+  }
+  
+  /**
+   * 📱 MOBILE ONLY: Convert native file URI to File object
+   */
+  private async uriToFile(uri: string, format: string): Promise<File> {
+    const response = await fetch(uri)
+    const blob = await response.blob()
+    const fileName = `capture-${Date.now()}.${format}`
+    return new File([blob], fileName, { type: `image/${format}` })
+  }
+
+  /**
    * Compress image before upload
    * Target: 60-80% file size reduction
+   * Works on BOTH web and mobile
    */
   async compressImage(file: File): Promise<File> {
     console.log('🔄 Compressing image:', file.name, 'Original size:', file.size)
@@ -81,7 +156,7 @@ class MediaUploadService {
     const options = {
       maxSizeMB: 1, // Target 1MB max
       maxWidthOrHeight: 1920, // Max dimension
-      useWebWorker: true, // Use web worker for better performance
+      useWebWorker: !Capacitor.isNativePlatform(), // Disable web worker on mobile
       fileType: file.type, // Maintain original format
       initialQuality: 0.8 // Start with 80% quality
     }
@@ -100,6 +175,7 @@ class MediaUploadService {
 
   /**
    * Generate thumbnail (max 300px)
+   * Works on BOTH web and mobile
    */
   async generateThumbnail(file: File): Promise<Blob> {
     console.log('🔄 Generating thumbnail for:', file.name)
@@ -107,7 +183,7 @@ class MediaUploadService {
     const options = {
       maxSizeMB: 0.1, // 100KB max for thumbnail
       maxWidthOrHeight: 300,
-      useWebWorker: true
+      useWebWorker: !Capacitor.isNativePlatform()  // 📱 Disable on mobile
     }
 
     try {
@@ -414,7 +490,7 @@ export function ImageUploadButton({
 
 ## 🧪 **Testing Checklist**
 
-### Unit Tests
+### Unit Tests (All Platforms)
 - [ ] Test image compression reduces file size by 60-80%
 - [ ] Test thumbnail generation creates max 300px image
 - [ ] Test upload with valid image succeeds
@@ -422,6 +498,8 @@ export function ImageUploadButton({
 - [ ] Test upload with oversized file fails
 - [ ] Test signed URL generation works
 - [ ] Test file deletion works
+- [ ] 📱 Test `pickImage()` returns null on web (file input used instead)
+- [ ] 📱 Test `uriToFile()` converts Capacitor URI to File correctly
 
 ### Integration Tests with Supabase MCP
 ```bash
@@ -445,11 +523,81 @@ warp mcp run supabase "execute_sql
 
 ### Performance Tests with Chrome DevTools MCP
 ```bash
-# Monitor upload performance
+# Monitor upload performance (Web)
 warp mcp run chrome-devtools "open DevTools Network tab, upload 5MB image, measure upload time"
 
-# Check compression performance
+# Check compression performance (Web)
 warp mcp run chrome-devtools "open Performance tab, profile image compression, verify < 2s processing time"
+```
+
+### 📱 Mobile Testing (iOS/Android)
+
+**Manual Testing Required:**
+
+#### iOS Testing (Xcode Simulator + Physical Device)
+1. **Permissions Test:**
+   - [ ] App requests camera permission on first use
+   - [ ] App requests photo library permission on first use
+   - [ ] Permission prompts show correct usage descriptions
+   
+2. **Camera Capture Test:**
+   - [ ] Tap image button → Opens native camera
+   - [ ] Capture photo → Shows preview/edit screen
+   - [ ] Accept photo → Uploads successfully
+   - [ ] Image appears in conversation
+   
+3. **Photo Library Test:**
+   - [ ] Long-press image button → Shows camera/gallery options
+   - [ ] Select "Photo Library" → Opens native photo picker
+   - [ ] Select photo → Uploads successfully
+   - [ ] Image appears in conversation
+   
+4. **Compression Test:**
+   - [ ] Upload 10MB photo → Compressed to < 1MB
+   - [ ] Verify upload time < 3s on WiFi
+   - [ ] Verify upload time < 5s on cellular
+
+#### Android Testing (Emulator + Physical Device)
+1. **Permissions Test:**
+   - [ ] App requests camera permission on first use
+   - [ ] App requests storage/media permission on first use (Android 13+)
+   - [ ] Permission rationale shown before request
+   
+2. **Camera Capture Test:**
+   - [ ] Tap image button → Opens native camera
+   - [ ] Capture photo → Shows preview
+   - [ ] Accept photo → Uploads successfully
+   - [ ] Image appears in conversation
+   
+3. **Photo Library Test:**
+   - [ ] Long-press image button → Shows bottom sheet with options
+   - [ ] Select "Gallery" → Opens native photo picker
+   - [ ] Select photo → Uploads successfully
+   - [ ] Image appears in conversation
+   
+4. **Compression Test:**
+   - [ ] Upload 10MB photo → Compressed to < 1MB
+   - [ ] Verify upload time < 3s on WiFi
+   - [ ] Verify upload time < 5s on cellular
+
+#### Cross-Platform Edge Cases
+- [ ] 📱 **Network switching**: Upload starts on WiFi, switches to cellular → Upload completes
+- [ ] 📱 **App backgrounding**: Upload in progress, user switches apps → Upload continues/completes
+- [ ] 📱 **Low storage**: Device storage < 100MB → Shows error before upload
+- [ ] 📱 **Camera unavailable**: Simulator without camera → Falls back to photo library
+- [ ] 📱 **Permission denied**: User denies camera → Shows settings prompt
+
+**Testing Commands:**
+```bash
+# Build and run on iOS simulator
+npx cap run ios
+
+# Build and run on Android emulator
+npx cap run android
+
+# Open native IDEs for debugging
+npx cap open ios
+npx cap open android
 ```
 
 ---
@@ -458,11 +606,17 @@ warp mcp run chrome-devtools "open Performance tab, profile image compression, v
 
 | Metric | Target | Verification Method |
 |--------|--------|-------------------|
-| **Compression Ratio** | 60-80% reduction | Manual testing with various images |
-| **Upload Time** | < 3s for 5MB | Chrome DevTools Network tab |
-| **Upload Success Rate** | > 99% | Production monitoring |
-| **Thumbnail Generation** | < 1s | Chrome DevTools Performance |
-| **Final Image Size** | < 1MB | Verify compressed file size |
+| **Compression Ratio (Web)** | 60-80% reduction | Chrome DevTools |
+| **Compression Ratio (iOS)** | 60-80% reduction | Xcode Instruments |
+| **Compression Ratio (Android)** | 60-80% reduction | Android Studio Profiler |
+| **Upload Time (Web, WiFi)** | < 3s for 5MB | Chrome DevTools Network tab |
+| **Upload Time (Mobile, WiFi)** | < 3s for 5MB | Manual testing |
+| **Upload Time (Mobile, Cellular)** | < 5s for 5MB | Manual testing on device |
+| **Upload Success Rate** | > 99% (all platforms) | Production monitoring |
+| **Thumbnail Generation** | < 1s (all platforms) | Performance profiling |
+| **Final Image Size** | < 1MB (all platforms) | Verify compressed file size |
+| **Camera Permission Grant** | 100% if granted | iOS/Android analytics |
+| **Native Picker Launch** | < 500ms (iOS/Android) | Manual testing |
 
 ---
 
