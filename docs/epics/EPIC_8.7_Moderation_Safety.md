@@ -9,13 +9,45 @@
 
 ## 🎯 **Epic Goal**
 
-Implement **safety and moderation features** to protect users:
+Implement **safety and moderation features** to protect users **on web browsers, iOS, and Android native apps**:
 - Block and unblock users
 - Report inappropriate messages
 - Detect and filter spam messages
 - Validate links for phishing/malware
 - Rate limiting for message sending
+- **Native confirmation dialogs on iOS/Android** (Capacitor Dialog plugin)
 - Admin moderation dashboard (optional for v2)
+
+---
+
+## 📱 **Platform Support**
+
+**Target Platforms:**
+- ✅ **Web Browsers** (Chrome, Firefox, Safari, Edge)
+- ✅ **iOS Native App** (via Capacitor framework)
+- ✅ **Android Native App** (via Capacitor framework)
+
+**Cross-Platform Safety Features:**
+
+| Feature | Web Implementation | iOS/Android Implementation |
+|---------|-------------------|---------------------------|
+| **Block Confirmation** | Browser dialog | `@capacitor/dialog` - Native alert |
+| **Report Form** | Web form | Native action sheet with predefined reasons |
+| **Spam Warnings** | Banner/toast | Native notification banner |
+| **Link Validation** | Backend service (same) | Backend service (same) |
+
+**Required Capacitor Plugins:**
+```json
+{
+  "@capacitor/dialog": "^5.0.0"  // Native dialogs for confirmations
+}
+```
+
+**Mobile UX Enhancements:**
+- **iOS**: Native UIAlertController for block confirmations
+- **Android**: Material Design AlertDialog for confirmations
+- **Long-press gestures** to access block/report options on mobile
+- **Native action sheets** for report reason selection (more intuitive than dropdowns)
 
 ---
 
@@ -23,10 +55,11 @@ Implement **safety and moderation features** to protect users:
 
 | Objective | Target |
 |-----------|--------|
-| **Spam Detection Accuracy** | > 90% |
-| **Block Success Rate** | 100% |
-| **Report Submission Rate** | 100% |
-| **Link Validation Rate** | 100% |
+| **Spam Detection Accuracy** | > 90% (all platforms) |
+| **Block Success Rate** | 100% (all platforms) |
+| **Report Submission Rate** | 100% (all platforms) |
+| **Link Validation Rate** | 100% (all platforms) |
+| **Native Dialog UX (Mobile)** | Uses native alerts/action sheets on iOS/Android |
 || **False Positive Rate** | < 5% |
 
 ---

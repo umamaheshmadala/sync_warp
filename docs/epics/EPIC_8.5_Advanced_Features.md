@@ -9,13 +9,46 @@
 
 ## 🎯 **Epic Goal**
 
-Implement **game-changing advanced features** that differentiate SynC from competitors:
+Implement **game-changing advanced features** that differentiate SynC from competitors **on web browsers, iOS, and Android native apps**:
 - ✅ **Read receipts** (seen by 👀)
 - ✏️ **Edit messages** (15-minute window)
 - 🗑️ **Delete messages** (15-minute window)
 - 🔍 **Search messages** within conversations
 - ❤️ **Message reactions** (emoji responses)
+- 📱 **Native haptic feedback** on iOS/Android for reactions and interactions
 - 📌 **Pin important messages** (optional for v2)
+
+---
+
+## 📱 **Platform Support**
+
+**Target Platforms:**
+- ✅ **Web Browsers** (Chrome, Firefox, Safari, Edge)
+- ✅ **iOS Native App** (via Capacitor framework)
+- ✅ **Android Native App** (via Capacitor framework)
+
+**Cross-Platform Advanced Features:**
+
+| Feature | Web Implementation | iOS/Android Implementation |
+|---------|-------------------|---------------------------|
+| **Read Receipts** | Visual indicators | Visual indicators + haptic feedback |
+| **Edit/Delete UI** | Context menu | Long-press gesture + native action sheet |
+| **Message Search** | Text input search | Native search bar with keyboard integration |
+| **Reactions** | Click/hover UI | Tap + hold + native haptic feedback |
+| **Haptic Feedback** | Not available | `@capacitor/haptics` - Native vibration patterns |
+
+**Required Capacitor Plugins:**
+```json
+{
+  "@capacitor/haptics": "^5.0.0"  // Native haptic feedback (iOS/Android)
+}
+```
+
+**Mobile UX Enhancements:**
+- **iOS**: Light haptic feedback on reactions (UIImpactFeedbackGenerator)
+- **Android**: Vibration patterns for reactions (VibrationEffect)
+- **Long-press gestures** for edit/delete on mobile (more intuitive than web context menu)
+- **Native action sheets** for edit/delete confirmations on mobile
 
 ---
 
@@ -23,11 +56,13 @@ Implement **game-changing advanced features** that differentiate SynC from compe
 
 | Objective | Target |
 |-----------|--------|
-| **Read Receipt Accuracy** | 100% |
-| **Edit Success Rate** | > 99% within 15min window |
-| **Delete Success Rate** | > 99% within 15min window |
-| **Search Performance** | < 200ms for keyword search |
-|| **Reaction Latency** | < 500ms |
+| **Read Receipt Accuracy** | 100% (all platforms) |
+| **Edit Success Rate** | > 99% within 15min window (all platforms) |
+| **Delete Success Rate** | > 99% within 15min window (all platforms) |
+| **Search Performance** | < 200ms for keyword search (all platforms) |
+| **Reaction Latency** | < 500ms (all platforms) |
+| **Haptic Feedback (Mobile)** | Triggers on reaction/edit/delete (iOS/Android) |
+|| **Long-press Gesture (Mobile)** | Activates edit/delete menu on iOS/Android |
 
 ---
 

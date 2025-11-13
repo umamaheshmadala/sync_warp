@@ -9,12 +9,45 @@
 
 ## 🎯 **Epic Goal**
 
-Enable seamless messaging even when users are offline:
-- Queue messages locally using IndexedDB
+Enable seamless messaging even when users are offline **on web browsers, iOS, and Android native apps**:
+- Queue messages locally using IndexedDB (web) or Capacitor Preferences (mobile)
 - Sync pending messages when back online
 - Handle conflict resolution (e.g., duplicate sends)
 - Display offline indicators
 - Cache message history for faster loading
+- **Native network detection on iOS/Android** (Capacitor Network API)
+
+---
+
+## 📱 **Platform Support**
+
+**Target Platforms:**
+- ✅ **Web Browsers** (Chrome, Firefox, Safari, Edge)
+- ✅ **iOS Native App** (via Capacitor framework)
+- ✅ **Android Native App** (via Capacitor framework)
+
+**Cross-Platform Offline Strategy:**
+
+| Feature | Web Implementation | iOS/Android Implementation |
+|---------|-------------------|---------------------------|
+| **Message Queue Storage** | IndexedDB (Dexie.js) | `@capacitor/preferences` - Key/value storage |
+| **Network Detection** | `navigator.onLine` + `online`/`offline` events | `@capacitor/network` - Network status API |
+| **Message Cache** | IndexedDB | Capacitor Preferences (JSON serialized) |
+| **Sync Trigger** | Browser online event | Capacitor Network plugin listener |
+
+**Required Capacitor Plugins:**
+```json
+{
+  "@capacitor/preferences": "^5.0.0",  // Key-value storage for offline queue
+  "@capacitor/network": "^5.0.0"       // Network status detection
+}
+```
+
+**Key Differences:**
+- **Web**: Uses IndexedDB for structured offline storage (more powerful)
+- **Mobile**: Uses Capacitor Preferences (simpler key-value storage, better iOS/Android integration)
+- **Mobile**: More reliable network status detection via native APIs
+- **Mobile**: Handles background/foreground transitions (sync on app resume)
 
 ---
 
@@ -22,11 +55,13 @@ Enable seamless messaging even when users are offline:
 
 | Objective | Target |
 |-----------|--------|
-| **Offline Message Queue** | 100% reliability |
-| **Sync Success Rate** | > 99% |
-| **Sync Latency** | < 2s after reconnection |
+| **Offline Message Queue (Web)** | 100% reliability via IndexedDB |
+| **Offline Message Queue (iOS/Android)** | 100% reliability via Capacitor Preferences |
+| **Sync Success Rate** | > 99% (all platforms) |
+| **Sync Latency** | < 2s after reconnection (all platforms) |
+| **Network Detection Accuracy** | 100% on iOS/Android (native API) |
 | **Cache Hit Rate** | > 90% for recent messages |
-|| **Conflict Resolution** | Zero duplicate messages |
+|| **Conflict Resolution** | Zero duplicate messages (all platforms) |
 
 ---
 
@@ -83,6 +118,10 @@ Enable seamless messaging even when users are offline:
 ```typescript
 // src/services/offlineQueueService.ts
 import Dexie, { Table } from 'dexie'
+import { Preferences } from '@capacitor/preferences'  // 📱 Mobile storage
+import { Network } from '@capacitor/network'         // 📱 Mobile network detection
+import { App } from '@capacitor/app'                 // 📱 Mobile app state
+import { Capacitor } from '@capacitor/core'
 import { messagingService } from './messagingService'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -110,26 +149,58 @@ class OfflineQueueDB extends Dexie {
 }
 
 class OfflineQueueService {
-  private db: OfflineQueueDB
+  private db: OfflineQueueDB | null = null  // Web only
   private isSyncing = false
   private retryDelay = 2000 // 2 seconds
+  private QUEUE_KEY = 'offline_message_queue'  // Mobile storage key
 
   constructor() {
-    this.db = new OfflineQueueDB()
-    this.initEventListeners()
+    // 📱 Platform-conditional initialization
+    if (Capacitor.isNativePlatform()) {
+      // MOBILE: Use Capacitor plugins
+      this.initMobileListeners()
+    } else {
+      // WEB: Use IndexedDB
+      this.db = new OfflineQueueDB()
+      this.initWebListeners()
+    }
   }
 
   /**
-   * Listen for online/offline events
+   * WEB ONLY: Listen for browser online/offline events
    */
-  private initEventListeners() {
+  private initWebListeners() {
     window.addEventListener('online', () => {
-      console.log('🔄 Back online, syncing pending messages...')
+      console.log('🔄 Back online (web), syncing pending messages...')
       this.syncPendingMessages()
     })
 
     window.addEventListener('offline', () => {
-      console.log('📴 Offline mode activated')
+      console.log('📴 Offline mode activated (web)')
+    })
+  }
+  
+  /**
+   * 📱 MOBILE ONLY: Listen for native network events
+   */
+  private async initMobileListeners() {
+    // Network status changes
+    Network.addListener('networkStatusChange', async (status) => {
+      console.log(`📱 Network status changed: ${status.connected ? 'online' : 'offline'}`)
+      if (status.connected) {
+        await this.syncPendingMessages()
+      }
+    })
+    
+    // App state changes (sync when app comes to foreground)
+    App.addListener('appStateChange', async ({ isActive }) => {
+      if (isActive) {
+        console.log('📱 App resumed, checking network...')
+        const status = await Network.getStatus()
+        if (status.connected) {
+          await this.syncPendingMessages()
+        }
+      }
     })
   }
 

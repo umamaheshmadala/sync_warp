@@ -9,12 +9,41 @@
 
 ## 🎯 **Epic Goal**
 
-Ensure **bullet-proof quality** of the messaging system through comprehensive testing:
+Ensure **bullet-proof quality** of the messaging system through comprehensive testing **on web browsers, iOS, and Android native apps**:
 - **Unit tests** for all services/hooks
 - **Integration tests** for RLS policies, API endpoints
-- **E2E tests** with Puppeteer MCP for critical user flows
+- **E2E tests** with Puppeteer MCP for critical user flows (web + mobile)
+- **Capacitor-specific tests** for native plugin integrations
+- **Device testing** on physical iOS/Android devices
 - **Load testing** (optional for MVP)
 - Achieve **> 85% code coverage**
+
+---
+
+## 📱 **Platform Support**
+
+**Target Platforms:**
+- ✅ **Web Browsers** (Chrome, Firefox, Safari, Edge)
+- ✅ **iOS Native App** (via Capacitor framework)
+- ✅ **Android Native App** (via Capacitor framework)
+
+**Cross-Platform Testing Strategy:**
+
+| Test Type | Web Testing | iOS/Android Testing |
+|-----------|-------------|--------------------|
+| **Unit Tests** | Vitest + React Testing Library | Same (runs in Node.js) |
+| **Integration Tests** | Supabase MCP for RLS/SQL | Same + Capacitor plugin mocks |
+| **E2E Tests** | Puppeteer (Chrome) | Capacitor + Appium (iOS/Android simulators) |
+| **Device Testing** | BrowserStack (optional) | Physical iOS/Android devices |
+| **Plugin Testing** | N/A | Test Camera, Filesystem, Network, Haptics |
+
+**Mobile Testing Requirements:**
+- **iOS Simulator** testing (Xcode required)
+- **Android Emulator** testing (Android Studio required)
+- **Physical device** testing for camera, permissions, haptics
+- **Platform-specific integration tests** for Capacitor plugins
+- **Background/foreground transition** testing
+- **Network switching** testing (WiFi ↔ Cellular)
 
 ---
 
@@ -22,11 +51,14 @@ Ensure **bullet-proof quality** of the messaging system through comprehensive te
 
 | Objective | Target |
 |-----------|--------|
-| **Code Coverage** | > 85% |
-| **Unit Test Pass Rate** | 100% |
-| **Integration Test Pass Rate** | 100% |
-| **E2E Test Pass Rate** | 100% |
-|| **Critical Bugs** | 0 |
+| **Code Coverage** | > 85% (all platforms) |
+| **Unit Test Pass Rate** | 100% (all platforms) |
+| **Integration Test Pass Rate** | 100% (all platforms) |
+| **E2E Test Pass Rate (Web)** | 100% |
+| **E2E Test Pass Rate (iOS)** | 100% on simulator + physical device |
+| **E2E Test Pass Rate (Android)** | 100% on emulator + physical device |
+| **Capacitor Plugin Tests** | 100% coverage for Camera, Filesystem, Network, Haptics |
+|| **Critical Bugs** | 0 (all platforms) |
 
 ---
 

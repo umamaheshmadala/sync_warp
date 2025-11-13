@@ -12,11 +12,57 @@
 
 **Automate** the execution of message retention policies to ensure:
 - Messages older than 90 days are automatically archived
-- Storage costs remain predictable
+- Storage costs remain predictable (cloud storage + mobile local cache)
 - Database performance doesn't degrade over time
 - Compliance with stated retention policy (Instagram/WhatsApp standard)
+- **Mobile app local cache cleanup** (Capacitor Preferences + Filesystem)
 
 **Key Deliverable:** A scheduled Edge Function that runs daily to clean up old messages and orphaned data.
+
+---
+
+## 📱 **Platform Support**
+
+**Target Platforms:**
+- ✅ **Web Browsers** (Chrome, Firefox, Safari, Edge)
+- ✅ **iOS Native App** (via Capacitor framework)
+- ✅ **Android Native App** (via Capacitor framework)
+
+**Cross-Platform Cleanup Strategy:**
+
+| Cleanup Target | Web | iOS/Android |
+|----------------|-----|-------------|
+| **Remote Database Messages** | Edge Function (same) | Edge Function (same) |
+| **Remote Storage Bucket** | Edge Function (same) | Edge Function (same) |
+| **Local Cache** | IndexedDB cleanup | Capacitor Preferences cleanup |
+| **Local Media Files** | N/A (web doesn't cache files) | Capacitor Filesystem cleanup |
+
+**Mobile-Specific Considerations:**
+- **iOS/Android cache grows over time** (IndexedDB/Preferences + local files)
+- **Background task limitations**: iOS/Android don't support true background jobs
+- **Cleanup triggers**: App launch, user-initiated, or foreground scheduling
+- **Storage permission**: Android requires WRITE_EXTERNAL_STORAGE (API < 29)
+
+**Mobile Cache Cleanup Approach:**
+```typescript
+// Run cleanup on app launch or manually
+async function cleanupMobileCache() {
+  // Clean Capacitor Preferences (offline queue older than 7 days)
+  const { keys } = await Preferences.keys()
+  for (const key of keys) {
+    if (key.startsWith('offline_')) {
+      // Check timestamp and delete if old
+    }
+  }
+  
+  // Clean Filesystem (cached media older than 30 days)
+  const files = await Filesystem.readdir({
+    path: 'message-cache',
+    directory: Directory.Cache
+  })
+  // Delete old files
+}
+```
 
 ---
 
@@ -24,11 +70,13 @@
 
 | Objective | Target |
 |-----------|--------|
-| **Cleanup Execution** | Runs daily at 2 AM UTC |
-| **Messages Archived** | 100% of 90+ day old messages soft-deleted |
-| **Storage Cleanup** | Media files older than 90 days removed |
+| **Cleanup Execution (Backend)** | Runs daily at 2 AM UTC |
+| **Messages Archived (Database)** | 100% of 90+ day old messages soft-deleted |
+| **Storage Cleanup (Cloud)** | Media files older than 90 days removed |
+| **Mobile Cache Cleanup** | Runs on app launch (iOS/Android) |
+| **Local Cache Size** | < 100MB per user on mobile |
 | **Zero Downtime** | Cleanup runs without affecting users |
-|| **Monitoring** | Logs cleanup operations with metrics |
+|| **Monitoring** | Logs cleanup operations with metrics (all platforms) |
 
 ---
 
