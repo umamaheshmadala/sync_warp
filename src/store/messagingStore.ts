@@ -1,0 +1,454 @@
+// src/store/messagingStore.ts
+// Global messaging state management with platform-specific memory optimizations
+// Story: 8.2.3 - Zustand State Management
+
+import { create } from 'zustand';
+import { devtools } from 'zustand/middleware';
+import { Capacitor } from '@capacitor/core';
+import { Preferences } from '@capacitor/preferences';
+import type { Message, ConversationWithDetails } from '../types/messaging';
+
+// ============================================================================
+// Constants - Platform-Specific Memory Limits
+// ============================================================================
+
+/**
+ * Memory constraints by platform:
+ * - Web (Desktop): 16-32GB RAM → 200-500MB budget for messaging
+ * - iOS: 2-6GB RAM → 50-100MB budget
+ * - Android: 2-8GB RAM → 50-150MB budget
+ */
+const MAX_CACHED_MESSAGES = Capacitor.isNativePlatform() ? 100 : 500;
+const MAX_CACHED_CONVERSATIONS = Capacitor.isNativePlatform() ? 50 : 200;
+
+// Persistence keys for mobile
+const STORAGE_KEYS = {
+  UNREAD_COUNTS: 'messaging_unread_counts',
+  ACTIVE_CONVERSATION: 'messaging_active_conversation',
+};
+
+// ============================================================================
+// State Interface
+// ============================================================================
+
+interface MessagingState {
+  // Conversations
+  conversations: ConversationWithDetails[];
+  activeConversationId: string | null;
+  
+  // Messages (Map for efficient O(1) lookup by conversation ID)
+  messages: Map<string, Message[]>;
+  
+  // Unread counts
+  unreadCounts: Map<string, number>; // conversationId -> count
+  totalUnreadCount: number;
+  
+  // Typing indicators (Map<conversationId, Set<userId>>)
+  typingUsers: Map<string, Set<string>>;
+  
+  // UI Loading States
+  isLoadingConversations: boolean;
+  isLoadingMessages: boolean;
+  isSendingMessage: boolean;
+  
+  // ============================================================================
+  // Conversation Actions
+  // ============================================================================
+  
+  setConversations: (conversations: ConversationWithDetails[]) => void;
+  addConversation: (conversation: ConversationWithDetails) => void;
+  updateConversation: (conversationId: string, updates: Partial<ConversationWithDetails>) => void;
+  setActiveConversation: (conversationId: string | null) => void;
+  
+  // ============================================================================
+  // Message Actions
+  // ============================================================================
+  
+  setMessages: (conversationId: string, messages: Message[]) => void;
+  addMessage: (conversationId: string, message: Message) => void;
+  updateMessage: (conversationId: string, messageId: string, updates: Partial<Message>) => void;
+  removeMessage: (conversationId: string, messageId: string) => void;
+  prependMessages: (conversationId: string, messages: Message[]) => void; // For pagination
+  
+  // ============================================================================
+  // Unread Count Actions
+  // ============================================================================
+  
+  setUnreadCount: (conversationId: string, count: number) => void;
+  incrementUnreadCount: (conversationId: string) => void;
+  clearUnreadCount: (conversationId: string) => void;
+  setTotalUnreadCount: (count: number) => void;
+  
+  // ============================================================================
+  // Typing Indicator Actions
+  // ============================================================================
+  
+  addTypingUser: (conversationId: string, userId: string) => void;
+  removeTypingUser: (conversationId: string, userId: string) => void;
+  getTypingUsers: (conversationId: string) => string[];
+  
+  // ============================================================================
+  // Loading State Actions
+  // ============================================================================
+  
+  setLoadingConversations: (loading: boolean) => void;
+  setLoadingMessages: (loading: boolean) => void;
+  setSendingMessage: (sending: boolean) => void;
+  
+  // ============================================================================
+  // Persistence & Reset
+  // ============================================================================
+  
+  saveUnreadCounts: () => Promise<void>;
+  loadUnreadCounts: () => Promise<void>;
+  reset: () => void;
+}
+
+// ============================================================================
+// Store Implementation
+// ============================================================================
+
+export const useMessagingStore = create<MessagingState>()(
+  devtools(
+    (set, get) => ({
+      // Initial State
+      conversations: [],
+      activeConversationId: null,
+      messages: new Map(),
+      unreadCounts: new Map(),
+      totalUnreadCount: 0,
+      typingUsers: new Map(),
+      isLoadingConversations: false,
+      isLoadingMessages: false,
+      isSendingMessage: false,
+
+      // ========================================================================
+      // Conversation Actions
+      // ========================================================================
+
+      setConversations: (conversations) => {
+        // Apply platform-specific limits
+        const limitedConversations = Capacitor.isNativePlatform()
+          ? conversations.slice(0, MAX_CACHED_CONVERSATIONS)
+          : conversations;
+        
+        set({ conversations: limitedConversations }, false, 'setConversations');
+      },
+
+      addConversation: (conversation) =>
+        set((state) => {
+          const updatedConversations = [conversation, ...state.conversations];
+          
+          // Trim excess conversations on mobile to prevent memory bloat
+          const finalConversations = Capacitor.isNativePlatform()
+            ? updatedConversations.slice(0, MAX_CACHED_CONVERSATIONS)
+            : updatedConversations;
+          
+          return { conversations: finalConversations };
+        }, false, 'addConversation'),
+
+      updateConversation: (conversationId, updates) =>
+        set((state) => ({
+          conversations: state.conversations.map(conv =>
+            conv.conversation_id === conversationId
+              ? { ...conv, ...updates }
+              : conv
+          )
+        }), false, 'updateConversation'),
+
+      setActiveConversation: (conversationId) => {
+        set({ activeConversationId: conversationId }, false, 'setActiveConversation');
+        
+        // Persist active conversation on mobile
+        if (Capacitor.isNativePlatform() && conversationId) {
+          Preferences.set({
+            key: STORAGE_KEYS.ACTIVE_CONVERSATION,
+            value: conversationId
+          }).catch(err => console.error('Failed to save active conversation:', err));
+        }
+      },
+
+      // ========================================================================
+      // Message Actions
+      // ========================================================================
+
+      setMessages: (conversationId, messages) =>
+        set((state) => {
+          const newMessages = new Map(state.messages);
+          
+          // Limit cache on mobile to prevent memory bloat
+          const limitedMessages = Capacitor.isNativePlatform()
+            ? messages.slice(-MAX_CACHED_MESSAGES) // Keep last N messages
+            : messages;
+          
+          newMessages.set(conversationId, limitedMessages);
+          return { messages: newMessages };
+        }, false, 'setMessages'),
+
+      addMessage: (conversationId, message) =>
+        set((state) => {
+          const newMessages = new Map(state.messages);
+          const conversationMessages = newMessages.get(conversationId) || [];
+          const updatedMessages = [...conversationMessages, message];
+          
+          // Enforce cache limit on mobile
+          const finalMessages = Capacitor.isNativePlatform()
+            ? updatedMessages.slice(-MAX_CACHED_MESSAGES)
+            : updatedMessages;
+          
+          newMessages.set(conversationId, finalMessages);
+          return { messages: newMessages };
+        }, false, 'addMessage'),
+
+      updateMessage: (conversationId, messageId, updates) =>
+        set((state) => {
+          const newMessages = new Map(state.messages);
+          const conversationMessages = newMessages.get(conversationId) || [];
+          newMessages.set(
+            conversationId,
+            conversationMessages.map(msg =>
+              msg.id === messageId ? { ...msg, ...updates } : msg
+            )
+          );
+          return { messages: newMessages };
+        }, false, 'updateMessage'),
+
+      removeMessage: (conversationId, messageId) =>
+        set((state) => {
+          const newMessages = new Map(state.messages);
+          const conversationMessages = newMessages.get(conversationId) || [];
+          newMessages.set(
+            conversationId,
+            conversationMessages.filter(msg => msg.id !== messageId)
+          );
+          return { messages: newMessages };
+        }, false, 'removeMessage'),
+
+      prependMessages: (conversationId, messages) =>
+        set((state) => {
+          const newMessages = new Map(state.messages);
+          const existing = newMessages.get(conversationId) || [];
+          const combined = [...messages, ...existing];
+          
+          // Enforce cache limit on mobile
+          const finalMessages = Capacitor.isNativePlatform()
+            ? combined.slice(-MAX_CACHED_MESSAGES)
+            : combined;
+          
+          newMessages.set(conversationId, finalMessages);
+          return { messages: newMessages };
+        }, false, 'prependMessages'),
+
+      // ========================================================================
+      // Unread Count Actions
+      // ========================================================================
+
+      setUnreadCount: (conversationId, count) =>
+        set((state) => {
+          const newCounts = new Map(state.unreadCounts);
+          newCounts.set(conversationId, count);
+          
+          // Auto-save on mobile
+          if (Capacitor.isNativePlatform()) {
+            get().saveUnreadCounts().catch(err => 
+              console.error('Failed to save unread counts:', err)
+            );
+          }
+          
+          return { unreadCounts: newCounts };
+        }, false, 'setUnreadCount'),
+
+      incrementUnreadCount: (conversationId) =>
+        set((state) => {
+          const newCounts = new Map(state.unreadCounts);
+          const current = newCounts.get(conversationId) || 0;
+          newCounts.set(conversationId, current + 1);
+          
+          // Auto-save on mobile
+          if (Capacitor.isNativePlatform()) {
+            get().saveUnreadCounts().catch(err => 
+              console.error('Failed to save unread counts:', err)
+            );
+          }
+          
+          return {
+            unreadCounts: newCounts,
+            totalUnreadCount: state.totalUnreadCount + 1
+          };
+        }, false, 'incrementUnreadCount'),
+
+      clearUnreadCount: (conversationId) =>
+        set((state) => {
+          const newCounts = new Map(state.unreadCounts);
+          const removed = newCounts.get(conversationId) || 0;
+          newCounts.set(conversationId, 0);
+          
+          // Auto-save on mobile
+          if (Capacitor.isNativePlatform()) {
+            get().saveUnreadCounts().catch(err => 
+              console.error('Failed to save unread counts:', err)
+            );
+          }
+          
+          return {
+            unreadCounts: newCounts,
+            totalUnreadCount: Math.max(0, state.totalUnreadCount - removed)
+          };
+        }, false, 'clearUnreadCount'),
+
+      setTotalUnreadCount: (count) =>
+        set({ totalUnreadCount: count }, false, 'setTotalUnreadCount'),
+
+      // ========================================================================
+      // Typing Indicator Actions
+      // ========================================================================
+
+      addTypingUser: (conversationId, userId) =>
+        set((state) => {
+          const newTyping = new Map(state.typingUsers);
+          const users = new Set(newTyping.get(conversationId) || new Set());
+          users.add(userId);
+          newTyping.set(conversationId, users);
+          return { typingUsers: newTyping };
+        }, false, 'addTypingUser'),
+
+      removeTypingUser: (conversationId, userId) =>
+        set((state) => {
+          const newTyping = new Map(state.typingUsers);
+          const users = new Set(newTyping.get(conversationId) || new Set());
+          users.delete(userId);
+          newTyping.set(conversationId, users);
+          return { typingUsers: newTyping };
+        }, false, 'removeTypingUser'),
+
+      getTypingUsers: (conversationId) => {
+        const users = get().typingUsers.get(conversationId);
+        return users ? Array.from(users) : [];
+      },
+
+      // ========================================================================
+      // Loading State Actions
+      // ========================================================================
+
+      setLoadingConversations: (loading) =>
+        set({ isLoadingConversations: loading }, false, 'setLoadingConversations'),
+
+      setLoadingMessages: (loading) =>
+        set({ isLoadingMessages: loading }, false, 'setLoadingMessages'),
+
+      setSendingMessage: (sending) =>
+        set({ isSendingMessage: sending }, false, 'setSendingMessage'),
+
+      // ========================================================================
+      // Persistence (Mobile Only)
+      // ========================================================================
+
+      saveUnreadCounts: async () => {
+        if (!Capacitor.isNativePlatform()) return;
+        
+        try {
+          const counts = Array.from(get().unreadCounts.entries());
+          await Preferences.set({
+            key: STORAGE_KEYS.UNREAD_COUNTS,
+            value: JSON.stringify(counts)
+          });
+          console.log('💾 Unread counts saved');
+        } catch (error) {
+          console.error('Failed to save unread counts:', error);
+        }
+      },
+
+      loadUnreadCounts: async () => {
+        if (!Capacitor.isNativePlatform()) return;
+        
+        try {
+          const { value } = await Preferences.get({ key: STORAGE_KEYS.UNREAD_COUNTS });
+          if (value) {
+            const counts = JSON.parse(value) as [string, number][];
+            const unreadCounts = new Map(counts);
+            const totalUnreadCount = Array.from(unreadCounts.values())
+              .reduce((sum, count) => sum + count, 0);
+            
+            set({ unreadCounts, totalUnreadCount }, false, 'loadUnreadCounts');
+            console.log('📂 Unread counts loaded:', totalUnreadCount);
+          }
+        } catch (error) {
+          console.error('Failed to load unread counts:', error);
+        }
+      },
+
+      // ========================================================================
+      // Reset (Logout/Cleanup)
+      // ========================================================================
+
+      reset: () => {
+        // Clear persisted data on mobile
+        if (Capacitor.isNativePlatform()) {
+          Preferences.remove({ key: STORAGE_KEYS.UNREAD_COUNTS })
+            .catch(err => console.error('Failed to clear unread counts:', err));
+          Preferences.remove({ key: STORAGE_KEYS.ACTIVE_CONVERSATION })
+            .catch(err => console.error('Failed to clear active conversation:', err));
+        }
+        
+        set({
+          conversations: [],
+          activeConversationId: null,
+          messages: new Map(),
+          unreadCounts: new Map(),
+          totalUnreadCount: 0,
+          typingUsers: new Map(),
+          isLoadingConversations: false,
+          isLoadingMessages: false,
+          isSendingMessage: false
+        }, false, 'reset');
+        
+        console.log('🔄 Messaging store reset');
+      }
+    }),
+    { name: 'Messaging Store' }
+  )
+);
+
+// ============================================================================
+// Selector Helpers (Performance Optimization)
+// ============================================================================
+
+/**
+ * Selectors to prevent unnecessary re-renders
+ * Use these in components instead of accessing state directly
+ */
+export const messagingSelectors = {
+  // Get messages for a specific conversation
+  getMessages: (conversationId: string) => (state: MessagingState) =>
+    state.messages.get(conversationId) || [],
+  
+  // Get unread count for a specific conversation
+  getUnreadCount: (conversationId: string) => (state: MessagingState) =>
+    state.unreadCounts.get(conversationId) || 0,
+  
+  // Get typing users for a specific conversation
+  getTypingUsers: (conversationId: string) => (state: MessagingState) =>
+    Array.from(state.typingUsers.get(conversationId) || new Set()),
+  
+  // Get active conversation details
+  getActiveConversation: (state: MessagingState) =>
+    state.conversations.find(c => c.conversation_id === state.activeConversationId),
+  
+  // Check if any message is being sent
+  isSending: (state: MessagingState) =>
+    state.isSendingMessage,
+  
+  // Check if conversations are loading
+  isLoadingConversations: (state: MessagingState) =>
+    state.isLoadingConversations,
+  
+  // Check if messages are loading
+  isLoadingMessages: (state: MessagingState) =>
+    state.isLoadingMessages
+};
+
+// ============================================================================
+// Export for testing
+// ============================================================================
+
+export { MAX_CACHED_MESSAGES, MAX_CACHED_CONVERSATIONS, STORAGE_KEYS };
