@@ -43,7 +43,7 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({
       return `📶 You're offline • ${syncQueueCount} change${syncQueueCount === 1 ? '' : 's'} waiting to sync`
     }
     
-    return '📶 You're offline • Changes will sync when reconnected'
+    return "📶 You're offline • Changes will sync when reconnected"
   }
 
   const getConnectionInfo = () => {
