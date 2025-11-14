@@ -70,6 +70,11 @@ interface MessagingState {
   removeMessage: (conversationId: string, messageId: string) => void;
   prependMessages: (conversationId: string, messages: Message[]) => void; // For pagination
   
+  // Optimistic Updates (Story 8.2.7)
+  addOptimisticMessage: (conversationId: string, message: Message) => void;
+  replaceOptimisticMessage: (conversationId: string, tempId: string, realMessage: Message) => void;
+  markMessageFailed: (conversationId: string, tempId: string) => void;
+  
   // ============================================================================
   // Unread Count Actions
   // ============================================================================
@@ -238,6 +243,63 @@ export const useMessagingStore = create<MessagingState>()(
           newMessages.set(conversationId, finalMessages);
           return { messages: newMessages };
         }, false, 'prependMessages'),
+      
+      // ========================================================================
+      // Optimistic Update Actions (Story 8.2.7)
+      // ========================================================================
+      
+      addOptimisticMessage: (conversationId, message) =>
+        set((state) => {
+          const newMessages = new Map(state.messages);
+          const conversationMessages = newMessages.get(conversationId) || [];
+          
+          // Add optimistic message with _optimistic flag
+          const optimisticMessage = {
+            ...message,
+            _optimistic: true,
+            _failed: false
+          };
+          
+          const updatedMessages = [...conversationMessages, optimisticMessage];
+          
+          // Enforce cache limit on mobile
+          const finalMessages = Capacitor.isNativePlatform()
+            ? updatedMessages.slice(-MAX_CACHED_MESSAGES)
+            : updatedMessages;
+          
+          newMessages.set(conversationId, finalMessages);
+          return { messages: newMessages };
+        }, false, 'addOptimisticMessage'),
+      
+      replaceOptimisticMessage: (conversationId, tempId, realMessage) =>
+        set((state) => {
+          const newMessages = new Map(state.messages);
+          const conversationMessages = newMessages.get(conversationId) || [];
+          
+          // Find and replace optimistic message with real message
+          const updatedMessages = conversationMessages.map(msg =>
+            msg._tempId === tempId ? realMessage : msg
+          );
+          
+          newMessages.set(conversationId, updatedMessages);
+          return { messages: newMessages };
+        }, false, 'replaceOptimisticMessage'),
+      
+      markMessageFailed: (conversationId, tempId) =>
+        set((state) => {
+          const newMessages = new Map(state.messages);
+          const conversationMessages = newMessages.get(conversationId) || [];
+          
+          // Mark optimistic message as failed
+          const updatedMessages = conversationMessages.map(msg =>
+            msg._tempId === tempId
+              ? { ...msg, _optimistic: false, _failed: true }
+              : msg
+          );
+          
+          newMessages.set(conversationId, updatedMessages);
+          return { messages: newMessages };
+        }, false, 'markMessageFailed'),
 
       // ========================================================================
       // Unread Count Actions

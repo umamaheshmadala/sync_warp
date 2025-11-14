@@ -9,6 +9,7 @@ interface MessageListProps {
   hasMore: boolean
   onLoadMore: () => void
   isLoading?: boolean
+  onRetry?: (message: Message) => void // Story 8.2.7 - Retry failed messages
 }
 
 /**
@@ -27,6 +28,7 @@ interface MessageListProps {
  *   hasMore={hasMore}
  *   onLoadMore={loadMore}
  *   isLoading={isLoading}
+ *   onRetry={(msg) => handleRetry(msg)}
  * />
  * ```
  */
@@ -34,7 +36,8 @@ export function MessageList({
   messages, 
   hasMore, 
   onLoadMore,
-  isLoading = false
+  isLoading = false,
+  onRetry
 }: MessageListProps) {
   const currentUserId = useAuthStore(state => state.user?.id)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -121,6 +124,7 @@ export function MessageList({
             message={message}
             isOwn={message.sender_id === currentUserId}
             showTimestamp={showTimestamp}
+            onRetry={onRetry}
           />
         )
       })}

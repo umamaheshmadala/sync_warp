@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useMessages } from '../../hooks/useMessages'
 import { useTypingIndicator } from '../../hooks/useTypingIndicator'
+import { useSendMessage } from '../../hooks/useSendMessage'
 import { MessageList } from './MessageList'
 import { MessageComposer } from './MessageComposer'
 import { ChatHeader } from './ChatHeader'
@@ -9,6 +10,7 @@ import { TypingIndicator } from './TypingIndicator'
 import { Loader2 } from 'lucide-react'
 import { Capacitor } from '@capacitor/core'
 import { Keyboard } from '@capacitor/keyboard'
+import type { Message } from '../../types/messaging'
 import './ChatScreen.css'
 
 /**
@@ -39,6 +41,7 @@ export function ChatScreen() {
   const navigate = useNavigate()
   const { messages, isLoading, hasMore, loadMore } = useMessages(conversationId || null)
   const { isTyping, typingUserIds, handleTyping } = useTypingIndicator(conversationId || null)
+  const { retryMessage } = useSendMessage() // For retrying failed messages (Story 8.2.7)
   
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [keyboardPadding, setKeyboardPadding] = useState(0)
@@ -96,6 +99,12 @@ export function ChatScreen() {
     }
   }, [])
 
+  // Retry handler for failed messages
+  const handleRetry = (message: Message) => {
+    console.log('🔄 Retrying message:', message.id)
+    retryMessage(message)
+  }
+
   // Redirect if no conversation ID
   if (!conversationId) {
     navigate('/messages')
@@ -123,6 +132,7 @@ export function ChatScreen() {
         hasMore={hasMore}
         onLoadMore={loadMore}
         isLoading={isLoading}
+        onRetry={handleRetry}
       />
       
       {isTyping && <TypingIndicator userIds={typingUserIds} />}

@@ -70,6 +70,9 @@ const MyReviewsPage = lazy(() => import('../pages/MyReviewsPage'))
 // Notifications redirect page
 const NotificationsPage = lazy(() => import('../pages/NotificationsPage'))
 
+// Story 8.1.3: Storage Test
+const StorageTest = lazy(() => import('../pages/test/StorageTest'))
+
 // Story 5.5: Test Sharing Limits (excluded from production)
 
 // Route definitions
@@ -278,6 +281,14 @@ export const routes: RouteConfig[] = [
     protected: true,
     title: 'Follower Targeting Demo - SynC',
     description: 'Interactive demo of follower targeting and campaign features'
+  },
+  // Story 8.1.3: Storage Test
+  {
+    path: '/test/storage',
+    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><StorageTest /></Suspense>,
+    protected: true,
+    title: 'Storage Test - SynC (STORY 8.1.3)',
+    description: 'Test message attachments upload, signed URLs, and CORS behavior'
   },
   // Business Routes
   {

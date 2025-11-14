@@ -35,21 +35,13 @@ Set up a secure Supabase storage bucket for message attachments (images/videos) 
 
 ### Mobile-Specific Storage Considerations
 
-1. **CORS Configuration** (CRITICAL for mobile):
-   ```json
-   {
-     "allowedOrigins": [
-       "https://yourdomain.com",
-       "http://localhost:*",
-       "capacitor://localhost",  // iOS
-       "http://localhost"         // Android
-     ],
-     "allowedMethods": ["GET", "POST", "PUT", "DELETE"],
-     "allowedHeaders": ["*"],
-     "maxAge": 3600
-   }
-   ```
-   - Configure in Supabase Dashboard → Storage → CORS
+1. **CORS / Cross-Origin Strategy** (CRITICAL for mobile):
+   - Supabase’s Storage UI no longer exposes a detailed CORS JSON editor.
+   - For SynC we rely on:
+     - Supabase’s default CORS behaviour for Storage endpoints, and
+     - Private bucket + signed URLs for download.
+   - If the web or Capacitor apps hit CORS errors (e.g. `No 'Access-Control-Allow-Origin'`), route Storage calls through your own backend/edge proxy which sets the appropriate `Access-Control-Allow-Origin` headers.
+   - See `docs/messaging/STORAGE_STRUCTURE.md` for the exact strategy.
 
 2. **Native File URI Handling**:
    - iOS: `file:///var/mobile/Containers/...`

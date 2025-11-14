@@ -13,6 +13,7 @@ import { useNotificationHandler } from './hooks/useNotificationHandler'
 import { NotificationToast } from './components/NotificationToast'
 import { useAuthStore } from './store/authStore'
 import { OfflineBanner } from './components/ui/OfflineBanner'
+import DevMenu from './components/DevMenu'
 
 // Configure React Query with optimistic updates and caching
 const queryClient = new QueryClient({
@@ -64,6 +65,7 @@ function AppContent() {
       <AppLayout>
         <AppRouter />
       </AppLayout>
+      <DevMenu />
       <Toaster
           position="top-right"
           toastOptions={{

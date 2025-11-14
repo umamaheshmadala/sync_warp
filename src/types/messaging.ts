@@ -44,6 +44,11 @@ export interface Message {
   deleted_at?: string | null;
   created_at: string;
   updated_at: string;
+  
+  // Optimistic UI fields (client-side only)
+  _optimistic?: boolean;   // True if message is being sent
+  _failed?: boolean;       // True if message failed to send
+  _tempId?: string;        // Temporary ID for optimistic messages
 }
 
 /**

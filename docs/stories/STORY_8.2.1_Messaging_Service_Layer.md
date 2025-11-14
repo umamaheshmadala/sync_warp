@@ -14,6 +14,182 @@ Build the **core messaging service layer** (`messagingService.ts`) that abstract
 
 ---
 
+## 📱 **Platform Support**
+
+### **Web + iOS + Android (Service Layer)**
+
+The messaging service layer works identically across all platforms, but requires platform-specific considerations for network handling, timeouts, and error recovery.
+
+#### **Platform-Specific Network Handling**
+
+**1. Network Timeouts:**
+- **Web**: Standard browser timeout (default: 30 seconds)
+- **Mobile (iOS/Android)**: Extended timeout for slower networks
+
+```typescript
+// src/services/messagingService.ts
+import { Capacitor } from '@capacitor/core'
+
+class MessagingService {
+  private getTimeout(): number {
+    // Mobile networks can be slower, especially on 3G/4G
+    return Capacitor.isNativePlatform() ? 60000 : 30000 // 60s mobile, 30s web
+  }
+
+  async createOrGetConversation(friendId: string): Promise<string> {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), this.getTimeout())
+    
+    try {
+      const { data, error } = await supabase
+        .rpc('create_or_get_conversation', { p_participant_id: friendId })
+        .abortSignal(controller.signal)
+      
+      if (error) throw error
+      return data as string
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        throw new Error('Request timed out. Please check your connection.')
+      }
+      throw error
+    } finally {
+      clearTimeout(timeoutId)
+    }
+  }
+}
+```
+
+**2. Retry Logic for Mobile:**
+Mobile networks are less reliable (WiFi ↔ Cellular switching, tunnels, elevators)
+
+```typescript
+// Retry with exponential backoff for mobile
+private async retryWithBackoff<T>(
+  operation: () => Promise<T>,
+  maxRetries: number = 3
+): Promise<T> {
+  const isMobile = Capacitor.isNativePlatform()
+  const retries = isMobile ? maxRetries : 1 // Only retry on mobile
+  
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      return await operation()
+    } catch (error: any) {
+      const isNetworkError = error.message?.includes('network') || 
+                            error.message?.includes('timeout')
+      
+      if (isNetworkError && attempt < retries - 1) {
+        // Exponential backoff: 1s, 2s, 4s
+        const delay = Math.pow(2, attempt) * 1000
+        console.log(`🔄 Retry attempt ${attempt + 1}/${retries} after ${delay}ms`)
+        await new Promise(resolve => setTimeout(resolve, delay))
+      } else {
+        throw error
+      }
+    }
+  }
+  throw new Error('Max retries exceeded')
+}
+
+// Usage:
+async sendMessage(params: SendMessageParams): Promise<string> {
+  return this.retryWithBackoff(async () => {
+    const { data, error } = await supabase.rpc('send_message', { ...params })
+    if (error) throw error
+    return data as string
+  })
+}
+```
+
+**3. Offline Detection:**
+
+```typescript
+import { Network } from '@capacitor/network'
+
+class MessagingService {
+  private isOnline: boolean = true
+
+  async init() {
+    if (Capacitor.isNativePlatform()) {
+      // Listen to network status changes
+      Network.addListener('networkStatusChange', status => {
+        this.isOnline = status.connected
+        console.log('📡 Network status:', status.connected ? 'Online' : 'Offline')
+      })
+      
+      // Get initial status
+      const status = await Network.getStatus()
+      this.isOnline = status.connected
+    }
+  }
+
+  async sendMessage(params: SendMessageParams): Promise<string> {
+    if (!this.isOnline && Capacitor.isNativePlatform()) {
+      throw new Error('No internet connection. Message will be sent when online.')
+    }
+    // ... rest of send logic
+  }
+}
+```
+
+#### **Platform-Specific Error Handling**
+
+**Error Messages by Platform:**
+
+```typescript
+private getErrorMessage(error: any): string {
+  const platform = Capacitor.getPlatform() // 'web', 'ios', 'android'
+  
+  if (error.message?.includes('timeout')) {
+    if (platform === 'ios' || platform === 'android') {
+      return 'Poor connection. Please check your network and try again.'
+    }
+    return 'Request timed out. Please try again.'
+  }
+  
+  if (error.message?.includes('network')) {
+    if (platform === 'ios' || platform === 'android') {
+      return 'Connection lost. Make sure you have WiFi or mobile data enabled.'
+    }
+    return 'Network error. Please check your connection.'
+  }
+  
+  return error.message || 'An unexpected error occurred'
+}
+```
+
+#### **Required Capacitor Plugins**
+
+```json
+{
+  "dependencies": {
+    "@capacitor/network": "^5.0.0"  // Network status monitoring
+  }
+}
+```
+
+#### **Testing Checklist (Platform-Specific)**
+
+- [ ] **Web**: Test with Chrome DevTools Network throttling (Slow 3G, Offline)
+- [ ] **iOS**: Test on real device with Airplane mode toggle
+- [ ] **iOS**: Test WiFi ↔ Cellular switching during message send
+- [ ] **Android**: Test with Airplane mode toggle
+- [ ] **Android**: Test in subway/tunnel (intermittent connectivity)
+- [ ] **Mobile**: Verify retry logic with 3 attempts (1s, 2s, 4s)
+- [ ] **Mobile**: Verify 60-second timeout (vs 30s on web)
+- [ ] **Mobile**: Verify offline error messages are user-friendly
+
+#### **Performance Targets by Platform**
+
+| Operation | Web | iOS/Android (WiFi) | iOS/Android (4G) |
+|-----------|-----|-------------------|------------------|
+| **Create Conversation** | < 200ms | < 300ms | < 500ms |
+| **Send Message** | < 100ms | < 200ms | < 400ms |
+| **Fetch Messages (50)** | < 150ms | < 250ms | < 500ms |
+| **Mark as Read** | < 50ms | < 100ms | < 200ms |
+
+---
+
 ## 📖 **User Stories**
 
 ### As a developer, I want:
