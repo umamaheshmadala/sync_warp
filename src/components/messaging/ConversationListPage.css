@@ -1,0 +1,137 @@
+/**
+ * Conversation List Page Styles
+ * 
+ * Platform-specific styles for:
+ * - iOS Safe Area Insets (notch support)
+ * - Native momentum scrolling
+ * - Responsive design (320px to 1920px)
+ */
+
+/* Safe Area Insets for iOS (notch devices) */
+.safe-area-top {
+  padding-top: max(0.75rem, env(safe-area-inset-top));
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
+}
+
+.safe-area-bottom {
+  padding-bottom: max(0px, env(safe-area-inset-bottom));
+}
+
+/* Native Scrolling Optimization */
+.conversation-list-scroll {
+  -webkit-overflow-scrolling: touch; /* iOS smooth scrolling */
+  overflow-y: auto;
+  overscroll-behavior: contain; /* Prevent pull-to-refresh conflicts */
+  scroll-behavior: smooth;
+}
+
+/* Prevent scrollbar from taking up space on mobile */
+.conversation-list-scroll::-webkit-scrollbar {
+  width: 0px;
+  background: transparent;
+}
+
+/* Desktop scrollbar (optional) */
+@media (min-width: 768px) {
+  .conversation-list-scroll::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  .conversation-list-scroll::-webkit-scrollbar-track {
+    background: #f1f1f1;
+  }
+  
+  .conversation-list-scroll::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+  }
+  
+  .conversation-list-scroll::-webkit-scrollbar-thumb:hover {
+    background: #555;
+  }
+}
+
+/* Responsive Design Breakpoints */
+
+/* Small mobile devices (320px - 479px) */
+@media (max-width: 479px) {
+  .conversation-list-header h1 {
+    font-size: 1.5rem; /* 24px */
+  }
+}
+
+/* Mobile devices (480px - 767px) */
+@media (min-width: 480px) and (max-width: 767px) {
+  .conversation-list-header h1 {
+    font-size: 1.75rem; /* 28px */
+  }
+}
+
+/* Tablets (768px - 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .conversation-list-header h1 {
+    font-size: 2rem; /* 32px */
+  }
+}
+
+/* Desktop (1024px+) */
+@media (min-width: 1024px) {
+  /* Center the conversation list on large screens */
+  .conversation-list-container {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+}
+
+/* Large Desktop (1920px+) */
+@media (min-width: 1920px) {
+  .conversation-list-container {
+    max-width: 1000px;
+  }
+}
+
+/* Performance Optimizations */
+
+/* GPU acceleration for smooth scrolling */
+.conversation-list-scroll,
+.conversation-card {
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* Reduce layout shifts during render */
+.conversation-card {
+  contain: layout style paint;
+}
+
+/* Touch target sizing (minimum 44x44px for accessibility) */
+button, 
+.conversation-card {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Active state feedback for mobile taps */
+@media (pointer: coarse) {
+  button:active {
+    opacity: 0.7;
+    transition: opacity 0.1s;
+  }
+}
+
+/* Hover states only on devices with hover capability */
+@media (hover: hover) {
+  .conversation-card:hover {
+    background-color: rgb(249, 250, 251); /* gray-50 */
+  }
+  
+  button:hover {
+    opacity: 0.8;
+  }
+}
+
+/* Dark mode support (future enhancement) */
+@media (prefers-color-scheme: dark) {
+  /* TODO: Add dark mode styles when theme system is implemented */
+}
