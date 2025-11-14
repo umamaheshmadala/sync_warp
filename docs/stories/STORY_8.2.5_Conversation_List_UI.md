@@ -14,6 +14,165 @@ Build the **conversation list page** UI that displays all user conversations sor
 
 ---
 
+## 📱 **Platform Support (Web + iOS + Android)**
+
+### **Mobile UI Patterns**
+
+The conversation list must adapt to mobile-specific UI patterns for optimal user experience.
+
+#### **1. Pull-to-Refresh (Mobile)**
+
+```typescript
+import { Capacitor } from '@capacitor/core'
+import { IonRefresher, IonRefresherContent } from '@ionic/react' // Optional
+
+export function ConversationListPage() {
+  const handleRefresh = async (event?: CustomEvent) => {
+    await fetchConversations()
+    event?.detail.complete() // Ionic API
+  }
+  
+  return (
+    <div>
+      {Capacitor.isNativePlatform() && (
+        <IonRefresher onIonRefresh={handleRefresh}>
+          <IonRefresherContent />
+        </IonRefresher>
+      )}
+      {/* Rest of UI */}
+    </div>
+  )
+}
+```
+
+#### **2. Safe Area Insets (iOS)**
+
+```css
+/* src/components/messaging/ConversationListPage.css */
+.conversation-list-header {
+  padding-top: env(safe-area-inset-top);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+.conversation-list-container {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+```
+
+#### **3. Haptic Feedback on Tap (Mobile)**
+
+```typescript
+import { Haptics, ImpactStyle } from '@capacitor/haptics'
+import { Capacitor } from '@capacitor/core'
+
+export function ConversationCard({ conversation, onClick }: ConversationCardProps) {
+  const handleClick = async () => {
+    // Provide haptic feedback on mobile
+    if (Capacitor.isNativePlatform()) {
+      await Haptics.impact({ style: ImpactStyle.Light })
+    }
+    
+    onClick()
+  }
+  
+  return (
+    <div onClick={handleClick}>
+      {/* Card content */}
+    </div>
+  )
+}
+```
+
+#### **4. Native Scrolling Optimization**
+
+```css
+/* Enable momentum scrolling on iOS */
+.conversation-list-scroll {
+  -webkit-overflow-scrolling: touch; /* iOS smooth scrolling */
+  overflow-y: auto;
+}
+```
+
+#### **5. Long-Press Context Menu (Mobile)**
+
+```typescript
+import { Haptics, ImpactStyle } from '@capacitor/haptics'
+
+export function ConversationCard({ conversation }: ConversationCardProps) {
+  const [pressTimer, setPressTimer] = useState<NodeJS.Timeout | null>(null)
+  
+  const handleTouchStart = () => {
+    if (Capacitor.isNativePlatform()) {
+      const timer = setTimeout(() => {
+        Haptics.impact({ style: ImpactStyle.Medium })
+        showContextMenu(conversation) // Archive, Delete, etc.
+      }, 500) // Long-press after 500ms
+      
+      setPressTimer(timer)
+    }
+  }
+  
+  const handleTouchEnd = () => {
+    if (pressTimer) {
+      clearTimeout(pressTimer)
+      setPressTimer(null)
+    }
+  }
+  
+  return (
+    <div 
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Card content */}
+    </div>
+  )
+}
+```
+
+### **Required Capacitor Plugins**
+
+```json
+{
+  "dependencies": {
+    "@capacitor/haptics": "^5.0.0",    // Haptic feedback
+    "@ionic/react": "^7.0.0"           // Pull-to-refresh (optional)
+  }
+}
+```
+
+### **Platform-Specific Testing Checklist**
+
+#### **Web Testing**
+- [ ] Scroll is smooth on mouse wheel
+- [ ] Search filters instantly
+- [ ] Hover states work correctly
+
+#### **iOS Testing**
+- [ ] Pull-to-refresh works (if implemented)
+- [ ] Safe area insets respected (notch devices)
+- [ ] Haptic feedback on conversation tap
+- [ ] Momentum scrolling feels native
+- [ ] Long-press context menu works
+
+#### **Android Testing**
+- [ ] Pull-to-refresh works
+- [ ] Haptic feedback on tap (if supported)
+- [ ] Scrolling is smooth on all device sizes
+- [ ] No UI clipping on small screens
+
+### **Performance Targets**
+
+| Metric | Web | iOS | Android |
+|--------|-----|-----|---------|
+| **List Load Time** | < 500ms | < 800ms | < 800ms |
+| **Search Latency** | < 50ms | < 100ms | < 100ms |
+| **Scroll FPS** | 60fps | 60fps | 60fps |
+| **Tap Response Time** | Instant | < 50ms (with haptic) | < 50ms |
+
+---
+
 ## 📖 **User Stories**
 
 ### As a user, I want to:

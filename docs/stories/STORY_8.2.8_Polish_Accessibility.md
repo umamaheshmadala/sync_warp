@@ -14,6 +14,214 @@ Add final **polish and accessibility** to the messaging feature, including loadi
 
 ---
 
+## 📱 **Platform Support (Web + iOS + Android)**
+
+### **Mobile Accessibility**
+
+Accessibility is critical for mobile apps to support VoiceOver (iOS), TalkBack (Android), and haptic feedback patterns.
+
+#### **1. VoiceOver Support (iOS)**
+
+```typescript
+export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
+  const timeAgo = formatDistanceToNow(new Date(message.created_at))
+  
+  return (
+    <div
+      role="article"
+      aria-label={`Message from ${
+        isOwn ? 'you' : message.sender_name
+      }: ${message.content}. Sent ${timeAgo}`}
+      tabIndex={0}
+    >
+      {message.content}
+    </div>
+  )
+}
+```
+
+#### **2. TalkBack Support (Android)**
+
+```typescript
+export function ConversationCard({ conversation }: ConversationCardProps) {
+  const unreadLabel = conversation.unread_count > 0
+    ? `${conversation.unread_count} unread message${conversation.unread_count > 1 ? 's' : ''}`
+    : 'No unread messages'
+  
+  return (
+    <div
+      role="button"
+      aria-label={`Conversation with ${conversation.other_participant_name}. ${unreadLabel}. Last message: ${conversation.last_message_content || 'None'}`}
+      aria-pressed={isActive}
+      tabIndex={0}
+    >
+      {/* Card content */}
+    </div>
+  )
+}
+```
+
+#### **3. Haptic Feedback Patterns**
+
+```typescript
+import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics'
+import { Capacitor } from '@capacitor/core'
+
+// Success (message sent)
+const hapticSuccess = async () => {
+  if (Capacitor.isNativePlatform()) {
+    await Haptics.notification({ type: NotificationType.Success })
+  }
+}
+
+// Warning (network error)
+const hapticWarning = async () => {
+  if (Capacitor.isNativePlatform()) {
+    await Haptics.notification({ type: NotificationType.Warning })
+  }
+}
+
+// Error (message failed)
+const hapticError = async () => {
+  if (Capacitor.isNativePlatform()) {
+    await Haptics.notification({ type: NotificationType.Error })
+  }
+}
+
+// Light impact (tap)
+const hapticLight = async () => {
+  if (Capacitor.isNativePlatform()) {
+    await Haptics.impact({ style: ImpactStyle.Light })
+  }
+}
+
+// Medium impact (long-press)
+const hapticMedium = async () => {
+  if (Capacitor.isNativePlatform()) {
+    await Haptics.impact({ style: ImpactStyle.Medium })
+  }
+}
+```
+
+#### **4. Platform-Specific Gestures**
+
+```typescript
+// iOS: Swipe-back from left edge (native - no code needed)
+// Capacitor handles this automatically
+
+// Android: Back button support
+import { App } from '@capacitor/app'
+
+export function ChatScreen() {
+  useEffect(() => {
+    if (Capacitor.getPlatform() !== 'android') return
+    
+    // Handle Android back button
+    const listener = App.addListener('backButton', ({ canGoBack }) => {
+      if (canGoBack) {
+        window.history.back()
+      } else {
+        App.exitApp() // Exit app if on main screen
+      }
+    })
+    
+    return () => listener.remove()
+  }, [])
+}
+
+// Both platforms: Long-press context menu
+export function MessageBubble({ message }: MessageBubbleProps) {
+  const [pressTimer, setPressTimer] = useState<NodeJS.Timeout | null>(null)
+  
+  const handleLongPress = () => {
+    if (Capacitor.isNativePlatform()) {
+      hapticMedium()
+      showContextMenu(message) // Edit, Delete, Copy, etc.
+    }
+  }
+  
+  return (
+    <div
+      onTouchStart={() => {
+        const timer = setTimeout(handleLongPress, 500)
+        setPressTimer(timer)
+      }}
+      onTouchEnd={() => {
+        if (pressTimer) clearTimeout(pressTimer)
+      }}
+    >
+      {message.content}
+    </div>
+  )
+}
+```
+
+#### **5. Focus Management (Mobile)**
+
+```typescript
+// Auto-focus message input on mobile
+export function MessageComposer() {
+  const inputRef = useRef<HTMLTextAreaElement>(null)
+  
+  useEffect(() => {
+    // Delay focus on mobile to avoid keyboard flicker
+    if (Capacitor.isNativePlatform()) {
+      setTimeout(() => {
+        inputRef.current?.focus()
+      }, 300)
+    } else {
+      inputRef.current?.focus()
+    }
+  }, [])
+  
+  return <textarea ref={inputRef} />
+}
+```
+
+### **Required Capacitor Plugins**
+
+```json
+{
+  "dependencies": {
+    "@capacitor/haptics": "^5.0.0",  // Haptic feedback
+    "@capacitor/app": "^5.0.0"       // Back button handling
+  }
+}
+```
+
+### **Platform-Specific Testing Checklist**
+
+#### **Web Testing**
+- [ ] Keyboard navigation works (Tab, Enter, Esc)
+- [ ] ARIA labels are descriptive
+- [ ] Focus indicators visible
+- [ ] Color contrast meets WCAG AA
+
+#### **iOS Testing**
+- [ ] VoiceOver reads all UI elements correctly
+- [ ] Swipe-back gesture works
+- [ ] Haptic feedback on all interactions
+- [ ] Long-press context menu works
+- [ ] Dynamic Type (font scaling) supported
+
+#### **Android Testing**
+- [ ] TalkBack reads all UI elements correctly
+- [ ] Back button navigates correctly
+- [ ] Haptic feedback works (if supported)
+- [ ] Long-press context menu works
+- [ ] Font scaling supported
+
+### **Performance Targets**
+
+| Metric | Web | iOS | Android |
+|--------|-----|-----|---------|
+| **Lighthouse A11y Score** | > 90% | N/A | N/A |
+| **VoiceOver Coverage** | N/A | 100% | N/A |
+| **TalkBack Coverage** | N/A | N/A | 100% |
+| **Haptic Response Time** | N/A | < 50ms | < 50ms |
+
+---
+
 ## 📖 **User Stories**
 
 ### As a user, I want to:

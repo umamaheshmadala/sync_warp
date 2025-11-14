@@ -14,6 +14,205 @@ Implement **end-to-end message sending and receiving flow** with optimistic UI u
 
 ---
 
+## 📱 **Platform Support (Web + iOS + Android)**
+
+### **Mobile Network Resilience**
+
+Mobile devices face unreliable networks (WiFi ↔ 4G switching, tunnels, weak signal), requiring robust offline handling.
+
+#### **1. Offline Message Queue**
+
+```typescript
+import { Preferences } from '@capacitor/preferences'
+import { Network } from '@capacitor/network'
+import { Capacitor } from '@capacitor/core'
+
+class MessageQueue {
+  private readonly QUEUE_KEY = 'pendingMessages'
+  
+  // Queue message for later sending (mobile only)
+  async queueMessage(message: SendMessageParams) {
+    if (!Capacitor.isNativePlatform()) return
+    
+    const queue = await this.getQueue()
+    queue.push({
+      ...message,
+      timestamp: Date.now(),
+      retryCount: 0
+    })
+    
+    await Preferences.set({
+      key: this.QUEUE_KEY,
+      value: JSON.stringify(queue)
+    })
+    
+    console.log('💾 Queued message for offline send:', message)
+  }
+  
+  // Process queued messages when network returns
+  async processQueue() {
+    const queue = await this.getQueue()
+    
+    for (const queuedMessage of queue) {
+      try {
+        await messagingService.sendMessage(queuedMessage)
+        console.log('✅ Sent queued message:', queuedMessage)
+      } catch (error) {
+        console.error('❌ Failed to send queued message:', error)
+        
+        // Retry logic with exponential backoff
+        queuedMessage.retryCount++
+        if (queuedMessage.retryCount < 3) {
+          await this.queueMessage(queuedMessage)
+        }
+      }
+    }
+    
+    // Clear queue
+    await Preferences.remove({ key: this.QUEUE_KEY })
+  }
+  
+  private async getQueue(): Promise<any[]> {
+    const { value } = await Preferences.get({ key: this.QUEUE_KEY })
+    return value ? JSON.parse(value) : []
+  }
+}
+
+export const messageQueue = new MessageQueue()
+```
+
+#### **2. Network Status Monitoring**
+
+```typescript
+import { Network } from '@capacitor/network'
+
+export function useNetworkStatus() {
+  const [isOnline, setIsOnline] = useState(true)
+  
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return
+    
+    // Initial status
+    Network.getStatus().then(status => {
+      setIsOnline(status.connected)
+    })
+    
+    // Listen for network changes
+    const listener = Network.addListener('networkStatusChange', status => {
+      console.log('📡 Network status changed:', status.connected)
+      setIsOnline(status.connected)
+      
+      // Process queued messages when network returns
+      if (status.connected) {
+        messageQueue.processQueue()
+      }
+    })
+    
+    return () => listener.remove()
+  }, [])
+  
+  return { isOnline }
+}
+```
+
+#### **3. Background Sync (App Foreground)**
+
+```typescript
+import { App } from '@capacitor/app'
+
+export function useBackgroundSync() {
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return
+    
+    const listener = App.addListener('appStateChange', async ({ isActive }) => {
+      if (isActive) {
+        console.log('📱 App came to foreground - processing queue...')
+        await messageQueue.processQueue()
+      }
+    })
+    
+    return () => listener.remove()
+  }, [])
+}
+```
+
+#### **4. Retry Logic with Exponential Backoff**
+
+```typescript
+const sendWithRetry = async (
+  message: SendMessageParams,
+  maxRetries = 3
+): Promise<string> => {
+  let retryCount = 0
+  
+  while (retryCount < maxRetries) {
+    try {
+      return await messagingService.sendMessage(message)
+    } catch (error) {
+      retryCount++
+      
+      if (retryCount >= maxRetries) {
+        // Queue for later if all retries failed
+        if (Capacitor.isNativePlatform()) {
+          await messageQueue.queueMessage(message)
+        }
+        throw error
+      }
+      
+      // Exponential backoff: 1s, 2s, 4s
+      const delay = Math.pow(2, retryCount - 1) * 1000
+      console.log(`⏱️ Retry ${retryCount}/${maxRetries} in ${delay}ms...`)
+      await new Promise(resolve => setTimeout(resolve, delay))
+    }
+  }
+  
+  throw new Error('Max retries exceeded')
+}
+```
+
+### **Required Capacitor Plugins**
+
+```json
+{
+  "dependencies": {
+    "@capacitor/network": "^5.0.0",      // Network status
+    "@capacitor/preferences": "^5.0.0",  // Offline queue storage
+    "@capacitor/app": "^5.0.0"           // App state monitoring
+  }
+}
+```
+
+### **Platform-Specific Testing Checklist**
+
+#### **Web Testing**
+- [ ] Optimistic UI updates instantly
+- [ ] Failed messages show retry option
+- [ ] Read receipts update correctly
+
+#### **iOS Testing**
+- [ ] Messages queue when offline
+- [ ] Queue processes on network return
+- [ ] Retry logic works correctly
+- [ ] Background sync on app foreground
+- [ ] No duplicate messages
+
+#### **Android Testing**
+- [ ] Offline queue persists across app restarts
+- [ ] Network switching doesn't lose messages
+- [ ] Retry exponential backoff works
+- [ ] Queue cleared after successful send
+
+### **Performance Targets**
+
+| Metric | Web | iOS (WiFi) | iOS (4G) | Android (WiFi) | Android (4G) |
+|--------|-----|-----------|----------|---------------|-------------|
+| **Send Latency** | < 300ms | < 500ms | < 1s | < 500ms | < 1s |
+| **Optimistic UI** | < 16ms | < 16ms | < 16ms | < 16ms | < 16ms |
+| **Retry Delay (1st)** | 1s | 1s | 2s | 1s | 2s |
+| **Queue Processing** | N/A | < 5s | < 10s | < 5s | < 10s |
+
+---
+
 ## 📖 **User Stories**
 
 ### As a user, I want to:

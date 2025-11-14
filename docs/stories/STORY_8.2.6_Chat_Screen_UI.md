@@ -14,6 +14,191 @@ Build the **chat screen UI** with message bubbles, message composer, typing indi
 
 ---
 
+## 📱 **Platform Support (Web + iOS + Android)**
+
+### **Keyboard Handling (Critical for Mobile)**
+
+Keyboard management is one of the most important aspects of mobile chat UIs.
+
+#### **1. Keyboard Show/Hide Events**
+
+```typescript
+import { Keyboard } from '@capacitor/keyboard'
+import { Capacitor } from '@capacitor/core'
+import { useEffect, useState } from 'react'
+
+export function ChatScreen() {
+  const [bottomPadding, setBottomPadding] = useState(0)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return
+    
+    // Keyboard will show listener
+    const showListener = Keyboard.addListener('keyboardWillShow', info => {
+      console.log('⌨️ Keyboard showing, height:', info.keyboardHeight)
+      setBottomPadding(info.keyboardHeight)
+      
+      // Auto-scroll to bottom when keyboard shows
+      setTimeout(() => scrollToBottom(), 100)
+    })
+    
+    // Keyboard will hide listener
+    const hideListener = Keyboard.addListener('keyboardWillHide', () => {
+      console.log('⌨️ Keyboard hiding')
+      setBottomPadding(0)
+    })
+    
+    return () => {
+      showListener.remove()
+      hideListener.remove()
+    }
+  }, [])
+  
+  const scrollToBottom = () => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ 
+        behavior: Capacitor.isNativePlatform() ? 'auto' : 'smooth' 
+      })
+    }
+  }
+  
+  return (
+    <div style={{ paddingBottom: bottomPadding }}>
+      {/* Chat UI */}
+    </div>
+  )
+}
+```
+
+#### **2. Auto-Scroll Adjustments**
+
+```typescript
+// Disable smooth scroll on mobile (better performance)
+const scrollToBottom = () => {
+  if (messagesEndRef.current) {
+    messagesEndRef.current.scrollIntoView({ 
+      behavior: Capacitor.isNativePlatform() ? 'auto' : 'smooth',
+      block: 'end'
+    })
+  }
+}
+
+// Auto-scroll when new message arrives
+useEffect(() => {
+  scrollToBottom()
+}, [messages])
+```
+
+#### **3. Haptic Feedback on Send**
+
+```typescript
+import { Haptics, NotificationType } from '@capacitor/haptics'
+
+const handleSend = async () => {
+  if (!content.trim()) return
+  
+  // Haptic feedback on successful send (mobile only)
+  if (Capacitor.isNativePlatform()) {
+    await Haptics.notification({ type: NotificationType.Success })
+  }
+  
+  await sendMessage({ conversationId, content, type: 'text' })
+  setContent('')
+}
+```
+
+#### **4. Native Share Sheet (Mobile)**
+
+```typescript
+import { Share } from '@capacitor/share'
+
+const handleShare = async (message: Message) => {
+  if (Capacitor.isNativePlatform()) {
+    await Share.share({
+      title: 'Share Message',
+      text: message.content,
+      dialogTitle: 'Share with friends'
+    })
+  } else {
+    // Web: Use native Web Share API or fallback
+    if (navigator.share) {
+      await navigator.share({ text: message.content })
+    }
+  }
+}
+```
+
+#### **5. Message Composer Height Adjustment**
+
+```typescript
+export function MessageComposer() {
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  
+  // Auto-resize textarea on mobile
+  const handleInput = () => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`
+    }
+  }
+  
+  return (
+    <textarea
+      ref={textareaRef}
+      onInput={handleInput}
+      style={{ 
+        maxHeight: Capacitor.isNativePlatform() ? '100px' : '120px' 
+      }}
+    />
+  )
+}
+```
+
+### **Required Capacitor Plugins**
+
+```json
+{
+  "dependencies": {
+    "@capacitor/keyboard": "^5.0.0",  // Keyboard events
+    "@capacitor/haptics": "^5.0.0",   // Haptic feedback
+    "@capacitor/share": "^5.0.0"      // Native share sheet
+  }
+}
+```
+
+### **Platform-Specific Testing Checklist**
+
+#### **Web Testing**
+- [ ] Message bubbles display correctly
+- [ ] Smooth auto-scroll on new message
+- [ ] Textarea expands smoothly
+
+#### **iOS Testing**
+- [ ] Keyboard shows/hides smoothly
+- [ ] Chat UI adjusts for keyboard height
+- [ ] Auto-scroll works with keyboard open
+- [ ] Haptic feedback on send
+- [ ] Native share sheet opens correctly
+- [ ] Safe area insets respected
+
+#### **Android Testing**
+- [ ] Keyboard handling works on all Android versions
+- [ ] Chat doesn't clip behind keyboard
+- [ ] Haptic feedback works (if supported)
+- [ ] Share sheet functions correctly
+
+### **Performance Targets**
+
+| Metric | Web | iOS | Android |
+|--------|-----|-----|---------|
+| **Message Rendering** | 60fps | 60fps | 60fps |
+| **Keyboard Show Latency** | N/A | < 100ms | < 150ms |
+| **Auto-scroll Latency** | < 50ms | < 100ms | < 100ms |
+| **Send Button Response** | Instant | < 50ms | < 50ms |
+
+---
+
 ## 📖 **User Stories**
 
 ### As a user, I want to:

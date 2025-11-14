@@ -14,6 +14,133 @@ Build **custom React hooks** that encapsulate business logic for conversations, 
 
 ---
 
+## 📱 **Platform Support (Web + iOS + Android)**
+
+### **Platform Detection in Hooks**
+
+Custom hooks must adapt behavior based on the platform (web vs mobile) to optimize performance and battery life.
+
+#### **1. usePlatform Hook**
+
+```typescript
+import { Capacitor } from '@capacitor/core'
+import { useState, useEffect } from 'react'
+
+export function usePlatform() {
+  const isNative = Capacitor.isNativePlatform()
+  const platform = Capacitor.getPlatform() // 'web', 'ios', or 'android'
+  
+  return {
+    isNative,
+    isWeb: platform === 'web',
+    isIOS: platform === 'ios',
+    isAndroid: platform === 'android',
+    platform
+  }
+}
+```
+
+#### **2. Platform-Specific Message Pagination**
+
+```typescript
+import { usePlatform } from './usePlatform'
+
+export function useMessages(conversationId: string | null) {
+  const { isNative } = usePlatform()
+  
+  // Smaller page size on mobile (less memory, slower network)
+  const PAGE_SIZE = isNative ? 25 : 50
+  
+  const fetchMessages = useCallback(async () => {
+    const { messages, hasMore } = await messagingService.fetchMessages(
+      conversationId,
+      PAGE_SIZE // Adaptive page size
+    )
+    // ...
+  }, [conversationId, isNative])
+}
+```
+
+#### **3. Mobile Lifecycle Integration**
+
+```typescript
+import { App } from '@capacitor/app'
+import { Capacitor } from '@capacitor/core'
+
+export function useRealtimeConnection() {
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return
+    
+    // Re-subscribe when app returns to foreground
+    const listener = App.addListener('appStateChange', ({ isActive }) => {
+      if (isActive) {
+        console.log('📱 App active - reconnecting realtime...')
+        reconnectRealtime()
+      }
+    })
+    
+    return () => listener.remove()
+  }, [])
+}
+```
+
+#### **4. Adaptive Polling Intervals**
+
+```typescript
+export function useConversations() {
+  const { isNative } = usePlatform()
+  
+  // Longer polling interval on mobile to save battery
+  const POLLING_INTERVAL = isNative ? 30000 : 10000 // 30s mobile, 10s web
+  
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchConversations()
+    }, POLLING_INTERVAL)
+    
+    return () => clearInterval(interval)
+  }, [POLLING_INTERVAL])
+}
+```
+
+### **Required Capacitor Plugins**
+
+```json
+{
+  "dependencies": {
+    "@capacitor/app": "^5.0.0"   // App state monitoring
+  }
+}
+```
+
+### **Platform-Specific Testing Checklist**
+
+#### **Web Testing**
+- [ ] Hooks use larger page sizes (50 messages)
+- [ ] Faster polling intervals (10s)
+- [ ] No app lifecycle listeners
+
+#### **iOS Testing**
+- [ ] Hooks use smaller page sizes (25 messages)
+- [ ] Realtime reconnects on app foreground
+- [ ] Longer polling intervals (30s)
+- [ ] Battery drain < 5% per hour
+
+#### **Android Testing**
+- [ ] Adaptive page sizes work correctly
+- [ ] App state listeners don't leak
+- [ ] Background/foreground transitions are smooth
+
+### **Performance Targets**
+
+| Metric | Web | iOS | Android |
+|--------|-----|-----|---------|
+| **Message Page Size** | 50 | 25 | 25 |
+| **Polling Interval** | 10s | 30s | 30s |
+| **Hook Render Count** | < 3 per change | < 3 per change | < 3 per change |
+
+---
+
 ## 📖 **User Stories**
 
 ### As a developer, I want:

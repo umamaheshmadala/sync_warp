@@ -14,6 +14,172 @@ Implement the **realtime service layer** (`realtimeService.ts`) to manage all Su
 
 ---
 
+## 📱 **Platform Support (Web + iOS + Android)**
+
+### **Mobile WebSocket Handling**
+
+Realtime WebSocket connections on mobile require special handling for app lifecycle events, network switching, and battery optimization.
+
+#### **1. Background/Foreground State Management**
+
+```typescript
+import { App } from '@capacitor/app'
+import { Capacitor } from '@capacitor/core'
+
+class RealtimeService {
+  private isAppActive: boolean = true
+  private backgroundDisconnectTimer: NodeJS.Timeout | null = null
+  
+  async init() {
+    if (Capacitor.isNativePlatform()) {
+      // Handle app state changes on mobile
+      App.addListener('appStateChange', ({ isActive }) => {
+        this.isAppActive = isActive
+        
+        if (!isActive) {
+          console.log('📱 App went to background')
+          // Disconnect after 1 minute in background to save battery
+          this.backgroundDisconnectTimer = setTimeout(() => {
+            if (!this.isAppActive) {
+              console.log('🔌 Disconnecting WebSocket (background timeout)')
+              this.disconnectAll()
+            }
+          }, 60000) // 1 minute
+        } else {
+          console.log('📱 App came to foreground')
+          // Clear disconnect timer and reconnect
+          if (this.backgroundDisconnectTimer) {
+            clearTimeout(this.backgroundDisconnectTimer)
+            this.backgroundDisconnectTimer = null
+          }
+          this.reconnectAll()
+        }
+      })
+    }
+  }
+  
+  private async reconnectAll() {
+    console.log('🔄 Reconnecting all WebSocket channels...')
+    // Resubscribe to all active channels
+    for (const [channelName, channel] of this.channels.entries()) {
+      await channel.subscribe()
+    }
+  }
+  
+  private async disconnectAll() {
+    console.log('🔌 Disconnecting all WebSocket channels...')
+    for (const [channelName, channel] of this.channels.entries()) {
+      await supabase.removeChannel(channel)
+    }
+  }
+}
+```
+
+#### **2. Network Switching (WiFi ↔ Cellular)**
+
+Mobile devices frequently switch between WiFi and cellular networks, requiring reconnection logic:
+
+```typescript
+import { Network } from '@capacitor/network'
+
+class RealtimeService {
+  private previousConnectionType: string | null = null
+  
+  async init() {
+    if (Capacitor.isNativePlatform()) {
+      // Monitor network changes
+      Network.addListener('networkStatusChange', status => {
+        console.log('📡 Network status changed:', status)
+        
+        if (status.connected && status.connectionType !== this.previousConnectionType) {
+          console.log(`📡 Network switched: ${this.previousConnectionType} → ${status.connectionType}`)
+          this.previousConnectionType = status.connectionType
+          
+          // Reconnect all channels on network switch
+          this.reconnectAll()
+        } else if (!status.connected) {
+          console.log('❌ Network disconnected')
+          this.previousConnectionType = null
+        }
+      })
+      
+      // Get initial network status
+      const status = await Network.getStatus()
+      this.previousConnectionType = status.connectionType
+    }
+  }
+}
+```
+
+#### **3. Reconnection Delays by Platform**
+
+Different platforms have different reconnection characteristics:
+
+| Platform | Network Type | Reconnection Delay |
+|----------|--------------|-------------------|
+| **Web** | Ethernet/WiFi | 1-3 seconds |
+| **iOS** | WiFi | 2-5 seconds |
+| **iOS** | 4G/5G | 3-10 seconds |
+| **Android** | WiFi | 2-5 seconds |
+| **Android** | 4G/5G | 3-10 seconds |
+
+```typescript
+const getReconnectionDelay = async (): Promise<number> => {
+  if (!Capacitor.isNativePlatform()) {
+    return 1000 // Web: 1 second
+  }
+  
+  const networkStatus = await Network.getStatus()
+  
+  if (networkStatus.connectionType === 'wifi') {
+    return 2000 // Mobile WiFi: 2 seconds
+  }
+  
+  return 5000 // Mobile 4G/5G: 5 seconds (higher latency)
+}
+```
+
+### **Required Capacitor Plugins**
+
+```json
+{
+  "dependencies": {
+    "@capacitor/app": "^5.0.0",      // App state monitoring
+    "@capacitor/network": "^5.0.0"   // Network status
+  }
+}
+```
+
+### **Platform-Specific Testing Checklist**
+
+#### **Web Testing**
+- [ ] WebSocket connects on page load
+- [ ] Reconnects automatically on network drop (DevTools offline mode)
+- [ ] Handles tab visibility changes gracefully
+
+#### **iOS Testing**
+- [ ] WebSocket survives WiFi → Cellular switch
+- [ ] Disconnects after 1 minute in background
+- [ ] Reconnects when app returns to foreground
+- [ ] Battery drain is acceptable (< 5% per hour)
+
+#### **Android Testing**
+- [ ] WebSocket survives network changes
+- [ ] Background disconnect works correctly
+- [ ] Foreground reconnect is reliable
+- [ ] Battery optimization doesn't kill connections prematurely
+
+### **Performance Targets**
+
+| Metric | Web | iOS (WiFi) | iOS (4G) | Android (WiFi) | Android (4G) |
+|--------|-----|-----------|----------|---------------|-------------|
+| **Initial Connection** | < 500ms | < 1s | < 2s | < 1s | < 2s |
+| **Reconnection Time** | < 1s | < 3s | < 5s | < 3s | < 5s |
+| **Message Delivery** | < 300ms | < 500ms | < 1s | < 500ms | < 1s |
+| **Background Disconnect** | N/A | 60s | 60s | 60s | 60s |
+
+---
+
 ## 📖 **User Stories**
 
 ### As a user, I want:

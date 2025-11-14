@@ -12,10 +12,144 @@
 
 Implement **image upload with compression** to enable users to share photos in messages **on web browsers, iOS, and Android native apps**. Images are automatically compressed to reduce bandwidth, thumbnails are generated for quick loading, and files are uploaded to Supabase Storage with proper RLS policies.
 
-**Platform Support:**
-- ✅ **Web**: Browser file picker (`<input type="file">`)
-- ✅ **iOS**: Capacitor Camera plugin (native camera + photo library)
-- ✅ **Android**: Capacitor Camera plugin (native camera + photo library)
+---
+
+## 📱 **Platform Support (Web + iOS + Android)**
+
+### **Cross-Platform Image Handling**
+
+Image upload requires different implementations per platform while maintaining a unified API:
+
+| Feature | Web | iOS | Android |
+|---------|-----|-----|----------|
+| **Image Picker** | `<input type="file">` | `@capacitor/camera` (native) | `@capacitor/camera` (native) |
+| **Camera Capture** | `<input capture="camera">` | Native camera UI | Native camera UI |
+| **Compression** | `browser-image-compression` | `browser-image-compression` (same) | `browser-image-compression` (same) |
+| **Max Upload Size** | 10MB | 10MB | 10MB |
+| **Target Size** | < 1MB | < 1MB | < 1MB |
+| **Thumbnail Size** | 300px | 300px | 300px |
+
+#### **1. Mobile Camera Access (iOS/Android)**
+
+```typescript
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera'
+import { Capacitor } from '@capacitor/core'
+
+class MediaUploadService {
+  async pickImage(source: 'camera' | 'gallery' = 'gallery'): Promise<File | null> {
+    if (Capacitor.isNativePlatform()) {
+      // MOBILE: Use native camera/photo library
+      try {
+        const photo = await Camera.getPhoto({
+          resultType: CameraResultType.Uri,
+          source: source === 'camera' ? CameraSource.Camera : CameraSource.Photos,
+          quality: 90,
+          allowEditing: true,
+          width: 1920,
+          height: 1920
+        })
+        
+        // Convert URI to File
+        return await this.uriToFile(photo.webPath!, photo.format)
+      } catch (error) {
+        if (error.message.includes('permission')) {
+          // Show permission prompt
+          alert('Camera permission required. Please enable in Settings.')
+        }
+        return null
+      }
+    } else {
+      // WEB: File input handled by component
+      return null
+    }
+  }
+}
+```
+
+#### **2. Permission Handling (iOS/Android)**
+
+**iOS - Info.plist:**
+```xml
+<key>NSCameraUsageDescription</key>
+<string>SynC needs camera access to capture and share photos</string>
+
+<key>NSPhotoLibraryUsageDescription</key>
+<string>SynC needs photo library access to share images</string>
+```
+
+**Android - AndroidManifest.xml:**
+```xml
+<uses-permission android:name="android.permission.CAMERA" />
+<uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+```
+
+#### **3. Compression Performance Optimization**
+
+```typescript
+async compressImage(file: File): Promise<File> {
+  const options = {
+    maxSizeMB: 1,
+    maxWidthOrHeight: 1920,
+    // 📱 CRITICAL: Disable web worker on mobile (WebView limitation)
+    useWebWorker: !Capacitor.isNativePlatform(),
+    fileType: file.type,
+    initialQuality: 0.8
+  }
+  
+  return await imageCompression(file, options)
+}
+```
+
+### **Required Capacitor Plugins**
+
+```json
+{
+  "dependencies": {
+    "@capacitor/camera": "^5.0.0",       // Camera + photo library
+    "@capacitor/filesystem": "^5.0.0"    // File system access
+  }
+}
+```
+
+### **Platform-Specific Testing Checklist**
+
+#### **Web Testing**
+- [ ] File picker opens correctly
+- [ ] Drag-and-drop works
+- [ ] Compression reduces size by 60-80%
+- [ ] Upload progress shows correctly
+- [ ] Multiple file formats supported (JPG, PNG, WEBP, GIF)
+
+#### **iOS Testing**
+- [ ] Camera permission prompt shows on first use
+- [ ] Photo library permission prompt shows
+- [ ] Native camera opens correctly
+- [ ] Native photo picker opens correctly
+- [ ] Image editing screen works (crop, rotate)
+- [ ] Compression works without web worker
+- [ ] Upload completes successfully
+- [ ] HEIC images convert to JPEG correctly
+- [ ] Works on iPhone (notch) and iPad (safe areas)
+
+#### **Android Testing**
+- [ ] Camera permission prompt shows on first use
+- [ ] Storage/media permission prompt shows (Android 13+)
+- [ ] Native camera opens correctly
+- [ ] Native photo picker opens correctly
+- [ ] Compression works without web worker
+- [ ] Upload completes successfully
+- [ ] Works on various Android versions (11, 12, 13, 14)
+- [ ] Works on various screen sizes
+
+### **Performance Targets**
+
+| Metric | Web | iOS (WiFi) | iOS (4G) | Android (WiFi) | Android (4G) |
+|--------|-----|-----------|----------|---------------|-------------|
+| **Compression Time** | < 2s | < 3s | < 3s | < 3s | < 3s |
+| **Upload Time (5MB)** | < 3s | < 5s | < 8s | < 5s | < 8s |
+| **Thumbnail Generation** | < 1s | < 1.5s | < 1.5s | < 1.5s | < 1.5s |
+| **Camera Launch Time** | N/A | < 500ms | < 500ms | < 500ms | < 500ms |
+| **File Size Reduction** | 60-80% | 60-80% | 60-80% | 60-80% | 60-80% |
 
 ---
 

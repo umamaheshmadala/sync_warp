@@ -14,6 +14,128 @@ Create the **global messaging store** using Zustand to manage conversations, mes
 
 ---
 
+## 📱 **Platform Support (Web + iOS + Android)**
+
+### **Mobile Memory Optimization**
+
+Mobile devices have limited memory compared to desktop browsers, requiring special optimization:
+
+#### **1. Memory Constraints by Platform**
+
+| Platform | Typical RAM | Messaging Memory Budget |
+|----------|------------|------------------------|
+| **Web (Desktop)** | 16-32GB | 200-500MB |
+| **iOS** | 2-6GB | 50-100MB |
+| **Android** | 2-8GB | 50-150MB |
+
+#### **2. Message Cache Limits**
+
+```typescript
+import { Capacitor } from '@capacitor/core'
+
+// Limit message cache per conversation based on platform
+const MAX_CACHED_MESSAGES = Capacitor.isNativePlatform() ? 100 : 500
+const MAX_CACHED_CONVERSATIONS = Capacitor.isNativePlatform() ? 50 : 200
+
+setMessages: (conversationId, messages) => {
+  const newMessages = new Map(state.messages)
+  
+  // Limit cache on mobile to prevent memory bloat
+  const limitedMessages = Capacitor.isNativePlatform()
+    ? messages.slice(-MAX_CACHED_MESSAGES) // Keep last 100 on mobile
+    : messages // Keep all on web
+  
+  newMessages.set(conversationId, limitedMessages)
+  return { messages: newMessages }
+}
+```
+
+#### **3. State Persistence with Capacitor Preferences**
+
+```typescript
+import { Preferences } from '@capacitor/preferences'
+
+class MessagingStore {
+  // Persist critical state on mobile (e.g., unread counts)
+  async saveUnreadCounts() {
+    if (Capacitor.isNativePlatform()) {
+      const counts = Array.from(this.unreadCounts.entries())
+      await Preferences.set({
+        key: 'unreadCounts',
+        value: JSON.stringify(counts)
+      })
+    }
+  }
+  
+  async loadUnreadCounts() {
+    if (Capacitor.isNativePlatform()) {
+      const { value } = await Preferences.get({ key: 'unreadCounts' })
+      if (value) {
+        const counts = JSON.parse(value)
+        this.unreadCounts = new Map(counts)
+      }
+    }
+  }
+}
+```
+
+#### **4. Map/Set Memory Management**
+
+```typescript
+// Automatic cleanup of old conversations on mobile
+addConversation: (conversation) => {
+  set((state) => {
+    const updatedConversations = [conversation, ...state.conversations]
+    
+    // Trim excess conversations on mobile
+    const finalConversations = Capacitor.isNativePlatform()
+      ? updatedConversations.slice(0, MAX_CACHED_CONVERSATIONS)
+      : updatedConversations
+    
+    return { conversations: finalConversations }
+  }, false, 'addConversation')
+}
+```
+
+### **Required Capacitor Plugins**
+
+```json
+{
+  "dependencies": {
+    "@capacitor/preferences": "^5.0.0"   // Local storage for mobile
+  }
+}
+```
+
+### **Platform-Specific Testing Checklist**
+
+#### **Web Testing**
+- [ ] Store handles 1000+ messages without lag
+- [ ] No memory leaks with Map/Set
+- [ ] Zustand devtools work correctly
+
+#### **iOS Testing**
+- [ ] Store respects 100-message cache limit
+- [ ] Memory usage stays under 100MB
+- [ ] State persists across app restarts
+- [ ] No crashes when switching apps
+
+#### **Android Testing**
+- [ ] Cache limits prevent out-of-memory errors
+- [ ] State persistence works on all Android versions
+- [ ] Background app doesn't clear critical state
+
+### **Performance Targets**
+
+| Metric | Web | iOS | Android |
+|--------|-----|-----|---------|
+| **Max Cached Messages** | 500 per conversation | 100 per conversation | 100 per conversation |
+| **Max Cached Conversations** | 200 | 50 | 50 |
+| **Memory Usage** | < 200MB | < 100MB | < 100MB |
+| **State Update Time** | < 5ms | < 10ms | < 10ms |
+
+---
+
 ## 📖 **User Stories**
 
 ### As a developer, I want:

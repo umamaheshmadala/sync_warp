@@ -12,10 +12,176 @@
 
 Implement **video upload** to enable users to share short video clips in messages **on web browsers, iOS, and Android native apps**. Videos are uploaded to Supabase Storage with progress tracking, size validation (max 25MB), and automatic thumbnail extraction for previews.
 
-**Platform Support:**
-- ✅ **Web**: Browser file picker for video files
-- ✅ **iOS**: Capacitor Camera plugin (record video or select from library)
-- ✅ **Android**: Capacitor Camera plugin (record video or select from library)
+---
+
+## 📱 **Platform Support (Web + iOS + Android)**
+
+### **Cross-Platform Video Handling**
+
+Video upload requires platform-specific handling due to different video codecs and permissions:
+
+| Feature | Web | iOS | Android |
+|---------|-----|-----|----------|
+| **Video Picker** | `<input type="file" accept="video/*">` | `@capacitor/camera` (video mode) | `@capacitor/camera` (video mode) |
+| **Video Recording** | `<input capture="camera">` (limited) | Native camera (full control) | Native camera (full control) |
+| **Supported Formats** | MP4, WebM, MOV | MOV (native), MP4 | MP4 (native), WebM |
+| **Max File Size** | 25MB | 25MB | 25MB |
+| **Thumbnail Extraction** | Canvas API | Canvas API (via WebView) | Canvas API (via WebView) |
+
+#### **1. Mobile Video Capture (iOS/Android)**
+
+```typescript
+import { Camera, CameraResultType, CameraSource, CameraMediaType } from '@capacitor/camera'
+import { Capacitor } from '@capacitor/core'
+
+class MediaUploadService {
+  async pickVideo(source: 'camera' | 'gallery' = 'gallery'): Promise<File | null> {
+    if (Capacitor.isNativePlatform()) {
+      // MOBILE: Use native camera for video
+      try {
+        const video = await Camera.getPhoto({
+          resultType: CameraResultType.Uri,
+          source: source === 'camera' ? CameraSource.Camera : CameraSource.Photos,
+          quality: 90,
+          // 🎥 KEY: Specify video media type
+          mediaType: CameraMediaType.Video
+        })
+        
+        // Convert URI to File
+        return await this.uriToFile(video.webPath!, video.format || 'mp4')
+      } catch (error) {
+        if (error.message.includes('permission')) {
+          // Camera + Microphone permissions required
+          alert('Camera and microphone permissions required for video recording.')
+        }
+        return null
+      }
+    } else {
+      // WEB: File input handled by component
+      return null
+    }
+  }
+}
+```
+
+#### **2. Permission Handling (iOS/Android)**
+
+**iOS - Info.plist:**
+```xml
+<key>NSCameraUsageDescription</key>
+<string>SynC needs camera access to record videos</string>
+
+<key>NSMicrophoneUsageDescription</key>
+<string>SynC needs microphone access to record video audio</string>
+
+<key>NSPhotoLibraryUsageDescription</key>
+<string>SynC needs access to select videos from your library</string>
+```
+
+**Android - AndroidManifest.xml:**
+```xml
+<uses-permission android:name="android.permission.CAMERA" />
+<uses-permission android:name="android.permission.RECORD_AUDIO" />
+<uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+```
+
+#### **3. Video Thumbnail Extraction (Cross-Platform)**
+
+```typescript
+async generateVideoThumbnail(file: File): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement('video')
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+
+    video.preload = 'metadata'
+    video.muted = true
+    video.playsInline = true  // 📱 Important for iOS
+
+    video.onloadedmetadata = () => {
+      video.currentTime = 1 // Seek to 1s for better thumbnail
+    }
+
+    video.onseeked = () => {
+      // Scale to max 300px
+      const scale = Math.min(300 / video.videoWidth, 300 / video.videoHeight)
+      canvas.width = video.videoWidth * scale
+      canvas.height = video.videoHeight * scale
+      
+      ctx?.drawImage(video, 0, 0, canvas.width, canvas.height)
+      
+      canvas.toBlob((blob) => {
+        if (blob) resolve(blob)
+        else reject(new Error('Thumbnail generation failed'))
+      }, 'image/jpeg', 0.8)
+      
+      URL.revokeObjectURL(video.src)
+    }
+
+    video.onerror = () => {
+      reject(new Error('Video load failed'))
+      URL.revokeObjectURL(video.src)
+    }
+
+    video.src = URL.createObjectURL(file)
+  })
+}
+```
+
+### **Required Capacitor Plugins**
+
+```json
+{
+  "dependencies": {
+    "@capacitor/camera": "^5.0.0",       // Video recording + library
+    "@capacitor/filesystem": "^5.0.0"    // File system access
+  }
+}
+```
+
+### **Platform-Specific Testing Checklist**
+
+#### **Web Testing**
+- [ ] Video file picker opens correctly
+- [ ] Supports MP4, MOV, WebM formats
+- [ ] Size validation works (25MB limit)
+- [ ] Upload progress shows correctly
+- [ ] Thumbnail extracts from first frame
+- [ ] Video duration detected correctly
+
+#### **iOS Testing**
+- [ ] Camera permission prompt shows on first use
+- [ ] Microphone permission prompt shows for audio
+- [ ] Photo library permission prompt shows
+- [ ] Native camera opens in video mode
+- [ ] Video recording works (30s test)
+- [ ] Video library picker opens correctly
+- [ ] MOV videos upload successfully
+- [ ] Thumbnail extraction works (Canvas API via WebView)
+- [ ] Upload completes in < 10s (WiFi, 20MB video)
+- [ ] Works on iPhone and iPad
+
+#### **Android Testing**
+- [ ] Camera permission prompt shows on first use
+- [ ] Microphone permission prompt shows
+- [ ] Storage/media permission prompt shows (Android 13+)
+- [ ] Native camera opens in video mode
+- [ ] Video recording works (30s test)
+- [ ] Video library picker opens correctly
+- [ ] MP4 videos upload successfully
+- [ ] Thumbnail extraction works
+- [ ] Upload completes in < 10s (WiFi, 20MB video)
+- [ ] Works on various Android versions and devices
+
+### **Performance Targets**
+
+| Metric | Web | iOS (WiFi) | iOS (4G) | Android (WiFi) | Android (4G) |
+|--------|-----|-----------|----------|---------------|-------------|
+| **Upload Time (25MB)** | < 10s | < 12s | < 20s | < 12s | < 20s |
+| **Thumbnail Generation** | < 2s | < 3s | < 3s | < 3s | < 3s |
+| **Duration Detection** | < 1s | < 1.5s | < 1.5s | < 1.5s | < 1.5s |
+| **Camera Launch Time** | N/A | < 500ms | < 500ms | < 500ms | < 500ms |
+| **Video Recording** | Limited | Full control | Full control | Full control | Full control |
 
 ---
 
