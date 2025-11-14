@@ -10,6 +10,7 @@ import { TypingIndicator } from './TypingIndicator'
 import { Loader2 } from 'lucide-react'
 import { Capacitor } from '@capacitor/core'
 import { Keyboard } from '@capacitor/keyboard'
+import { App } from '@capacitor/app'
 import type { Message } from '../../types/messaging'
 import './ChatScreen.css'
 
@@ -98,6 +99,20 @@ export function ChatScreen() {
       hideListener.remove()
     }
   }, [])
+
+  // Android back button handling (Story 8.2.8)
+  useEffect(() => {
+    if (Capacitor.getPlatform() !== 'android') return
+
+    const listener = App.addListener('backButton', () => {
+      // Navigate back to conversation list
+      navigate('/messages')
+    })
+
+    return () => {
+      listener.remove()
+    }
+  }, [navigate])
 
   // Retry handler for failed messages
   const handleRetry = (message: Message) => {

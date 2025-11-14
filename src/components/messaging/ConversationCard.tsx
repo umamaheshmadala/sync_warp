@@ -24,6 +24,14 @@ interface ConversationCardProps {
  * - Unread message badge
  * - Mobile haptic feedback on tap
  * - Long-press context menu support
+ * - Full accessibility support (Story 8.2.8)
+ * 
+ * Accessibility Features:
+ * - role="button" for screen readers
+ * - Descriptive ARIA label with unread count
+ * - Keyboard navigation (Enter/Space)
+ * - Focus indicators
+ * - aria-pressed state
  * 
  * @example
  * ```tsx
@@ -73,6 +81,14 @@ export function ConversationCard({
     onClick()
   }
 
+  // Keyboard navigation (Story 8.2.8)
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      handleClick()
+    }
+  }
+
   // Long-press for context menu (mobile)
   const handleTouchStart = () => {
     if (Capacitor.isNativePlatform() && onLongPress) {
@@ -96,13 +112,30 @@ export function ConversationCard({
     }
   }
 
+  // Generate descriptive ARIA label (Story 8.2.8)
+  const unreadLabel = unread_count > 0
+    ? `${unread_count} unread message${unread_count > 1 ? 's' : ''}`
+    : 'No unread messages'
+  
+  const lastMessageLabel = last_message_content
+    ? `Last message: ${last_message_content}`
+    : 'No messages yet'
+  
+  const ariaLabel = `Conversation with ${other_participant_name || 'Unknown User'}. ${unreadLabel}. ${lastMessageLabel}`
+
   return (
     <div
+      role="button"
+      tabIndex={0}
       onClick={handleClick}
+      onKeyDown={handleKeyDown}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
+      aria-label={ariaLabel}
+      aria-pressed={isActive}
       className={cn(
         "flex items-center gap-3 p-4 hover:bg-gray-50 cursor-pointer transition-colors border-b",
+        "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset",
         isActive && "bg-blue-50 hover:bg-blue-100",
         "active:bg-gray-100" // Active state for tap feedback
       )}

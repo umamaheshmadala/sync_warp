@@ -20,6 +20,13 @@ interface MessageComposerProps {
  * - Enter to send (Shift+Enter for new line)
  * - Typing indicator integration
  * - Mobile haptic feedback on send
+ * - Full accessibility support (Story 8.2.8)
+ * 
+ * Accessibility Features:
+ * - aria-label for screen readers
+ * - aria-describedby with keyboard shortcut hint
+ * - Proper button labels
+ * - Icons marked as aria-hidden
  * 
  * @example
  * ```tsx
@@ -98,8 +105,13 @@ export function MessageComposer({ conversationId, onTyping }: MessageComposerPro
           className="min-h-[44px] max-h-[120px] resize-none"
           rows={1}
           disabled={isSending}
-          aria-label="Message input"
+          aria-label="Type a message"
+          aria-describedby="message-hint"
         />
+        {/* Screen reader hint for keyboard shortcuts */}
+        <span id="message-hint" className="sr-only">
+          Press Enter to send, Shift+Enter for new line
+        </span>
         <Button
           onClick={handleSend}
           disabled={!content.trim() || isSending}
@@ -107,7 +119,7 @@ export function MessageComposer({ conversationId, onTyping }: MessageComposerPro
           className="h-11 w-11 flex-shrink-0"
           aria-label="Send message"
         >
-          <Send className="h-5 w-5" />
+          <Send className="h-5 w-5" aria-hidden="true" />
         </Button>
       </div>
     </div>
