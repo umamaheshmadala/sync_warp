@@ -1,0 +1,185 @@
+/**
+ * Chat Screen Styles
+ * 
+ * Platform-specific styles for:
+ * - Message bubbles
+ * - Keyboard handling (mobile)
+ * - Smooth scrolling
+ * - Performance optimizations
+ */
+
+/* Chat Screen Container */
+.chat-screen {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Message List Scrolling */
+.message-list-scroll {
+  -webkit-overflow-scrolling: touch; /* iOS smooth scrolling */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-behavior: smooth;
+}
+
+/* Hide scrollbar on mobile */
+.message-list-scroll::-webkit-scrollbar {
+  width: 0px;
+  background: transparent;
+}
+
+/* Desktop scrollbar (optional) */
+@media (min-width: 768px) {
+  .message-list-scroll::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .message-list-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .message-list-scroll::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+  }
+  
+  .message-list-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* Message Bubble Animations */
+@keyframes slideInFromBottom {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Animate new messages (subtle) */
+.message-bubble-enter {
+  animation: slideInFromBottom 0.2s ease-out;
+}
+
+/* Performance Optimizations */
+
+/* GPU acceleration for smooth scrolling */
+.chat-screen,
+.message-list-scroll {
+  transform: translateZ(0);
+  will-change: scroll-position;
+}
+
+/* Optimize message rendering */
+.message-bubble {
+  contain: layout style paint;
+}
+
+/* Keyboard Padding Transition */
+.chat-screen {
+  transition: padding-bottom 0.3s ease-out;
+}
+
+/* Message Composer Fixed to Bottom */
+.safe-area-bottom {
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+}
+
+/* Responsive Design */
+
+/* Mobile devices (< 768px) */
+@media (max-width: 767px) {
+  /* Tighter padding on mobile */
+  .message-list-scroll {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  
+  /* Smaller message bubbles on very small screens */
+  @media (max-width: 360px) {
+    .message-bubble {
+      max-width: 80%;
+    }
+  }
+}
+
+/* Desktop (>= 768px) */
+@media (min-width: 768px) {
+  /* Center chat on large screens */
+  .chat-screen {
+    max-width: 900px;
+    margin: 0 auto;
+    border-left: 1px solid #e5e7eb;
+    border-right: 1px solid #e5e7eb;
+  }
+}
+
+/* Large Desktop (>= 1920px) */
+@media (min-width: 1920px) {
+  .chat-screen {
+    max-width: 1100px;
+  }
+}
+
+/* Typing Indicator Animation */
+@keyframes bounce {
+  0%, 60%, 100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-6px);
+  }
+}
+
+/* Touch Target Sizing */
+button,
+textarea {
+  min-height: 44px; /* Apple HIG minimum */
+  min-width: 44px;
+}
+
+/* Active state feedback for mobile */
+@media (pointer: coarse) {
+  button:active {
+    opacity: 0.7;
+    transition: opacity 0.1s;
+  }
+}
+
+/* Hover states only on devices with hover capability */
+@media (hover: hover) {
+  button:hover {
+    opacity: 0.9;
+  }
+}
+
+/* Dark mode support (future enhancement) */
+@media (prefers-color-scheme: dark) {
+  /* TODO: Add dark mode styles when theme system is implemented */
+}
+
+/* Accessibility */
+
+/* Focus visible for keyboard navigation */
+button:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Reduced motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .message-list-scroll {
+    scroll-behavior: auto;
+  }
+}
