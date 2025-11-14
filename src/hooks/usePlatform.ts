@@ -6,17 +6,22 @@ export interface PlatformInfo {
   isIOS: boolean;
   isAndroid: boolean;
   isWeb: boolean;
+  isMobile: boolean;
   platform: 'ios' | 'android' | 'web';
 }
 
 export const usePlatform = (): PlatformInfo => {
-  const [platformInfo] = useState<PlatformInfo>(() => ({
-    isNative: Capacitor.isNativePlatform(),
-    isIOS: Capacitor.getPlatform() === 'ios',
-    isAndroid: Capacitor.getPlatform() === 'android',
-    isWeb: Capacitor.getPlatform() === 'web',
-    platform: Capacitor.getPlatform() as 'ios' | 'android' | 'web'
-  }));
+  const [platformInfo] = useState<PlatformInfo>(() => {
+    const platform = Capacitor.getPlatform() as 'ios' | 'android' | 'web';
+    return {
+      isNative: Capacitor.isNativePlatform(),
+      isIOS: platform === 'ios',
+      isAndroid: platform === 'android',
+      isWeb: platform === 'web',
+      isMobile: platform === 'ios' || platform === 'android',
+      platform
+    };
+  });
 
   return platformInfo;
 };
