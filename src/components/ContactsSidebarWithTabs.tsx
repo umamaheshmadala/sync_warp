@@ -4,9 +4,12 @@ import { Dialog, Transition } from '@headlessui/react'
 import { Fragment } from 'react'
 import { X, Search, UserPlus, MessageCircle, Users, User, Share2, Trash2, Filter, Check, Clock, MapPin, Heart } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { useNewFriends as useFriends } from '../hooks/useNewFriends'
+import { useMessagingStore } from '../store/messagingStore'
 import { useHapticFeedback } from '../hooks/useHapticFeedback'
+import { messagingService } from '../services/messagingService'
 import AddFriend from './AddFriend'
 import ShareDeal from './ShareDealSimple'
 import type { Friend } from '../services/newFriendService'
@@ -19,6 +22,7 @@ interface ContactsSidebarProps {
 type TabType = 'friends' | 'requests'
 
 const ContactsSidebar: React.FC<ContactsSidebarProps> = ({ isOpen, onClose }) => {
+  const navigate = useNavigate()
   const { user } = useAuthStore()
   const {
     friends,
@@ -30,6 +34,7 @@ const ContactsSidebar: React.FC<ContactsSidebarProps> = ({ isOpen, onClose }) =>
     acceptFriendRequest,
     rejectFriendRequest
   } = useFriends()
+  const { conversations } = useMessagingStore()
   const { triggerHaptic } = useHapticFeedback()
   
   const [activeTab, setActiveTab] = useState<TabType>('friends')
@@ -66,10 +71,34 @@ const ContactsSidebar: React.FC<ContactsSidebarProps> = ({ isOpen, onClose }) =>
     setShowShareDeal(friend.friend_profile.user_id)
   }
 
-  const handleMessageTap = (friend: Friend) => {
-    triggerHaptic('light')
-    // This would open a messaging interface
-    console.log('Message friend:', friend.friend_profile.full_name)
+  const handleMessageTap = async (friend: Friend) => {
+    try {
+      triggerHaptic('light')
+      
+      // Check if conversation already exists
+      const existingConversation = conversations.find(conv =>
+        conv.participant1_id === friend.friend_profile.user_id ||
+        conv.participant2_id === friend.friend_profile.user_id
+      )
+      
+      if (existingConversation) {
+        // Navigate to existing conversation
+        console.log('📬 Navigating to existing conversation:', existingConversation.conversation_id)
+        navigate(`/messages/${existingConversation.conversation_id}`)
+        triggerHaptic('success')
+      } else {
+        // Create new conversation and navigate
+        console.log('✨ Creating new conversation with:', friend.friend_profile.full_name)
+        const conversationId = await messagingService.createOrGetConversation(friend.friend_profile.user_id)
+        navigate(`/messages/${conversationId}`)
+        triggerHaptic('success')
+      }
+      
+      onClose() // Close sidebar
+    } catch (error) {
+      console.error('❌ Error starting conversation:', error)
+      triggerHaptic('error')
+    }
   }
   
   const handleRemoveFriend = async (friend: Friend) => {

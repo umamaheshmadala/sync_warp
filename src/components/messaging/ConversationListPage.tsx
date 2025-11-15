@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useConversations } from '../../hooks/useConversations'
 import { useMessagingStore } from '../../store/messagingStore'
 import { ConversationCard } from './ConversationCard'
+import { FriendPickerModal } from './FriendPickerModal'
 import { SearchBar } from '../ui/SearchBar'
 import { Skeleton } from '../ui/skeleton'
 import { MessageSquarePlus } from 'lucide-react'
@@ -36,6 +37,7 @@ export function ConversationListPage() {
   const activeConversationId = useMessagingStore(state => state.activeConversationId)
   
   const [searchQuery, setSearchQuery] = useState('')
+  const [showFriendPicker, setShowFriendPicker] = useState(false)
 
   // Filter conversations by search query (instant filtering)
   const filteredConversations = useMemo(() => {
@@ -91,7 +93,7 @@ export function ConversationListPage() {
             </p>
           </div>
           <button
-            onClick={() => navigate('/friends')}
+            onClick={() => setShowFriendPicker(true)}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors"
             title="Start new conversation"
             aria-label="Start new conversation"
@@ -141,10 +143,10 @@ export function ConversationListPage() {
                   Start chatting with your friends to see conversations here
                 </p>
                 <button
-                  onClick={() => navigate('/friends')}
+                  onClick={() => setShowFriendPicker(true)}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
                 >
-                  Browse Friends
+                  Start Conversation
                 </button>
               </>
             )}
@@ -167,6 +169,12 @@ export function ConversationListPage() {
           ))
         )}
       </div>
+
+      {/* Friend Picker Modal */}
+      <FriendPickerModal
+        isOpen={showFriendPicker}
+        onClose={() => setShowFriendPicker(false)}
+      />
     </div>
   )
 }
