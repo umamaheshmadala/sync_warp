@@ -18,8 +18,9 @@ Integrate friends module with the notifications system to automatically notify u
 
 - [ ] **AC1:** Notification types added: `friend_request`, `friend_accepted`, `friend_removed`
 - [ ] **AC2:** Database triggers auto-create notifications on friend events
-- [ ] **AC3:** Realtime subscription delivers notifications instantly
-- [ ] **AC4:** Notification bell UI shows unread count
+- [ ] **AC3:** friend_activities table tracks all friend-related events
+- [ ] **AC4:** Realtime subscription delivers notifications instantly
+- [ ] **AC5:** Notification bell UI shows unread count
 
 ---
 
@@ -207,7 +208,132 @@ COMMENT ON FUNCTION notify_unfriend IS 'Optionally notify user when unfriended (
 
 ---
 
-### **STEP 5: Create Notification Service Updates (30 min)**
+### **STEP 5: Create friend_activities Table (30 min)**
+
+Add to same migration file:
+
+`sql
+-- ============================================================
+-- Table: friend_activities
+-- Tracks all friend-related events for activity feeds
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS public.friend_activities (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  activity_type TEXT NOT NULL CHECK (activity_type IN (
+    'sent_friend_request',
+    'accepted_friend_request',
+    'removed_friend',
+    'started_following',
+    'stopped_following',
+    'blocked_user',
+    'unblocked_user'
+  )),
+  related_user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  metadata JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Index for fast user activity queries
+CREATE INDEX idx_friend_activities_user ON friend_activities(user_id, created_at DESC);
+CREATE INDEX idx_friend_activities_related_user ON friend_activities(related_user_id, created_at DESC);
+
+-- RLS: Users see only their own activities
+ALTER TABLE friend_activities ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users view their own activities"
+  ON friend_activities FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "System can insert activities"
+  ON friend_activities FOR INSERT
+  WITH CHECK (true);
+
+COMMENT ON TABLE friend_activities IS 'Tracks all friend-related events for activity feeds and analytics';
+
+-- Trigger: Log friend request activity
+CREATE OR REPLACE FUNCTION log_friend_request_activity()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.status = 'pending' THEN
+    INSERT INTO friend_activities (user_id, activity_type, related_user_id, metadata)
+    VALUES (
+      NEW.sender_id,
+      'sent_friend_request',
+      NEW.receiver_id,
+      jsonb_build_object('request_id', NEW.id)
+    );
+  ELSIF NEW.status = 'accepted' AND OLD.status = 'pending' THEN
+    INSERT INTO friend_activities (user_id, activity_type, related_user_id, metadata)
+    VALUES (
+      NEW.receiver_id,
+      'accepted_friend_request',
+      NEW.sender_id,
+      jsonb_build_object('request_id', NEW.id)
+    );
+  END IF;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_log_friend_request_activity
+  AFTER INSERT OR UPDATE ON friend_requests
+  FOR EACH ROW
+  EXECUTE FUNCTION log_friend_request_activity();
+
+-- Trigger: Log friendship changes
+CREATE OR REPLACE FUNCTION log_friendship_activity()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.status = 'unfriended' AND OLD.status = 'active' THEN
+    INSERT INTO friend_activities (user_id, activity_type, related_user_id)
+    VALUES (
+      NEW.user_id,
+      'removed_friend',
+      NEW.friend_id
+    );
+  END IF;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_log_friendship_activity
+  AFTER UPDATE ON friendships
+  FOR EACH ROW
+  WHEN (OLD.status IS DISTINCT FROM NEW.status)
+  EXECUTE FUNCTION log_friendship_activity();
+
+-- Trigger: Log follow activities
+CREATE OR REPLACE FUNCTION log_follow_activity()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    INSERT INTO friend_activities (user_id, activity_type, related_user_id)
+    VALUES (NEW.follower_id, 'started_following', NEW.following_id);
+  ELSIF TG_OP = 'DELETE' THEN
+    INSERT INTO friend_activities (user_id, activity_type, related_user_id)
+    VALUES (OLD.follower_id, 'stopped_following', OLD.following_id);
+  END IF;
+  
+  RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_log_follow_activity
+  AFTER INSERT OR DELETE ON following
+  FOR EACH ROW
+  EXECUTE FUNCTION log_follow_activity();
+
+-- Enable realtime for friend_activities
+ALTER PUBLICATION supabase_realtime ADD TABLE friend_activities;
+`
+
+---
+
+### **STEP 6: Create Notification Service Updates (30 min)**
 
 Update: `src/services/notificationService.ts`
 

@@ -20,7 +20,8 @@ Create reusable, performant database functions for common friend operations incl
 - [ ] **AC2:** get_mutual_friends() returns shared friends efficiently
 - [ ] **AC3:** search_friends() with full-text search capability  
 - [ ] **AC4:** get_online_friends_count() for realtime metrics
-- [ ] **AC5:** All functions execute in < 50ms (verified with EXPLAIN ANALYZE)
+- [ ] **AC5:** get_friend_recommendations() returns "People You May Know" suggestions
+- [ ] **AC6:** All functions execute in < 50ms (verified with EXPLAIN ANALYZE)
 
 ---
 
@@ -218,7 +219,75 @@ COMMENT ON FUNCTION get_online_friends_count IS 'Returns count of currently onli
 
 ---
 
-### **STEP 5: Performance Benchmarking (30 min)**
+### **STEP 5: Create get_friend_recommendations() Function (45 min)**
+
+Add to same migration file:
+
+`sql
+-- ============================================================
+-- Function: Get friend recommendations ("People You May Know")
+-- Returns non-friends who share mutual friends with the user
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION get_friend_recommendations(p_limit INT DEFAULT 10)
+RETURNS TABLE(
+  user_id UUID,
+  username TEXT,
+  full_name TEXT,
+  avatar_url TEXT,
+  mutual_friends_count INT,
+  is_online BOOLEAN
+) AS $$
+  SELECT 
+    p.id,
+    p.username,
+    p.full_name,
+    p.avatar_url,
+    COUNT(DISTINCT f2.friend_id)::INT as mutual_friends_count,
+    p.is_online
+  FROM profiles p
+  JOIN friendships f2 ON f2.user_id = p.id
+  WHERE 
+    -- Exclude yourself
+    p.id != auth.uid()
+    -- Exclude existing friends
+    AND p.id NOT IN (
+      SELECT friend_id FROM friendships 
+      WHERE user_id = auth.uid() AND status = 'active'
+    )
+    -- Exclude users with pending friend requests
+    AND p.id NOT IN (
+      SELECT sender_id FROM friend_requests 
+      WHERE receiver_id = auth.uid() AND status = 'pending'
+    )
+    AND p.id NOT IN (
+      SELECT receiver_id FROM friend_requests 
+      WHERE sender_id = auth.uid() AND status = 'pending'
+    )
+    -- Must have mutual friends (shared connections)
+    AND f2.friend_id IN (
+      SELECT friend_id FROM friendships 
+      WHERE user_id = auth.uid() AND status = 'active'
+    )
+    AND f2.status = 'active'
+    -- Exclude blocked users
+    AND NOT EXISTS (
+      SELECT 1 FROM blocked_users
+      WHERE (blocker_id = auth.uid() AND blocked_id = p.id)
+         OR (blocker_id = p.id AND blocked_id = auth.uid())
+    )
+  GROUP BY p.id, p.username, p.full_name, p.avatar_url, p.is_online
+  HAVING COUNT(DISTINCT f2.friend_id) > 0
+  ORDER BY mutual_friends_count DESC, p.full_name
+  LIMIT p_limit;
+$$ LANGUAGE sql STABLE SECURITY DEFINER;
+
+COMMENT ON FUNCTION get_friend_recommendations IS 'Returns friend recommendations based on mutual friends';
+`
+
+---
+
+### **STEP 6: Performance Benchmarking (30 min)**
 
 Add to migration file:
 
@@ -244,7 +313,11 @@ SELECT * FROM search_friends('john');
 EXPLAIN ANALYZE
 SELECT get_online_friends_count();
 
--- Expected: Execution Time < 50ms for all queries
+-- Test 5: get_friend_recommendations() performance
+EXPLAIN ANALYZE
+SELECT * FROM get_friend_recommendations(10);
+
+-- Expected: Execution Time < 50ms for all queries (< 100ms for recommendations)
 `
 
 **MCP Command:**
@@ -306,6 +379,18 @@ export async function getOnlineFriendsCount(): Promise<number> {
   if (error) throw error;
   return data;
 }
+
+/**
+ * Get friend recommendations ("People You May Know")
+ */
+export async function getFriendRecommendations(limit: number = 10) {
+  const { data, error } = await supabase.rpc('get_friend_recommendations', {
+    p_limit: limit,
+  });
+  
+  if (error) throw error;
+  return data;
+}
 `
 
 ---
@@ -320,7 +405,8 @@ import {
   unfriend, 
   getMutualFriends, 
   searchFriends, 
-  getOnlineFriendsCount 
+  getOnlineFriendsCount,
+  getFriendRecommendations 
 } from '@/services/friendService';
 import { toast } from '@/hooks/use-toast';
 
@@ -370,6 +456,13 @@ export function useOnlineFriendsCount() {
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 }
+
+export function useFriendRecommendations(limit: number = 10) {
+  return useQuery({
+    queryKey: ['friend-recommendations', limit],
+    queryFn: () => getFriendRecommendations(limit),
+  });
+}
 `
 
 ---
@@ -393,7 +486,10 @@ SELECT * FROM search_friends('doe');
 -- Test 4: Online friends count
 SELECT get_online_friends_count();
 
--- Test 5: Performance validation
+-- Test 5: Friend recommendations
+SELECT * FROM get_friend_recommendations(10);
+
+-- Test 6: Performance validation
 -- All should execute in < 50ms
 EXPLAIN ANALYZE SELECT * FROM get_mutual_friends('uuid');
 EXPLAIN ANALYZE SELECT * FROM search_friends('test');
@@ -423,6 +519,14 @@ describe('Friend Operations', () => {
     const count = await getOnlineFriendsCount();
     expect(typeof count).toBe('number');
     expect(count).toBeGreaterThanOrEqual(0);
+  });
+
+  it('should get friend recommendations', async () => {
+    const recommendations = await getFriendRecommendations(5);
+    expect(Array.isArray(recommendations)).toBe(true);
+    recommendations.forEach(rec => {
+      expect(rec.mutual_friends_count).toBeGreaterThan(0);
+    });
   });
 });
 `

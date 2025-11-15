@@ -16,10 +16,11 @@ Extend the `profiles` table with friend-related metrics and online presence trac
 
 ## ✅ Acceptance Criteria
 
-- [ ] **AC1:** Add columns: `is_online`, `last_active`, `friend_count`, `follower_count`, `following_count`
+- [ ] **AC1:** Add columns: `is_online`, `last_active`, `friend_count`, `follower_count`, `following_count`, `privacy_settings`
 - [ ] **AC2:** Database triggers auto-update counts on friendship/follow changes
 - [ ] **AC3:** Realtime presence tracking using Supabase channels
-- [ ] **AC4:** Online status indicators in UI components
+- [ ] **AC4:** Privacy settings JSONB column for user preferences
+- [ ] **AC5:** Online status indicators in UI components
 
 ---
 
@@ -40,7 +41,13 @@ ALTER TABLE public.profiles
   ADD COLUMN IF NOT EXISTS last_active TIMESTAMPTZ DEFAULT NOW(),
   ADD COLUMN IF NOT EXISTS friend_count INTEGER DEFAULT 0,
   ADD COLUMN IF NOT EXISTS follower_count INTEGER DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS following_count INTEGER DEFAULT 0;
+  ADD COLUMN IF NOT EXISTS following_count INTEGER DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS privacy_settings JSONB DEFAULT '{
+    "show_online_status": true,
+    "show_friend_list": "friends",
+    "allow_friend_requests": true,
+    "show_mutual_friends": true
+  }'::jsonb;
 
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_profiles_is_online 
@@ -55,6 +62,7 @@ COMMENT ON COLUMN profiles.last_active IS 'Last activity timestamp (updated on a
 COMMENT ON COLUMN profiles.friend_count IS 'Cached count of active friendships';
 COMMENT ON COLUMN profiles.follower_count IS 'Cached count of followers';
 COMMENT ON COLUMN profiles.following_count IS 'Cached count of users being followed';
+COMMENT ON COLUMN profiles.privacy_settings IS 'User privacy preferences for friend features';
 ```
 
 **MCP Command:**
