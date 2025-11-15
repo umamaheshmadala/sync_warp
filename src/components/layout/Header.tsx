@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { List, LogOut, User, Settings, UserPlus, Search } from 'lucide-react';
+import { List, LogOut, User, Settings, UserPlus, Search, MessageCircle } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { useSimpleProductSocial } from '../../hooks/useSimpleProductSocial';
@@ -204,6 +204,17 @@ export default function Header() {
             <SyncStatusIndicator compact />
           </div>
           
+          {/* Messages - Desktop Only */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden md:flex relative text-gray-700 hover:text-indigo-600 hover:bg-indigo-50"
+            onClick={() => navigate('/messages')}
+            title="Messages"
+          >
+            <MessageCircle className="h-5 w-5" />
+          </Button>
+
           {/* Wishlist - Desktop Only */}
           <Button
             variant="ghost"
@@ -224,6 +235,17 @@ export default function Header() {
 
           {/* Notifications - All screens */}
           <FollowerNotificationBell />
+
+          {/* Messages - Mobile Only */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden text-gray-700 hover:text-indigo-600 hover:bg-indigo-50"
+            onClick={() => navigate('/messages')}
+            title="Messages"
+          >
+            <MessageCircle className="h-6 w-6" />
+          </Button>
 
           {/* Friends Sidebar Toggle - Mobile shows on right, Desktop hidden */}
           <Button

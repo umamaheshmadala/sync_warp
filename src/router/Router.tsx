@@ -34,6 +34,10 @@ import { ProductDetails, AllProducts } from '../components/products'
 // Import social components
 import FriendsManagementPage from '../components/FriendsManagementPage'
 
+// Import messaging components (Epic 8.2)
+import { ConversationListPage } from '../components/messaging/ConversationListPage'
+import { ChatScreen } from '../components/messaging/ChatScreen'
+
 // Lazy load components for better performance
 const NotFound = lazy(() => import('../components/NotFound'))
 const Profile = lazy(() => import('../components/Profile'))
@@ -289,6 +293,21 @@ export const routes: RouteConfig[] = [
     protected: true,
     title: 'Storage Test - SynC (STORY 8.1.3)',
     description: 'Test message attachments upload, signed URLs, and CORS behavior'
+  },
+  // Epic 8.2: Messaging Routes
+  {
+    path: '/messages',
+    element: <ConversationListPage />,
+    protected: true,
+    title: 'Messages - SynC',
+    description: 'Your conversations and direct messages'
+  },
+  {
+    path: '/messages/:conversationId',
+    element: <ChatScreen />,
+    protected: true,
+    title: 'Chat - SynC',
+    description: 'Chat conversation'
   },
   // Business Routes
   {
