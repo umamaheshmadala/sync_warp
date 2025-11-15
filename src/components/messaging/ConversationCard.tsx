@@ -1,9 +1,10 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 import { Badge } from '../ui/badge'
 import { formatDistanceToNow } from 'date-fns'
 import { Haptics, ImpactStyle } from '@capacitor/haptics'
 import { Capacitor } from '@capacitor/core'
+import { useNewFriends } from '../../hooks/useNewFriends'
 import type { ConversationWithDetails } from '../../types/messaging'
 import { cn } from '../../lib/utils'
 
@@ -54,10 +55,21 @@ export function ConversationCard({
     other_participant_avatar,
     last_message_content,
     last_message_at,
-    unread_count
+    unread_count,
+    participant1_id,
+    participant2_id
   } = conversation
 
+  const { friends } = useNewFriends()
   const [pressTimer, setPressTimer] = useState<NodeJS.Timeout | null>(null)
+
+  // Get friend's online status
+  const friendProfile = useMemo(() => {
+    return friends.find(f =>
+      f.friend_profile.user_id === participant1_id ||
+      f.friend_profile.user_id === participant2_id
+    )?.friend_profile
+  }, [friends, participant1_id, participant2_id])
 
   // Generate initials from participant name
   const initials = other_participant_name
@@ -140,16 +152,28 @@ export function ConversationCard({
         "active:bg-gray-100" // Active state for tap feedback
       )}
     >
-      {/* Avatar */}
-      <Avatar className="h-12 w-12 flex-shrink-0">
-        <AvatarImage 
-          src={other_participant_avatar || undefined} 
-          alt={other_participant_name || 'User'} 
-        />
-        <AvatarFallback className="bg-blue-500 text-white font-semibold">
-          {initials}
-        </AvatarFallback>
-      </Avatar>
+      {/* Avatar with online status */}
+      <div className="relative flex-shrink-0">
+        <Avatar className="h-12 w-12">
+          <AvatarImage 
+            src={other_participant_avatar || undefined} 
+            alt={other_participant_name || 'User'} 
+          />
+          <AvatarFallback className="bg-blue-500 text-white font-semibold">
+            {initials}
+          </AvatarFallback>
+        </Avatar>
+        {/* Online indicator */}
+        {friendProfile && (
+          <div
+            className={cn(
+              "absolute -bottom-0 -right-0 h-3 w-3 rounded-full border-2 border-white",
+              friendProfile.is_online ? "bg-green-400" : "bg-gray-400"
+            )}
+            title={friendProfile.is_online ? "Online" : "Offline"}
+          />
+        )}
+      </div>
 
       {/* Content */}
       <div className="flex-1 min-w-0">
