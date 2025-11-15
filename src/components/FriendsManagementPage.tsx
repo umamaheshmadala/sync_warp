@@ -17,7 +17,9 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { useNewFriends as useFriends } from '../hooks/useNewFriends';
+import { useReceivedFriendRequests, useAcceptFriendRequest, useRejectFriendRequest } from '../hooks/useFriendRequests';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
+import { toast } from 'react-hot-toast';
 import AddFriend from './AddFriend';
 import ShareDeal from './ShareDealSimple';
 import type { Friend } from '../services/newFriendService';
@@ -28,14 +30,15 @@ const FriendsManagementPage: React.FC = () => {
   const { user } = useAuthStore();
   const {
     friends,
-    friendRequests,
     loading,
     totalFriends,
     onlineCount,
-    removeFriend,
-    acceptFriendRequest,
-    rejectFriendRequest
+    removeFriend
   } = useFriends();
+  
+  const { receivedRequests } = useReceivedFriendRequests();
+  const acceptRequest = useAcceptFriendRequest();
+  const rejectRequest = useRejectFriendRequest();
   const { triggerHaptic } = useHapticFeedback();
 
   const [activeTab, setActiveTab] = useState<TabType>('friends');
@@ -65,38 +68,66 @@ const FriendsManagementPage: React.FC = () => {
   const filteredFriends = getFilteredFriends();
 
   // Handle friend request actions
-  const handleAcceptRequest = async (requestId: string) => {
-    try {
-      setProcessingRequest(prev => new Set(prev).add(requestId));
-      await acceptFriendRequest(requestId);
-      triggerHaptic('success');
-    } catch (error) {
-      console.error('Error accepting friend request:', error);
-      triggerHaptic('error');
-    } finally {
-      setProcessingRequest(prev => {
-        const next = new Set(prev);
-        next.delete(requestId);
-        return next;
-      });
-    }
+  const handleAcceptRequest = (requestId: string) => {
+    setProcessingRequest(prev => new Set(prev).add(requestId));
+    
+    acceptRequest.mutate(requestId, {
+      onSuccess: (result) => {
+        if (result.success) {
+          triggerHaptic('success');
+          toast.success('Friend request accepted!');
+        } else {
+          triggerHaptic('error');
+          toast.error(result.error || 'Failed to accept request');
+        }
+        setProcessingRequest(prev => {
+          const next = new Set(prev);
+          next.delete(requestId);
+          return next;
+        });
+      },
+      onError: (error) => {
+        console.error('Error accepting friend request:', error);
+        triggerHaptic('error');
+        toast.error('Failed to accept friend request');
+        setProcessingRequest(prev => {
+          const next = new Set(prev);
+          next.delete(requestId);
+          return next;
+        });
+      }
+    });
   };
 
-  const handleRejectRequest = async (requestId: string) => {
-    try {
-      setProcessingRequest(prev => new Set(prev).add(requestId));
-      await rejectFriendRequest(requestId);
-      triggerHaptic('light');
-    } catch (error) {
-      console.error('Error rejecting friend request:', error);
-      triggerHaptic('error');
-    } finally {
-      setProcessingRequest(prev => {
-        const next = new Set(prev);
-        next.delete(requestId);
-        return next;
-      });
-    }
+  const handleRejectRequest = (requestId: string) => {
+    setProcessingRequest(prev => new Set(prev).add(requestId));
+    
+    rejectRequest.mutate(requestId, {
+      onSuccess: (result) => {
+        if (result.success) {
+          triggerHaptic('light');
+          toast.success('Friend request declined');
+        } else {
+          triggerHaptic('error');
+          toast.error(result.error || 'Failed to decline request');
+        }
+        setProcessingRequest(prev => {
+          const next = new Set(prev);
+          next.delete(requestId);
+          return next;
+        });
+      },
+      onError: (error) => {
+        console.error('Error rejecting friend request:', error);
+        triggerHaptic('error');
+        toast.error('Failed to decline friend request');
+        setProcessingRequest(prev => {
+          const next = new Set(prev);
+          next.delete(requestId);
+          return next;
+        });
+      }
+    });
   };
 
   const handleRemoveFriend = async (friend: Friend) => {
@@ -123,7 +154,7 @@ const FriendsManagementPage: React.FC = () => {
 
   const tabs = [
     { id: 'friends', label: 'Friends', icon: Users, count: totalFriends },
-    { id: 'requests', label: 'Requests', icon: Clock, count: friendRequests.length },
+    { id: 'requests', label: 'Requests', icon: Clock, count: receivedRequests.length },
     { id: 'add', label: 'Add Friends', icon: UserPlus, count: null },
     { id: 'activity', label: 'Activity', icon: MessageCircle, count: null }
   ];
@@ -149,9 +180,9 @@ const FriendsManagementPage: React.FC = () => {
               <h1 className="text-2xl font-bold text-gray-900">Friends</h1>
               <p className="text-gray-600">
                 {totalFriends} friends • {onlineCount} online
-                {friendRequests.length > 0 && (
+                {receivedRequests.length > 0 && (
                   <span className="ml-2 bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs font-medium">
-                    {friendRequests.length} pending
+                    {receivedRequests.length} pending
                   </span>
                 )}
               </p>
@@ -316,8 +347,8 @@ const FriendsManagementPage: React.FC = () => {
             {/* Friend Requests Tab */}
             {activeTab === 'requests' && (
               <div className="space-y-4">
-                {friendRequests.length > 0 ? (
-                  friendRequests.map((request) => (
+                {receivedRequests.length > 0 ? (
+                  receivedRequests.map((request) => (
                     <div
                       key={request.id}
                       className="bg-white rounded-lg border p-4 hover:shadow-sm transition-shadow"
@@ -329,13 +360,13 @@ const FriendsManagementPage: React.FC = () => {
                           </div>
                           <div>
                             <h3 className="font-medium text-gray-900">
-                              {request.requester_profile.full_name}
+                              {request.sender?.full_name || 'Unknown User'}
                             </h3>
                             <p className="text-sm text-gray-500">
-                              {request.requester_profile.city && (
+                              {request.sender?.city && (
                                 <>
                                   <MapPin className="w-3 h-3 inline mr-1" />
-                                  {request.requester_profile.city}
+                                  {request.sender.city}
                                 </>
                               )}
                             </p>

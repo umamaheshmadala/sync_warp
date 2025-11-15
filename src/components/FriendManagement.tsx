@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Users, UserPlus, Activity, MessageSquare } from 'lucide-react';
 import { useNewFriends as useFriends } from '../hooks/useNewFriends';
+import { useReceivedFriendRequests } from '../hooks/useFriendRequests';
 import ContactsSidebar from './ContactsSidebarWithTabs';
 import AddFriend from './AddFriend';
 import FriendRequests from './FriendRequests';
@@ -15,11 +16,12 @@ interface FriendManagementProps {
 const FriendManagement: React.FC<FriendManagementProps> = ({ className = '' }) => {
   const { 
     friends, 
-    friendRequests, 
     totalFriends, 
     onlineCount, 
     loading 
   } = useFriends();
+  
+  const { receivedRequests } = useReceivedFriendRequests();
   
   const [showContactsSidebar, setShowContactsSidebar] = useState(false);
   const [showAddFriend, setShowAddFriend] = useState(false);
@@ -67,23 +69,23 @@ const FriendManagement: React.FC<FriendManagementProps> = ({ className = '' }) =
           </div>
         </motion.div>
 
-        <motion.div 
-          className="bg-white p-4 rounded-lg shadow-sm border border-gray-200"
-          whileHover={{ scale: 1.02 }}
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        >
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <UserPlus className="h-8 w-8 text-blue-600" />
+          <motion.div 
+            className="bg-white p-4 rounded-lg shadow-sm border border-gray-200"
+            whileHover={{ scale: 1.02 }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          >
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <UserPlus className="h-8 w-8 text-blue-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-2xl font-semibold text-gray-900">
+                  {loading ? '...' : receivedRequests.length}
+                </p>
+                <p className="text-sm font-medium text-gray-500">Pending Requests</p>
+              </div>
             </div>
-            <div className="ml-4">
-              <p className="text-2xl font-semibold text-gray-900">
-                {loading ? '...' : friendRequests.length}
-              </p>
-              <p className="text-sm font-medium text-gray-500">Pending Requests</p>
-            </div>
-          </div>
-        </motion.div>
+          </motion.div>
 
         <motion.div 
           className="bg-white p-4 rounded-lg shadow-sm border border-gray-200"
@@ -139,11 +141,11 @@ const FriendManagement: React.FC<FriendManagementProps> = ({ className = '' }) =
             <MessageSquare className="h-8 w-8 text-green-600 mb-2" />
             <span className="text-sm font-medium text-green-900">Friend Requests</span>
             <span className="text-xs text-green-600">
-              {friendRequests.length > 0 ? `${friendRequests.length} pending` : 'No pending'}
+              {receivedRequests.length > 0 ? `${receivedRequests.length} pending` : 'No pending'}
             </span>
-            {friendRequests.length > 0 && (
+            {receivedRequests.length > 0 && (
               <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center">
-                {friendRequests.length}
+                {receivedRequests.length}
               </div>
             )}
           </motion.button>

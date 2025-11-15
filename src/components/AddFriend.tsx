@@ -3,7 +3,9 @@ import React, { useState, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, UserPlus, User, MapPin, Heart, X, Check } from 'lucide-react'
 import { useNewFriends as useFriends } from '../hooks/useNewFriends'
+import { useSendFriendRequest } from '../hooks/useFriendRequests'
 import { useHapticFeedback } from '../hooks/useHapticFeedback'
+import { toast } from 'react-hot-toast'
 import type { FriendProfile } from '../services/newFriendService'
 
 interface AddFriendProps {
@@ -12,14 +14,14 @@ interface AddFriendProps {
 }
 
 const AddFriend: React.FC<AddFriendProps> = ({ isOpen, onClose }) => {
-  const { searchUsers, sendFriendRequest } = useFriends()
+  const { searchUsers } = useFriends()
+  const sendRequest = useSendFriendRequest()
   const { triggerHaptic } = useHapticFeedback()
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<FriendProfile[]>([])
   const [loading, setLoading] = useState(false)
   const [sendingRequest, setSendingRequest] = useState<Set<string>>(new Set())
   const [successMessages, setSuccessMessages] = useState<Set<string>>(new Set())
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const searchTimeoutRef = useRef<NodeJS.Timeout>()
 
   /**
@@ -63,40 +65,47 @@ const AddFriend: React.FC<AddFriendProps> = ({ isOpen, onClose }) => {
   /**
    * Send friend request
    */
-  const handleSendRequest = useCallback(async (userId: string) => {
-    try {
-      setErrorMessage(null) // Clear any previous errors
-      setSendingRequest(prev => new Set(prev).add(userId))
-      
-      console.log('Sending friend request to userId:', userId) // Debug log
-      await sendFriendRequest(userId)
-      
-      triggerHaptic('success')
-      
-      // Mark as successfully sent
-      setSuccessMessages(prev => new Set(prev).add(userId))
-      
-      // Remove user from search results after successful send
-      setSearchResults(prev => prev.filter(user => user.user_id !== userId))
-      
-      console.log('Friend request sent successfully!') // Debug log
-    } catch (error) {
-      console.error('Error sending friend request:', error)
-      triggerHaptic('error')
-      
-      // Show error message to user
-      const errorMsg = error instanceof Error ? error.message : 'Failed to send friend request'
-      setErrorMessage(errorMsg)
-      
-      console.log('Friend request failed:', errorMsg) // Debug log
-    } finally {
-      setSendingRequest(prev => {
-        const next = new Set(prev)
-        next.delete(userId)
-        return next
-      })
-    }
-  }, [sendFriendRequest, triggerHaptic])
+  const handleSendRequest = useCallback((userId: string) => {
+    setSendingRequest(prev => new Set(prev).add(userId))
+    
+    sendRequest.mutate(
+      { receiverId: userId },
+      {
+        onSuccess: (result) => {
+          if (result.success) {
+            triggerHaptic('success')
+            toast.success('Friend request sent!')
+            
+            // Mark as successfully sent
+            setSuccessMessages(prev => new Set(prev).add(userId))
+            
+            // Remove user from search results after successful send
+            setSearchResults(prev => prev.filter(user => user.user_id !== userId))
+          } else {
+            triggerHaptic('error')
+            toast.error(result.error || 'Failed to send friend request')
+          }
+          
+          setSendingRequest(prev => {
+            const next = new Set(prev)
+            next.delete(userId)
+            return next
+          })
+        },
+        onError: (error) => {
+          console.error('Error sending friend request:', error)
+          triggerHaptic('error')
+          toast.error('Failed to send friend request')
+          
+          setSendingRequest(prev => {
+            const next = new Set(prev)
+            next.delete(userId)
+            return next
+          })
+        }
+      }
+    )
+  }, [sendRequest, triggerHaptic])
 
   /**
    * Reset component when closing
@@ -171,24 +180,6 @@ const AddFriend: React.FC<AddFriendProps> = ({ isOpen, onClose }) => {
                     </div>
                   )}
                 </div>
-
-                {/* Error Message */}
-                {errorMessage && (
-                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0">
-                        <X className="h-4 w-4 text-red-500" />
-                      </div>
-                      <div className="ml-2 text-sm text-red-700">{errorMessage}</div>
-                      <button
-                        onClick={() => setErrorMessage(null)}
-                        className="ml-auto flex-shrink-0 text-red-500 hover:text-red-700"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                )}
 
                 {/* Search Results */}
                 <div className="max-h-96 overflow-y-auto">
