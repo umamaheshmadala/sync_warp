@@ -33,6 +33,7 @@ import { ProductDetails, AllProducts } from '../components/products'
 
 // Import social components
 import FriendsManagementPage from '../components/FriendsManagementPage'
+import { FriendSearchPage } from '../pages/FriendSearchPage'
 
 // Import messaging components (Epic 8.2)
 import { ConversationListPage } from '../components/messaging/ConversationListPage'
@@ -262,6 +263,13 @@ export const routes: RouteConfig[] = [
     protected: true,
     title: 'Friends - SynC',
     description: 'Manage your friends and connections'
+  },
+  {
+    path: '/friends/search',
+    element: <FriendSearchPage />,
+    protected: true,
+    title: 'Find Friends - SynC',
+    description: 'Search for friends with intelligent fuzzy matching'
   },
   {
     path: '/checkins',

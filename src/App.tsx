@@ -1,7 +1,7 @@
 import { BrowserRouter as Router } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
-import { experimental_createQueryPersister as createQueryPersister } from '@tanstack/query-persist-client-core'
+import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister'
 import { Toaster } from 'react-hot-toast'
 import { useEffect, useState } from 'react'
 import { Capacitor } from '@capacitor/core'
@@ -29,11 +29,8 @@ const queryClient = new QueryClient({
 })
 
 // Create persister for localStorage
-const persister = createQueryPersister({
+const persister = createSyncStoragePersister({
   storage: window.localStorage,
-  maxAge: 1000 * 60 * 60 * 24, // 24 hours
-  serialize: (data) => JSON.stringify(data),
-  deserialize: (data) => JSON.parse(data),
 })
 
 // Component that needs Router context

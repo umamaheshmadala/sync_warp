@@ -120,21 +120,11 @@ class FriendRequestService {
           message,
           created_at,
           updated_at,
-          expires_at,
-          sender:profiles!friend_requests_requester_id_fkey(
-            id,
-            full_name,
-            email,
-            avatar_url,
-            city,
-            interests,
-            is_online,
-            last_active
-          )
+          expires_at
         `)
         .eq('receiver_id', currentUser.user.id)
         .eq('status', 'pending')
-        .gt('expires_at', new Date().toISOString()) // Filter expired
+        .gt('expires_at', new Date().toISOString())
         .order('created_at', { ascending: false })
 
       if (error) {
@@ -142,13 +132,20 @@ class FriendRequestService {
         throw error
       }
 
-      // Map the data to fix join type (Supabase returns array for joins)
-      const mappedData = (data || []).map((req: any) => ({
-        ...req,
-        sender: Array.isArray(req.sender) ? req.sender[0] : req.sender
-      }))
+      // Fetch sender profiles separately
+      const requestsWithSenders = await Promise.all(
+        (data || []).map(async (req) => {
+          const { data: sender } = await supabase
+            .from('profiles')
+            .select('id, full_name, email, avatar_url, city, interests, is_online, last_active')
+            .eq('id', req.sender_id)
+            .single()
+          
+          return { ...req, sender }
+        })
+      )
 
-      return mappedData as FriendRequest[]
+      return requestsWithSenders as FriendRequest[]
     } catch (error) {
       console.error('Get received requests error:', error)
       throw error
@@ -173,17 +170,7 @@ class FriendRequestService {
           message,
           created_at,
           updated_at,
-          expires_at,
-          receiver:profiles!friend_requests_receiver_id_fkey(
-            id,
-            full_name,
-            email,
-            avatar_url,
-            city,
-            interests,
-            is_online,
-            last_active
-          )
+          expires_at
         `)
         .eq('sender_id', currentUser.user.id)
         .eq('status', 'pending')
@@ -195,13 +182,20 @@ class FriendRequestService {
         throw error
       }
 
-      // Map the data to fix join type (Supabase returns array for joins)
-      const mappedData = (data || []).map((req: any) => ({
-        ...req,
-        receiver: Array.isArray(req.receiver) ? req.receiver[0] : req.receiver
-      }))
+      // Fetch receiver profiles separately
+      const requestsWithReceivers = await Promise.all(
+        (data || []).map(async (req) => {
+          const { data: receiver } = await supabase
+            .from('profiles')
+            .select('id, full_name, email, avatar_url, city, interests, is_online, last_active')
+            .eq('id', req.receiver_id)
+            .single()
+          
+          return { ...req, receiver }
+        })
+      )
 
-      return mappedData as FriendRequest[]
+      return requestsWithReceivers as FriendRequest[]
     } catch (error) {
       console.error('Get sent requests error:', error)
       throw error
