@@ -28,9 +28,11 @@ export interface FriendRequest {
 
 export interface Friendship {
   id: string
-  user1_id: string
-  user2_id: string
+  user_id: string
+  friend_id: string
+  status: 'active' | 'unfriended'
   created_at: string
+  unfriended_at?: string
   friend_profile: FriendProfile
 }
 
@@ -48,46 +50,52 @@ export interface FriendActivity {
 
 class FriendService {
   /**
-   * Get user's friends list
+   * Get user's friends list (bidirectional)
+   * Uses new bidirectional friendships table with user_id/friend_id pattern
    */
   async getFriends(userId: string): Promise<Friendship[]> {
     try {
-      // Get friendships first
-      const { data: friendshipData, error: friendshipError } = await supabase
+      // Query bidirectional friendships table (already indexed)
+      const { data, error } = await supabase
         .from('friendships')
-        .select('id, user1_id, user2_id, created_at')
-        .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
+        .select(`
+          id,
+          user_id,
+          friend_id,
+          status,
+          created_at,
+          unfriended_at,
+          friend:profiles!friendships_friend_id_fkey(
+            id,
+            email,
+            full_name,
+            avatar_url,
+            city,
+            interests,
+            is_online,
+            last_active,
+            created_at
+          )
+        `)
+        .eq('user_id', userId)
+        .eq('status', 'active')
         .order('created_at', { ascending: false })
 
-      if (friendshipError) throw friendshipError
+      if (error) throw error
 
-      if (!friendshipData || friendshipData.length === 0) return []
-
-      // Get friend profiles separately
-      const friendIds = friendshipData.map(friendship => 
-        friendship.user1_id === userId ? friendship.user2_id : friendship.user1_id
-      )
-
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('id, email, full_name, avatar_url, city, interests, is_online, last_active, created_at')
-        .in('id', friendIds)
-
-      if (profileError) throw profileError
-
-      // Map the data to include the correct friend profile
-      const friendships: Friendship[] = friendshipData.map(friendship => {
-        const friendId = friendship.user1_id === userId ? friendship.user2_id : friendship.user1_id
-        const friendProfile = profileData?.find(profile => profile.id === friendId)
-        
-        return {
-          ...friendship,
-          friend_profile: {
-            ...friendProfile,
-            user_id: friendId // Add user_id for compatibility
-          } as FriendProfile
-        }
-      }).filter(friendship => friendship.friend_profile.id) // Filter out any with missing profiles
+      // Map the data to match Friendship interface
+      const friendships: Friendship[] = (data || []).map(friendship => ({
+        id: friendship.id,
+        user_id: friendship.user_id,
+        friend_id: friendship.friend_id,
+        status: friendship.status,
+        created_at: friendship.created_at,
+        unfriended_at: friendship.unfriended_at,
+        friend_profile: {
+          ...friendship.friend,
+          user_id: friendship.friend_id // Add user_id for compatibility
+        } as FriendProfile
+      }))
 
       return friendships
     } catch (error) {
@@ -142,15 +150,14 @@ class FriendService {
         throw new Error('Friend request already exists')
       }
 
-      // Check if already friends
+      // Check if already friends (bidirectional check)
       const { data: existingFriendship } = await supabase
         .from('friendships')
-        .select('*')
-        .or(`
-          and(user1_id.eq.${requesterId},user2_id.eq.${receiverId}),
-          and(user1_id.eq.${receiverId},user2_id.eq.${requesterId})
-        `)
-        .single()
+        .select('id')
+        .eq('user_id', requesterId)
+        .eq('friend_id', receiverId)
+        .eq('status', 'active')
+        .maybeSingle()
 
       if (existingFriendship) {
         throw new Error('Already friends')
@@ -281,17 +288,18 @@ class FriendService {
   }
 
   /**
-   * Remove friend
+   * Remove friend (soft delete using unfriend status)
+   * Updates both directions automatically via trigger
    */
   async removeFriend(userId: string, friendId: string): Promise<void> {
     try {
+      // Soft delete: update status to unfriended
+      // Trigger will auto-update the reverse relationship
       const { error } = await supabase
         .from('friendships')
-        .delete()
-        .or(`
-          and(user1_id.eq.${userId},user2_id.eq.${friendId}),
-          and(user1_id.eq.${friendId},user2_id.eq.${userId})
-        `)
+        .update({ status: 'unfriended' })
+        .eq('user_id', userId)
+        .eq('friend_id', friendId)
 
       if (error) throw error
     } catch (error) {
@@ -423,6 +431,93 @@ class FriendService {
       }, (payload) => {
         callback(payload.new as FriendProfile)
       })
+      .subscribe()
+  }
+
+  /**
+   * Check if two users are friends (O(1) lookup)
+   */
+  async areFriends(userId: string, friendId: string): Promise<boolean> {
+    try {
+      const { data } = await supabase
+        .from('friendships')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('friend_id', friendId)
+        .eq('status', 'active')
+        .maybeSingle()
+      
+      return !!data
+    } catch (error) {
+      console.error('Error checking friendship:', error)
+      return false
+    }
+  }
+
+  /**
+   * Get friend count for a user (O(1) with index)
+   */
+  async getFriendCount(userId: string): Promise<number> {
+    try {
+      const { count, error } = await supabase
+        .from('friendships')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('status', 'active')
+      
+      if (error) throw error
+      return count || 0
+    } catch (error) {
+      console.error('Error getting friend count:', error)
+      return 0
+    }
+  }
+
+  /**
+   * Get mutual friends between two users
+   */
+  async getMutualFriends(userId: string, otherUserId: string): Promise<FriendProfile[]> {
+    try {
+      // Use the database function for optimal performance
+      const { data, error } = await supabase
+        .rpc('get_mutual_friends', {
+          user1_uuid: userId,
+          user2_uuid: otherUserId
+        })
+
+      if (error) throw error
+
+      // Map to FriendProfile format
+      return (data || []).map((friend: any) => ({
+        id: friend.friend_id,
+        user_id: friend.friend_id,
+        full_name: friend.friend_name,
+        email: '',
+        is_online: false,
+        last_active: new Date().toISOString(),
+        created_at: new Date().toISOString()
+      }))
+    } catch (error) {
+      console.error('Error getting mutual friends:', error)
+      return []
+    }
+  }
+
+  /**
+   * Subscribe to friendship changes (realtime)
+   */
+  subscribeToFriendshipChanges(
+    userId: string, 
+    callback: (payload: any) => void
+  ) {
+    return supabase
+      .channel('friendships_changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'friendships',
+        filter: `user_id=eq.${userId}`
+      }, callback)
       .subscribe()
   }
 }
