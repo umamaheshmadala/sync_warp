@@ -894,4 +894,103 @@ class SearchService {
 
 // Export singleton instance
 export const searchService = new SearchService();
+
+/**
+ * Friend Search Filters
+ * Story 9.2.4: Search Filters & Advanced Search
+ */
+export interface FriendSearchFilters {
+  location?: {
+    lat: number;
+    lng: number;
+    radius: 5 | 10 | 25 | 50; // km
+  };
+  hasMutualFriends?: boolean;
+  sharedInterests?: string[]; // deal category IDs
+  limit?: number;
+  offset?: number;
+}
+
+export interface FriendSearchResult {
+  user_id: string;
+  full_name: string;
+  username: string;
+  avatar_url: string | null;
+  location: string | null;
+  mutual_friends_count: number;
+  distance_km: number | null;
+  relevance_score: number;
+}
+
+/**
+ * Search users with filters
+ * Story 9.2.4
+ */
+export async function searchUsersWithFilters(
+  query: string,
+  filters: FriendSearchFilters = {}
+): Promise<FriendSearchResult[]> {
+  if (!query || query.trim().length < 2) {
+    throw new Error('Search query must be at least 2 characters');
+  }
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    throw new Error('User not authenticated');
+  }
+
+  const { data, error } = await supabase.rpc('search_users_with_filters', {
+    search_query: query.trim(),
+    current_user_id: user.id,
+    filter_location_lat: filters.location?.lat || null,
+    filter_location_lng: filters.location?.lng || null,
+    filter_location_radius_km: filters.location?.radius || null,
+    filter_require_mutual_friends: filters.hasMutualFriends || false,
+    filter_shared_interests: filters.sharedInterests || [],
+    limit_count: filters.limit || 20,
+    offset_count: filters.offset || 0,
+  });
+
+  if (error) {
+    console.error('Filtered search error:', error);
+    throw new Error('Failed to search with filters. Please try again.');
+  }
+
+  return data || [];
+}
+
+/**
+ * Save filters to localStorage
+ */
+export function saveSearchFilters(filters: FriendSearchFilters): void {
+  try {
+    localStorage.setItem('friend_search_filters', JSON.stringify(filters));
+  } catch (error) {
+    console.error('Failed to save search filters:', error);
+  }
+}
+
+/**
+ * Load filters from localStorage
+ */
+export function loadSearchFilters(): FriendSearchFilters {
+  try {
+    const saved = localStorage.getItem('friend_search_filters');
+    return saved ? JSON.parse(saved) : {};
+  } catch (error) {
+    console.error('Failed to load search filters:', error);
+    return {};
+  }
+}
+
+/**
+ * Clear saved filters
+ */
+export function clearSearchFilters(): void {
+  try {
+    localStorage.removeItem('friend_search_filters');
+  } catch (error) {
+    console.error('Failed to clear search filters:', error);
+  }
+}
 export default searchService;

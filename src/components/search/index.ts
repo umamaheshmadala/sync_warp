@@ -11,3 +11,6 @@ export * from './BusinessCard';
 export * from './FilterPanel';
 export * from './SearchSuggestions';
 export * from './SearchAnalytics';
+// Story 9.2.4: Search Filters & Advanced Search
+export { SearchFilters } from './SearchFilters';
+export { FilterChips } from './FilterChips';

@@ -35,6 +35,7 @@ import { ProductDetails, AllProducts } from '../components/products'
 import FriendsManagementPage from '../components/FriendsManagementPage'
 import { FriendSearchPage } from '../pages/FriendSearchPage'
 import { PYMKPage } from '../pages/PYMKPage'
+import { TestSearchFilters } from '../pages/TestSearchFilters'
 
 // Import messaging components (Epic 8.2)
 import { ConversationListPage } from '../components/messaging/ConversationListPage'
@@ -278,6 +279,13 @@ export const routes: RouteConfig[] = [
     protected: true,
     title: 'People You May Know - SynC',
     description: 'Discover friends based on mutual connections and contacts'
+  },
+  {
+    path: '/test/search-filters',
+    element: <TestSearchFilters />,
+    protected: true,
+    title: 'Test Search Filters - SynC (STORY 9.2.4)',
+    description: 'Test page for search filters with location, mutual friends, and shared interests'
   },
   {
     path: '/checkins',
