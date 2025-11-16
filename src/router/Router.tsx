@@ -36,6 +36,7 @@ import FriendsManagementPage from '../components/FriendsManagementPage'
 import { FriendSearchPage } from '../pages/FriendSearchPage'
 import { PYMKPage } from '../pages/PYMKPage'
 import { TestSearchFilters } from '../pages/TestSearchFilters'
+import { TestSearchPerformance } from '../pages/TestSearchPerformance'
 
 // Import messaging components (Epic 8.2)
 import { ConversationListPage } from '../components/messaging/ConversationListPage'
@@ -317,6 +318,14 @@ export const routes: RouteConfig[] = [
     protected: true,
     title: 'Storage Test - SynC (STORY 8.1.3)',
     description: 'Test message attachments upload, signed URLs, and CORS behavior'
+  },
+  // Story 9.2.5: Search Performance Test
+  {
+    path: '/test/search-performance',
+    element: <TestSearchPerformance />,
+    protected: true,
+    title: 'Search Performance Test - SynC (STORY 9.2.5)',
+    description: 'Test search performance optimizations with metrics dashboard'
   },
   // Epic 8.2: Messaging Routes
   {

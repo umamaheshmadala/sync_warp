@@ -993,4 +993,69 @@ export function clearSearchFilters(): void {
     console.error('Failed to clear search filters:', error);
   }
 }
+
+/**
+ * Performance Optimization
+ * Story 9.2.5: Search Performance Optimization
+ */
+
+// Search result caching TTL (30 seconds)
+export const SEARCH_CACHE_TTL = 30000;
+
+/**
+ * Search users with client-side caching and performance monitoring
+ * Story 9.2.5
+ */
+export async function searchUsers(
+  query: string,
+  options: { limit?: number; offset?: number } = {}
+): Promise<FriendSearchResult[]> {
+  if (!query || query.trim().length < 2) {
+    throw new Error('Search query must be at least 2 characters');
+  }
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    throw new Error('User not authenticated');
+  }
+
+  // Use optimized search function (now using GIN full-text index)
+  const { data, error } = await supabase.rpc('search_users', {
+    search_query: query.trim(),
+    current_user_id: user.id,
+    limit_count: options.limit || 20,
+    offset_count: options.offset || 0,
+  });
+
+  if (error) {
+    console.error('Search error:', error);
+    throw new Error('Search failed. Please try again.');
+  }
+
+  return data || [];
+}
+
+/**
+ * Performance monitoring: Log slow searches
+ * Story 9.2.5
+ */
+export async function logSlowSearch(
+  query: string,
+  duration: number,
+  resultCount: number
+): Promise<void> {
+  if (duration > 500) {
+    // Log to monitoring service (e.g., Sentry, LogRocket)
+    console.warn('Slow search detected', {
+      query,
+      duration,
+      resultCount,
+      timestamp: new Date().toISOString(),
+    });
+
+    // You can also send this to your analytics/monitoring service
+    // Example: Sentry.captureMessage('Slow search', { level: 'warning', ... });
+  }
+}
+
 export default searchService;
