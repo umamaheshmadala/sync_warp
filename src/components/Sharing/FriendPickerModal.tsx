@@ -90,6 +90,11 @@ export function FriendPickerModal({
       setRecentlySharedWith(updated);
 
       onSuccess?.(selectedFriends);
+      
+      // Show success message
+      const friendCount = selectedFriends.length;
+      alert(`✅ Successfully shared deal with ${friendCount} friend${friendCount > 1 ? 's' : ''}!`);
+      
       onClose();
       
       // Reset state
@@ -97,7 +102,7 @@ export function FriendPickerModal({
       setSearchQuery('');
     } catch (error) {
       console.error('Failed to share deal:', error);
-      alert('Failed to share deal. Please try again.');
+      alert('❌ Failed to share deal. Please try again.');
     } finally {
       setIsSharing(false);
     }
