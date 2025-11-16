@@ -18,19 +18,31 @@ export async function shareDealWithFriends(
   dealId: string,
   friendIds: string[]
 ): Promise<void> {
+  console.log('shareDealWithFriends called:', { dealId, friendIds });
+  
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     throw new Error('User not authenticated');
   }
+  
+  console.log('Current user:', user.id);
 
   // Get user's full name for the notification
-  const { data: profile } = await supabase
+  console.log('Fetching user profile...');
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('full_name')
     .eq('id', user.id)
     .single();
 
+  if (profileError) {
+    console.error('Failed to fetch user profile:', profileError);
+  } else {
+    console.log('Profile fetched:', profile);
+  }
+
   const senderName = profile?.full_name || 'A friend';
+  console.log('Sender name:', senderName);
 
   // Create notification for each friend
   const notifications = friendIds.map((friendId) => ({
@@ -39,20 +51,35 @@ export async function shareDealWithFriends(
     message: `${senderName} shared a deal with you`,
     notification_type: 'deal_shared_message',
     entity_id: dealId,
-    route_to: `/deals/${dealId}`,
     sender_id: user.id,
-    is_read: false,
-    created_at: new Date().toISOString(),
   }));
+  
+  console.log('Notifications to insert:', notifications);
 
+  console.log('Inserting notifications...');
   const { error } = await supabase.from('notifications').insert(notifications);
 
   if (error) {
-    console.error('Failed to share deal:', error);
-    throw new Error('Failed to share deal. Please try again.');
+    console.error('Failed to create notifications:', error);
+    console.error('Error code:', error.code);
+    console.error('Error message:', error.message);
+    console.error('Error details:', error.details);
+    console.error('Attempted to insert:', notifications);
+    
+    // Provide more helpful error message
+    if (error.message.includes('null value')) {
+      throw new Error('Missing required fields. Please ensure all data is valid.');
+    } else if (error.code === '23503') {
+      throw new Error('Invalid user ID. Please check friend selection.');
+    } else {
+      throw new Error(`Database error: ${error.message}`);
+    }
   }
+  
+  console.log('✅ Notifications inserted successfully');
 
   // Track sharing analytics (optional)
+  console.log('Tracking analytics...');
   try {
     await supabase.from('deal_shares').insert({
       deal_id: dealId,
@@ -60,10 +87,13 @@ export async function shareDealWithFriends(
       shared_with: friendIds,
       shared_at: new Date().toISOString(),
     });
+    console.log('✅ Analytics tracked successfully');
   } catch (error) {
     // Analytics tracking failure shouldn't block the share
     console.warn('Failed to track deal share analytics:', error);
   }
+  
+  console.log('🎉 shareDealWithFriends completed successfully');
 }
 
 /**
