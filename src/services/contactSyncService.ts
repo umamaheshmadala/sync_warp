@@ -77,19 +77,49 @@ async function hashPhoneNumber(phone: string): Promise<string> {
 }
 
 /**
+ * Log sync event for analytics
+ */
+async function logSyncEvent(
+  eventType: 'started' | 'completed' | 'failed',
+  data?: {
+    contactsCount?: number;
+    matchesFound?: number;
+    durationMs?: number;
+    errorType?: string;
+  }
+): Promise<void> {
+  const { error } = await supabase.rpc('log_contact_sync_event', {
+    p_event_type: eventType,
+    p_contacts_count: data?.contactsCount || null,
+    p_matches_found: data?.matchesFound || null,
+    p_duration_ms: data?.durationMs || null,
+    p_error_type: data?.errorType || null,
+  });
+
+  if (error) {
+    console.error('Failed to log sync event:', error);
+  }
+}
+
+/**
  * Sync contacts from device
  */
 export async function syncContacts(
   onProgress?: (progress: SyncProgress) => void
 ): Promise<ContactMatch[]> {
-  // Check permission
-  const hasPermission = await hasContactsPermission();
-  if (!hasPermission) {
-    const granted = await requestContactsPermission();
-    if (!granted) {
-      throw new Error('Contacts permission denied');
+  const startTime = Date.now();
+  try {
+    // Log sync started
+    await logSyncEvent('started');
+
+    // Check permission
+    const hasPermission = await hasContactsPermission();
+    if (!hasPermission) {
+      const granted = await requestContactsPermission();
+      if (!granted) {
+        throw new Error('Contacts permission denied');
+      }
     }
-  }
 
   // Get current user
   const { data: { user } } = await supabase.auth.getUser();
@@ -164,7 +194,27 @@ export async function syncContacts(
     matches: matches?.length || 0 
   });
 
-  return matches || [];
+    const duration = Date.now() - startTime;
+
+    // Log sync completed
+    await logSyncEvent('completed', {
+      contactsCount: contacts.length,
+      matchesFound: matches?.length || 0,
+      durationMs: duration,
+    });
+
+    return matches || [];
+  } catch (error: any) {
+    const duration = Date.now() - startTime;
+
+    // Log sync failed
+    await logSyncEvent('failed', {
+      durationMs: duration,
+      errorType: error.message || 'unknown_error',
+    });
+
+    throw error;
+  }
 }
 
 /**
@@ -247,4 +297,43 @@ export async function hasContactsSynced(): Promise<boolean> {
     .eq('user_id', user.id);
 
   return !error && (count || 0) > 0;
+}
+
+/**
+ * Get last sync timestamp
+ * Story 9.2.7: Contact Sync Enhancements
+ */
+export async function getLastSyncTime(): Promise<Date | null> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('last_contact_sync_at')
+    .eq('id', user.id)
+    .single();
+
+  if (error || !data?.last_contact_sync_at) return null;
+  
+  return new Date(data.last_contact_sync_at);
+}
+
+/**
+ * Schedule background sync (every 24 hours)
+ * Story 9.2.7: Contact Sync Enhancements
+ */
+export function scheduleBackgroundSync(): void {
+  // Check if already synced today
+  getLastSyncTime().then(lastSync => {
+    if (!lastSync) return;
+    
+    const hoursSinceLastSync = (Date.now() - lastSync.getTime()) / (1000 * 60 * 60);
+    
+    if (hoursSinceLastSync >= 24) {
+      // Silently sync in background
+      syncContacts().catch(err => {
+        console.error('Background sync failed:', err);
+      });
+    }
+  });
 }
