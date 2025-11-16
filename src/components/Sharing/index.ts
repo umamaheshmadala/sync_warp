@@ -7,3 +7,6 @@ export type { StorefrontShareButtonProps } from './StorefrontShareButton';
 
 export { ProductShareButton } from './ProductShareButton';
 export type { ProductShareButtonProps } from './ProductShareButton';
+
+// Story 9.2.6 - Deal Sharing Integration
+export { FriendPickerModal } from './FriendPickerModal';

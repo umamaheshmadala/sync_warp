@@ -37,6 +37,7 @@ import { FriendSearchPage } from '../pages/FriendSearchPage'
 import { PYMKPage } from '../pages/PYMKPage'
 import { TestSearchFilters } from '../pages/TestSearchFilters'
 import { TestSearchPerformance } from '../pages/TestSearchPerformance'
+import { TestDealSharing } from '../pages/TestDealSharing'
 
 // Import messaging components (Epic 8.2)
 import { ConversationListPage } from '../components/messaging/ConversationListPage'
@@ -326,6 +327,14 @@ export const routes: RouteConfig[] = [
     protected: true,
     title: 'Search Performance Test - SynC (STORY 9.2.5)',
     description: 'Test search performance optimizations with metrics dashboard'
+  },
+  // Story 9.2.6: Deal Sharing Test
+  {
+    path: '/test/deal-sharing',
+    element: <TestDealSharing />,
+    protected: true,
+    title: 'Deal Sharing Test - SynC (STORY 9.2.6)',
+    description: 'Test FriendPickerModal with search, multi-select, and notifications'
   },
   // Epic 8.2: Messaging Routes
   {
