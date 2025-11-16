@@ -34,6 +34,7 @@ import { ProductDetails, AllProducts } from '../components/products'
 // Import social components
 import FriendsManagementPage from '../components/FriendsManagementPage'
 import { FriendSearchPage } from '../pages/FriendSearchPage'
+import { PYMKPage } from '../pages/PYMKPage'
 
 // Import messaging components (Epic 8.2)
 import { ConversationListPage } from '../components/messaging/ConversationListPage'
@@ -270,6 +271,13 @@ export const routes: RouteConfig[] = [
     protected: true,
     title: 'Find Friends - SynC',
     description: 'Search for friends with intelligent fuzzy matching'
+  },
+  {
+    path: '/friends/recommendations',
+    element: <PYMKPage />,
+    protected: true,
+    title: 'People You May Know - SynC',
+    description: 'Discover friends based on mutual connections and contacts'
   },
   {
     path: '/checkins',
