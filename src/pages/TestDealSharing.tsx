@@ -22,24 +22,24 @@ export function TestDealSharing() {
     timestamp: number;
   }>>([]);
 
-  // Mock deal data
+  // Mock deal data (using valid UUID format)
   const mockDeals = [
     {
-      id: '1',
+      id: '550e8400-e29b-41d4-a716-446655440001',
       title: '50% Off Pizza Special',
       description: 'Get 50% off any large pizza',
       business: "Mario's Pizzeria",
       category: 'Food & Dining',
     },
     {
-      id: '2',
+      id: '550e8400-e29b-41d4-a716-446655440002',
       title: 'Buy 1 Get 1 Free Coffee',
       description: 'Morning special on all coffee drinks',
       business: 'Coffee Haven',
       category: 'Cafe',
     },
     {
-      id: '3',
+      id: '550e8400-e29b-41d4-a716-446655440003',
       title: '30% Off Spa Services',
       description: 'Relax and rejuvenate with our spa package',
       business: 'Serenity Spa',
