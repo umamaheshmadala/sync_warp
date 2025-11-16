@@ -18,7 +18,7 @@ interface FriendRequest {
   sender: {
     id: string;
     full_name: string;
-    username: string;
+    email: string;
     avatar_url?: string;
   };
 }
@@ -49,7 +49,7 @@ export function TempFriendRequests() {
         
         const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
-          .select('id, full_name, username, avatar_url')
+          .select('id, full_name, email, avatar_url')
           .in('id', senderIds);
 
         if (profilesError) {
@@ -63,7 +63,7 @@ export function TempFriendRequests() {
           console.log('Mapping request:', req.id, 'sender:', sender);
           return {
             ...req,
-            sender: sender || { id: req.sender_id, full_name: 'Unknown', username: 'unknown' }
+            sender: sender || { id: req.sender_id, full_name: 'Unknown', email: 'unknown' }
           };
         });
       }
@@ -75,23 +75,17 @@ export function TempFriendRequests() {
   // Accept request mutation
   const acceptMutation = useMutation({
     mutationFn: async (request: FriendRequest) => {
-      // Update request status
-      const { error: updateError } = await supabase
-        .from('friend_requests')
-        .update({ status: 'accepted' })
-        .eq('id', request.id);
+      console.log('Accepting request:', request);
+      
+      // Use DB function to accept request and create bidirectional friendships
+      const { error } = await supabase.rpc('accept_friend_request', {
+        request_id: request.id
+      });
 
-      if (updateError) throw updateError;
-
-      // Create bidirectional friendships
-      const { error: friendshipError } = await supabase
-        .from('friendships')
-        .insert([
-          { user_id: request.receiver_id, friend_id: request.sender_id, status: 'accepted' },
-          { user_id: request.sender_id, friend_id: request.receiver_id, status: 'accepted' }
-        ]);
-
-      if (friendshipError) throw friendshipError;
+      if (error) {
+        console.error('Accept error:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['temp-friend-requests'] });
@@ -165,7 +159,7 @@ export function TempFriendRequests() {
                   {/* Info */}
                   <div className="flex-1">
                     <h3 className="font-semibold">{request.sender.full_name}</h3>
-                    <p className="text-sm text-gray-600">@{request.sender.username}</p>
+                    <p className="text-sm text-gray-600">{request.sender.email}</p>
                   </div>
 
                   {/* Actions */}

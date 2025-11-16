@@ -40,7 +40,8 @@ import { TestSearchPerformance } from '../pages/TestSearchPerformance'
 import { TestDealSharing } from '../pages/TestDealSharing'
 // Story 9.3.1: Friends List Component
 import { FriendsPage } from '../pages/Friends'
-import { TempFriendRequests } from '../pages/TempFriendRequests'
+// Story 9.3.2: Friend Requests UI
+import { FriendRequestsList } from '../components/friends/FriendRequestsList'
 
 // Import messaging components (Epic 8.2)
 import { ConversationListPage } from '../components/messaging/ConversationListPage'
@@ -287,10 +288,10 @@ export const routes: RouteConfig[] = [
   },
   {
     path: '/friends/requests',
-    element: <TempFriendRequests />,
+    element: <FriendRequestsList />,
     protected: true,
     title: 'Friend Requests - SynC',
-    description: 'Accept or reject pending friend requests'
+    description: 'Manage received and sent friend requests'
   },
   {
     path: '/friends/recommendations',

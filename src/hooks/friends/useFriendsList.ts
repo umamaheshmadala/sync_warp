@@ -26,7 +26,7 @@ export function useFriendsList() {
         .from('friendships')
         .select('friend_id')
         .eq('user_id', user.id)
-        .eq('status', 'accepted')
+        .eq('status', 'active')
         .range(pageParam * 50, (pageParam + 1) * 50 - 1);
 
       if (friendshipsError) {
@@ -45,7 +45,7 @@ export function useFriendsList() {
       const friendIds = friendships.map(f => f.friend_id);
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, full_name, username, avatar_url, is_online, last_active')
+        .select('id, full_name, email, avatar_url, is_online, last_active')
         .in('id', friendIds);
 
       if (profilesError) {

@@ -15,14 +15,10 @@ export function useFriendActions() {
 
   const unfriendMutation = useMutation({
     mutationFn: async (friendId: string) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      // Delete both friendship records (bidirectional)
-      const { error } = await supabase
-        .from('friendships')
-        .delete()
-        .or(`and(user_id.eq.${user.id},friend_id.eq.${friendId}),and(user_id.eq.${friendId},friend_id.eq.${user.id})`);
+      // Use DB function to ensure atomic bidirectional delete
+      const { error } = await supabase.rpc('unfriend_user', {
+        p_friend_id: friendId
+      });
 
       if (error) throw error;
 

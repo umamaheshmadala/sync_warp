@@ -105,7 +105,6 @@ export function FriendSearchResults({
             />
             <div className="flex-1 min-w-0">
               <h3 className="font-semibold text-gray-900 truncate">{result.full_name}</h3>
-              <p className="text-sm text-gray-500 truncate">@{result.username}</p>
               {result.mutual_friends_count > 0 && (
                 <div className="flex items-center text-xs text-gray-600 mt-1">
                   <Users className="w-3 h-3 mr-1" />
