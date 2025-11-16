@@ -215,7 +215,7 @@ export function TestSearchPerformance() {
             <li>✅ Query: Single user location lookup (DECLARE variable)</li>
             <li>✅ Frontend: 300ms debounce on search input</li>
             <li>✅ Frontend: React Query caching (30s staleTime, 60s gcTime)</li>
-            <li>✅ Frontend: Performance timing and slow search logging (> 500ms)</li>
+            <li>✅ Frontend: Performance timing and slow search logging (&gt; 500ms)</li>
             <li>✅ Maintenance: Weekly VACUUM ANALYZE scheduled (Sundays 2 AM)</li>
             <li>✅ Monitoring: slow_search_queries view created</li>
           </ul>
