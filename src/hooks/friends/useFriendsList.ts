@@ -10,11 +10,6 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import type { Friend } from '../../types/friends';
 
-interface FriendshipWithProfile {
-  friend_id: string;
-  profiles: Friend;
-}
-
 export function useFriendsList() {
   const query = useInfiniteQuery({
     queryKey: ['friends-list'],
@@ -24,32 +19,44 @@ export function useFriendsList() {
       if (!user) throw new Error('Not authenticated');
 
       // Fetch friendships with profile data
-      const { data, error } = await supabase
+      console.log('Fetching friends for user:', user.id, 'page:', pageParam);
+      
+      // First, get friend IDs
+      const { data: friendships, error: friendshipsError } = await supabase
         .from('friendships')
-        .select(`
-          friend_id,
-          profiles!friendships_friend_id_fkey(
-            id,
-            full_name,
-            username,
-            avatar_url,
-            is_online,
-            last_active
-          )
-        `)
+        .select('friend_id')
         .eq('user_id', user.id)
         .eq('status', 'accepted')
         .range(pageParam * 50, (pageParam + 1) * 50 - 1);
 
-      if (error) {
-        console.error('Error fetching friends:', error);
-        throw error;
+      if (friendshipsError) {
+        console.error('Error fetching friendships:', friendshipsError);
+        throw friendshipsError;
       }
 
+      if (!friendships || friendships.length === 0) {
+        console.log('No friendships found');
+        return [];
+      }
+
+      console.log('Found friendships:', friendships.length);
+
+      // Then fetch friend profiles
+      const friendIds = friendships.map(f => f.friend_id);
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name, username, avatar_url, is_online, last_active')
+        .in('id', friendIds);
+
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        throw profilesError;
+      }
+
+      console.log('Fetched profiles:', profiles?.length || 0);
+
       // Transform data
-      const friends = (data as unknown as FriendshipWithProfile[])
-        ?.map(f => f.profiles)
-        .filter(Boolean) || [];
+      const friends = profiles || [];
 
       return friends;
     },
