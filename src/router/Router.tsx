@@ -38,6 +38,8 @@ import { PYMKPage } from '../pages/PYMKPage'
 import { TestSearchFilters } from '../pages/TestSearchFilters'
 import { TestSearchPerformance } from '../pages/TestSearchPerformance'
 import { TestDealSharing } from '../pages/TestDealSharing'
+// Story 9.3.1: Friends List Component
+import { FriendsPage } from '../pages/Friends'
 
 // Import messaging components (Epic 8.2)
 import { ConversationListPage } from '../components/messaging/ConversationListPage'
@@ -263,10 +265,17 @@ export const routes: RouteConfig[] = [
   },
   {
     path: '/friends',
-    element: <FriendsManagementPage />,
+    element: <FriendsPage />,
     protected: true,
     title: 'Friends - SynC',
-    description: 'Manage your friends and connections'
+    description: 'View and manage your friends list with online status'
+  },
+  {
+    path: '/friends/manage',
+    element: <FriendsManagementPage />,
+    protected: true,
+    title: 'Manage Friends - SynC',
+    description: 'Manage friend requests and connections'
   },
   {
     path: '/friends/search',
