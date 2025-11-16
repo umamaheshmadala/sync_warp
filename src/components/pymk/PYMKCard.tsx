@@ -94,10 +94,19 @@ export function PYMKCard({ recommendation }: PYMKCardProps) {
         </p>
       </div>
 
-      {/* Reason */}
-      <div className="flex items-center justify-center text-xs text-gray-600 mb-4">
-        <Users className="w-3 h-3 mr-1 flex-shrink-0" />
-        <span className="truncate">{recommendation.reason}</span>
+      {/* Reason and Contact Badge */}
+      <div className="mb-4">
+        <div className="flex items-center justify-center text-xs text-gray-600 mb-2">
+          <Users className="w-3 h-3 mr-1 flex-shrink-0" />
+          <span className="truncate">{recommendation.reason}</span>
+        </div>
+        {recommendation.from_contacts && (
+          <div className="flex justify-center">
+            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+              From contacts
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Add Friend button */}
