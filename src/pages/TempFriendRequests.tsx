@@ -45,15 +45,27 @@ export function TempFriendRequests() {
       // Fetch sender profiles
       if (data && data.length > 0) {
         const senderIds = data.map(r => r.sender_id);
-        const { data: profiles } = await supabase
+        console.log('Fetching profiles for senders:', senderIds);
+        
+        const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
           .select('id, full_name, username, avatar_url')
           .in('id', senderIds);
 
-        return data.map(req => ({
-          ...req,
-          sender: profiles?.find(p => p.id === req.sender_id) || { id: req.sender_id, full_name: 'Unknown', username: 'unknown' }
-        }));
+        if (profilesError) {
+          console.error('Error fetching profiles:', profilesError);
+        }
+        
+        console.log('Fetched profiles:', profiles);
+
+        return data.map(req => {
+          const sender = profiles?.find(p => p.id === req.sender_id);
+          console.log('Mapping request:', req.id, 'sender:', sender);
+          return {
+            ...req,
+            sender: sender || { id: req.sender_id, full_name: 'Unknown', username: 'unknown' }
+          };
+        });
       }
 
       return [];
