@@ -123,26 +123,31 @@ export function TestDealSharing() {
           </div>
         </div>
 
-        {/* Share Button */}
-        {selectedDeal && (
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Share Selected Deal</h2>
-            <div className="flex items-center gap-4">
+        {/* Share Button - Always Visible */}
+        <div className="bg-gradient-to-r from-primary-50 to-blue-50 rounded-lg shadow-lg p-6 border-2 border-primary-200">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">📤 Share Selected Deal</h2>
+          {selectedDeal ? (
+            <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
               <div className="flex-1">
                 <p className="text-sm font-medium text-gray-700">Selected Deal:</p>
                 <p className="text-lg font-semibold text-gray-900">{selectedDeal.title}</p>
                 <p className="text-sm text-gray-600">{selectedDeal.business}</p>
               </div>
               <button
-                onClick={() => setIsPickerOpen(true)}
-                className="flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition"
+                onClick={() => {
+                  console.log('Share Deal button clicked!', { dealId: selectedDealId });
+                  setIsPickerOpen(true);
+                }}
+                className="flex items-center gap-2 px-8 py-4 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition shadow-lg hover:shadow-xl text-lg"
               >
-                <Share2 className="w-5 h-5" />
+                <Share2 className="w-6 h-6" />
                 Share Deal
               </button>
             </div>
-          </div>
-        )}
+          ) : (
+            <p className="text-gray-600">Please select a deal from the list above first.</p>
+          )}
+        </div>
 
         {/* Sharing History */}
         <div className="bg-white rounded-lg shadow p-6">
