@@ -40,6 +40,7 @@ import { TestSearchPerformance } from '../pages/TestSearchPerformance'
 import { TestDealSharing } from '../pages/TestDealSharing'
 // Story 9.3.1: Friends List Component
 import { FriendsPage } from '../pages/Friends'
+import { TempFriendRequests } from '../pages/TempFriendRequests'
 
 // Import messaging components (Epic 8.2)
 import { ConversationListPage } from '../components/messaging/ConversationListPage'
@@ -283,6 +284,13 @@ export const routes: RouteConfig[] = [
     protected: true,
     title: 'Find Friends - SynC',
     description: 'Search for friends with intelligent fuzzy matching'
+  },
+  {
+    path: '/friends/requests',
+    element: <TempFriendRequests />,
+    protected: true,
+    title: 'Friend Requests - SynC',
+    description: 'Accept or reject pending friend requests'
   },
   {
     path: '/friends/recommendations',
