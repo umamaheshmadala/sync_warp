@@ -100,7 +100,7 @@ export function TestDealSharing() {
                 onClick={() => setSelectedDealId(deal.id)}
                 className={`w-full text-left p-4 rounded-lg border-2 transition ${
                   selectedDealId === deal.id
-                    ? 'border-primary-600 bg-primary-50'
+                    ? 'border-blue-600 bg-blue-50'
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
               >
@@ -115,7 +115,7 @@ export function TestDealSharing() {
                     </div>
                   </div>
                   {selectedDealId === deal.id && (
-                    <CheckCircle className="w-6 h-6 text-primary-600 flex-shrink-0 ml-3" />
+                    <CheckCircle className="w-6 h-6 text-blue-600 flex-shrink-0 ml-3" />
                   )}
                 </div>
               </button>
@@ -124,7 +124,7 @@ export function TestDealSharing() {
         </div>
 
         {/* Share Button - Always Visible */}
-        <div className="bg-gradient-to-r from-primary-50 to-blue-50 rounded-lg shadow-lg p-6 border-2 border-primary-200">
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg shadow-lg p-6 border-2 border-blue-200">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">📤 Share Selected Deal</h2>
           {selectedDeal ? (
             <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
@@ -138,7 +138,7 @@ export function TestDealSharing() {
                   console.log('Share Deal button clicked!', { dealId: selectedDealId });
                   setIsPickerOpen(true);
                 }}
-                className="flex items-center gap-2 px-8 py-4 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition shadow-lg hover:shadow-xl text-lg"
+                className="flex items-center gap-2 px-8 py-4 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition shadow-lg hover:shadow-xl text-lg"
               >
                 <Share2 className="w-6 h-6" />
                 Share Deal

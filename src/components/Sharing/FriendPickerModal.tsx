@@ -134,7 +134,7 @@ export function FriendPickerModal({
               placeholder="Search friends..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
         </div>
@@ -190,7 +190,7 @@ export function FriendPickerModal({
             </h3>
             {isSearching ? (
               <div className="text-center py-8 text-gray-500">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
                 <p className="mt-2">Searching...</p>
               </div>
             ) : searchResults.length > 0 ? (
@@ -228,7 +228,7 @@ export function FriendPickerModal({
           <button
             onClick={handleShare}
             disabled={selectedFriends.length === 0 || isSharing}
-            className="w-full bg-primary-600 text-white py-3 rounded-lg font-medium hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition"
+            className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition"
           >
             {isSharing
               ? 'Sharing...'
@@ -293,11 +293,11 @@ function FriendRow({
       <div
         className={`w-6 h-6 rounded border-2 flex items-center justify-center transition ${
           isSelected
-            ? 'bg-primary-600 border-primary-600'
-            : 'border-gray-300'
+            ? 'bg-blue-600 border-blue-600'
+            : 'border-gray-400 bg-white'
         }`}
       >
-        {isSelected && <Check className="w-4 h-4 text-white" />}
+        {isSelected && <Check className="w-4 h-4 text-white stroke-[3]" />}
       </div>
     </button>
   );
@@ -327,11 +327,11 @@ function FriendRowSkeleton({ userId, isSelected, onToggle }: FriendRowSkeletonPr
       <div
         className={`w-6 h-6 rounded border-2 flex items-center justify-center transition ${
           isSelected
-            ? 'bg-primary-600 border-primary-600'
-            : 'border-gray-300'
+            ? 'bg-blue-600 border-blue-600'
+            : 'border-gray-400 bg-white'
         }`}
       >
-        {isSelected && <Check className="w-4 h-4 text-white" />}
+        {isSelected && <Check className="w-4 h-4 text-white stroke-[3]" />}
       </div>
     </button>
   );
