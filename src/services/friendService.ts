@@ -48,6 +48,18 @@ export interface FriendActivity {
   user_profile?: FriendProfile
 }
 
+export interface PYMKSuggestion {
+  id: string
+  full_name: string
+  avatar_url?: string
+  mutual_friends_count: number
+  mutual_friends: {
+    id: string
+    full_name: string
+    avatar_url?: string
+  }[]
+}
+
 class FriendService {
   /**
    * Get user's friends list (bidirectional)
@@ -117,13 +129,13 @@ class FriendService {
         .limit(10)
 
       if (error) throw error
-      
+
       // Map the data to match FriendProfile interface
       const mappedData = (data || []).map(profile => ({
         ...profile,
         user_id: profile.id // Add user_id field for compatibility
       }))
-      
+
       return mappedData
     } catch (error) {
       console.error('Error searching users:', error)
@@ -235,7 +247,7 @@ class FriendService {
       const enrichedRequests = requests.map(request => {
         const requesterProfile = requesterProfiles?.find(profile => profile.id === request.requester_id)
         const receiverProfile = receiverProfiles?.find(profile => profile.id === request.receiver_id)
-        
+
         return {
           ...request,
           requester_profile: requesterProfile ? { ...requesterProfile, user_id: requesterProfile.id } : null,
@@ -260,7 +272,7 @@ class FriendService {
         .rpc('accept_friend_request_safe', { request_id: requestId })
 
       if (error) throw error
-      
+
       if (!data) {
         throw new Error('Friend request not found or already processed')
       }
@@ -336,7 +348,7 @@ class FriendService {
       // Get user's friends first
       const friends = await this.getFriends(userId)
       const friendIds = friends.map(f => f.friend_profile.user_id)
-      
+
       if (friendIds.length === 0) return []
 
       const { data, error } = await supabase
@@ -446,7 +458,7 @@ class FriendService {
         .eq('friend_id', friendId)
         .eq('status', 'active')
         .maybeSingle()
-      
+
       return !!data
     } catch (error) {
       console.error('Error checking friendship:', error)
@@ -464,7 +476,7 @@ class FriendService {
         .select('id', { count: 'exact', head: true })
         .eq('user_id', userId)
         .eq('status', 'active')
-      
+
       if (error) throw error
       return count || 0
     } catch (error) {
@@ -507,7 +519,7 @@ class FriendService {
    * Subscribe to friendship changes (realtime)
    */
   subscribeToFriendshipChanges(
-    userId: string, 
+    userId: string,
     callback: (payload: any) => void
   ) {
     return supabase
@@ -519,6 +531,41 @@ class FriendService {
         filter: `user_id=eq.${userId}`
       }, callback)
       .subscribe()
+  }
+  /**
+   * Get People You May Know suggestions
+   */
+  async getPymkSuggestions(userId: string, limit: number = 10): Promise<PYMKSuggestion[]> {
+    try {
+      const { data, error } = await supabase
+        .rpc('get_pymk_suggestions', {
+          current_user_id: userId,
+          limit_count: limit
+        })
+
+      if (error) throw error
+      return data as PYMKSuggestion[]
+    } catch (error) {
+      console.error('Error fetching PYMK suggestions:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Dismiss a PYMK suggestion
+   */
+  async dismissPymkSuggestion(suggestedUserId: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .rpc('dismiss_pymk_suggestion', {
+          target_user_id: suggestedUserId
+        })
+
+      if (error) throw error
+    } catch (error) {
+      console.error('Error dismissing PYMK suggestion:', error)
+      throw error
+    }
   }
 }
 

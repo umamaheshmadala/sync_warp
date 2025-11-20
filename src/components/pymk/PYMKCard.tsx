@@ -1,19 +1,18 @@
 /**
  * PYMK Card Component
- * Story 9.2.2: People You May Know Engine
+ * Story 9.3.5: People You May Know Cards
  */
 
 import React, { useState } from 'react';
-import { Users, X, Loader2 } from 'lucide-react';
-import { PYMKRecommendation } from '@/services/recommendationService';
+import { Users, X, Loader2, UserPlus } from 'lucide-react';
+import { PYMKSuggestion } from '@/services/friendService';
 import { useSendFriendRequest } from '@/hooks/useFriendRequests';
 import { useDismissPYMK } from '@/hooks/usePYMK';
 import { useNavigate } from 'react-router-dom';
-import { trackPYMKEvent } from '@/services/recommendationService';
 import toast from 'react-hot-toast';
 
 interface PYMKCardProps {
-  recommendation: PYMKRecommendation;
+  recommendation: PYMKSuggestion;
 }
 
 export function PYMKCard({ recommendation }: PYMKCardProps) {
@@ -24,9 +23,8 @@ export function PYMKCard({ recommendation }: PYMKCardProps) {
 
   const handleAddFriend = (e: React.MouseEvent) => {
     e.stopPropagation();
-    trackPYMKEvent('friend_request', recommendation.user_id);
     sendFriendRequest.mutate(
-      { receiverId: recommendation.user_id },
+      { receiverId: recommendation.id },
       {
         onSuccess: (data) => {
           if (data.success) {
@@ -35,9 +33,6 @@ export function PYMKCard({ recommendation }: PYMKCardProps) {
           } else {
             toast.error(data.error || 'Failed to send friend request');
           }
-        },
-        onError: () => {
-          toast.error('Failed to send friend request. Please try again.');
         }
       }
     );
@@ -45,31 +40,23 @@ export function PYMKCard({ recommendation }: PYMKCardProps) {
 
   const handleDismiss = (e: React.MouseEvent) => {
     e.stopPropagation();
-    dismissSuggestion.mutate(recommendation.user_id, {
-      onSuccess: () => {
-        toast.success('Suggestion dismissed');
-      },
-      onError: () => {
-        toast.error('Failed to dismiss suggestion');
-      }
-    });
+    dismissSuggestion.mutate(recommendation.id);
   };
 
   const handleCardClick = () => {
-    trackPYMKEvent('click', recommendation.user_id);
-    navigate(`/profile/${recommendation.user_id}`);
+    navigate(`/profile/${recommendation.id}`);
   };
 
   return (
     <div
       onClick={handleCardClick}
-      className="relative bg-white rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer p-4"
+      className="relative bg-white rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer p-4 flex flex-col items-center h-full"
     >
       {/* Dismiss button */}
       <button
         onClick={handleDismiss}
         disabled={dismissSuggestion.isPending}
-        className="absolute top-2 right-2 p-1 hover:bg-gray-100 rounded-full transition-colors"
+        className="absolute top-2 right-2 p-1 hover:bg-gray-100 rounded-full transition-colors z-10"
         title="Dismiss suggestion"
       >
         {dismissSuggestion.isPending ? (
@@ -80,59 +67,67 @@ export function PYMKCard({ recommendation }: PYMKCardProps) {
       </button>
 
       {/* Avatar */}
-      <div className="flex flex-col items-center mb-4">
+      <div className="flex flex-col items-center mb-3 w-full">
         <img
-          src={recommendation.avatar_url || '/default-avatar.png'}
+          src={recommendation.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(recommendation.full_name)}&background=random`}
           alt={recommendation.full_name}
-          className="w-20 h-20 rounded-full object-cover mb-3"
+          className="w-20 h-20 rounded-full object-cover mb-3 border border-gray-100"
         />
-        <h3 className="font-semibold text-gray-900 text-center truncate w-full px-6">
+        <h3 className="font-semibold text-gray-900 text-center truncate w-full px-2" title={recommendation.full_name}>
           {recommendation.full_name}
         </h3>
-        <p className="text-sm text-gray-500 text-center truncate w-full px-6">
-          @{recommendation.username}
-        </p>
       </div>
 
-      {/* Reason and Contact Badge */}
-      <div className="mb-4">
+      {/* Mutual Friends Info */}
+      <div className="mb-4 flex flex-col items-center w-full">
         <div className="flex items-center justify-center text-xs text-gray-600 mb-2">
           <Users className="w-3 h-3 mr-1 flex-shrink-0" />
-          <span className="truncate">{recommendation.reason}</span>
+          <span>{recommendation.mutual_friends_count} mutual friends</span>
         </div>
-        {recommendation.from_contacts && (
-          <div className="flex justify-center">
-            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-              From contacts
-            </span>
+
+        {/* Mutual friends avatars preview */}
+        {recommendation.mutual_friends && recommendation.mutual_friends.length > 0 && (
+          <div className="flex -space-x-2 justify-center h-6">
+            {recommendation.mutual_friends.slice(0, 3).map(mf => (
+              <img
+                key={mf.id}
+                src={mf.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(mf.full_name)}`}
+                className="w-6 h-6 rounded-full border-2 border-white bg-gray-100"
+                title={mf.full_name}
+                alt={mf.full_name}
+              />
+            ))}
+            {recommendation.mutual_friends.length > 3 && (
+              <div className="w-6 h-6 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-[10px] text-gray-500 font-medium">
+                +{recommendation.mutual_friends.length - 3}
+              </div>
+            )}
           </div>
         )}
       </div>
 
       {/* Add Friend button */}
-      {requestSent ? (
-        <button
-          disabled
-          className="w-full px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 text-gray-600 cursor-not-allowed"
-        >
-          Request Sent
-        </button>
-      ) : (
+      <div className="mt-auto w-full">
         <button
           onClick={handleAddFriend}
-          disabled={sendFriendRequest.isPending}
-          className="w-full px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={sendFriendRequest.isPending || requestSent}
+          className={`w-full px-4 py-2 text-sm font-medium rounded-lg transition-colors flex items-center justify-center ${requestSent
+              ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
+              : 'bg-blue-600 text-white hover:bg-blue-700'
+            }`}
         >
           {sendFriendRequest.isPending ? (
-            <span className="flex items-center justify-center">
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Sending...
-            </span>
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : requestSent ? (
+            'Request Sent'
           ) : (
-            'Add Friend'
+            <>
+              <UserPlus className="w-4 h-4 mr-2" />
+              Add Friend
+            </>
           )}
         </button>
-      )}
+      </div>
     </div>
   );
 }

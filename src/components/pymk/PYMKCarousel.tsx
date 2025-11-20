@@ -58,7 +58,7 @@ export function PYMKCarousel() {
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         {recommendations.map((recommendation) => (
-          <div key={recommendation.user_id} className="flex-shrink-0 w-64 snap-start">
+          <div key={recommendation.id} className="flex-shrink-0 w-64 snap-start h-full">
             <PYMKCard recommendation={recommendation} />
           </div>
         ))}

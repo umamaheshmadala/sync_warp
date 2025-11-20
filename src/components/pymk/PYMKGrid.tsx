@@ -1,6 +1,6 @@
 /**
  * PYMK Grid Component (Web)
- * Story 9.2.2: PYMK Engine
+ * Story 9.3.5: People You May Know Cards
  */
 
 import React from 'react';
@@ -36,7 +36,7 @@ export function PYMKGrid() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {recommendations.map((recommendation) => (
-          <PYMKCard key={recommendation.user_id} recommendation={recommendation} />
+          <PYMKCard key={recommendation.id} recommendation={recommendation} />
         ))}
       </div>
     </div>

@@ -13,6 +13,8 @@ import { useDrag } from '@use-gesture/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRealtimeOnlineStatus } from '../hooks/friends/useRealtimeOnlineStatus';
 
+import { PYMKCarousel } from '../components/pymk/PYMKCarousel';
+
 export function FriendsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -28,7 +30,7 @@ export function FriendsPage() {
     ({ movement: [, my], last, memo = window.scrollY }) => {
       // Only trigger if at top of page and pulling down
       if (memo > 10) return;
-      
+
       if (!last && my > 0) {
         setPullDistance(Math.min(my, 80));
       } else if (last) {
@@ -57,20 +59,20 @@ export function FriendsPage() {
     <div className="min-h-screen bg-gray-50" {...bind()} ref={containerRef}>
       {/* Pull-to-refresh indicator */}
       {(pullDistance > 0 || isRefreshing) && (
-        <div 
+        <div
           className="flex justify-center items-center transition-all duration-200"
-          style={{ 
+          style={{
             height: isRefreshing ? '60px' : `${pullDistance}px`,
             opacity: Math.min(pullDistance / 60, 1)
           }}
         >
-          <RefreshCw 
+          <RefreshCw
             className={`w-6 h-6 text-blue-600 ${isRefreshing ? 'animate-spin' : ''}`}
             style={{ transform: `rotate(${pullDistance * 3}deg)` }}
           />
         </div>
       )}
-      
+
       <div className="max-w-4xl mx-auto p-4 md:p-6">
         {/* Header */}
         <div className="mb-6">
@@ -83,10 +85,14 @@ export function FriendsPage() {
 
         {/* Search Bar */}
         <div className="mb-6">
-          <FriendSearchBar 
-            value={searchQuery} 
-            onChange={setSearchQuery}
+          <FriendSearchBar
+            onSearch={setSearchQuery}
           />
+        </div>
+
+        {/* People You May Know */}
+        <div className="mb-8">
+          <PYMKCarousel />
         </div>
 
         {/* Friends List */}
