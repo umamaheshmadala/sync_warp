@@ -4,24 +4,28 @@
  */
 
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
-import { 
-  searchFriends, 
-  getFriendSearchHistory, 
+import {
+  searchFriends,
+  getFriendSearchHistory,
   clearFriendSearchHistory,
   type FriendSearchResult,
-  type SearchHistory 
+  type SearchHistory
 } from '@/services/friendSearchService';
 import { useDebounce } from '@/hooks/useDebounce';
 
 /**
  * Hook for searching friends with debouncing
  */
-export function useSearchFriends(query: string, options: { enabled?: boolean } = {}) {
+export function useSearchFriends(
+  query: string,
+  filters: Record<string, any> = {},
+  options: { enabled?: boolean } = {}
+) {
   const debouncedQuery = useDebounce(query, 300);
-  
+
   return useQuery<FriendSearchResult[], Error>({
-    queryKey: ['friends', 'search', debouncedQuery],
-    queryFn: () => searchFriends(debouncedQuery),
+    queryKey: ['friends', 'search', debouncedQuery, filters],
+    queryFn: () => searchFriends(debouncedQuery, filters),
     enabled: (options.enabled !== false) && debouncedQuery.length >= 2,
     staleTime: 30000, // 30 seconds
     retry: 2,
@@ -36,7 +40,7 @@ export function useInfiniteSearchFriends(query: string) {
 
   return useInfiniteQuery<FriendSearchResult[], Error>({
     queryKey: ['friends', 'search', 'infinite', debouncedQuery],
-    queryFn: ({ pageParam = 0 }) => 
+    queryFn: ({ pageParam = 0 }) =>
       searchFriends(debouncedQuery, { offset: pageParam as number, limit: 20 }),
     getNextPageParam: (lastPage, allPages) => {
       // If we got fewer results than requested, we're at the end

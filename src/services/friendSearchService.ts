@@ -11,6 +11,8 @@ export interface FriendSearchResult {
   username: string;
   avatar_url: string | null;
   location: string | null;
+  city: string | null;      // Added
+  is_online: boolean;       // Added
   mutual_friends_count: number;
   distance_km: number | null;
   relevance_score: number;
@@ -19,6 +21,9 @@ export interface FriendSearchResult {
 export interface FriendSearchFilters {
   limit?: number;
   offset?: number;
+  location?: string;
+  hasMutualFriends?: boolean;
+  isOnline?: boolean;
 }
 
 export interface SearchHistory {
@@ -54,10 +59,31 @@ export async function searchFriends(
     throw new Error('Failed to search users. Please try again.');
   }
 
+  let results = data || [];
+
+  // Apply client-side filters
+  if (filters.location) {
+    results = results.filter(r => {
+      // Check both city and location fields for the filter value
+      const cityMatch = r.city?.toLowerCase() === filters.location!.toLowerCase();
+      const locationMatch = r.location?.toLowerCase() === filters.location!.toLowerCase();
+      return cityMatch || locationMatch;
+    });
+  }
+
+  if (filters.hasMutualFriends) {
+    results = results.filter(r => r.mutual_friends_count > 0);
+  }
+
+  if (filters.isOnline) {
+    // Filter by actual is_online status from database
+    results = results.filter(r => r.is_online === true);
+  }
+
   // Save search query to history (fire and forget)
   saveFriendSearchQuery(query.trim()).catch(console.error);
 
-  return data || [];
+  return results;
 }
 
 /**

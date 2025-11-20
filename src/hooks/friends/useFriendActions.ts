@@ -8,6 +8,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
+
 
 export function useFriendActions() {
   const queryClient = useQueryClient();
@@ -44,17 +46,74 @@ export function useFriendActions() {
 
       return { previousFriends };
     },
-    onError: (_err, _friendId, context) => {
+    onError: (error, _friendId, context) => {
       // Rollback on error
       if (context?.previousFriends) {
         queryClient.setQueryData(['friends-list'], context.previousFriends);
       }
+      toast.error('Failed to remove friend');
+      console.error(error);
     },
     onSuccess: () => {
       // Refetch to ensure consistency
       queryClient.invalidateQueries({ queryKey: ['friends-list'] });
+      toast.success('Friend removed successfully');
     },
+
   });
+
+  const blockMutation = useMutation({
+    mutationFn: async (friendId: string) => {
+      const { error } = await supabase.from('blocked_users').insert({
+        blocker_id: (await supabase.auth.getUser()).data.user?.id,
+        blocked_id: friendId,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['friends-list'] });
+      // Also invalidate profile to update UI if needed
+      toast.success('User blocked');
+    },
+    onError: (error) => {
+      toast.error('Failed to block user');
+      console.error(error);
+    }
+
+  });
+
+  const toggleFollowMutation = useMutation({
+    mutationFn: async ({ friendId, isFollowing }: { friendId: string; isFollowing: boolean }) => {
+      const user = (await supabase.auth.getUser()).data.user;
+      if (!user) throw new Error('Not authenticated');
+
+      if (isFollowing) {
+        // Unfollow
+        const { error } = await supabase
+          .from('followers')
+          .delete()
+          .eq('follower_id', user.id)
+          .eq('following_id', friendId);
+        if (error) throw error;
+      } else {
+        // Follow
+        const { error } = await supabase
+          .from('followers')
+          .insert({ follower_id: user.id, following_id: friendId });
+        if (error) throw error;
+      }
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['friend-profile', variables.friendId] });
+      toast.success(variables.isFollowing ? 'Unfollowed user' : 'Following user');
+    },
+    onError: (error) => {
+      toast.error('Failed to update follow status');
+      console.error(error);
+    }
+
+  });
+
 
   const sendMessage = (friendId: string) => {
     // Navigate to chat with friend
@@ -65,5 +124,8 @@ export function useFriendActions() {
     unfriend: unfriendMutation.mutate,
     isUnfriending: unfriendMutation.isPending,
     sendMessage,
+    blockUser: blockMutation.mutate,
+    toggleFollow: toggleFollowMutation.mutate,
+
   };
 }

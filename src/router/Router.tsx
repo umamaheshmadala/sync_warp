@@ -42,6 +42,8 @@ import { TestDealSharing } from '../pages/TestDealSharing'
 import { FriendsPage } from '../pages/Friends'
 // Story 9.3.2: Friend Requests UI
 import { FriendRequestsList } from '../components/friends/FriendRequestsList'
+import TestProfileModal from '../pages/TestProfileModal'
+
 
 // Import messaging components (Epic 8.2)
 import { ConversationListPage } from '../components/messaging/ConversationListPage'
@@ -354,6 +356,15 @@ export const routes: RouteConfig[] = [
     title: 'Deal Sharing Test - SynC (STORY 9.2.6)',
     description: 'Test FriendPickerModal with search, multi-select, and notifications'
   },
+  // Story 9.3.3: Friend Profile Modal Test
+  {
+    path: '/test/profile-modal',
+    element: <TestProfileModal />,
+    protected: true,
+    title: 'Profile Modal Test - SynC (STORY 9.3.3)',
+    description: 'Test FriendProfileModal with mock data'
+  },
+
   // Epic 8.2: Messaging Routes
   {
     path: '/messages',
@@ -517,13 +528,13 @@ export default function AppRouter() {
         if (route.protected) {
           // Determine if this route requires completed onboarding
           const requireOnboarding = !['/', '/onboarding', '/auth/login', '/auth/signup'].includes(route.path)
-          
+
           return (
             <Route
               key={route.path}
               path={route.path}
               element={
-                <ProtectedRoute 
+                <ProtectedRoute
                   requireAuth={true}
                   requireOnboarding={requireOnboarding}
                   debugMode={isDevelopment}
@@ -534,7 +545,7 @@ export default function AppRouter() {
             />
           )
         }
-        
+
         // For public routes, wrap auth pages and landing to redirect if already logged in
         if (route.path.startsWith('/auth/') || route.path === '/') {
           return (
@@ -542,7 +553,7 @@ export default function AppRouter() {
               key={route.path}
               path={route.path}
               element={
-                <ProtectedRoute 
+                <ProtectedRoute
                   requireAuth={false}
                   debugMode={isDevelopment}
                 >
@@ -552,7 +563,7 @@ export default function AppRouter() {
             />
           )
         }
-        
+
         // Regular public routes
         return (
           <Route
@@ -562,15 +573,15 @@ export default function AppRouter() {
           />
         )
       })}
-      
+
       {/* Catch-all route for 404 */}
-      <Route 
-        path="*" 
+      <Route
+        path="*"
         element={
           <RouteLoader>
             <NotFound />
           </RouteLoader>
-        } 
+        }
       />
     </Routes>
   )
