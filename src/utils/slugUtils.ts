@@ -72,3 +72,12 @@ export function parseBusinessIdentifier(identifier: string): string {
   const shortId = extractIdFromSlug(identifier);
   return shortId || identifier;
 }
+
+/**
+ * Get full business URL
+ * Example: "Urban Coffee", "ac269130..." -> "/business/urban-coffee-ac269130"
+ */
+export function getBusinessUrl(businessId: string, businessName: string): string {
+  const slug = createBusinessSlug(businessName, businessId);
+  return `/business/${slug}`;
+}

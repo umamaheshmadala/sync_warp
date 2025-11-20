@@ -3,7 +3,7 @@
 // Handles filtering, sorting, pagination, and search analytics
 
 import { supabase } from '../lib/supabase';
-import { 
+import {
   Coupon,
   CouponFilters,
   CouponSortBy,
@@ -31,7 +31,7 @@ export interface SearchFilters {
   businessName?: string;
   location?: string;
   distance?: number; // in km
-  
+
   // Coupon Type & Value
   couponTypes?: CouponType[];
   discountTypes?: DiscountType[];
@@ -39,27 +39,27 @@ export interface SearchFilters {
   maxDiscountValue?: number;
   minPurchaseAmount?: number;
   maxPurchaseAmount?: number;
-  
+
   // Availability & Status
   status?: CouponStatus[];
   availableOnly?: boolean; // Has remaining uses
   validOnly?: boolean; // Not expired
-  
+
   // Time & Date
   validUntil?: {
     start?: string;
     end?: string;
   };
   createdAfter?: string;
-  
+
   // Target Audience
   targetAudience?: TargetAudience[];
   isPublic?: boolean;
-  
+
   // Categories & Tags
   categories?: string[];
   tags?: string[];
-  
+
   // User Context
   excludeCollected?: boolean; // Exclude coupons user already has
   excludeUsed?: boolean; // Exclude coupons user already used
@@ -70,7 +70,7 @@ export interface SearchSort {
   order: 'asc' | 'desc';
 }
 
-export type SearchSortField = 
+export type SearchSortField =
   | 'relevance'
   | 'discount_value'
   | 'created_at'
@@ -166,10 +166,10 @@ class SearchService {
    */
   async search(query: SearchQuery, userId?: string): Promise<SearchResult> {
     const startTime = Date.now();
-    
+
     // Generate cache key
     const cacheKey = this.generateCacheKey(query, userId);
-    
+
     // Check cache first
     const cached = this.getFromCache(cacheKey);
     if (cached) {
@@ -215,7 +215,7 @@ class SearchService {
    * Search coupons with advanced filtering
    */
   private async searchCoupons(
-    query: SearchQuery, 
+    query: SearchQuery,
     userId?: string
   ): Promise<{ coupons: SearchCoupon[]; total: number; hasMore: boolean }> {
     let supabaseQuery = supabase
@@ -265,8 +265,8 @@ class SearchService {
 
     // Enhance results with search-specific data
     const coupons = await this.enhanceCouponResults(
-      couponsData || [], 
-      query, 
+      couponsData || [],
+      query,
       userId
     );
 
@@ -281,7 +281,7 @@ class SearchService {
    * Search businesses
    */
   private async searchBusinesses(
-    query: SearchQuery, 
+    query: SearchQuery,
     userId?: string
   ): Promise<{ businesses: SearchBusiness[]; total: number; hasMore: boolean }> {
     let supabaseQuery = supabase
@@ -325,7 +325,7 @@ class SearchService {
 
     // Enhance results
     const businesses = await this.enhanceBusinessResults(
-      businessData || [], 
+      businessData || [],
       query
     );
 
@@ -412,7 +412,7 @@ class SearchService {
 
     // Use the nearby_businesses function for precise distance calculation
     const { latitude, longitude, radius } = location;
-    
+
     return query.rpc('nearby_businesses', {
       lat: latitude,
       lng: longitude,
@@ -476,8 +476,8 @@ class SearchService {
    * Enhance coupon results with search-specific data
    */
   private async enhanceCouponResults(
-    coupons: any[], 
-    query: SearchQuery, 
+    coupons: any[],
+    query: SearchQuery,
     userId?: string
   ): Promise<SearchCoupon[]> {
     const enhancedCoupons: SearchCoupon[] = [];
@@ -500,7 +500,7 @@ class SearchService {
       }
 
       // Calculate remaining uses
-      const remainingUses = coupon.total_limit 
+      const remainingUses = coupon.total_limit
         ? Math.max(0, coupon.total_limit - coupon.usage_count)
         : null;
 
@@ -524,8 +524,8 @@ class SearchService {
       });
 
       // Extract business - handle both object and potential array formats
-      const businessData = Array.isArray(coupon.businesses) 
-        ? coupon.businesses[0] 
+      const businessData = Array.isArray(coupon.businesses)
+        ? coupon.businesses[0]
         : coupon.businesses;
 
       enhancedCoupons.push({
@@ -549,7 +549,7 @@ class SearchService {
    * Enhance business results with search-specific data
    */
   private async enhanceBusinessResults(
-    businesses: any[], 
+    businesses: any[],
     query: SearchQuery
   ): Promise<SearchBusiness[]> {
     return businesses.map(business => {
@@ -751,8 +751,8 @@ class SearchService {
    * Highlight search terms in text
    */
   private highlightSearchTerms(
-    title: string, 
-    description: string, 
+    title: string,
+    description: string,
     searchTerm?: string
   ): { highlightedTitle?: string; highlightedDescription?: string } {
     if (!searchTerm) {
@@ -760,7 +760,7 @@ class SearchService {
     }
 
     const regex = new RegExp(`(${searchTerm})`, 'gi');
-    
+
     return {
       highlightedTitle: title.replace(regex, '<mark>$1</mark>'),
       highlightedDescription: description.replace(regex, '<mark>$1</mark>')
@@ -771,8 +771,8 @@ class SearchService {
    * Track search analytics in the database
    */
   private async trackSearchAnalytics(
-    query: SearchQuery, 
-    result: SearchResult, 
+    query: SearchQuery,
+    result: SearchResult,
     userId?: string
   ): Promise<void> {
     try {
@@ -839,6 +839,11 @@ class SearchService {
    * Get trending search terms using database function
    */
   async getTrendingSearchTerms(daysBack: number = 7, limit: number = 10) {
+    // Temporarily disabled: search_analytics table doesn't exist yet
+    // Once the table is created, uncomment the RPC call below
+    return this.getFallbackTrendingTerms();
+
+    /* Original RPC call - disabled to prevent 400 errors
     try {
       const { data, error } = await supabase.rpc('get_trending_search_terms', {
         days_back: daysBack,
@@ -859,6 +864,7 @@ class SearchService {
       console.warn('Error getting trending search terms:', error);
       return this.getFallbackTrendingTerms();
     }
+    */
   }
 
   /**

@@ -6,8 +6,9 @@
  */
 
 import React, { useEffect, useRef, useMemo } from 'react';
-import { VariableSizeList as List } from 'react-window';
-import AutoSizer from 'react-virtualized-auto-sizer';
+// Virtualization temporarily disabled due to module issues
+// import { VariableSizeList as List } from 'react-window';
+// import AutoSizer from 'react-virtualized-auto-sizer';
 import { FriendCard } from './FriendCard';
 import { FriendsListSkeleton } from './LoadingSkeleton';
 import { NoFriendsEmptyState } from './EmptyState';
@@ -20,13 +21,13 @@ interface FriendsListProps {
 
 export function FriendsList({ searchQuery = '' }: FriendsListProps) {
   const { friends, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage, error } = useFriendsList();
-  
+
   // Filter friends based on search query
   const filteredFriends = useMemo(() => {
     if (!searchQuery.trim()) return friends;
-    
+
     const query = searchQuery.toLowerCase().trim();
-    return friends.filter(friend => 
+    return friends.filter(friend =>
       friend.full_name.toLowerCase().includes(query) ||
       friend.email.toLowerCase().includes(query)
     );
@@ -92,8 +93,8 @@ export function FriendsList({ searchQuery = '' }: FriendsListProps) {
     );
   };
 
-  // Use virtualization only when there are many friends (> 20)
-  const useVirtualization = filteredFriends.length > 20 && !searchQuery;
+  // Virtualization disabled - always use standard rendering
+  const useVirtualization = false;
 
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -105,31 +106,9 @@ export function FriendsList({ searchQuery = '' }: FriendsListProps) {
           </p>
         </div>
       )}
-      
-      {useVirtualization ? (
-        /* Virtualized list for better performance */
-        <div style={{ height: '600px' }}>
-          <AutoSizer>
-            {({ height, width }) => (
-              <List
-                height={height}
-                itemCount={filteredFriends.length}
-                itemSize={() => 80} // Fixed height per item
-                width={width}
-                onScroll={({ scrollOffset }) => {
-                  // Trigger load more when near bottom
-                  const listHeight = filteredFriends.length * 80;
-                  if (scrollOffset > listHeight - height - 200 && hasNextPage && !isFetchingNextPage) {
-                    fetchNextPage();
-                  }
-                }}
-              >
-                {Row}
-              </List>
-            )}
-          </AutoSizer>
-        </div>
-      ) : (
+
+      {/* Virtualization disabled - using standard list rendering */}
+      {false ? null : (
         /* Standard list for small lists or search results */
         <div className="divide-y divide-gray-100">
           {filteredFriends.map((friend) => (
