@@ -88,6 +88,9 @@ const NotificationsPage = lazy(() => import('../pages/NotificationsPage'))
 // Story 8.1.3: Storage Test
 const StorageTest = lazy(() => import('../pages/test/StorageTest'))
 
+// Story 9.3.6: Contact Sync Test
+const ContactSyncTestPage = lazy(() => import('../pages/ContactSyncTestPage'))
+
 // Story 5.5: Test Sharing Limits (excluded from production)
 
 // Route definitions
@@ -339,6 +342,14 @@ export const routes: RouteConfig[] = [
     protected: true,
     title: 'Storage Test - SynC (STORY 8.1.3)',
     description: 'Test message attachments upload, signed URLs, and CORS behavior'
+  },
+  // Story 9.3.6: Contact Sync Test
+  {
+    path: '/test/contact-sync',
+    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><ContactSyncTestPage /></Suspense>,
+    protected: true,
+    title: 'Contact Sync Test - SynC (STORY 9.3.6)',
+    description: 'Test contact sync permission flow and modal functionality'
   },
   // Story 9.2.5: Search Performance Test
   {

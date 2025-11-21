@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import type { AdSlotData, Ad, OrganicContent } from '../types/ads';
+import { getBusinessUrl } from '../utils/slugUtils';
 
 export function useAdSlots() {
   const { profile } = useAuthStore();
@@ -60,7 +61,7 @@ export function useAdSlots() {
       setSlots(adSlots);
     } catch (error) {
       console.error('Error fetching ad slots:', error);
-      
+
       // Fallback: create organic-only slots if ads table doesn't exist yet
       try {
         const organicContent = await fetchOrganicFallbacks(6);
@@ -94,7 +95,7 @@ export function useAdSlots() {
       if (error) throw error;
 
       // Import getBusinessUrl function directly
-      const { getBusinessUrl } = await import('../utils/slugUtils');
+      // const { getBusinessUrl } = await import('../utils/slugUtils');
       return (businesses || []).map((business, index) => ({
         id: business.id,
         type: 'business' as const,
@@ -107,7 +108,7 @@ export function useAdSlots() {
       }));
     } catch (error) {
       console.error('Error fetching organic fallbacks:', error);
-      
+
       // Fallback to mock data for demonstration
       return createMockOrganicContent(limit);
     }

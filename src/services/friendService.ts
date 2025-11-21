@@ -567,6 +567,86 @@ class FriendService {
       throw error
     }
   }
+
+  /**
+   * Match contacts against existing users
+   * Story 9.3.6: Contact Sync
+   */
+  async matchContacts(contactHashes: string[]): Promise<FriendProfile[]> {
+    try {
+      const { data, error } = await supabase
+        .rpc('match_contacts', {
+          contact_hashes: contactHashes
+        })
+
+      if (error) throw error
+
+      return (data || []).map((match: any) => ({
+        id: match.id,
+        user_id: match.id,
+        full_name: match.full_name,
+        email: match.email,
+        avatar_url: match.avatar_url,
+        city: match.city,
+        is_online: match.is_online,
+        last_active: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        mutual_friends_count: 0
+      }))
+    } catch (error) {
+      console.error('Error matching contacts:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Save synced contact matches
+   * Story 9.3.6: Contact Sync
+   */
+  async saveSyncedContacts(matches: Array<{ contact_hash: string; matched_user_id: string }>): Promise<number> {
+    try {
+      const { data, error } = await supabase
+        .rpc('save_synced_contacts', {
+          contacts: matches
+        })
+
+      if (error) throw error
+
+      return data || 0
+    } catch (error) {
+      console.error('Error saving synced contacts:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Get previously matched contacts
+   * Story 9.3.6: Contact Sync
+   */
+  async getContactMatches(): Promise<FriendProfile[]> {
+    try {
+      const { data, error } = await supabase
+        .rpc('get_contact_matches')
+
+      if (error) throw error
+
+      return (data || []).map((match: any) => ({
+        id: match.id,
+        user_id: match.id,
+        full_name: match.full_name,
+        email: match.email,
+        avatar_url: match.avatar_url,
+        city: match.city,
+        is_online: match.is_online,
+        last_active: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        mutual_friends_count: 0
+      }))
+    } catch (error) {
+      console.error('Error getting contact matches:', error)
+      throw error
+    }
+  }
 }
 
 export const friendService = new FriendService()

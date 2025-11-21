@@ -59,9 +59,6 @@ const config: CapacitorConfig = {
       launchShowDuration: 0, // Disable Capacitor splash
       showSpinner: false,
       launchAutoHide: false
-    },
-    PushNotifications: {
-      presentationOptions: ['badge', 'sound', 'alert']
     }
   }
 };

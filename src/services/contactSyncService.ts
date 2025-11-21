@@ -51,12 +51,12 @@ export async function requestContactsPermission(): Promise<boolean> {
 function normalizePhoneNumber(phone: string): string {
   // Remove all non-digit characters
   const digits = phone.replace(/\D/g, '');
-  
+
   // For US numbers, keep last 10 digits if longer
   if (digits.length > 10 && digits.startsWith('1')) {
     return digits.slice(-10);
   }
-  
+
   return digits;
 }
 
@@ -65,14 +65,14 @@ function normalizePhoneNumber(phone: string): string {
  */
 async function hashPhoneNumber(phone: string): Promise<string> {
   const normalized = normalizePhoneNumber(phone);
-  
+
   // Use Web Crypto API (available in Capacitor)
   const encoder = new TextEncoder();
   const data = encoder.encode(normalized);
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  
+
   return hashHex;
 }
 
@@ -97,7 +97,7 @@ async function logSyncEvent(
   });
 
   if (error) {
-    console.error('Failed to log sync event:', error);
+    console.error('Failed to log sync event:', JSON.stringify(error));
   }
 }
 
@@ -121,78 +121,81 @@ export async function syncContacts(
       }
     }
 
-  // Get current user
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    throw new Error('User not authenticated');
-  }
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
 
-  // Read contacts from device
-  const { contacts } = await Contacts.getContacts({
-    projection: {
-      name: true,
-      phones: true,
-    },
-  });
+    // Read contacts from device
+    const { contacts } = await Contacts.getContacts({
+      projection: {
+        name: true,
+        phones: true,
+      },
+    });
 
-  // Extract and hash phone numbers
-  const phoneHashes: string[] = [];
-  let processed = 0;
+    // Extract and hash phone numbers (use Set to avoid duplicates)
+    const phoneHashSet = new Set<string>();
+    let processed = 0;
 
-  for (const contact of contacts) {
-    if (contact.phones && contact.phones.length > 0) {
-      for (const phone of contact.phones) {
-        if (phone.number) {
-          try {
-            const hash = await hashPhoneNumber(phone.number);
-            phoneHashes.push(hash);
-          } catch (error) {
-            console.error('Failed to hash phone number:', error);
+    for (const contact of contacts) {
+      if (contact.phones && contact.phones.length > 0) {
+        for (const phone of contact.phones) {
+          if (phone.number) {
+            try {
+              const hash = await hashPhoneNumber(phone.number);
+              phoneHashSet.add(hash); // Set automatically deduplicates
+            } catch (error) {
+              console.error('Failed to hash phone number:', error);
+            }
           }
         }
       }
+
+      processed++;
+      onProgress?.({ total: contacts.length, synced: processed, matches: 0 });
     }
-    
-    processed++;
-    onProgress?.({ total: contacts.length, synced: processed, matches: 0 });
-  }
 
-  // Upload hashed phone numbers to database
-  const { error: uploadError } = await supabase.rpc('upsert_contact_hashes', {
-    p_user_id: user.id,
-    p_phone_hashes: phoneHashes,
-  });
+    // Convert Set to Array for database upload
+    const phoneHashes = Array.from(phoneHashSet);
 
-  if (uploadError) {
-    console.error('Failed to upload contact hashes:', uploadError);
-    throw new Error('Failed to sync contacts. Please try again.');
-  }
-
-  // Match contacts with existing SynC users
-  const { data: matches, error: matchError } = await supabase.rpc('match_contacts', {
-    p_user_id: user.id,
-    p_phone_hashes: phoneHashes,
-  });
-
-  if (matchError) {
-    console.error('Failed to match contacts:', matchError);
-    throw new Error('Failed to find friends from contacts');
-  }
-
-  // Update contact_matches table for PYMK integration
-  const matchedUserIds = matches?.map((m: ContactMatch) => m.user_id) || [];
-  if (matchedUserIds.length > 0) {
-    await supabase.rpc('update_contact_matches', {
+    // Upload hashed phone numbers to database
+    const { error: uploadError } = await supabase.rpc('upsert_contact_hashes', {
       p_user_id: user.id,
-      p_matched_user_ids: matchedUserIds,
+      p_phone_hashes: phoneHashes,
     });
-  }
 
-  onProgress?.({ 
-    total: contacts.length, 
-    synced: contacts.length, 
-    matches: matches?.length || 0 
-  });
+    if (uploadError) {
+      console.error('Failed to upload contact hashes:', uploadError.message, uploadError.details, uploadError.hint);
+      throw new Error(`Failed to sync contacts: ${uploadError.message}`);
+    }
+
+    // Match contacts with existing SynC users
+    const { data: matches, error: matchError } = await supabase.rpc('match_contacts', {
+      p_user_id: user.id,
+      p_phone_hashes: phoneHashes,
+    });
+
+    if (matchError) {
+      console.error('Failed to match contacts:', matchError);
+      throw new Error('Failed to find friends from contacts');
+    }
+
+    // Update contact_matches table for PYMK integration
+    const matchedUserIds = matches?.map((m: ContactMatch) => m.user_id) || [];
+    if (matchedUserIds.length > 0) {
+      await supabase.rpc('update_contact_matches', {
+        p_user_id: user.id,
+        p_matched_user_ids: matchedUserIds,
+      });
+    }
+
+    onProgress?.({
+      total: contacts.length,
+      synced: contacts.length,
+      matches: matches?.length || 0
+    });
 
     const duration = Date.now() - startTime;
 
@@ -314,7 +317,7 @@ export async function getLastSyncTime(): Promise<Date | null> {
     .single();
 
   if (error || !data?.last_contact_sync_at) return null;
-  
+
   return new Date(data.last_contact_sync_at);
 }
 
@@ -326,9 +329,9 @@ export function scheduleBackgroundSync(): void {
   // Check if already synced today
   getLastSyncTime().then(lastSync => {
     if (!lastSync) return;
-    
+
     const hoursSinceLastSync = (Date.now() - lastSync.getTime()) / (1000 * 60 * 60);
-    
+
     if (hoursSinceLastSync >= 24) {
       // Silently sync in background
       syncContacts().catch(err => {

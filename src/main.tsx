@@ -21,6 +21,8 @@ Promise.all([
   ),
 
   // Setup dev tools (only in development)
+  // Setup dev tools (only in development)
+  /*
   import.meta.env.DEV ? (async () => {
     const searchService = (await import('./services/searchService')).default
     const { simpleSearchService } = await import('./services/simpleSearchService')
@@ -30,4 +32,5 @@ Promise.all([
       ; (window as any).simpleSearchService = simpleSearchService
       ; (window as any).supabase = supabase
   })() : Promise.resolve()
+  */
 ]).catch(console.error)

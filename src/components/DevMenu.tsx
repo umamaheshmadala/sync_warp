@@ -4,23 +4,31 @@
 
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Capacitor } from '@capacitor/core'
 
 const DevMenu = () => {
   const [isOpen, setIsOpen] = useState(false)
   const navigate = useNavigate()
-  
-  // Only show in development mode
+
+  // Show in development mode OR on native platforms (for testing)
   const isDevelopment = import.meta.env.MODE === 'development'
-  
-  if (!isDevelopment) {
+  const isNativePlatform = Capacitor.isNativePlatform()
+
+  // Show menu in dev mode or on mobile apps
+  if (!isDevelopment && !isNativePlatform) {
     return null
   }
 
   const testPages = [
+    { name: '👥 Friends Page', path: '/friends' },
+    { name: '📱 Contact Sync Test', path: '/test/contact-sync' },
     { name: 'Storage Test (8.1.3)', path: '/test/storage' },
     { name: 'Dashboard', path: '/dashboard' },
     { name: 'Profile', path: '/profile' },
   ]
+
+  // Build timestamp for identification
+  const buildTime = new Date().toISOString().slice(0, 16).replace('T', ' ')
 
   return (
     <div className="fixed bottom-4 right-4 z-50">
@@ -54,16 +62,17 @@ const DevMenu = () => {
             className="fixed inset-0 bg-black bg-opacity-50 z-40"
             onClick={() => setIsOpen(false)}
           />
-          
+
           {/* Menu */}
           <div className="absolute bottom-16 right-0 bg-white rounded-lg shadow-xl p-4 min-w-[250px] z-50">
             <div className="mb-3 pb-3 border-b border-gray-200">
               <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wide">
                 Dev Menu
               </h3>
-              <p className="text-xs text-gray-500 mt-1">Development Mode</p>
+              <p className="text-xs text-gray-500 mt-1">Story 9.3.6</p>
+              <p className="text-xs text-purple-600 font-mono mt-0.5">Build: {buildTime}</p>
             </div>
-            
+
             <div className="space-y-2">
               {testPages.map((page) => (
                 <button

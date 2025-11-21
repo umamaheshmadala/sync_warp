@@ -136,7 +136,7 @@ const BusinessProfile: React.FC = () => {
   // Editable form state
   const [editForm, setEditForm] = useState<Partial<Business>>({});
   const [businessCategories, setBusinessCategories] = useState<BusinessCategory[]>([]);
-  
+
   // Image upload states
   const [imageUploads, setImageUploads] = useState({
     logo: null as File | null,
@@ -153,12 +153,12 @@ const BusinessProfile: React.FC = () => {
   useEffect(() => {
     const offerCode = searchParams.get('offer');
     const tab = searchParams.get('tab');
-    
+
     // Handle direct tab navigation
     if (tab && ['overview', 'reviews', 'statistics', 'enhanced-profile'].includes(tab)) {
       setActiveTab(tab);
     }
-    
+
     // Handle offer code - redirect to offers management page
     if (offerCode && businessId && business) {
       const slug = getBusinessUrl(businessId, business.business_name);
@@ -171,14 +171,14 @@ const BusinessProfile: React.FC = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        
+
         console.log('🔍 BusinessProfile: Loading business from URL param:', businessId);
         console.log('🔍 Parsed ID:', parsedBusinessId);
-        
+
         // Fetch business data using short ID prefix match or full UUID
         let businessData;
         let businessError;
-        
+
         // If it's 8 chars (short ID), use RPC function or manual filter
         if (parsedBusinessId && parsedBusinessId.length === 8) {
           console.log('🔍 Using short ID prefix match:', parsedBusinessId);
@@ -186,12 +186,12 @@ const BusinessProfile: React.FC = () => {
           const { data: allBusinesses, error: fetchError } = await supabase
             .from('businesses')
             .select('*');
-          
+
           if (fetchError) {
             businessError = fetchError;
           } else {
             // Filter in JavaScript for businesses where UUID starts with short ID
-            businessData = allBusinesses?.find(b => 
+            businessData = allBusinesses?.find(b =>
               b.id.toLowerCase().startsWith(parsedBusinessId.toLowerCase())
             );
             if (!businessData) {
@@ -216,12 +216,12 @@ const BusinessProfile: React.FC = () => {
           console.error('❌ Database error:', businessError);
           throw businessError;
         }
-        
+
         if (!businessData) {
-          console.error('❌ No business found for ID:', parsedId);
+          console.error('❌ No business found for ID:', parsedBusinessId);
           throw new Error('Business not found');
         }
-        
+
         console.log('✅ Business loaded:', businessData.business_name);
         setBusiness(businessData);
         // Initialize edit form with proper operating hours structure
@@ -274,18 +274,18 @@ const BusinessProfile: React.FC = () => {
       toast.success('Review submitted successfully!');
       setShowReviewModal(false);
       setEditingReview(null);
-      
+
       // Refresh business data to update review count
       const { data: updatedBusiness } = await supabase
         .from('businesses')
         .select('*')
         .eq('id', business?.id)
         .single();
-      
+
       if (updatedBusiness) {
         setBusiness(updatedBusiness);
       }
-      
+
       // Refresh stats and trigger re-render of reviews component
       await refreshStats();
       setReviewsKey(prev => prev + 1);
@@ -392,21 +392,21 @@ const BusinessProfile: React.FC = () => {
 
     try {
       setImageUploadLoading(prev => ({ ...prev, [type]: true }));
-      
+
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}_${type}_${Date.now()}.${fileExt}`;
       const filePath = `business_images/${fileName}`;
-      
+
       const { error: uploadError } = await supabase.storage
         .from('business-assets')
         .upload(filePath, file);
-        
+
       if (uploadError) throw uploadError;
-      
+
       const { data: { publicUrl } } = supabase.storage
         .from('business-assets')
         .getPublicUrl(filePath);
-        
+
       return publicUrl;
     } catch (error) {
       console.error('Image upload error:', error);
@@ -430,13 +430,13 @@ const BusinessProfile: React.FC = () => {
         ...prev,
         [fieldName]: uploadedUrl
       }));
-      
+
       // Update business state immediately for visual feedback
       setBusiness(prev => prev ? {
         ...prev,
         [fieldName]: uploadedUrl
       } : null);
-      
+
       // Save to database immediately
       try {
         const updateField = type === 'cover' ? 'cover_image_url' : `${type}_url`;
@@ -445,12 +445,12 @@ const BusinessProfile: React.FC = () => {
           .update({ [updateField]: uploadedUrl })
           .eq('id', businessId)
           .eq('user_id', user?.id);
-          
+
         if (error) {
           console.error('Database update error:', error);
           throw error;
         }
-        
+
         toast.success(`${type === 'cover' ? 'Cover' : type} image updated successfully!`);
       } catch (error) {
         console.error('Error saving image:', error);
@@ -520,16 +520,16 @@ const BusinessProfile: React.FC = () => {
     setEditForm(business);
     setEditing(false);
   };
-  
+
   // Get current location using browser geolocation
   const getCurrentLocation = () => {
     if (!navigator.geolocation) {
       toast.error('Geolocation is not supported by this browser');
       return;
     }
-    
+
     setImageUploadLoading(prev => ({ ...prev, gallery: true })); // Reuse loading state
-    
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
@@ -556,11 +556,11 @@ const BusinessProfile: React.FC = () => {
     return Object.keys(hours).map(day => {
       const dayHours = hours[day];
       const dayName = day.charAt(0).toUpperCase() + day.slice(1);
-      
+
       if (dayHours.closed) {
         return `${dayName}: Closed`;
       }
-      
+
       return `${dayName}: ${dayHours.open} - ${dayHours.close}`;
     }).join('\n');
   };
@@ -614,7 +614,7 @@ const BusinessProfile: React.FC = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
               <textarea
@@ -635,7 +635,7 @@ const BusinessProfile: React.FC = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Business Phone</label>
                 <input
@@ -646,11 +646,11 @@ const BusinessProfile: React.FC = () => {
                 />
               </div>
             </div>
-            
+
             {/* Location Section */}
             <div className="space-y-4">
               <h4 className="text-sm font-medium text-gray-700">Location Information</h4>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Street Address</label>
                 <input
@@ -661,7 +661,7 @@ const BusinessProfile: React.FC = () => {
                   placeholder="123 Main Street"
                 />
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
@@ -672,7 +672,7 @@ const BusinessProfile: React.FC = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
                   <input
@@ -682,7 +682,7 @@ const BusinessProfile: React.FC = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Postal Code</label>
                   <input
@@ -693,7 +693,7 @@ const BusinessProfile: React.FC = () => {
                   />
                 </div>
               </div>
-              
+
               {/* Location Map Picker */}
               <div className="space-y-4">
                 <h4 className="text-sm font-medium text-gray-700">Business Location</h4>
@@ -725,7 +725,7 @@ const BusinessProfile: React.FC = () => {
                       <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                       <h3 className="text-lg font-medium text-gray-900 mb-2">Google Maps Not Available</h3>
                       <p className="text-gray-600 mb-4">Please add your Google Maps API key to enable location selection.</p>
-                      
+
                       {/* Fallback coordinate inputs */}
                       <div className="max-w-md mx-auto space-y-4">
                         <div className="grid grid-cols-2 gap-4">
@@ -740,7 +740,7 @@ const BusinessProfile: React.FC = () => {
                               placeholder="40.7128"
                             />
                           </div>
-                          
+
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">Longitude</label>
                             <input
@@ -753,7 +753,7 @@ const BusinessProfile: React.FC = () => {
                             />
                           </div>
                         </div>
-                        
+
                         <button
                           type="button"
                           onClick={getCurrentLocation}
@@ -767,7 +767,7 @@ const BusinessProfile: React.FC = () => {
                     </div>
                   )}
                 </div>
-                
+
                 {/* Current coordinates display */}
                 {editForm.latitude && editForm.longitude && (
                   <div className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg">
@@ -778,7 +778,7 @@ const BusinessProfile: React.FC = () => {
                   </div>
                 )}
               </div>
-              
+
               <div className="text-xs text-gray-500">
                 <p>You can get coordinates from Google Maps by right-clicking on your location and copying the coordinates.</p>
                 <p>Format: Latitude (North/South), Longitude (East/West)</p>
@@ -788,7 +788,7 @@ const BusinessProfile: React.FC = () => {
             {/* Image Upload Section */}
             <div className="space-y-4">
               <h4 className="text-sm font-medium text-gray-700">Business Images</h4>
-              
+
               {/* Logo Upload */}
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-2">Logo</label>
@@ -833,7 +833,7 @@ const BusinessProfile: React.FC = () => {
                   </div>
                 </div>
               </div>
-              
+
               {/* Cover Image Upload */}
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-2">Cover Image</label>
@@ -891,7 +891,7 @@ const BusinessProfile: React.FC = () => {
                       <div className="w-24">
                         <span className="text-sm font-medium text-gray-700 capitalize">{day}</span>
                       </div>
-                      
+
                       <label className="flex items-center">
                         <input
                           type="checkbox"
@@ -908,7 +908,7 @@ const BusinessProfile: React.FC = () => {
                         />
                         <span className="text-sm text-gray-600">Closed</span>
                       </label>
-                      
+
                       {!dayHours.closed && (
                         <>
                           <div className="flex items-center space-x-2">
@@ -958,13 +958,13 @@ const BusinessProfile: React.FC = () => {
               <h4 className="font-medium text-gray-900 mb-2">{business?.business_name}</h4>
               <p className="text-gray-600">{business?.description}</p>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-gray-500">Business Type</p>
                 <p className="font-medium text-gray-900">{business?.business_type}</p>
               </div>
-              
+
               <div>
                 <p className="text-sm text-gray-500">Status</p>
                 <div className="mt-1">{getStatusBadge(business?.status)}</div>
@@ -1017,7 +1017,7 @@ const BusinessProfile: React.FC = () => {
               <p className="text-gray-600">{business?.city}, {business?.state} {business?.postal_code}</p>
             </div>
           </div>
-          
+
           {(business?.latitude && business?.longitude) && (
             <div className="flex items-start pl-8">
               <div className="text-sm text-gray-500">
@@ -1025,7 +1025,7 @@ const BusinessProfile: React.FC = () => {
                 <p className="text-gray-700 font-mono">
                   {business.latitude.toFixed(6)}, {business.longitude.toFixed(6)}
                 </p>
-                <a 
+                <a
                   href={`https://maps.google.com/?q=${business.latitude},${business.longitude}`}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -1084,7 +1084,7 @@ const BusinessProfile: React.FC = () => {
 
       {/* Featured Products Section */}
       {business && (
-        <FeaturedProducts 
+        <FeaturedProducts
           businessId={business.id}
           businessName={business.business_name}
           isOwner={isOwner}
@@ -1269,174 +1269,172 @@ const BusinessProfile: React.FC = () => {
       </AnimatePresence>
 
       <div className="min-h-screen bg-gray-50">
-      {/* Breadcrumbs Navigation */}
-      <div className="bg-white border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="py-3">
-            <nav className="flex items-center space-x-2 text-sm">
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="flex items-center text-gray-500 hover:text-indigo-600 transition-colors"
-              >
-                <Home className="w-4 h-4 mr-1" />
-                Dashboard
-              </button>
-              <ChevronRight className="w-4 h-4 text-gray-300" />
-              <button
-                onClick={() => navigate('/business/dashboard')}
-                className="text-gray-500 hover:text-indigo-600 transition-colors"
-              >
-                Businesses
-              </button>
-              <ChevronRight className="w-4 h-4 text-gray-300" />
-              <span className="text-gray-900 font-medium">
-                {business?.business_name || 'Business Profile'}
-              </span>
-            </nav>
-          </div>
-        </div>
-      </div>
-      
-      {/* Header */}
-      <div className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="py-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
+        {/* Breadcrumbs Navigation */}
+        <div className="bg-white border-b border-gray-100">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="py-3">
+              <nav className="flex items-center space-x-2 text-sm">
+                <button
+                  onClick={() => navigate('/dashboard')}
+                  className="flex items-center text-gray-500 hover:text-indigo-600 transition-colors"
+                >
+                  <Home className="w-4 h-4 mr-1" />
+                  Dashboard
+                </button>
+                <ChevronRight className="w-4 h-4 text-gray-300" />
                 <button
                   onClick={() => navigate('/business/dashboard')}
-                  className="mr-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                  title="Back to Business Dashboard"
+                  className="text-gray-500 hover:text-indigo-600 transition-colors"
                 >
-                  <ArrowLeft className="w-5 h-5" />
+                  Businesses
                 </button>
-                
-                {business?.logo_url ? (
-                  <img
-                    src={business.logo_url}
-                    alt={`${business.business_name} logo`}
-                    className="w-16 h-16 rounded-lg object-cover mr-4"
-                  />
-                ) : (
-                  <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center mr-4">
-                    <Camera className="w-8 h-8 text-gray-400" />
+                <ChevronRight className="w-4 h-4 text-gray-300" />
+                <span className="text-gray-900 font-medium">
+                  {business?.business_name || 'Business Profile'}
+                </span>
+              </nav>
+            </div>
+          </div>
+        </div>
+
+        {/* Header */}
+        <div className="bg-white border-b">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="py-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <button
+                    onClick={() => navigate('/business/dashboard')}
+                    className="mr-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                    title="Back to Business Dashboard"
+                  >
+                    <ArrowLeft className="w-5 h-5" />
+                  </button>
+
+                  {business?.logo_url ? (
+                    <img
+                      src={business.logo_url}
+                      alt={`${business.business_name} logo`}
+                      className="w-16 h-16 rounded-lg object-cover mr-4"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center mr-4">
+                      <Camera className="w-8 h-8 text-gray-400" />
+                    </div>
+                  )}
+                  <div>
+                    <h1 className="text-2xl font-bold text-gray-900">{business?.business_name}</h1>
+                    <p className="text-gray-600">{business?.city}, {business?.state}</p>
                   </div>
-                )}
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">{business?.business_name}</h1>
-                  <p className="text-gray-600">{business?.city}, {business?.state}</p>
                 </div>
-              </div>
-              
-              <div className="flex items-center space-x-3">
-                {getStatusBadge(business?.status)}
-                {business?.verified && (
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                    <CheckCircle className="w-3 h-3 mr-1" />
-                    Verified
-                  </span>
-                )}
-                
-                {/* Follow Button - Only show for non-owners */}
-                {!isOwner && user && (
-                  <FollowButton
+
+                <div className="flex items-center space-x-3">
+                  {getStatusBadge(business?.status)}
+                  {business?.verified && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      <CheckCircle className="w-3 h-3 mr-1" />
+                      Verified
+                    </span>
+                  )}
+
+                  {/* Follow Button - Only show for non-owners */}
+                  {!isOwner && user && (
+                    <FollowButton
+                      businessId={business.id}
+                      variant="default"
+                      size="default"
+                    />
+                  )}
+
+                  <StorefrontShareButton
                     businessId={business.id}
-                    variant="default"
+                    businessName={business.business_name}
+                    businessDescription={business.description}
+                    variant="outline"
                     size="default"
+                    onShareSuccess={() => {
+                      // Optional: Track share success analytics
+                      console.log('Storefront shared successfully');
+                    }}
                   />
-                )}
-                
-                <StorefrontShareButton
-                  businessId={business.id}
-                  businessName={business.business_name}
-                  businessDescription={business.description}
-                  variant="outline"
-                  size="default"
-                  onShareSuccess={() => {
-                    // Optional: Track share success analytics
-                    console.log('Storefront shared successfully');
-                  }}
-                />
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Cover Image */}
-      {business?.cover_image_url && (
-        <div className="h-64 bg-gray-200 overflow-hidden">
-          <img
-            src={business.cover_image_url}
-            alt={`${business.business_name} cover`}
-            className="w-full h-full object-cover"
-          />
+        {/* Cover Image */}
+        {business?.cover_image_url && (
+          <div className="h-64 bg-gray-200 overflow-hidden">
+            <img
+              src={business.cover_image_url}
+              alt={`${business.business_name} cover`}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        )}
+
+        {/* Tabs */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="border-b border-gray-200">
+            <nav className="-mb-px flex space-x-8">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === tab.id
+                      ? 'border-indigo-500 text-indigo-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                >
+                  {tab.label}
+                  {tab.count !== null && (
+                    <span className={`ml-2 py-0.5 px-2 rounded-full text-xs ${activeTab === tab.id
+                        ? 'bg-indigo-100 text-indigo-600'
+                        : 'bg-gray-100 text-gray-900'
+                      }`}>
+                      {tab.count}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </nav>
+          </div>
         </div>
-      )}
 
-      {/* Tabs */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === tab.id
-                    ? 'border-indigo-500 text-indigo-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                {tab.label}
-                {tab.count !== null && (
-                  <span className={`ml-2 py-0.5 px-2 rounded-full text-xs ${
-                    activeTab === tab.id
-                      ? 'bg-indigo-100 text-indigo-600'
-                      : 'bg-gray-100 text-gray-900'
-                  }`}>
-                    {tab.count}
-                  </span>
-                )}
-              </button>
-            ))}
-          </nav>
+        {/* Tab Content */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.2 }}
+            >
+              {activeTab === 'overview' && renderOverview()}
+              {activeTab === 'reviews' && renderReviews()}
+              {activeTab === 'statistics' && renderStatistics()}
+              {activeTab === 'enhanced-profile' && (
+                <EnhancedProfileTab
+                  businessId={businessId!}
+                  business={business!}
+                  isOwner={isOwner}
+                  onUpdate={async () => {
+                    // Refresh business data after update
+                    const { data } = await supabase
+                      .from('businesses')
+                      .select('*')
+                      .eq('id', businessId)
+                      .single();
+                    if (data) setBusiness(data);
+                  }}
+                />
+              )}
+            </motion.div>
+          </AnimatePresence>
         </div>
       </div>
-
-      {/* Tab Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.2 }}
-          >
-            {activeTab === 'overview' && renderOverview()}
-            {activeTab === 'reviews' && renderReviews()}
-            {activeTab === 'statistics' && renderStatistics()}
-            {activeTab === 'enhanced-profile' && (
-              <EnhancedProfileTab
-                businessId={businessId!}
-                business={business!}
-                isOwner={isOwner}
-                onUpdate={async () => {
-                  // Refresh business data after update
-                  const { data } = await supabase
-                    .from('businesses')
-                    .select('*')
-                    .eq('id', businessId)
-                    .single();
-                  if (data) setBusiness(data);
-                }}
-              />
-            )}
-          </motion.div>
-        </AnimatePresence>
-      </div>
-    </div>
     </>
   );
 };

@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Sync App</string>
-    <string name="title_activity_main">Sync App</string>
+    <string name="app_name">Sync Dev [9.3.6]</string>
+    <string name="title_activity_main">Sync Dev [9.3.6]</string>
     <string name="package_name">com.syncapp.mobile</string>
     <string name="custom_url_scheme">com.syncapp.mobile</string>
 </resources>
