@@ -178,8 +178,13 @@ export async function syncContacts(
     });
 
     if (matchError) {
-      console.error('Failed to match contacts:', matchError);
-      throw new Error('Failed to find friends from contacts');
+      console.error('Failed to match contacts:', {
+        message: matchError.message,
+        details: matchError.details,
+        hint: matchError.hint,
+        code: matchError.code,
+      });
+      throw new Error(`Failed to find friends from contacts: ${matchError.message}`);
     }
 
     // Update contact_matches table for PYMK integration
