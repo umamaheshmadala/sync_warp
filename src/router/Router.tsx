@@ -43,6 +43,8 @@ import { FriendsPage } from '../pages/Friends'
 // Story 9.3.2: Friend Requests UI
 import { FriendRequestsList } from '../components/friends/FriendRequestsList'
 import TestProfileModal from '../pages/TestProfileModal'
+// Story 9.5.6: Privacy Dashboard
+import { FriendsPrivacySettings } from '../pages/settings/FriendsPrivacySettings'
 
 
 // Import messaging components (Epic 8.2)
@@ -227,6 +229,13 @@ export const routes: RouteConfig[] = [
     protected: true,
     title: 'Settings - SynC',
     description: 'Manage your account settings'
+  },
+  {
+    path: '/settings/privacy',
+    element: <FriendsPrivacySettings />,
+    protected: true,
+    title: 'Privacy Settings - SynC',
+    description: 'Manage privacy and blocking settings'
   },
   {
     path: '/wallet',

@@ -2,8 +2,8 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Users, UserPlus, Activity, MessageSquare } from 'lucide-react';
-import { useNewFriends as useFriends } from '../hooks/useNewFriends';
-import { useReceivedFriendRequests } from '../hooks/useFriendRequests';
+import { useFriends } from '../hooks/friends/useFriends';
+import { useReceivedFriendRequests } from '../hooks/friends/useFriendRequests';
 import ContactsSidebar from './ContactsSidebarWithTabs';
 import AddFriend from './AddFriend';
 import FriendRequests from './FriendRequests';
@@ -14,15 +14,14 @@ interface FriendManagementProps {
 }
 
 const FriendManagement: React.FC<FriendManagementProps> = ({ className = '' }) => {
-  const { 
-    friends, 
-    totalFriends, 
-    onlineCount, 
-    loading 
-  } = useFriends();
-  
-  const { receivedRequests } = useReceivedFriendRequests();
-  
+  const { data: friendsResponse, isLoading: loading } = useFriends();
+  const { data: receivedRequests = [] } = useReceivedFriendRequests();
+
+  // Extract friends array from ServiceResponse
+  const friends = friendsResponse?.data || [];
+  const totalFriends = friends.length;
+  const onlineCount = friends.filter((f: any) => f.friend?.is_online).length;
+
   const [showContactsSidebar, setShowContactsSidebar] = useState(false);
   const [showAddFriend, setShowAddFriend] = useState(false);
   const [showFriendRequests, setShowFriendRequests] = useState(false);
@@ -31,7 +30,7 @@ const FriendManagement: React.FC<FriendManagementProps> = ({ className = '' }) =
     <div className={`space-y-6 ${className}`}>
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <motion.div 
+        <motion.div
           className="bg-white p-4 rounded-lg shadow-sm border border-gray-200"
           whileHover={{ scale: 1.02 }}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
@@ -49,7 +48,7 @@ const FriendManagement: React.FC<FriendManagementProps> = ({ className = '' }) =
           </div>
         </motion.div>
 
-        <motion.div 
+        <motion.div
           className="bg-white p-4 rounded-lg shadow-sm border border-gray-200"
           whileHover={{ scale: 1.02 }}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
@@ -69,25 +68,25 @@ const FriendManagement: React.FC<FriendManagementProps> = ({ className = '' }) =
           </div>
         </motion.div>
 
-          <motion.div 
-            className="bg-white p-4 rounded-lg shadow-sm border border-gray-200"
-            whileHover={{ scale: 1.02 }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-          >
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <UserPlus className="h-8 w-8 text-blue-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-2xl font-semibold text-gray-900">
-                  {loading ? '...' : receivedRequests.length}
-                </p>
-                <p className="text-sm font-medium text-gray-500">Pending Requests</p>
-              </div>
+        <motion.div
+          className="bg-white p-4 rounded-lg shadow-sm border border-gray-200"
+          whileHover={{ scale: 1.02 }}
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        >
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <UserPlus className="h-8 w-8 text-blue-600" />
             </div>
-          </motion.div>
+            <div className="ml-4">
+              <p className="text-2xl font-semibold text-gray-900">
+                {loading ? '...' : receivedRequests.length}
+              </p>
+              <p className="text-sm font-medium text-gray-500">Pending Requests</p>
+            </div>
+          </div>
+        </motion.div>
 
-        <motion.div 
+        <motion.div
           className="bg-white p-4 rounded-lg shadow-sm border border-gray-200"
           whileHover={{ scale: 1.02 }}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
@@ -165,17 +164,17 @@ const FriendManagement: React.FC<FriendManagementProps> = ({ className = '' }) =
       <FriendActivityFeed className="w-full" />
 
       {/* Modals */}
-      <ContactsSidebar 
+      <ContactsSidebar
         isOpen={showContactsSidebar}
         onClose={() => setShowContactsSidebar(false)}
       />
-      
-      <AddFriend 
+
+      <AddFriend
         isOpen={showAddFriend}
         onClose={() => setShowAddFriend(false)}
       />
-      
-      <FriendRequests 
+
+      <FriendRequests
         isOpen={showFriendRequests}
         onClose={() => setShowFriendRequests(false)}
       />

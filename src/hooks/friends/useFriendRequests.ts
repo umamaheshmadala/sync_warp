@@ -11,14 +11,36 @@ export function useReceivedFriendRequests() {
       const { data, error } = await supabase
         .from('friend_requests')
         .select(`
-          *,
-          sender:profiles!friend_requests_sender_id_fkey(*)
+          id, 
+          created_at, 
+          status, 
+          sender_id, 
+          receiver_id
         `)
         .eq('receiver_id', user!.id)
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Received requests error:', error);
+        throw error;
+      }
+
+      // Fetch sender profiles separately to avoid RLS issues
+      if (data && data.length > 0) {
+        const senderIds = data.map(req => req.sender_id);
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, full_name, email, avatar_url')
+          .in('id', senderIds);
+
+        // Merge profiles into requests
+        return data.map(req => ({
+          ...req,
+          sender: profiles?.find(p => p.id === req.sender_id) || null
+        }));
+      }
+
       return data;
     },
     enabled: !!user,
@@ -34,16 +56,54 @@ export function useSentFriendRequests() {
       const { data, error } = await supabase
         .from('friend_requests')
         .select(`
-          *,
-          receiver:profiles!friend_requests_receiver_id_fkey(*)
+          id, 
+          created_at, 
+          status, 
+          sender_id, 
+          receiver_id
         `)
         .eq('sender_id', user!.id)
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Sent requests error:', error);
+        throw error;
+      }
+
+      // Fetch receiver profiles separately to avoid RLS issues
+      if (data && data.length > 0) {
+        const receiverIds = data.map(req => req.receiver_id);
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, full_name, email, avatar_url')
+          .in('id', receiverIds);
+
+        // Merge profiles into requests
+        return data.map(req => ({
+          ...req,
+          receiver: profiles?.find(p => p.id === req.receiver_id) || null
+        }));
+      }
+
       return data;
     },
     enabled: !!user,
   });
+}
+
+// Wrapper hook to match component expectations
+export function useFriendRequests(type: 'received' | 'sent') {
+  const receivedHook = useReceivedFriendRequests();
+  const sentHook = useSentFriendRequests();
+
+  const hook = type === 'received' ? receivedHook : sentHook;
+
+  return {
+    requests: hook.data || [],
+    isLoading: hook.isLoading,
+    hasNextPage: false,
+    fetchNextPage: () => { },
+    isFetchingNextPage: false,
+  };
 }

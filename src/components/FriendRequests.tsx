@@ -2,11 +2,11 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Users, X } from 'lucide-react'
-import { useReceivedFriendRequests, useAcceptFriendRequest, useRejectFriendRequest } from '../hooks/useFriendRequests'
+import { useReceivedFriendRequests } from '../hooks/friends/useFriendRequests'
+import { useFriendActions } from '../hooks/friends/useFriendActions'
 import { useHapticFeedback } from '../hooks/useHapticFeedback'
 import FriendRequestCard from './FriendRequestCard'
 import { NoRequestsEmptyState } from './friends/EmptyStates'
-import { toast } from 'react-hot-toast'
 
 interface FriendRequestsProps {
   isOpen: boolean
@@ -14,9 +14,8 @@ interface FriendRequestsProps {
 }
 
 const FriendRequests: React.FC<FriendRequestsProps> = ({ isOpen, onClose }) => {
-  const { receivedRequests, isLoading } = useReceivedFriendRequests()
-  const acceptRequest = useAcceptFriendRequest()
-  const rejectRequest = useRejectFriendRequest()
+  const { data: receivedRequests = [], isLoading } = useReceivedFriendRequests()
+  const { acceptRequest, rejectRequest } = useFriendActions()
   const { triggerHaptic } = useHapticFeedback()
   const [processingRequest, setProcessingRequest] = useState<Set<string>>(new Set())
 
@@ -34,14 +33,8 @@ const FriendRequests: React.FC<FriendRequestsProps> = ({ isOpen, onClose }) => {
     setProcessingRequest(prev => new Set(prev).add(requestId))
 
     acceptRequest.mutate(requestId, {
-      onSuccess: (result) => {
-        if (result.success) {
-          triggerHaptic('success')
-          toast.success('Friend request accepted!')
-        } else {
-          triggerHaptic('error')
-          toast.error(result.error || 'Failed to accept request')
-        }
+      onSuccess: () => {
+        triggerHaptic('success')
         setProcessingRequest(prev => {
           const next = new Set(prev)
           next.delete(requestId)
@@ -51,7 +44,6 @@ const FriendRequests: React.FC<FriendRequestsProps> = ({ isOpen, onClose }) => {
       onError: (error) => {
         console.error('Error accepting friend request:', error)
         triggerHaptic('error')
-        toast.error('Failed to accept friend request')
         setProcessingRequest(prev => {
           const next = new Set(prev)
           next.delete(requestId)
@@ -68,14 +60,8 @@ const FriendRequests: React.FC<FriendRequestsProps> = ({ isOpen, onClose }) => {
     setProcessingRequest(prev => new Set(prev).add(requestId))
 
     rejectRequest.mutate(requestId, {
-      onSuccess: (result) => {
-        if (result.success) {
-          triggerHaptic('light')
-          toast.success('Friend request declined')
-        } else {
-          triggerHaptic('error')
-          toast.error(result.error || 'Failed to decline request')
-        }
+      onSuccess: () => {
+        triggerHaptic('light')
         setProcessingRequest(prev => {
           const next = new Set(prev)
           next.delete(requestId)
@@ -85,7 +71,6 @@ const FriendRequests: React.FC<FriendRequestsProps> = ({ isOpen, onClose }) => {
       onError: (error) => {
         console.error('Error rejecting friend request:', error)
         triggerHaptic('error')
-        toast.error('Failed to decline friend request')
         setProcessingRequest(prev => {
           const next = new Set(prev)
           next.delete(requestId)
@@ -152,7 +137,7 @@ const FriendRequests: React.FC<FriendRequestsProps> = ({ isOpen, onClose }) => {
                     <NoRequestsEmptyState />
                   ) : (
                     <div className="space-y-4">
-                      {receivedRequests.map((request) => (
+                      {receivedRequests.map((request: any) => (
                         <FriendRequestCard
                           key={request.id}
                           request={request}

@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 import { Users, X, Loader2, UserPlus } from 'lucide-react';
 import { PYMKSuggestion } from '@/services/friendService';
-import { useSendFriendRequest } from '@/hooks/useFriendRequests';
+import { useFriendActions } from '@/hooks/friends/useFriendActions';
 import { useDismissPYMK } from '@/hooks/usePYMK';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -17,25 +17,21 @@ interface PYMKCardProps {
 
 export function PYMKCard({ recommendation }: PYMKCardProps) {
   const navigate = useNavigate();
-  const sendFriendRequest = useSendFriendRequest();
+  const { sendRequest } = useFriendActions();
   const dismissSuggestion = useDismissPYMK();
   const [requestSent, setRequestSent] = useState(false);
 
   const handleAddFriend = (e: React.MouseEvent) => {
     e.stopPropagation();
-    sendFriendRequest.mutate(
-      { receiverId: recommendation.id },
-      {
-        onSuccess: (data) => {
-          if (data.success) {
-            setRequestSent(true);
-            toast.success(`Friend request sent to ${recommendation.full_name}`);
-          } else {
-            toast.error(data.error || 'Failed to send friend request');
-          }
-        }
+    sendRequest.mutate(recommendation.id, {
+      onSuccess: () => {
+        setRequestSent(true);
+        toast.success(`Friend request sent to ${recommendation.full_name}`);
+      },
+      onError: (error: any) => {
+        toast.error(error?.message || 'Failed to send friend request');
       }
-    );
+    });
   };
 
   const handleDismiss = (e: React.MouseEvent) => {
@@ -110,13 +106,13 @@ export function PYMKCard({ recommendation }: PYMKCardProps) {
       <div className="mt-auto w-full">
         <button
           onClick={handleAddFriend}
-          disabled={sendFriendRequest.isPending || requestSent}
+          disabled={sendRequest.isPending || requestSent}
           className={`w-full px-4 py-2 text-sm font-medium rounded-lg transition-colors flex items-center justify-center ${requestSent
-              ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
-              : 'bg-blue-600 text-white hover:bg-blue-700'
+            ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
+            : 'bg-blue-600 text-white hover:bg-blue-700'
             }`}
         >
-          {sendFriendRequest.isPending ? (
+          {sendRequest.isPending ? (
             <Loader2 className="w-4 h-4 animate-spin" />
           ) : requestSent ? (
             'Request Sent'

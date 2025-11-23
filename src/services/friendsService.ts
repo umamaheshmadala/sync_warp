@@ -94,6 +94,21 @@ export const friendsService = {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error('Not authenticated');
 
+            // Check privacy settings first
+            const { data: canSend, error: privacyError } = await supabase.rpc('can_send_friend_request', {
+                sender_id: user.id,
+                receiver_id: receiverId,
+            });
+
+            if (privacyError) throw privacyError;
+
+            if (!canSend) {
+                return {
+                    success: false,
+                    error: 'This user is not accepting friend requests due to their privacy settings.',
+                };
+            }
+
             const data = await withRetry(
                 () => friendsCircuitBreaker.execute(async () => {
                     const { data, error } = await supabase

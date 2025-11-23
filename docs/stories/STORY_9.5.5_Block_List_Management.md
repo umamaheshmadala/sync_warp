@@ -3,7 +3,7 @@
 **Epic:** [EPIC 9.5: Privacy Controls & Settings](../epics/EPIC_9.5_Privacy_Settings.md)  
 **Story Points:** 2  
 **Priority:** 🟡 Medium  
-**Status:** 📋 To Do
+**Status:** ✅ Complete
 
 ---
 

@@ -65,13 +65,19 @@ export function FriendCard({ friend, style, onClick }: FriendCardProps) {
               {initials}
             </div>
           )}
-          <OnlineStatusDot userId={friend.id} />
+          {/* Only show dot if we have status info (it might be hidden by privacy settings) */}
+          {friend.is_online !== undefined && <OnlineStatusDot userId={friend.id} />}
         </div>
 
         {/* Friend info */}
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-gray-900 truncate">{friend.full_name}</h3>
-          <OnlineStatusBadge userId={friend.id} lastActive={friend.last_active} />
+          {/* Pass explicit null if hidden, or let the component handle undefined */}
+          <OnlineStatusBadge
+            userId={friend.id}
+            lastActive={friend.last_active}
+            className={friend.is_online === undefined ? 'hidden' : ''}
+          />
         </div>
 
         {/* Quick actions */}
