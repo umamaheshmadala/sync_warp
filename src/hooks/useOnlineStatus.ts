@@ -2,83 +2,30 @@
  * useOnlineStatus Hook - Real-time Online Status Consumer
  * Story 9.3.7: Online Status & Badges (Real-time Implementation)
  * 
- * Subscribes to Supabase Realtime Presence channel and provides:
+ * Consumes global presence state from usePresenceStore.
  * - isUserOnline(userId) - Check if user is currently online
  * - getLastSeen(userId) - Get user's last online timestamp
  * - onlineUsers - Map of all online users
  */
 
-import { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { usePresenceStore } from '../store/presenceStore';
 
 export function useOnlineStatus() {
-    const [onlineUsers, setOnlineUsers] = useState<Map<string, string>>(new Map());
-
-    useEffect(() => {
-        console.log('[OnlineStatus] Subscribing to presence channel');
-
-        const channel = supabase.channel('online-users');
-
-        channel
-            .on('presence', { event: 'sync' }, () => {
-                const state = channel.presenceState();
-                const online = new Map<string, string>();
-
-                // Extract all online users from presence state
-                Object.values(state).forEach(presences => {
-                    presences.forEach((presence: any) => {
-                        if (presence.user_id && presence.online_at) {
-                            online.set(presence.user_id, presence.online_at);
-                        }
-                    });
-                });
-
-                console.log('[OnlineStatus] Updated online users:', online.size);
-                setOnlineUsers(online);
-            })
-            .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-                console.log('[OnlineStatus] User joined:', key);
-                setOnlineUsers(prev => {
-                    const updated = new Map(prev);
-                    newPresences.forEach((presence: any) => {
-                        if (presence.user_id && presence.online_at) {
-                            updated.set(presence.user_id, presence.online_at);
-                        }
-                    });
-                    return updated;
-                });
-            })
-            .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-                console.log('[OnlineStatus] User left:', key);
-                setOnlineUsers(prev => {
-                    const updated = new Map(prev);
-                    leftPresences.forEach((presence: any) => {
-                        if (presence.user_id) {
-                            updated.delete(presence.user_id);
-                        }
-                    });
-                    return updated;
-                });
-            })
-            .subscribe();
-
-        return () => {
-            console.log('[OnlineStatus] Unsubscribing from presence channel');
-            supabase.removeChannel(channel);
-        };
-    }, []);
+    const onlineUsers = usePresenceStore(state => state.onlineUsers);
 
     /**
      * Check if a user is currently online
-     * A user is considered online if their heartbeat was within the last 60 seconds
+     * A user is considered online if they are in the presence map
+     * (Presence map is maintained by Realtime sync events)
      */
     const isUserOnline = (userId: string): boolean => {
         const onlineAt = onlineUsers.get(userId);
         if (!onlineAt) return false;
 
-        // Consider online if heartbeat within last 60 seconds
+        // Optional: Double check timestamp freshness if needed
+        // But Realtime 'leave' events should handle this.
         const diff = new Date().getTime() - new Date(onlineAt).getTime();
-        return diff < 60000; // 1 minute
+        return diff < 65000; // 65s buffer (heartbeat is 30s)
     };
 
     /**

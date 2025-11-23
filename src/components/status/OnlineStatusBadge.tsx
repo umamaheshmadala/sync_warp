@@ -8,19 +8,23 @@ import { formatLastSeen } from '../../utils/formatLastSeen';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 
 interface OnlineStatusBadgeProps {
-    userId: string; // Changed from isOnline/lastActive to userId for real-time lookup
+    userId: string;
+    lastActive?: string | null; // Added fallback from DB
     showText?: boolean;
 }
 
 export function OnlineStatusBadge({
     userId,
+    lastActive: dbLastActive,
     showText = true
 }: OnlineStatusBadgeProps) {
     const { isUserOnline, getLastSeen } = useOnlineStatus();
 
     // Real-time status lookup
     const online = isUserOnline(userId);
-    const lastSeen = getLastSeen(userId);
+    // Use Realtime last seen if available, otherwise fallback to DB
+    const realtimeLastSeen = getLastSeen(userId);
+    const displayLastSeen = realtimeLastSeen || dbLastActive;
 
     return (
         <div className="flex items-center gap-2">
@@ -41,7 +45,7 @@ export function OnlineStatusBadge({
                     </span>
                     {showText && (
                         <span className="text-sm text-gray-500">
-                            {formatLastSeen(lastSeen)}
+                            {formatLastSeen(displayLastSeen)}
                         </span>
                     )}
                 </>

@@ -15,6 +15,7 @@ import { useAuthStore } from './store/authStore'
 import { OfflineBanner } from './components/ui/OfflineBanner'
 import DevMenu from './components/DevMenu'
 import { useUpdateOnlineStatus } from './hooks/useUpdateOnlineStatus'
+import { usePresence } from './hooks/usePresence'
 
 // Configure React Query with optimistic updates and caching
 const queryClient = new QueryClient({
@@ -37,12 +38,15 @@ const persister = createSyncStoragePersister({
 // Component that needs Router context
 function AppContent() {
   const user = useAuthStore(state => state.user)
-  
+
   // Automatically register push notifications when user logs in
   const pushState = usePushNotifications(user?.id ?? null)
 
   // Track user's online status in database
   useUpdateOnlineStatus()
+
+  // Track real-time presence via Supabase Realtime
+  usePresence()
 
   // Handle notification routing and foreground display (needs Router context)
   const { foregroundNotification, handleToastTap, handleToastDismiss } = useNotificationHandler()
@@ -68,21 +72,21 @@ function AppContent() {
       </AppLayout>
       <DevMenu />
       <Toaster
-          position="top-right"
-          toastOptions={{
-            duration: 4000,
-            style: {
-              background: '#363636',
-              color: '#fff',
-            },
-            success: {
-              duration: 3000,
-            },
-            error: {
-              duration: 5000,
-            },
-          }}
-        />
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#363636',
+            color: '#fff',
+          },
+          success: {
+            duration: 3000,
+          },
+          error: {
+            duration: 5000,
+          },
+        }}
+      />
       {/* Show in-app notification toast for foreground notifications */}
       {foregroundNotification && (
         <NotificationToast
@@ -100,7 +104,7 @@ function AppContent() {
 // Main App component
 function App() {
   const [isHydrated, setIsHydrated] = useState(false)
-  
+
   // Wait for Zustand to hydrate from storage
   useEffect(() => {
     const unsubscribe = useAuthStore.persist.onFinishHydration(() => {
@@ -129,7 +133,7 @@ function App() {
           console.log('[React Query] Cache hydrated from storage')
         }}
       >
-        <Router 
+        <Router
           future={{
             v7_startTransition: true,
             v7_relativeSplatPath: true

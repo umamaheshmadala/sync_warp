@@ -14,14 +14,21 @@ import type { Friend } from '../../types/friends';
 interface FriendCardProps {
   friend: Friend;
   style?: React.CSSProperties;
+  onClick?: () => void;
 }
 
-export function FriendCard({ friend, style }: FriendCardProps) {
+export function FriendCard({ friend, style, onClick }: FriendCardProps) {
   const { unfriend, sendMessage } = useFriendActions();
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const handleUnfriend = () => {
+  const handleUnfriend = (e: React.MouseEvent) => {
+    e.stopPropagation();
     setShowConfirm(true);
+  };
+
+  const handleSendMessage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    sendMessage(friend.id);
   };
 
   const confirmUnfriend = () => {
@@ -41,8 +48,9 @@ export function FriendCard({ friend, style }: FriendCardProps) {
     <>
       <div
         style={style}
-        className="flex items-center gap-3 p-4 hover:bg-gray-50 transition border-b border-gray-100"
+        className="flex items-center gap-3 p-4 hover:bg-gray-50 transition border-b border-gray-100 cursor-pointer"
         data-testid="friend-card"
+        onClick={onClick}
       >
         {/* Avatar with online badge */}
         <div className="relative flex-shrink-0">
@@ -63,13 +71,13 @@ export function FriendCard({ friend, style }: FriendCardProps) {
         {/* Friend info */}
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-gray-900 truncate">{friend.full_name}</h3>
-          <OnlineStatusBadge userId={friend.id} />
+          <OnlineStatusBadge userId={friend.id} lastActive={friend.last_active} />
         </div>
 
         {/* Quick actions */}
         <div className="flex gap-2 flex-shrink-0">
           <button
-            onClick={() => sendMessage(friend.id)}
+            onClick={handleSendMessage}
             className="p-2 hover:bg-blue-50 rounded-lg transition text-blue-600"
             aria-label="Send message"
             title="Send message"

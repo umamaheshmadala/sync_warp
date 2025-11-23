@@ -10,6 +10,7 @@ import React, { useEffect, useRef, useMemo } from 'react';
 // import { VariableSizeList as List } from 'react-window';
 // import AutoSizer from 'react-virtualized-auto-sizer';
 import { FriendCard } from './FriendCard';
+import { FriendProfileModal } from './FriendProfileModal';
 import { FriendsListSkeleton } from '../ui/skeletons/FriendsListSkeleton';
 import { NoFriendsEmptyState, SearchNoResultsEmptyState } from './EmptyStates';
 import { useFriendsList } from '../../hooks/friends/useFriendsList';
@@ -21,6 +22,7 @@ interface FriendsListProps {
 
 export function FriendsList({ searchQuery = '' }: FriendsListProps) {
   const { friends, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage, error } = useFriendsList();
+  const [selectedFriendId, setSelectedFriendId] = React.useState<string | null>(null);
 
   // Filter friends based on search query
   const filteredFriends = useMemo(() => {
@@ -83,7 +85,10 @@ export function FriendsList({ searchQuery = '' }: FriendsListProps) {
     const friend = filteredFriends[index];
     return (
       <div style={style}>
-        <FriendCard friend={friend} />
+        <FriendCard
+          friend={friend}
+          onClick={() => setSelectedFriendId(friend.id)}
+        />
       </div>
     );
   };
@@ -107,7 +112,11 @@ export function FriendsList({ searchQuery = '' }: FriendsListProps) {
         /* Standard list for small lists or search results */
         <div className="divide-y divide-gray-100">
           {filteredFriends.map((friend) => (
-            <FriendCard key={friend.id} friend={friend} />
+            <FriendCard
+              key={friend.id}
+              friend={friend}
+              onClick={() => setSelectedFriendId(friend.id)}
+            />
           ))}
         </div>
       )}
@@ -121,6 +130,14 @@ export function FriendsList({ searchQuery = '' }: FriendsListProps) {
           <div className="inline-block w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
           <span className="ml-2">Loading more...</span>
         </div>
+      )}
+      {/* Friend Profile Modal */}
+      {selectedFriendId && (
+        <FriendProfileModal
+          friendId={selectedFriendId}
+          isOpen={!!selectedFriendId}
+          onClose={() => setSelectedFriendId(null)}
+        />
       )}
     </div>
   );
