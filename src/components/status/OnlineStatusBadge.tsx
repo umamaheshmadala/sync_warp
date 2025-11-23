@@ -1,30 +1,30 @@
 /**
  * Online Status Badge Component
  * Shows green pulsing dot for online users and last seen text for offline users
- * Story 9.3.7: Online Status & Badges
+ * Story 9.3.7: Online Status & Badges (Real-time Implementation)
  */
 
 import { formatLastSeen } from '../../utils/formatLastSeen';
+import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 
 interface OnlineStatusBadgeProps {
-    isOnline: boolean;
-    lastActive?: string | null;
+    userId: string; // Changed from isOnline/lastActive to userId for real-time lookup
     showText?: boolean;
 }
 
 export function OnlineStatusBadge({
-    isOnline,
-    lastActive,
+    userId,
     showText = true
 }: OnlineStatusBadgeProps) {
-    // Client-side verification: Check if last_active is stale (> 2 minutes)
-    // This prevents showing users as online when they haven't been active recently
-    const isActuallyOnline = isOnline && lastActive &&
-        (new Date().getTime() - new Date(lastActive).getTime()) < 120000; // 2 minutes
+    const { isUserOnline, getLastSeen } = useOnlineStatus();
+
+    // Real-time status lookup
+    const online = isUserOnline(userId);
+    const lastSeen = getLastSeen(userId);
 
     return (
         <div className="flex items-center gap-2">
-            {isActuallyOnline ? (
+            {online ? (
                 <>
                     <span className="relative flex h-3 w-3" aria-label="Online">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
@@ -41,11 +41,27 @@ export function OnlineStatusBadge({
                     </span>
                     {showText && (
                         <span className="text-sm text-gray-500">
-                            {formatLastSeen(lastActive)}
+                            {formatLastSeen(lastSeen)}
                         </span>
                     )}
                 </>
             )}
         </div>
+    );
+}
+
+// Keep the OnlineStatusDot component for avatar overlays
+interface OnlineStatusDotProps {
+    userId: string;
+}
+
+export function OnlineStatusDot({ userId }: OnlineStatusDotProps) {
+    const { isUserOnline } = useOnlineStatus();
+    const online = isUserOnline(userId);
+
+    if (!online) return null;
+
+    return (
+        <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-green-500 ring-2 ring-white" />
     );
 }

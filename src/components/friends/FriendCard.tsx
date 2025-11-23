@@ -7,7 +7,7 @@
 
 import React, { useState } from 'react';
 import { MessageCircle, UserMinus } from 'lucide-react';
-import { OnlineStatusBadge, OnlineStatusDot } from './OnlineStatusBadge';
+import { OnlineStatusBadge, OnlineStatusDot } from '../status/OnlineStatusBadge';
 import { useFriendActions } from '../../hooks/friends/useFriendActions';
 import type { Friend } from '../../types/friends';
 
@@ -57,13 +57,13 @@ export function FriendCard({ friend, style }: FriendCardProps) {
               {initials}
             </div>
           )}
-          <OnlineStatusDot isOnline={friend.is_online} />
+          <OnlineStatusDot userId={friend.id} />
         </div>
 
         {/* Friend info */}
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-gray-900 truncate">{friend.full_name}</h3>
-          <OnlineStatusBadge isOnline={friend.is_online} lastActive={friend.last_active} />
+          <OnlineStatusBadge userId={friend.id} />
         </div>
 
         {/* Quick actions */}
