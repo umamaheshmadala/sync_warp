@@ -1,6 +1,5 @@
-import React from 'react';
+import { Users, UserPlus, SearchX, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Users, UserPlus, SearchX, Sparkles } from 'lucide-react';
 import { EmptyState } from '../ui/EmptyState';
 
 export function NoFriendsEmptyState() {
@@ -8,15 +7,13 @@ export function NoFriendsEmptyState() {
 
     return (
         <EmptyState
-            icon={Users}
+            icon={<Users className="w-full h-full" />}
             title="No Friends Yet"
-            description="Start building your network by finding and adding friends to your circle."
+            description="Start building your network by finding and adding friends"
             action={{
                 label: "Find Friends",
                 onClick: () => navigate('/friends/search')
             }}
-            iconBgClass="bg-blue-50"
-            iconColorClass="text-blue-500"
         />
     );
 }
@@ -24,11 +21,9 @@ export function NoFriendsEmptyState() {
 export function NoRequestsEmptyState() {
     return (
         <EmptyState
-            icon={UserPlus}
+            icon={<UserPlus className="w-full h-full" />}
             title="No New Requests"
-            description="You're all caught up! New friend requests will appear here when people add you."
-            iconBgClass="bg-green-50"
-            iconColorClass="text-green-500"
+            description="You're all caught up! New friend requests will appear here"
         />
     );
 }
@@ -36,11 +31,9 @@ export function NoRequestsEmptyState() {
 export function SearchNoResultsEmptyState({ query }: { query: string }) {
     return (
         <EmptyState
-            icon={SearchX}
+            icon={<SearchX className="w-full h-full" />}
             title="No Results Found"
-            description={`We couldn't find anyone matching "${query}". Try different keywords or check the spelling.`}
-            iconBgClass="bg-gray-50"
-            iconColorClass="text-gray-400"
+            description={`We couldn't find anyone matching "${query}". Try different keywords or check spelling.`}
         />
     );
 }
@@ -48,11 +41,9 @@ export function SearchNoResultsEmptyState({ query }: { query: string }) {
 export function NoPYMKEmptyState() {
     return (
         <EmptyState
-            icon={Sparkles}
+            icon={<User className="w-full h-full" />}
             title="No Suggestions"
             description="Check back later! We'll suggest people you might know as your network grows."
-            iconBgClass="bg-purple-50"
-            iconColorClass="text-purple-500"
         />
     );
 }

@@ -1,5 +1,3 @@
-import React from 'react';
-
 export function ProfileModalSkeleton() {
     return (
         <div className="space-y-6 animate-pulse">
@@ -17,7 +15,7 @@ export function ProfileModalSkeleton() {
                 <div className="h-4 bg-gray-200 rounded w-1/4" />
                 <div className="flex gap-2">
                     {[1, 2, 3, 4, 5].map((i) => (
-                        <div key={i} className="w-10 h-10 bg-gray-200 rounded-full shrink-0" />
+                        <div key={i} className="w-10 h-10 bg-gray-200 rounded-full" />
                     ))}
                 </div>
             </div>

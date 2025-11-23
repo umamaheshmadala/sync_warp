@@ -1,8 +1,6 @@
-import React from 'react';
-
 export function PYMKCardSkeleton() {
     return (
-        <div className="bg-white rounded-lg border border-gray-200 p-4 w-64 shrink-0 animate-pulse">
+        <div className="bg-white rounded-lg border border-gray-100 p-4 w-64 animate-pulse shrink-0">
             {/* Avatar */}
             <div className="w-16 h-16 bg-gray-200 rounded-full mx-auto" />
 

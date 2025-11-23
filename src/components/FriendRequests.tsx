@@ -5,6 +5,7 @@ import { Users, X } from 'lucide-react'
 import { useReceivedFriendRequests, useAcceptFriendRequest, useRejectFriendRequest } from '../hooks/useFriendRequests'
 import { useHapticFeedback } from '../hooks/useHapticFeedback'
 import FriendRequestCard from './FriendRequestCard'
+import { NoRequestsEmptyState } from './friends/EmptyStates'
 import { toast } from 'react-hot-toast'
 
 interface FriendRequestsProps {
@@ -31,7 +32,7 @@ const FriendRequests: React.FC<FriendRequestsProps> = ({ isOpen, onClose }) => {
    */
   const handleAccept = (requestId: string) => {
     setProcessingRequest(prev => new Set(prev).add(requestId))
-    
+
     acceptRequest.mutate(requestId, {
       onSuccess: (result) => {
         if (result.success) {
@@ -65,7 +66,7 @@ const FriendRequests: React.FC<FriendRequestsProps> = ({ isOpen, onClose }) => {
    */
   const handleReject = (requestId: string) => {
     setProcessingRequest(prev => new Set(prev).add(requestId))
-    
+
     rejectRequest.mutate(requestId, {
       onSuccess: (result) => {
         if (result.success) {
@@ -111,7 +112,7 @@ const FriendRequests: React.FC<FriendRequestsProps> = ({ isOpen, onClose }) => {
               exit={{ opacity: 0 }}
               onClick={onClose}
             />
-            
+
             <div className="inline-block w-full max-w-lg p-6 my-8 text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl relative">
               <motion.div
                 initial={{ scale: 0.95, opacity: 0 }}
@@ -148,13 +149,7 @@ const FriendRequests: React.FC<FriendRequestsProps> = ({ isOpen, onClose }) => {
                       <p className="mt-4 text-gray-600">Loading requests...</p>
                     </div>
                   ) : receivedRequests.length === 0 ? (
-                    <div className="text-center py-8">
-                      <Users className="mx-auto h-12 w-12 text-gray-400" />
-                      <h3 className="mt-2 text-sm font-medium text-gray-900">No pending requests</h3>
-                      <p className="mt-1 text-sm text-gray-500">
-                        Friend requests will appear here when someone wants to connect
-                      </p>
-                    </div>
+                    <NoRequestsEmptyState />
                   ) : (
                     <div className="space-y-4">
                       {receivedRequests.map((request) => (

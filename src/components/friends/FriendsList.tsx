@@ -6,15 +6,11 @@
  */
 
 import React, { useEffect, useRef, useMemo } from 'react';
-// Virtualization temporarily disabled due to module issues
-// import { VariableSizeList as List } from 'react-window';
-// import AutoSizer from 'react-virtualized-auto-sizer';
 import { FriendCard } from './FriendCard';
 import { FriendProfileModal } from './FriendProfileModal';
 import { FriendsListSkeleton } from '../ui/skeletons/FriendsListSkeleton';
 import { NoFriendsEmptyState, SearchNoResultsEmptyState } from './EmptyStates';
 import { useFriendsList } from '../../hooks/friends/useFriendsList';
-import type { Friend } from '../../types/friends';
 
 interface FriendsListProps {
   searchQuery?: string;
@@ -34,6 +30,7 @@ export function FriendsList({ searchQuery = '' }: FriendsListProps) {
       friend.email.toLowerCase().includes(query)
     );
   }, [friends, searchQuery]);
+
   const observerTarget = useRef<HTMLDivElement>(null);
 
   // Infinite scroll observer
@@ -80,22 +77,6 @@ export function FriendsList({ searchQuery = '' }: FriendsListProps) {
     return <SearchNoResultsEmptyState query={searchQuery} />;
   }
 
-  // Row renderer for virtualized list
-  const Row = ({ index, style }: { index: number; style: React.CSSProperties }) => {
-    const friend = filteredFriends[index];
-    return (
-      <div style={style}>
-        <FriendCard
-          friend={friend}
-          onClick={() => setSelectedFriendId(friend.id)}
-        />
-      </div>
-    );
-  };
-
-  // Virtualization disabled - always use standard rendering
-  const useVirtualization = false;
-
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
       {/* Results count when searching */}
@@ -107,22 +88,19 @@ export function FriendsList({ searchQuery = '' }: FriendsListProps) {
         </div>
       )}
 
-      {/* Virtualization disabled - using standard list rendering */}
-      {false ? null : (
-        /* Standard list for small lists or search results */
-        <div className="divide-y divide-gray-100">
-          {filteredFriends.map((friend) => (
-            <FriendCard
-              key={friend.id}
-              friend={friend}
-              onClick={() => setSelectedFriendId(friend.id)}
-            />
-          ))}
-        </div>
-      )}
+      {/* Standard list rendering */}
+      <div className="divide-y divide-gray-100">
+        {filteredFriends.map((friend) => (
+          <FriendCard
+            key={friend.id}
+            friend={friend}
+            onClick={() => setSelectedFriendId(friend.id)}
+          />
+        ))}
+      </div>
 
-      {/* Infinite scroll trigger - only for non-virtualized lists */}
-      {!useVirtualization && !searchQuery && <div ref={observerTarget} className="h-4" />}
+      {/* Infinite scroll trigger */}
+      {!searchQuery && <div ref={observerTarget} className="h-4" />}
 
       {/* Loading more indicator */}
       {!searchQuery && isFetchingNextPage && (
@@ -131,6 +109,7 @@ export function FriendsList({ searchQuery = '' }: FriendsListProps) {
           <span className="ml-2">Loading more...</span>
         </div>
       )}
+
       {/* Friend Profile Modal */}
       {selectedFriendId && (
         <FriendProfileModal
