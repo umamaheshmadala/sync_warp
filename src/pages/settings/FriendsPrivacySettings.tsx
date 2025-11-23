@@ -1,18 +1,85 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FriendRequestPrivacy } from '@/components/friends/privacy/FriendRequestPrivacy';
-import { ProfileVisibilitySettings } from '@/components/friends/privacy/ProfileVisibilitySettings';
-import { OnlineStatusVisibility } from '@/components/friends/privacy/OnlineStatusVisibility';
 import { BlockList } from '@/components/friends/privacy/BlockList';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Download, Shield, Users, UserX, Eye } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { ArrowLeft, Download, Shield, UserX, Save, RotateCcw, Check } from 'lucide-react';
 import { privacyService } from '@/services/privacyService';
+import { usePrivacySettings } from '@/hooks/usePrivacySettings';
 import { toast } from 'react-hot-toast';
+
+type FriendRequestSetting = 'everyone' | 'friends_of_friends' | 'friends';
+type ProfileVisibilitySetting = 'public' | 'friends';
+type OnlineStatusSetting = 'everyone' | 'friends' | 'no_one';
+
+const DEFAULT_SETTINGS = {
+    friend_requests: 'everyone' as FriendRequestSetting,
+    profile_visibility: 'public' as ProfileVisibilitySetting,
+    search_visibility: true,
+    online_status_visibility: 'friends' as OnlineStatusSetting,
+};
 
 export function FriendsPrivacySettings() {
     const navigate = useNavigate();
+    const { settings, isLoading, updateSettings } = usePrivacySettings();
     const [isExporting, setIsExporting] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [hasChanges, setHasChanges] = useState(false);
+
+    // Local state for form
+    const [friendRequests, setFriendRequests] = useState<FriendRequestSetting>('everyone');
+    const [profileVisibility, setProfileVisibility] = useState<ProfileVisibilitySetting>('public');
+    const [searchVisibility, setSearchVisibility] = useState(true);
+    const [onlineStatus, setOnlineStatus] = useState<OnlineStatusSetting>('friends');
+
+    // Load settings from server
+    useEffect(() => {
+        if (settings) {
+            setFriendRequests(settings.friend_requests || 'everyone');
+            setProfileVisibility(settings.profile_visibility || 'public');
+            setSearchVisibility(settings.search_visibility ?? true);
+            setOnlineStatus(settings.online_status_visibility || 'friends');
+        }
+    }, [settings]);
+
+    // Check for changes
+    useEffect(() => {
+        if (settings) {
+            const changed =
+                friendRequests !== (settings.friend_requests || 'everyone') ||
+                profileVisibility !== (settings.profile_visibility || 'public') ||
+                searchVisibility !== (settings.search_visibility ?? true) ||
+                onlineStatus !== (settings.online_status_visibility || 'friends');
+            setHasChanges(changed);
+        }
+    }, [friendRequests, profileVisibility, searchVisibility, onlineStatus, settings]);
+
+    const handleSave = async () => {
+        try {
+            setIsSaving(true);
+            await updateSettings({
+                friend_requests: friendRequests,
+                profile_visibility: profileVisibility,
+                search_visibility: searchVisibility,
+                online_status_visibility: onlineStatus,
+            });
+            toast.success('Privacy settings saved successfully');
+            setHasChanges(false);
+        } catch (error: any) {
+            toast.error(error.message || 'Failed to save settings');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleReset = () => {
+        setFriendRequests(DEFAULT_SETTINGS.friend_requests);
+        setProfileVisibility(DEFAULT_SETTINGS.profile_visibility);
+        setSearchVisibility(DEFAULT_SETTINGS.search_visibility);
+        setOnlineStatus(DEFAULT_SETTINGS.online_status_visibility);
+    };
 
     const handleExportData = async () => {
         try {
@@ -43,7 +110,7 @@ export function FriendsPrivacySettings() {
     };
 
     return (
-        <div className="container max-w-2xl mx-auto py-6 px-4 space-y-8">
+        <div className="container max-w-3xl mx-auto py-6 px-4 space-y-6">
             {/* Header */}
             <div className="flex items-center gap-4">
                 <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
@@ -68,32 +135,160 @@ export function FriendsPrivacySettings() {
                 </TabsList>
 
                 {/* Privacy Settings Tab */}
-                <TabsContent value="privacy" className="space-y-8 animate-in fade-in-50">
-                    <section className="space-y-4">
-                        <div className="flex items-center gap-2 text-primary pb-2 border-b">
-                            <Users className="h-5 w-5" />
-                            <h2 className="text-lg font-semibold">Friend Requests</h2>
+                <TabsContent value="privacy" className="space-y-6">
+                    <div className="bg-card rounded-lg border p-6 space-y-6">
+                        {/* Friend Requests */}
+                        <div className="space-y-3">
+                            <div>
+                                <label className="text-sm font-medium">Who can send you friend requests?</label>
+                                <p className="text-xs text-muted-foreground">Control who can send you friend requests</p>
+                            </div>
+                            <Select value={friendRequests} onValueChange={(value) => setFriendRequests(value as FriendRequestSetting)}>
+                                <SelectTrigger className="w-full">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="bg-popover border shadow-md">
+                                    <SelectItem value="everyone">
+                                        <div className="flex items-center gap-2">
+                                            <Check className={friendRequests === 'everyone' ? 'h-4 w-4 text-primary' : 'h-4 w-4 opacity-0'} />
+                                            <div>
+                                                <div className="font-medium">Everyone</div>
+                                                <div className="text-xs text-muted-foreground">Anyone can send you requests</div>
+                                            </div>
+                                        </div>
+                                    </SelectItem>
+                                    <SelectItem value="friends_of_friends">
+                                        <div className="flex items-center gap-2">
+                                            <Check className={friendRequests === 'friends_of_friends' ? 'h-4 w-4 text-primary' : 'h-4 w-4 opacity-0'} />
+                                            <div>
+                                                <div className="font-medium">Friends of Friends</div>
+                                                <div className="text-xs text-muted-foreground">Only mutual connections</div>
+                                            </div>
+                                        </div>
+                                    </SelectItem>
+                                    <SelectItem value="friends">
+                                        <div className="flex items-center gap-2">
+                                            <Check className={friendRequests === 'friends' ? 'h-4 w-4 text-primary' : 'h-4 w-4 opacity-0'} />
+                                            <div>
+                                                <div className="font-medium">Friends Only</div>
+                                                <div className="text-xs text-muted-foreground">Only existing friends</div>
+                                            </div>
+                                        </div>
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
-                        <FriendRequestPrivacy />
-                    </section>
 
-                    <section className="space-y-4">
-                        <div className="flex items-center gap-2 text-primary pb-2 border-b">
-                            <Eye className="h-5 w-5" />
-                            <h2 className="text-lg font-semibold">Visibility</h2>
+                        <div className="border-t" />
+
+                        {/* Profile Visibility */}
+                        <div className="space-y-3">
+                            <div>
+                                <label className="text-sm font-medium">Who can view your profile?</label>
+                                <p className="text-xs text-muted-foreground">Control who can see your full profile</p>
+                            </div>
+                            <Select value={profileVisibility} onValueChange={(value) => setProfileVisibility(value as ProfileVisibilitySetting)}>
+                                <SelectTrigger className="w-full">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="bg-popover border shadow-md">
+                                    <SelectItem value="public">
+                                        <div className="flex items-center gap-2">
+                                            <Check className={profileVisibility === 'public' ? 'h-4 w-4 text-primary' : 'h-4 w-4 opacity-0'} />
+                                            <div>
+                                                <div className="font-medium">Public</div>
+                                                <div className="text-xs text-muted-foreground">Anyone can view your profile</div>
+                                            </div>
+                                        </div>
+                                    </SelectItem>
+                                    <SelectItem value="friends">
+                                        <div className="flex items-center gap-2">
+                                            <Check className={profileVisibility === 'friends' ? 'h-4 w-4 text-primary' : 'h-4 w-4 opacity-0'} />
+                                            <div>
+                                                <div className="font-medium">Friends Only</div>
+                                                <div className="text-xs text-muted-foreground">Only friends can view</div>
+                                            </div>
+                                        </div>
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
-                        <ProfileVisibilitySettings />
-                    </section>
 
-                    <section className="space-y-4">
-                        <div className="flex items-center gap-2 text-primary pb-2 border-b">
-                            <div className="h-2.5 w-2.5 rounded-full bg-green-500" />
-                            <h2 className="text-lg font-semibold">Online Status</h2>
+                        <div className="border-t" />
+
+                        {/* Search Visibility */}
+                        <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                                <label className="text-sm font-medium">Appear in search results</label>
+                                <p className="text-xs text-muted-foreground">Allow others to find you by searching</p>
+                            </div>
+                            <Switch checked={searchVisibility} onCheckedChange={setSearchVisibility} />
                         </div>
-                        <OnlineStatusVisibility />
-                    </section>
 
-                    <section className="pt-8 border-t">
+                        <div className="border-t" />
+
+                        {/* Online Status */}
+                        <div className="space-y-3">
+                            <div>
+                                <label className="text-sm font-medium">Who can see when you're online?</label>
+                                <p className="text-xs text-muted-foreground">Control your online status visibility</p>
+                            </div>
+                            <Select value={onlineStatus} onValueChange={(value) => setOnlineStatus(value as OnlineStatusSetting)}>
+                                <SelectTrigger className="w-full">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="bg-popover border shadow-md">
+                                    <SelectItem value="everyone">
+                                        <div className="flex items-center gap-2">
+                                            <Check className={onlineStatus === 'everyone' ? 'h-4 w-4 text-primary' : 'h-4 w-4 opacity-0'} />
+                                            <div>
+                                                <div className="font-medium">Everyone</div>
+                                                <div className="text-xs text-muted-foreground">All users can see</div>
+                                            </div>
+                                        </div>
+                                    </SelectItem>
+                                    <SelectItem value="friends">
+                                        <div className="flex items-center gap-2">
+                                            <Check className={onlineStatus === 'friends' ? 'h-4 w-4 text-primary' : 'h-4 w-4 opacity-0'} />
+                                            <div>
+                                                <div className="font-medium">Friends Only</div>
+                                                <div className="text-xs text-muted-foreground">Only friends can see</div>
+                                            </div>
+                                        </div>
+                                    </SelectItem>
+                                    <SelectItem value="no_one">
+                                        <div className="flex items-center gap-2">
+                                            <Check className={onlineStatus === 'no_one' ? 'h-4 w-4 text-primary' : 'h-4 w-4 opacity-0'} />
+                                            <div>
+                                                <div className="font-medium">No One</div>
+                                                <div className="text-xs text-muted-foreground">Stay invisible</div>
+                                            </div>
+                                        </div>
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    {hasChanges && (
+                        <div className="flex items-center justify-between bg-muted/50 rounded-lg p-4 border border-primary/20">
+                            <p className="text-sm text-muted-foreground">You have unsaved changes</p>
+                            <div className="flex gap-2">
+                                <Button variant="outline" size="sm" onClick={handleReset} disabled={isSaving}>
+                                    <RotateCcw className="h-4 w-4 mr-2" />
+                                    Reset to Default
+                                </Button>
+                                <Button size="sm" onClick={handleSave} disabled={isSaving}>
+                                    <Save className="h-4 w-4 mr-2" />
+                                    {isSaving ? 'Saving...' : 'Save Changes'}
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Data Export */}
+                    <div className="bg-card rounded-lg border p-6">
                         <div className="flex items-center justify-between">
                             <div className="space-y-1">
                                 <h3 className="font-medium">Download Your Data</h3>
@@ -111,7 +306,7 @@ export function FriendsPrivacySettings() {
                                 {isExporting ? 'Exporting...' : 'Download JSON'}
                             </Button>
                         </div>
-                    </section>
+                    </div>
                 </TabsContent>
 
                 {/* Blocked Users Tab */}

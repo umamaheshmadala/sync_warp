@@ -27,7 +27,7 @@ export function BlockedUserItem({ blockedUser }: BlockedUserItemProps) {
     const user = blockedUser.blocked_user;
     if (!user) return null;
 
-    const initials = (user.display_name || user.username || '?')
+    const initials = (user.full_name || '?')
         .slice(0, 2)
         .toUpperCase();
 
@@ -42,13 +42,13 @@ export function BlockedUserItem({ blockedUser }: BlockedUserItemProps) {
             <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors">
                 <div className="flex items-center gap-3">
                     <Avatar>
-                        <AvatarImage src={user.avatar_url || undefined} alt={user.display_name || user.username} />
+                        <AvatarImage src={user.avatar_url || undefined} alt={user.full_name} />
                         <AvatarFallback>{initials}</AvatarFallback>
                     </Avatar>
                     <div>
-                        <p className="font-medium">{user.display_name || user.username}</p>
+                        <p className="font-medium">{user.full_name}</p>
                         <p className="text-xs text-muted-foreground">
-                            Blocked on {format(new Date(blockedUser.created_at), 'MMM d, yyyy')}
+                            Blocked on {format(new Date(blockedUser.blocked_at), 'MMM d, yyyy')}
                         </p>
                     </div>
                 </div>
@@ -74,7 +74,7 @@ export function BlockedUserItem({ blockedUser }: BlockedUserItemProps) {
             <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Unblock {user.display_name || user.username}?</AlertDialogTitle>
+                        <AlertDialogTitle>Unblock {user.full_name}?</AlertDialogTitle>
                         <AlertDialogDescription>
                             They will be able to see your profile and posts again. This will not automatically add them back as a friend.
                         </AlertDialogDescription>

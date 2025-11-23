@@ -13,8 +13,8 @@ export function BlockList() {
         if (!user) return false;
         const query = searchQuery.toLowerCase();
         return (
-            (user.username?.toLowerCase().includes(query) || false) ||
-            (user.display_name?.toLowerCase().includes(query) || false)
+            (user.full_name?.toLowerCase().includes(query) || false) ||
+            (user.email?.toLowerCase().includes(query) || false)
         );
     });
 
@@ -27,9 +27,10 @@ export function BlockList() {
     }
 
     if (error) {
+        console.error('BlockList error:', error);
         return (
             <div className="p-4 text-red-500 bg-red-50 rounded-lg">
-                Failed to load blocked users. Please try again.
+                Failed to load blocked users: {error instanceof Error ? error.message : JSON.stringify(error)}
             </div>
         );
     }
@@ -67,7 +68,7 @@ export function BlockList() {
                     </div>
                 ) : (
                     filteredUsers.map((block) => (
-                        <BlockedUserItem key={block.id} blockedUser={block} />
+                        <BlockedUserItem key={block.blocked_id} blockedUser={block} />
                     ))
                 )}
             </div>

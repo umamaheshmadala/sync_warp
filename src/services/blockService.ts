@@ -5,18 +5,18 @@ import { supabase } from '../lib/supabase';
  */
 
 export interface BlockedUser {
-  id: string;
+  // id: string; // Removed as it doesn't exist in actual schema
   blocker_id: string;
   blocked_id: string;
   reason: string | null;
-  created_at: string;
+  blocked_at: string; // Renamed from created_at
   blocked_user?: Profile;
 }
 
 interface Profile {
   id: string;
-  username: string;
-  display_name: string | null;
+  full_name: string;
+  email: string;
   avatar_url: string | null;
 }
 
@@ -110,35 +110,30 @@ export async function unblockUser(userId: string): Promise<UnblockUserResult> {
 export async function getBlockedUsers(): Promise<BlockedUser[]> {
   const { data, error } = await supabase
     .from('blocked_users')
-    .select(`
-      id,
-      blocker_id,
-      blocked_id,
-      reason,
-      created_at,
-      blocked_user:profiles!blocked_users_blocked_id_fkey(
-        id,
-        username,
-        display_name,
-        avatar_url
-      )
-    `)
-    .order('created_at', { ascending: false });
+    .select('blocker_id, blocked_id, reason, blocked_at')
+    .order('blocked_at', { ascending: false });
 
   if (error) {
     console.error('Get blocked users error:', error);
     throw new Error(error.message || 'Failed to fetch blocked users');
   }
 
-  // Handle Supabase join type (returns array)
-  const blockedUsers = (data || []).map(block => ({
-    ...block,
-    blocked_user: Array.isArray(block.blocked_user) 
-      ? block.blocked_user[0] 
-      : block.blocked_user
-  }));
+  // Fetch blocked user profiles separately to avoid RLS issues
+  if (data && data.length > 0) {
+    const blockedIds = data.map(block => block.blocked_id);
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, full_name, email, avatar_url')
+      .in('id', blockedIds);
 
-  return blockedUsers as BlockedUser[];
+    // Merge profiles into blocked users
+    return data.map(block => ({
+      ...block,
+      blocked_user: profiles?.find(p => p.id === block.blocked_id) || null
+    })) as BlockedUser[];
+  }
+
+  return [];
 }
 
 /**
@@ -155,7 +150,7 @@ export async function isUserBlocked(userId: string): Promise<boolean> {
 
   const { data, error } = await supabase
     .from('blocked_users')
-    .select('id')
+    .select('blocked_id')
     .eq('blocked_id', userId)
     .maybeSingle();
 
@@ -187,7 +182,7 @@ export async function isBlockedByUser(userId: string): Promise<boolean> {
 
   const { data, error } = await supabase
     .from('blocked_users')
-    .select('id')
+    .select('blocker_id')
     .eq('blocker_id', userId)
     .eq('blocked_id', currentUser.user.id)
     .maybeSingle();
@@ -209,7 +204,7 @@ export async function isBlockedByUser(userId: string): Promise<boolean> {
 export async function getBlockedUsersCount(): Promise<number> {
   const { count, error } = await supabase
     .from('blocked_users')
-    .select('id', { count: 'exact', head: true });
+    .select('blocked_id', { count: 'exact', head: true });
 
   if (error) {
     console.error('Get blocked users count error:', error);
