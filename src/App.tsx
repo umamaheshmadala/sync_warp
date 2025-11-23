@@ -16,6 +16,7 @@ import { OfflineBanner } from './components/ui/OfflineBanner'
 import DevMenu from './components/DevMenu'
 import { useUpdateOnlineStatus } from './hooks/useUpdateOnlineStatus'
 import { usePresence } from './hooks/usePresence'
+import { useRealtimeFriends } from './hooks/friends/useRealtimeFriends'
 
 // Configure React Query with optimistic updates and caching
 const queryClient = new QueryClient({
@@ -47,6 +48,9 @@ function AppContent() {
 
   // Track real-time presence via Supabase Realtime
   usePresence()
+
+  // Track real-time friends via Supabase Realtime
+  useRealtimeFriends()
 
   // Handle notification routing and foreground display (needs Router context)
   const { foregroundNotification, handleToastTap, handleToastDismiss } = useNotificationHandler()

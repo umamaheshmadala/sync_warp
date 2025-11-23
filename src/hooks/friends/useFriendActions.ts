@@ -1,131 +1,90 @@
-/**
- * useFriendActions Hook
- * Story 9.3.1: Friends List Component
- * 
- * Provides actions for friends: unfriend, message
- */
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../lib/supabase';
-import { useNavigate } from 'react-router-dom';
+import { friendsService } from '../../services/friendsService';
 import { toast } from 'react-hot-toast';
-
 
 export function useFriendActions() {
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
 
-  const unfriendMutation = useMutation({
-    mutationFn: async (friendId: string) => {
-      // Use DB function to ensure atomic bidirectional delete
-      const { error } = await supabase.rpc('unfriend_user', {
-        p_friend_id: friendId
-      });
-
-      if (error) throw error;
-
-      return friendId;
+  const sendRequest = useMutation({
+    mutationFn: (receiverId: string) => friendsService.sendFriendRequest(receiverId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['friendRequests'] });
+      toast.success('Friend request sent!');
     },
+    onError: () => {
+      toast.error('Failed to send friend request');
+    },
+  });
+
+  const acceptRequest = useMutation({
+    mutationFn: (requestId: string) => friendsService.acceptFriendRequest(requestId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['friends'] });
+      queryClient.invalidateQueries({ queryKey: ['friendRequests'] });
+      toast.success('Friend request accepted!');
+    },
+    onError: () => {
+      toast.error('Failed to accept friend request');
+    },
+  });
+
+  const rejectRequest = useMutation({
+    mutationFn: (requestId: string) => friendsService.rejectFriendRequest(requestId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['friendRequests'] });
+      toast.success('Friend request rejected');
+    },
+    onError: () => {
+      toast.error('Failed to reject friend request');
+    },
+  });
+
+  const unfriend = useMutation({
+    mutationFn: (friendId: string) => friendsService.unfriend(friendId),
     onMutate: async (friendId) => {
-      // Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ['friends-list'] });
+      // Optimistic update
+      await queryClient.cancelQueries({ queryKey: ['friends'] });
+      const previousFriends = queryClient.getQueryData(['friends']);
 
-      // Snapshot previous value
-      const previousFriends = queryClient.getQueryData(['friends-list']);
-
-      // Optimistically update UI
-      queryClient.setQueryData(['friends-list'], (old: any) => {
-        if (!old) return old;
+      queryClient.setQueryData(['friends'], (old: any) => {
+        if (!old?.data) return old;
         return {
           ...old,
-          pages: old.pages.map((page: any[]) =>
-            page.filter((friend) => friend.id !== friendId)
-          ),
+          data: old.data.filter((f: any) => f.friend.id !== friendId),
         };
       });
 
       return { previousFriends };
     },
-    onError: (error, _friendId, context) => {
-      // Rollback on error
-      if (context?.previousFriends) {
-        queryClient.setQueryData(['friends-list'], context.previousFriends);
-      }
-      toast.error('Failed to remove friend');
-      console.error(error);
+    onError: (err, friendId, context) => {
+      queryClient.setQueryData(['friends'], context?.previousFriends);
+      toast.error('Failed to unfriend user');
     },
     onSuccess: () => {
-      // Refetch to ensure consistency
-      queryClient.invalidateQueries({ queryKey: ['friends-list'] });
-      toast.success('Friend removed successfully');
+      toast.success('Friend removed');
     },
-
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['friends'] });
+    },
   });
 
-  const blockMutation = useMutation({
-    mutationFn: async (friendId: string) => {
-      const { error } = await supabase.from('blocked_users').insert({
-        blocker_id: (await supabase.auth.getUser()).data.user?.id,
-        blocked_id: friendId,
-      });
-      if (error) throw error;
-    },
+  const blockUser = useMutation({
+    mutationFn: ({ userId, reason }: { userId: string; reason?: string }) =>
+      friendsService.blockUser(userId, reason),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['friends-list'] });
-      // Also invalidate profile to update UI if needed
+      queryClient.invalidateQueries({ queryKey: ['friends'] });
       toast.success('User blocked');
     },
-    onError: (error) => {
+    onError: () => {
       toast.error('Failed to block user');
-      console.error(error);
-    }
-
-  });
-
-  const toggleFollowMutation = useMutation({
-    mutationFn: async ({ friendId, isFollowing }: { friendId: string; isFollowing: boolean }) => {
-      const user = (await supabase.auth.getUser()).data.user;
-      if (!user) throw new Error('Not authenticated');
-
-      if (isFollowing) {
-        // Unfollow
-        const { error } = await supabase
-          .from('followers')
-          .delete()
-          .eq('follower_id', user.id)
-          .eq('following_id', friendId);
-        if (error) throw error;
-      } else {
-        // Follow
-        const { error } = await supabase
-          .from('followers')
-          .insert({ follower_id: user.id, following_id: friendId });
-        if (error) throw error;
-      }
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['friend-profile', variables.friendId] });
-      toast.success(variables.isFollowing ? 'Unfollowed user' : 'Following user');
-    },
-    onError: (error) => {
-      toast.error('Failed to update follow status');
-      console.error(error);
-    }
-
   });
-
-
-  const sendMessage = (friendId: string) => {
-    // Navigate to chat with friend
-    navigate(`/chat/${friendId}`);
-  };
 
   return {
-    unfriend: unfriendMutation.mutate,
-    isUnfriending: unfriendMutation.isPending,
-    sendMessage,
-    blockUser: blockMutation.mutate,
-    toggleFollow: toggleFollowMutation.mutate,
-
+    sendRequest,
+    acceptRequest,
+    rejectRequest,
+    unfriend,
+    blockUser,
   };
 }

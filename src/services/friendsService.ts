@@ -1,12 +1,17 @@
 /**
  * Friends Service Layer
  * Story 9.4.1: Friends Service Layer - Core Service
+ * Story 9.4.5: Error Handling & Retry Logic
+ * Story 9.4.6: Offline Support for Friend Requests
  * 
  * Centralized business logic for all friend operations
+ * with retry logic, circuit breaker, and offline support
  */
 
 import { supabase } from '../lib/supabase';
 import type { Friend, FriendRequest, ServiceResponse } from '../types/friends';
+import { withRetry, friendsCircuitBreaker, getUserFriendlyErrorMessage, logError } from '../utils/errorHandler';
+import { offlineQueue } from './offlineQueue';
 
 /**
  * Friends Service - Centralized business logic for friend operations
@@ -19,9 +24,11 @@ export const friendsService = {
      */
     async getFriends(userId: string): Promise<ServiceResponse<Friend[]>> {
         try {
-            const { data, error } = await supabase
-                .from('friendships')
-                .select(`
+            const result = await withRetry(
+                () => friendsCircuitBreaker.execute(async () => {
+                    const { data, error } = await supabase
+                        .from('friendships')
+                        .select(`
           id,
           friend:profiles!friendships_friend_id_fkey (
             id,
@@ -33,23 +40,27 @@ export const friendsService = {
             last_active
           )
         `)
-                .eq('user_id', userId)
-                .eq('status', 'active')
-                .order('created_at', { ascending: false });
+                        .eq('user_id', userId)
+                        .eq('status', 'active')
+                        .order('created_at', { ascending: false });
 
-            if (error) throw error;
+                    if (error) throw error;
+                    return data;
+                }),
+                { maxRetries: 2, baseDelay: 500 }
+            );
 
-            const friends = data?.map((f: any) => f.friend).filter(Boolean) || [];
+            const friends = result?.map((f: any) => f.friend).filter(Boolean) || [];
 
             return {
                 success: true,
                 data: friends,
             };
         } catch (error) {
-            console.error('[friendsService] getFriends error:', error);
+            logError('getFriends', error, { userId });
             return {
                 success: false,
-                error: 'Failed to load friends',
+                error: getUserFriendlyErrorMessage(error),
             };
         }
     },
@@ -65,31 +76,52 @@ export const friendsService = {
         message?: string
     ): Promise<ServiceResponse<FriendRequest>> {
         try {
+            // Check if online
+            const isOnline = await offlineQueue.isOnline();
+
+            if (!isOnline) {
+                // Queue for later processing
+                await offlineQueue.add('friend_request', { receiverId, message });
+                console.log('[friendsService] Request queued for offline processing');
+
+                return {
+                    success: true,
+                    data: null as any, // Will be populated when processed
+                    queued: true,
+                };
+            }
+
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error('Not authenticated');
 
-            const { data, error } = await supabase
-                .from('friend_requests')
-                .insert({
-                    sender_id: user.id,
-                    receiver_id: receiverId,
-                    message,
-                    status: 'pending',
-                })
-                .select()
-                .single();
+            const data = await withRetry(
+                () => friendsCircuitBreaker.execute(async () => {
+                    const { data, error } = await supabase
+                        .from('friend_requests')
+                        .insert({
+                            sender_id: user.id,
+                            receiver_id: receiverId,
+                            message,
+                            status: 'pending',
+                        })
+                        .select()
+                        .single();
 
-            if (error) throw error;
+                    if (error) throw error;
+                    return data;
+                }),
+                { maxRetries: 3, baseDelay: 1000 }
+            );
 
             return {
                 success: true,
                 data,
             };
         } catch (error: any) {
-            console.error('[friendsService] sendFriendRequest error:', error);
+            logError('sendFriendRequest', error, { receiverId });
             return {
                 success: false,
-                error: error.message || 'Failed to send friend request',
+                error: getUserFriendlyErrorMessage(error),
             };
         }
     },
@@ -101,18 +133,23 @@ export const friendsService = {
      */
     async acceptFriendRequest(requestId: string): Promise<ServiceResponse<void>> {
         try {
-            const { error } = await supabase.rpc('accept_friend_request', {
-                request_id: requestId,
-            });
+            await withRetry(
+                () => friendsCircuitBreaker.execute(async () => {
+                    const { error } = await supabase.rpc('accept_friend_request', {
+                        request_id: requestId,
+                    });
 
-            if (error) throw error;
+                    if (error) throw error;
+                }),
+                { maxRetries: 3, baseDelay: 1000 }
+            );
 
             return { success: true };
         } catch (error: any) {
-            console.error('[friendsService] acceptFriendRequest error:', error);
+            logError('acceptFriendRequest', error, { requestId });
             return {
                 success: false,
-                error: error.message || 'Failed to accept friend request',
+                error: getUserFriendlyErrorMessage(error),
             };
         }
     },
