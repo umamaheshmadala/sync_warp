@@ -23,6 +23,8 @@ import { toast } from 'react-hot-toast';
 import AddFriend from './AddFriend';
 import ShareDeal from './ShareDealSimple';
 import type { Friend } from '../services/newFriendService';
+import { NoRequestsEmptyState } from './friends/EmptyStates';
+import { FriendsListSkeleton } from './ui/skeletons/FriendsListSkeleton';
 
 type TabType = 'friends' | 'requests' | 'add' | 'activity';
 
@@ -35,7 +37,7 @@ const FriendsManagementPage: React.FC = () => {
     onlineCount,
     removeFriend
   } = useFriends();
-  
+
   const { receivedRequests } = useReceivedFriendRequests();
   const acceptRequest = useAcceptFriendRequest();
   const rejectRequest = useRejectFriendRequest();
@@ -50,18 +52,18 @@ const FriendsManagementPage: React.FC = () => {
   // Filter friends based on search and online status
   const getFilteredFriends = () => {
     let filteredFriends = friends;
-    
+
     if (filterOnline) {
       filteredFriends = filteredFriends.filter(f => f.friend_profile.is_online);
     }
-    
+
     if (searchQuery) {
       filteredFriends = filteredFriends.filter(f =>
         f.friend_profile.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (f.friend_profile.city && f.friend_profile.city.toLowerCase().includes(searchQuery.toLowerCase()))
       );
     }
-    
+
     return filteredFriends;
   };
 
@@ -70,7 +72,7 @@ const FriendsManagementPage: React.FC = () => {
   // Handle friend request actions
   const handleAcceptRequest = (requestId: string) => {
     setProcessingRequest(prev => new Set(prev).add(requestId));
-    
+
     acceptRequest.mutate(requestId, {
       onSuccess: (result) => {
         if (result.success) {
@@ -101,7 +103,7 @@ const FriendsManagementPage: React.FC = () => {
 
   const handleRejectRequest = (requestId: string) => {
     setProcessingRequest(prev => new Set(prev).add(requestId));
-    
+
     rejectRequest.mutate(requestId, {
       onSuccess: (result) => {
         if (result.success) {
@@ -145,7 +147,7 @@ const FriendsManagementPage: React.FC = () => {
     const date = new Date(lastActive);
     const now = new Date();
     const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-    
+
     if (diffInMinutes < 1) return 'now';
     if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
     if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
@@ -161,10 +163,9 @@ const FriendsManagementPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading your friends...</p>
+      <div className="min-h-screen bg-gray-50 pt-20 px-4">
+        <div className="max-w-4xl mx-auto">
+          <FriendsListSkeleton count={6} />
         </div>
       </div>
     );
@@ -203,11 +204,10 @@ const FriendsManagementPage: React.FC = () => {
             </div>
             <button
               onClick={() => setFilterOnline(!filterOnline)}
-              className={`px-4 py-2 rounded-lg border font-medium transition-colors ${
-                filterOnline
+              className={`px-4 py-2 rounded-lg border font-medium transition-colors ${filterOnline
                   ? 'bg-indigo-600 text-white border-indigo-600'
                   : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-              }`}
+                }`}
             >
               <Filter className="w-4 h-4 mr-2 inline" />
               Online
@@ -226,20 +226,18 @@ const FriendsManagementPage: React.FC = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as TabType)}
-                  className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center ${
-                    activeTab === tab.id
+                  className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center ${activeTab === tab.id
                       ? 'border-indigo-500 text-indigo-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
+                    }`}
                 >
                   <Icon className="w-4 h-4 mr-2" />
                   {tab.label}
                   {tab.count !== null && tab.count > 0 && (
-                    <span className={`ml-2 py-0.5 px-2 rounded-full text-xs ${
-                      activeTab === tab.id
+                    <span className={`ml-2 py-0.5 px-2 rounded-full text-xs ${activeTab === tab.id
                         ? 'bg-indigo-100 text-indigo-600'
                         : 'bg-gray-100 text-gray-900'
-                    }`}>
+                      }`}>
                       {tab.count}
                     </span>
                   )}
@@ -394,11 +392,7 @@ const FriendsManagementPage: React.FC = () => {
                     </div>
                   ))
                 ) : (
-                  <div className="text-center py-12">
-                    <Clock className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No pending requests</h3>
-                    <p className="text-gray-500">Friend requests will appear here</p>
-                  </div>
+                  <NoRequestsEmptyState />
                 )}
               </div>
             )}

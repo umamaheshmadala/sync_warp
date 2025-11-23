@@ -14,6 +14,7 @@ import { NotificationToast } from './components/NotificationToast'
 import { useAuthStore } from './store/authStore'
 import { OfflineBanner } from './components/ui/OfflineBanner'
 import DevMenu from './components/DevMenu'
+import { useUpdateOnlineStatus } from './hooks/useUpdateOnlineStatus'
 
 // Configure React Query with optimistic updates and caching
 const queryClient = new QueryClient({
@@ -39,6 +40,9 @@ function AppContent() {
   
   // Automatically register push notifications when user logs in
   const pushState = usePushNotifications(user?.id ?? null)
+
+  // Track user's online status in database
+  useUpdateOnlineStatus()
 
   // Handle notification routing and foreground display (needs Router context)
   const { foregroundNotification, handleToastTap, handleToastDismiss } = useNotificationHandler()

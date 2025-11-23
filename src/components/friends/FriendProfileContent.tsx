@@ -2,7 +2,7 @@ import { ProfileHeader } from "./ProfileHeader";
 import { MutualFriendsSection } from "./MutualFriendsSection";
 import { FriendActionsMenu } from "./FriendActionsMenu";
 import { RecentActivityFeed } from "./RecentActivityFeed";
-import { Skeleton } from "@/components/ui/skeleton";
+import { ProfileModalSkeleton } from "../ui/skeletons/ProfileModalSkeleton";
 import { DialogTitle } from "@/components/ui/dialog";
 
 interface FriendProfileContentProps {
@@ -29,13 +29,7 @@ export function FriendProfileContent({
     handleShare,
 }: FriendProfileContentProps) {
     if (isLoading || !data) {
-        return (
-            <div className="space-y-4">
-                <Skeleton className="h-24 w-full" />
-                <Skeleton className="h-16 w-full" />
-                <Skeleton className="h-32 w-full" />
-            </div>
-        );
+        return <ProfileModalSkeleton />;
     }
 
     const { profile, mutualFriends, mutualFriendsCount } = data;

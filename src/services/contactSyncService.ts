@@ -3,7 +3,7 @@
  * Story 9.2.3: Contact Sync Integration
  */
 
-import { Contacts, Contact } from '@capacitor-community/contacts';
+import { Contacts } from '@capacitor-community/contacts';
 import { supabase } from '../lib/supabase';
 import { Capacitor } from '@capacitor/core';
 
@@ -19,6 +19,32 @@ export interface SyncProgress {
   total: number;
   synced: number;
   matches: number;
+}
+
+/**
+ * Normalize phone number for hashing
+ * Uses last 10 digits to handle country code variations
+ */
+const normalizePhoneNumber = (phone: string): string => {
+  const digitsOnly = phone.replace(/\D/g, '');
+  // Use last 10 digits to ignore country code differences
+  return digitsOnly.slice(-10);
+};
+
+/**
+ * Hash phone number with SHA-256
+ */
+async function hashPhoneNumber(phone: string): Promise<string> {
+  const normalized = normalizePhoneNumber(phone);
+
+  // Use Web Crypto API (available in Capacitor)
+  const encoder = new TextEncoder();
+  const data = encoder.encode(normalized);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+  return hashHex;
 }
 
 /**
@@ -43,37 +69,6 @@ export async function requestContactsPermission(): Promise<boolean> {
 
   const permission = await Contacts.requestPermissions();
   return permission.contacts === 'granted';
-}
-
-/**
- * Normalize phone number (remove spaces, dashes, parentheses, etc.)
- */
-function normalizePhoneNumber(phone: string): string {
-  // Remove all non-digit characters
-  const digits = phone.replace(/\D/g, '');
-
-  // For US numbers, keep last 10 digits if longer
-  if (digits.length > 10 && digits.startsWith('1')) {
-    return digits.slice(-10);
-  }
-
-  return digits;
-}
-
-/**
- * Hash phone number with SHA-256
- */
-async function hashPhoneNumber(phone: string): Promise<string> {
-  const normalized = normalizePhoneNumber(phone);
-
-  // Use Web Crypto API (available in Capacitor)
-  const encoder = new TextEncoder();
-  const data = encoder.encode(normalized);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-
-  return hashHex;
 }
 
 /**
@@ -138,13 +133,45 @@ export async function syncContacts(
     // Extract and hash phone numbers (use Set to avoid duplicates)
     const phoneHashSet = new Set<string>();
     let processed = 0;
+    let debugLogCount = 0; // Limit logs to first 5 contacts
+
+    console.log('=== CONTACT SYNC DEBUG: PROCESSING CONTACTS ===');
+
+    // TEST HASH VERIFICATION
+    try {
+      const testPhone = '7000000001';
+      const testHash = await hashPhoneNumber(testPhone);
+      console.log(`[DEBUG] TEST HASH for ${testPhone}: ${testHash}`);
+      console.log(`[DEBUG] EXPECTED HASH: f2aee6a0738c354a7ce6fa9a9694c6c11ccd0a0c7e170b41cf8e330734dbb414`);
+      if (testHash === 'f2aee6a0738c354a7ce6fa9a9694c6c11ccd0a0c7e170b41cf8e330734dbb414') {
+        console.log('[DEBUG] ✅ HASHING ALGORITHM IS CORRECT');
+      } else {
+        console.error('[DEBUG] ❌ HASHING ALGORITHM MISMATCH');
+      }
+    } catch (err) {
+      console.error('[DEBUG] TEST HASH FAILED:', err);
+    }
+
+    console.log(`[DEBUG] Total contacts received from plugin: ${contacts?.length}`);
+
+    if (!contacts || contacts.length === 0) {
+      console.warn('[DEBUG] WARNING: No contacts received from plugin!');
+    }
 
     for (const contact of contacts) {
       if (contact.phones && contact.phones.length > 0) {
         for (const phone of contact.phones) {
           if (phone.number) {
             try {
+              const normalized = normalizePhoneNumber(phone.number);
               const hash = await hashPhoneNumber(phone.number);
+
+              // DEBUG LOGGING: Log first 5 contacts in ONE LINE to avoid filtering
+              if (debugLogCount < 5) {
+                console.log(`[DEBUG] Contact ${debugLogCount + 1}: Name="${contact.name?.display || 'Unknown'}" Raw="${phone.number}" Norm="${normalized}" Hash="${hash}"`);
+                debugLogCount++;
+              }
+
               phoneHashSet.add(hash); // Set automatically deduplicates
             } catch (error) {
               console.error('Failed to hash phone number:', error);
@@ -156,20 +183,37 @@ export async function syncContacts(
       processed++;
       onProgress?.({ total: contacts.length, synced: processed, matches: 0 });
     }
+    console.log('=== END CONTACT PROCESSING ===');
 
     // Convert Set to Array for database upload
     const phoneHashes = Array.from(phoneHashSet);
 
+    console.log('=== CONTACT SYNC DEBUG START ===');
+    try {
+      console.log('User ID: ' + (user?.id || 'missing'));
+      console.log('Contacts count: ' + (contacts?.length || 0));
+      console.log('Hashes count: ' + (phoneHashes?.length || 0));
+      console.log('First hash: ' + (phoneHashes?.[0] || 'none'));
+    } catch (e) {
+      console.error('Error logging debug info: ' + e);
+    }
+    console.log('================================');
+
     // Upload hashed phone numbers to database
-    const { error: uploadError } = await supabase.rpc('upsert_contact_hashes', {
+    console.log('Calling upsert_contact_hashes RPC...');
+    const { data: upsertData, error: uploadError } = await supabase.rpc('upsert_contact_hashes', {
       p_user_id: user.id,
       p_phone_hashes: phoneHashes,
     });
+
+    console.log('Upsert finished. Error: ' + (uploadError ? JSON.stringify(uploadError) : 'none'));
 
     if (uploadError) {
       console.error('Failed to upload contact hashes:', uploadError.message, uploadError.details, uploadError.hint);
       throw new Error(`Failed to sync contacts: ${uploadError.message}`);
     }
+
+    console.log('✅ Contact hashes uploaded successfully');
 
     // Match contacts with existing SynC users
     const { data: matches, error: matchError } = await supabase.rpc('match_contacts', {
@@ -238,7 +282,7 @@ export async function getContactMatches(): Promise<ContactMatch[]> {
     .from('contact_matches')
     .select(`
       matched_user_id,
-      profiles:matched_user_id (
+      profiles!contact_matches_matched_user_id_fkey (
         id,
         full_name,
         email,
@@ -248,21 +292,38 @@ export async function getContactMatches(): Promise<ContactMatch[]> {
     .eq('user_id', user.id);
 
   if (error) {
-    console.error('Failed to get contact matches:', error);
-    return [];
+    throw error;
   }
 
-  return data?.map((m: any) => ({
-    user_id: m.matched_user_id,
-    full_name: m.profiles.full_name,
-    username: m.profiles.email,
-    avatar_url: m.profiles.avatar_url,
-    phone_hash: '',
-  })) || [];
+  // Transform the data to match ContactMatch interface
+  return (data || []).map((match: any) => ({
+    user_id: match.matched_user_id,
+    full_name: match.profiles.full_name,
+    username: match.profiles.email,
+    avatar_url: match.profiles.avatar_url,
+    phone_hash: '', // Not needed for display
+  }));
 }
 
 /**
- * Disable contact sync (delete all contact hashes)
+ * Check if user has synced contacts
+ */
+export async function hasContactsSynced(): Promise<boolean> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return false;
+  }
+
+  const { count } = await supabase
+    .from('contact_hashes')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', user.id);
+
+  return (count || 0) > 0;
+}
+
+/**
+ * Disable contact sync (delete all synced data)
  */
 export async function disableContactSync(): Promise<void> {
   const { data: { user } } = await supabase.auth.getUser();
@@ -271,77 +332,14 @@ export async function disableContactSync(): Promise<void> {
   }
 
   // Delete contact hashes
-  const { error: hashError } = await supabase
+  await supabase
     .from('contact_hashes')
     .delete()
     .eq('user_id', user.id);
 
-  if (hashError) {
-    console.error('Failed to delete contact hashes:', hashError);
-    throw new Error('Failed to disable contact sync');
-  }
-
   // Delete contact matches
-  const { error: matchError } = await supabase
+  await supabase
     .from('contact_matches')
     .delete()
     .eq('user_id', user.id);
-
-  if (matchError) {
-    console.error('Failed to delete contact matches:', matchError);
-  }
-}
-
-/**
- * Check if user has synced contacts before
- */
-export async function hasContactsSynced(): Promise<boolean> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return false;
-
-  const { count, error } = await supabase
-    .from('contact_hashes')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', user.id);
-
-  return !error && (count || 0) > 0;
-}
-
-/**
- * Get last sync timestamp
- * Story 9.2.7: Contact Sync Enhancements
- */
-export async function getLastSyncTime(): Promise<Date | null> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('last_contact_sync_at')
-    .eq('id', user.id)
-    .single();
-
-  if (error || !data?.last_contact_sync_at) return null;
-
-  return new Date(data.last_contact_sync_at);
-}
-
-/**
- * Schedule background sync (every 24 hours)
- * Story 9.2.7: Contact Sync Enhancements
- */
-export function scheduleBackgroundSync(): void {
-  // Check if already synced today
-  getLastSyncTime().then(lastSync => {
-    if (!lastSync) return;
-
-    const hoursSinceLastSync = (Date.now() - lastSync.getTime()) / (1000 * 60 * 60);
-
-    if (hoursSinceLastSync >= 24) {
-      // Silently sync in background
-      syncContacts().catch(err => {
-        console.error('Background sync failed:', err);
-      });
-    }
-  });
 }

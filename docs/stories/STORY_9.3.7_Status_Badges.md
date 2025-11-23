@@ -1,10 +1,9 @@
-# 📋 STORY 9.3.7: Online Status & Badges
-
-**Epic:** [EPIC 9.3: Friends UI Components](../epics/EPIC_9.3_Friends_UI_Components.md)  
-**Story Points:** 2  
-**Priority:** High  
-**Status:** 📋 Ready for Development
-
+---
+title: "Online Status & Badges"
+status: Complete
+priority: High
+date_created: 2025-01-22
+date_completed: 2025-01-22
 ---
 
 ## 📝 **Story Description**

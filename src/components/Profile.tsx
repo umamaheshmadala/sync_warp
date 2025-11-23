@@ -6,10 +6,10 @@ import { useAuthStore } from '../store/authStore'
 import { useNavigationPreferences } from '../hooks/useNavigationState'
 import { User, MapPin, Phone, Mail, Edit3, Camera, Settings, Smartphone, MessageSquare } from 'lucide-react'
 import UserReviewsList from './reviews/UserReviewsList'
-import { AvatarUpload, ProfileEditForm, ProfileSettings, ProfileCompletionWizard, ActivityFeed } from './profile/index'
+import { AvatarUpload, ProfileEditForm, ProfileSettings, ProfileCompletionWizard, ActivityFeed, InlineEditField } from './profile/index'
 
 export default function Profile() {
-  const { user, profile } = useAuthStore()
+  const { user, profile, updateProfile } = useAuthStore()
   const { preferences, updatePreference } = useNavigationPreferences()
   const [isEditing, setIsEditing] = useState(false)
   const [activeTab, setActiveTab] = useState<'overview' | 'edit' | 'settings' | 'activity'>('overview')
@@ -61,18 +61,16 @@ export default function Profile() {
           <div className="flex">
             {[
               { id: 'overview', label: 'Overview' },
-              { id: 'edit', label: 'Edit Profile' },
               { id: 'settings', label: 'Settings' },
               { id: 'activity', label: 'Activity' }
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex-1 px-6 py-4 text-sm font-medium transition-colors ${
-                  activeTab === tab.id
-                    ? 'border-b-2 border-blue-600 text-blue-600 dark:text-blue-400'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                }`}
+                className={`flex-1 px-6 py-4 text-sm font-medium transition-colors ${activeTab === tab.id
+                  ? 'border-b-2 border-blue-600 text-blue-600 dark:text-blue-400'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                  }`}
               >
                 {tab.label}
               </button>
@@ -87,43 +85,116 @@ export default function Profile() {
           {/* Profile Information Section */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 p-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 pb-3 border-b border-gray-200 dark:border-gray-700">Profile Information</h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Email */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              {/* Full Name */}
+              <InlineEditField
+                label="Full Name"
+                value={profile?.full_name || ''}
+                icon={<User className="h-5 w-5" />}
+                type="text"
+                placeholder="Enter your full name"
+                onSave={async (value) => {
+                  await updateProfile({ full_name: value });
+                }}
+                validate={(value) => {
+                  if (!value.trim()) return 'Name is required';
+                  if (value.length < 2) return 'Name must be at least 2 characters';
+                  return null;
+                }}
+              />
+
+              {/* Email - Read Only */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Email Address
                 </label>
-                <div className="flex items-center">
+                <div className="flex items-center px-3 py-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                   <Mail className="h-5 w-5 text-gray-400 mr-3" />
                   <span className="text-gray-900 dark:text-white">{user?.email}</span>
+                  <span className="ml-auto text-xs text-gray-500">Cannot be changed</span>
                 </div>
               </div>
 
               {/* Phone */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Phone Number
-                </label>
-                <div className="flex items-center">
-                  <Phone className="h-5 w-5 text-gray-400 mr-3" />
-                  <span className="text-gray-900 dark:text-white">
-                    {profile?.phone || 'Not provided'}
-                  </span>
-                </div>
-              </div>
+              <InlineEditField
+                label="Phone Number"
+                value={profile?.phone || ''}
+                icon={<Phone className="h-5 w-5" />}
+                type="tel"
+                placeholder="Enter your phone number"
+                helperText="Include country code (e.g., +1 234 567 8900)"
+                onSave={async (value) => {
+                  await updateProfile({ phone: value });
+                }}
+                validate={(value) => {
+                  if (!value) return null; // Optional field
+                  const digits = value.replace(/\D/g, '');
+                  if (digits.length < 10 || digits.length > 15) {
+                    return 'Phone number must be between 10-15 digits';
+                  }
+                  return null;
+                }}
+              />
 
-              {/* Location */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  City
-                </label>
-                <div className="flex items-center">
-                  <MapPin className="h-5 w-5 text-gray-400 mr-3" />
-                  <span className="text-gray-900 dark:text-white">
-                    {profile?.city || 'Not provided'}
-                  </span>
-                </div>
+              {/* City */}
+              <InlineEditField
+                label="City"
+                value={profile?.city || ''}
+                icon={<MapPin className="h-5 w-5" />}
+                type="text"
+                placeholder="Enter your city"
+                onSave={async (value) => {
+                  await updateProfile({ city: value });
+                }}
+              />
+
+              {/* Website */}
+              <InlineEditField
+                label="Website"
+                value={profile?.website || ''}
+                icon={<span className="text-gray-400">🌐</span>}
+                type="url"
+                placeholder="https://example.com"
+                onSave={async (value) => {
+                  await updateProfile({ website: value });
+                }}
+                validate={(value) => {
+                  if (value && !value.match(/^https?:\/\/.+/)) {
+                    return 'Website must start with http:// or https://';
+                  }
+                  return null;
+                }}
+              />
+
+              {/* Date of Birth */}
+              <InlineEditField
+                label="Date of Birth"
+                value={profile?.date_of_birth || ''}
+                icon={<span className="text-gray-400">📅</span>}
+                type="date"
+                placeholder="Select your date of birth"
+                onSave={async (value) => {
+                  await updateProfile({ date_of_birth: value });
+                }}
+              />
+
+              {/* Bio - Full Width */}
+              <div className="md:col-span-2">
+                <InlineEditField
+                  label="Bio"
+                  value={profile?.bio || ''}
+                  multiline
+                  maxLength={500}
+                  placeholder="Tell us about yourself..."
+                  onSave={async (value) => {
+                    await updateProfile({ bio: value });
+                  }}
+                  validate={(value) => {
+                    if (value.length > 500) return 'Bio must be 500 characters or less';
+                    return null;
+                  }}
+                />
               </div>
 
               {/* Interests - Full width */}
@@ -189,18 +260,16 @@ export default function Profile() {
                   </div>
                   <button
                     onClick={() => updatePreference('swipeGesturesEnabled', !preferences.swipeGesturesEnabled)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      preferences.swipeGesturesEnabled ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-gray-700'
-                    }`}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${preferences.swipeGesturesEnabled ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-gray-700'
+                      }`}
                   >
                     <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
-                        preferences.swipeGesturesEnabled ? 'translate-x-6' : 'translate-x-1'
-                      }`}
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${preferences.swipeGesturesEnabled ? 'translate-x-6' : 'translate-x-1'
+                        }`}
                     />
                   </button>
                 </div>
-                
+
                 <div className="flex items-center justify-between py-2">
                   <div>
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Haptic Feedback</span>
@@ -208,18 +277,16 @@ export default function Profile() {
                   </div>
                   <button
                     onClick={() => updatePreference('enableHapticFeedback', !preferences.enableHapticFeedback)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      preferences.enableHapticFeedback ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-gray-700'
-                    }`}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${preferences.enableHapticFeedback ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-gray-700'
+                      }`}
                   >
                     <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
-                        preferences.enableHapticFeedback ? 'translate-x-6' : 'translate-x-1'
-                      }`}
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${preferences.enableHapticFeedback ? 'translate-x-6' : 'translate-x-1'
+                        }`}
                     />
                   </button>
                 </div>
-                
+
                 <div className="flex items-center justify-between py-2">
                   <div>
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Page Animations</span>
@@ -227,14 +294,12 @@ export default function Profile() {
                   </div>
                   <button
                     onClick={() => updatePreference('enableAnimations', !preferences.enableAnimations)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      preferences.enableAnimations ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-gray-700'
-                    }`}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${preferences.enableAnimations ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-gray-700'
+                      }`}
                   >
                     <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
-                        preferences.enableAnimations ? 'translate-x-6' : 'translate-x-1'
-                      }`}
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${preferences.enableAnimations ? 'translate-x-6' : 'translate-x-1'
+                        }`}
                     />
                   </button>
                 </div>

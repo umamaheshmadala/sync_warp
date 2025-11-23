@@ -10,8 +10,8 @@ import React, { useEffect, useRef, useMemo } from 'react';
 // import { VariableSizeList as List } from 'react-window';
 // import AutoSizer from 'react-virtualized-auto-sizer';
 import { FriendCard } from './FriendCard';
-import { FriendsListSkeleton } from './LoadingSkeleton';
-import { NoFriendsEmptyState } from './EmptyState';
+import { FriendsListSkeleton } from '../ui/skeletons/FriendsListSkeleton';
+import { NoFriendsEmptyState, SearchNoResultsEmptyState } from './EmptyStates';
 import { useFriendsList } from '../../hooks/friends/useFriendsList';
 import type { Friend } from '../../types/friends';
 
@@ -58,7 +58,7 @@ export function FriendsList({ searchQuery = '' }: FriendsListProps) {
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   if (isLoading) {
-    return <FriendsListSkeleton count={10} />;
+    return <FriendsListSkeleton count={8} />;
   }
 
   if (error) {
@@ -75,12 +75,7 @@ export function FriendsList({ searchQuery = '' }: FriendsListProps) {
 
   // Show empty state for search with no results
   if (searchQuery && filteredFriends.length === 0) {
-    return (
-      <div className="bg-white rounded-lg shadow p-8 text-center">
-        <p className="text-gray-600">No friends found matching "{searchQuery}"</p>
-        <p className="text-sm text-gray-500 mt-2">Try a different search term</p>
-      </div>
-    );
+    return <SearchNoResultsEmptyState query={searchQuery} />;
   }
 
   // Row renderer for virtualized list
