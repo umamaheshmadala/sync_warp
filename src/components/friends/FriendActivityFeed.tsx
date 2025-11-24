@@ -3,10 +3,11 @@ import { UserPlus, Heart, Tag, Share2, Users } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { FriendActivity } from '@/types/friends';
 import { useRealtimeActivities } from '@/hooks/useRealtimeActivities';
+import { FriendProfileModal } from '@/components/friends/FriendProfileModal';
 
 const ACTIVITY_ICONS = {
     friend_added: UserPlus,
@@ -25,7 +26,7 @@ const ACTIVITY_COLORS = {
 } as const;
 
 export function FriendActivityFeed() {
-    const navigate = useNavigate();
+    const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
     const {
         data,
@@ -78,10 +79,9 @@ export function FriendActivityFeed() {
 
     const handleActivityClick = (activity: FriendActivity) => {
         if (activity.activity_type === 'friend_added' && activity.related_user_id) {
-            navigate(`/profile/${activity.related_user_id}`);
-        } else if (activity.related_deal_id) {
-            navigate(`/deals/${activity.related_deal_id}`);
+            setSelectedUserId(activity.related_user_id);
         }
+        // TODO: Handle deal navigation when deal pages are implemented
     };
 
     if (isLoading) {
@@ -178,6 +178,13 @@ export function FriendActivityFeed() {
                     )}
                 </div>
             )}
+
+            {/* Profile Modal */}
+            <FriendProfileModal
+                friendId={selectedUserId || ''}
+                isOpen={!!selectedUserId}
+                onClose={() => setSelectedUserId(null)}
+            />
         </div>
     );
 }

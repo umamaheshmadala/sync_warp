@@ -15,15 +15,19 @@ export function useRealtimeActivities() {
                     schema: 'public',
                     table: 'friend_activities',
                 },
-                () => {
+                (payload) => {
+                    console.log('New activity received:', payload);
                     // Invalidate activities query to refetch
                     queryClient.invalidateQueries({ queryKey: ['friend-activities'] });
                 }
             )
-            .subscribe();
+            .subscribe((status) => {
+                console.log('Realtime subscription status:', status);
+            });
 
         return () => {
             supabase.removeChannel(channel);
         };
     }, [queryClient]);
 }
+
