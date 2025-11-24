@@ -137,8 +137,8 @@ BEGIN
   JOIN profiles p1 ON fa.user_id = p1.id
   LEFT JOIN profiles p2 ON fa.related_user_id = p2.id
   WHERE fa.user_id IN (
-    SELECT friend_id FROM friendships 
-    WHERE user_id = auth.uid() AND status = 'active'
+    SELECT f.friend_id FROM friendships f
+    WHERE f.user_id = auth.uid() AND f.status = 'active'
   )
   ORDER BY fa.created_at DESC
   LIMIT page_limit
