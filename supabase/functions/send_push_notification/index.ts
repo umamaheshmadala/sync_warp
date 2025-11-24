@@ -14,6 +14,37 @@ interface NotificationRequest {
     data?: Record<string, string>;
 }
 
+// Firebase Admin SDK setup
+const getFirebaseApp = async () => {
+    const serviceAccountJson = Deno.env.get('FIREBASE_SERVICE_ACCOUNT');
+
+    if (!serviceAccountJson) {
+        console.warn('[send_push_notification] Firebase service account not configured');
+        return null;
+    }
+
+    try {
+        const serviceAccount = JSON.parse(serviceAccountJson);
+
+        // Import Firebase Admin SDK
+        const { initializeApp, cert, getApps } = await import('npm:firebase-admin@12.0.0/app');
+        const { getMessaging } = await import('npm:firebase-admin@12.0.0/messaging');
+
+        // Initialize Firebase if not already initialized
+        if (getApps().length === 0) {
+            initializeApp({
+                credential: cert(serviceAccount),
+            });
+            console.log('[send_push_notification] Firebase Admin SDK initialized');
+        }
+
+        return getMessaging();
+    } catch (error) {
+        console.error('[send_push_notification] Firebase initialization error:', error);
+        return null;
+    }
+};
+
 Deno.serve(async (req) => {
     try {
         const {
@@ -52,11 +83,60 @@ Deno.serve(async (req) => {
 
         console.log(`[send_push_notification] Found ${tokens.length} active tokens`);
 
-        // TODO: Send notifications via Firebase Admin SDK
-        // For now, just log to notification_log table
+        // Get Firebase messaging instance
+        const messaging = await getFirebaseApp();
+        const firebaseEnabled = messaging !== null;
+
+        // Send notifications
         const results = await Promise.allSettled(
             tokens.map(async ({ token, platform }: any) => {
+                let delivered = false;
+                let error_msg = null;
+
                 try {
+                    if (firebaseEnabled && messaging) {
+                        // Send via Firebase Admin SDK
+                        const message: any = {
+                            token,
+                            notification: {
+                                title,
+                                body,
+                            },
+                            data: {
+                                ...data,
+                                notification_type,
+                                user_id,
+                            },
+                        };
+
+                        // Platform-specific configuration
+                        if (platform === 'android') {
+                            message.android = {
+                                priority: 'high',
+                                notification: {
+                                    sound: 'default',
+                                    channelId: 'friend_notifications',
+                                },
+                            };
+                        } else if (platform === 'ios') {
+                            message.apns = {
+                                payload: {
+                                    aps: {
+                                        sound: 'default',
+                                        badge: 1,
+                                    },
+                                },
+                            };
+                        }
+
+                        await messaging.send(message);
+                        delivered = true;
+                        console.log(`[send_push_notification] Sent to ${platform} device via FCM`);
+                    } else {
+                        error_msg = 'Firebase Admin SDK not configured';
+                        console.log(`[send_push_notification] Firebase not configured, logging only`);
+                    }
+
                     // Log the notification
                     await supabase.from('notification_log').insert({
                         user_id,
@@ -65,14 +145,37 @@ Deno.serve(async (req) => {
                         body,
                         data,
                         platform,
-                        delivered: false, // Will be true when FCM is integrated
-                        error: 'Firebase Admin SDK not configured yet',
+                        delivered,
+                        error: error_msg,
                     });
 
-                    console.log(`[send_push_notification] Logged notification for ${platform} device`);
-                    return { success: true, platform };
-                } catch (error) {
-                    console.error(`[send_push_notification] Error logging notification:`, error);
+                    return { success: true, platform, delivered };
+                } catch (error: any) {
+                    console.error(`[send_push_notification] Error sending to ${platform}:`, error);
+
+                    // Check if token is invalid
+                    if (error.code === 'messaging/invalid-registration-token' ||
+                        error.code === 'messaging/registration-token-not-registered') {
+                        // Mark token as inactive
+                        await supabase
+                            .from('push_tokens')
+                            .update({ is_active: false })
+                            .eq('token', token);
+                        console.log(`[send_push_notification] Marked token as inactive: ${token}`);
+                    }
+
+                    // Log failed notification
+                    await supabase.from('notification_log').insert({
+                        user_id,
+                        notification_type,
+                        title,
+                        body,
+                        data,
+                        platform,
+                        delivered: false,
+                        error: error.message || 'Unknown error',
+                    });
+
                     throw error;
                 }
             })
@@ -80,15 +183,19 @@ Deno.serve(async (req) => {
 
         const successful = results.filter((r: any) => r.status === 'fulfilled').length;
         const failed = results.filter((r: any) => r.status === 'rejected').length;
+        const actuallyDelivered = results
+            .filter((r: any) => r.status === 'fulfilled')
+            .filter((r: any) => r.value.delivered).length;
 
-        console.log(`[send_push_notification] Results: ${successful} logged, ${failed} failed`);
+        console.log(`[send_push_notification] Results: ${successful} sent, ${failed} failed, ${actuallyDelivered} delivered`);
 
         return new Response(
             JSON.stringify({
                 sent: successful,
                 failed,
+                delivered: actuallyDelivered,
                 total: tokens.length,
-                note: 'Notifications logged. Firebase Admin SDK integration pending.',
+                firebase_enabled: firebaseEnabled,
             }),
             {
                 status: 200,
