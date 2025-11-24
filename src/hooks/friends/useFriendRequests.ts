@@ -22,7 +22,6 @@ export function useReceivedFriendRequests() {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Received requests error:', error);
         throw error;
       }
 
@@ -44,6 +43,8 @@ export function useReceivedFriendRequests() {
       return data;
     },
     enabled: !!user,
+    staleTime: 0, // Always fetch fresh data to prevent showing accepted requests
+    gcTime: 0, // Don't cache data after component unmounts
   });
 }
 

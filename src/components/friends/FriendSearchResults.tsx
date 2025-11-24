@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { Users, MapPin, Search, UserCheck, Clock, UserPlus } from 'lucide-react';
 import { FriendSearchResult } from '@/services/friendSearchService';
 import { useNavigate } from 'react-router-dom';
-import { useSendFriendRequest } from '@/hooks/useFriendRequests';
+import { useSendFriendRequest, useCancelFriendRequest } from '@/hooks/useFriendRequests';
 import { supabase } from '@/lib/supabase';
 import toast from 'react-hot-toast';
 import { HighlightedText } from './HighlightedText';
@@ -34,8 +34,10 @@ export function FriendSearchResults({
 }: FriendSearchResultsProps) {
   const navigate = useNavigate();
   const sendFriendRequest = useSendFriendRequest();
+  const cancelFriendRequest = useCancelFriendRequest();
   const [sendingToUserId, setSendingToUserId] = useState<string | null>(null);
-  const [requestStatuses, setRequestStatuses] = useState<Record<string, 'none' | 'sent' | 'received' | 'friends'>>({});
+  const [cancellingRequestId, setCancellingRequestId] = useState<string | null>(null);
+  const [requestStatuses, setRequestStatuses] = useState<Record<string, { status: 'none' | 'sent' | 'received' | 'friends', requestId?: string }>>({});
   const { ref, inView } = useInView();
 
   // Trigger load more when in view
@@ -64,7 +66,7 @@ export function FriendSearchResults({
       // Check for sent requests
       const { data: sentRequests } = await supabase
         .from('friend_requests')
-        .select('receiver_id')
+        .select('id, receiver_id')
         .eq('sender_id', user.id)
         .eq('status', 'pending')
         .in('receiver_id', userIds);
@@ -72,22 +74,28 @@ export function FriendSearchResults({
       // Check for received requests
       const { data: receivedRequests } = await supabase
         .from('friend_requests')
-        .select('sender_id')
+        .select('id, sender_id')
         .eq('receiver_id', user.id)
         .eq('status', 'pending')
         .in('sender_id', userIds);
 
-      const statuses: Record<string, 'none' | 'sent' | 'received' | 'friends'> = {};
+      const statuses: Record<string, { status: 'none' | 'sent' | 'received' | 'friends', requestId?: string }> = {};
 
       userIds.forEach(userId => {
         if (friendships?.some(f => f.friend_id === userId)) {
-          statuses[userId] = 'friends';
-        } else if (sentRequests?.some(r => r.receiver_id === userId)) {
-          statuses[userId] = 'sent';
-        } else if (receivedRequests?.some(r => r.sender_id === userId)) {
-          statuses[userId] = 'received';
+          statuses[userId] = { status: 'friends' };
         } else {
-          statuses[userId] = 'none';
+          const sentReq = sentRequests?.find(r => r.receiver_id === userId);
+          if (sentReq) {
+            statuses[userId] = { status: 'sent', requestId: sentReq.id };
+          } else {
+            const receivedReq = receivedRequests?.find(r => r.sender_id === userId);
+            if (receivedReq) {
+              statuses[userId] = { status: 'received', requestId: receivedReq.id };
+            } else {
+              statuses[userId] = { status: 'none' };
+            }
+          }
         }
       });
 
@@ -145,8 +153,9 @@ export function FriendSearchResults({
 
           <div className="ml-4 flex-shrink-0">
             {(() => {
-              const status = requestStatuses[result.user_id];
+              const { status, requestId } = requestStatuses[result.user_id] || { status: 'none' };
               const isSending = sendingToUserId === result.user_id;
+              const isCancelling = cancellingRequestId === requestId;
 
               if (status === 'friends') {
                 return (
@@ -162,16 +171,30 @@ export function FriendSearchResults({
                 );
               }
 
-              if (status === 'sent') {
+              if (status === 'sent' && requestId) {
                 return (
                   <Button
-                    disabled
-                    variant="ghost"
                     size="sm"
-                    className="bg-gray-100 text-gray-600"
+                    variant="outline"
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCancellingRequestId(requestId);
+                      cancelFriendRequest.mutate(requestId, {
+                        onSuccess: () => {
+                          setCancellingRequestId(null);
+                          toast.success('Friend request cancelled');
+                          setRequestStatuses(prev => ({ ...prev, [result.user_id]: { status: 'none' } }));
+                        },
+                        onError: () => {
+                          setCancellingRequestId(null);
+                          toast.error('Failed to cancel request');
+                        }
+                      });
+                    }}
+                    disabled={isCancelling}
                   >
-                    <Clock className="w-4 h-4 mr-2" />
-                    Pending
+                    {isCancelling ? 'Cancelling...' : 'Cancel'}
                   </Button>
                 );
               }
@@ -205,7 +228,11 @@ export function FriendSearchResults({
                           setSendingToUserId(null);
                           if (data.success) {
                             toast.success(`Friend request sent to ${result.full_name}`);
-                            setRequestStatuses(prev => ({ ...prev, [result.user_id]: 'sent' }));
+                            const newRequestId = data.request_id;
+                            setRequestStatuses(prev => ({
+                              ...prev,
+                              [result.user_id]: { status: 'sent', requestId: newRequestId }
+                            }));
                           } else {
                             toast.error(data.error || 'Failed to send friend request');
                           }
@@ -226,14 +253,17 @@ export function FriendSearchResults({
             })()}
           </div>
         </div>
-      ))}
+      ))
+      }
 
-      {hasMore && (
-        <div ref={ref} className="h-4 flex justify-center py-4">
-          {isLoading && <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>}
-        </div>
-      )}
-    </div>
+      {
+        hasMore && (
+          <div ref={ref} className="h-4 flex justify-center py-4">
+            {isLoading && <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>}
+          </div>
+        )
+      }
+    </div >
   );
 }
 

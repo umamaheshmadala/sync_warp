@@ -32,7 +32,7 @@ export function FriendCard({ friend, style, onClick }: FriendCardProps) {
   };
 
   const confirmUnfriend = () => {
-    unfriend(friend.id);
+    unfriend.mutate(friend.id);
     setShowConfirm(false);
   };
 

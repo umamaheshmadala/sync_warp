@@ -194,6 +194,36 @@ export const friendsService = {
     },
 
     /**
+     * Cancel friend request (delete pending request)
+     * @param requestId - The friend request ID to cancel
+     * @returns ServiceResponse indicating success/failure
+     */
+    async cancelFriendRequest(requestId: string): Promise<ServiceResponse<void>> {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            // Delete the friend request (only if sender is current user)
+            const { error } = await supabase
+                .from('friend_requests')
+                .delete()
+                .eq('id', requestId)
+                .eq('sender_id', user.id)  // Ensure only sender can cancel
+                .eq('status', 'pending');   // Only cancel pending requests
+
+            if (error) throw error;
+
+            return { success: true };
+        } catch (error: any) {
+            console.error('[friendsService] cancelFriendRequest error:', error);
+            return {
+                success: false,
+                error: error.message || 'Failed to cancel friend request',
+            };
+        }
+    },
+
+    /**
      * Unfriend user (uses RPC for atomic operation)
      * @param friendId - The friend's user ID to unfriend
      * @returns ServiceResponse indicating success/failure
@@ -204,8 +234,7 @@ export const friendsService = {
             if (!user) throw new Error('Not authenticated');
 
             const { error } = await supabase.rpc('unfriend_user', {
-                user_id: user.id,
-                friend_id: friendId,
+                p_friend_id: friendId,
             });
 
             if (error) throw error;

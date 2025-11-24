@@ -38,7 +38,11 @@ export function FriendRequestCard({ request, type }: FriendRequestCardProps) {
   const [showRejectDialog, setShowRejectDialog] = useState(false);
 
   const otherUser = type === 'received' ? request.sender : request.receiver;
-  
+
+  if (!otherUser) {
+    return null;
+  }
+
   // Generate initials for avatar fallback
   const initials = otherUser.full_name
     .split(' ')
@@ -74,7 +78,7 @@ export function FriendRequestCard({ request, type }: FriendRequestCardProps) {
             <h3 className="font-semibold text-gray-900 truncate">
               {otherUser.full_name}
             </h3>
-            
+
             {/* Mutual friends count */}
             {request.mutual_friends_count !== undefined && request.mutual_friends_count > 0 && (
               <div className="flex items-center gap-1 text-sm text-gray-600 mt-1">

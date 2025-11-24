@@ -6,33 +6,34 @@
  */
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../lib/supabase';
 import toast from 'react-hot-toast';
+import { useAuthStore } from '../../store/authStore';
+import { friendsService } from '../../services/friendsService';
 
 export function useRequestActions() {
   const queryClient = useQueryClient();
+  const user = useAuthStore(state => state.user);
 
   const acceptMutation = useMutation({
     mutationFn: async (requestId: string) => {
-      // Use DB function for atomic operation
-      const { error } = await supabase.rpc('accept_friend_request', {
-        request_id: requestId
-      });
-
-      if (error) throw error;
+      const { error } = await friendsService.acceptFriendRequest(requestId);
+      if (error) throw new Error(error);
       return requestId;
     },
     onMutate: async (requestId) => {
       // Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ['friend-requests'] });
+      await queryClient.cancelQueries({ queryKey: ['friendRequests'] });
 
       // Snapshot previous values
-      const previousReceived = queryClient.getQueryData(['friend-requests', 'received']);
-      const previousSent = queryClient.getQueryData(['friend-requests', 'sent']);
+      const previousReceived = queryClient.getQueryData(['friendRequests', 'received', user?.id]);
+      const previousSent = queryClient.getQueryData(['friendRequests', 'sent', user?.id]);
 
       // Optimistically remove from UI
-      queryClient.setQueryData(['friend-requests', 'received'], (old: any) => {
+      queryClient.setQueryData(['friendRequests', 'received', user?.id], (old: any) => {
         if (!old) return old;
+        if (Array.isArray(old)) {
+          return old.filter((req: any) => req.id !== requestId);
+        }
         return {
           ...old,
           pages: old.pages.map((page: any[]) =>
@@ -46,16 +47,16 @@ export function useRequestActions() {
     onError: (_err, _requestId, context) => {
       // Rollback on error
       if (context?.previousReceived) {
-        queryClient.setQueryData(['friend-requests', 'received'], context.previousReceived);
+        queryClient.setQueryData(['friendRequests', 'received', user?.id], context.previousReceived);
       }
       if (context?.previousSent) {
-        queryClient.setQueryData(['friend-requests', 'sent'], context.previousSent);
+        queryClient.setQueryData(['friendRequests', 'sent', user?.id], context.previousSent);
       }
       toast.error('Failed to accept friend request');
     },
     onSuccess: () => {
-      // Refetch to ensure consistency
-      queryClient.invalidateQueries({ queryKey: ['friend-requests'] });
+      // Aggressively clear cache to prevent stale data
+      queryClient.removeQueries({ queryKey: ['friendRequests'] });
       queryClient.invalidateQueries({ queryKey: ['friends-list'] });
       toast.success('Friend request accepted!');
     },
@@ -63,24 +64,23 @@ export function useRequestActions() {
 
   const rejectMutation = useMutation({
     mutationFn: async (requestId: string) => {
-      const { error } = await supabase
-        .from('friend_requests')
-        .update({ status: 'rejected' })
-        .eq('id', requestId);
-
-      if (error) throw error;
+      const { error } = await friendsService.rejectFriendRequest(requestId);
+      if (error) throw new Error(error);
       return requestId;
     },
     onMutate: async (requestId) => {
-      await queryClient.cancelQueries({ queryKey: ['friend-requests'] });
+      await queryClient.cancelQueries({ queryKey: ['friendRequests'] });
 
-      const previousReceived = queryClient.getQueryData(['friend-requests', 'received']);
-      const previousSent = queryClient.getQueryData(['friend-requests', 'sent']);
+      const previousReceived = queryClient.getQueryData(['friendRequests', 'received', user?.id]);
+      const previousSent = queryClient.getQueryData(['friendRequests', 'sent', user?.id]);
 
       // Optimistically remove from UI
       ['received', 'sent'].forEach(type => {
-        queryClient.setQueryData(['friend-requests', type], (old: any) => {
+        queryClient.setQueryData(['friendRequests', type, user?.id], (old: any) => {
           if (!old) return old;
+          if (Array.isArray(old)) {
+            return old.filter((req: any) => req.id !== requestId);
+          }
           return {
             ...old,
             pages: old.pages.map((page: any[]) =>
@@ -94,31 +94,54 @@ export function useRequestActions() {
     },
     onError: (_err, _requestId, context) => {
       if (context?.previousReceived) {
-        queryClient.setQueryData(['friend-requests', 'received'], context.previousReceived);
+        queryClient.setQueryData(['friendRequests', 'received', user?.id], context.previousReceived);
       }
       if (context?.previousSent) {
-        queryClient.setQueryData(['friend-requests', 'sent'], context.previousSent);
+        queryClient.setQueryData(['friendRequests', 'sent', user?.id], context.previousSent);
       }
       toast.error('Failed to reject friend request');
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['friend-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['friendRequests'] });
       toast.success('Friend request rejected');
     },
   });
 
   const cancelMutation = useMutation({
     mutationFn: async (requestId: string) => {
-      const { error } = await supabase
-        .from('friend_requests')
-        .update({ status: 'cancelled' })
-        .eq('id', requestId);
-
-      if (error) throw error;
+      const { error } = await friendsService.cancelFriendRequest(requestId);
+      if (error) throw new Error(error);
       return requestId;
     },
+    onMutate: async (requestId) => {
+      await queryClient.cancelQueries({ queryKey: ['friendRequests'] });
+
+      const previousSent = queryClient.getQueryData(['friendRequests', 'sent', user?.id]);
+
+      // Optimistically remove from UI
+      queryClient.setQueryData(['friendRequests', 'sent', user?.id], (old: any) => {
+        if (!old) return old;
+        if (Array.isArray(old)) {
+          return old.filter((req: any) => req.id !== requestId);
+        }
+        return {
+          ...old,
+          pages: old.pages.map((page: any[]) =>
+            page.filter((req) => req.id !== requestId)
+          ),
+        };
+      });
+
+      return { previousSent };
+    },
+    onError: (_err, _requestId, context) => {
+      if (context?.previousSent) {
+        queryClient.setQueryData(['friendRequests', 'sent', user?.id], context.previousSent);
+      }
+      toast.error('Failed to cancel friend request');
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['friend-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['friendRequests'] });
       toast.success('Friend request cancelled');
     },
   });

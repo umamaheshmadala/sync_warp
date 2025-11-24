@@ -13,13 +13,12 @@ import { cn } from '../../lib/utils';
 
 export function FriendRequestsList() {
   const [activeTab, setActiveTab] = useState<'received' | 'sent'>('received');
-  
-  const { 
-    requests, 
-    isLoading, 
-    hasNextPage, 
-    fetchNextPage, 
-    isFetchingNextPage 
+  const {
+    requests,
+    isLoading,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage
   } = useFriendRequests(activeTab);
 
   if (isLoading) {
@@ -104,9 +103,9 @@ export function FriendRequestsList() {
       ) : (
         <div className="space-y-3">
           {requests.map((request) => (
-            <FriendRequestCard 
-              key={request.id} 
-              request={request} 
+            <FriendRequestCard
+              key={request.id}
+              request={request}
               type={activeTab}
             />
           ))}
