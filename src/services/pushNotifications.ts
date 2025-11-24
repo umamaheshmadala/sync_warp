@@ -60,13 +60,13 @@ class PushNotificationServiceImpl implements PushNotificationService {
 
     try {
       const result = await PushNotifications.requestPermissions()
-      
+
       if (result.receive === 'granted') {
         console.log('[PushNotifications] Permission granted')
-        
+
         // Register with APNs/FCM
         await PushNotifications.register()
-        
+
         return true
       } else {
         console.log('[PushNotifications] Permission denied')
@@ -85,7 +85,7 @@ class PushNotificationServiceImpl implements PushNotificationService {
   async savePushToken(token: string): Promise<void> {
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      
+
       if (!user) {
         console.warn('[PushNotifications] No user logged in - cannot save token')
         return
@@ -101,6 +101,7 @@ class PushNotificationServiceImpl implements PushNotificationService {
           token: token,
           platform: platform,
           device_name: `${platform} device`,
+          is_active: true,
           updated_at: new Date().toISOString()
         }, {
           onConflict: 'user_id,token'

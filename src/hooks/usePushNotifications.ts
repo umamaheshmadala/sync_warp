@@ -35,9 +35,10 @@ export const usePushNotifications = (userId: string | null) => {
           user_id: userId,
           token: token,
           platform: platform,
+          is_active: true,
           updated_at: new Date().toISOString()
         }, {
-          onConflict: 'user_id,platform'
+          onConflict: 'user_id,token'
         });
 
       if (error) {
@@ -112,12 +113,6 @@ export const usePushNotifications = (userId: string | null) => {
     };
 
     const registerPushNotifications = async () => {
-      // TEMPORARY: Disable push notifications until Firebase is configured
-      // TODO: Remove this when google-services.json is added
-      console.log('[usePushNotifications] Push notifications disabled - Firebase not configured');
-      return;
-
-      /*
       try {
         console.log('[usePushNotifications] Starting registration for user:', userId);
         console.log('[usePushNotifications] Platform:', Capacitor.getPlatform());
@@ -161,7 +156,6 @@ export const usePushNotifications = (userId: string | null) => {
         }));
         console.error('[usePushNotifications] Initialization failed:', error);
       }
-      */
     };
 
     registerPushNotifications();
