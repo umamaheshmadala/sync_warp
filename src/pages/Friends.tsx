@@ -1,6 +1,7 @@
 /**
  * Friends Page
  * Story 9.3.1: Friends List Component
+ * Story 9.6.2: Activity Feed UI Component
  * 
  * Main friends page at /friends route
  */
@@ -9,6 +10,8 @@ import React, { useState, useRef } from 'react';
 import { Users, RefreshCw } from 'lucide-react';
 import { FriendsList } from '../components/friends/FriendsList';
 import { FriendSearchBar } from '../components/friends/FriendSearchBar';
+import { FriendActivityFeed } from '../components/friends/FriendActivityFeed';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { useDrag } from '@use-gesture/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRealtimeOnlineStatus } from '../hooks/friends/useRealtimeOnlineStatus';
@@ -83,23 +86,32 @@ export function FriendsPage() {
           <p className="text-gray-600">Stay connected with your friends</p>
         </div>
 
-        {/* Search Bar */}
-        <div className="mb-6">
-          <FriendSearchBar
-            onSearch={setSearchQuery}
-          />
-        </div>
+        {/* Tabs */}
+        <Tabs defaultValue="friends" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="friends">Friends</TabsTrigger>
+            <TabsTrigger value="activity">Activity</TabsTrigger>
+          </TabsList>
 
-        {/* People You May Know */}
-        <div className="mb-8">
-          <PYMKCarousel />
-        </div>
+          <TabsContent value="friends" className="space-y-6">
+            {/* Search Bar */}
+            <FriendSearchBar onSearch={setSearchQuery} />
 
-        {/* Friends List */}
-        <FriendsList searchQuery={searchQuery} />
+            {/* People You May Know */}
+            <PYMKCarousel />
+
+            {/* Friends List */}
+            <FriendsList searchQuery={searchQuery} />
+          </TabsContent>
+
+          <TabsContent value="activity">
+            <FriendActivityFeed />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
 }
 
 export default FriendsPage;
+

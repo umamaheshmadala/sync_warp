@@ -43,3 +43,23 @@ export interface ServiceResponse<T = void> {
   error?: string;
   queued?: boolean; // For offline queue support
 }
+
+export type ActivityType =
+  | 'friend_added'
+  | 'friend_joined'
+  | 'deal_liked'
+  | 'deal_saved'
+  | 'deal_shared';
+
+export interface FriendActivity {
+  id: string;
+  user_id: string;
+  user_full_name: string;
+  user_avatar_url: string | null;
+  activity_type: ActivityType;
+  related_user_id?: string;
+  related_user_full_name?: string;
+  related_deal_id?: string;
+  metadata: Record<string, any>;
+  created_at: string;
+}

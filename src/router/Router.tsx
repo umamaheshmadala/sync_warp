@@ -45,6 +45,8 @@ import { FriendRequestsList } from '../components/friends/FriendRequestsList'
 import TestProfileModal from '../pages/TestProfileModal'
 // Story 9.5.6: Privacy Dashboard
 import { FriendsPrivacySettings } from '../pages/settings/FriendsPrivacySettings'
+// Story 9.6.2: Activity Feed UI
+import TestActivityFeed from '../pages/TestActivityFeed'
 
 
 // Import messaging components (Epic 8.2)
@@ -236,6 +238,13 @@ export const routes: RouteConfig[] = [
     protected: true,
     title: 'Privacy Settings - SynC',
     description: 'Manage privacy and blocking settings'
+  },
+  {
+    path: '/test/activity-feed',
+    element: <TestActivityFeed />,
+    protected: true,
+    title: 'Activity Feed Test - SynC',
+    description: 'Test page for friend activity feed'
   },
   {
     path: '/wallet',
