@@ -16,12 +16,15 @@ interface NotificationRequest {
 
 // Firebase Admin SDK setup
 const getFirebaseApp = async () => {
-    const serviceAccountJson = Deno.env.get('FIREBASE_SERVICE_ACCOUNT');
+    // Check for FCM_SERVICE_ACCOUNT first (existing), then FIREBASE_SERVICE_ACCOUNT
+    const serviceAccountJson = Deno.env.get('FCM_SERVICE_ACCOUNT') || Deno.env.get('FIREBASE_SERVICE_ACCOUNT');
 
     if (!serviceAccountJson) {
-        console.warn('[send_push_notification] Firebase service account not configured');
+        console.warn('[send_push_notification] Firebase service account not configured (checked FCM_SERVICE_ACCOUNT and FIREBASE_SERVICE_ACCOUNT)');
         return null;
     }
+
+    console.log('[send_push_notification] Found Firebase credentials');
 
     try {
         const serviceAccount = JSON.parse(serviceAccountJson);
