@@ -21,14 +21,22 @@ const DevMenu = () => {
 
   const testPages = [
     { name: '👥 Friends Page', path: '/friends' },
+    { name: '🔍 Friend Search', path: '/friends/search' },
+    { name: '📬 Friend Requests', path: '/friends/requests' },
     { name: '📱 Contact Sync Test', path: '/test/contact-sync' },
+    { name: '⚡ Search Perf', path: '/test/search-performance' },
+    { name: '🎁 Deal Sharing', path: '/test/deal-sharing' },
+    { name: '👤 Profile Modal', path: '/test/profile-modal' },
+    { name: '📰 Activity Feed', path: '/test/activity-feed' },
     { name: 'Storage Test (8.1.3)', path: '/test/storage' },
-    { name: 'Dashboard', path: '/dashboard' },
-    { name: 'Profile', path: '/profile' },
   ]
 
-  // Build timestamp for identification
-  const buildTime = new Date().toISOString().slice(0, 16).replace('T', ' ')
+  // Build timestamp for identification (IST)
+  const buildTime = new Date().toLocaleString('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    dateStyle: 'medium',
+    timeStyle: 'short'
+  })
 
   return (
     <div className="fixed bottom-4 right-4 z-50">
@@ -73,7 +81,7 @@ const DevMenu = () => {
               <p className="text-xs text-purple-600 font-mono mt-0.5">Build: {buildTime}</p>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1">
               {testPages.map((page) => (
                 <button
                   key={page.path}
@@ -81,7 +89,7 @@ const DevMenu = () => {
                     navigate(page.path)
                     setIsOpen(false)
                   }}
-                  className="w-full text-left px-3 py-2 rounded hover:bg-purple-50 text-sm text-gray-700 hover:text-purple-700 transition-colors"
+                  className="w-full text-left px-3 py-1.5 rounded hover:bg-purple-50 text-sm text-gray-700 hover:text-purple-700 transition-colors"
                 >
                   {page.name}
                 </button>

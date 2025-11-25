@@ -209,7 +209,11 @@ export function useCancelFriendRequest() {
     onSuccess: (data, requestId) => {
       if (data.success) {
         console.log('[useFriendRequests] Friend request cancelled:', requestId)
-        queryClient.invalidateQueries({ queryKey: ['friend-requests', 'sent'] })
+        // Invalidate all friend-related queries to ensure UI updates everywhere
+        queryClient.invalidateQueries({ queryKey: ['friend-requests'] })
+        queryClient.invalidateQueries({ queryKey: ['friendRequests'] })
+        queryClient.invalidateQueries({ queryKey: ['friends-list'] })
+        queryClient.invalidateQueries({ queryKey: ['pymk'] })
       } else {
         console.error('[useFriendRequests] Failed to cancel friend request:', data.error)
       }

@@ -30,15 +30,19 @@ export const usePushNotifications = (userId: string | null) => {
 
       // Upsert token to database
       const { error } = await supabase
-        .from('push_tokens')
+        .from('user_push_tokens')
         .upsert({
           user_id: userId,
           token: token,
           platform: platform,
+          device_info: {
+            platform,
+            timestamp: new Date().toISOString()
+          },
           is_active: true,
           updated_at: new Date().toISOString()
         }, {
-          onConflict: 'user_id,token'
+          onConflict: 'token'
         });
 
       if (error) {
@@ -55,13 +59,17 @@ export const usePushNotifications = (userId: string | null) => {
   };
 
   useEffect(() => {
+    console.log('[usePushNotifications] Hook effect triggered. UserId:', userId, 'Platform:', Capacitor.getPlatform(), 'IsNative:', Capacitor.isNativePlatform());
+
     // Only run on native platforms
     if (!Capacitor.isNativePlatform()) {
+      console.log('[usePushNotifications] Skipping - not a native platform');
       return;
     }
 
     // Only register if user is logged in
     if (!userId) {
+      console.log('[usePushNotifications] Skipping - no userId provided');
       return;
     }
 
@@ -107,7 +115,12 @@ export const usePushNotifications = (userId: string | null) => {
       PushNotifications.addListener('pushNotificationActionPerformed',
         (action: ActionPerformed) => {
           console.log('[usePushNotifications] Notification tapped:', action);
-          // Can be extended to handle navigation
+          const data = action.notification.data;
+
+          // Navigate based on notification type
+          if (data.action_url) {
+            window.location.href = data.action_url;
+          }
         }
       );
     };
@@ -172,7 +185,7 @@ export const usePushNotifications = (userId: string | null) => {
 
     try {
       const { error } = await supabase
-        .from('push_tokens')
+        .from('user_push_tokens')
         .delete()
         .eq('token', state.token);
 

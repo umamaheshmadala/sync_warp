@@ -181,10 +181,28 @@ export function FriendSearchResults({
                       e.stopPropagation();
                       setCancellingRequestId(requestId);
                       cancelFriendRequest.mutate(requestId, {
-                        onSuccess: () => {
+                        onSuccess: async () => {
                           setCancellingRequestId(null);
                           toast.success('Friend request cancelled');
+                          // Update local state immediately
                           setRequestStatuses(prev => ({ ...prev, [result.user_id]: { status: 'none' } }));
+
+                          // Re-check status from database after a brief delay to ensure delete completed
+                          setTimeout(async () => {
+                            const { data: { user } } = await supabase.auth.getUser();
+                            if (!user) return;
+
+                            const { data: sentRequests } = await supabase
+                              .from('friend_requests')
+                              .select('id')
+                              .eq('sender_id', user.id)
+                              .eq('receiver_id', result.user_id)
+                              .eq('status', 'pending');
+
+                            if (!sentRequests || sentRequests.length === 0) {
+                              setRequestStatuses(prev => ({ ...prev, [result.user_id]: { status: 'none' } }));
+                            }
+                          }, 500);
                         },
                         onError: () => {
                           setCancellingRequestId(null);

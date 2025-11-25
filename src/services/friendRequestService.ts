@@ -140,7 +140,7 @@ class FriendRequestService {
             .select('id, full_name, email, avatar_url, city, interests, is_online, last_active')
             .eq('id', req.sender_id)
             .single()
-          
+
           return { ...req, sender }
         })
       )
@@ -190,7 +190,7 @@ class FriendRequestService {
             .select('id, full_name, email, avatar_url, city, interests, is_online, last_active')
             .eq('id', req.receiver_id)
             .single()
-          
+
           return { ...req, receiver }
         })
       )
@@ -321,9 +321,11 @@ class FriendRequestService {
 
       const senderId = currentUser.user.id
 
+      // DELETE the request instead of updating status to 'cancelled'
+      // This ensures the request is completely removed and can be re-sent
       const { error } = await supabase
         .from('friend_requests')
-        .update({ status: 'cancelled' })
+        .delete()
         .eq('id', requestId)
         .eq('sender_id', senderId)
         .eq('status', 'pending')

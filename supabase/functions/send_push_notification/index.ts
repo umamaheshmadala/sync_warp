@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
 
         // Get user's device tokens
         const { data: tokens, error: tokensError } = await supabase
-            .from('push_tokens')
+            .from('user_push_tokens')
             .select('token, platform')
             .eq('user_id', user_id)
             .eq('is_active', true);
@@ -161,7 +161,7 @@ Deno.serve(async (req) => {
                         error.code === 'messaging/registration-token-not-registered') {
                         // Mark token as inactive
                         await supabase
-                            .from('push_tokens')
+                            .from('user_push_tokens')
                             .update({ is_active: false })
                             .eq('token', token);
                         console.log(`[send_push_notification] Marked token as inactive: ${token}`);
