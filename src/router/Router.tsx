@@ -45,6 +45,7 @@ import { FriendRequestsList } from '../components/friends/FriendRequestsList'
 import TestProfileModal from '../pages/TestProfileModal'
 // Story 9.5.6: Privacy Dashboard
 import { FriendsPrivacySettings } from '../pages/settings/FriendsPrivacySettings'
+import NotificationSettings from '../pages/settings/NotificationSettings'
 // Story 9.6.2: Activity Feed UI
 import TestActivityFeed from '../pages/TestActivityFeed'
 
@@ -238,6 +239,13 @@ export const routes: RouteConfig[] = [
     protected: true,
     title: 'Privacy Settings - SynC',
     description: 'Manage privacy and blocking settings'
+  },
+  {
+    path: '/settings/notifications',
+    element: <NotificationSettings />,
+    protected: true,
+    title: 'Notification Settings - SynC',
+    description: 'Manage your notification preferences'
   },
   {
     path: '/test/activity-feed',

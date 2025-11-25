@@ -28,6 +28,7 @@ export function useRealtimeNotifications() {
                 },
                 (payload) => {
                     console.error('[useRealtimeNotifications] Received INSERT event:', payload);
+
                     // Invalidate notifications query
                     queryClient.invalidateQueries({ queryKey: ['notifications'] });
                     queryClient.invalidateQueries({ queryKey: ['all-notifications'] });
@@ -64,10 +65,6 @@ export function useRealtimeNotifications() {
             console.error('[useRealtimeNotifications] Received foreground push event');
             queryClient.invalidateQueries({ queryKey: ['notifications'] });
             queryClient.invalidateQueries({ queryKey: ['all-notifications'] });
-
-            // Optional: Show toast if not already shown by the push handler
-            // const detail = (event as CustomEvent).detail;
-            // toast(detail.title || 'New Notification', { icon: '🔔' });
         };
 
         window.addEventListener('foreground-notification', handleForegroundPush);

@@ -64,6 +64,40 @@ Deno.serve(async (req) => {
             title,
         });
 
+        // Check user's notification preferences
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('notification_preferences')
+            .eq('id', user_id)
+            .single();
+
+        if (profileError) {
+            console.error('[send_push_notification] Error fetching preferences:', profileError);
+            throw profileError;
+        }
+
+        const prefs = profile?.notification_preferences || {};
+        const pushEnabled = prefs.push_enabled !== false; // Default to true
+        const typeEnabled = prefs[notification_type] !== false; // Default to true
+
+        console.log('[send_push_notification] Preferences check:', {
+            push_enabled: pushEnabled,
+            type_enabled: typeEnabled,
+            notification_type,
+        });
+
+        if (!pushEnabled || !typeEnabled) {
+            console.log('[send_push_notification] Notifications disabled for user, skipping');
+            return new Response(
+                JSON.stringify({
+                    message: 'Notifications disabled for this user',
+                    push_enabled: pushEnabled,
+                    type_enabled: typeEnabled,
+                }),
+                { status: 200, headers: { 'Content-Type': 'application/json' } }
+            );
+        }
+
         // Get user's device tokens
         const { data: tokens, error: tokensError } = await supabase
             .from('user_push_tokens')
