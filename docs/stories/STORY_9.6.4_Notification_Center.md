@@ -1,15 +1,3 @@
-# Story 9.6.4: In-App Notification Center
-
-**Epic:** [EPIC 9.6: Friend Activity Feed & Notifications](../epics/EPIC_9.6_Friend_Activity_Notifications.md)  
-**Priority:** 🔴 Critical  
-**Estimated Time:** 1 day  
-**MCP Usage:** None (Pure Frontend)  
-**Dependencies:** Story 9.6.1 (Database Schema)
-
----
-
-## 📋 Story Description
-
 Build an in-app notification center with a bell icon in the header, unread count badge, and dropdown list of recent notifications. Users can mark notifications as read, navigate to related content, and receive real-time updates.
 
 ---

@@ -1,15 +1,3 @@
-# Story 9.6.5: Notification Preferences UI
-
-**Epic:** [EPIC 9.6: Friend Activity Feed & Notifications](../epics/EPIC_9.6_Friend_Activity_Notifications.md)  
-**Priority:** 🟡 Medium  
-**Estimated Time:** 0.5 day  
-**MCP Usage:** None (Pure Frontend)  
-**Dependencies:** Story 9.6.3 (Push Notifications), Story 9.6.4 (Notification Center)
-
----
-
-## 📋 Story Description
-
 Create a settings page where users can customize their notification preferences. Users can toggle notifications for different event types and choose delivery methods (push, email, in-app).
 
 ---
