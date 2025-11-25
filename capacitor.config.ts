@@ -42,11 +42,16 @@ const getServerConfig = () => {
     };
   }
 
-  return {
-    ...baseConfig,
-    hostname: 'app.syncapp.com',
-    cleartext: false,
-  };
+  if (isProduction) {
+    return {
+      ...baseConfig,
+      hostname: 'app.syncapp.com',
+      cleartext: false,
+    };
+  }
+
+  // Default to local bundle (no server config)
+  return undefined;
 };
 
 const config: CapacitorConfig = {

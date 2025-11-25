@@ -6,7 +6,7 @@ import { useSimpleProductSocial } from '../../hooks/useSimpleProductSocial';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import ContactsSidebar from '../ContactsSidebarWithTabs';
-import { FollowerNotificationBell } from '../following/FollowerNotificationBell';
+import { NotificationCenter } from '../notifications/NotificationCenter';
 import MobileProfileDrawer from '../MobileProfileDrawer';
 import { SearchSuggestions } from '../search/SearchSuggestions';
 import { useSearch } from '../../hooks/useSearch';
@@ -35,7 +35,7 @@ export default function Header() {
   const search = useSearch({ autoSearch: false });
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
-  
+
   // Get recent searches from localStorage
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   useEffect(() => {
@@ -62,7 +62,7 @@ export default function Header() {
     const value = e.target.value;
     setSearchQuery(value);
     setShowSearchSuggestions(true);
-    
+
     // Get suggestions if query is long enough
     if (value.length >= 2) {
       setSuggestionsLoading(true);
@@ -114,7 +114,7 @@ export default function Header() {
     recent = [{ query, timestamp: Date.now() }, ...recent.filter(s => s.query !== query)].slice(0, 10);
     localStorage.setItem('recent_searches', JSON.stringify(recent));
     setRecentSearches(recent.map(s => s.query).slice(0, 5));
-    
+
     // Navigate to search results
     navigate(`/search?q=${encodeURIComponent(query)}`);
     setShowSearchSuggestions(false);
@@ -142,9 +142,9 @@ export default function Header() {
               title="Open Profile Menu"
             >
               <Avatar className="h-10 w-10 border-2 border-gray-200">
-                <AvatarImage 
-                  src={profile?.avatar_url || ''} 
-                  alt={user?.email || 'User'} 
+                <AvatarImage
+                  src={profile?.avatar_url || ''}
+                  alt={user?.email || 'User'}
                 />
                 <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-semibold">
                   {user?.email?.charAt(0).toUpperCase() || 'U'}
@@ -152,16 +152,16 @@ export default function Header() {
               </Avatar>
             </Button>
           )}
-          
+
           {/* Logo - Desktop Only */}
-          <div 
+          <div
             className="hidden md:flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
             onClick={() => navigate('/dashboard')}
           >
             {/* Logo with text for desktop */}
-            <img 
-              src="/Logo/Sync Logo Text Transparent SVG.svg" 
-              alt="Sync" 
+            <img
+              src="/Logo/Sync Logo Text Transparent SVG.svg"
+              alt="Sync"
               className="h-10"
             />
           </div>
@@ -183,7 +183,7 @@ export default function Header() {
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-gray-50 focus:bg-white transition-all"
               />
             </div>
-            
+
             {/* Search Suggestions Overlay */}
             <SearchSuggestions
               searchTerm={searchQuery}
@@ -203,7 +203,7 @@ export default function Header() {
           <div className="hidden md:block">
             <SyncStatusIndicator compact />
           </div>
-          
+
           {/* Messages - Desktop Only */}
           <Button
             variant="ghost"
@@ -234,7 +234,7 @@ export default function Header() {
           </Button>
 
           {/* Notifications - All screens */}
-          <FollowerNotificationBell />
+          <NotificationCenter />
 
           {/* Messages - Mobile Only */}
           <Button
@@ -264,9 +264,9 @@ export default function Header() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full hover:ring-2 hover:ring-indigo-500 hover:ring-offset-2 transition-all">
                   <Avatar className="h-10 w-10 border-2 border-gray-200">
-                    <AvatarImage 
-                      src={profile?.avatar_url || ''} 
-                      alt={user?.email || 'User'} 
+                    <AvatarImage
+                      src={profile?.avatar_url || ''}
+                      alt={user?.email || 'User'}
                     />
                     <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-semibold">
                       {user?.email?.charAt(0).toUpperCase() || 'U'}

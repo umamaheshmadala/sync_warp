@@ -107,7 +107,24 @@ export const usePushNotifications = (userId: string | null) => {
       PushNotifications.addListener('pushNotificationReceived',
         (notification: PushNotificationSchema) => {
           console.log('[usePushNotifications] Notification received:', notification);
-          // Can be extended to show in-app notification UI
+
+          // Show toast for foreground notification
+          const title = notification.title || 'New Notification';
+          const body = notification.body || '';
+
+          // Use a custom event or a global toast handler if available
+          // For now, we'll dispatch a custom event that the app can listen to
+          // or use the browser's Notification API if permission granted
+
+          // Dispatch event for UI components to pick up
+          window.dispatchEvent(new CustomEvent('foreground-notification', {
+            detail: notification
+          }));
+
+          // Also try to show a system notification if possible (for web/PWA)
+          if (Notification.permission === 'granted') {
+            new Notification(title, { body });
+          }
         }
       );
 
@@ -132,6 +149,19 @@ export const usePushNotifications = (userId: string | null) => {
 
         // Set up listeners FIRST before registering
         setupListeners();
+
+        // Create notification channel (required for Android O+)
+        if (Capacitor.getPlatform() === 'android') {
+          await PushNotifications.createChannel({
+            id: 'friend_notifications',
+            name: 'Friend Notifications',
+            description: 'Notifications for friend requests and updates',
+            importance: 5,
+            visibility: 1,
+            vibration: true,
+          });
+          console.log('[usePushNotifications] Notification channel created');
+        }
 
         // Check current permission status
         const currentPermission = await PushNotifications.checkPermissions();
