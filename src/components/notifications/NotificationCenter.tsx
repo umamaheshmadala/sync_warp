@@ -22,6 +22,7 @@ interface Notification {
     title: string;
     message: string;
     data: Record<string, any>;
+    route_to?: string;
     is_read: boolean;
     created_at: string;
 }
@@ -114,19 +115,21 @@ export function NotificationCenter() {
     });
 
     const handleNotificationClick = (notification: Notification) => {
+        console.log('[NotificationCenter] Notification clicked:', notification);
+
         // Mark as read
         if (!notification.is_read) {
             markAsReadMutation.mutate(notification.id);
         }
 
-        // Navigate based on notification type
-        // Use the action_url from data, or fallback to router logic
-        const actionUrl = notification.data?.action_url;
-        if (actionUrl) {
-            navigate(actionUrl);
+        // Navigate based on route_to field or fallback to type-based routing
+        if (notification.route_to) {
+            console.log('[NotificationCenter] Navigating to:', notification.route_to);
+            navigate(notification.route_to);
             setIsOpen(false);
         } else {
-            // Fallback routing logic if action_url is missing
+            // Fallback routing logic if route_to is missing
+            console.log('[NotificationCenter] No route_to, using fallback for type:', notification.type);
             switch (notification.type) {
                 case 'friend_request':
                     navigate('/friends/requests');
