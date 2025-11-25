@@ -1,6 +1,16 @@
 import { NavigateFunction } from 'react-router-dom'
 
-export type NotificationType = 'review' | 'offer' | 'follower' | 'business' | 'message' | 'test'
+export type NotificationType =
+  | 'review'
+  | 'offer'
+  | 'follower'
+  | 'business'
+  | 'message'
+  | 'test'
+  | 'friend_request'
+  | 'friend_accepted'
+  | 'deal_shared'
+  | 'birthday_reminder'
 
 export interface NotificationData {
   type: NotificationType
@@ -93,6 +103,34 @@ export class NotificationRouter {
         navigate('/')
         break
 
+      case 'friend_request':
+        // Route to friend requests page
+        navigate('/friends/requests')
+        break
+
+      case 'friend_accepted':
+        if (data.friend_id) {
+          // Could route to friend's profile in the future
+          navigate('/friends')
+        } else {
+          navigate('/friends')
+        }
+        break
+
+      case 'deal_shared':
+        if (data.deal_id) {
+          // Route to notifications to see the shared deal
+          navigate('/notifications')
+        } else {
+          navigate('/notifications')
+        }
+        break
+
+      case 'birthday_reminder':
+        // Route to friends page to see birthday person
+        navigate('/friends')
+        break
+
       default:
         console.warn('[NotificationRouter] Unknown notification type:', data.type)
         navigate('/')
@@ -112,7 +150,11 @@ export class NotificationRouter {
       follower: '👥 Follower',
       business: '🏢 Business',
       message: '💬 Message',
-      test: '🧪 Test'
+      test: '🧪 Test',
+      friend_request: '👋 Friend Request',
+      friend_accepted: '✅ Friend Accepted',
+      deal_shared: '🎁 Deal Shared',
+      birthday_reminder: '🎉 Birthday'
     }
     return labels[type] || '🔔 Notification'
   }
@@ -130,7 +172,11 @@ export class NotificationRouter {
       follower: '#5856D6',
       business: '#34C759',
       message: '#FF2D55',
-      test: '#8E8E93'
+      test: '#8E8E93',
+      friend_request: '#5856D6',
+      friend_accepted: '#34C759',
+      deal_shared: '#FF9500',
+      birthday_reminder: '#FF2D55'
     }
     return colors[type] || '#007AFF'
   }
@@ -146,8 +192,11 @@ export class NotificationRouter {
       return false
     }
 
-    const validTypes: NotificationType[] = ['review', 'offer', 'follower', 'business', 'message', 'test']
-    
+    const validTypes: NotificationType[] = [
+      'review', 'offer', 'follower', 'business', 'message', 'test',
+      'friend_request', 'friend_accepted', 'deal_shared', 'birthday_reminder'
+    ]
+
     if (!validTypes.includes(data.type)) {
       console.warn('[NotificationRouter] Invalid notification type:', data.type)
       return false
