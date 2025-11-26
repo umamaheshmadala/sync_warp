@@ -78,6 +78,7 @@ export const friendsService = {
         try {
             // Check if online
             const isOnline = await offlineQueue.isOnline();
+            console.error('DEBUG: isOnline:', isOnline);
 
             if (!isOnline) {
                 // Queue for later processing
@@ -306,11 +307,11 @@ export const friendsService = {
     },
 
     /**
-     * Search friends by name or username
+     * Search friends by name or username (Search My Friends)
      * @param query - Search query string
      * @returns ServiceResponse with array of matching friends
      */
-    async searchFriends(query: string): Promise<ServiceResponse<Friend[]>> {
+    async searchMyFriends(query: string): Promise<ServiceResponse<Friend[]>> {
         try {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error('Not authenticated');
@@ -341,10 +342,79 @@ export const friendsService = {
                 data: friends,
             };
         } catch (error: any) {
-            console.error('[friendsService] searchFriends error:', error);
+            console.error('[friendsService] searchMyFriends error:', error);
             return {
                 success: false,
                 error: error.message || 'Failed to search friends',
+            };
+        }
+    },
+
+    /**
+     * Search for users globally (Friend Discovery)
+     */
+    async searchUsers(query: string, limit: number = 20): Promise<ServiceResponse<any[]>> {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const { data, error } = await supabase.rpc('search_users', {
+                search_query: query.trim(),
+                current_user_id: user.id,
+                limit_count: limit,
+                offset_count: 0,
+            });
+
+            if (error) throw error;
+
+            return {
+                success: true,
+                data: data || [],
+            };
+        } catch (error: any) {
+            logError('searchUsers', error, { query });
+            return {
+                success: false,
+                error: getUserFriendlyErrorMessage(error),
+            };
+        }
+    },
+
+    /**
+     * Get pending requests sent by current user
+     */
+    async getSentRequests(): Promise<ServiceResponse<FriendRequest[]>> {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const { data: requests, error } = await supabase
+                .from('friend_requests')
+                .select(`
+                    *,
+                    receiver:profiles!friend_requests_receiver_id_fkey(*)
+                `)
+                .eq('sender_id', user.id)
+                .eq('status', 'pending')
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+
+            // Map profiles
+            const enrichedRequests = (requests || []).map((req: any) => ({
+                ...req,
+                receiver_profile: req.receiver
+            }));
+
+            return {
+                success: true,
+                data: enrichedRequests,
+            };
+        } catch (error: any) {
+            logError('getSentRequests', error, { userId: 'current' });
+            return {
+                success: false,
+                error: getUserFriendlyErrorMessage(error),
             };
         }
     },
@@ -409,4 +479,353 @@ export const friendsService = {
             };
         }
     },
+    /**
+     * Get pending friend requests for user
+     */
+    async getFriendRequests(userId: string): Promise<ServiceResponse<FriendRequest[]>> {
+        try {
+            const { data: requests, error } = await supabase
+                .from('friend_requests')
+                .select(`
+                    *,
+                    requester:profiles!friend_requests_requester_id_fkey(*),
+                    receiver:profiles!friend_requests_receiver_id_fkey(*)
+                `)
+                .eq('receiver_id', userId)
+                .eq('status', 'pending')
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+
+            // Map profiles to match expected interface
+            const enrichedRequests = (requests || []).map((req: any) => ({
+                ...req,
+                requester_profile: req.requester,
+                receiver_profile: req.receiver
+            }));
+
+            return {
+                success: true,
+                data: enrichedRequests,
+            };
+        } catch (error: any) {
+            logError('getFriendRequests', error, { userId });
+            return {
+                success: false,
+                error: getUserFriendlyErrorMessage(error),
+            };
+        }
+    },
+
+    /**
+     * Update user online status
+     */
+    async updateOnlineStatus(userId: string, isOnline: boolean): Promise<ServiceResponse<void>> {
+        try {
+            const { error } = await supabase
+                .from('profiles')
+                .update({
+                    is_online: isOnline,
+                    last_active: new Date().toISOString()
+                })
+                .eq('id', userId);
+
+            if (error) throw error;
+            return { success: true };
+        } catch (error: any) {
+            logError('updateOnlineStatus', error, { userId, isOnline });
+            return {
+                success: false,
+                error: getUserFriendlyErrorMessage(error),
+            };
+        }
+    },
+
+    /**
+     * Get friend activity feed
+     */
+    async getFriendActivity(userId: string, limit: number = 20): Promise<ServiceResponse<any[]>> {
+        try {
+            // Get user's friends first
+            const friendsResponse = await this.getFriends(userId);
+            if (!friendsResponse.success || !friendsResponse.data) {
+                return { success: true, data: [] };
+            }
+
+            const friendIds = friendsResponse.data.map(f => f.id);
+            if (friendIds.length === 0) return { success: true, data: [] };
+
+            const { data, error } = await supabase
+                .from('friend_activities')
+                .select(`
+                    id,
+                    user_id,
+                    type,
+                    deal_id,
+                    deal_title,
+                    message,
+                    created_at,
+                    user_profile:profiles!friend_activities_user_id_fkey (*)
+                `)
+                .in('user_id', friendIds)
+                .order('created_at', { ascending: false })
+                .limit(limit);
+
+            if (error) throw error;
+            return { success: true, data: data || [] };
+        } catch (error: any) {
+            logError('getFriendActivity', error, { userId });
+            return {
+                success: false,
+                error: getUserFriendlyErrorMessage(error),
+            };
+        }
+    },
+
+    /**
+     * Create activity for user
+     */
+    async createActivity(userId: string, activityType: string, activityData: any): Promise<ServiceResponse<void>> {
+        try {
+            const { error } = await supabase
+                .from('friend_activities')
+                .insert({
+                    user_id: userId,
+                    type: activityType,
+                    deal_id: activityData.deal_id,
+                    deal_title: activityData.deal_title,
+                    message: activityData.message
+                });
+
+            if (error) throw error;
+            return { success: true };
+        } catch (error: any) {
+            logError('createActivity', error, { userId, activityType });
+            return {
+                success: false,
+                error: getUserFriendlyErrorMessage(error),
+            };
+        }
+    },
+
+    /**
+     * Share deal with friend
+     */
+    async shareDeal(senderId: string, receiverId: string, dealData: any): Promise<ServiceResponse<void>> {
+        try {
+            // Create notification for the receiver
+            const { error } = await supabase
+                .from('notifications')
+                .insert({
+                    user_id: receiverId,
+                    type: 'deal_shared',
+                    title: 'Friend shared a deal with you',
+                    message: `${dealData.title} - Check it out!`,
+                    data: {
+                        sender_id: senderId,
+                        deal: dealData
+                    }
+                });
+
+            if (error) throw error;
+
+            // Create activity
+            await this.createActivity(senderId, 'deal_shared', {
+                receiver_id: receiverId,
+                deal: dealData
+            });
+
+            return { success: true };
+        } catch (error: any) {
+            logError('shareDeal', error, { senderId, receiverId });
+            return {
+                success: false,
+                error: getUserFriendlyErrorMessage(error),
+            };
+        }
+    },
+
+    /**
+     * Check if two users are friends (O(1) lookup)
+     */
+    async areFriends(userId: string, friendId: string): Promise<boolean> {
+        try {
+            const { data } = await supabase
+                .from('friendships')
+                .select('id')
+                .eq('user_id', userId)
+                .eq('friend_id', friendId)
+                .eq('status', 'active')
+                .maybeSingle();
+
+            return !!data;
+        } catch (error) {
+            console.error('Error checking friendship:', error);
+            return false;
+        }
+    },
+
+    /**
+     * Get friend count for a user
+     */
+    async getFriendCount(userId: string): Promise<number> {
+        try {
+            const { count, error } = await supabase
+                .from('friendships')
+                .select('id', { count: 'exact', head: true })
+                .eq('user_id', userId)
+                .eq('status', 'active');
+
+            if (error) throw error;
+            return count || 0;
+        } catch (error) {
+            console.error('Error getting friend count:', error);
+            return 0;
+        }
+    },
+
+    /**
+     * Get People You May Know suggestions
+     */
+    async getPymkSuggestions(userId: string, limit: number = 10): Promise<ServiceResponse<any[]>> {
+        try {
+            const { data, error } = await supabase
+                .rpc('get_pymk_suggestions', {
+                    current_user_id: userId,
+                    limit_count: limit
+                });
+
+            if (error) throw error;
+            return { success: true, data: data || [] };
+        } catch (error: any) {
+            logError('getPymkSuggestions', error, { userId });
+            return {
+                success: false,
+                error: getUserFriendlyErrorMessage(error),
+            };
+        }
+    },
+
+    /**
+     * Dismiss a PYMK suggestion
+     */
+    async dismissPymkSuggestion(suggestedUserId: string): Promise<ServiceResponse<void>> {
+        try {
+            const { error } = await supabase
+                .rpc('dismiss_pymk_suggestion', {
+                    target_user_id: suggestedUserId
+                });
+
+            if (error) throw error;
+            return { success: true };
+        } catch (error: any) {
+            logError('dismissPymkSuggestion', error, { suggestedUserId });
+            return {
+                success: false,
+                error: getUserFriendlyErrorMessage(error),
+            };
+        }
+    },
+
+    /**
+     * Subscribe to real-time friend status updates
+     */
+    subscribeToFriendUpdates(userId: string, callback: (friend: any) => void) {
+        return supabase
+            .channel('friend_updates')
+            .on('postgres_changes', {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'profiles',
+                filter: `id=neq.${userId}`
+            }, (payload) => {
+                callback(payload.new);
+            })
+            .subscribe();
+    },
+
+    /**
+     * Subscribe to friendship changes (realtime)
+     */
+    subscribeToFriendshipChanges(userId: string, callback: (payload: any) => void) {
+        return supabase
+            .channel('friendships_changes')
+            .on('postgres_changes', {
+                event: '*',
+                schema: 'public',
+                table: 'friendships',
+                filter: `user_id=eq.${userId}`
+            }, callback)
+            .subscribe();
+    },
+    /**
+     * Save search query to history
+     */
+    async saveFriendSearchQuery(query: string): Promise<void> {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+
+            const { error } = await supabase.rpc('save_search_query', {
+                p_user_id: user.id,
+                p_query: query,
+            });
+
+            if (error) console.error('Failed to save search query:', error);
+        } catch (error) {
+            console.error('Failed to save search query:', error);
+        }
+    },
+
+    /**
+     * Get user's search history
+     */
+    async getFriendSearchHistory(): Promise<ServiceResponse<any[]>> {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const { data, error } = await supabase.rpc('get_search_history', {
+                p_user_id: user.id,
+            });
+
+            if (error) throw error;
+
+            return {
+                success: true,
+                data: data || [],
+            };
+        } catch (error: any) {
+            logError('getFriendSearchHistory', error, { userId: 'current' });
+            return {
+                success: false,
+                error: getUserFriendlyErrorMessage(error),
+            };
+        }
+    },
+
+    /**
+     * Clear all search history
+     */
+    async clearFriendSearchHistory(): Promise<ServiceResponse<void>> {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const { error } = await supabase
+                .from('search_history')
+                .delete()
+                .eq('user_id', user.id);
+
+            if (error) throw error;
+
+            return { success: true };
+        } catch (error: any) {
+            logError('clearFriendSearchHistory', error, { userId: 'current' });
+            return {
+                success: false,
+                error: getUserFriendlyErrorMessage(error),
+            };
+        }
+    }
 };

@@ -13,6 +13,20 @@ export interface Friend {
   is_online: boolean;
   last_active?: string | null;
   location?: string | null;
+  city?: string | null;
+  interests?: string[] | null;
+}
+
+export interface PYMKSuggestion {
+  id: string;
+  full_name: string;
+  avatar_url?: string;
+  mutual_friends_count: number;
+  mutual_friends: {
+    id: string;
+    full_name: string;
+    avatar_url?: string;
+  }[];
 }
 
 export interface Friendship {

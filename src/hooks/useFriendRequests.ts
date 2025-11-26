@@ -1,15 +1,13 @@
 // src/hooks/useFriendRequests.ts
 // React Query hooks for Story 9.1.3: Friend Requests with Auto-Expiry
-// Uses friendRequestService and includes realtime subscriptions
+// Uses friendsService and includes realtime subscriptions
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import { useAuthStore } from '../store/authStore'
 import { supabase } from '../lib/supabase'
-import friendRequestService, {
-  type FriendRequest,
-  type SendRequestResult
-} from '../services/friendRequestService'
+import { friendsService } from '../services/friendsService'
+import type { FriendRequest } from '../types/friends'
 
 /**
  * Hook for managing received friend requests (pending requests to current user)
@@ -25,7 +23,11 @@ export function useReceivedFriendRequests() {
     refetch
   } = useQuery<FriendRequest[], Error>({
     queryKey: ['friend-requests', 'received', user?.id],
-    queryFn: () => friendRequestService.getReceivedRequests(),
+    queryFn: async () => {
+      const response = await friendsService.getFriendRequests(user!.id);
+      if (!response.success) throw new Error(response.error);
+      return response.data || [];
+    },
     staleTime: 30000, // Cache for 30 seconds
     enabled: !!user
   })
@@ -84,7 +86,11 @@ export function useSentFriendRequests() {
     refetch
   } = useQuery<FriendRequest[], Error>({
     queryKey: ['friend-requests', 'sent', user?.id],
-    queryFn: () => friendRequestService.getSentRequests(),
+    queryFn: async () => {
+      const response = await friendsService.getSentRequests();
+      if (!response.success) throw new Error(response.error);
+      return response.data || [];
+    },
     staleTime: 30000,
     enabled: !!user
   })
@@ -133,9 +139,9 @@ export function useSentFriendRequests() {
 export function useSendFriendRequest() {
   const queryClient = useQueryClient()
 
-  return useMutation<SendRequestResult, Error, { receiverId: string; message?: string }>({
+  return useMutation<any, Error, { receiverId: string; message?: string }>({
     mutationFn: ({ receiverId, message }) =>
-      friendRequestService.sendFriendRequest(receiverId, message),
+      friendsService.sendFriendRequest(receiverId, message),
     onSuccess: (data) => {
       if (data.success) {
         console.log('[useFriendRequests] Friend request sent successfully')
@@ -157,8 +163,8 @@ export function useSendFriendRequest() {
 export function useAcceptFriendRequest() {
   const queryClient = useQueryClient()
 
-  return useMutation<SendRequestResult, Error, string>({
-    mutationFn: (requestId) => friendRequestService.acceptFriendRequest(requestId),
+  return useMutation<any, Error, string>({
+    mutationFn: (requestId) => friendsService.acceptFriendRequest(requestId),
     onSuccess: (data, requestId) => {
       if (data.success) {
         console.log('[useFriendRequests] Friend request accepted:', requestId)
@@ -182,8 +188,8 @@ export function useAcceptFriendRequest() {
 export function useRejectFriendRequest() {
   const queryClient = useQueryClient()
 
-  return useMutation<SendRequestResult, Error, string>({
-    mutationFn: (requestId) => friendRequestService.rejectFriendRequest(requestId),
+  return useMutation<any, Error, string>({
+    mutationFn: (requestId) => friendsService.rejectFriendRequest(requestId),
     onSuccess: (data, requestId) => {
       if (data.success) {
         console.log('[useFriendRequests] Friend request rejected:', requestId)
@@ -204,8 +210,8 @@ export function useRejectFriendRequest() {
 export function useCancelFriendRequest() {
   const queryClient = useQueryClient()
 
-  return useMutation<SendRequestResult, Error, string>({
-    mutationFn: (requestId) => friendRequestService.cancelFriendRequest(requestId),
+  return useMutation<any, Error, string>({
+    mutationFn: (requestId) => friendsService.cancelFriendRequest(requestId),
     onSuccess: (data, requestId) => {
       if (data.success) {
         console.log('[useFriendRequests] Friend request cancelled:', requestId)

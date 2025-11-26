@@ -4,7 +4,8 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { friendService, PYMKSuggestion } from '../services/friendService';
+import { friendsService } from '../services/friendsService';
+import { PYMKSuggestion } from '../services/friendService'; // Keep type import for now, or move type
 import { useAuthStore } from '../store/authStore';
 import { toast } from 'react-hot-toast';
 
@@ -16,7 +17,11 @@ export function usePYMK(limit: number = 10) {
 
   return useQuery({
     queryKey: ['pymk', user?.id],
-    queryFn: () => friendService.getPymkSuggestions(user!.id, limit),
+    queryFn: async () => {
+      const response = await friendsService.getPymkSuggestions(user!.id, limit);
+      if (!response.success) throw new Error(response.error);
+      return response.data as PYMKSuggestion[];
+    },
     enabled: !!user?.id,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
@@ -30,7 +35,7 @@ export function useDismissPYMK() {
   const { user } = useAuthStore();
 
   return useMutation({
-    mutationFn: (suggestedUserId: string) => friendService.dismissPymkSuggestion(suggestedUserId),
+    mutationFn: (suggestedUserId: string) => friendsService.dismissPymkSuggestion(suggestedUserId),
     onSuccess: (_, suggestedUserId) => {
       queryClient.setQueryData(['pymk', user?.id], (old: PYMKSuggestion[] | undefined) =>
         old ? old.filter(s => s.id !== suggestedUserId) : []
