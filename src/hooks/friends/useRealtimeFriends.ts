@@ -52,15 +52,19 @@ export function useRealtimeFriends() {
         handleFriendAdded: throttle((payload: any) => {
             console.log('[Realtime] New friend added:', payload);
             // Invalidate friends query to refetch with new friend
-            queryClient.invalidateQueries({ queryKey: ['friends'] });
+            queryClient.invalidateQueries({ queryKey: ['friends-list'] });
+            queryClient.invalidateQueries({ queryKey: ['pymk'] });
         }, 1000),
 
         handleFriendRemoved: throttle((payload: any) => {
-            console.log('[Realtime] Friend removed:', payload);
+            console.log('[Realtime] Friend removed event received:', payload);
             if (payload.old?.friend_id) {
+                console.log('[Realtime] Removing friend from store:', payload.old.friend_id);
                 removeFriend(payload.old.friend_id);
             }
-            queryClient.invalidateQueries({ queryKey: ['friends'] });
+            console.log('[Realtime] Invalidating friends-list query');
+            queryClient.invalidateQueries({ queryKey: ['friends-list'] });
+            queryClient.invalidateQueries({ queryKey: ['pymk'] });
         }, 1000),
 
         handleFriendRequestChange: throttle((payload: any) => {

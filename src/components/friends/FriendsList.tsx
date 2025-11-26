@@ -16,7 +16,10 @@ interface FriendsListProps {
   searchQuery?: string;
 }
 
+import { useRealtimeFriends } from '../../hooks/friends/useRealtimeFriends';
+
 export function FriendsList({ searchQuery = '' }: FriendsListProps) {
+  useRealtimeFriends(); // Enable realtime updates
   const { friends, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage, error } = useFriendsList();
   const [selectedFriendId, setSelectedFriendId] = React.useState<string | null>(null);
 

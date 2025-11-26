@@ -20,7 +20,7 @@ export function useFriendsList() {
 
       // Fetch friendships with profile data
       console.log('Fetching friends for user:', user.id, 'page:', pageParam);
-      
+
       // First, get friend IDs
       const { data: friendships, error: friendshipsError } = await supabase
         .from('friendships')
@@ -55,8 +55,12 @@ export function useFriendsList() {
 
       console.log('Fetched profiles:', profiles?.length || 0);
 
-      // Transform data
-      const friends = profiles || [];
+      // Transform data and filter out current user (just in case)
+      const friends = (profiles || []).filter(p => p.id !== user.id);
+
+      if (friends.length !== (profiles?.length || 0)) {
+        console.warn('Filtered out self from friends list');
+      }
 
       return friends;
     },
@@ -65,6 +69,9 @@ export function useFriendsList() {
       return lastPage.length === 50 ? pages.length : undefined;
     },
     initialPageParam: 0,
+    staleTime: 0, // Always fetch fresh data, do not rely on cache
+    refetchOnMount: true, // Refetch when component mounts
+    refetchOnWindowFocus: true, // Refetch when window gains focus
   });
 
   // Flatten pages into single array

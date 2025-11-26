@@ -75,10 +75,11 @@ export function useFriendActions() {
     },
     onSuccess: () => {
       toast.success('Friend removed');
-      // Force reload to ensure UI updates correctly
-      window.location.reload();
+      queryClient.invalidateQueries({ queryKey: ['friends-list'] });
+      queryClient.invalidateQueries({ queryKey: ['pymk'] });
     },
     onSettled: () => {
+      // Also invalidate the legacy/service key just in case
       queryClient.invalidateQueries({ queryKey: ['friends', user?.id] });
     },
   });

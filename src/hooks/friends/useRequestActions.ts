@@ -57,7 +57,9 @@ export function useRequestActions() {
     onSuccess: () => {
       // Aggressively clear cache to prevent stale data
       queryClient.removeQueries({ queryKey: ['friendRequests'] });
-      queryClient.invalidateQueries({ queryKey: ['friends-list'] });
+      // Invalidate the specific friends list query used by useFriendsList
+      queryClient.invalidateQueries({ queryKey: ['friends'] });
+      queryClient.invalidateQueries({ queryKey: ['pymk'] }); // Also refresh PYMK
       toast.success('Friend request accepted!');
     },
   });
