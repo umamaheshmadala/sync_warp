@@ -337,18 +337,23 @@ Epic 9.6 has a comprehensive completion summary document showing 3 out of 6 stor
 
 **Estimated Effort**: 1 day
 
-### 4. No Automated Tests
+### 4. Automated Tests - PARTIALLY COMPLETE ✅
 
 **Issue**: Only manual testing performed  
-**Impact**: No regression protection  
+**Impact**: Limited regression protection  
 **Priority**: 🟡 Medium
 
-**Missing**:
-- ❌ Unit tests for hooks
+**Completed**:
+- ✅ Unit tests for `usePushNotifications` hook (12 tests)
+- ✅ Unit tests for `useRealtimeNotifications` hook (12 tests)
+- ✅ Unit tests for `useNotificationHandler` hook (13 tests)
+- ✅ Unit tests for `useNotificationPreferences` hook (6 tests)
+
+**Still Missing**:
 - ❌ Unit tests for Edge Function
 - ❌ E2E tests for notification flows
 
-**Estimated Effort**: 2-3 days
+**Estimated Remaining Effort**: 1-2 days
 
 ---
 
