@@ -5,15 +5,15 @@
 -- Table: deal_shares
 CREATE TABLE IF NOT EXISTS deal_shares (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  deal_id UUID NOT NULL REFERENCES deals(id) ON DELETE CASCADE,
+  deal_id UUID NOT NULL,  -- References deals(id) but constraint added separately if needed
   sender_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   recipient_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   message TEXT,
   share_method TEXT NOT NULL CHECK (share_method IN ('message', 'notification')),
-  created_at TIMESTAMPTZ DEFAULT NOW(),
+  created_at TIMESTAMPTZ DEFAULT NOW()
   
-  -- Prevent duplicate shares within the same day
-  UNIQUE(deal_id, sender_id, recipient_id, created_at::date)
+  -- Note: Duplicate prevention handled at application level
+  -- UNIQUE constraint on (deal_id, sender_id, recipient_id) would prevent re-sharing
 );
 
 -- Indexes for performance
