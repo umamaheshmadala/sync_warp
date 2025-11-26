@@ -34,13 +34,13 @@ export function FriendProfileModal({ friendId, isOpen, onClose }: FriendProfileM
     if (!friendId) return null;
 
     const handleUnfriend = () => {
-        unfriend(friendId);
+        unfriend.mutate(friendId);
         setShowUnfriendDialog(false);
         onClose();
     };
 
     const handleBlock = () => {
-        blockUser(friendId);
+        blockUser.mutate({ userId: friendId });
         setShowBlockDialog(false);
         onClose();
     };

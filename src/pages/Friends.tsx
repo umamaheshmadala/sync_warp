@@ -11,6 +11,9 @@ import { Users, RefreshCw } from 'lucide-react';
 import { FriendsList } from '../components/friends/FriendsList';
 import { FriendSearchBar } from '../components/friends/FriendSearchBar';
 import { FriendActivityFeed } from '../components/friends/FriendActivityFeed';
+import { FriendRequestsList } from '../components/friends/FriendRequestsList';
+import { BlockedUsersList } from '../components/BlockedUsersList';
+import { FriendSearchPage } from './FriendSearchPage';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { useDrag } from '@use-gesture/react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -88,8 +91,11 @@ export function FriendsPage() {
 
         {/* Tabs */}
         <Tabs defaultValue="friends" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-5 gap-1">
             <TabsTrigger value="friends">Friends</TabsTrigger>
+            <TabsTrigger value="find">Find</TabsTrigger>
+            <TabsTrigger value="requests">Requests</TabsTrigger>
+            <TabsTrigger value="blocked">Blocked</TabsTrigger>
             <TabsTrigger value="activity">Activity</TabsTrigger>
           </TabsList>
 
@@ -102,6 +108,21 @@ export function FriendsPage() {
 
             {/* Friends List */}
             <FriendsList searchQuery={searchQuery} />
+          </TabsContent>
+
+          <TabsContent value="find" className="space-y-6">
+            {/* Friend Search Page Content */}
+            <FriendSearchPage />
+          </TabsContent>
+
+          <TabsContent value="requests" className="space-y-6">
+            {/* Friend Requests List */}
+            <FriendRequestsList />
+          </TabsContent>
+
+          <TabsContent value="blocked" className="space-y-6">
+            {/* Blocked Users List */}
+            <BlockedUsersList />
           </TabsContent>
 
           <TabsContent value="activity">

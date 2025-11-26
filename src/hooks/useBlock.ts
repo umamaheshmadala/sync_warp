@@ -14,7 +14,7 @@ import {
   UnblockUserResult,
   BlockedUser,
 } from '../services/blockService';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuthStore } from '../store/authStore';
 
 // Query keys
 export const blockQueryKeys = {
@@ -31,7 +31,7 @@ export const blockQueryKeys = {
  * Includes realtime updates
  */
 export const useBlockedUsers = () => {
-  const { user } = useAuth();
+  const user = useAuthStore((state) => state.user);
   const queryClient = useQueryClient();
 
   const query = useQuery({
@@ -61,7 +61,7 @@ export const useBlockedUsers = () => {
  * Hook to get count of blocked users
  */
 export const useBlockedUsersCount = () => {
-  const { user } = useAuth();
+  const user = useAuthStore((state) => state.user);
   const queryClient = useQueryClient();
 
   const query = useQuery({
@@ -89,7 +89,7 @@ export const useBlockedUsersCount = () => {
  * Hook to check if a specific user is blocked by current user
  */
 export const useIsBlocked = (userId: string) => {
-  const { user } = useAuth();
+  const user = useAuthStore((state) => state.user);
   const queryClient = useQueryClient();
 
   const query = useQuery({
@@ -123,7 +123,7 @@ export const useIsBlocked = (userId: string) => {
  * Hook to check if current user is blocked by another user
  */
 export const useIsBlockedBy = (userId: string) => {
-  const { user } = useAuth();
+  const user = useAuthStore((state) => state.user);
   const queryClient = useQueryClient();
 
   const query = useQuery({
@@ -157,7 +157,7 @@ export const useIsBlockedBy = (userId: string) => {
  * Hook to get blocking status (both directions) for a user
  */
 export const useBlockingStatus = (userId: string) => {
-  const { user } = useAuth();
+  const user = useAuthStore((state) => state.user);
 
   return useQuery({
     queryKey: blockQueryKeys.status(userId),
@@ -172,13 +172,13 @@ export const useBlockingStatus = (userId: string) => {
  * Includes optimistic updates and comprehensive cache invalidation
  */
 export const useBlockUser = () => {
-  const { user } = useAuth();
+  const user = useAuthStore((state) => state.user);
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ userId, reason }: { userId: string; reason?: string }) =>
       blockUser(userId, reason),
-    
+
     onMutate: async ({ userId }) => {
       // Cancel outgoing queries
       await queryClient.cancelQueries({ queryKey: blockQueryKeys.isBlocked(userId) });
@@ -195,7 +195,7 @@ export const useBlockUser = () => {
 
       // Invalidate all related queries
       queryClient.invalidateQueries({ queryKey: blockQueryKeys.all });
-      
+
       // Also invalidate friend/follow queries since blocking removes these
       queryClient.invalidateQueries({ queryKey: ['friends'] });
       queryClient.invalidateQueries({ queryKey: ['friendRequests'] });
@@ -216,8 +216,8 @@ export const useBlockUser = () => {
       const message = result.already_blocked
         ? 'User was already blocked'
         : details.length > 0
-        ? `User blocked successfully (${details.join(', ')})`
-        : 'User blocked successfully';
+          ? `User blocked successfully (${details.join(', ')})`
+          : 'User blocked successfully';
 
       toast.success(message);
     },
@@ -238,7 +238,7 @@ export const useBlockUser = () => {
  * Hook to unblock a user
  */
 export const useUnblockUser = () => {
-  const { user } = useAuth();
+  const user = useAuthStore((state) => state.user);
   const queryClient = useQueryClient();
 
   return useMutation({

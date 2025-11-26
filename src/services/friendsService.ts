@@ -261,9 +261,8 @@ export const friendsService = {
             if (!user) throw new Error('Not authenticated');
 
             const { error } = await supabase.rpc('block_user', {
-                blocker_id: user.id,
-                blocked_id: userId,
-                block_reason: reason,
+                p_blocked_user_id: userId,
+                p_reason: reason,
             });
 
             if (error) throw error;

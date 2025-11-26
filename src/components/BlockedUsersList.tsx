@@ -38,7 +38,7 @@ export const BlockedUsersList: React.FC = () => {
 
         return (
           <div
-            key={block.id}
+            key={`${block.blocker_id}-${block.blocked_id}`}
             className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 
               rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm"
           >
@@ -48,12 +48,12 @@ export const BlockedUsersList: React.FC = () => {
                 {user.avatar_url ? (
                   <img
                     src={user.avatar_url}
-                    alt={user.display_name || user.username}
+                    alt={user.full_name || user.email}
                     className="w-full h-full object-cover"
                   />
                 ) : (
                   <span className="text-lg font-semibold text-gray-600 dark:text-gray-300">
-                    {(user.display_name || user.username)?.[0]?.toUpperCase() || '?'}
+                    {(user.full_name || user.email)?.[0]?.toUpperCase() || '?'}
                   </span>
                 )}
               </div>
@@ -61,10 +61,10 @@ export const BlockedUsersList: React.FC = () => {
               {/* User info */}
               <div>
                 <p className="font-medium text-gray-900 dark:text-gray-100">
-                  {user.display_name || user.username}
+                  {user.full_name || user.email || 'Unknown User'}
                 </p>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  @{user.username}
+                  {user.email}
                 </p>
                 {block.reason && (
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -72,7 +72,7 @@ export const BlockedUsersList: React.FC = () => {
                   </p>
                 )}
                 <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                  Blocked on {new Date(block.created_at).toLocaleDateString()}
+                  Blocked on {new Date(block.blocked_at).toLocaleDateString()}
                 </p>
               </div>
             </div>

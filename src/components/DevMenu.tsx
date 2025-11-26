@@ -20,9 +20,7 @@ const DevMenu = () => {
   }
 
   const testPages = [
-    { name: '👥 Friends Page', path: '/friends' },
-    { name: '🔍 Friend Search', path: '/friends/search' },
-    { name: '📬 Friend Requests', path: '/friends/requests' },
+    { name: '👥 Social', path: '/social' },
     { name: '📱 Contact Sync Test', path: '/test/contact-sync' },
     { name: '⚡ Search Perf', path: '/test/search-performance' },
     { name: '🎁 Deal Sharing', path: '/test/deal-sharing' },
