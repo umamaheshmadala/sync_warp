@@ -31,22 +31,28 @@ export function usePrivacySettings() {
         },
     });
 
-    const { mutate: updateSetting, isPending: isUpdating } = useMutation({
-        mutationFn: async ({ key, value }: { key: keyof PrivacySettings; value: any }) => {
-            const { data, error } = await supabase.rpc('update_privacy_settings', {
-                setting_key: key,
-                setting_value: value,
-            });
+    const { mutateAsync: updateSettings, isPending: isUpdating } = useMutation({
+        mutationFn: async (newSettings: Partial<PrivacySettings>) => {
+            const promises = Object.entries(newSettings).map(([key, value]) =>
+                supabase.rpc('update_privacy_settings', {
+                    setting_key: key,
+                    setting_value: value,
+                })
+            );
 
+            const results = await Promise.all(promises);
+            const error = results.find(r => r.error)?.error;
             if (error) throw error;
-            return data;
+
+            return results.map(r => r.data);
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['privacySettings'] });
-            toast.success('Privacy settings updated');
+            // Toast handled in component for bulk update
         },
         onError: (error: any) => {
-            toast.error(error.message || 'Failed to update privacy settings');
+            // Toast handled in component
+            throw error;
         },
     });
 
@@ -54,7 +60,7 @@ export function usePrivacySettings() {
         settings,
         isLoading,
         error,
-        updateSetting,
+        updateSettings,
         isUpdating,
     };
 }

@@ -14,6 +14,37 @@ interface ServiceResponse<T> {
  */
 export const privacyService = {
     /**
+     * Update user privacy settings
+     * @param key - Setting key to update
+     * @param value - New value
+     * @returns ServiceResponse with updated settings
+     */
+    async updatePrivacySettings(key: string, value: any): Promise<ServiceResponse<any>> {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const { data, error } = await supabase.rpc('update_privacy_settings', {
+                setting_key: key,
+                setting_value: value,
+            });
+
+            if (error) throw error;
+
+            return {
+                success: true,
+                data,
+            };
+        } catch (error: any) {
+            logError('updatePrivacySettings', error, { key, value });
+            return {
+                success: false,
+                error: getUserFriendlyErrorMessage(error),
+            };
+        }
+    },
+
+    /**
      * Check if viewer can view target's profile
      * @param targetId - The profile ID to check visibility for
      * @returns ServiceResponse with boolean result

@@ -1,24 +1,21 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BlockList } from '@/components/friends/privacy/BlockList';
+import { PrivacyAuditLog } from '@/components/privacy/PrivacyAuditLog';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { ArrowLeft, Download, Shield, UserX, Save, RotateCcw, Check } from 'lucide-react';
 import { privacyService } from '@/services/privacyService';
-import { usePrivacySettings } from '@/hooks/usePrivacySettings';
+import { usePrivacySettings, PrivacySettings } from '@/hooks/usePrivacySettings';
 import { toast } from 'react-hot-toast';
 
-type FriendRequestSetting = 'everyone' | 'friends_of_friends' | 'friends';
-type ProfileVisibilitySetting = 'public' | 'friends';
-type OnlineStatusSetting = 'everyone' | 'friends' | 'no_one';
-
-const DEFAULT_SETTINGS = {
-    friend_requests: 'everyone' as FriendRequestSetting,
-    profile_visibility: 'public' as ProfileVisibilitySetting,
+const DEFAULT_SETTINGS: Partial<PrivacySettings> = {
+    friend_requests: 'everyone',
+    profile_visibility: 'public',
     search_visibility: true,
-    online_status_visibility: 'friends' as OnlineStatusSetting,
+    online_status_visibility: 'friends',
 };
 
 export function FriendsPrivacySettings() {
@@ -29,10 +26,10 @@ export function FriendsPrivacySettings() {
     const [hasChanges, setHasChanges] = useState(false);
 
     // Local state for form
-    const [friendRequests, setFriendRequests] = useState<FriendRequestSetting>('everyone');
-    const [profileVisibility, setProfileVisibility] = useState<ProfileVisibilitySetting>('public');
+    const [friendRequests, setFriendRequests] = useState<PrivacySettings['friend_requests']>('everyone');
+    const [profileVisibility, setProfileVisibility] = useState<PrivacySettings['profile_visibility']>('public');
     const [searchVisibility, setSearchVisibility] = useState(true);
-    const [onlineStatus, setOnlineStatus] = useState<OnlineStatusSetting>('friends');
+    const [onlineStatus, setOnlineStatus] = useState<PrivacySettings['online_status_visibility']>('friends');
 
     // Load settings from server
     useEffect(() => {
@@ -143,7 +140,7 @@ export function FriendsPrivacySettings() {
                                 <label className="text-sm font-medium">Who can send you friend requests?</label>
                                 <p className="text-xs text-muted-foreground">Control who can send you friend requests</p>
                             </div>
-                            <Select value={friendRequests} onValueChange={(value) => setFriendRequests(value as FriendRequestSetting)}>
+                            <Select value={friendRequests} onValueChange={(value) => setFriendRequests(value as PrivacySettings['friend_requests'])}>
                                 <SelectTrigger className="w-full">
                                     <SelectValue />
                                 </SelectTrigger>
@@ -166,12 +163,12 @@ export function FriendsPrivacySettings() {
                                             </div>
                                         </div>
                                     </SelectItem>
-                                    <SelectItem value="friends">
+                                    <SelectItem value="no_one">
                                         <div className="flex items-center gap-2">
-                                            <Check className={friendRequests === 'friends' ? 'h-4 w-4 text-primary' : 'h-4 w-4 opacity-0'} />
+                                            <Check className={friendRequests === 'no_one' ? 'h-4 w-4 text-primary' : 'h-4 w-4 opacity-0'} />
                                             <div>
-                                                <div className="font-medium">Friends Only</div>
-                                                <div className="text-xs text-muted-foreground">Only existing friends</div>
+                                                <div className="font-medium">No One</div>
+                                                <div className="text-xs text-muted-foreground">Block all requests</div>
                                             </div>
                                         </div>
                                     </SelectItem>
@@ -187,7 +184,7 @@ export function FriendsPrivacySettings() {
                                 <label className="text-sm font-medium">Who can view your profile?</label>
                                 <p className="text-xs text-muted-foreground">Control who can see your full profile</p>
                             </div>
-                            <Select value={profileVisibility} onValueChange={(value) => setProfileVisibility(value as ProfileVisibilitySetting)}>
+                            <Select value={profileVisibility} onValueChange={(value) => setProfileVisibility(value as PrivacySettings['profile_visibility'])}>
                                 <SelectTrigger className="w-full">
                                     <SelectValue />
                                 </SelectTrigger>
@@ -207,6 +204,15 @@ export function FriendsPrivacySettings() {
                                             <div>
                                                 <div className="font-medium">Friends Only</div>
                                                 <div className="text-xs text-muted-foreground">Only friends can view</div>
+                                            </div>
+                                        </div>
+                                    </SelectItem>
+                                    <SelectItem value="friends_of_friends">
+                                        <div className="flex items-center gap-2">
+                                            <Check className={profileVisibility === 'friends_of_friends' ? 'h-4 w-4 text-primary' : 'h-4 w-4 opacity-0'} />
+                                            <div>
+                                                <div className="font-medium">Friends of Friends</div>
+                                                <div className="text-xs text-muted-foreground">Friends and their friends</div>
                                             </div>
                                         </div>
                                     </SelectItem>
@@ -233,7 +239,7 @@ export function FriendsPrivacySettings() {
                                 <label className="text-sm font-medium">Who can see when you're online?</label>
                                 <p className="text-xs text-muted-foreground">Control your online status visibility</p>
                             </div>
-                            <Select value={onlineStatus} onValueChange={(value) => setOnlineStatus(value as OnlineStatusSetting)}>
+                            <Select value={onlineStatus} onValueChange={(value) => setOnlineStatus(value as PrivacySettings['online_status_visibility'])}>
                                 <SelectTrigger className="w-full">
                                     <SelectValue />
                                 </SelectTrigger>
@@ -306,6 +312,11 @@ export function FriendsPrivacySettings() {
                                 {isExporting ? 'Exporting...' : 'Download JSON'}
                             </Button>
                         </div>
+                    </div>
+
+                    {/* Privacy Audit Log */}
+                    <div className="bg-card rounded-lg border p-6">
+                        <PrivacyAuditLog />
                     </div>
                 </TabsContent>
 
