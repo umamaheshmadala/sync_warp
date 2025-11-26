@@ -26,35 +26,36 @@ export const friendsService = {
         try {
             const result = await withRetry(
                 () => friendsCircuitBreaker.execute(async () => {
-                    const { data, error } = await supabase
+                    // Step 1: Get active friendships
+                    const { data: friendships, error: friendshipError } = await supabase
                         .from('friendships')
-                        .select(`
-          id,
-          friend:profiles!friendships_friend_id_fkey (
-            id,
-            full_name,
-            username,
-            email,
-            avatar_url,
-            is_online,
-            last_active
-          )
-        `)
+                        .select('friend_id')
                         .eq('user_id', userId)
                         .eq('status', 'active')
                         .order('created_at', { ascending: false });
 
-                    if (error) throw error;
-                    return data;
+                    if (friendshipError) throw friendshipError;
+
+                    if (!friendships || friendships.length === 0) return [];
+
+                    const friendIds = friendships.map(f => f.friend_id);
+
+                    // Step 2: Get friend profiles manually
+                    const { data: profiles, error: profileError } = await supabase
+                        .from('profiles')
+                        .select('id, full_name, username, email, avatar_url, is_online, last_active')
+                        .in('id', friendIds);
+
+                    if (profileError) throw profileError;
+
+                    return profiles;
                 }),
                 { maxRetries: 2, baseDelay: 500 }
             );
 
-            const friends = result?.map((f: any) => f.friend).filter(Boolean) || [];
-
             return {
                 success: true,
-                data: friends,
+                data: result || [],
             };
         } catch (error) {
             logError('getFriends', error, { userId });

@@ -38,6 +38,7 @@ import { PYMKPage } from '../pages/PYMKPage'
 import { TestSearchFilters } from '../pages/TestSearchFilters'
 import { TestSearchPerformance } from '../pages/TestSearchPerformance'
 import { TestDealSharing } from '../pages/TestDealSharing'
+import { TestDealComments } from '../pages/TestDealComments'
 // Story 9.3.1: Friends List Component
 import { FriendsPage } from '../pages/Friends'
 // Story 9.3.2: Friend Requests UI
@@ -400,6 +401,14 @@ export const routes: RouteConfig[] = [
     protected: true,
     title: 'Profile Modal Test - SynC (STORY 9.3.3)',
     description: 'Test FriendProfileModal with mock data'
+  },
+  // Story 9.7.2: Deal Comments Test
+  {
+    path: '/test/deal-comments',
+    element: <TestDealComments />,
+    protected: true,
+    title: 'Deal Comments Test - SynC (STORY 9.7.2)',
+    description: 'Test comments with friend mentions'
   },
 
   // Epic 8.2: Messaging Routes
