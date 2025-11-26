@@ -1,6 +1,7 @@
 /**
  * Friend Picker Modal - Deal Sharing Integration
  * Story 9.2.6: Deal Sharing Integration
+ * Story 9.7.1: Enhanced with share method and custom message
  * 
  * Allows users to select friends to share deals with
  * Features:
@@ -8,10 +9,12 @@
  * - PYMK suggestions (integrates with Story 9.2.2)
  * - Recently shared with section
  * - Multi-select with checkboxes
+ * - Share method selection (message vs notification)
+ * - Optional custom message
  */
 
 import React, { useState, useEffect } from 'react';
-import { X, Search, Check, Users, Clock } from 'lucide-react';
+import { X, Search, Check, Users, Clock, MessageSquare, Bell } from 'lucide-react';
 import { useOptimizedSearch } from '../../hooks/useOptimizedSearch';
 
 interface FriendPickerModalProps {
@@ -39,6 +42,8 @@ export function FriendPickerModal({
   const [selectedFriends, setSelectedFriends] = useState<string[]>([]);
   const [isSharing, setIsSharing] = useState(false);
   const [recentlySharedWith, setRecentlySharedWith] = useState<string[]>([]);
+  const [shareMethod, setShareMethod] = useState<'message' | 'notification'>('notification');
+  const [customMessage, setCustomMessage] = useState('');
 
   // Use optimized search hook (from Story 9.2.5)
   const { data: searchData, isLoading: isSearching } = useOptimizedSearch(searchQuery);
@@ -79,7 +84,10 @@ export function FriendPickerModal({
     try {
       // Import dynamically to avoid circular dependencies
       const { shareDealWithFriends } = await import('../../services/dealService');
-      await shareDealWithFriends(dealId, selectedFriends);
+      await shareDealWithFriends(dealId, selectedFriends, {
+        shareMethod,
+        message: customMessage || undefined,
+      });
 
       // Update recently shared with
       const updated = [
@@ -90,16 +98,18 @@ export function FriendPickerModal({
       setRecentlySharedWith(updated);
 
       onSuccess?.(selectedFriends);
-      
+
       // Show success message
       const friendCount = selectedFriends.length;
       alert(`✅ Successfully shared deal with ${friendCount} friend${friendCount > 1 ? 's' : ''}!`);
-      
+
       onClose();
-      
+
       // Reset state
       setSelectedFriends([]);
       setSearchQuery('');
+      setCustomMessage('');
+      setShareMethod('notification');
     } catch (error) {
       console.error('Failed to share deal:', error);
       alert('❌ Failed to share deal. Please try again.');
@@ -111,7 +121,7 @@ export function FriendPickerModal({
   if (!isOpen) return null;
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-50 bg-black/50 flex items-end md:items-center justify-center"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
@@ -121,8 +131,8 @@ export function FriendPickerModal({
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
           <h2 className="text-lg font-semibold">Share Deal</h2>
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-full transition"
             aria-label="Close"
           >
@@ -177,8 +187,8 @@ export function FriendPickerModal({
               </h3>
               <div className="space-y-2">
                 {recentlySharedWith.map((userId) => (
-                  <FriendRowSkeleton 
-                    key={userId} 
+                  <FriendRowSkeleton
+                    key={userId}
                     userId={userId}
                     isSelected={selectedFriends.includes(userId)}
                     onToggle={() => handleToggleFriend(userId)}
@@ -228,6 +238,67 @@ export function FriendPickerModal({
           </div>
         </div>
 
+        {/* Custom Message and Share Method */}
+        <div className="p-4 border-t space-y-4">
+          {/* Custom Message */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Add a message (optional)
+            </label>
+            <textarea
+              value={customMessage}
+              onChange={(e) => setCustomMessage(e.target.value)}
+              placeholder="Say something about this deal..."
+              rows={3}
+              maxLength={500}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              {customMessage.length}/500 characters
+            </p>
+          </div>
+
+          {/* Share Method */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Share as:
+            </label>
+            <div className="space-y-2">
+              <label className="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition">
+                <input
+                  type="radio"
+                  name="shareMethod"
+                  value="notification"
+                  checked={shareMethod === 'notification'}
+                  onChange={() => setShareMethod('notification')}
+                  className="w-4 h-4 text-blue-600"
+                />
+                <Bell className="w-5 h-5 ml-3 mr-2 text-gray-600" />
+                <div className="flex-1">
+                  <p className="font-medium text-sm">Notification</p>
+                  <p className="text-xs text-gray-500">Instant notification (recommended)</p>
+                </div>
+              </label>
+
+              <label className="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition">
+                <input
+                  type="radio"
+                  name="shareMethod"
+                  value="message"
+                  checked={shareMethod === 'message'}
+                  onChange={() => setShareMethod('message')}
+                  className="w-4 h-4 text-blue-600"
+                />
+                <MessageSquare className="w-5 h-5 ml-3 mr-2 text-gray-600" />
+                <div className="flex-1">
+                  <p className="font-medium text-sm">Message</p>
+                  <p className="text-xs text-gray-500">Send in chat (coming soon)</p>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+
         {/* Footer */}
         <div className="p-4 border-t bg-white">
           <button
@@ -238,8 +309,8 @@ export function FriendPickerModal({
             {isSharing
               ? 'Sharing...'
               : selectedFriends.length === 0
-              ? 'Select friends to share'
-              : `Share with ${selectedFriends.length} friend${selectedFriends.length !== 1 ? 's' : ''}`}
+                ? 'Select friends to share'
+                : `Share with ${selectedFriends.length} friend${selectedFriends.length !== 1 ? 's' : ''}`}
           </button>
         </div>
       </div>
@@ -296,11 +367,10 @@ function FriendRow({
 
       {/* Checkbox */}
       <div
-        className={`w-6 h-6 rounded border-2 flex items-center justify-center transition ${
-          isSelected
-            ? 'bg-blue-600 border-blue-600'
-            : 'border-gray-400 bg-white'
-        }`}
+        className={`w-6 h-6 rounded border-2 flex items-center justify-center transition ${isSelected
+          ? 'bg-blue-600 border-blue-600'
+          : 'border-gray-400 bg-white'
+          }`}
       >
         {isSelected && <Check className="w-4 h-4 text-white stroke-[3]" />}
       </div>
@@ -330,11 +400,10 @@ function FriendRowSkeleton({ userId, isSelected, onToggle }: FriendRowSkeletonPr
         <div className="h-3 bg-gray-200 rounded w-24 animate-pulse" />
       </div>
       <div
-        className={`w-6 h-6 rounded border-2 flex items-center justify-center transition ${
-          isSelected
-            ? 'bg-blue-600 border-blue-600'
-            : 'border-gray-400 bg-white'
-        }`}
+        className={`w-6 h-6 rounded border-2 flex items-center justify-center transition ${isSelected
+          ? 'bg-blue-600 border-blue-600'
+          : 'border-gray-400 bg-white'
+          }`}
       >
         {isSelected && <Check className="w-4 h-4 text-white stroke-[3]" />}
       </div>
