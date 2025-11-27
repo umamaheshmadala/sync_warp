@@ -27,7 +27,7 @@ const CouponManagerPage: React.FC = () => {
   // Optimized effect to run only when businessId or user.id changes
   useEffect(() => {
     let isCancelled = false;
-    
+
     const fetchBusiness = async () => {
       if (!businessId || !user?.id) {
         setError('Business ID or user not found');
@@ -39,36 +39,72 @@ const CouponManagerPage: React.FC = () => {
         setLoading(true);
         setError(null);
 
-        const { data, error: fetchError } = await supabase
-          .from('businesses')
-          .select('id, user_id, business_name, business_type, status, verified')
-          .eq('id', businessId)
-          .single();
+        // Extract short ID from slug (format: business-name-shortid)
+        // The short ID is the last 8 characters after the last hyphen
+        const parts = businessId.split('-');
+        const lastPart = parts[parts.length - 1];
 
-        if (isCancelled) return;
+        let businessData: Business | null = null;
 
-        if (fetchError) {
-          console.error('Error fetching business:', fetchError);
-          if (fetchError.code === 'PGRST116') {
-            setError('Business not found');
-          } else {
+        // If last part is 8 hex characters, it's a short ID - query by prefix
+        if (lastPart.length === 8 && /^[a-f0-9]{8}$/i.test(lastPart)) {
+          // Query all businesses and find the one with matching UUID prefix
+          const { data: businesses, error: fetchError } = await supabase
+            .from('businesses')
+            .select('id, user_id, business_name, business_type, status, verified');
+
+          if (isCancelled) return;
+
+          if (fetchError) {
+            console.error('Error fetching businesses:', fetchError);
             setError('Failed to load business information');
+            return;
           }
-          return;
+
+          // Find the business with matching UUID prefix
+          businessData = businesses?.find(b =>
+            b.id.toLowerCase().startsWith(lastPart.toLowerCase())
+          ) || null;
+
+          if (!businessData) {
+            setError('Business not found');
+            return;
+          }
+        } else {
+          // It's a full UUID, query directly
+          const { data, error: fetchError } = await supabase
+            .from('businesses')
+            .select('id, user_id, business_name, business_type, status, verified')
+            .eq('id', businessId)
+            .single();
+
+          if (isCancelled) return;
+
+          if (fetchError) {
+            console.error('Error fetching business:', fetchError);
+            if (fetchError.code === 'PGRST116') {
+              setError('Business not found');
+            } else {
+              setError('Failed to load business information');
+            }
+            return;
+          }
+
+          businessData = data;
         }
 
-        if (!data) {
+        if (!businessData) {
           setError('Business not found');
           return;
         }
 
         // Check if user owns this business
-        if (data.user_id !== user.id) {
+        if (businessData.user_id !== user.id) {
           setError('You do not have permission to manage coupons for this business');
           return;
         }
 
-        setBusiness(data);
+        setBusiness(businessData);
       } catch (err) {
         if (!isCancelled) {
           console.error('Unexpected error:', err);
@@ -80,9 +116,9 @@ const CouponManagerPage: React.FC = () => {
         }
       }
     };
-    
+
     fetchBusiness();
-    
+
     return () => {
       isCancelled = true;
     };
@@ -153,27 +189,27 @@ const CouponManagerPage: React.FC = () => {
               >
                 <Home className="w-4 h-4" />
               </button>
-              
+
               <ChevronRight className="w-4 h-4" />
-              
+
               <button
                 onClick={handleGoToBusinessDashboard}
                 className="hover:text-gray-700 transition-colors"
               >
                 Businesses
               </button>
-              
+
               <ChevronRight className="w-4 h-4" />
-              
+
               <button
                 onClick={handleGoBack}
                 className="hover:text-gray-700 transition-colors max-w-48 truncate"
               >
                 {business.business_name}
               </button>
-              
+
               <ChevronRight className="w-4 h-4" />
-              
+
               <span className="text-gray-900 font-medium">Coupons</span>
             </nav>
 

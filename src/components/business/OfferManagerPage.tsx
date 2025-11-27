@@ -12,7 +12,7 @@ import type { Offer } from '@/types/offers';
 import toast from 'react-hot-toast';
 
 export default function OfferManagerPage() {
-  const { businessId } = useParams<{ businessId: string}>();
+  const { businessId } = useParams<{ businessId: string }>();
   const navigate = useNavigate();
   const { getBusinessUrl } = useBusinessUrl();
   const [searchParams] = useSearchParams();
@@ -42,16 +42,44 @@ export default function OfferManagerPage() {
       }
 
       try {
-        const { data, error } = await supabase
+        // Extract short ID from slug (format: business-name-shortid)
+        // The short ID is the last 8 characters after the last hyphen
+        const parts = businessId.split('-');
+        const lastPart = parts[parts.length - 1];
+
+        let query = supabase
           .from('businesses')
-          .select('user_id, business_name')
-          .eq('id', businessId)
-          .single();
+          .select('id, user_id, business_name');
 
-        if (error) throw error;
+        // If last part is 8 hex characters, it's a short ID - query by prefix
+        if (lastPart.length === 8 && /^[a-f0-9]{8}$/i.test(lastPart)) {
+          // Query businesses where UUID starts with this short ID
+          const { data: businesses, error } = await query;
 
-        setBusiness(data);
-        setIsOwner(data.user_id === user.id);
+          if (error) throw error;
+
+          // Find the business with matching UUID prefix
+          const matchingBusiness = businesses?.find(b =>
+            b.id.toLowerCase().startsWith(lastPart.toLowerCase())
+          );
+
+          if (!matchingBusiness) {
+            throw new Error('Business not found');
+          }
+
+          setBusiness(matchingBusiness);
+          setIsOwner(matchingBusiness.user_id === user.id);
+        } else {
+          // It's a full UUID, query directly
+          const { data, error } = await query
+            .eq('id', businessId)
+            .single();
+
+          if (error) throw error;
+
+          setBusiness(data);
+          setIsOwner(data.user_id === user.id);
+        }
       } catch (error) {
         console.error('Error checking ownership:', error);
         toast.error('Failed to load business information');
@@ -68,7 +96,7 @@ export default function OfferManagerPage() {
     const offerCode = searchParams.get('offer') || searchParams.get('highlight');
     if (offerCode) {
       setHighlightedOfferCode(offerCode);
-      
+
       // Fetch and open the offer in modal view
       const fetchAndOpenOffer = async () => {
         try {
@@ -90,7 +118,7 @@ export default function OfferManagerPage() {
       };
 
       fetchAndOpenOffer();
-      
+
       // Clear highlight after 5 seconds (visual feedback)
       setTimeout(() => setHighlightedOfferCode(null), 5000);
     }
@@ -190,12 +218,12 @@ export default function OfferManagerPage() {
           <OffersList
             key={refreshTrigger}
             businessId={businessId}
-            onCreateOffer={() => {}} 
-            onEditOffer={() => {}}
+            onCreateOffer={() => { }}
+            onEditOffer={() => { }}
             onViewDetails={(offer) => setViewDetailsOffer(offer)}
-            onViewAnalytics={() => {}}
-            onExtendExpiry={() => {}}
-            onDuplicate={() => {}}
+            onViewAnalytics={() => { }}
+            onExtendExpiry={() => { }}
+            onDuplicate={() => { }}
             showActions={false}
           />
         )}
