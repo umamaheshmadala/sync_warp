@@ -18,16 +18,17 @@ export async function getDealsLikedByFriends(
     limit: number = 20
 ): Promise<FriendLikedDeal[]> {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+    if (!user) {
+        console.warn('User not authenticated, returning empty deals');
+        return [];
+    }
 
-    const { data, error } = await supabase.rpc('get_deals_liked_by_friends', {
-        current_user_id: user.id,
-        limit_count: limit,
-    });
+    // Note: The RPC function doesn't accept parameters - it uses auth.uid() internally
+    const { data, error } = await supabase.rpc('get_deals_liked_by_friends');
 
     if (error) {
         console.error('Error fetching friend liked deals:', error);
-        throw error;
+        return []; // Return empty array instead of throwing to prevent component from disappearing
     }
 
     return data || [];
