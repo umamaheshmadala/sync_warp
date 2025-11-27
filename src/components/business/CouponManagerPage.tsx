@@ -33,6 +33,84 @@ const CouponManagerPage: React.FC = () => {
         setError('Business ID or user not found');
         setLoading(false);
         return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Extract short ID from slug (format: business-name-shortid)
+        // The short ID is the last 8 characters after the last hyphen
+        const parts = businessId.split('-');
+        const lastPart = parts[parts.length - 1];
+
+        let businessData: Business | null = null;
+
+        // If last part is 8 hex characters, it's a short ID - query by prefix
+        if (lastPart.length === 8 && /^[a-f0-9]{8}$/i.test(lastPart)) {
+          // Query all businesses and find the one with matching UUID prefix
+          const { data: businesses, error: fetchError } = await supabase
+            .from('businesses')
+            .select('id, user_id, business_name, business_type, status, verified');
+
+          if (isCancelled) return;
+
+          if (fetchError) {
+            console.error('Error fetching businesses:', fetchError);
+            setError('Failed to load business information');
+            return;
+          }
+
+          // Find the business with matching UUID prefix
+          businessData = businesses?.find(b =>
+            b.id.toLowerCase().startsWith(lastPart.toLowerCase())
+          ) || null;
+
+          if (!businessData) {
+            setError('Business not found');
+            return;
+          }
+        } else {
+          // It's a full UUID, query directly
+          const { data, error: fetchError } = await supabase
+            .from('businesses')
+            .select('id, user_id, business_name, business_type, status, verified')
+            .eq('id', businessId)
+            .single();
+
+          if (isCancelled) return;
+
+          if (fetchError) {
+            console.error('Error fetching business:', fetchError);
+            if (fetchError.code === 'PGRST116') {
+              setError('Business not found');
+            } else {
+              setError('Failed to load business information');
+            }
+            return;
+          }
+
+          businessData = data;
+        }
+
+        if (!businessData) {
+          setError('Business not found');
+          return;
+        }
+
+        // Check if user owns this business
+        if (businessData.user_id !== user.id) {
+          setError('You do not have permission to manage coupons for this business');
+          return;
+        }
+
+        setBusiness(businessData);
+      } catch (err) {
+        if (!isCancelled) {
+          console.error('Unexpected error:', err);
+          setError('An unexpected error occurred');
+        }
+      } finally {
         if (!isCancelled) {
           setLoading(false);
         }
@@ -96,4 +174,67 @@ const CouponManagerPage: React.FC = () => {
       </div>
     );
   }
-  export default CouponManagerPage;
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Navigation Header */}
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Breadcrumb Navigation */}
+            <nav className="flex items-center space-x-2 text-sm text-gray-500">
+              <button
+                onClick={handleGoHome}
+                className="hover:text-gray-700 transition-colors flex items-center"
+              >
+                <Home className="w-4 h-4" />
+              </button>
+
+              <ChevronRight className="w-4 h-4" />
+
+              <button
+                onClick={handleGoToBusinessDashboard}
+                className="hover:text-gray-700 transition-colors"
+              >
+                Businesses
+              </button>
+
+              <ChevronRight className="w-4 h-4" />
+
+              <button
+                onClick={handleGoBack}
+                className="hover:text-gray-700 transition-colors max-w-48 truncate"
+              >
+                {business.business_name}
+              </button>
+
+              <ChevronRight className="w-4 h-4" />
+
+              <span className="text-gray-900 font-medium">Coupons</span>
+            </nav>
+
+            {/* Back Button */}
+            <button
+              onClick={handleGoBack}
+              className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Business
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="py-6">
+        <CouponManager
+          businessId={business.id}
+          businessName={business.business_name}
+          isOwner={true} // Already verified ownership above
+        />
+      </div>
+    </div>
+  );
+};
+
+export default CouponManagerPage;

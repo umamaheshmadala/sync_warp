@@ -18,6 +18,7 @@ export default function OfferManagerPage() {
   const [searchParams] = useSearchParams();
   const { user } = useAuthStore();
   const [business, setBusiness] = useState<any>(null);
+  const [actualBusinessId, setActualBusinessId] = useState<string | null>(null);
   const [isOwner, setIsOwner] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -29,7 +30,7 @@ export default function OfferManagerPage() {
   const [highlightedOfferCode, setHighlightedOfferCode] = useState<string | null>(null);
 
   const { extendExpiry, duplicateOffer } = useOffers({
-    businessId: businessId || '',
+    businessId: actualBusinessId || '',
     autoFetch: false,
   });
 
@@ -52,29 +53,14 @@ export default function OfferManagerPage() {
         if (error) {
           // If slug query fails, try as UUID (for backward compatibility)
           const { data: uuidData, error: uuidError } = await supabase
-            .from('businesses')
-            .select('id, user_id, business_name')
-            .eq('id', businessId)
-            .single();
-
-          if (uuidError) throw uuidError;
-
-          setBusiness(uuidData);
-          setIsOwner(uuidData.user_id === user.id);
-        } else {
-          setBusiness(data);
-          setIsOwner(data.user_id === user.id);
+          toast.error('Failed to load business information');
+        } finally {
+          setLoading(false);
         }
-      } catch (error) {
-        console.error('Error checking ownership:', error);
-        toast.error('Failed to load business information');
-      } finally {
-        setLoading(false);
-      }
-    };
+      };
 
-    checkOwnership();
-  }, [businessId, user]);
+      checkOwnership();
+    }, [businessId, user]);
 
   // Handle offer highlight/open from URL (notification clicks)
   useEffect(() => {
@@ -177,7 +163,7 @@ export default function OfferManagerPage() {
           /* Owner View: Full management with OffersList */
           <OffersList
             key={refreshTrigger}
-            businessId={businessId}
+            businessId={actualBusinessId || ''}
             onCreateOffer={() => {
               setEditingOfferId(null);
               setShowCreateForm(true);
@@ -220,7 +206,7 @@ export default function OfferManagerPage() {
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <CreateOfferForm
-                businessId={businessId}
+                businessId={actualBusinessId || ''}
                 userId={user.id}
                 offerId={editingOfferId || undefined}
                 onComplete={() => {
