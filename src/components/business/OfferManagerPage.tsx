@@ -86,9 +86,10 @@ export default function OfferManagerPage() {
       } finally {
         setLoading(false);
       }
+    };
 
-      checkOwnership();
-    }, [businessId, user]);
+    checkOwnership();
+  }, [businessId, user]);
 
   // Handle offer highlight/open from URL (notification clicks)
   useEffect(() => {
