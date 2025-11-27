@@ -80,11 +80,9 @@ export function FriendLikedDealsSection() {
                             <p className="text-sm text-gray-600 mb-3 line-clamp-2">{deal.description}</p>
 
                             <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    {deal.original_price && (
-                                        <span className="text-sm text-gray-400 line-through">${deal.original_price}</span>
-                                    )}
-                                    <span className="text-lg font-bold text-indigo-600">${deal.price}</span>
+                                <div className="flex items-center gap-2 text-sm text-gray-500">
+                                    <Heart className="w-4 h-4 text-red-500 fill-red-500" />
+                                    <span>{deal.likes_by_friends} {deal.likes_by_friends === 1 ? 'friend' : 'friends'}</span>
                                 </div>
                                 <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-indigo-600 transition-colors" />
                             </div>
