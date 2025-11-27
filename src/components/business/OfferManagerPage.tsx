@@ -42,41 +42,26 @@ export default function OfferManagerPage() {
       }
 
       try {
-        // Extract short ID from slug (format: business-name-shortid)
-        // The short ID is the last 8 characters after the last hyphen
-        const parts = businessId.split('-');
-        const lastPart = parts[parts.length - 1];
-
-        let query = supabase
+        // Query business by slug
+        const { data, error } = await supabase
           .from('businesses')
-          .select('id, user_id, business_name');
+          .select('id, user_id, business_name')
+          .eq('slug', businessId)
+          .single();
 
-        // If last part is 8 hex characters, it's a short ID - query by prefix
-        if (lastPart.length === 8 && /^[a-f0-9]{8}$/i.test(lastPart)) {
-          // Query businesses where UUID starts with this short ID
-          const { data: businesses, error } = await query;
-
-          if (error) throw error;
-
-          // Find the business with matching UUID prefix
-          const matchingBusiness = businesses?.find(b =>
-            b.id.toLowerCase().startsWith(lastPart.toLowerCase())
-          );
-
-          if (!matchingBusiness) {
-            throw new Error('Business not found');
-          }
-
-          setBusiness(matchingBusiness);
-          setIsOwner(matchingBusiness.user_id === user.id);
-        } else {
-          // It's a full UUID, query directly
-          const { data, error } = await query
+        if (error) {
+          // If slug query fails, try as UUID (for backward compatibility)
+          const { data: uuidData, error: uuidError } = await supabase
+            .from('businesses')
+            .select('id, user_id, business_name')
             .eq('id', businessId)
             .single();
 
-          if (error) throw error;
+          if (uuidError) throw uuidError;
 
+          setBusiness(uuidData);
+          setIsOwner(uuidData.user_id === user.id);
+        } else {
           setBusiness(data);
           setIsOwner(data.user_id === user.id);
         }
