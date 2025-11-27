@@ -51,13 +51,41 @@ export default function OfferManagerPage() {
           .single();
 
         if (error) {
+          console.warn('Slug query failed:', error);
+
+          // Only try fallback if businessId looks like a UUID
+          const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+          if (!uuidRegex.test(businessId)) {
+            toast.error('Failed to load business information');
+            return;
+          }
+
           // If slug query fails, try as UUID (for backward compatibility)
           const { data: uuidData, error: uuidError } = await supabase
-          toast.error('Failed to load business information');
-        } finally {
-          setLoading(false);
+            .from('businesses')
+            .select('id, user_id, business_name')
+            .eq('id', businessId)
+            .single();
+
+          if (uuidError) {
+            toast.error('Failed to load business information');
+            return;
+          }
+
+          setActualBusinessId(uuidData.id);
+          setBusiness(uuidData);
+          setIsOwner(uuidData.user_id === user.id);
+        } else {
+          setActualBusinessId(data.id);
+          setBusiness(data);
+          setIsOwner(data.user_id === user.id);
         }
-      };
+      } catch (err) {
+        console.error('Error loading business:', err);
+        toast.error('Failed to load business information');
+      } finally {
+        setLoading(false);
+      }
 
       checkOwnership();
     }, [businessId, user]);

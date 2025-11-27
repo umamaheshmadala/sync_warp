@@ -39,40 +39,30 @@ const CouponManagerPage: React.FC = () => {
         setLoading(true);
         setError(null);
 
-        // Extract short ID from slug (format: business-name-shortid)
-        // The short ID is the last 8 characters after the last hyphen
-        const parts = businessId.split('-');
-        const lastPart = parts[parts.length - 1];
+        // Query business by slug
+        const { data, error: fetchError } = await supabase
+          .from('businesses')
+          .select('id, user_id, business_name, business_type, status, verified')
+          .eq('slug', businessId)
+          .single();
+
+        if (isCancelled) return;
 
         let businessData: Business | null = null;
 
-        // If last part is 8 hex characters, it's a short ID - query by prefix
-        if (lastPart.length === 8 && /^[a-f0-9]{8}$/i.test(lastPart)) {
-          // Query all businesses and find the one with matching UUID prefix
-          const { data: businesses, error: fetchError } = await supabase
-            .from('businesses')
-            .select('id, user_id, business_name, business_type, status, verified');
+        if (fetchError) {
+          console.warn('Slug query failed:', fetchError);
 
-          if (isCancelled) return;
-
-          if (fetchError) {
-            console.error('Error fetching businesses:', fetchError);
-            setError('Failed to load business information');
-            return;
-          }
-
-          // Find the business with matching UUID prefix
-          businessData = businesses?.find(b =>
-            b.id.toLowerCase().startsWith(lastPart.toLowerCase())
-          ) || null;
-
-          if (!businessData) {
+          // Only try fallback if businessId looks like a UUID
+          const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+          if (!uuidRegex.test(businessId)) {
             setError('Business not found');
+            setLoading(false);
             return;
           }
-        } else {
-          // It's a full UUID, query directly
-          const { data, error: fetchError } = await supabase
+
+          // If slug query fails, try as UUID (for backward compatibility)
+          const { data: uuidData, error: uuidError } = await supabase
             .from('businesses')
             .select('id, user_id, business_name, business_type, status, verified')
             .eq('id', businessId)
@@ -80,9 +70,9 @@ const CouponManagerPage: React.FC = () => {
 
           if (isCancelled) return;
 
-          if (fetchError) {
-            console.error('Error fetching business:', fetchError);
-            if (fetchError.code === 'PGRST116') {
+          if (uuidError) {
+            console.error('Error fetching business:', uuidError);
+            if (uuidError.code === 'PGRST116') {
               setError('Business not found');
             } else {
               setError('Failed to load business information');
@@ -90,6 +80,8 @@ const CouponManagerPage: React.FC = () => {
             return;
           }
 
+          businessData = uuidData;
+        } else {
           businessData = data;
         }
 
