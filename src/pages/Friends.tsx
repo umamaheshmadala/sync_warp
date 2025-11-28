@@ -20,6 +20,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useRealtimeOnlineStatus } from '../hooks/friends/useRealtimeOnlineStatus';
 
 import { PYMKCarousel } from '../components/pymk/PYMKCarousel';
+import { FriendLeaderboard } from '../components/friends/FriendLeaderboard';
 
 export function FriendsPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -105,6 +106,9 @@ export function FriendsPage() {
 
             {/* People You May Know */}
             <PYMKCarousel />
+
+            {/* Friend Leaderboard */}
+            <FriendLeaderboard />
 
             {/* Friends List */}
             <FriendsList searchQuery={searchQuery} />
