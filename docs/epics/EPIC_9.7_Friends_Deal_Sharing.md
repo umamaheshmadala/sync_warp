@@ -4,7 +4,7 @@
 **Stakeholders:** Product, UX/UI, QA  
 **Dependencies:** Epic 9.3 (UI), Epic 9.4 (Services)  
 **Timeline:** Week 8 (1 week)  
-**Status:** 🚧 In Progress (3/6 stories complete)
+**Status:** 🚧 In Progress (4/6 stories complete)
 **Last Updated:** 2025-11-28
 
 ---
@@ -245,19 +245,28 @@ export function CommentInput({ dealId }: { dealId: string }) {
 
 ---
 
-### **STORY 9.7.3: Friend-Based Deal Recommendations** ⏱️ 1 day
+### **STORY 9.7.3: Friend-Based Deal Recommendations** ⏱️ 1 day ✅ COMPLETE
 **Priority:** 🔴 Critical  
-**MCP Usage:** 🛢 Supabase MCP
+**MCP Usage:** 🛢 Supabase MCP  
+**Status:** ✅ Complete (2025-11-27)
 
 **Description:**  
 Show "Deals your friends liked" section on home page.
 
 **Acceptance Criteria:**
-- [ ] Algorithm: friends' recent likes/saves (last 7 days)
-- [ ] Display friend avatars on deal cards
-- [ ] Tooltip: "Liked by John, Sarah, +2 others"
-- [ ] Sort by # of friends who liked
-- [ ] Real-time updates when friends like deals
+- [x] Algorithm: friends' likes/saves from last 7 days
+- [x] Display friend avatars on deal cards
+- [x] Tooltip showing which friends liked
+- [x] Sort by number of friends who liked
+- [x] Real-time updates when friends like deals
+- [x] Integrated into Dashboard
+
+**Implementation Notes:**
+- Uses `offers` table (not `deals`)
+- Uses `favorites` table (not `user_likes`)
+- RPC function: `get_deals_liked_by_friends()`
+- Component: `FriendLikedDealsSection.tsx`
+- Multiple bug fixes completed and verified
 
 **Technical Spec:**
 ```sql
