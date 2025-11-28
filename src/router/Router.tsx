@@ -40,13 +40,14 @@ import TestProfileModal from '../pages/TestProfileModal'
 // Story 9.5.6: Privacy Dashboard
 import { FriendsPrivacySettings } from '../pages/settings/FriendsPrivacySettings'
 import NotificationSettings from '../pages/settings/NotificationSettings'
+
 // Story 9.6.2: Activity Feed UI
 import TestActivityFeed from '../pages/TestActivityFeed'
 import { TestSearchFilters } from '../pages/TestSearchFilters'
 import { TestDealComments } from '../pages/TestDealComments'
 import ShareDealDemo from '../pages/ShareDealDemo'
+import SharingAnalyticsDemo from '../pages/SharingAnalyticsDemo'
 import { TestSearchPerformance } from '../pages/TestSearchPerformance'
-
 
 // Import messaging components (Epic 8.2)
 import { ConversationListPage } from '../components/messaging/ConversationListPage'
@@ -392,6 +393,14 @@ export const routes: RouteConfig[] = [
     title: 'ShareDeal Component Test - SynC (STORY 9.7.5)',
     description: 'Test unified ShareDeal component with Friends, Link, and Email tabs'
   },
+  // Story 9.7.6: Sharing Analytics
+  {
+    path: '/test/sharing-analytics',
+    element: <SharingAnalyticsDemo />,
+    protected: true,
+    title: 'Sharing Analytics - SynC (STORY 9.7.6)',
+    description: 'View deal sharing analytics and engagement metrics'
+  },
   // Story 9.3.3: Friend Profile Modal Test
   {
     path: '/test/profile-modal',
@@ -530,6 +539,7 @@ export const routes: RouteConfig[] = [
     title: 'Followers - SynC',
     description: 'View and manage your followers'
   },
+
   // Story 4.7: Product Detail Routes (customer-facing)
   {
     path: '/business/:businessId/product/:productId',

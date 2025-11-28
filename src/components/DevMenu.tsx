@@ -24,9 +24,9 @@ const DevMenu = () => {
     { name: '📱 Contact Sync Test', path: '/test/contact-sync' },
     { name: '⚡ Search Perf', path: '/test/search-performance' },
     { name: '🎁 Share Deal (9.7.5)', path: '/test/share-deal' },
+    { name: '📊 Sharing Analytics (9.7.6)', path: '/test/sharing-analytics' },
     { name: '👤 Profile Modal', path: '/test/profile-modal' },
     { name: '📰 Activity Feed', path: '/test/activity-feed' },
-    { name: 'Storage Test (8.1.3)', path: '/test/storage' },
   ]
 
   // Build timestamp for identification (IST)

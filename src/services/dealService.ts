@@ -167,3 +167,21 @@ export async function getDealSharingStats(dealId: string): Promise<{
     recentShares,
   };
 }
+
+/**
+ * Get deal details by ID
+ */
+export async function getDealById(dealId: string): Promise<any> {
+  const { data, error } = await supabase
+    .from('offers')
+    .select('*')
+    .eq('id', dealId)
+    .single();
+
+  if (error) {
+    console.error('Failed to fetch deal:', error);
+    return null;
+  }
+
+  return data;
+}

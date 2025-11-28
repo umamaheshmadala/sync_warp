@@ -1,7 +1,8 @@
 // src/components/business/FeaturedOffers.tsx
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Tag, ChevronRight, Calendar, TrendingUp, X } from 'lucide-react';
+import { Tag, ChevronRight, Calendar, TrendingUp, X, Heart } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { supabase } from '@/lib/supabase';
 import type { Offer } from '@/types/offers';
 import { useBusinessUrl } from '@/hooks/useBusinessUrl';
@@ -11,9 +12,17 @@ interface FeaturedOffersProps {
   businessId: string;
   businessName: string;
   isOwner: boolean;
+  initialOfferId?: string | null;
+  shareId?: string | null;
 }
 
-export default function FeaturedOffers({ businessId, businessName, isOwner }: FeaturedOffersProps) {
+export default function FeaturedOffers({
+  businessId,
+  businessName,
+  isOwner,
+  initialOfferId,
+  shareId
+}: FeaturedOffersProps) {
   const navigate = useNavigate();
   const { getBusinessUrl } = useBusinessUrl();
   const [offers, setOffers] = useState<Offer[]>([]);
@@ -24,6 +33,49 @@ export default function FeaturedOffers({ businessId, businessName, isOwner }: Fe
   useEffect(() => {
     fetchOffers();
   }, [businessId]);
+
+  // Handle deep linking to specific offer
+  useEffect(() => {
+    const handleDeepLink = async () => {
+      if (initialOfferId) {
+        // Check if offer is already in the list
+        const existingOffer = offers.find(o => o.id === initialOfferId);
+
+        if (existingOffer) {
+          setSelectedOffer(existingOffer);
+          handleShareTracking();
+        } else {
+          // Fetch specific offer if not in list
+          try {
+            const { data, error } = await supabase
+              .from('offers')
+              .select('*')
+              .eq('id', initialOfferId)
+              .single();
+
+            if (data && !error) {
+              setSelectedOffer(data);
+              handleShareTracking();
+            }
+          } catch (err) {
+            console.error('Error fetching deep linked offer:', err);
+          }
+        }
+      }
+    };
+
+    if (!loading) {
+      handleDeepLink();
+    }
+  }, [initialOfferId, loading, offers]);
+
+  const handleShareTracking = async () => {
+    if (shareId && initialOfferId) {
+      // Import dynamically to avoid circular dependencies if any
+      const { trackShareClick } = await import('@/services/analyticsService');
+      trackShareClick(shareId, initialOfferId);
+    }
+  };
 
   const fetchOffers = async () => {
     try {
@@ -216,9 +268,28 @@ export default function FeaturedOffers({ businessId, businessName, isOwner }: Fe
               </div>
 
               {/* Share Section */}
-              <div className="pt-4 border-t border-gray-100">
-                <h4 className="text-sm font-semibold text-gray-700 mb-3">Share this Offer</h4>
-                <ShareDeal deal={selectedOffer} variant="default" size="default" />
+              <div className="pt-4 border-t border-gray-100 flex justify-between items-center">
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3">Share this Offer</h4>
+                  <ShareDeal deal={selectedOffer} variant="default" size="default" />
+                </div>
+
+                {/* Save Deal Button */}
+                {!isOwner && (
+                  <button
+                    onClick={async () => {
+                      toast.success('Deal saved!');
+                      if (shareId && initialOfferId === selectedOffer.id) {
+                        const { trackShareConversion } = await import('@/services/analyticsService');
+                        trackShareConversion(shareId, selectedOffer.id, 'save');
+                      }
+                    }}
+                    className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                  >
+                    <Heart className="w-4 h-4 mr-2" />
+                    Save Deal
+                  </button>
+                )}
               </div>
 
               {/* Stats */}
