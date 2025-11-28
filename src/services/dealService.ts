@@ -52,18 +52,18 @@ export async function shareDealWithFriends(
   const senderName = profile?.full_name || 'A friend';
   console.log('Sender name:', senderName);
 
-  // Get deal details for sharing
-  const { data: deal, error: dealError } = await supabase
-    .from('deals')
+  // Get offer details for sharing (using offers table, not deals)
+  const { data: offer, error: offerError } = await supabase
+    .from('offers')
     .select('title')
     .eq('id', dealId)
     .single();
 
-  if (dealError) {
-    console.error('Failed to fetch deal:', dealError);
+  if (offerError) {
+    console.error('Failed to fetch offer:', offerError);
   }
 
-  const dealTitle = deal?.title || 'a deal';
+  const dealTitle = offer?.title || 'a deal';
 
   // Share with each friend based on method
   const sharePromises = friendIds.map(async (friendId) => {
