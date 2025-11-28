@@ -227,7 +227,7 @@ export function FriendPickerModal({
           )}
 
           {/* Recently Shared With */}
-          {!searchQuery && recentlySharedUsers.length > 0 && (
+          {!searchQuery && (isLoadingRecent || recentlySharedUsers.length > 0) && (
             <div className="p-4 border-b">
               <h3 className="flex items-center text-sm font-semibold text-gray-900 mb-3">
                 <Clock className="w-4 h-4 mr-2" />
