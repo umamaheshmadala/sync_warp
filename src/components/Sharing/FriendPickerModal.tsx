@@ -42,6 +42,8 @@ export function FriendPickerModal({
   const [selectedFriends, setSelectedFriends] = useState<string[]>([]);
   const [isSharing, setIsSharing] = useState(false);
   const [recentlySharedWith, setRecentlySharedWith] = useState<string[]>([]);
+  const [recentlySharedUsers, setRecentlySharedUsers] = useState<Friend[]>([]);
+  const [isLoadingRecent, setIsLoadingRecent] = useState(false);
   const [shareMethod, setShareMethod] = useState<'message' | 'notification'>('notification');
   const [customMessage, setCustomMessage] = useState('');
 
@@ -59,6 +61,52 @@ export function FriendPickerModal({
       console.error('Failed to load recently shared with:', error);
     }
   }, []);
+
+  // Fetch user data for recently shared IDs
+  useEffect(() => {
+    const fetchRecentUsers = async () => {
+      if (recentlySharedWith.length === 0) return;
+
+      setIsLoadingRecent(true);
+      try {
+        const { supabase } = await import('../../lib/supabase');
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('user_id, full_name, username, avatar_url, city')
+          .in('user_id', recentlySharedWith);
+
+        if (error) throw error;
+
+        // Map to Friend format and maintain order from recentlySharedWith
+        const usersMap = new Map<string, Friend>();
+        data?.forEach(u => {
+          usersMap.set(u.user_id, {
+            userId: u.user_id,
+            fullName: u.full_name,
+            username: u.username,
+            avatarUrl: u.avatar_url || undefined,
+            subtitle: u.city || undefined,
+          });
+        });
+
+        const orderedUsers: Friend[] = [];
+        for (const id of recentlySharedWith) {
+          const user = usersMap.get(id);
+          if (user) {
+            orderedUsers.push(user);
+          }
+        }
+
+        setRecentlySharedUsers(orderedUsers);
+      } catch (error) {
+        console.error('Failed to fetch recent users:', error);
+      } finally {
+        setIsLoadingRecent(false);
+      }
+    };
+
+    fetchRecentUsers();
+  }, [recentlySharedWith]);
 
   // Transform search results to Friend format
   const searchResults: Friend[] = searchData?.results.map(result => ({
@@ -179,22 +227,40 @@ export function FriendPickerModal({
           )}
 
           {/* Recently Shared With */}
-          {!searchQuery && recentlySharedWith.length > 0 && (
+          {!searchQuery && recentlySharedUsers.length > 0 && (
             <div className="p-4 border-b">
               <h3 className="flex items-center text-sm font-semibold text-gray-900 mb-3">
                 <Clock className="w-4 h-4 mr-2" />
                 Recently Shared With
               </h3>
-              <div className="space-y-2">
-                {recentlySharedWith.map((userId) => (
-                  <FriendRowSkeleton
-                    key={userId}
-                    userId={userId}
-                    isSelected={selectedFriends.includes(userId)}
-                    onToggle={() => handleToggleFriend(userId)}
-                  />
-                ))}
-              </div>
+              {isLoadingRecent ? (
+                <div className="space-y-2">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center gap-3 p-2">
+                      <div className="w-12 h-12 rounded-full bg-gray-200 animate-pulse" />
+                      <div className="flex-1">
+                        <div className="h-4 bg-gray-200 rounded w-32 mb-2 animate-pulse" />
+                        <div className="h-3 bg-gray-200 rounded w-24 animate-pulse" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {recentlySharedUsers.map((user) => (
+                    <FriendRow
+                      key={user.userId}
+                      userId={user.userId}
+                      name={user.fullName}
+                      username={user.username}
+                      avatarUrl={user.avatarUrl}
+                      subtitle={user.subtitle}
+                      isSelected={selectedFriends.includes(user.userId)}
+                      onToggle={() => handleToggleFriend(user.userId)}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
