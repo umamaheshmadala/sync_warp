@@ -31,6 +31,10 @@ import CampaignAnalyticsPage from '../components/business/CampaignAnalyticsPage'
 // Import product components (Story 4.7)
 import { ProductDetails, AllProducts } from '../components/products'
 
+import { FriendsPage } from '../pages/Friends'
+import { FriendSearchPage } from '../pages/FriendSearchPage'
+import { PYMKPage } from '../pages/PYMKPage'
+import FriendsManagementPage from '../components/FriendsManagementPage'
 import { FriendRequestsList } from '../components/friends/FriendRequestsList'
 import TestProfileModal from '../pages/TestProfileModal'
 // Story 9.5.6: Privacy Dashboard
