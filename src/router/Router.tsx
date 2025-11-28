@@ -45,7 +45,7 @@ import TestActivityFeed from '../pages/TestActivityFeed'
 import { TestSearchFilters } from '../pages/TestSearchFilters'
 import { TestDealComments } from '../pages/TestDealComments'
 import ShareDealDemo from '../pages/ShareDealDemo'
-import TestSearchPerformance from '../pages/TestSearchPerformance'
+import { TestSearchPerformance } from '../pages/TestSearchPerformance'
 
 
 // Import messaging components (Epic 8.2)
