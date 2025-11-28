@@ -14,8 +14,9 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { X, Search, Check, Users, Clock, MessageSquare, Bell } from 'lucide-react';
+import { X, Search, Check, Users, Clock, MessageSquare, Bell, Plus } from 'lucide-react';
 import { useOptimizedSearch } from '../../hooks/useOptimizedSearch';
+import { useFriends } from '../../hooks/friends/useFriends';
 
 interface FriendPickerModalProps {
   dealId: string;
@@ -46,9 +47,13 @@ export function FriendPickerModal({
   const [isLoadingRecent, setIsLoadingRecent] = useState(false);
   const [shareMethod, setShareMethod] = useState<'message' | 'notification'>('notification');
   const [customMessage, setCustomMessage] = useState('');
+  const [showMessageInput, setShowMessageInput] = useState(false);
 
   // Use optimized search hook (from Story 9.2.5)
   const { data: searchData, isLoading: isSearching } = useOptimizedSearch(searchQuery);
+
+  // Use friends hook to get all friends
+  const { data: friendsResponse, isLoading: loadingAllFriends } = useFriends();
 
   // Load recently shared with from localStorage
   useEffect(() => {
@@ -129,6 +134,22 @@ export function FriendPickerModal({
     subtitle: result.location || undefined,
   })) || [];
 
+  // Transform all friends data to Friend format
+  // friendsResponse is ServiceResponse<Friend[]>, so we need to access .data
+  const allFriends: Friend[] = friendsResponse?.success && Array.isArray(friendsResponse.data)
+    ? friendsResponse.data.map((profile: any) => ({
+      userId: profile.id,
+      fullName: profile.full_name,
+      username: profile.username,
+      avatarUrl: profile.avatar_url || undefined,
+      subtitle: undefined,
+    }))
+    : [];
+
+  // Display friends based on search query
+  const displayFriends = searchQuery ? searchResults : allFriends;
+  const isLoadingFriends = searchQuery ? isSearching : loadingAllFriends;
+
   const handleToggleFriend = (userId: string) => {
     setSelectedFriends((prev) =>
       prev.includes(userId)
@@ -169,6 +190,7 @@ export function FriendPickerModal({
       setSelectedFriends([]);
       setSearchQuery('');
       setCustomMessage('');
+      setShowMessageInput(false);
       setShareMethod('notification');
     } catch (error) {
       console.error('Failed to share deal:', error);
@@ -286,23 +308,23 @@ export function FriendPickerModal({
             <h3 className="text-sm font-semibold text-gray-900 mb-3">
               {searchQuery ? 'Search Results' : 'All Friends'}
             </h3>
-            {isSearching ? (
+            {isLoadingFriends ? (
               <div className="text-center py-8 text-gray-500">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="mt-2">Searching...</p>
+                <p className="mt-2">Loading...</p>
               </div>
-            ) : searchResults.length > 0 ? (
+            ) : displayFriends.length > 0 ? (
               <div className="space-y-2">
-                {searchResults.map((result) => (
+                {displayFriends.map((friend) => (
                   <FriendRow
-                    key={result.userId}
-                    userId={result.userId}
-                    name={result.fullName}
-                    username={result.username}
-                    avatarUrl={result.avatarUrl}
-                    subtitle={result.subtitle}
-                    isSelected={selectedFriends.includes(result.userId)}
-                    onToggle={() => handleToggleFriend(result.userId)}
+                    key={friend.userId}
+                    userId={friend.userId}
+                    name={friend.fullName}
+                    username={friend.username}
+                    avatarUrl={friend.avatarUrl}
+                    subtitle={friend.subtitle}
+                    isSelected={selectedFriends.includes(friend.userId)}
+                    onToggle={() => handleToggleFriend(friend.userId)}
                   />
                 ))}
               </div>
@@ -321,63 +343,70 @@ export function FriendPickerModal({
           </div>
         </div>
 
+
         {/* Custom Message and Share Method */}
-        <div className="p-4 border-t space-y-4">
-          {/* Custom Message */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+        <div className="p-4 border-t space-y-3">
+          {/* Collapsible Custom Message */}
+          {!showMessageInput ? (
+            <button
+              onClick={() => setShowMessageInput(true)}
+              className="flex items-center text-sm text-blue-600 hover:text-blue-700 font-medium"
+            >
+              <Plus className="w-4 h-4 mr-1" />
               Add a message (optional)
-            </label>
-            <textarea
-              value={customMessage}
-              onChange={(e) => setCustomMessage(e.target.value)}
-              placeholder="Say something about this deal..."
-              rows={3}
-              maxLength={500}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              {customMessage.length}/500 characters
-            </p>
-          </div>
+            </button>
+          ) : (
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Add a message
+                </label>
+                <button
+                  onClick={() => {
+                    setShowMessageInput(false);
+                    setCustomMessage('');
+                  }}
+                  className="text-xs text-gray-500 hover:text-gray-700"
+                >
+                  Cancel
+                </button>
+              </div>
+              <textarea
+                value={customMessage}
+                onChange={(e) => setCustomMessage(e.target.value)}
+                placeholder="Say something about this deal..."
+                rows={3}
+                maxLength={500}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                {customMessage.length}/500 characters
+              </p>
+            </div>
+          )}
 
-          {/* Share Method */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Share as:
-            </label>
-            <div className="space-y-2">
-              <label className="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition">
-                <input
-                  type="radio"
-                  name="shareMethod"
-                  value="notification"
-                  checked={shareMethod === 'notification'}
-                  onChange={() => setShareMethod('notification')}
-                  className="w-4 h-4 text-blue-600"
-                />
-                <Bell className="w-5 h-5 ml-3 mr-2 text-gray-600" />
-                <div className="flex-1">
-                  <p className="font-medium text-sm">Notification</p>
-                  <p className="text-xs text-gray-500">Instant notification (recommended)</p>
-                </div>
-              </label>
-
-              <label className="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition">
-                <input
-                  type="radio"
-                  name="shareMethod"
-                  value="message"
-                  checked={shareMethod === 'message'}
-                  onChange={() => setShareMethod('message')}
-                  className="w-4 h-4 text-blue-600"
-                />
-                <MessageSquare className="w-5 h-5 ml-3 mr-2 text-gray-600" />
-                <div className="flex-1">
-                  <p className="font-medium text-sm">Message</p>
-                  <p className="text-xs text-gray-500">Send in chat (coming soon)</p>
-                </div>
-              </label>
+          {/* Icon-based Share Method */}
+          <div className="flex items-center gap-3">
+            <label className="text-sm font-medium text-gray-700">Share as:</label>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShareMethod('notification')}
+                className={`p-3 rounded-lg transition ${shareMethod === 'notification'
+                    ? 'bg-blue-100 text-blue-600'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                title="Notification (recommended)"
+              >
+                <Bell className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setShareMethod('message')}
+                className="p-3 rounded-lg bg-gray-100 text-gray-400 opacity-50 cursor-not-allowed"
+                disabled
+                title="Message (coming soon)"
+              >
+                <MessageSquare className="w-5 h-5" />
+              </button>
             </div>
           </div>
         </div>
