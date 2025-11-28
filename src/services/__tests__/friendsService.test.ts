@@ -2,11 +2,7 @@
  * Comprehensive Unit Tests for friendsService
  * Story 9.8.1: Unit Tests - Services & Database Functions
  * 
- * Coverage:
- * - All 20+ service functions
- * - Edge cases (errors, validation, offline)
- * - Retry logic and circuit breaker
- * - Offline queue integration
+ * Fixed to properly handle Supabase query chaining and multiple calls
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
@@ -75,14 +71,22 @@ describe('friendsService', () => {
                 createMockFriend({ id: 'friend-2', full_name: 'Jane Smith' }),
             ];
 
-            (supabase.from as any).mockReturnValueOnce({
+            // First call: get friendships
+            const friendshipsQuery = {
                 select: vi.fn().mockReturnThis(),
                 eq: vi.fn().mockReturnThis(),
                 order: vi.fn().mockResolvedValue({ data: mockFriendships, error: null }),
-            }).mockReturnValueOnce({
+            };
+
+            // Second call: get profiles
+            const profilesQuery = {
                 select: vi.fn().mockReturnThis(),
                 in: vi.fn().mockResolvedValue({ data: mockProfiles, error: null }),
-            });
+            };
+
+            (supabase.from as any)
+                .mockReturnValueOnce(friendshipsQuery)
+                .mockReturnValueOnce(profilesQuery);
 
             const result = await friendsService.getFriends('user-123');
 
@@ -92,11 +96,13 @@ describe('friendsService', () => {
         });
 
         it('should return empty array when no friends', async () => {
-            (supabase.from as any).mockReturnValue({
+            const friendshipsQuery = {
                 select: vi.fn().mockReturnThis(),
                 eq: vi.fn().mockReturnThis(),
                 order: vi.fn().mockResolvedValue({ data: [], error: null }),
-            });
+            };
+
+            (supabase.from as any).mockReturnValue(friendshipsQuery);
 
             const result = await friendsService.getFriends('user-123');
 
@@ -105,14 +111,16 @@ describe('friendsService', () => {
         });
 
         it('should handle database errors', async () => {
-            (supabase.from as any).mockReturnValue({
+            const friendshipsQuery = {
                 select: vi.fn().mockReturnThis(),
                 eq: vi.fn().mockReturnThis(),
                 order: vi.fn().mockResolvedValue({
                     data: null,
                     error: { message: 'Database error' },
                 }),
-            });
+            };
+
+            (supabase.from as any).mockReturnValue(friendshipsQuery);
 
             const result = await friendsService.getFriends('user-123');
 
@@ -128,11 +136,14 @@ describe('friendsService', () => {
             // Mock privacy check
             (supabase.rpc as any).mockResolvedValueOnce({ data: true, error: null });
 
-            (supabase.from as any).mockReturnValue({
+            // Mock insert
+            const insertQuery = {
                 insert: vi.fn().mockReturnThis(),
                 select: vi.fn().mockReturnThis(),
                 single: vi.fn().mockResolvedValue({ data: mockRequest, error: null }),
-            });
+            };
+
+            (supabase.from as any).mockReturnValue(insertQuery);
 
             const result = await friendsService.sendFriendRequest('user-456', 'Hello!');
 
@@ -165,14 +176,17 @@ describe('friendsService', () => {
 
         it('should handle database errors', async () => {
             (supabase.rpc as any).mockResolvedValueOnce({ data: true, error: null });
-            (supabase.from as any).mockReturnValue({
+
+            const insertQuery = {
                 insert: vi.fn().mockReturnThis(),
                 select: vi.fn().mockReturnThis(),
                 single: vi.fn().mockResolvedValue({
                     data: null,
                     error: { message: 'Database error' },
                 }),
-            });
+            };
+
+            (supabase.from as any).mockReturnValue(insertQuery);
 
             const result = await friendsService.sendFriendRequest('user-456');
 
@@ -207,10 +221,12 @@ describe('friendsService', () => {
 
     describe('rejectFriendRequest', () => {
         it('should reject friend request successfully', async () => {
-            (supabase.from as any).mockReturnValue({
+            const updateQuery = {
                 update: vi.fn().mockReturnThis(),
                 eq: vi.fn().mockResolvedValue({ error: null }),
-            });
+            };
+
+            (supabase.from as any).mockReturnValue(updateQuery);
 
             const result = await friendsService.rejectFriendRequest('request-1');
 
@@ -218,12 +234,14 @@ describe('friendsService', () => {
         });
 
         it('should handle database errors', async () => {
-            (supabase.from as any).mockReturnValue({
+            const updateQuery = {
                 update: vi.fn().mockReturnThis(),
                 eq: vi.fn().mockResolvedValue({
                     error: { message: 'Database error' },
                 }),
-            });
+            };
+
+            (supabase.from as any).mockReturnValue(updateQuery);
 
             const result = await friendsService.rejectFriendRequest('request-1');
 
@@ -234,11 +252,13 @@ describe('friendsService', () => {
 
     describe('cancelFriendRequest', () => {
         it('should cancel friend request successfully', async () => {
-            (supabase.from as any).mockReturnValue({
+            const deleteQuery = {
                 delete: vi.fn().mockReturnThis(),
                 eq: vi.fn().mockReturnThis(),
                 single: vi.fn().mockResolvedValue({ error: null }),
-            });
+            };
+
+            (supabase.from as any).mockReturnValue(deleteQuery);
 
             const result = await friendsService.cancelFriendRequest('request-1');
 
@@ -310,11 +330,13 @@ describe('friendsService', () => {
 
     describe('unblockUser', () => {
         it('should unblock user successfully', async () => {
-            (supabase.from as any).mockReturnValue({
+            const deleteQuery = {
                 delete: vi.fn().mockReturnThis(),
                 eq: vi.fn().mockReturnThis(),
                 single: vi.fn().mockResolvedValue({ error: null }),
-            });
+            };
+
+            (supabase.from as any).mockReturnValue(deleteQuery);
 
             const result = await friendsService.unblockUser('user-456');
 
@@ -329,11 +351,13 @@ describe('friendsService', () => {
                 { friend: createMockFriend({ full_name: 'Jane Doe' }) },
             ];
 
-            (supabase.from as any).mockReturnValue({
+            const searchQuery = {
                 select: vi.fn().mockReturnThis(),
                 eq: vi.fn().mockReturnThis(),
                 or: vi.fn().mockResolvedValue({ data: mockData, error: null }),
-            });
+            };
+
+            (supabase.from as any).mockReturnValue(searchQuery);
 
             const result = await friendsService.searchMyFriends('Doe');
 
@@ -374,11 +398,13 @@ describe('friendsService', () => {
                 { ...createMockFriendRequest(), receiver: createMockProfile() },
             ];
 
-            (supabase.from as any).mockReturnValue({
+            const selectQuery = {
                 select: vi.fn().mockReturnThis(),
                 eq: vi.fn().mockReturnThis(),
                 order: vi.fn().mockResolvedValue({ data: mockRequests, error: null }),
-            });
+            };
+
+            (supabase.from as any).mockReturnValue(selectQuery);
 
             const result = await friendsService.getSentRequests();
 
@@ -411,11 +437,12 @@ describe('friendsService', () => {
                 { friend: { is_online: true } },
             ];
 
-            (supabase.from as any).mockReturnValue({
+            const selectQuery = {
                 select: vi.fn().mockReturnThis(),
-                eq: vi.fn().mockReturnThis(),
-                single: vi.fn().mockResolvedValue({ data: mockData, error: null }),
-            });
+                eq: vi.fn().mockResolvedValue({ data: mockData, error: null }),
+            };
+
+            (supabase.from as any).mockReturnValue(selectQuery);
 
             const result = await friendsService.getOnlineFriendsCount('user-123');
 
@@ -430,11 +457,13 @@ describe('friendsService', () => {
                 { ...createMockFriendRequest(), requester: createMockProfile(), receiver: createMockProfile() },
             ];
 
-            (supabase.from as any).mockReturnValue({
+            const selectQuery = {
                 select: vi.fn().mockReturnThis(),
                 eq: vi.fn().mockReturnThis(),
                 order: vi.fn().mockResolvedValue({ data: mockRequests, error: null }),
-            });
+            };
+
+            (supabase.from as any).mockReturnValue(selectQuery);
 
             const result = await friendsService.getFriendRequests(mockUser.id);
 
@@ -445,10 +474,12 @@ describe('friendsService', () => {
 
     describe('updateOnlineStatus', () => {
         it('should update online status successfully', async () => {
-            (supabase.from as any).mockReturnValue({
+            const updateQuery = {
                 update: vi.fn().mockReturnThis(),
                 eq: vi.fn().mockResolvedValue({ error: null }),
-            });
+            };
+
+            (supabase.from as any).mockReturnValue(updateQuery);
 
             const result = await friendsService.updateOnlineStatus('user-123', true);
 
@@ -458,25 +489,30 @@ describe('friendsService', () => {
 
     describe('getFriendActivity', () => {
         it('should get friend activity successfully', async () => {
-            // Mock getFriends
-            const mockFriends = [createMockFriend({ id: 'friend-1' })];
-            (supabase.from as any).mockReturnValueOnce({
+            // Mock getFriends - first call for friendships, second for profiles
+            const friendshipsQuery = {
                 select: vi.fn().mockReturnThis(),
                 eq: vi.fn().mockReturnThis(),
                 order: vi.fn().mockResolvedValue({ data: [{ friend_id: 'friend-1' }], error: null }),
-            }).mockReturnValueOnce({
+            };
+
+            const profilesQuery = {
                 select: vi.fn().mockReturnThis(),
-                in: vi.fn().mockResolvedValue({ data: mockFriends, error: null }),
-            });
+                in: vi.fn().mockResolvedValue({ data: [createMockFriend({ id: 'friend-1' })], error: null }),
+            };
 
             // Mock activity query
-            const mockActivities = [{ id: 'activity-1', type: 'deal_shared' }];
-            (supabase.from as any).mockReturnValueOnce({
+            const activityQuery = {
                 select: vi.fn().mockReturnThis(),
                 in: vi.fn().mockReturnThis(),
                 order: vi.fn().mockReturnThis(),
-                limit: vi.fn().mockResolvedValue({ data: mockActivities, error: null }),
-            });
+                limit: vi.fn().mockResolvedValue({ data: [{ id: 'activity-1', type: 'deal_shared' }], error: null }),
+            };
+
+            (supabase.from as any)
+                .mockReturnValueOnce(friendshipsQuery)
+                .mockReturnValueOnce(profilesQuery)
+                .mockReturnValueOnce(activityQuery);
 
             const result = await friendsService.getFriendActivity('user-123');
 
@@ -487,9 +523,11 @@ describe('friendsService', () => {
 
     describe('createActivity', () => {
         it('should create activity successfully', async () => {
-            (supabase.from as any).mockReturnValue({
+            const insertQuery = {
                 insert: vi.fn().mockResolvedValue({ error: null }),
-            });
+            };
+
+            (supabase.from as any).mockReturnValue(insertQuery);
 
             const result = await friendsService.createActivity('user-123', 'deal_shared', {
                 deal_id: 'deal-1',
@@ -502,9 +540,11 @@ describe('friendsService', () => {
 
     describe('shareDeal', () => {
         it('should share deal successfully', async () => {
-            (supabase.from as any).mockReturnValue({
+            const insertQuery = {
                 insert: vi.fn().mockResolvedValue({ error: null }),
-            });
+            };
+
+            (supabase.from as any).mockReturnValue(insertQuery);
 
             const result = await friendsService.shareDeal('user-123', 'user-456', {
                 title: 'Amazing Deal',
@@ -517,11 +557,13 @@ describe('friendsService', () => {
 
     describe('areFriends', () => {
         it('should return true if users are friends', async () => {
-            (supabase.from as any).mockReturnValue({
+            const selectQuery = {
                 select: vi.fn().mockReturnThis(),
                 eq: vi.fn().mockReturnThis(),
                 maybeSingle: vi.fn().mockResolvedValue({ data: { id: 'friendship-1' }, error: null }),
-            });
+            };
+
+            (supabase.from as any).mockReturnValue(selectQuery);
 
             const result = await friendsService.areFriends('user-123', 'user-456');
 
@@ -529,11 +571,13 @@ describe('friendsService', () => {
         });
 
         it('should return false if users are not friends', async () => {
-            (supabase.from as any).mockReturnValue({
+            const selectQuery = {
                 select: vi.fn().mockReturnThis(),
                 eq: vi.fn().mockReturnThis(),
                 maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
-            });
+            };
+
+            (supabase.from as any).mockReturnValue(selectQuery);
 
             const result = await friendsService.areFriends('user-123', 'user-456');
 
@@ -543,11 +587,12 @@ describe('friendsService', () => {
 
     describe('getFriendCount', () => {
         it('should get friend count successfully', async () => {
-            (supabase.from as any).mockReturnValue({
+            const selectQuery = {
                 select: vi.fn().mockReturnThis(),
-                eq: vi.fn().mockReturnThis(),
-                single: vi.fn().mockResolvedValue({ count: 10, error: null }),
-            });
+                eq: vi.fn().mockResolvedValue({ count: 10, error: null }),
+            };
+
+            (supabase.from as any).mockReturnValue(selectQuery);
 
             const result = await friendsService.getFriendCount('user-123');
 
@@ -555,11 +600,12 @@ describe('friendsService', () => {
         });
 
         it('should return 0 on error', async () => {
-            (supabase.from as any).mockReturnValue({
+            const selectQuery = {
                 select: vi.fn().mockReturnThis(),
-                eq: vi.fn().mockReturnThis(),
-                single: vi.fn().mockResolvedValue({ count: null, error: { message: 'Error' } }),
-            });
+                eq: vi.fn().mockResolvedValue({ count: null, error: { message: 'Error' } }),
+            };
+
+            (supabase.from as any).mockReturnValue(selectQuery);
 
             const result = await friendsService.getFriendCount('user-123');
 
