@@ -21,7 +21,7 @@ import { Button } from './ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
-import { FriendSelector } from './Sharing/FriendSelector';
+import { FriendPickerModal } from './sharing/FriendPickerModal';
 import { trackEvent } from '../lib/analytics';
 import toast from 'react-hot-toast';
 
@@ -155,10 +155,14 @@ export function ShareDeal({
 
                     {/* Friends Tab */}
                     <TabsContent value="friends" className="space-y-4 mt-4">
-                        <FriendSelector
+                        <div className="text-sm text-muted-foreground mb-4">
+                            Select friends to share this deal with
+                        </div>
+                        <FriendPickerModal
                             dealId={deal.id}
-                            onSuccess={handleFriendShareSuccess}
+                            isOpen={true}
                             onClose={() => setIsOpen(false)}
+                            onSuccess={handleFriendShareSuccess}
                         />
                     </TabsContent>
 

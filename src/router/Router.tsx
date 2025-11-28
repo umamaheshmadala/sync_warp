@@ -39,6 +39,7 @@ import { TestSearchFilters } from '../pages/TestSearchFilters'
 import { TestSearchPerformance } from '../pages/TestSearchPerformance'
 import { TestDealSharing } from '../pages/TestDealSharing'
 import { TestDealComments } from '../pages/TestDealComments'
+import { ShareDealDemo } from '../pages/ShareDealDemo'
 // Story 9.3.1: Friends List Component
 import { FriendsPage } from '../pages/Friends'
 // Story 9.3.2: Friend Requests UI
@@ -393,6 +394,14 @@ export const routes: RouteConfig[] = [
     protected: true,
     title: 'Deal Sharing Test - SynC (STORY 9.2.6)',
     description: 'Test FriendPickerModal with search, multi-select, and notifications'
+  },
+  // Story 9.7.5: ShareDeal Integration Test
+  {
+    path: '/test/share-deal',
+    element: <ShareDealDemo />,
+    protected: true,
+    title: 'ShareDeal Component Test - SynC (STORY 9.7.5)',
+    description: 'Test unified ShareDeal component with Friends, Link, and Email tabs'
   },
   // Story 9.3.3: Friend Profile Modal Test
   {
