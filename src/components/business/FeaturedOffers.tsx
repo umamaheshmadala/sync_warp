@@ -5,6 +5,7 @@ import { Tag, ChevronRight, Calendar, TrendingUp, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import type { Offer } from '@/types/offers';
 import { useBusinessUrl } from '@/hooks/useBusinessUrl';
+import { ShareDeal } from '@/components/ShareDeal';
 
 interface FeaturedOffersProps {
   businessId: string;
@@ -88,8 +89,8 @@ export default function FeaturedOffers({ businessId, businessName, isOwner }: Fe
           )}
         </div>
         <p className="text-sm text-gray-500 text-center py-8">
-          {isOwner 
-            ? 'No active offers yet. Create your first promotional offer!' 
+          {isOwner
+            ? 'No active offers yet. Create your first promotional offer!'
             : 'No current offers available.'}
         </p>
       </div>
@@ -113,7 +114,7 @@ export default function FeaturedOffers({ businessId, businessName, isOwner }: Fe
       </div>
 
       <p className="text-sm text-gray-600 mb-4">
-        {isOwner 
+        {isOwner
           ? 'Your active promotional offers. Track performance and manage them anytime.'
           : 'Check out the latest deals and promotions from this business.'}
       </p>
@@ -214,9 +215,15 @@ export default function FeaturedOffers({ businessId, businessName, isOwner }: Fe
                 </p>
               </div>
 
+              {/* Share Section */}
+              <div className="pt-4 border-t border-gray-100">
+                <h4 className="text-sm font-semibold text-gray-700 mb-3">Share this Offer</h4>
+                <ShareDeal deal={selectedOffer} variant="default" size="default" />
+              </div>
+
               {/* Stats */}
               {isOwner && (
-                <div>
+                <div className="pt-4 border-t border-gray-100">
                   <h4 className="text-sm font-semibold text-gray-700 mb-3">Performance</h4>
                   <div className="grid grid-cols-3 gap-4">
                     <div className="text-center p-4 bg-blue-50 rounded-lg">

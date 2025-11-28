@@ -31,18 +31,6 @@ import CampaignAnalyticsPage from '../components/business/CampaignAnalyticsPage'
 // Import product components (Story 4.7)
 import { ProductDetails, AllProducts } from '../components/products'
 
-// Import social components
-import FriendsManagementPage from '../components/FriendsManagementPage'
-import { FriendSearchPage } from '../pages/FriendSearchPage'
-import { PYMKPage } from '../pages/PYMKPage'
-import { TestSearchFilters } from '../pages/TestSearchFilters'
-import { TestSearchPerformance } from '../pages/TestSearchPerformance'
-import { TestDealSharing } from '../pages/TestDealSharing'
-import { TestDealComments } from '../pages/TestDealComments'
-import { ShareDealDemo } from '../pages/ShareDealDemo'
-// Story 9.3.1: Friends List Component
-import { FriendsPage } from '../pages/Friends'
-// Story 9.3.2: Friend Requests UI
 import { FriendRequestsList } from '../components/friends/FriendRequestsList'
 import TestProfileModal from '../pages/TestProfileModal'
 // Story 9.5.6: Privacy Dashboard
@@ -387,14 +375,7 @@ export const routes: RouteConfig[] = [
     title: 'Search Performance Test - SynC (STORY 9.2.5)',
     description: 'Test search performance optimizations with metrics dashboard'
   },
-  // Story 9.2.6: Deal Sharing Test
-  {
-    path: '/test/deal-sharing',
-    element: <TestDealSharing />,
-    protected: true,
-    title: 'Deal Sharing Test - SynC (STORY 9.2.6)',
-    description: 'Test FriendPickerModal with search, multi-select, and notifications'
-  },
+
   // Story 9.7.5: ShareDeal Integration Test
   {
     path: '/test/share-deal',

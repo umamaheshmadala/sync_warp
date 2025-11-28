@@ -23,7 +23,7 @@ const DevMenu = () => {
     { name: '👥 Social', path: '/social' },
     { name: '📱 Contact Sync Test', path: '/test/contact-sync' },
     { name: '⚡ Search Perf', path: '/test/search-performance' },
-    { name: '🎁 Deal Sharing', path: '/test/deal-sharing' },
+    { name: '🎁 Share Deal (9.7.5)', path: '/test/share-deal' },
     { name: '👤 Profile Modal', path: '/test/profile-modal' },
     { name: '📰 Activity Feed', path: '/test/activity-feed' },
     { name: 'Storage Test (8.1.3)', path: '/test/storage' },
