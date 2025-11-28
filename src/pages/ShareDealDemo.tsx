@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 export function ShareDealDemo() {
     // Mock deal data for testing
     const mockDeal = {
-        id: 'demo-deal-123',
+        id: '8d7c0847-81e3-4ea8-9479-92cc92253199',  // Real offer ID: TU1 TB1 Test offer 1
         title: '50% off Premium Coffee',
         description: 'Get premium artisan coffee at half price. Limited time offer!',
         price: 15.99,

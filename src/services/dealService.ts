@@ -92,7 +92,7 @@ export async function shareDealWithFriends(
         user_id: friendId,
         title: 'Deal Shared',
         message: customMessage || `${senderName} shared ${dealTitle} with you`,
-        notification_type: 'deal_shared',
+        notification_type: 'deal_shared_message',
         entity_id: dealId,
         sender_id: user.id,
       });
@@ -102,7 +102,7 @@ export async function shareDealWithFriends(
         user_id: friendId,
         title: 'Deal Shared',
         message: customMessage || `${senderName} shared ${dealTitle} with you`,
-        notification_type: 'deal_shared',
+        notification_type: 'deal_shared_message',
         entity_id: dealId,
         sender_id: user.id,
       });
