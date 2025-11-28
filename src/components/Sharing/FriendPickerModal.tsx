@@ -52,10 +52,14 @@ export function FriendPickerModal({
 
   // Load recently shared with from localStorage
   useEffect(() => {
+    console.log('[FriendPickerModal] Loading from localStorage');
     try {
       const recent = localStorage.getItem('recently_shared_with');
+      console.log('[FriendPickerModal] localStorage value:', recent);
       if (recent) {
-        setRecentlySharedWith(JSON.parse(recent).slice(0, 5));
+        const parsed = JSON.parse(recent).slice(0, 5);
+        console.log('[FriendPickerModal] Setting recentlySharedWith:', parsed);
+        setRecentlySharedWith(parsed);
       }
     } catch (error) {
       console.error('Failed to load recently shared with:', error);
@@ -64,9 +68,14 @@ export function FriendPickerModal({
 
   // Fetch user data for recently shared IDs
   useEffect(() => {
+    console.log('[FriendPickerModal] recentlySharedWith changed:', recentlySharedWith);
     const fetchRecentUsers = async () => {
-      if (recentlySharedWith.length === 0) return;
+      if (recentlySharedWith.length === 0) {
+        console.log('[FriendPickerModal] No IDs to fetch, returning');
+        return;
+      }
 
+      console.log('[FriendPickerModal] Fetching users for IDs:', recentlySharedWith);
       setIsLoadingRecent(true);
       try {
         const { supabase } = await import('../../lib/supabase');
@@ -76,6 +85,8 @@ export function FriendPickerModal({
           .in('user_id', recentlySharedWith);
 
         if (error) throw error;
+
+        console.log('[FriendPickerModal] Fetched data:', data);
 
         // Map to Friend format and maintain order from recentlySharedWith
         const usersMap = new Map<string, Friend>();
@@ -97,6 +108,7 @@ export function FriendPickerModal({
           }
         }
 
+        console.log('[FriendPickerModal] Setting recentlySharedUsers:', orderedUsers);
         setRecentlySharedUsers(orderedUsers);
       } catch (error) {
         console.error('Failed to fetch recent users:', error);
@@ -226,43 +238,48 @@ export function FriendPickerModal({
             </div>
           )}
 
+
           {/* Recently Shared With */}
-          {!searchQuery && (isLoadingRecent || recentlySharedUsers.length > 0) && (
-            <div className="p-4 border-b">
-              <h3 className="flex items-center text-sm font-semibold text-gray-900 mb-3">
-                <Clock className="w-4 h-4 mr-2" />
-                Recently Shared With
-              </h3>
-              {isLoadingRecent ? (
-                <div className="space-y-2">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="flex items-center gap-3 p-2">
-                      <div className="w-12 h-12 rounded-full bg-gray-200 animate-pulse" />
-                      <div className="flex-1">
-                        <div className="h-4 bg-gray-200 rounded w-32 mb-2 animate-pulse" />
-                        <div className="h-3 bg-gray-200 rounded w-24 animate-pulse" />
+          {(() => {
+            const shouldShow = !searchQuery && (isLoadingRecent || recentlySharedUsers.length > 0);
+            console.log('[FriendPickerModal] Render check - searchQuery:', searchQuery, 'isLoadingRecent:', isLoadingRecent, 'recentlySharedUsers.length:', recentlySharedUsers.length, 'shouldShow:', shouldShow);
+            return shouldShow;
+          })() && (
+              <div className="p-4 border-b">
+                <h3 className="flex items-center text-sm font-semibold text-gray-900 mb-3">
+                  <Clock className="w-4 h-4 mr-2" />
+                  Recently Shared With
+                </h3>
+                {isLoadingRecent ? (
+                  <div className="space-y-2">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="flex items-center gap-3 p-2">
+                        <div className="w-12 h-12 rounded-full bg-gray-200 animate-pulse" />
+                        <div className="flex-1">
+                          <div className="h-4 bg-gray-200 rounded w-32 mb-2 animate-pulse" />
+                          <div className="h-3 bg-gray-200 rounded w-24 animate-pulse" />
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {recentlySharedUsers.map((user) => (
-                    <FriendRow
-                      key={user.userId}
-                      userId={user.userId}
-                      name={user.fullName}
-                      username={user.username}
-                      avatarUrl={user.avatarUrl}
-                      subtitle={user.subtitle}
-                      isSelected={selectedFriends.includes(user.userId)}
-                      onToggle={() => handleToggleFriend(user.userId)}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {recentlySharedUsers.map((user) => (
+                      <FriendRow
+                        key={user.userId}
+                        userId={user.userId}
+                        name={user.fullName}
+                        username={user.username}
+                        avatarUrl={user.avatarUrl}
+                        subtitle={user.subtitle}
+                        isSelected={selectedFriends.includes(user.userId)}
+                        onToggle={() => handleToggleFriend(user.userId)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
           {/* Search Results or All Friends */}
           <div className="p-4">
