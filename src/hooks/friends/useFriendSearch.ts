@@ -9,7 +9,7 @@ export function useFriendSearch(initialQuery = '') {
 
     const { data, isLoading, error } = useQuery({
         queryKey: ['friendSearch', debouncedQuery],
-        queryFn: () => friendsService.searchFriends(debouncedQuery),
+        queryFn: () => friendsService.searchMyFriends(debouncedQuery),
         enabled: debouncedQuery.length > 0,
     });
 

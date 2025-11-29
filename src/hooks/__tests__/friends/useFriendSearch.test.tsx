@@ -69,7 +69,7 @@ describe('useFriendSearch', () => {
             ],
         };
 
-        (friendsService.searchFriends as any).mockResolvedValue(mockResults);
+        (friendsService.searchMyFriends as any).mockResolvedValue(mockResults);
 
         const { result } = renderHook(() => useFriendSearch('doe'), { wrapper });
 
@@ -78,19 +78,19 @@ describe('useFriendSearch', () => {
         });
 
         expect(result.current.results).toEqual(mockResults.data);
-        expect(friendsService.searchFriends).toHaveBeenCalledWith('doe');
+        expect(friendsService.searchMyFriends).toHaveBeenCalledWith('doe');
     });
 
     it('should not search when query is empty', () => {
         const { result } = renderHook(() => useFriendSearch(''), { wrapper });
 
         expect(result.current.isLoading).toBe(false);
-        expect(friendsService.searchFriends).not.toHaveBeenCalled();
+        expect(friendsService.searchMyFriends).not.toHaveBeenCalled();
     });
 
     it('should handle search errors', async () => {
         const mockError = new Error('Search failed');
-        (friendsService.searchFriends as any).mockRejectedValue(mockError);
+        (friendsService.searchMyFriends as any).mockRejectedValue(mockError);
 
         const { result } = renderHook(() => useFriendSearch('test'), { wrapper });
 
@@ -103,7 +103,7 @@ describe('useFriendSearch', () => {
     });
 
     it('should return empty results when service returns null data', async () => {
-        (friendsService.searchFriends as any).mockResolvedValue({
+        (friendsService.searchMyFriends as any).mockResolvedValue({
             success: true,
             data: null,
         });
@@ -128,7 +128,7 @@ describe('useFriendSearch', () => {
             data: [{ id: 'user-2', full_name: 'Jane Smith' }],
         };
 
-        (friendsService.searchFriends as any)
+        (friendsService.searchMyFriends as any)
             .mockResolvedValueOnce(mockResults1)
             .mockResolvedValueOnce(mockResults2);
 
@@ -152,7 +152,7 @@ describe('useFriendSearch', () => {
     });
 
     it('should handle service returning success: false', async () => {
-        (friendsService.searchFriends as any).mockResolvedValue({
+        (friendsService.searchMyFriends as any).mockResolvedValue({
             success: false,
             error: 'Search failed',
         });
@@ -174,7 +174,7 @@ describe('useFriendSearch', () => {
             data: [{ id: 'user-1', full_name: 'John Doe' }],
         };
 
-        (friendsService.searchFriends as any).mockResolvedValue(mockResults);
+        (friendsService.searchMyFriends as any).mockResolvedValue(mockResults);
 
         const { result } = renderHook(() => useFriendSearch(), { wrapper });
 
@@ -205,7 +205,7 @@ describe('useFriendSearch', () => {
             data: [{ id: 'user-1', full_name: 'John Doe' }],
         };
 
-        (friendsService.searchFriends as any).mockResolvedValue(mockResults);
+        (friendsService.searchMyFriends as any).mockResolvedValue(mockResults);
 
         const { result } = renderHook(() => useFriendSearch('john'), { wrapper });
 
