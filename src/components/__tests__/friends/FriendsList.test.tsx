@@ -15,6 +15,13 @@ import * as useRealtimeFriendsHook from '../../../hooks/friends/useRealtimeFrien
 // Mock hooks
 vi.mock('../../../hooks/friends/useFriendsList');
 vi.mock('../../../hooks/friends/useRealtimeFriends');
+vi.mock('../../friends/FriendCard', () => ({
+    FriendCard: ({ friend, onClick }: any) => (
+        <div data-testid="friend-card" onClick={onClick}>
+            <span>{friend.full_name}</span>
+        </div>
+    ),
+}));
 vi.mock('../../friends/FriendProfileModal', () => ({
     FriendProfileModal: ({ isOpen, onClose }: any) =>
         isOpen ? <div data-testid="friend-profile-modal" onClick={onClose}>Modal</div> : null,
