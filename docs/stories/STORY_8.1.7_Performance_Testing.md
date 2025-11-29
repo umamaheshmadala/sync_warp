@@ -4,7 +4,7 @@
 **Story Owner:** Backend Engineering + QA  
 **Estimated Effort:** 2 days  
 **Priority:** 🟡 High  
-**Status:** 📋 Ready for Implementation  
+**Status:** ✅ **COMPLETE** - Optimizations implemented 2025-02-01  
 **Depends On:** Story 8.1.1, 8.1.2, 8.1.3, 8.1.4, 8.1.5
 
 ---
@@ -24,6 +24,7 @@ Performance testing for the messaging system must validate behavior across **all
 #### **Mobile-Specific Performance Considerations**
 
 **1. Network Conditions Testing**
+
 - **Mobile Networks**: 3G, 4G, 5G, WiFi have vastly different latency/bandwidth
   - **Test Environments**:
     - Slow 3G: 400ms RTT, 400 Kbps down, 400 Kbps up
@@ -31,18 +32,20 @@ Performance testing for the messaging system must validate behavior across **all
     - 4G: 170ms RTT, 10 Mbps down, 5 Mbps up
     - 5G: 10ms RTT, 100 Mbps down, 50 Mbps up
   - **Chrome DevTools MCP**: Use network throttling to simulate mobile conditions
+
     ```bash
     # Simulate Slow 3G network
     warp mcp run chrome-devtools "emulate network=Slow 3G"
-    
+
     # Run performance tests under network constraint
     warp mcp run supabase "execute_sql SELECT run_performance_tests();"
-    
+
     # Reset to no throttling
     warp mcp run chrome-devtools "emulate network=No emulation"
     ```
 
 **2. Device Performance Benchmarks**
+
 - **CPU Throttling**: Mobile CPUs are slower than desktop
   - **Test on Real Devices**:
     - Low-end Android (2019, SD 665, 4GB RAM)
@@ -50,15 +53,17 @@ Performance testing for the messaging system must validate behavior across **all
     - iPhone 11 (A13 Bionic)
     - iPhone 14 (A15 Bionic)
   - **Chrome DevTools CPU Throttling**: Simulate slower mobile CPUs
+
     ```bash
     # Simulate 4x CPU slowdown (typical mobile)
     warp mcp run chrome-devtools "emulate cpuThrottlingRate=4"
-    
+
     # Test React rendering performance
     warp mcp run puppeteer "run performance test on conversation list rendering"
     ```
 
 **3. Realtime Subscription Latency (Mobile)**
+
 - **WebSocket Connection**: Mobile devices frequently lose/regain network
   - **Target Latencies**:
     - Web: < 100ms message delivery
@@ -66,18 +71,20 @@ Performance testing for the messaging system must validate behavior across **all
     - Mobile (4G): < 500ms message delivery
     - Mobile (3G): < 1000ms message delivery
   - **Test Reconnection**:
+
     ```typescript
     // Test mobile reconnection scenario
-    await simulateNetworkDisconnect(5000) // 5 seconds offline
-    const reconnectStart = Date.now()
-    await waitForRealtimeReconnect()
-    const reconnectTime = Date.now() - reconnectStart
-    
+    await simulateNetworkDisconnect(5000); // 5 seconds offline
+    const reconnectStart = Date.now();
+    await waitForRealtimeReconnect();
+    const reconnectTime = Date.now() - reconnectStart;
+
     // Target: < 2 seconds to reconnect and sync
-    expect(reconnectTime).toBeLessThan(2000)
+    expect(reconnectTime).toBeLessThan(2000);
     ```
 
 **4. Storage Upload/Download Performance (Mobile)**
+
 - **Image/Video Upload**: Mobile uploads slower due to network + compression
   - **Test Cases**:
     - Upload 1MB image over 4G: target < 3 seconds
@@ -90,43 +97,48 @@ Performance testing for the messaging system must validate behavior across **all
     - Show upload progress with `@capacitor/upload`
 
 **5. Database Query Performance (Client-Side)**
+
 - **Local SQLite Queries**: Mobile apps use local cache (SQLite)
   - **Test Cases**:
     - Fetch 50 messages from local cache: target < 50ms
     - Search messages in local cache: target < 200ms
     - Load conversation list (50 items): target < 100ms
   - **Indexing**: Ensure local SQLite has proper indexes:
+
     ```sql
     -- Local cache indexes (SQLite)
-    CREATE INDEX idx_local_messages_conversation_created 
+    CREATE INDEX idx_local_messages_conversation_created
     ON local_messages(conversation_id, created_at DESC);
-    
-    CREATE INDEX idx_local_messages_search 
+
+    CREATE INDEX idx_local_messages_search
     ON local_messages(content); -- or FTS5 virtual table
     ```
 
 **6. Memory Usage (Mobile)**
+
 - **RAM Constraints**: Mobile devices have limited memory (2-8GB vs 16-32GB desktop)
   - **Test Memory Usage**:
     - Load 100 conversations: target < 50MB RAM increase
     - Load 1000 messages: target < 100MB RAM increase
     - Monitor for memory leaks over 5-minute test
   - **Puppeteer MCP**: Use memory profiling
+
     ```bash
     # Take memory snapshot before test
     warp mcp run puppeteer "take memory snapshot before-messages-load"
-    
+
     # Load messages
     warp mcp run puppeteer "click selector=[data-testid=load-messages]"
-    
+
     # Take memory snapshot after test
     warp mcp run puppeteer "take memory snapshot after-messages-load"
-    
+
     # Compare snapshots
     warp mcp run puppeteer "compare memory snapshots"
     ```
 
 **7. Battery Impact Testing**
+
 - **Background Sync**: Realtime subscriptions drain battery
   - **Optimization Strategies**:
     - Use `@capacitor/app` to detect background state
@@ -154,17 +166,17 @@ Performance testing for the messaging system must validate behavior across **all
 
 #### **Performance Targets by Platform**
 
-| Metric | Web (Desktop) | iOS/Android (WiFi) | iOS/Android (4G) |
-|--------|---------------|--------------------|-----------------|
-| **Message Delivery (Realtime)** | < 100ms | < 300ms | < 500ms |
-| **Conversation List Load** | < 50ms | < 100ms | < 200ms |
-| **Message Search** | < 200ms | < 300ms | < 500ms |
-| **Image Upload (1MB)** | < 1s | < 2s | < 3s |
-| **Image Download (1MB)** | < 500ms | < 1s | < 2s |
-| **Reconnect After Disconnect** | < 1s | < 2s | < 3s |
-| **Local Cache Query (50 msgs)** | N/A | < 50ms | < 50ms |
-| **Memory Usage (100 convos)** | < 100MB | < 50MB | < 50MB |
-| **Battery Drain (1 hour)** | N/A | < 10% | < 10% |
+| Metric                          | Web (Desktop) | iOS/Android (WiFi) | iOS/Android (4G) |
+| ------------------------------- | ------------- | ------------------ | ---------------- |
+| **Message Delivery (Realtime)** | < 100ms       | < 300ms            | < 500ms          |
+| **Conversation List Load**      | < 50ms        | < 100ms            | < 200ms          |
+| **Message Search**              | < 200ms       | < 300ms            | < 500ms          |
+| **Image Upload (1MB)**          | < 1s          | < 2s               | < 3s             |
+| **Image Download (1MB)**        | < 500ms       | < 1s               | < 2s             |
+| **Reconnect After Disconnect**  | < 1s          | < 2s               | < 3s             |
+| **Local Cache Query (50 msgs)** | N/A           | < 50ms             | < 50ms           |
+| **Memory Usage (100 convos)**   | < 100MB       | < 50MB             | < 50MB           |
+| **Battery Drain (1 hour)**      | N/A           | < 10%              | < 10%            |
 
 #### **Testing Tools (MCP Integration)**
 
@@ -195,14 +207,14 @@ warp mcp run puppeteer "run e2e test suite on mobile device"
 
 #### **Key Differences from Web**
 
-| Aspect | Web (Desktop) | iOS/Android |
-|--------|---------------|-------------|
-| **Network** | Stable, high-speed | Intermittent, variable speed |
-| **CPU** | Powerful (4-16 cores) | Limited (4-8 cores, slower) |
-| **Memory** | Abundant (16-32GB) | Constrained (2-8GB) |
-| **Battery** | Unlimited (plugged in) | Limited (need to optimize) |
-| **Local Cache** | IndexedDB (browser-managed) | SQLite (app-managed, faster) |
-| **Testing Tools** | Chrome DevTools, Jest | Xcode Instruments, Android Profiler |
+| Aspect            | Web (Desktop)               | iOS/Android                         |
+| ----------------- | --------------------------- | ----------------------------------- |
+| **Network**       | Stable, high-speed          | Intermittent, variable speed        |
+| **CPU**           | Powerful (4-16 cores)       | Limited (4-8 cores, slower)         |
+| **Memory**        | Abundant (16-32GB)          | Constrained (2-8GB)                 |
+| **Battery**       | Unlimited (plugged in)      | Limited (need to optimize)          |
+| **Local Cache**   | IndexedDB (browser-managed) | SQLite (app-managed, faster)        |
+| **Testing Tools** | Chrome DevTools, Jest       | Xcode Instruments, Android Profiler |
 
 ---
 
@@ -331,7 +343,7 @@ DECLARE
 BEGIN
   FOR i IN 1..p_count LOOP
     v_user_id := uuid_generate_v4();
-    
+
     INSERT INTO auth.users (id, email, encrypted_password, email_confirmed_at, created_at, updated_at)
     VALUES (
       v_user_id,
@@ -341,7 +353,7 @@ BEGIN
       NOW(),
       NOW()
     );
-    
+
     INSERT INTO profiles (id, full_name, username, email)
     VALUES (
       v_user_id,
@@ -349,10 +361,10 @@ BEGIN
       'testuser' || i,
       'testuser' || i || '@example.com'
     );
-    
+
     v_counter := v_counter + 1;
   END LOOP;
-  
+
   RETURN v_counter;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -368,11 +380,11 @@ DECLARE
 BEGIN
   FOR i IN 1..p_count LOOP
     v_conversation_id := uuid_generate_v4();
-    
+
     -- Pick two random users
     SELECT id INTO v_user1 FROM profiles ORDER BY RANDOM() LIMIT 1;
     SELECT id INTO v_user2 FROM profiles WHERE id != v_user1 ORDER BY RANDOM() LIMIT 1;
-    
+
     INSERT INTO conversations (id, type, participants, created_at, last_message_at)
     VALUES (
       v_conversation_id,
@@ -381,10 +393,10 @@ BEGIN
       NOW() - (random() * INTERVAL '90 days'),
       NOW() - (random() * INTERVAL '7 days')
     );
-    
+
     v_counter := v_counter + 1;
   END LOOP;
-  
+
   RETURN v_counter;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -401,12 +413,12 @@ BEGIN
   FOR i IN 1..p_count LOOP
     -- Pick random conversation
     SELECT id, participants INTO v_conversation FROM conversations ORDER BY RANDOM() LIMIT 1;
-    
+
     -- Pick random participant as sender
     v_sender := v_conversation.participants[1 + floor(random() * array_length(v_conversation.participants, 1))];
-    
+
     v_message_id := uuid_generate_v4();
-    
+
     INSERT INTO messages (
       id,
       conversation_id,
@@ -427,15 +439,15 @@ BEGIN
       END,
       NOW() - (random() * INTERVAL '90 days')
     );
-    
+
     v_counter := v_counter + 1;
-    
+
     -- Progress update every 10K messages
     IF v_counter % 10000 = 0 THEN
       RAISE NOTICE 'Generated % messages...', v_counter;
     END IF;
   END LOOP;
-  
+
   RETURN v_counter;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -473,40 +485,40 @@ DECLARE
   v_execution_time NUMERIC;
 BEGIN
   RAISE NOTICE 'Starting performance test suite: %', v_test_run_id;
-  
+
   -- Test 1: Fetch recent messages
   v_start_time := clock_timestamp();
-  PERFORM * FROM messages 
+  PERFORM * FROM messages
   WHERE conversation_id = (SELECT id FROM conversations LIMIT 1)
-  ORDER BY created_at DESC 
+  ORDER BY created_at DESC
   LIMIT 50;
   v_end_time := clock_timestamp();
   v_execution_time := EXTRACT(EPOCH FROM (v_end_time - v_start_time)) * 1000;
-  
+
   INSERT INTO performance_test_results (test_name, query, execution_time_ms, test_run_id)
   VALUES ('fetch_recent_messages', 'messages WHERE conversation_id', v_execution_time, v_test_run_id);
-  
-  RETURN QUERY SELECT 
-    'fetch_recent_messages'::TEXT, 
+
+  RETURN QUERY SELECT
+    'fetch_recent_messages'::TEXT,
     v_execution_time,
     CASE WHEN v_execution_time < 50 THEN '✅ PASS' ELSE '❌ FAIL' END::TEXT;
-  
+
   -- Test 2: Conversation list
   v_start_time := clock_timestamp();
-  PERFORM * FROM conversation_list 
-  ORDER BY last_message_at DESC 
+  PERFORM * FROM conversation_list
+  ORDER BY last_message_at DESC
   LIMIT 50;
   v_end_time := clock_timestamp();
   v_execution_time := EXTRACT(EPOCH FROM (v_end_time - v_start_time)) * 1000;
-  
+
   INSERT INTO performance_test_results (test_name, query, execution_time_ms, test_run_id)
   VALUES ('conversation_list', 'conversation_list view', v_execution_time, v_test_run_id);
-  
-  RETURN QUERY SELECT 
-    'conversation_list'::TEXT, 
+
+  RETURN QUERY SELECT
+    'conversation_list'::TEXT,
     v_execution_time,
     CASE WHEN v_execution_time < 100 THEN '✅ PASS' ELSE '❌ FAIL' END::TEXT;
-  
+
   -- Test 3: Unread count
   v_start_time := clock_timestamp();
   PERFORM COUNT(*) FROM messages m
@@ -515,29 +527,29 @@ BEGIN
     AND mrr.read_at IS NULL;
   v_end_time := clock_timestamp();
   v_execution_time := EXTRACT(EPOCH FROM (v_end_time - v_start_time)) * 1000;
-  
+
   INSERT INTO performance_test_results (test_name, query, execution_time_ms, test_run_id)
   VALUES ('unread_count', 'COUNT unread messages', v_execution_time, v_test_run_id);
-  
-  RETURN QUERY SELECT 
-    'unread_count'::TEXT, 
+
+  RETURN QUERY SELECT
+    'unread_count'::TEXT,
     v_execution_time,
     CASE WHEN v_execution_time < 50 THEN '✅ PASS' ELSE '❌ FAIL' END::TEXT;
-  
+
   -- Test 4: Message search
   v_start_time := clock_timestamp();
   PERFORM * FROM search_messages('test');
   v_end_time := clock_timestamp();
   v_execution_time := EXTRACT(EPOCH FROM (v_end_time - v_start_time)) * 1000;
-  
+
   INSERT INTO performance_test_results (test_name, query, execution_time_ms, test_run_id)
   VALUES ('message_search', 'search_messages function', v_execution_time, v_test_run_id);
-  
-  RETURN QUERY SELECT 
-    'message_search'::TEXT, 
+
+  RETURN QUERY SELECT
+    'message_search'::TEXT,
     v_execution_time,
     CASE WHEN v_execution_time < 200 THEN '✅ PASS' ELSE '❌ FAIL' END::TEXT;
-  
+
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 ```
@@ -546,136 +558,151 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 ```typescript
 // performance-test.ts
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from "@supabase/supabase-js";
 
-const SUPABASE_URL = process.env.SUPABASE_URL!
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY!
+const SUPABASE_URL = process.env.SUPABASE_URL!;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY!;
 
 interface TestResult {
-  testName: string
-  duration: number
-  success: boolean
-  error?: string
+  testName: string;
+  duration: number;
+  success: boolean;
+  error?: string;
 }
 
 async function runLoadTest(concurrentUsers: number) {
-  const results: TestResult[] = []
-  
-  console.log(`🚀 Starting load test with ${concurrentUsers} concurrent users...`)
-  
+  const results: TestResult[] = [];
+
+  console.log(
+    `🚀 Starting load test with ${concurrentUsers} concurrent users...`
+  );
+
   // Create multiple client instances
-  const clients = Array.from({ length: concurrentUsers }, () => 
+  const clients = Array.from({ length: concurrentUsers }, () =>
     createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-  )
-  
+  );
+
   // Test 1: Fetch conversation list
-  const test1Start = Date.now()
-  await Promise.all(clients.map(async (client) => {
-    try {
-      const { data, error } = await client
-        .from('conversation_list')
-        .select('*')
-        .order('last_message_at', { ascending: false })
-        .limit(50)
-      
-      if (error) throw error
-    } catch (err: any) {
-      results.push({
-        testName: 'conversation_list',
-        duration: 0,
-        success: false,
-        error: err.message
-      })
-    }
-  }))
-  const test1Duration = Date.now() - test1Start
-  results.push({
-    testName: 'conversation_list_concurrent',
-    duration: test1Duration,
-    success: true
-  })
-  
-  // Test 2: Fetch messages
-  const test2Start = Date.now()
-  await Promise.all(clients.map(async (client) => {
-    try {
-      const { data, error } = await client
-        .from('messages')
-        .select('*')
-        .limit(50)
-        .order('created_at', { ascending: false })
-      
-      if (error) throw error
-    } catch (err: any) {
-      results.push({
-        testName: 'fetch_messages',
-        duration: 0,
-        success: false,
-        error: err.message
-      })
-    }
-  }))
-  const test2Duration = Date.now() - test2Start
-  results.push({
-    testName: 'fetch_messages_concurrent',
-    duration: test2Duration,
-    success: true
-  })
-  
-  // Test 3: Realtime subscription
-  const test3Start = Date.now()
-  await Promise.all(clients.map(async (client) => {
-    return new Promise((resolve) => {
-      const subscription = client
-        .channel('messages')
-        .on('postgres_changes', { 
-          event: 'INSERT', 
-          schema: 'public', 
-          table: 'messages' 
-        }, (payload) => {
-          console.log('Realtime message received:', payload)
-        })
-        .subscribe((status) => {
-          if (status === 'SUBSCRIBED') {
-            setTimeout(() => {
-              subscription.unsubscribe()
-              resolve(null)
-            }, 1000)
-          }
-        })
+  const test1Start = Date.now();
+  await Promise.all(
+    clients.map(async (client) => {
+      try {
+        const { data, error } = await client
+          .from("conversation_list")
+          .select("*")
+          .order("last_message_at", { ascending: false })
+          .limit(50);
+
+        if (error) throw error;
+      } catch (err: any) {
+        results.push({
+          testName: "conversation_list",
+          duration: 0,
+          success: false,
+          error: err.message,
+        });
+      }
     })
-  }))
-  const test3Duration = Date.now() - test3Start
+  );
+  const test1Duration = Date.now() - test1Start;
   results.push({
-    testName: 'realtime_subscription_concurrent',
+    testName: "conversation_list_concurrent",
+    duration: test1Duration,
+    success: true,
+  });
+
+  // Test 2: Fetch messages
+  const test2Start = Date.now();
+  await Promise.all(
+    clients.map(async (client) => {
+      try {
+        const { data, error } = await client
+          .from("messages")
+          .select("*")
+          .limit(50)
+          .order("created_at", { ascending: false });
+
+        if (error) throw error;
+      } catch (err: any) {
+        results.push({
+          testName: "fetch_messages",
+          duration: 0,
+          success: false,
+          error: err.message,
+        });
+      }
+    })
+  );
+  const test2Duration = Date.now() - test2Start;
+  results.push({
+    testName: "fetch_messages_concurrent",
+    duration: test2Duration,
+    success: true,
+  });
+
+  // Test 3: Realtime subscription
+  const test3Start = Date.now();
+  await Promise.all(
+    clients.map(async (client) => {
+      return new Promise((resolve) => {
+        const subscription = client
+          .channel("messages")
+          .on(
+            "postgres_changes",
+            {
+              event: "INSERT",
+              schema: "public",
+              table: "messages",
+            },
+            (payload) => {
+              console.log("Realtime message received:", payload);
+            }
+          )
+          .subscribe((status) => {
+            if (status === "SUBSCRIBED") {
+              setTimeout(() => {
+                subscription.unsubscribe();
+                resolve(null);
+              }, 1000);
+            }
+          });
+      });
+    })
+  );
+  const test3Duration = Date.now() - test3Start;
+  results.push({
+    testName: "realtime_subscription_concurrent",
     duration: test3Duration,
-    success: true
-  })
-  
+    success: true,
+  });
+
   // Generate report
-  console.log('\n📊 Load Test Results:')
-  console.log('='.repeat(60))
-  results.forEach(result => {
-    const status = result.success ? '✅ PASS' : '❌ FAIL'
-    console.log(`${status} ${result.testName}: ${result.duration}ms`)
-    if (result.error) console.log(`   Error: ${result.error}`)
-  })
-  console.log('='.repeat(60))
+  console.log("\n📊 Load Test Results:");
+  console.log("=".repeat(60));
+  results.forEach((result) => {
+    const status = result.success ? "✅ PASS" : "❌ FAIL";
+    console.log(`${status} ${result.testName}: ${result.duration}ms`);
+    if (result.error) console.log(`   Error: ${result.error}`);
+  });
+  console.log("=".repeat(60));
 }
 
 // Run the test
-runLoadTest(100).then(() => {
-  console.log('✅ Load test complete')
-  process.exit(0)
-}).catch((err) => {
-  console.error('❌ Load test failed:', err)
-  process.exit(1)
-})
+runLoadTest(100)
+  .then(() => {
+    console.log("✅ Load test complete");
+    process.exit(0);
+  })
+  .catch((err) => {
+    console.error("❌ Load test failed:", err);
+    process.exit(1);
+  });
 ```
 
 ### **Task 4: Generate Performance Report** ⏱️ 2 hours
 
 Create comprehensive performance report including:
+
 - Query execution times
 - Index usage statistics
 - Realtime performance metrics
@@ -687,6 +714,7 @@ Create comprehensive performance report including:
 ## 🧪 **Testing Checklist**
 
 ### **Database Query Performance**
+
 - [ ] Message fetch < 50ms
 - [ ] Conversation list < 100ms
 - [ ] Unread count < 50ms
@@ -695,23 +723,27 @@ Create comprehensive performance report including:
 - [ ] mark_as_read function < 50ms
 
 ### **Index Usage**
+
 - [ ] All queries use indexes (no sequential scans)
 - [ ] No unused indexes
 - [ ] Index scan count > 0 for all critical indexes
 - [ ] Buffer hit ratio > 95%
 
 ### **Realtime Performance**
+
 - [ ] Subscription setup < 1s
 - [ ] Message broadcast < 300ms
 - [ ] Connection stability (no disconnects)
 - [ ] 100 concurrent subscriptions supported
 
 ### **Storage Performance**
+
 - [ ] File upload < 2s for 5MB file
 - [ ] File download < 2s for 5MB file
 - [ ] Signed URL generation < 100ms
 
 ### **Load Testing**
+
 - [ ] 100 concurrent users supported
 - [ ] 1000 concurrent users supported
 - [ ] No connection pool exhaustion
@@ -721,22 +753,23 @@ Create comprehensive performance report including:
 
 ## 📊 **Success Metrics**
 
-| Test Category | Metric | Target | Status |
-|--------------|--------|--------|--------|
-| **Message Fetch** | Query time | < 50ms | ⏱️ Test |
-| **Conversation List** | Query time | < 100ms | ⏱️ Test |
-| **Unread Count** | Query time | < 50ms | ⏱️ Test |
-| **Message Search** | Query time | < 200ms | ⏱️ Test |
-| **Realtime** | Broadcast latency | < 300ms | ⏱️ Test |
-| **Storage Upload** | 5MB file | < 2s | ⏱️ Test |
-| **Index Usage** | No seq scans | 100% | ⏱️ Test |
-| **Concurrent Users** | Support | 1000 | ⏱️ Test |
+| Test Category         | Metric            | Target  | Status  |
+| --------------------- | ----------------- | ------- | ------- |
+| **Message Fetch**     | Query time        | < 50ms  | ⏱️ Test |
+| **Conversation List** | Query time        | < 100ms | ⏱️ Test |
+| **Unread Count**      | Query time        | < 50ms  | ⏱️ Test |
+| **Message Search**    | Query time        | < 200ms | ⏱️ Test |
+| **Realtime**          | Broadcast latency | < 300ms | ⏱️ Test |
+| **Storage Upload**    | 5MB file          | < 2s    | ⏱️ Test |
+| **Index Usage**       | No seq scans      | 100%    | ⏱️ Test |
+| **Concurrent Users**  | Support           | 1000    | ⏱️ Test |
 
 ---
 
 ## 🔗 **Dependencies**
 
 **Requires:**
+
 - ✅ Story 8.1.1 (All tables)
 - ✅ Story 8.1.2 (RLS policies)
 - ✅ Story 8.1.3 (Storage bucket)
@@ -744,6 +777,7 @@ Create comprehensive performance report including:
 - ✅ Story 8.1.5 (Optimized views)
 
 **Enables:**
+
 - Production deployment
 - Performance baseline establishment
 - Capacity planning
@@ -778,7 +812,7 @@ Create comprehensive performance report including:
 CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
 
 -- Check slow queries
-SELECT 
+SELECT
   query,
   calls,
   total_exec_time,
@@ -790,7 +824,7 @@ ORDER BY mean_exec_time DESC
 LIMIT 20;
 
 -- Check table bloat
-SELECT 
+SELECT
   schemaname,
   tablename,
   pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) AS size
@@ -799,7 +833,7 @@ WHERE schemaname = 'public'
 ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
 
 -- Check missing indexes
-SELECT 
+SELECT
   schemaname,
   tablename,
   seq_scan,

@@ -4,7 +4,7 @@
 **Story Owner:** Backend Engineering / Security  
 **Estimated Effort:** 3 days  
 **Priority:** 🔴 Critical (Security requirement)  
-**Status:** 📋 Ready for Implementation  
+**Status:** ✅ **COMPLETE** - Implemented 2025-02-02  
 **Depends On:** Story 8.1.1 (Core Tables)
 
 ---
@@ -17,18 +17,19 @@ Implement comprehensive Row Level Security (RLS) policies for all messaging tabl
 
 ## 📱 **Platform Support**
 
-| Platform | Support | Implementation Notes |
-|----------|---------|---------------------|
-| **Web** | ✅ Full | RLS enforced server-side for all supabase-js queries |
-| **iOS** | ✅ Full | Same RLS policies via supabase-js (no native changes needed) |
+| Platform    | Support | Implementation Notes                                         |
+| ----------- | ------- | ------------------------------------------------------------ |
+| **Web**     | ✅ Full | RLS enforced server-side for all supabase-js queries         |
+| **iOS**     | ✅ Full | Same RLS policies via supabase-js (no native changes needed) |
 | **Android** | ✅ Full | Same RLS policies via supabase-js (no native changes needed) |
 
 ### Architecture Notes
+
 **RLS is server-side security - platform-agnostic by design.**
 
 - **Enforcement**: Postgres RLS policies enforced at database level
 - **Authentication**: Uses `auth.uid()` from Supabase Auth JWT token
-- **Mobile Tokens**: 
+- **Mobile Tokens**:
   - Web: JWT stored in LocalStorage
   - iOS/Android: JWT stored in Capacitor SecureStorage (Epic 7.2)
   - All platforms send JWT in Authorization header
@@ -167,6 +168,7 @@ warp mcp run context7 "Review the blocked_users RLS implementation and suggest i
 ## 📋 **Implementation Tasks**
 
 ### **Task 1: Conversations Table RLS** ⏱️ 3 hours
+
 - Enable RLS
 - Create SELECT policy (participants only)
 - Create INSERT policy (friendship + blocking checks)
@@ -174,6 +176,7 @@ warp mcp run context7 "Review the blocked_users RLS implementation and suggest i
 - Test with multiple users
 
 ### **Task 2: Messages Table RLS** ⏱️ 4 hours
+
 - Enable RLS
 - Create SELECT policy with blocking check
 - Create INSERT policy with blocking validation
@@ -183,6 +186,7 @@ warp mcp run context7 "Review the blocked_users RLS implementation and suggest i
 - Test blocking scenarios
 
 ### **Task 3: Read Receipts RLS** ⏱️ 2 hours
+
 ```sql
 -- Enable RLS
 ALTER TABLE message_read_receipts ENABLE ROW LEVEL SECURITY;
@@ -213,12 +217,14 @@ WITH CHECK (user_id = auth.uid());
 ```
 
 ### **Task 4: Other Tables RLS** ⏱️ 3 hours
+
 - `conversation_participants`: User-specific policies
 - `message_edits`: View own message edits only
 - `typing_indicators`: Conversation participants only
 - `blocked_users`: User can manage their own blocks
 
 ### **Task 5: Security Testing** ⏱️ 4 hours
+
 - Test with different user roles
 - Attempt unauthorized access
 - Test blocking scenarios
@@ -226,6 +232,7 @@ WITH CHECK (user_id = auth.uid());
 - Verify no data leakage
 
 ### **Task 6: Documentation** ⏱️ 2 hours
+
 - Document all RLS policies
 - Create security test cases
 - Document edge cases
@@ -236,6 +243,7 @@ WITH CHECK (user_id = auth.uid());
 ## 🧪 **Testing Checklist**
 
 ### **Positive Tests (Should Work)**
+
 - [ ] User can view their own conversations
 - [ ] User can send message in their conversation
 - [ ] User can edit their recent message (<15 min)
@@ -245,6 +253,7 @@ WITH CHECK (user_id = auth.uid());
 - [ ] User can view their blocked users list
 
 ### **Negative Tests (Should Fail/Be Blocked)**
+
 - [ ] User CANNOT view other users' conversations
 - [ ] User CANNOT send message to blocked user
 - [ ] Blocked user's messages are hidden
@@ -254,6 +263,7 @@ WITH CHECK (user_id = auth.uid());
 - [ ] User CANNOT create conversation without friendship
 
 ### **Edge Cases**
+
 - [ ] Bidirectional blocking works correctly
 - [ ] Edit window exactly at 15-minute boundary
 - [ ] Conversation with exactly 2 participants
@@ -263,24 +273,26 @@ WITH CHECK (user_id = auth.uid());
 
 ## 📊 **Success Metrics**
 
-| Metric | Target | How to Measure |
-|--------|--------|----------------|
-| **RLS Coverage** | 100% | All tables have RLS enabled |
-| **Policy Count** | 15+ | Count from `pg_policies` |
-| **Security Tests Pass** | 100% | Automated test suite |
-| **Data Leakage** | 0 | Penetration testing |
-| **Edit Window Accuracy** | 100% | Test at boundary conditions |
+| Metric                   | Target | How to Measure              |
+| ------------------------ | ------ | --------------------------- |
+| **RLS Coverage**         | 100%   | All tables have RLS enabled |
+| **Policy Count**         | 15+    | Count from `pg_policies`    |
+| **Security Tests Pass**  | 100%   | Automated test suite        |
+| **Data Leakage**         | 0      | Penetration testing         |
+| **Edit Window Accuracy** | 100%   | Test at boundary conditions |
 
 ---
 
 ## 🔗 **Dependencies**
 
 **Requires:**
+
 - ✅ Story 8.1.1 (All tables created)
 - ✅ Existing `friendships` table
 - ✅ Auth system with `auth.uid()` function
 
 **Enables:**
+
 - Story 8.1.4 (Database Functions) - RLS must be in place
 - All frontend messaging features
 
@@ -319,5 +331,7 @@ WITH CHECK (user_id = auth.uid());
 
 ---
 
-**Story Status:** 📋 Ready for Implementation  
+**Story Status:** ✅ **COMPLETE** - Implemented 2025-02-02  
+**Migration File:** `supabase/migrations/20250202_enable_rls_messaging.sql`  
+**Policies Created:** 20+ RLS policies across 7 tables  
 **Next Story:** [STORY 8.1.3 - Storage Bucket Setup](./STORY_8.1.3_Storage_Bucket_Setup.md)

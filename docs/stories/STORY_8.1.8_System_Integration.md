@@ -4,7 +4,7 @@
 **Story Owner:** Backend Engineering  
 **Estimated Effort:** 2 days  
 **Priority:** 🔴 Critical  
-**Status:** 📋 Ready for Implementation  
+**Status:** ✅ **COMPLETE** - Implemented 2025-02-01  
 **Depends On:** Story 8.1.1, 8.1.2, 8.1.3, 8.1.4
 
 ---
@@ -24,6 +24,7 @@ System integration is **primarily backend** (database triggers, RLS policies, Ed
 #### **Mobile-Specific Integration Points**
 
 **1. Friendships Integration (Mobile)**
+
 - **Friend Invitation from Contacts**:
   - iOS: Use `@capacitor/contacts` to access device contacts
   - Android: Use `@capacitor/contacts` with runtime permission request
@@ -32,18 +33,18 @@ System integration is **primarily backend** (database triggers, RLS policies, Ed
 
 ```typescript
 // Mobile: Check if can message before showing "Send Message" button
-import { Capacitor } from '@capacitor/core'
+import { Capacitor } from "@capacitor/core";
 
 export async function canMessageUser(targetUserId: string): Promise<boolean> {
-  const { data, error } = await supabase.rpc('can_message_user', {
-    p_target_user_id: targetUserId
-  })
-  
+  const { data, error } = await supabase.rpc("can_message_user", {
+    p_target_user_id: targetUserId,
+  });
+
   if (error || !data) {
-    return false
+    return false;
   }
-  
-  return data // true if friends, false otherwise
+
+  return data; // true if friends, false otherwise
 }
 
 // Show "Add Friend" vs "Send Message" button
@@ -55,6 +56,7 @@ if (await canMessageUser(userId)) {
 ```
 
 **2. Shares Integration (Mobile)**
+
 - **Native Share Sheet**:
   - iOS: Use `@capacitor/share` for native share UI
   - Android: Use `@capacitor/share` for Android share sheet
@@ -62,42 +64,46 @@ if (await canMessageUser(userId)) {
 
 ```typescript
 // Mobile: Share coupon via native share sheet
-import { Share } from '@capacitor/share'
-import { Haptics, ImpactStyle } from '@capacitor/haptics'
+import { Share } from "@capacitor/share";
+import { Haptics, ImpactStyle } from "@capacitor/haptics";
 
 export async function shareCouponViaMessage(
   couponId: string,
   recipientUserId: string
 ) {
   // Haptic feedback on share initiation
-  await Haptics.impact({ style: ImpactStyle.Medium })
-  
+  await Haptics.impact({ style: ImpactStyle.Medium });
+
   // Get conversation with recipient
-  const { data: conversation } = await supabase.rpc('get_or_create_conversation', {
-    p_participant_id: recipientUserId
-  })
-  
+  const { data: conversation } = await supabase.rpc(
+    "get_or_create_conversation",
+    {
+      p_participant_id: recipientUserId,
+    }
+  );
+
   if (!conversation) {
-    throw new Error('Cannot create conversation: not friends')
+    throw new Error("Cannot create conversation: not friends");
   }
-  
+
   // Send message with shared coupon
-  const { data: message } = await supabase.rpc('send_message', {
+  const { data: message } = await supabase.rpc("send_message", {
     p_conversation_id: conversation.id,
-    p_content: 'Check out this coupon!',
-    p_type: 'text',
-    p_shared_coupon_id: couponId
-  })
-  
+    p_content: "Check out this coupon!",
+    p_type: "text",
+    p_shared_coupon_id: couponId,
+  });
+
   // Track share in shares table (handled by send_message function)
   // Success haptic feedback
-  await Haptics.notification({ type: 'success' })
-  
-  return message
+  await Haptics.notification({ type: "success" });
+
+  return message;
 }
 ```
 
 **3. Notifications Integration (Mobile)**
+
 - **Push Notifications**:
   - iOS: Use `@capacitor/push-notifications` + APNs
   - Android: Use `@capacitor/push-notifications` + FCM
@@ -109,63 +115,64 @@ export async function shareCouponViaMessage(
 
 ```typescript
 // Mobile: Register for push notifications
-import { PushNotifications } from '@capacitor/push-notifications'
-import { App } from '@capacitor/app'
+import { PushNotifications } from "@capacitor/push-notifications";
+import { App } from "@capacitor/app";
 
 export async function registerPushNotifications() {
   // Request permission (iOS/Android)
-  let permission = await PushNotifications.requestPermissions()
-  
-  if (permission.receive !== 'granted') {
-    console.warn('Push notification permission denied')
-    return
+  let permission = await PushNotifications.requestPermissions();
+
+  if (permission.receive !== "granted") {
+    console.warn("Push notification permission denied");
+    return;
   }
-  
+
   // Register for push
-  await PushNotifications.register()
-  
+  await PushNotifications.register();
+
   // Handle registration
-  PushNotifications.addListener('registration', async (token) => {
-    console.log('Push registration success, token: ' + token.value)
-    
+  PushNotifications.addListener("registration", async (token) => {
+    console.log("Push registration success, token: " + token.value);
+
     // Store token in Supabase
-    await supabase.from('push_tokens').upsert({
+    await supabase.from("push_tokens").upsert({
       user_id: supabase.auth.user()?.id,
       token: token.value,
-      platform: Capacitor.getPlatform() // 'ios' or 'android'
-    })
-  })
-  
+      platform: Capacitor.getPlatform(), // 'ios' or 'android'
+    });
+  });
+
   // Handle push notification received (app in foreground)
-  PushNotifications.addListener('pushNotificationReceived', (notification) => {
-    console.log('Push notification received: ', notification)
-    
+  PushNotifications.addListener("pushNotificationReceived", (notification) => {
+    console.log("Push notification received: ", notification);
+
     // Show in-app notification banner
     // (Capacitor handles system notification when app in background)
-  })
-  
+  });
+
   // Handle push notification action (user tapped notification)
-  PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
-    console.log('Push notification action: ', action)
-    
-    const data = action.notification.data
-    
+  PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
+    console.log("Push notification action: ", action);
+
+    const data = action.notification.data;
+
     // Navigate to appropriate screen based on notification type
-    if (data.type === 'message_received' || data.type === 'message_reply') {
+    if (data.type === "message_received" || data.type === "message_reply") {
       // Navigate to conversation
-      navigateToConversation(data.conversation_id)
-    } else if (data.type === 'coupon_shared_message') {
+      navigateToConversation(data.conversation_id);
+    } else if (data.type === "coupon_shared_message") {
       // Navigate to coupon detail
-      navigateToCoupon(data.shared_coupon_id)
-    } else if (data.type === 'deal_shared_message') {
+      navigateToCoupon(data.shared_coupon_id);
+    } else if (data.type === "deal_shared_message") {
       // Navigate to deal detail
-      navigateToDeal(data.shared_deal_id)
+      navigateToDeal(data.shared_deal_id);
     }
-  })
+  });
 }
 ```
 
 **4. Blocked Users Integration (Mobile)**
+
 - **Block Action from Message Screen**:
   - iOS: Show action sheet with "Block User" option
   - Android: Show bottom sheet with "Block User" option
@@ -173,41 +180,42 @@ export async function registerPushNotifications() {
 
 ```typescript
 // Mobile: Block user from conversation screen
-import { ActionSheet } from '@capacitor/action-sheet'
-import { Haptics } from '@capacitor/haptics'
+import { ActionSheet } from "@capacitor/action-sheet";
+import { Haptics } from "@capacitor/haptics";
 
-export async function showBlockUserActionSheet(userId: string, userName: string) {
+export async function showBlockUserActionSheet(
+  userId: string,
+  userName: string
+) {
   const result = await ActionSheet.showActions({
-    title: 'Block ' + userName + '?',
-    message: 'Blocked users cannot send you messages',
-    options: [
-      { title: 'Block User' },
-      { title: 'Cancel', style: 'cancel' }
-    ]
-  })
-  
+    title: "Block " + userName + "?",
+    message: "Blocked users cannot send you messages",
+    options: [{ title: "Block User" }, { title: "Cancel", style: "cancel" }],
+  });
+
   if (result.index === 0) {
     // User confirmed block
-    await Haptics.impact({ style: ImpactStyle.Medium })
-    
+    await Haptics.impact({ style: ImpactStyle.Medium });
+
     // Insert into blocked_users table
-    const { error } = await supabase.from('blocked_users').insert({
+    const { error } = await supabase.from("blocked_users").insert({
       blocker_id: supabase.auth.user()?.id,
-      blocked_id: userId
-    })
-    
+      blocked_id: userId,
+    });
+
     if (!error) {
       // Success feedback
-      await Haptics.notification({ type: 'success' })
-      
+      await Haptics.notification({ type: "success" });
+
       // Navigate back to conversation list
-      navigateBack()
+      navigateBack();
     }
   }
 }
 ```
 
 **5. Auth Integration (Mobile)**
+
 - **Biometric Authentication**:
   - iOS: Face ID / Touch ID
   - Android: Fingerprint / Face Unlock
@@ -215,48 +223,49 @@ export async function showBlockUserActionSheet(userId: string, userName: string)
 
 ```typescript
 // Mobile: Biometric authentication for app unlock
-import { NativeBiometric } from '@capgo/capacitor-native-biometric'
+import { NativeBiometric } from "@capgo/capacitor-native-biometric";
 
 export async function authenticateWithBiometrics(): Promise<boolean> {
   // Check if biometrics available
-  const available = await NativeBiometric.isAvailable()
-  
+  const available = await NativeBiometric.isAvailable();
+
   if (!available.isAvailable) {
-    console.warn('Biometric authentication not available')
-    return false
+    console.warn("Biometric authentication not available");
+    return false;
   }
-  
+
   try {
     // Verify user
     await NativeBiometric.verifyIdentity({
-      reason: 'Authenticate to access messages',
-      title: 'Unlock SynC',
-      subtitle: 'Use biometrics to unlock',
-      description: 'Your messages are secured'
-    })
-    
-    return true // Authentication success
+      reason: "Authenticate to access messages",
+      title: "Unlock SynC",
+      subtitle: "Use biometrics to unlock",
+      description: "Your messages are secured",
+    });
+
+    return true; // Authentication success
   } catch (error) {
-    console.error('Biometric authentication failed:', error)
-    return false
+    console.error("Biometric authentication failed:", error);
+    return false;
   }
 }
 
 // Use in App.tsx on app launch
-App.addListener('appStateChange', async ({ isActive }) => {
+App.addListener("appStateChange", async ({ isActive }) => {
   if (isActive) {
     // App came to foreground, require auth
-    const authenticated = await authenticateWithBiometrics()
-    
+    const authenticated = await authenticateWithBiometrics();
+
     if (!authenticated) {
       // Show PIN entry screen as fallback
-      navigateToAuthScreen()
+      navigateToAuthScreen();
     }
   }
-})
+});
 ```
 
 **6. Deep Linking (Mobile)**
+
 - **Open Conversation from Notification**:
   - iOS: Universal Links (`https://sync.app/conversation/{id}`)
   - Android: App Links (`https://sync.app/conversation/{id}`)
@@ -264,20 +273,20 @@ App.addListener('appStateChange', async ({ isActive }) => {
 
 ```typescript
 // Mobile: Handle deep links
-import { App } from '@capacitor/app'
+import { App } from "@capacitor/app";
 
 export function setupDeepLinking() {
-  App.addListener('appUrlOpen', (data) => {
-    console.log('App opened with URL: ' + data.url)
-    
+  App.addListener("appUrlOpen", (data) => {
+    console.log("App opened with URL: " + data.url);
+
     // Parse URL: https://sync.app/conversation/123e4567-e89b-12d3-a456-426614174000
-    const conversationMatch = data.url.match(/\/conversation\/([a-f0-9-]+)/i)
-    
+    const conversationMatch = data.url.match(/\/conversation\/([a-f0-9-]+)/i);
+
     if (conversationMatch) {
-      const conversationId = conversationMatch[1]
-      navigateToConversation(conversationId)
+      const conversationId = conversationMatch[1];
+      navigateToConversation(conversationId);
     }
-  })
+  });
 }
 
 // iOS: Configure in Info.plist
@@ -352,15 +361,15 @@ warp mcp run puppeteer "verify conversation hidden"
 
 #### **Key Differences from Web**
 
-| Aspect | Web | iOS/Android |
-|--------|-----|-------------|
-| **Friendships UI** | Button click | Contacts integration |
-| **Share Action** | Web Share API | Native share sheet + haptics |
-| **Notifications** | Web Push API | APNs (iOS), FCM (Android) |
-| **Block Action** | Dropdown menu | Action sheet / bottom sheet |
-| **Auth** | Password | Biometric (Face ID, Touch ID) |
-| **Deep Linking** | URL params | Universal Links / App Links |
-| **Background Behavior** | Service Worker | Background tasks + push |
+| Aspect                  | Web            | iOS/Android                   |
+| ----------------------- | -------------- | ----------------------------- |
+| **Friendships UI**      | Button click   | Contacts integration          |
+| **Share Action**        | Web Share API  | Native share sheet + haptics  |
+| **Notifications**       | Web Push API   | APNs (iOS), FCM (Android)     |
+| **Block Action**        | Dropdown menu  | Action sheet / bottom sheet   |
+| **Auth**                | Password       | Biometric (Face ID, Touch ID) |
+| **Deep Linking**        | URL params     | Universal Links / App Links   |
+| **Background Behavior** | Service Worker | Background tasks + push       |
 
 #### **Required Capacitor Plugins**
 
@@ -527,28 +536,28 @@ BEGIN
   -- For direct messages, verify friendship
   IF p_type = 'direct' THEN
     v_other_user := (
-      SELECT id FROM unnest(p_participants) AS id 
-      WHERE id != auth.uid() 
+      SELECT id FROM unnest(p_participants) AS id
+      WHERE id != auth.uid()
       LIMIT 1
     );
-    
+
     IF NOT can_message_user(v_other_user) THEN
       RAISE EXCEPTION 'Cannot message user: not friends';
     END IF;
   END IF;
-  
+
   -- Check for existing conversation
   SELECT id INTO v_conversation_id
   FROM conversations
   WHERE type = p_type
     AND participants = p_participants;
-  
+
   IF v_conversation_id IS NULL THEN
     INSERT INTO conversations (type, participants)
     VALUES (p_type, p_participants)
     RETURNING id INTO v_conversation_id;
   END IF;
-  
+
   RETURN v_conversation_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -564,7 +573,7 @@ BEGIN
     WHERE type = 'direct'
       AND participants && ARRAY[NEW.user_id, NEW.friend_id];
   END IF;
-  
+
   -- If friendship is accepted, restore conversations
   IF NEW.status = 'accepted' AND OLD.status != 'accepted' THEN
     UPDATE conversations
@@ -572,7 +581,7 @@ BEGIN
     WHERE type = 'direct'
       AND participants && ARRAY[NEW.user_id, NEW.friend_id];
   END IF;
-  
+
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -620,12 +629,12 @@ BEGIN
     p_shared_deal_id
   )
   RETURNING id INTO v_message_id;
-  
+
   -- Update conversation last_message_at
   UPDATE conversations
   SET last_message_at = NOW()
   WHERE id = p_conversation_id;
-  
+
   -- Track share in shares table if coupon/deal shared
   IF p_shared_coupon_id IS NOT NULL THEN
     INSERT INTO shares (
@@ -645,7 +654,7 @@ BEGIN
     )
     RETURNING id INTO v_share_id;
   END IF;
-  
+
   IF p_shared_deal_id IS NOT NULL THEN
     INSERT INTO shares (
       user_id,
@@ -664,7 +673,7 @@ BEGIN
     )
     RETURNING id INTO v_share_id;
   END IF;
-  
+
   RETURN v_message_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -680,7 +689,7 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'notification_type') THEN
     RAISE EXCEPTION 'notification_type enum does not exist';
   END IF;
-  
+
   -- Note: These should be added to the notification_type enum
   -- ALTER TYPE notification_type ADD VALUE IF NOT EXISTS 'message_received';
   -- ALTER TYPE notification_type ADD VALUE IF NOT EXISTS 'message_reply';
@@ -702,7 +711,7 @@ BEGIN
   SELECT full_name INTO v_sender_name
   FROM profiles
   WHERE id = NEW.sender_id;
-  
+
   -- Determine notification type and content
   IF NEW.shared_coupon_id IS NOT NULL THEN
     v_notification_type := 'coupon_shared_message';
@@ -721,7 +730,7 @@ BEGIN
     v_title := v_sender_name || ' sent you a message';
     v_body := NEW.content;
   END IF;
-  
+
   -- Create notification for each participant (except sender)
   FOR v_recipient IN (
     SELECT unnest(participants)
@@ -754,7 +763,7 @@ BEGIN
       );
     END IF;
   END LOOP;
-  
+
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -787,7 +796,7 @@ BEGIN
   SELECT participants INTO v_recipients
   FROM conversations
   WHERE id = p_conversation_id;
-  
+
   -- Check if sender is blocked by any recipient (bidirectional)
   IF EXISTS (
     SELECT 1 FROM blocked_users
@@ -799,7 +808,7 @@ BEGIN
   ) THEN
     RAISE EXCEPTION 'Cannot send message: blocked user';
   END IF;
-  
+
   -- Rest of send_message logic...
   INSERT INTO messages (
     conversation_id,
@@ -820,18 +829,18 @@ BEGIN
     p_shared_deal_id
   )
   RETURNING id INTO v_message_id;
-  
+
   UPDATE conversations
   SET last_message_at = NOW()
   WHERE id = p_conversation_id;
-  
+
   RETURN v_message_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Update conversation_list view to filter blocked users
 CREATE OR REPLACE VIEW conversation_list AS
-SELECT 
+SELECT
   c.id AS conversation_id,
   c.type,
   c.participants,
@@ -840,28 +849,28 @@ SELECT
   c.is_pinned,
   c.created_at,
   c.last_message_at,
-  
+
   -- Last message details
   lm.id AS last_message_id,
   lm.content AS last_message_content,
   lm.type AS last_message_type,
   lm.sender_id AS last_message_sender_id,
   lm.created_at AS last_message_timestamp,
-  
+
   -- Sender profile
   sender.full_name AS last_message_sender_name,
   sender.avatar_url AS last_message_sender_avatar,
-  
+
   -- Other participant info
-  CASE 
+  CASE
     WHEN c.type = 'direct' THEN
       (SELECT id FROM unnest(c.participants) AS id WHERE id != auth.uid() LIMIT 1)
   END AS other_participant_id,
-  
+
   other_profile.full_name AS other_participant_name,
   other_profile.avatar_url AS other_participant_avatar,
   other_profile.is_online AS other_participant_online,
-  
+
   -- Unread count
   (
     SELECT COUNT(*)
@@ -872,15 +881,15 @@ SELECT
       AND mrr.read_at IS NULL
       AND m.is_deleted = false
   ) AS unread_count
-  
+
 FROM conversations c
 
 -- Last message
 LEFT JOIN LATERAL (
-  SELECT * FROM messages 
-  WHERE conversation_id = c.id 
+  SELECT * FROM messages
+  WHERE conversation_id = c.id
     AND is_deleted = false
-  ORDER BY created_at DESC 
+  ORDER BY created_at DESC
   LIMIT 1
 ) lm ON true
 
@@ -912,7 +921,7 @@ Update friend service to show messaging CTA and last message preview:
 ```sql
 -- Add messaging info to friend list view
 CREATE OR REPLACE VIEW friend_list_with_messaging AS
-SELECT 
+SELECT
   f.*,
   p.*,
   -- Last message info
@@ -953,6 +962,7 @@ WHERE f.status = 'accepted'
 ## 🧪 **Testing Checklist**
 
 ### **Friendships Integration**
+
 - [ ] Cannot message non-friends
 - [ ] Can message accepted friends
 - [ ] Friendship removal archives conversations
@@ -960,6 +970,7 @@ WHERE f.status = 'accepted'
 - [ ] Blocking prevents messaging
 
 ### **Shares Integration**
+
 - [ ] Coupon sharing creates share record
 - [ ] Deal sharing creates share record
 - [ ] Share metadata includes message ID
@@ -967,6 +978,7 @@ WHERE f.status = 'accepted'
 - [ ] Share method is 'message'
 
 ### **Notifications Integration**
+
 - [ ] message_received notification created
 - [ ] message_reply notification created
 - [ ] coupon_shared_message notification created
@@ -975,6 +987,7 @@ WHERE f.status = 'accepted'
 - [ ] Notification data includes correct IDs
 
 ### **Blocked Users Integration**
+
 - [ ] Blocked user cannot send message
 - [ ] Blocker cannot send message to blocked
 - [ ] Blocked conversations not in list
@@ -982,6 +995,7 @@ WHERE f.status = 'accepted'
 - [ ] Existing messages remain visible
 
 ### **Friend Service Integration**
+
 - [ ] Friend list shows last message
 - [ ] Friend list shows conversation ID
 - [ ] Messaging CTA appears for friends
@@ -991,21 +1005,22 @@ WHERE f.status = 'accepted'
 
 ## 📊 **Success Metrics**
 
-| Integration | Test | Status |
-|------------|------|--------|
-| **Friendships** | Only friends can message | ⏱️ Test |
-| **Shares** | Coupons tracked correctly | ⏱️ Test |
-| **Shares** | Deals tracked correctly | ⏱️ Test |
-| **Notifications** | All 4 types working | ⏱️ Test |
-| **Blocked Users** | Cannot message blocked | ⏱️ Test |
-| **Blocked Users** | Conversations filtered | ⏱️ Test |
-| **Friend Service** | Messaging CTA present | ⏱️ Test |
+| Integration        | Test                      | Status  |
+| ------------------ | ------------------------- | ------- |
+| **Friendships**    | Only friends can message  | ⏱️ Test |
+| **Shares**         | Coupons tracked correctly | ⏱️ Test |
+| **Shares**         | Deals tracked correctly   | ⏱️ Test |
+| **Notifications**  | All 4 types working       | ⏱️ Test |
+| **Blocked Users**  | Cannot message blocked    | ⏱️ Test |
+| **Blocked Users**  | Conversations filtered    | ⏱️ Test |
+| **Friend Service** | Messaging CTA present     | ⏱️ Test |
 
 ---
 
 ## 🔗 **Dependencies**
 
 **Requires:**
+
 - ✅ friendships table
 - ✅ shares table
 - ✅ notifications table
@@ -1015,6 +1030,7 @@ WHERE f.status = 'accepted'
 - ✅ Story 8.1.4 (Functions)
 
 **Enables:**
+
 - Complete messaging feature
 - Production deployment
 - End-to-end user flows
@@ -1053,7 +1069,7 @@ BEGIN
   -- Setup: Create two users
   INSERT INTO profiles (id, full_name) VALUES (uuid_generate_v4(), 'User 1') RETURNING id INTO v_user1;
   INSERT INTO profiles (id, full_name) VALUES (uuid_generate_v4(), 'User 2') RETURNING id INTO v_user2;
-  
+
   -- Test: Try to message without friendship (should fail)
   BEGIN
     PERFORM create_conversation('direct', ARRAY[v_user1, v_user2]);
@@ -1061,10 +1077,10 @@ BEGIN
   EXCEPTION WHEN OTHERS THEN
     RAISE NOTICE 'Test passed: Non-friends cannot message';
   END;
-  
+
   -- Setup: Create friendship
   INSERT INTO friendships (user_id, friend_id, status) VALUES (v_user1, v_user2, 'accepted');
-  
+
   -- Test: Try to message with friendship (should succeed)
   PERFORM create_conversation('direct', ARRAY[v_user1, v_user2]);
   RAISE NOTICE 'Test passed: Friends can create conversation';
@@ -1080,10 +1096,10 @@ BEGIN
   -- Setup
   SELECT id INTO v_conversation_id FROM conversations LIMIT 1;
   SELECT id INTO v_coupon_id FROM coupons LIMIT 1;
-  
+
   -- Test: Send message with coupon
   SELECT send_message(v_conversation_id, 'Check this out!', 'text', NULL, v_coupon_id, NULL) INTO v_message_id;
-  
+
   -- Verify: Check shares table
   IF EXISTS (SELECT 1 FROM shares WHERE share_method = 'message' AND shared_coupon_id = v_coupon_id) THEN
     RAISE NOTICE 'Test passed: Share tracked correctly';
@@ -1103,9 +1119,9 @@ BEGIN
   SELECT id INTO v_user1 FROM profiles LIMIT 1;
   SELECT id INTO v_user2 FROM profiles LIMIT 1 OFFSET 1;
   INSERT INTO blocked_users (blocker_id, blocked_id) VALUES (v_user1, v_user2);
-  
+
   SELECT id INTO v_conversation_id FROM conversations WHERE participants && ARRAY[v_user1, v_user2] LIMIT 1;
-  
+
   -- Test: Try to send message (should fail)
   BEGIN
     PERFORM send_message(v_conversation_id, 'Test', 'text', NULL, NULL, NULL);

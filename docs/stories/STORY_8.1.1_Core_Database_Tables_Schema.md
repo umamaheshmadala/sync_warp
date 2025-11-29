@@ -4,7 +4,7 @@
 **Story Owner:** Backend Engineering  
 **Estimated Effort:** 2 days  
 **Priority:** 🔴 Critical (Blocks all other messaging stories)  
-**Status:** 📋 Ready for Implementation
+**Status:** ✅ **COMPLETE** - Implemented 2025-02-01
 
 ---
 
@@ -16,13 +16,14 @@ Create the foundational database schema for SynC's messaging system, including a
 
 ## 📱 **Platform Support**
 
-| Platform | Support | Implementation Notes |
-|----------|---------|---------------------|
-| **Web** | ✅ Full | Supabase Postgres accessible via supabase-js client |
-| **iOS** | ✅ Full | Same database via Capacitor + supabase-js (no native changes needed) |
+| Platform    | Support | Implementation Notes                                                 |
+| ----------- | ------- | -------------------------------------------------------------------- |
+| **Web**     | ✅ Full | Supabase Postgres accessible via supabase-js client                  |
+| **iOS**     | ✅ Full | Same database via Capacitor + supabase-js (no native changes needed) |
 | **Android** | ✅ Full | Same database via Capacitor + supabase-js (no native changes needed) |
 
 ### Architecture Notes
+
 **This is a backend/database story - platform-agnostic by design.**
 
 - **Database Layer**: Supabase Postgres serves all platforms identically
@@ -38,12 +39,13 @@ Create the foundational database schema for SynC's messaging system, including a
    - Not required for MVP database schema
 
 2. **Metadata Column Usage**:
+
    ```json
    // conversations.metadata can store mobile-specific data
    {
      "last_read_mobile": "2025-01-13T18:00:00Z",
      "notification_enabled": true,
-     "ringtone": "default"  // iOS/Android custom ringtone
+     "ringtone": "default" // iOS/Android custom ringtone
    }
    ```
 
@@ -181,6 +183,7 @@ warp mcp run context7 "Review the message_read_receipts table design and suggest
 ## 📋 **Implementation Tasks**
 
 ### **Task 1: Create Conversations Table** ⏱️ 2 hours
+
 ```sql
 CREATE TABLE public.conversations (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -205,6 +208,7 @@ CREATE INDEX idx_conversations_type ON conversations(type);
 ```
 
 ### **Task 2: Create Messages Table** ⏱️ 3 hours
+
 ```sql
 CREATE TABLE public.messages (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -228,7 +232,7 @@ CREATE TABLE public.messages (
   created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL,
   updated_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL,
   CONSTRAINT valid_content CHECK (
-    content IS NOT NULL OR 
+    content IS NOT NULL OR
     array_length(media_urls, 1) > 0 OR
     shared_coupon_id IS NOT NULL OR
     shared_deal_id IS NOT NULL
@@ -247,6 +251,7 @@ CREATE INDEX idx_messages_reply_to ON messages(reply_to_id) WHERE reply_to_id IS
 ```
 
 ### **Task 3: Create Message Read Receipts Table** ⏱️ 1 hour
+
 ```sql
 CREATE TABLE public.message_read_receipts (
   message_id UUID NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
@@ -263,6 +268,7 @@ CREATE INDEX idx_read_receipts_unread ON message_read_receipts(user_id, read_at)
 ```
 
 ### **Task 4: Create Conversation Participants Table** ⏱️ 1 hour
+
 ```sql
 CREATE TABLE public.conversation_participants (
   conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
@@ -284,6 +290,7 @@ CREATE INDEX idx_participants_active ON conversation_participants(user_id) WHERE
 ```
 
 ### **Task 5: Create Message Edits Table** ⏱️ 1 hour
+
 ```sql
 CREATE TABLE public.message_edits (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -299,6 +306,7 @@ CREATE INDEX idx_message_edits_message_id ON message_edits(message_id, edited_at
 ```
 
 ### **Task 6: Create Typing Indicators Table with Auto-Cleanup** ⏱️ 1 hour
+
 ```sql
 CREATE TABLE public.typing_indicators (
   conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
@@ -313,7 +321,7 @@ CREATE INDEX idx_typing_conversation_id ON typing_indicators(conversation_id);
 CREATE OR REPLACE FUNCTION cleanup_old_typing_indicators()
 RETURNS trigger AS $$
 BEGIN
-  DELETE FROM typing_indicators 
+  DELETE FROM typing_indicators
   WHERE started_at < now() - INTERVAL '10 seconds';
   RETURN NEW;
 END;
@@ -325,6 +333,7 @@ CREATE TRIGGER cleanup_typing_trigger
 ```
 
 ### **Task 7: Create Blocked Users Table** ⏱️ 1 hour
+
 ```sql
 CREATE TABLE public.blocked_users (
   blocker_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -340,6 +349,7 @@ CREATE INDEX idx_blocked_users_blocked ON blocked_users(blocked_id);
 ```
 
 ### **Task 8: Enable Realtime & Test** ⏱️ 1 hour
+
 - Enable Realtime publication on conversations, messages, message_read_receipts
 - Test Realtime subscriptions
 - Verify auto-cleanup trigger works
@@ -349,6 +359,7 @@ CREATE INDEX idx_blocked_users_blocked ON blocked_users(blocked_id);
 ## 🧪 **Testing Checklist**
 
 ### **Schema Validation Tests**
+
 - [ ] All tables exist in database
 - [ ] All columns have correct data types
 - [ ] All constraints work as expected
@@ -356,12 +367,14 @@ CREATE INDEX idx_blocked_users_blocked ON blocked_users(blocked_id);
 - [ ] Default values are set correctly
 
 ### **Index Performance Tests**
+
 - [ ] GIN index on participants used in queries
 - [ ] Composite index on (conversation_id, created_at) used
 - [ ] Partial indexes reduce index size
 - [ ] No sequential scans in EXPLAIN plans
 
 ### **Constraint Tests**
+
 - [ ] Cannot insert conversation with < 2 participants
 - [ ] Cannot insert message with invalid type
 - [ ] Cannot block self
@@ -369,10 +382,12 @@ CREATE INDEX idx_blocked_users_blocked ON blocked_users(blocked_id);
 - [ ] JSONB metadata validation works
 
 ### **Trigger Tests**
+
 - [ ] Typing indicators auto-cleanup works
 - [ ] Old indicators (>10s) are deleted automatically
 
 ### **Realtime Tests**
+
 - [ ] New conversation appears in subscriptions
 - [ ] New message triggers realtime event
 - [ ] Read receipt update triggers event
@@ -381,25 +396,27 @@ CREATE INDEX idx_blocked_users_blocked ON blocked_users(blocked_id);
 
 ## 📊 **Success Metrics**
 
-| Metric | Target | How to Measure |
-|--------|--------|----------------|
-| **Migration Success** | 100% | Zero errors during `apply_migration` |
-| **Index Creation** | 100% | All indexes present in `pg_indexes` |
-| **Constraint Validation** | 100% | All invalid inserts rejected |
-| **Realtime Enablement** | 100% | Tables in `pg_publication_tables` |
-| **Query Performance** | < 50ms | EXPLAIN ANALYZE on participant lookup |
+| Metric                    | Target | How to Measure                        |
+| ------------------------- | ------ | ------------------------------------- |
+| **Migration Success**     | 100%   | Zero errors during `apply_migration`  |
+| **Index Creation**        | 100%   | All indexes present in `pg_indexes`   |
+| **Constraint Validation** | 100%   | All invalid inserts rejected          |
+| **Realtime Enablement**   | 100%   | Tables in `pg_publication_tables`     |
+| **Query Performance**     | < 50ms | EXPLAIN ANALYZE on participant lookup |
 
 ---
 
 ## 🔗 **Dependencies**
 
 **Requires:**
+
 - ✅ Supabase project set up
 - ✅ Auth system (Epic 2) completed
 - ✅ Existing `coupons` and `offers` tables
 - ✅ Existing `friendships` table
 
 **Enables:**
+
 - Story 8.1.2 (RLS Implementation)
 - Story 8.1.4 (Database Functions)
 - All other messaging stories
@@ -438,5 +455,6 @@ CREATE INDEX idx_blocked_users_blocked ON blocked_users(blocked_id);
 
 ---
 
-**Story Status:** 📋 Ready for Implementation  
+**Story Status:** ✅ **COMPLETE** - Implemented 2025-02-01  
+**Migration File:** `supabase/migrations/20250201_create_messaging_tables.sql`  
 **Next Story:** [STORY 8.1.2 - Row Level Security Implementation](./STORY_8.1.2_RLS_Implementation.md)

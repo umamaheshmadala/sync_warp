@@ -4,7 +4,7 @@
 **Story Owner:** Backend Engineering / DevOps  
 **Estimated Effort:** 2 days  
 **Priority:** 🔴 Critical  
-**Status:** 📋 Ready for Implementation  
+**Status:** ✅ **COMPLETE** - Implemented 2025-02-03  
 **Depends On:** Story 8.1.1 (Core Tables)
 
 ---
@@ -17,13 +17,14 @@ Set up a secure Supabase storage bucket for message attachments (images/videos) 
 
 ## 📱 **Platform Support**
 
-| Platform | Support | Implementation Notes |
-|----------|---------|---------------------|
-| **Web** | ✅ Full | File uploads via browser File API + supabase-js |
-| **iOS** | ✅ Full | File uploads via Capacitor Camera/Filesystem + supabase-js |
+| Platform    | Support | Implementation Notes                                       |
+| ----------- | ------- | ---------------------------------------------------------- |
+| **Web**     | ✅ Full | File uploads via browser File API + supabase-js            |
+| **iOS**     | ✅ Full | File uploads via Capacitor Camera/Filesystem + supabase-js |
 | **Android** | ✅ Full | File uploads via Capacitor Camera/Filesystem + supabase-js |
 
 ### Architecture Notes
+
 **Storage bucket serves all platforms with platform-specific file paths.**
 
 - **Bucket**: Single `message-attachments` bucket for all platforms
@@ -49,6 +50,7 @@ Set up a secure Supabase storage bucket for message attachments (images/videos) 
    - Must convert to Blob/File before upload (Epic 8.3.1)
 
 3. **File Path Structure** (same for all platforms):
+
    ```
    message-attachments/
      {user_id}/
@@ -167,13 +169,14 @@ warp mcp run context7 "Find all places in the codebase where file uploads will b
 ## 📋 **Implementation Tasks**
 
 ### **Task 1: Create Bucket via SQL** ⏱️ 1 hour
+
 ```sql
 -- Create bucket with configuration
 INSERT INTO storage.buckets (
-  id, 
-  name, 
-  public, 
-  file_size_limit, 
+  id,
+  name,
+  public,
+  file_size_limit,
   allowed_mime_types
 ) VALUES (
   'message-attachments',
@@ -182,7 +185,7 @@ INSERT INTO storage.buckets (
   26214400, -- 25 MB in bytes
   ARRAY[
     'image/jpeg',
-    'image/png', 
+    'image/png',
     'image/gif',
     'image/webp',
     'video/mp4',
@@ -193,6 +196,7 @@ INSERT INTO storage.buckets (
 ```
 
 ### **Task 2: Create RLS Policies** ⏱️ 2 hours
+
 ```sql
 -- Policy 1: Upload Policy
 CREATE POLICY "Users can upload their own attachments"
@@ -210,10 +214,10 @@ TO authenticated
 USING (
   bucket_id = 'message-attachments' AND
   EXISTS (
-    SELECT 1 
+    SELECT 1
     FROM messages m
     JOIN conversation_participants cp ON cp.conversation_id = m.conversation_id
-    WHERE 
+    WHERE
       cp.user_id = auth.uid() AND
       cp.left_at IS NULL AND
       (m.media_urls @> ARRAY[storage.objects.name] OR
@@ -232,12 +236,14 @@ USING (
 ```
 
 ### **Task 3: Configure CORS** ⏱️ 1 hour
+
 - Configure allowed origins for web app
 - Configure allowed origins for mobile app
 - Set allowed methods: GET, POST, DELETE
 - Document CORS configuration
 
 ### **Task 4: Test Upload/Download** ⏱️ 3 hours
+
 - Create test upload function
 - Test image upload (JPEG, PNG, GIF, WebP)
 - Test video upload (MP4, QuickTime, WebM)
@@ -248,6 +254,7 @@ USING (
 - Test download from signed URL
 
 ### **Task 5: Document File Structure** ⏱️ 1 hour
+
 ```
 message-attachments/
   {user_id}/              ← User's folder
@@ -257,6 +264,7 @@ message-attachments/
 ```
 
 Example:
+
 ```
 message-attachments/
   550e8400-e29b-41d4-a716-446655440000/
@@ -268,6 +276,7 @@ message-attachments/
 ```
 
 ### **Task 6: Setup Cleanup Strategy** ⏱️ 1 hour
+
 - Document orphaned file detection
 - Plan cleanup schedule (handled in Story 8.1.6)
 - Document storage monitoring
@@ -277,12 +286,14 @@ message-attachments/
 ## 🧪 **Testing Checklist**
 
 ### **Configuration Tests**
+
 - [ ] Bucket exists and is private
 - [ ] File size limit is 25MB
 - [ ] Only allowed MIME types accepted
 - [ ] CORS configured correctly
 
 ### **Upload Tests**
+
 - [ ] User can upload image to their folder
 - [ ] User can upload video to their folder
 - [ ] User CANNOT upload to another user's folder
@@ -291,6 +302,7 @@ message-attachments/
 - [ ] File path follows correct structure
 
 ### **Access Tests**
+
 - [ ] User can view attachments in their conversations
 - [ ] User CANNOT view attachments from other conversations
 - [ ] Signed URL works for authorized user
@@ -298,11 +310,13 @@ message-attachments/
 - [ ] Unauthorized user cannot access file
 
 ### **Delete Tests**
+
 - [ ] User can delete their own attachments
 - [ ] User CANNOT delete others' attachments
 - [ ] Deleted files removed from storage
 
 ### **Performance Tests**
+
 - [ ] Upload 5MB image < 3 seconds
 - [ ] Signed URL generation < 100ms
 - [ ] Download via signed URL performs well
@@ -311,25 +325,27 @@ message-attachments/
 
 ## 📊 **Success Metrics**
 
-| Metric | Target | How to Measure |
-|--------|--------|----------------|
-| **Upload Success Rate** | > 99% | Monitor upload errors |
-| **File Size Compliance** | 100% | All files ≤ 25MB |
-| **MIME Type Compliance** | 100% | Only allowed types stored |
-| **Signed URL Expiration** | 100% | URLs expire at 1 hour |
-| **RLS Enforcement** | 100% | No unauthorized access |
-| **Upload Speed (5MB)** | < 3s | Measure upload time |
+| Metric                    | Target | How to Measure            |
+| ------------------------- | ------ | ------------------------- |
+| **Upload Success Rate**   | > 99%  | Monitor upload errors     |
+| **File Size Compliance**  | 100%   | All files ≤ 25MB          |
+| **MIME Type Compliance**  | 100%   | Only allowed types stored |
+| **Signed URL Expiration** | 100%   | URLs expire at 1 hour     |
+| **RLS Enforcement**       | 100%   | No unauthorized access    |
+| **Upload Speed (5MB)**    | < 3s   | Measure upload time       |
 
 ---
 
 ## 🔗 **Dependencies**
 
 **Requires:**
+
 - ✅ Story 8.1.1 (messages table with media_urls column)
 - ✅ Supabase Storage enabled
 - ✅ Auth system working
 
 **Enables:**
+
 - Epic 8.3 (Media Attachments feature)
 - Story 8.1.6 (Cleanup of old files)
 
@@ -350,16 +366,12 @@ message-attachments/
 
 1. **Orphaned Files**: Files uploaded but message creation fails
    - Solution: Cleanup job in Story 8.1.6
-   
 2. **Filename Conflicts**: Same filename uploaded twice
    - Solution: Timestamp prefix ensures uniqueness
-   
 3. **Malicious File Upload**: User tries to upload executable
    - Solution: MIME type restriction enforced by bucket
-   
 4. **Storage Quota**: User uploads too many files
    - Solution: Monitor and implement user quotas (future)
-   
 5. **Deleted Message Files**: Message deleted but file remains
    - Solution: Cleanup job references messages table
 
@@ -371,25 +383,28 @@ message-attachments/
 ## 💡 **Implementation Notes**
 
 ### **Signed URL Generation (Frontend Code)**
+
 ```typescript
 // Generate signed URL for viewing
 const { data, error } = await supabase.storage
-  .from('message-attachments')
+  .from("message-attachments")
   .createSignedUrl(filePath, 3600); // 1 hour expiration
 ```
 
 ### **Upload Function (Frontend Code)**
+
 ```typescript
 // Upload with proper path structure
 const userId = (await supabase.auth.getUser()).data.user!.id;
 const fileName = `${userId}/${conversationId}/${Date.now()}-${file.name}`;
 
 const { data, error } = await supabase.storage
-  .from('message-attachments')
+  .from("message-attachments")
   .upload(fileName, file);
 ```
 
 ### **Thumbnail Generation**
+
 - Use `browser-image-compression` library (frontend)
 - Generate 300px max dimension thumbnail
 - Upload with `_thumb.jpg` suffix
@@ -411,5 +426,7 @@ const { data, error } = await supabase.storage
 
 ---
 
-**Story Status:** 📋 Ready for Implementation  
+**Story Status:** ✅ **COMPLETE** - Implemented 2025-02-03  
+**Migration File:** `supabase/migrations/20250203_create_message_attachments_bucket.sql`  
+**Bucket:** `message-attachments` (Private, 25MB limit, 7 MIME types)  
 **Next Story:** [STORY 8.1.4 - Core Database Functions](./STORY_8.1.4_Core_Database_Functions.md)

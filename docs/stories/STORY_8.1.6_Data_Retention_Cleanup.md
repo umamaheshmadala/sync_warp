@@ -4,7 +4,7 @@
 **Story Owner:** Backend Engineering  
 **Estimated Effort:** 2 days  
 **Priority:** 🟡 High  
-**Status:** 📋 Ready for Implementation  
+**Status:** ✅ **COMPLETE** - Implemented 2025-02-06  
 **Depends On:** Story 8.1.1 (Core Tables), Story 8.1.3 (Storage Bucket)
 
 ---
@@ -24,18 +24,21 @@ Data retention and cleanup is a **server-side operation** that runs identically 
 #### **Mobile-Specific Cleanup Considerations**
 
 **1. Client-Side Cache Cleanup**
+
 - **Local Message Cache**: Mobile apps cache messages locally using SQLite/IndexedDB
   - iOS: SQLite via `@capacitor/preferences` or `@capacitor-community/sqlite`
   - Android: SQLite or IndexedDB
   - Need client-side cleanup logic matching server retention policy (90 days)
 
 **2. Offline Message Queue**
+
 - **Pending Messages**: Mobile apps queue messages during offline periods
   - Archived messages on server should be marked as stale if still in local queue
   - Cleanup function must handle edge case where user sends message to archived conversation
   - Implement client-side check: "This conversation has been archived" before sending
 
 **3. Local File Storage Cleanup**
+
 - **Downloaded Media**: iOS/Android cache images/videos locally
   - iOS: `Documents/` folder via `@capacitor/filesystem`
   - Android: `files/` or Gallery via `@capacitor/filesystem`
@@ -43,18 +46,21 @@ Data retention and cleanup is a **server-side operation** that runs identically 
   - Implement background sync: Check server storage, clean orphaned local files
 
 **4. Storage Capacity Monitoring**
+
 - **Mobile Constraints**: Devices have limited storage compared to cloud
   - More aggressive cleanup on mobile (e.g., 30 days vs 90 days for server)
   - Provide user-facing storage management UI showing cache size
   - Option: "Clear old messages older than 30/60/90 days"
 
 **5. Background Sync After Cleanup**
+
 - **Realtime Sync Issues**: If server archives messages while app offline
   - When app reconnects, Realtime may try to deliver archived message events
   - Client should handle `message.archived` event gracefully
   - Update local cache to mark messages as archived (hide from UI)
 
 **6. Notification Cleanup**
+
 - **Push Notifications**: Old notifications for archived messages should be cleared
   - iOS: Use `@capacitor/push-notifications` to clear delivered notifications
   - Android: Use `@capacitor/push-notifications` to cancel notifications
@@ -64,40 +70,40 @@ Data retention and cleanup is a **server-side operation** that runs identically 
 
 ```typescript
 // Client-side cleanup (mobile app)
-import { Filesystem, Directory } from '@capacitor/filesystem'
-import { PushNotifications } from '@capacitor/push-notifications'
+import { Filesystem, Directory } from "@capacitor/filesystem";
+import { PushNotifications } from "@capacitor/push-notifications";
 
 // 1. Clean local cached messages older than 90 days
 export async function cleanupLocalMessageCache() {
-  const retentionDate = Date.now() - (90 * 24 * 60 * 60 * 1000)
-  
+  const retentionDate = Date.now() - 90 * 24 * 60 * 60 * 1000;
+
   // Using local SQLite
   await db.execute(
     `DELETE FROM local_messages WHERE created_at < ? AND is_synced = true`,
     [retentionDate]
-  )
+  );
 }
 
 // 2. Clean local media files for deleted server files
 export async function cleanupOrphanedLocalFiles() {
   // Get list of local files
   const localFiles = await Filesystem.readdir({
-    path: 'message-attachments',
-    directory: Directory.Documents
-  })
-  
+    path: "message-attachments",
+    directory: Directory.Documents,
+  });
+
   // Check each file against server
   for (const file of localFiles.files) {
     const { data, error } = await supabase.storage
-      .from('message-attachments')
-      .download(file.name)
-    
-    if (error && error.message.includes('not found')) {
+      .from("message-attachments")
+      .download(file.name);
+
+    if (error && error.message.includes("not found")) {
       // File deleted on server, clean up locally
       await Filesystem.deleteFile({
         path: `message-attachments/${file.name}`,
-        directory: Directory.Documents
-      })
+        directory: Directory.Documents,
+      });
     }
   }
 }
@@ -106,10 +112,10 @@ export async function cleanupOrphanedLocalFiles() {
 export async function clearArchivedMessageNotifications(
   archivedMessageIds: string[]
 ) {
-  const { notifications } = await PushNotifications.getDeliveredNotifications()
-  
+  const { notifications } = await PushNotifications.getDeliveredNotifications();
+
   for (const notification of notifications) {
-    const messageId = notification.data?.message_id
+    const messageId = notification.data?.message_id;
     if (messageId && archivedMessageIds.includes(messageId)) {
       // iOS: Remove notification from tray
       // Android: Cancel notification
@@ -133,14 +139,14 @@ export async function clearArchivedMessageNotifications(
 
 #### **Key Differences from Web**
 
-| Aspect | Web | iOS/Android |
-|--------|-----|-------------|
-| **Local Cache** | IndexedDB (browser-managed) | SQLite (app-managed) |
-| **Cleanup Trigger** | Automatic browser policy | Manual via background task |
-| **Storage Limits** | Browser quota (~50MB-1GB) | Device storage (user-controlled) |
-| **Offline Data** | Limited by quota | Can be larger, needs manual cleanup |
-| **Background Execution** | Service Workers | Background tasks (iOS), WorkManager (Android) |
-| **File Storage** | Browser cache | App-specific directories |
+| Aspect                   | Web                         | iOS/Android                                   |
+| ------------------------ | --------------------------- | --------------------------------------------- |
+| **Local Cache**          | IndexedDB (browser-managed) | SQLite (app-managed)                          |
+| **Cleanup Trigger**      | Automatic browser policy    | Manual via background task                    |
+| **Storage Limits**       | Browser quota (~50MB-1GB)   | Device storage (user-controlled)              |
+| **Offline Data**         | Limited by quota            | Can be larger, needs manual cleanup           |
+| **Background Execution** | Service Workers             | Background tasks (iOS), WorkManager (Android) |
+| **File Storage**         | Browser cache               | App-specific directories                      |
 
 ---
 
@@ -288,7 +294,7 @@ DECLARE
   v_retention_date TIMESTAMPTZ := NOW() - INTERVAL '90 days';
 BEGIN
   v_start_time := clock_timestamp();
-  
+
   IF p_dry_run THEN
     -- Dry run: just count messages that would be archived
     SELECT COUNT(*) INTO v_archived_count
@@ -297,13 +303,13 @@ BEGIN
       AND is_archived = false
       AND is_deleted = false
     LIMIT p_batch_size;
-    
+
     RAISE NOTICE 'DRY RUN: Would archive % messages', v_archived_count;
   ELSE
     -- Actual archiving
     WITH archived_messages AS (
       UPDATE messages
-      SET 
+      SET
         is_archived = true,
         archived_at = NOW()
       WHERE id IN (
@@ -319,15 +325,15 @@ BEGIN
       RETURNING id
     )
     SELECT COUNT(*) INTO v_archived_count FROM archived_messages;
-    
+
     -- Log the operation
     INSERT INTO cleanup_logs (operation, records_affected, status)
     VALUES ('archive_old_messages', v_archived_count, 'success');
   END IF;
-  
+
   v_end_time := clock_timestamp();
   v_execution_time_ms := EXTRACT(EPOCH FROM (v_end_time - v_start_time)) * 1000;
-  
+
   RETURN QUERY SELECT v_archived_count, v_execution_time_ms;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -352,7 +358,7 @@ DECLARE
   v_edits_deleted INTEGER := 0;
 BEGIN
   v_start_time := clock_timestamp();
-  
+
   -- Clean orphaned read receipts (message deleted >7 days ago)
   WITH deleted_receipts AS (
     DELETE FROM message_read_receipts
@@ -365,7 +371,7 @@ BEGIN
     RETURNING id
   )
   SELECT COUNT(*) INTO v_receipts_deleted FROM deleted_receipts;
-  
+
   -- Clean old typing indicators (>1 minute old)
   WITH deleted_typing AS (
     DELETE FROM typing_indicators
@@ -373,7 +379,7 @@ BEGIN
     RETURNING id
   )
   SELECT COUNT(*) INTO v_typing_deleted FROM deleted_typing;
-  
+
   -- Clean old message edits (>30 days old)
   WITH deleted_edits AS (
     DELETE FROM message_edits
@@ -381,11 +387,11 @@ BEGIN
     RETURNING id
   )
   SELECT COUNT(*) INTO v_edits_deleted FROM deleted_edits;
-  
+
   -- Log the operation
   INSERT INTO cleanup_logs (
-    operation, 
-    records_affected, 
+    operation,
+    records_affected,
     status
   )
   VALUES (
@@ -393,11 +399,11 @@ BEGIN
     v_receipts_deleted + v_typing_deleted + v_edits_deleted,
     'success'
   );
-  
+
   v_end_time := clock_timestamp();
   v_execution_time_ms := EXTRACT(EPOCH FROM (v_end_time - v_start_time)) * 1000;
-  
-  RETURN QUERY SELECT 
+
+  RETURN QUERY SELECT
     v_receipts_deleted,
     v_typing_deleted,
     v_edits_deleted,
@@ -424,7 +430,7 @@ DECLARE
 BEGIN
   IF p_dry_run THEN
     -- Dry run: count files that would be deleted
-    SELECT 
+    SELECT
       COUNT(*),
       COALESCE(SUM(metadata->>'size')::BIGINT, 0)
     INTO v_deleted_count, v_storage_freed
@@ -432,9 +438,9 @@ BEGIN
     WHERE bucket_id = 'message-attachments'
       AND created_at < NOW() - INTERVAL '90 days'
     LIMIT p_batch_size;
-    
-    RAISE NOTICE 'DRY RUN: Would delete % files (%.2f MB)', 
-      v_deleted_count, 
+
+    RAISE NOTICE 'DRY RUN: Would delete % files (%.2f MB)',
+      v_deleted_count,
       v_storage_freed::NUMERIC / 1048576;
   ELSE
     -- Delete old files
@@ -451,11 +457,11 @@ BEGIN
       DELETE FROM storage.objects
       WHERE bucket_id = 'message-attachments'
         AND name = v_file.name;
-      
+
       v_deleted_count := v_deleted_count + 1;
       v_storage_freed := v_storage_freed + COALESCE(v_file.file_size, 0);
     END LOOP;
-    
+
     -- Log the operation
     INSERT INTO cleanup_logs (
       operation,
@@ -468,8 +474,8 @@ BEGIN
       'success'
     );
   END IF;
-  
-  RETURN QUERY SELECT 
+
+  RETURN QUERY SELECT
     v_deleted_count,
     (v_storage_freed::NUMERIC / 1048576)::NUMERIC(10,2);
 END;
@@ -480,78 +486,78 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 ```typescript
 // supabase/functions/message-cleanup/index.ts
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 serve(async (req) => {
   try {
     const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
 
     const results = {
       archived_messages: 0,
       orphaned_data_cleaned: 0,
       storage_files_deleted: 0,
-      errors: []
-    }
+      errors: [],
+    };
 
     // Archive old messages (process in batches of 1000)
     try {
       const { data: archiveResult, error: archiveError } = await supabase.rpc(
-        'archive_old_messages',
+        "archive_old_messages",
         { p_batch_size: 1000, p_dry_run: false }
-      )
-      if (archiveError) throw archiveError
-      results.archived_messages = archiveResult[0].messages_archived
+      );
+      if (archiveError) throw archiveError;
+      results.archived_messages = archiveResult[0].messages_archived;
     } catch (err) {
-      results.errors.push({ operation: 'archive', error: err.message })
+      results.errors.push({ operation: "archive", error: err.message });
     }
 
     // Clean orphaned data
     try {
       const { data: cleanupResult, error: cleanupError } = await supabase.rpc(
-        'cleanup_orphaned_data'
-      )
-      if (cleanupError) throw cleanupError
-      results.orphaned_data_cleaned = 
+        "cleanup_orphaned_data"
+      );
+      if (cleanupError) throw cleanupError;
+      results.orphaned_data_cleaned =
         cleanupResult[0].orphaned_receipts_deleted +
         cleanupResult[0].old_typing_indicators_deleted +
-        cleanupResult[0].old_edits_deleted
+        cleanupResult[0].old_edits_deleted;
     } catch (err) {
-      results.errors.push({ operation: 'cleanup', error: err.message })
+      results.errors.push({ operation: "cleanup", error: err.message });
     }
 
     // Clean old storage files (batches of 100)
     try {
       const { data: storageResult, error: storageError } = await supabase.rpc(
-        'cleanup_old_storage_files',
+        "cleanup_old_storage_files",
         { p_batch_size: 100, p_dry_run: false }
-      )
-      if (storageError) throw storageError
-      results.storage_files_deleted = storageResult[0].files_deleted
+      );
+      if (storageError) throw storageError;
+      results.storage_files_deleted = storageResult[0].files_deleted;
     } catch (err) {
-      results.errors.push({ operation: 'storage', error: err.message })
+      results.errors.push({ operation: "storage", error: err.message });
     }
 
     return new Response(JSON.stringify(results), {
-      headers: { 'Content-Type': 'application/json' },
-      status: results.errors.length > 0 ? 207 : 200
-    })
-
+      headers: { "Content-Type": "application/json" },
+      status: results.errors.length > 0 ? 207 : 200,
+    });
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), {
-      headers: { 'Content-Type': 'application/json' },
-      status: 500
-    })
+      headers: { "Content-Type": "application/json" },
+      status: 500,
+    });
   }
-})
+});
 ```
 
 ### **Task 5: Create Admin Monitoring Dashboard** ⏱️ 2 hours
 
 Create SQL queries and views for monitoring:
+
 - Total archived messages
 - Storage space freed
 - Cleanup execution history
@@ -562,6 +568,7 @@ Create SQL queries and views for monitoring:
 ## 🧪 **Testing Checklist**
 
 ### **Archive Function Tests**
+
 - [ ] Archives messages older than 90 days
 - [ ] Does not archive active conversations
 - [ ] Dry-run mode works correctly
@@ -571,6 +578,7 @@ Create SQL queries and views for monitoring:
 - [ ] Logs created correctly
 
 ### **Cleanup Function Tests**
+
 - [ ] Removes orphaned read receipts
 - [ ] Removes typing indicators >1 minute old
 - [ ] Removes message edits >30 days old
@@ -579,6 +587,7 @@ Create SQL queries and views for monitoring:
 - [ ] Logs created correctly
 
 ### **Storage Cleanup Tests**
+
 - [ ] Identifies files older than 90 days
 - [ ] Dry-run mode works correctly
 - [ ] Deletes files from storage
@@ -587,6 +596,7 @@ Create SQL queries and views for monitoring:
 - [ ] No orphaned file references
 
 ### **Edge Function Tests**
+
 - [ ] Executes all cleanup operations
 - [ ] Handles errors gracefully
 - [ ] Returns correct metrics
@@ -597,25 +607,27 @@ Create SQL queries and views for monitoring:
 
 ## 📊 **Success Metrics**
 
-| Metric | Target | How to Measure |
-|--------|--------|----------------|
-| **Archive Function** | < 30s for 10K messages | Execution time log |
-| **Cleanup Function** | < 10s execution | Execution time log |
-| **Storage Cleanup** | < 5s per 100 files | Execution time log |
-| **Zero Data Loss** | 100% | Manual verification |
-| **Downtime During Cleanup** | 0 seconds | Monitor active queries |
-| **Performance Impact** | < 5% | Before/after query times |
+| Metric                      | Target                 | How to Measure           |
+| --------------------------- | ---------------------- | ------------------------ |
+| **Archive Function**        | < 30s for 10K messages | Execution time log       |
+| **Cleanup Function**        | < 10s execution        | Execution time log       |
+| **Storage Cleanup**         | < 5s per 100 files     | Execution time log       |
+| **Zero Data Loss**          | 100%                   | Manual verification      |
+| **Downtime During Cleanup** | 0 seconds              | Monitor active queries   |
+| **Performance Impact**      | < 5%                   | Before/after query times |
 
 ---
 
 ## 🔗 **Dependencies**
 
 **Requires:**
+
 - ✅ Story 8.1.1 (messages, conversations tables)
 - ✅ Story 8.1.3 (Storage bucket)
 - ✅ cleanup_logs table
 
 **Enables:**
+
 - Epic 8.9 (Full automation with cron)
 - Admin monitoring dashboard
 - Storage cost optimization
@@ -657,6 +669,7 @@ Create SQL queries and views for monitoring:
 ## 💡 **Usage Examples**
 
 ### **Manual Archive Execution**
+
 ```sql
 -- Dry run to see what would be archived
 SELECT * FROM archive_old_messages(100, true);
@@ -665,19 +678,20 @@ SELECT * FROM archive_old_messages(100, true);
 SELECT * FROM archive_old_messages(1000, false);
 
 -- Check recent archive operations
-SELECT * FROM cleanup_logs 
+SELECT * FROM cleanup_logs
 WHERE operation = 'archive_old_messages'
-ORDER BY executed_at DESC 
+ORDER BY executed_at DESC
 LIMIT 10;
 ```
 
 ### **Manual Cleanup Execution**
+
 ```sql
 -- Run cleanup
 SELECT * FROM cleanup_orphaned_data();
 
 -- Check cleanup stats
-SELECT 
+SELECT
   operation,
   SUM(records_affected) as total_records,
   COUNT(*) as executions,
@@ -688,6 +702,7 @@ GROUP BY operation;
 ```
 
 ### **Storage Cleanup**
+
 ```sql
 -- Dry run
 SELECT * FROM cleanup_old_storage_files(50, true);
@@ -696,7 +711,7 @@ SELECT * FROM cleanup_old_storage_files(50, true);
 SELECT * FROM cleanup_old_storage_files(100, false);
 
 -- Check total storage saved
-SELECT 
+SELECT
   SUM(records_affected) as total_files_deleted,
   'Check logs for storage freed' as note
 FROM cleanup_logs
@@ -709,7 +724,7 @@ WHERE operation = 'cleanup_old_storage_files';
 
 ```sql
 -- Overall cleanup summary (last 30 days)
-SELECT 
+SELECT
   operation,
   COUNT(*) as executions,
   SUM(records_affected) as total_records_affected,
@@ -728,7 +743,7 @@ WHERE status != 'success'
 ORDER BY executed_at DESC;
 
 -- Messages by archive status
-SELECT 
+SELECT
   is_archived,
   COUNT(*) as count,
   MIN(created_at) as oldest_message,
@@ -737,8 +752,8 @@ FROM messages
 GROUP BY is_archived;
 
 -- Storage usage by age
-SELECT 
-  CASE 
+SELECT
+  CASE
     WHEN created_at > NOW() - INTERVAL '30 days' THEN '<30 days'
     WHEN created_at > NOW() - INTERVAL '90 days' THEN '30-90 days'
     ELSE '>90 days'
@@ -768,5 +783,7 @@ ORDER BY age_group;
 
 ---
 
-**Story Status:** 📋 Ready for Implementation  
+**Story Status:** ✅ **COMPLETE** - Implemented 2025-02-06  
+**Migration File:** `supabase/migrations/20250206_create_cleanup_functions.sql`  
+**Functions Created:** archive_old_messages, cleanup_orphaned_data, cleanup_orphaned_storage_files  
 **Next Story:** [STORY 8.1.7 - Performance Testing](./STORY_8.1.7_Performance_Testing.md)
