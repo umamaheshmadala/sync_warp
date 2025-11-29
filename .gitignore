@@ -106,3 +106,6 @@ android/app/build
 # Firebase credentials - NEVER commit these!
 android/app/google-services.json
 ios/App/GoogleService-Info.plist
+
+*storybook.log
+storybook-static
