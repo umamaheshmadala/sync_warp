@@ -54,7 +54,10 @@
     "mobile:run:ios": "npm run mobile:sync && npx cap run ios",
     "mobile:run:android": "npm run mobile:sync && npx cap run android",
     "mobile:live-reload": "npx cap run android --livereload --external --host=0.0.0.0",
-    "mobile:live-reload:ios": "npx cap run ios --livereload --external"
+    "mobile:live-reload:ios": "npx cap run ios --livereload --external",
+    "docs:generate": "typedoc",
+    "docs:serve": "npx http-server docs/api -p 8080",
+    "docs:validate": "typedoc --validation.invalidLink"
   },
   "dependencies": {
     "@capacitor-community/contacts": "^7.0.0",
@@ -146,6 +149,8 @@
     "prettier": "^3.1.0",
     "prettier-plugin-tailwindcss": "^0.5.7",
     "tailwindcss": "^3.3.6",
+    "typedoc": "^0.28.15",
+    "typedoc-plugin-markdown": "^4.9.0",
     "typescript": "^5.2.2",
     "vite": "^5.0.0",
     "vite-plugin-pwa": "^1.1.0",
