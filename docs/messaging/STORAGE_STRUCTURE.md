@@ -56,6 +56,7 @@ The `messages` table stores references to attachment paths:
 - `messages.thumbnail_url` – `TEXT` path to a thumbnail image, if present.
 
 **Important:**
+
 - Paths stored in `media_urls` and `thumbnail_url` are **relative to the bucket**, e.g.
   - `"550e.../8b7d.../1704150000000-vacation.jpg"`
 - When you call Storage APIs, you always address files via:
@@ -87,48 +88,7 @@ RLS is enforced on `storage.objects` with three policies:
 3. **Delete** – `Users can delete their own attachments`
    - `DELETE` policy.
    - Conditions:
-     - `bucket_id = 'message-attachments'`.
-     - First folder segment equals `auth.uid()`.
-   - Effect: users can remove files under their own `{user_id}/...` prefix, but not other users' files.
 
----
-
-## 5. CORS & Cross-Origin Strategy
-
-Supabase’s Storage UI no longer exposes a detailed per-bucket **CORS** configuration screen. Instead, you typically rely on:
-
-- Supabase’s default CORS behaviour for Storage endpoints, and/or
-- Your own proxy/edge layer (optional) if you need strict control over origins/headers.
-
-### 5.1 Recommended approach for SynC (Web + Capacitor)
-
-1. **Keep the bucket private** and use **signed URLs** (`createSignedUrl`) for downloads.
-2. Use `@supabase/supabase-js` from:
-   - Web: origin will be `https://yourdomain.com` or `http://localhost:*` in dev.
-   - Capacitor (iOS/Android): origin will be `capacitor://localhost` or `http://localhost`.
-3. Test uploads/downloads from each client:
-   - If everything works without CORS errors, you can rely on Supabase defaults.
-   - If you see `No 'Access-Control-Allow-Origin'` errors in the browser console, introduce a **proxy** (see below).
-
-### 5.2 Optional proxy layer (if you hit CORS issues)
-
-If you need full control over CORS headers, front Supabase Storage with your own API or edge middleware:
-
-- Examples: Next.js API route, Cloudflare Worker, Vercel Edge Function.
-- Flow:
-  - Client → your API (`/api/storage/*` on your domain).
-  - Your API → Supabase Storage endpoint.
-  - Your API sets `Access-Control-Allow-Origin` and related headers on the response.
-
-This keeps CORS configuration under your control while still using Supabase as the backing store.
-
-> Note: The exact CORS headers depend on your deployment, but for SynC you’ll generally allow `https://yourdomain.com`, local dev origins, and Capacitor’s `capacitor://localhost`/`http://localhost` as needed.
-
----
-
-## 6. Frontend Usage Examples
-
-These examples assume you are using `@supabase/supabase-js` on:
 - Web (React/Next/etc.)
 - iOS/Android via Capacitor (using the same JS code in a WebView).
 
@@ -147,13 +107,13 @@ Web example (file from `<input type="file" />`):
 
 ```typescript
 const { data, error } = await supabase.storage
-  .from('message-attachments')
+  .from("message-attachments")
   .upload(path, file); // `file` is a File/Blob
 
 if (error) {
-  console.error('Upload failed', error);
+  console.error("Upload failed", error);
 } else {
-  console.log('Uploaded', data?.path);
+  console.log("Uploaded", data?.path);
 }
 ```
 
@@ -169,11 +129,11 @@ The resulting `path` should be saved to `messages.media_urls` for that message.
 
 ```typescript
 const { data, error } = await supabase.storage
-  .from('message-attachments')
+  .from("message-attachments")
   .createSignedUrl(path, 3600); // 3600 seconds = 1 hour
 
 if (error) {
-  console.error('Signed URL failed', error);
+  console.error("Signed URL failed", error);
 } else {
   const signedUrl = data.signedUrl;
   // Use signedUrl in <img>, <video>, or native WebView
