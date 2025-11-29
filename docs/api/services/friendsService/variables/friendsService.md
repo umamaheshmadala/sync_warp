@@ -8,7 +8,7 @@
 
 > `const` **friendsService**: `object`
 
-Defined in: [src/services/friendsService.ts:19](https://github.com/umamaheshmadala/sync_warp/blob/7bc49d2f6f5f71a9227856923276d19db183bbd9/src/services/friendsService.ts#L19)
+Defined in: [src/services/friendsService.ts:19](https://github.com/umamaheshmadala/sync_warp/blob/8d292941aaca173973ab1c4a6404fce0eac57cf4/src/services/friendsService.ts#L19)
 
 Friends Service - Centralized business logic for friend operations
 
@@ -18,7 +18,11 @@ Friends Service - Centralized business logic for friend operations
 
 > **getFriends**(`userId`): `Promise`\<`ServiceResponse`\<`Friend`[]\>\>
 
-Get user's friends with online status
+Retrieves the list of friends for a specific user with their online status.
+
+This function fetches all active friendships for the given user and returns
+detailed profile information including online status and last active time.
+Implements retry logic and circuit breaker pattern for reliability.
 
 #### Parameters
 
@@ -26,19 +30,43 @@ Get user's friends with online status
 
 `string`
 
-The user ID to fetch friends for
+The UUID of the user whose friends to fetch
 
 #### Returns
 
 `Promise`\<`ServiceResponse`\<`Friend`[]\>\>
 
-ServiceResponse with array of friends
+Promise resolving to ServiceResponse containing array of Friend objects
+
+#### Example
+
+```typescript
+const { success, data: friends, error } = await friendsService.getFriends('user-123');
+
+if (success) {
+  console.log(`User has ${friends.length} friends`);
+  friends.forEach(friend => {
+    console.log(`${friend.full_name} - ${friend.is_online ? 'Online' : 'Offline'}`);
+  });
+} else {
+  console.error('Failed to fetch friends:', error);
+}
+```
+
+#### See
+
+ - Friend for the structure of friend objects
+ - ServiceResponse for response format
 
 ### sendFriendRequest()
 
 > **sendFriendRequest**(`receiverId`, `message?`): `Promise`\<`ServiceResponse`\<`FriendRequest`\>\>
 
-Send friend request
+Sends a friend request to another user.
+
+This function creates a new friend request with privacy checks and offline support.
+If the user is offline, the request is queued for later processing.
+Checks privacy settings before sending to ensure the receiver accepts friend requests.
 
 #### Parameters
 
@@ -46,25 +74,63 @@ Send friend request
 
 `string`
 
-The user ID to send request to
+The UUID of the user to send the friend request to
 
 ##### message?
 
 `string`
 
-Optional message to include
+Optional personal message to include with the request
 
 #### Returns
 
 `Promise`\<`ServiceResponse`\<`FriendRequest`\>\>
 
-ServiceResponse with created friend request
+Promise resolving to ServiceResponse with the created FriendRequest
+
+#### Throws
+
+If user is not authenticated
+
+#### Throws
+
+If receiver's privacy settings block friend requests
+
+#### Example
+
+```typescript
+// Send a friend request with a message
+const { success, data: request, queued } = await friendsService.sendFriendRequest(
+  'user-456',
+  'Hey! I saw your profile and would love to connect!'
+);
+
+if (queued) {
+  toast.info('Request will be sent when you\'re back online');
+} else if (success) {
+  toast.success('Friend request sent!');
+} else {
+  toast.error('Failed to send request');
+}
+```
+
+#### See
+
+ - FriendRequest for the structure of friend request objects
+ - offlineQueue for offline request handling
 
 ### acceptFriendRequest()
 
 > **acceptFriendRequest**(`requestId`): `Promise`\<`ServiceResponse`\<`void`\>\>
 
-Accept friend request (uses RPC for atomic operation)
+Accepts a pending friend request and creates a bidirectional friendship.
+
+This function uses a database RPC (Remote Procedure Call) to atomically:
+1. Update the friend request status to 'accepted'
+2. Create bidirectional friendship records
+3. Send notification to the requester
+
+The atomic operation ensures data consistency even under concurrent requests.
 
 #### Parameters
 
@@ -72,13 +138,40 @@ Accept friend request (uses RPC for atomic operation)
 
 `string`
 
-The friend request ID to accept
+The UUID of the friend request to accept
 
 #### Returns
 
 `Promise`\<`ServiceResponse`\<`void`\>\>
 
-ServiceResponse indicating success/failure
+Promise resolving to ServiceResponse indicating success or failure
+
+#### Throws
+
+If the request doesn't exist or is not in pending status
+
+#### Throws
+
+If the RPC call fails
+
+#### Example
+
+```typescript
+const { success, error } = await friendsService.acceptFriendRequest('request-789');
+
+if (success) {
+  toast.success('You are now friends!');
+  // Invalidate friends list query to show new friend
+  queryClient.invalidateQueries(['friends']);
+} else {
+  toast.error(`Failed to accept request: ${error}`);
+}
+```
+
+#### See
+
+ - [rejectFriendRequest](#rejectfriendrequest) to reject a friend request instead
+ - [unfriend](#unfriend) to remove an existing friendship
 
 ### rejectFriendRequest()
 

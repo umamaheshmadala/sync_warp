@@ -8,7 +8,7 @@
 
 > **useFriendRequests**(`type`): `object`
 
-Defined in: [src/hooks/friends/useFriendRequests.ts:97](https://github.com/umamaheshmadala/sync_warp/blob/7bc49d2f6f5f71a9227856923276d19db183bbd9/src/hooks/friends/useFriendRequests.ts#L97)
+Defined in: [src/hooks/friends/useFriendRequests.ts:97](https://github.com/umamaheshmadala/sync_warp/blob/8d292941aaca173973ab1c4a6404fce0eac57cf4/src/hooks/friends/useFriendRequests.ts#L97)
 
 ## Parameters
 

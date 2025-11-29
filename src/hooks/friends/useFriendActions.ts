@@ -3,6 +3,61 @@ import { friendsService } from '../../services/friendsService';
 import { toast } from 'react-hot-toast';
 import { useAuthStore } from '../../store/authStore';
 
+/**
+ * React Query hook providing mutation functions for all friend-related actions.
+ * 
+ * This hook returns mutation objects for sending, accepting, rejecting, and cancelling
+ * friend requests, as well as unfriending and blocking users. Each mutation includes
+ * automatic query invalidation and toast notifications for user feedback.
+ * 
+ * @returns Object containing mutation functions for friend actions:
+ * - `sendRequest` - Send a friend request to a user
+ * - `acceptRequest` - Accept a pending friend request
+ * - `rejectRequest` - Reject a pending friend request
+ * - `cancelRequest` - Cancel a sent friend request
+ * - `unfriend` - Remove an existing friendship
+ * - `blockUser` - Block a user
+ * - `unblockUser` - Unblock a user
+ * 
+ * @example
+ * ```typescript
+ * import { useFriendActions } from '@/hooks/friends/useFriendActions';
+ * 
+ * function FriendRequestCard({ request }) {
+ *   const { acceptRequest, rejectRequest } = useFriendActions();
+ * 
+ *   const handleAccept = () => {
+ *     acceptRequest.mutate(request.id);
+ *   };
+ * 
+ *   const handleReject = () => {
+ *     rejectRequest.mutate(request.id);
+ *   };
+ * 
+ *   return (
+ *     <div>
+ *       <p>{request.sender.full_name} wants to be friends</p>
+ *       <button 
+ *         onClick={handleAccept}
+ *         disabled={acceptRequest.isPending}
+ *       >
+ *         {acceptRequest.isPending ? 'Accepting...' : 'Accept'}
+ *       </button>
+ *       <button 
+ *         onClick={handleReject}
+ *         disabled={rejectRequest.isPending}
+ *       >
+ *         Reject
+ *       </button>
+ *     </div>
+ *   );
+ * }
+ * ```
+ * 
+ * @see {@link friendsService} for the underlying service functions
+ * @see {@link useFriends} to fetch the friends list
+ * @see {@link useFriendRequests} to fetch friend requests
+ */
 export function useFriendActions() {
   const queryClient = useQueryClient();
   const user = useAuthStore(state => state.user);
