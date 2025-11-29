@@ -4,7 +4,14 @@
 **Story Owner:** Frontend Engineering / QA  
 **Estimated Effort:** 2 days  
 **Priority:** P0 - Critical  
-**Status:** 📋 Ready for Implementation
+**Status:** ✅ **COMPLETE** - Implemented 2025-02-01
+
+**Implementation Details:**
+
+- Optimistic UI updates in `messagingStore.ts` (addOptimisticMessage, replaceOptimisticMessage, markMessageFailed)
+- Retry mechanism with exponential backoff in `messagingService.ts`
+- Read receipts via `markMessageAsRead()` and `markConversationAsRead()`
+- Status indicators in `MessageBubble.tsx` (sending, sent, delivered, read)
 
 ---
 
@@ -23,116 +30,116 @@ Mobile devices face unreliable networks (WiFi ↔ 4G switching, tunnels, weak si
 #### **1. Offline Message Queue**
 
 ```typescript
-import { Preferences } from '@capacitor/preferences'
-import { Network } from '@capacitor/network'
-import { Capacitor } from '@capacitor/core'
+import { Preferences } from "@capacitor/preferences";
+import { Network } from "@capacitor/network";
+import { Capacitor } from "@capacitor/core";
 
 class MessageQueue {
-  private readonly QUEUE_KEY = 'pendingMessages'
-  
+  private readonly QUEUE_KEY = "pendingMessages";
+
   // Queue message for later sending (mobile only)
   async queueMessage(message: SendMessageParams) {
-    if (!Capacitor.isNativePlatform()) return
-    
-    const queue = await this.getQueue()
+    if (!Capacitor.isNativePlatform()) return;
+
+    const queue = await this.getQueue();
     queue.push({
       ...message,
       timestamp: Date.now(),
-      retryCount: 0
-    })
-    
+      retryCount: 0,
+    });
+
     await Preferences.set({
       key: this.QUEUE_KEY,
-      value: JSON.stringify(queue)
-    })
-    
-    console.log('💾 Queued message for offline send:', message)
+      value: JSON.stringify(queue),
+    });
+
+    console.log("💾 Queued message for offline send:", message);
   }
-  
+
   // Process queued messages when network returns
   async processQueue() {
-    const queue = await this.getQueue()
-    
+    const queue = await this.getQueue();
+
     for (const queuedMessage of queue) {
       try {
-        await messagingService.sendMessage(queuedMessage)
-        console.log('✅ Sent queued message:', queuedMessage)
+        await messagingService.sendMessage(queuedMessage);
+        console.log("✅ Sent queued message:", queuedMessage);
       } catch (error) {
-        console.error('❌ Failed to send queued message:', error)
-        
+        console.error("❌ Failed to send queued message:", error);
+
         // Retry logic with exponential backoff
-        queuedMessage.retryCount++
+        queuedMessage.retryCount++;
         if (queuedMessage.retryCount < 3) {
-          await this.queueMessage(queuedMessage)
+          await this.queueMessage(queuedMessage);
         }
       }
     }
-    
+
     // Clear queue
-    await Preferences.remove({ key: this.QUEUE_KEY })
+    await Preferences.remove({ key: this.QUEUE_KEY });
   }
-  
+
   private async getQueue(): Promise<any[]> {
-    const { value } = await Preferences.get({ key: this.QUEUE_KEY })
-    return value ? JSON.parse(value) : []
+    const { value } = await Preferences.get({ key: this.QUEUE_KEY });
+    return value ? JSON.parse(value) : [];
   }
 }
 
-export const messageQueue = new MessageQueue()
+export const messageQueue = new MessageQueue();
 ```
 
 #### **2. Network Status Monitoring**
 
 ```typescript
-import { Network } from '@capacitor/network'
+import { Network } from "@capacitor/network";
 
 export function useNetworkStatus() {
-  const [isOnline, setIsOnline] = useState(true)
-  
+  const [isOnline, setIsOnline] = useState(true);
+
   useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return
-    
+    if (!Capacitor.isNativePlatform()) return;
+
     // Initial status
-    Network.getStatus().then(status => {
-      setIsOnline(status.connected)
-    })
-    
+    Network.getStatus().then((status) => {
+      setIsOnline(status.connected);
+    });
+
     // Listen for network changes
-    const listener = Network.addListener('networkStatusChange', status => {
-      console.log('📡 Network status changed:', status.connected)
-      setIsOnline(status.connected)
-      
+    const listener = Network.addListener("networkStatusChange", (status) => {
+      console.log("📡 Network status changed:", status.connected);
+      setIsOnline(status.connected);
+
       // Process queued messages when network returns
       if (status.connected) {
-        messageQueue.processQueue()
+        messageQueue.processQueue();
       }
-    })
-    
-    return () => listener.remove()
-  }, [])
-  
-  return { isOnline }
+    });
+
+    return () => listener.remove();
+  }, []);
+
+  return { isOnline };
 }
 ```
 
 #### **3. Background Sync (App Foreground)**
 
 ```typescript
-import { App } from '@capacitor/app'
+import { App } from "@capacitor/app";
 
 export function useBackgroundSync() {
   useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return
-    
-    const listener = App.addListener('appStateChange', async ({ isActive }) => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    const listener = App.addListener("appStateChange", async ({ isActive }) => {
       if (isActive) {
-        console.log('📱 App came to foreground - processing queue...')
-        await messageQueue.processQueue()
+        console.log("📱 App came to foreground - processing queue...");
+        await messageQueue.processQueue();
       }
-    })
-    
-    return () => listener.remove()
-  }, [])
+    });
+
+    return () => listener.remove();
+  }, []);
 }
 ```
 
@@ -143,31 +150,31 @@ const sendWithRetry = async (
   message: SendMessageParams,
   maxRetries = 3
 ): Promise<string> => {
-  let retryCount = 0
-  
+  let retryCount = 0;
+
   while (retryCount < maxRetries) {
     try {
-      return await messagingService.sendMessage(message)
+      return await messagingService.sendMessage(message);
     } catch (error) {
-      retryCount++
-      
+      retryCount++;
+
       if (retryCount >= maxRetries) {
         // Queue for later if all retries failed
         if (Capacitor.isNativePlatform()) {
-          await messageQueue.queueMessage(message)
+          await messageQueue.queueMessage(message);
         }
-        throw error
+        throw error;
       }
-      
+
       // Exponential backoff: 1s, 2s, 4s
-      const delay = Math.pow(2, retryCount - 1) * 1000
-      console.log(`⏱️ Retry ${retryCount}/${maxRetries} in ${delay}ms...`)
-      await new Promise(resolve => setTimeout(resolve, delay))
+      const delay = Math.pow(2, retryCount - 1) * 1000;
+      console.log(`⏱️ Retry ${retryCount}/${maxRetries} in ${delay}ms...`);
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
-  
-  throw new Error('Max retries exceeded')
-}
+
+  throw new Error("Max retries exceeded");
+};
 ```
 
 ### **Required Capacitor Plugins**
@@ -175,9 +182,9 @@ const sendWithRetry = async (
 ```json
 {
   "dependencies": {
-    "@capacitor/network": "^5.0.0",      // Network status
-    "@capacitor/preferences": "^5.0.0",  // Offline queue storage
-    "@capacitor/app": "^5.0.0"           // App state monitoring
+    "@capacitor/network": "^5.0.0", // Network status
+    "@capacitor/preferences": "^5.0.0", // Offline queue storage
+    "@capacitor/app": "^5.0.0" // App state monitoring
   }
 }
 ```
@@ -185,11 +192,13 @@ const sendWithRetry = async (
 ### **Platform-Specific Testing Checklist**
 
 #### **Web Testing**
+
 - [ ] Optimistic UI updates instantly
 - [ ] Failed messages show retry option
 - [ ] Read receipts update correctly
 
 #### **iOS Testing**
+
 - [ ] Messages queue when offline
 - [ ] Queue processes on network return
 - [ ] Retry logic works correctly
@@ -197,6 +206,7 @@ const sendWithRetry = async (
 - [ ] No duplicate messages
 
 #### **Android Testing**
+
 - [ ] Offline queue persists across app restarts
 - [ ] Network switching doesn't lose messages
 - [ ] Retry exponential backoff works
@@ -204,18 +214,19 @@ const sendWithRetry = async (
 
 ### **Performance Targets**
 
-| Metric | Web | iOS (WiFi) | iOS (4G) | Android (WiFi) | Android (4G) |
-|--------|-----|-----------|----------|---------------|-------------|
-| **Send Latency** | < 300ms | < 500ms | < 1s | < 500ms | < 1s |
-| **Optimistic UI** | < 16ms | < 16ms | < 16ms | < 16ms | < 16ms |
-| **Retry Delay (1st)** | 1s | 1s | 2s | 1s | 2s |
-| **Queue Processing** | N/A | < 5s | < 10s | < 5s | < 10s |
+| Metric                | Web     | iOS (WiFi) | iOS (4G) | Android (WiFi) | Android (4G) |
+| --------------------- | ------- | ---------- | -------- | -------------- | ------------ |
+| **Send Latency**      | < 300ms | < 500ms    | < 1s     | < 500ms        | < 1s         |
+| **Optimistic UI**     | < 16ms  | < 16ms     | < 16ms   | < 16ms         | < 16ms       |
+| **Retry Delay (1st)** | 1s      | 1s         | 2s       | 1s             | 2s           |
+| **Queue Processing**  | N/A     | < 5s       | < 10s    | < 5s           | < 10s        |
 
 ---
 
 ## 📖 **User Stories**
 
 ### As a user, I want to:
+
 1. See my message appear immediately when I send it (optimistic UI)
 2. See a sending indicator if message is still being sent
 3. See a retry option if message fails to send
@@ -224,6 +235,7 @@ const sendWithRetry = async (
 6. Receive new messages instantly via realtime subscriptions
 
 ### Acceptance Criteria:
+
 - ✅ Messages send reliably (< 300ms)
 - ✅ Optimistic UI prevents perceived lag
 - ✅ Failed messages show retry option
@@ -237,6 +249,7 @@ const sendWithRetry = async (
 ### **Phase 1: Optimistic UI Updates** (0.5 days)
 
 #### Task 1.1: Add Optimistic Message to Store
+
 ```typescript
 // Enhance messagingStore with optimistic updates
 interface Message {
@@ -247,7 +260,7 @@ interface Message {
 }
 
 // Add optimistic message action
-addOptimisticMessage: (conversationId: string, tempMessage: Message) => 
+addOptimisticMessage: (conversationId: string, tempMessage: Message) =>
   set((state) => {
     const newMessages = new Map(state.messages)
     const conversationMessages = newMessages.get(conversationId) || []
@@ -262,7 +275,7 @@ replaceOptimisticMessage: (conversationId: string, tempId: string, realMessage: 
     const conversationMessages = newMessages.get(conversationId) || []
     newMessages.set(
       conversationId,
-      conversationMessages.map(msg => 
+      conversationMessages.map(msg =>
         msg._tempId === tempId ? realMessage : msg
       )
     )
@@ -287,12 +300,13 @@ markMessageFailed: (conversationId: string, tempId: string) =>
 ---
 
 #### Task 1.2: Update MessageComposer with Optimistic Sending
+
 ```typescript
 // src/components/messaging/MessageComposer.tsx (enhanced)
 const handleSend = async () => {
-  if (!content.trim() || isSending) return
+  if (!content.trim() || isSending) return;
 
-  const tempId = `temp-${Date.now()}-${Math.random()}`
+  const tempId = `temp-${Date.now()}-${Math.random()}`;
   const optimisticMessage: Message = {
     id: tempId,
     _tempId: tempId,
@@ -300,33 +314,33 @@ const handleSend = async () => {
     conversation_id: conversationId,
     sender_id: currentUserId!,
     content: content.trim(),
-    type: 'text',
+    type: "text",
     is_edited: false,
     is_deleted: false,
     created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  }
+    updated_at: new Date().toISOString(),
+  };
 
   // Add optimistic message immediately
-  addOptimisticMessage(conversationId, optimisticMessage)
-  setContent('')
+  addOptimisticMessage(conversationId, optimisticMessage);
+  setContent("");
 
   try {
     // Send actual message
     const realMessageId = await sendMessage({
       conversationId,
       content: optimisticMessage.content,
-      type: 'text'
-    })
+      type: "text",
+    });
 
     // Replace optimistic with real message
     // Real message will come via realtime subscription
   } catch (error) {
     // Mark as failed
-    markMessageFailed(conversationId, tempId)
-    toast.error('Message failed to send. Tap to retry.')
+    markMessageFailed(conversationId, tempId);
+    toast.error("Message failed to send. Tap to retry.");
   }
-}
+};
 ```
 
 ---
@@ -334,6 +348,7 @@ const handleSend = async () => {
 ### **Phase 2: Retry Failed Messages** (0.5 days)
 
 #### Task 2.1: Add Retry Functionality
+
 ```typescript
 // src/components/messaging/MessageBubble.tsx (enhanced)
 export function MessageBubble({ message, isOwn, onRetry }: MessageBubbleProps) {
@@ -382,19 +397,20 @@ export function MessageBubble({ message, isOwn, onRetry }: MessageBubbleProps) {
 ### **Phase 3: Read Receipts** (0.5 days)
 
 #### Task 3.1: Show Read Receipt Icons
+
 ```typescript
 // Enhanced MessageBubble with read receipts
 const getStatusIcon = () => {
   if (message._optimistic) {
     return <Clock className="h-3 w-3" />
   }
-  
+
   // Check if message has been read
   // This data would come from message_read_receipts table
   if (message.read_by_recipient) {
     return <CheckCheck className="h-3 w-3 text-blue-300" />
   }
-  
+
   // Message delivered but not read
   return <Check className="h-3 w-3 text-blue-300" />
 }
@@ -412,62 +428,70 @@ const getStatusIcon = () => {
 ### **Phase 4: E2E Testing with Puppeteer MCP** (0.5 days)
 
 #### Task 4.1: Create E2E Test Scenarios
+
 ```bash
 # Test complete send/receive flow
 warp mcp run puppeteer "e2e test: User A sends message to User B, verify User B receives it instantly"
 ```
 
 **Test Script Example:**
+
 ```typescript
 // e2e-messaging.test.ts
-describe('Messaging E2E Flow', () => {
-  test('should send and receive messages between two users', async () => {
+describe("Messaging E2E Flow", () => {
+  test("should send and receive messages between two users", async () => {
     // Open two browser instances
-    const browser1 = await puppeteer.launch()
-    const browser2 = await puppeteer.launch()
-    
-    const page1 = await browser1.newPage()
-    const page2 = await browser2.newPage()
-    
+    const browser1 = await puppeteer.launch();
+    const browser2 = await puppeteer.launch();
+
+    const page1 = await browser1.newPage();
+    const page2 = await browser2.newPage();
+
     // User A logs in
-    await page1.goto('http://localhost:5173/login')
-    await page1.type('#email', 'usera@test.com')
-    await page1.type('#password', 'password123')
-    await page1.click('#login-button')
-    await page1.waitForNavigation()
-    
+    await page1.goto("http://localhost:5173/login");
+    await page1.type("#email", "usera@test.com");
+    await page1.type("#password", "password123");
+    await page1.click("#login-button");
+    await page1.waitForNavigation();
+
     // User B logs in
-    await page2.goto('http://localhost:5173/login')
-    await page2.type('#email', 'userb@test.com')
-    await page2.type('#password', 'password123')
-    await page2.click('#login-button')
-    await page2.waitForNavigation()
-    
+    await page2.goto("http://localhost:5173/login");
+    await page2.type("#email", "userb@test.com");
+    await page2.type("#password", "password123");
+    await page2.click("#login-button");
+    await page2.waitForNavigation();
+
     // User A opens chat with User B
-    await page1.goto('http://localhost:5173/messages/conv-id')
-    
+    await page1.goto("http://localhost:5173/messages/conv-id");
+
     // User B opens same chat
-    await page2.goto('http://localhost:5173/messages/conv-id')
-    
+    await page2.goto("http://localhost:5173/messages/conv-id");
+
     // User A sends message
-    await page1.type('[data-testid="message-input"]', 'Hello from User A!')
-    await page1.click('[data-testid="send-button"]')
-    
+    await page1.type('[data-testid="message-input"]', "Hello from User A!");
+    await page1.click('[data-testid="send-button"]');
+
     // Verify message appears for User A immediately (optimistic)
-    await page1.waitForSelector('[data-testid="message"]:last-child')
-    
+    await page1.waitForSelector('[data-testid="message"]:last-child');
+
     // Verify message appears for User B (realtime)
-    await page2.waitForSelector('[data-testid="message"]:last-child', { timeout: 2000 })
-    const messageText = await page2.$eval('[data-testid="message"]:last-child', el => el.textContent)
-    expect(messageText).toContain('Hello from User A!')
-    
-    await browser1.close()
-    await browser2.close()
-  })
-})
+    await page2.waitForSelector('[data-testid="message"]:last-child', {
+      timeout: 2000,
+    });
+    const messageText = await page2.$eval(
+      '[data-testid="message"]:last-child',
+      (el) => el.textContent
+    );
+    expect(messageText).toContain("Hello from User A!");
+
+    await browser1.close();
+    await browser2.close();
+  });
+});
 ```
 
 **🤖 Puppeteer MCP Testing Commands:**
+
 ```bash
 # Test message send flow
 warp mcp run puppeteer "test sending message and verify optimistic UI update"
@@ -487,6 +511,7 @@ warp mcp run puppeteer "send message, verify read receipt updates when recipient
 ## 🧪 **Testing Checklist**
 
 ### Unit Tests
+
 - [ ] Test optimistic message addition
 - [ ] Test optimistic message replacement
 - [ ] Test failed message marking
@@ -494,12 +519,14 @@ warp mcp run puppeteer "send message, verify read receipt updates when recipient
 - [ ] Test read receipt logic
 
 ### Integration Tests
+
 ```bash
 # Test with Supabase MCP
 warp mcp run supabase "execute_sql INSERT INTO messages (...); SELECT * FROM messages WHERE id = 'msg-id';"
 ```
 
 ### E2E Tests with Puppeteer MCP
+
 - [ ] Send message flow (optimistic + realtime)
 - [ ] Receive message flow (realtime subscription)
 - [ ] Failed message + retry flow
@@ -510,18 +537,19 @@ warp mcp run supabase "execute_sql INSERT INTO messages (...); SELECT * FROM mes
 
 ## 📊 **Success Metrics**
 
-| Metric | Target | Verification Method |
-|--------|--------|-------------------|
-| **Message Send Latency** | < 300ms | Chrome DevTools Network |
-| **Optimistic UI Speed** | Instant (< 16ms) | Manual observation |
-| **Realtime Delivery** | < 500ms | Puppeteer E2E test |
-| **Retry Success Rate** | > 95% | E2E tests |
+| Metric                   | Target           | Verification Method     |
+| ------------------------ | ---------------- | ----------------------- |
+| **Message Send Latency** | < 300ms          | Chrome DevTools Network |
+| **Optimistic UI Speed**  | Instant (< 16ms) | Manual observation      |
+| **Realtime Delivery**    | < 500ms          | Puppeteer E2E test      |
+| **Retry Success Rate**   | > 95%            | E2E tests               |
 
 ---
 
 ## 🔗 **Dependencies**
 
 ### Required Before Starting:
+
 - ✅ Stories 8.2.1-8.2.6 complete
 - ✅ Puppeteer MCP configured
 
@@ -546,6 +574,7 @@ warp mcp run supabase "execute_sql INSERT INTO messages (...); SELECT * FROM mes
 ## 📝 **MCP Command Quick Reference**
 
 ### Puppeteer MCP
+
 ```bash
 # E2E message flow
 warp mcp run puppeteer "test complete send/receive flow between two users"
@@ -558,6 +587,7 @@ warp mcp run puppeteer "test read receipt updates in realtime"
 ```
 
 ### Supabase MCP
+
 ```bash
 # Verify message in database
 warp mcp run supabase "execute_sql SELECT * FROM messages WHERE id = 'msg-id';"

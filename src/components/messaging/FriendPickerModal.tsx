@@ -1,13 +1,9 @@
-// src/components/messaging/FriendPickerModal.tsx
-// Story: 8.2.9 - Friends-to-Messaging Integration
-// Modal for selecting a friend to start a conversation
-
 import React, { useState, useMemo } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import { X, Search, MessageCircle, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useNewFriends } from '../../hooks/useNewFriends';
+import { useFriends } from '../../hooks/friends/useFriends';
 import { useMessagingStore } from '../../store/messagingStore';
 import { useHapticFeedback } from '../../hooks/useHapticFeedback';
 import { messagingService } from '../../services/messagingService';
@@ -22,7 +18,7 @@ export const FriendPickerModal: React.FC<FriendPickerModalProps> = ({
   onClose
 }) => {
   const navigate = useNavigate();
-  const { friends, loading } = useNewFriends();
+  const { data: friendsResponse, isLoading: loading } = useFriends();
   const { conversations } = useMessagingStore();
   const { triggerHaptic } = useHapticFeedback();
   
@@ -33,34 +29,37 @@ export const FriendPickerModal: React.FC<FriendPickerModalProps> = ({
   // Check if conversation already exists with this friend
   const getExistingConversation = (friendId: string) => {
     return conversations.find(conv =>
-      conv.participant1_id === friendId ||
-      conv.participant2_id === friendId
+      conv.participants && conv.participants.includes(friendId)
     );
   };
 
   // Filter and sort friends
   const filteredFriends = useMemo(() => {
-    let result = friends;
+    // useFriends returns React Query result. data is ServiceResponse<Friend[]>
+    // ServiceResponse is { success, data: Friend[] }
+    const friendsList = friendsResponse?.data || [];
+    let result = friendsList;
 
     // Apply search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       result = result.filter(f =>
-        f.friend_profile.full_name.toLowerCase().includes(query) ||
-        (f.friend_profile.city && f.friend_profile.city.toLowerCase().includes(query))
+        f.full_name.toLowerCase().includes(query) ||
+        (f.city && f.city.toLowerCase().includes(query)) ||
+        (f.username && f.username.toLowerCase().includes(query))
       );
     }
 
     // Sort: Online first, then alphabetically
     return result.sort((a, b) => {
       // Online friends first
-      if (a.friend_profile.is_online && !b.friend_profile.is_online) return -1;
-      if (!a.friend_profile.is_online && b.friend_profile.is_online) return 1;
+      if (a.is_online && !b.is_online) return -1;
+      if (!a.is_online && b.is_online) return 1;
       
       // Then alphabetically
-      return a.friend_profile.full_name.localeCompare(b.friend_profile.full_name);
+      return a.full_name.localeCompare(b.full_name);
     });
-  }, [friends, searchQuery]);
+  }, [friendsResponse, searchQuery]);
 
   // Handle friend selection
   const handleSelectFriend = async (friendId: string, friendName: string) => {
@@ -195,14 +194,13 @@ export const FriendPickerModal: React.FC<FriendPickerModalProps> = ({
                     </div>
                   ) : (
                     <div className="space-y-1">
-                      {filteredFriends.map((friendship) => {
-                        const friend = friendship.friend_profile;
-                        const existingConv = getExistingConversation(friend.user_id);
+                      {filteredFriends.map((friend) => {
+                        const existingConv = getExistingConversation(friend.id);
                         
                         return (
                           <button
-                            key={friendship.id}
-                            onClick={() => handleSelectFriend(friend.user_id, friend.full_name)}
+                            key={friend.id}
+                            onClick={() => handleSelectFriend(friend.id, friend.full_name)}
                             disabled={isCreating}
                             className="w-full flex items-center space-x-3 rounded-lg p-3 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >

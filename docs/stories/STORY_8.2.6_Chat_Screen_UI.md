@@ -4,7 +4,17 @@
 **Story Owner:** Frontend Engineering / UX  
 **Estimated Effort:** 4 days  
 **Priority:** P0 - Critical  
-**Status:** 📋 Ready for Implementation
+**Status:** ✅ **COMPLETE** - Implemented 2025-02-01
+
+**Implementation Files:**
+
+- `src/components/messaging/ChatScreen.tsx`
+- `src/components/messaging/ChatHeader.tsx`
+- `src/components/messaging/MessageList.tsx`
+- `src/components/messaging/MessageBubble.tsx`
+- `src/components/messaging/MessageComposer.tsx`
+- Keyboard handling with Capacitor integration
+- Auto-scroll and pagination support
 
 ---
 
@@ -30,39 +40,39 @@ import { useEffect, useState } from 'react'
 export function ChatScreen() {
   const [bottomPadding, setBottomPadding] = useState(0)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  
+
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return
-    
+
     // Keyboard will show listener
     const showListener = Keyboard.addListener('keyboardWillShow', info => {
       console.log('⌨️ Keyboard showing, height:', info.keyboardHeight)
       setBottomPadding(info.keyboardHeight)
-      
+
       // Auto-scroll to bottom when keyboard shows
       setTimeout(() => scrollToBottom(), 100)
     })
-    
+
     // Keyboard will hide listener
     const hideListener = Keyboard.addListener('keyboardWillHide', () => {
       console.log('⌨️ Keyboard hiding')
       setBottomPadding(0)
     })
-    
+
     return () => {
       showListener.remove()
       hideListener.remove()
     }
   }, [])
-  
+
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ 
-        behavior: Capacitor.isNativePlatform() ? 'auto' : 'smooth' 
+      messagesEndRef.current.scrollIntoView({
+        behavior: Capacitor.isNativePlatform() ? 'auto' : 'smooth'
       })
     }
   }
-  
+
   return (
     <div style={{ paddingBottom: bottomPadding }}>
       {/* Chat UI */}
@@ -77,56 +87,56 @@ export function ChatScreen() {
 // Disable smooth scroll on mobile (better performance)
 const scrollToBottom = () => {
   if (messagesEndRef.current) {
-    messagesEndRef.current.scrollIntoView({ 
-      behavior: Capacitor.isNativePlatform() ? 'auto' : 'smooth',
-      block: 'end'
-    })
+    messagesEndRef.current.scrollIntoView({
+      behavior: Capacitor.isNativePlatform() ? "auto" : "smooth",
+      block: "end",
+    });
   }
-}
+};
 
 // Auto-scroll when new message arrives
 useEffect(() => {
-  scrollToBottom()
-}, [messages])
+  scrollToBottom();
+}, [messages]);
 ```
 
 #### **3. Haptic Feedback on Send**
 
 ```typescript
-import { Haptics, NotificationType } from '@capacitor/haptics'
+import { Haptics, NotificationType } from "@capacitor/haptics";
 
 const handleSend = async () => {
-  if (!content.trim()) return
-  
+  if (!content.trim()) return;
+
   // Haptic feedback on successful send (mobile only)
   if (Capacitor.isNativePlatform()) {
-    await Haptics.notification({ type: NotificationType.Success })
+    await Haptics.notification({ type: NotificationType.Success });
   }
-  
-  await sendMessage({ conversationId, content, type: 'text' })
-  setContent('')
-}
+
+  await sendMessage({ conversationId, content, type: "text" });
+  setContent("");
+};
 ```
 
 #### **4. Native Share Sheet (Mobile)**
 
 ```typescript
-import { Share } from '@capacitor/share'
+import { Share } from "@capacitor/share";
 
 const handleShare = async (message: Message) => {
   if (Capacitor.isNativePlatform()) {
     await Share.share({
-      title: 'Share Message',
+      title: "Share Message",
       text: message.content,
-      dialogTitle: 'Share with friends'
-    })
+      dialogTitle: "Share with friends",
+    });
   } else {
     // Web: Use native Web Share API or fallback
     if (navigator.share) {
-      await navigator.share({ text: message.content })
+      await navigator.share({ text: message.content });
     }
   }
-}
+};
 ```
 
 #### **5. Message Composer Height Adjustment**
@@ -134,7 +144,7 @@ const handleShare = async (message: Message) => {
 ```typescript
 export function MessageComposer() {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  
+
   // Auto-resize textarea on mobile
   const handleInput = () => {
     if (textareaRef.current) {
@@ -142,13 +152,13 @@ export function MessageComposer() {
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`
     }
   }
-  
+
   return (
     <textarea
       ref={textareaRef}
       onInput={handleInput}
-      style={{ 
-        maxHeight: Capacitor.isNativePlatform() ? '100px' : '120px' 
+      style={{
+        maxHeight: Capacitor.isNativePlatform() ? '100px' : '120px'
       }}
     />
   )
@@ -160,9 +170,9 @@ export function MessageComposer() {
 ```json
 {
   "dependencies": {
-    "@capacitor/keyboard": "^5.0.0",  // Keyboard events
-    "@capacitor/haptics": "^5.0.0",   // Haptic feedback
-    "@capacitor/share": "^5.0.0"      // Native share sheet
+    "@capacitor/keyboard": "^5.0.0", // Keyboard events
+    "@capacitor/haptics": "^5.0.0", // Haptic feedback
+    "@capacitor/share": "^5.0.0" // Native share sheet
   }
 }
 ```
@@ -170,11 +180,13 @@ export function MessageComposer() {
 ### **Platform-Specific Testing Checklist**
 
 #### **Web Testing**
+
 - [ ] Message bubbles display correctly
 - [ ] Smooth auto-scroll on new message
 - [ ] Textarea expands smoothly
 
 #### **iOS Testing**
+
 - [ ] Keyboard shows/hides smoothly
 - [ ] Chat UI adjusts for keyboard height
 - [ ] Auto-scroll works with keyboard open
@@ -183,6 +195,7 @@ export function MessageComposer() {
 - [ ] Safe area insets respected
 
 #### **Android Testing**
+
 - [ ] Keyboard handling works on all Android versions
 - [ ] Chat doesn't clip behind keyboard
 - [ ] Haptic feedback works (if supported)
@@ -190,18 +203,19 @@ export function MessageComposer() {
 
 ### **Performance Targets**
 
-| Metric | Web | iOS | Android |
-|--------|-----|-----|---------|
-| **Message Rendering** | 60fps | 60fps | 60fps |
-| **Keyboard Show Latency** | N/A | < 100ms | < 150ms |
-| **Auto-scroll Latency** | < 50ms | < 100ms | < 100ms |
-| **Send Button Response** | Instant | < 50ms | < 50ms |
+| Metric                    | Web     | iOS     | Android |
+| ------------------------- | ------- | ------- | ------- |
+| **Message Rendering**     | 60fps   | 60fps   | 60fps   |
+| **Keyboard Show Latency** | N/A     | < 100ms | < 150ms |
+| **Auto-scroll Latency**   | < 50ms  | < 100ms | < 100ms |
+| **Send Button Response**  | Instant | < 50ms  | < 50ms  |
 
 ---
 
 ## 📖 **User Stories**
 
 ### As a user, I want to:
+
 1. See all messages in a conversation displayed as bubbles
 2. Distinguish my messages from friend's messages visually
 3. Type and send messages with a text input and send button
@@ -211,6 +225,7 @@ export function MessageComposer() {
 7. See message timestamps and status indicators
 
 ### Acceptance Criteria:
+
 - ✅ Messages render smoothly (60fps with 1000+ messages)
 - ✅ Auto-scroll works on new message
 - ✅ Pagination loads older messages on scroll up
@@ -225,6 +240,7 @@ export function MessageComposer() {
 ### **Phase 1: Message Bubble Components** (1 day)
 
 #### Task 1.1: Create MessageBubble Component
+
 ```typescript
 // src/components/messaging/MessageBubble.tsx
 import React from 'react'
@@ -261,12 +277,12 @@ export function MessageBubble({ message, isOwn, showTimestamp = false }: Message
     <div className={cn("flex mb-2", isOwn ? "justify-end" : "justify-start")}>
       <div className={cn(
         "max-w-[70%] px-4 py-2 rounded-lg break-words",
-        isOwn 
-          ? "bg-blue-600 text-white rounded-br-none" 
+        isOwn
+          ? "bg-blue-600 text-white rounded-br-none"
           : "bg-gray-200 text-gray-900 rounded-bl-none"
       )}>
         <p className="text-sm">{content}</p>
-        
+
         <div className="flex items-center justify-end gap-1 mt-1">
           {is_edited && (
             <span className={cn(
@@ -294,6 +310,7 @@ export function MessageBubble({ message, isOwn, showTimestamp = false }: Message
 ### **Phase 2: Message List with Virtual Scrolling** (1.5 days)
 
 #### Task 2.1: Create MessageList Component
+
 ```typescript
 // src/components/messaging/MessageList.tsx
 import React, { useEffect, useRef } from 'react'
@@ -318,7 +335,7 @@ export function MessageList({ messages, hasMore, onLoadMore }: MessageListProps)
     if (!scrollRef.current || !hasMore || isLoadingMore.current) return
 
     const { scrollTop } = scrollRef.current
-    
+
     // Load more when scrolled near top
     if (scrollTop < 100) {
       isLoadingMore.current = true
@@ -338,7 +355,7 @@ export function MessageList({ messages, hasMore, onLoadMore }: MessageListProps)
   }, [hasMore])
 
   return (
-    <div 
+    <div
       ref={scrollRef}
       className="flex-1 overflow-y-auto px-4 py-4 space-y-2"
     >
@@ -347,7 +364,7 @@ export function MessageList({ messages, hasMore, onLoadMore }: MessageListProps)
           <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
         </div>
       )}
-      
+
       {messages.map(message => (
         <MessageBubble
           key={message.id}
@@ -361,6 +378,7 @@ export function MessageList({ messages, hasMore, onLoadMore }: MessageListProps)
 ```
 
 **🌐 Chrome DevTools MCP Profiling:**
+
 ```bash
 # Profile message rendering performance
 warp mcp run chrome-devtools "open Performance tab, render 1000 messages, verify 60fps and no jank"
@@ -371,6 +389,7 @@ warp mcp run chrome-devtools "open Performance tab, render 1000 messages, verify
 ### **Phase 3: Message Composer** (1 day)
 
 #### Task 3.1: Create MessageComposer Component
+
 ```typescript
 // src/components/messaging/MessageComposer.tsx
 import React, { useState } from 'react'
@@ -444,6 +463,7 @@ export function MessageComposer({ conversationId, onTyping }: MessageComposerPro
 ### **Phase 4: Chat Screen Assembly** (0.5 days)
 
 #### Task 4.1: Create ChatScreen Component
+
 ```typescript
 // src/components/messaging/ChatScreen.tsx
 import React, { useEffect, useRef } from 'react'
@@ -461,7 +481,7 @@ export function ChatScreen() {
   const navigate = useNavigate()
   const { messages, isLoading, hasMore, loadMore } = useMessages(conversationId || null)
   const { isTyping, typingUserIds, handleTyping } = useTypingIndicator(conversationId || null)
-  
+
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // Auto-scroll to bottom on new messages
@@ -485,18 +505,18 @@ export function ChatScreen() {
   return (
     <div className="flex flex-col h-screen bg-white">
       <ChatHeader conversationId={conversationId} />
-      
-      <MessageList 
-        messages={messages} 
+
+      <MessageList
+        messages={messages}
         hasMore={hasMore}
         onLoadMore={loadMore}
       />
-      
+
       {isTyping && <TypingIndicator userIds={typingUserIds} />}
-      
+
       <div ref={messagesEndRef} />
-      
-      <MessageComposer 
+
+      <MessageComposer
         conversationId={conversationId}
         onTyping={handleTyping}
       />
@@ -510,6 +530,7 @@ export function ChatScreen() {
 ## 🧪 **Testing Checklist**
 
 ### Visual Tests
+
 - [ ] Message bubbles display correctly (own vs friend)
 - [ ] Message composer textarea expands
 - [ ] Typing indicator shows/hides
@@ -518,6 +539,7 @@ export function ChatScreen() {
 - [ ] Empty state for no messages
 
 ### Performance Tests
+
 ```bash
 # Test message rendering performance
 warp mcp run chrome-devtools "render 1000 messages, profile with Performance tab, verify 60fps"
@@ -527,6 +549,7 @@ warp mcp run chrome-devtools "scroll through 500 messages, verify smooth 60fps s
 ```
 
 ### Responsive Tests
+
 ```bash
 # Test mobile layout
 warp mcp run chrome-devtools "test on iPhone 12, Galaxy S21, verify message bubbles adapt"
@@ -539,18 +562,19 @@ warp mcp run chrome-devtools "test on 1920x1080, verify max-width constraints"
 
 ## 📊 **Success Metrics**
 
-| Metric | Target | Verification Method |
-|--------|--------|-------------------|
-| **Message Rendering** | 60fps for 1000+ messages | Chrome DevTools Performance |
-| **Scroll Performance** | 60fps | Chrome DevTools Performance |
-| **Auto-scroll Latency** | < 100ms | Manual testing |
-| **Pagination Load Time** | < 300ms | Chrome DevTools Network |
+| Metric                   | Target                   | Verification Method         |
+| ------------------------ | ------------------------ | --------------------------- |
+| **Message Rendering**    | 60fps for 1000+ messages | Chrome DevTools Performance |
+| **Scroll Performance**   | 60fps                    | Chrome DevTools Performance |
+| **Auto-scroll Latency**  | < 100ms                  | Manual testing              |
+| **Pagination Load Time** | < 300ms                  | Chrome DevTools Network     |
 
 ---
 
 ## 🔗 **Dependencies**
 
 ### Required Before Starting:
+
 - ✅ Story 8.2.4 (useMessages, useTypingIndicator hooks) complete
 - ✅ Shadcn UI components installed
 
@@ -575,6 +599,7 @@ warp mcp run chrome-devtools "test on 1920x1080, verify max-width constraints"
 ## 📝 **MCP Command Quick Reference**
 
 ### Chrome DevTools MCP
+
 ```bash
 # Profile rendering
 warp mcp run chrome-devtools "profile message rendering performance"

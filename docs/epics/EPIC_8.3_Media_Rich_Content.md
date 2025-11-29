@@ -2,7 +2,7 @@
 
 **Epic Owner:** Frontend Engineering / Product  
 **Dependencies:** Epic 8.1 (Database), Epic 8.2 (Core Messaging)  
-**Timeline:** Week 5 (1 week)  
+**Timeline:** Week 5 (1.5 weeks - 6 stories)  
 **Status:** 📋 Planning
 
 ---
@@ -10,6 +10,7 @@
 ## 🎯 **Epic Goal**
 
 Enable users to share **rich media content** in messages **on web browsers, iOS, and Android native apps**:
+
 - Upload and display images/videos
 - **Native camera capture on iOS/Android** (Capacitor Camera plugin)
 - **Native file picker on iOS/Android** (Capacitor Filesystem plugin)
@@ -24,34 +25,37 @@ Enable users to share **rich media content** in messages **on web browsers, iOS,
 ## 📱 **Platform Support**
 
 **Target Platforms:**
+
 - ✅ **Web Browsers** (Chrome, Firefox, Safari, Edge)
 - ✅ **iOS Native App** (via Capacitor framework)
 - ✅ **Android Native App** (via Capacitor framework)
 
 **Cross-Platform Media Handling:**
 
-| Feature | Web Implementation | iOS/Android Implementation |
-|---------|-------------------|---------------------------|
-| **Image Upload** | `<input type="file">` | `@capacitor/camera` - Camera.getPhoto() |
-| **Video Upload** | `<input type="file" accept="video/*">` | `@capacitor/camera` - Camera.getPhoto({source: 'PHOTOS'}) |
-| **Camera Capture** | `<input capture="camera">` (limited) | `@capacitor/camera` - Native camera UI |
-| **File Picker** | `<input type="file">` | `@capacitor/filesystem` - Native file picker |
-| **Image Compression** | `browser-image-compression` (web worker) | `browser-image-compression` (same library) |
-| **Thumbnail Generation** | Canvas API | Canvas API (via WebView) |
-| **Share** | Web Share API (if supported) | `@capacitor/share` - Native share sheet |
+| Feature                  | Web Implementation                       | iOS/Android Implementation                                |
+| ------------------------ | ---------------------------------------- | --------------------------------------------------------- |
+| **Image Upload**         | `<input type="file">`                    | `@capacitor/camera` - Camera.getPhoto()                   |
+| **Video Upload**         | `<input type="file" accept="video/*">`   | `@capacitor/camera` - Camera.getPhoto({source: 'PHOTOS'}) |
+| **Camera Capture**       | `<input capture="camera">` (limited)     | `@capacitor/camera` - Native camera UI                    |
+| **File Picker**          | `<input type="file">`                    | `@capacitor/filesystem` - Native file picker              |
+| **Image Compression**    | `browser-image-compression` (web worker) | `browser-image-compression` (same library)                |
+| **Thumbnail Generation** | Canvas API                               | Canvas API (via WebView)                                  |
+| **Share**                | Web Share API (if supported)             | `@capacitor/share` - Native share sheet                   |
 
 **Required Capacitor Plugins:**
+
 ```json
 {
-  "@capacitor/camera": "^5.0.0",       // Native camera & photo library
-  "@capacitor/filesystem": "^5.0.0",   // File system access
-  "@capacitor/share": "^5.0.0"         // Native share sheet
+  "@capacitor/camera": "^5.0.0", // Native camera & photo library
+  "@capacitor/filesystem": "^5.0.0", // File system access
+  "@capacitor/share": "^5.0.0" // Native share sheet
 }
 ```
 
 **Platform-Specific Permissions:**
 
 **iOS (Info.plist):**
+
 ```xml
 <key>NSCameraUsageDescription</key>
 <string>SynC needs camera access to capture and share photos in messages</string>
@@ -64,6 +68,7 @@ Enable users to share **rich media content** in messages **on web browsers, iOS,
 ```
 
 **Android (AndroidManifest.xml):**
+
 ```xml
 <uses-permission android:name="android.permission.CAMERA" />
 <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
@@ -76,17 +81,17 @@ Enable users to share **rich media content** in messages **on web browsers, iOS,
 
 ## ✅ **Success Criteria**
 
-| Objective | Target |
-|-----------|--------|
-| **Image Upload Success (Web)** | > 99% |
-| **Image Upload Success (iOS)** | > 99% |
-| **Image Upload Success (Android)** | > 99% |
-| **Native Camera Capture** | Works on iOS/Android with permissions |
-| **Compression Ratio** | Reduce file size by 60-80% (all platforms) |
-| **Upload Speed** | < 3s for 5MB image (all platforms) |
-| **Link Preview Generation** | < 1s |
-| **Native Share Sheet** | Works on iOS/Android for coupon/deal sharing |
-|| **Coupon Share Tracking** | 100% tracked in shares table (all platforms) |
+| Objective                          | Target                                       |
+| ---------------------------------- | -------------------------------------------- | -------------------------------------------- |
+| **Image Upload Success (Web)**     | > 99%                                        |
+| **Image Upload Success (iOS)**     | > 99%                                        |
+| **Image Upload Success (Android)** | > 99%                                        |
+| **Native Camera Capture**          | Works on iOS/Android with permissions        |
+| **Compression Ratio**              | Reduce file size by 60-80% (all platforms)   |
+| **Upload Speed**                   | < 3s for 5MB image (all platforms)           |
+| **Link Preview Generation**        | < 1s                                         |
+| **Native Share Sheet**             | Works on iOS/Android for coupon/deal sharing |
+|                                    | **Coupon Share Tracking**                    | 100% tracked in shares table (all platforms) |
 
 ---
 
@@ -126,6 +131,7 @@ Enable users to share **rich media content** in messages **on web browsers, iOS,
    - Build image gallery components
 
 **🔄 Automatic Routing:** Per global MCP rule, commands automatically route to appropriate servers based on keywords:
+
 - SQL/database queries → Supabase MCP
 - inspect/debug → Chrome DevTools MCP
 - explain/analyze → Context7 MCP
@@ -143,11 +149,11 @@ Enable users to share **rich media content** in messages **on web browsers, iOS,
 
 ```typescript
 // src/services/mediaUploadService.ts
-import { supabase } from '../lib/supabase'
-import imageCompression from 'browser-image-compression'
-import { Camera, CameraResultType, CameraSource } from '@capacitor/camera'
-import { Filesystem, Directory } from '@capacitor/filesystem'
-import { Capacitor } from '@capacitor/core'
+import { supabase } from "../lib/supabase";
+import imageCompression from "browser-image-compression";
+import { Camera, CameraResultType, CameraSource } from "@capacitor/camera";
+import { Filesystem, Directory } from "@capacitor/filesystem";
+import { Capacitor } from "@capacitor/core";
 
 class MediaUploadService {
   /**
@@ -156,60 +162,60 @@ class MediaUploadService {
    * 🛢 Uses storage bucket from Epic 8.1
    */
   async uploadImage(
-    fileOrUri: File | string,  // File (web) or URI (mobile)
+    fileOrUri: File | string, // File (web) or URI (mobile)
     conversationId: string,
-    source: 'camera' | 'gallery' = 'gallery'
+    source: "camera" | "gallery" = "gallery"
   ): Promise<string> {
-    let file: File
-    
+    let file: File;
+
     // 📱 Platform-conditional logic
     if (Capacitor.isNativePlatform()) {
       // MOBILE: Use Capacitor Camera plugin
       const photo = await Camera.getPhoto({
         resultType: CameraResultType.Uri,
-        source: source === 'camera' ? CameraSource.Camera : CameraSource.Photos,
+        source: source === "camera" ? CameraSource.Camera : CameraSource.Photos,
         quality: 90,
         allowEditing: true,
         width: 1920,
-        height: 1920
-      })
-      
+        height: 1920,
+      });
+
       // Convert URI to File
-      file = await this.uriToFile(photo.webPath!, photo.format)
+      file = await this.uriToFile(photo.webPath!, photo.format);
     } else {
       // WEB: Use browser File API
-      if (typeof fileOrUri === 'string') {
-        throw new Error('Web platform requires File object')
+      if (typeof fileOrUri === "string") {
+        throw new Error("Web platform requires File object");
       }
-      file = fileOrUri
+      file = fileOrUri;
     }
 
     // Compress image (works on both web and mobile)
     const compressed = await imageCompression(file, {
       maxSizeMB: 1,
       maxWidthOrHeight: 1920,
-      useWebWorker: !Capacitor.isNativePlatform()  // Disable web worker on mobile
-    })
+      useWebWorker: !Capacitor.isNativePlatform(), // Disable web worker on mobile
+    });
 
     // Generate thumbnail (works on both web and mobile)
-    const thumbnail = await this.generateThumbnail(compressed)
+    const thumbnail = await this.generateThumbnail(compressed);
 
-    const userId = (await supabase.auth.getUser()).data.user!.id
-    const fileName = `${userId}/${conversationId}/${Date.now()}-${file.name}`
+    const userId = (await supabase.auth.getUser()).data.user!.id;
+    const fileName = `${userId}/${conversationId}/${Date.now()}-${file.name}`;
 
     // Upload original
     const { data, error } = await supabase.storage
-      .from('message-attachments')
-      .upload(fileName, compressed)
+      .from("message-attachments")
+      .upload(fileName, compressed);
 
-    if (error) throw error
+    if (error) throw error;
 
     // Upload thumbnail
     await supabase.storage
-      .from('message-attachments')
-      .upload(`${fileName}_thumb.jpg`, thumbnail)
+      .from("message-attachments")
+      .upload(`${fileName}_thumb.jpg`, thumbnail);
 
-    return data.path
+    return data.path;
   }
 
   /**
@@ -220,18 +226,18 @@ class MediaUploadService {
     return await imageCompression(file, {
       maxSizeMB: 0.1,
       maxWidthOrHeight: 300,
-      useWebWorker: !Capacitor.isNativePlatform()  // Disable web worker on mobile
-    })
+      useWebWorker: !Capacitor.isNativePlatform(), // Disable web worker on mobile
+    });
   }
-  
+
   /**
    * 📱 MOBILE ONLY: Convert native file URI to File object
    */
   private async uriToFile(uri: string, format: string): Promise<File> {
-    const response = await fetch(uri)
-    const blob = await response.blob()
-    const fileName = `capture-${Date.now()}.${format}`
-    return new File([blob], fileName, { type: `image/${format}` })
+    const response = await fetch(uri);
+    const blob = await response.blob();
+    const fileName = `capture-${Date.now()}.${format}`;
+    return new File([blob], fileName, { type: `image/${format}` });
   }
 
   /**
@@ -239,18 +245,18 @@ class MediaUploadService {
    */
   async uploadVideo(file: File, conversationId: string): Promise<string> {
     if (file.size > 25 * 1024 * 1024) {
-      throw new Error('Video size exceeds 25MB limit')
+      throw new Error("Video size exceeds 25MB limit");
     }
 
-    const userId = (await supabase.auth.getUser()).data.user!.id
-    const fileName = `${userId}/${conversationId}/${Date.now()}-${file.name}`
+    const userId = (await supabase.auth.getUser()).data.user!.id;
+    const fileName = `${userId}/${conversationId}/${Date.now()}-${file.name}`;
 
     const { data, error } = await supabase.storage
-      .from('message-attachments')
-      .upload(fileName, file)
+      .from("message-attachments")
+      .upload(fileName, file);
 
-    if (error) throw error
-    return data.path
+    if (error) throw error;
+    return data.path;
   }
 
   /**
@@ -258,18 +264,19 @@ class MediaUploadService {
    */
   async getSignedUrl(path: string): Promise<string> {
     const { data, error } = await supabase.storage
-      .from('message-attachments')
-      .createSignedUrl(path, 3600)
+      .from("message-attachments")
+      .createSignedUrl(path, 3600);
 
-    if (error) throw error
-    return data.signedUrl
+    if (error) throw error;
+    return data.signedUrl;
   }
 }
 
-export const mediaUploadService = new MediaUploadService()
+export const mediaUploadService = new MediaUploadService();
 ```
 
 **🛢 MCP Integration:**
+
 ```bash
 # Test storage upload via Supabase MCP
 warp mcp run supabase "execute_sql SELECT * FROM storage.objects WHERE bucket_id = 'message-attachments';"
@@ -283,16 +290,16 @@ warp mcp run supabase "execute_sql SELECT * FROM storage.objects WHERE bucket_id
 
 ```typescript
 // src/services/linkPreviewService.ts
-import { supabase } from '../lib/supabase'
+import { supabase } from "../lib/supabase";
 
 interface LinkPreview {
-  title: string
-  description: string
-  image?: string
-  url: string
-  type: 'external' | 'coupon' | 'deal'
-  couponId?: string
-  dealId?: string
+  title: string;
+  description: string;
+  image?: string;
+  url: string;
+  type: "external" | "coupon" | "deal";
+  couponId?: string;
+  dealId?: string;
 }
 
 class LinkPreviewService {
@@ -302,19 +309,19 @@ class LinkPreviewService {
    */
   async generatePreview(url: string): Promise<LinkPreview> {
     // Check if it's a SynC coupon link
-    const couponMatch = url.match(/\/coupons\/([a-f0-9-]+)/)
+    const couponMatch = url.match(/\/coupons\/([a-f0-9-]+)/);
     if (couponMatch) {
-      return await this.fetchCouponPreview(couponMatch[1])
+      return await this.fetchCouponPreview(couponMatch[1]);
     }
 
     // Check if it's a SynC deal link
-    const dealMatch = url.match(/\/offers\/([a-f0-9-]+)/)
+    const dealMatch = url.match(/\/offers\/([a-f0-9-]+)/);
     if (dealMatch) {
-      return await this.fetchDealPreview(dealMatch[1])
+      return await this.fetchDealPreview(dealMatch[1]);
     }
 
     // External link - fetch Open Graph data
-    return await this.fetchExternalPreview(url)
+    return await this.fetchExternalPreview(url);
   }
 
   /**
@@ -323,21 +330,21 @@ class LinkPreviewService {
    */
   private async fetchCouponPreview(couponId: string): Promise<LinkPreview> {
     const { data, error } = await supabase
-      .from('coupons')
-      .select('title, description, image_url, business_id')
-      .eq('id', couponId)
-      .single()
+      .from("coupons")
+      .select("title, description, image_url, business_id")
+      .eq("id", couponId)
+      .single();
 
-    if (error) throw error
+    if (error) throw error;
 
     return {
       title: data.title,
       description: data.description,
       image: data.image_url,
       url: `/coupons/${couponId}`,
-      type: 'coupon',
-      couponId
-    }
+      type: "coupon",
+      couponId,
+    };
   }
 
   /**
@@ -346,21 +353,21 @@ class LinkPreviewService {
    */
   private async fetchDealPreview(dealId: string): Promise<LinkPreview> {
     const { data, error } = await supabase
-      .from('offers')
-      .select('title, description, image_url, business_id')
-      .eq('id', dealId)
-      .single()
+      .from("offers")
+      .select("title, description, image_url, business_id")
+      .eq("id", dealId)
+      .single();
 
-    if (error) throw error
+    if (error) throw error;
 
     return {
       title: data.title,
       description: data.description,
       image: data.image_url,
       url: `/offers/${dealId}`,
-      type: 'deal',
-      dealId
-    }
+      type: "deal",
+      dealId,
+    };
   }
 
   /**
@@ -369,16 +376,18 @@ class LinkPreviewService {
    */
   private async fetchExternalPreview(url: string): Promise<LinkPreview> {
     // Call your backend API or use a service like Microlink
-    const response = await fetch(`/api/link-preview?url=${encodeURIComponent(url)}`)
-    const data = await response.json()
+    const response = await fetch(
+      `/api/link-preview?url=${encodeURIComponent(url)}`
+    );
+    const data = await response.json();
 
     return {
       title: data.title || url,
-      description: data.description || '',
+      description: data.description || "",
       image: data.image,
       url,
-      type: 'external'
-    }
+      type: "external",
+    };
   }
 
   /**
@@ -387,11 +396,11 @@ class LinkPreviewService {
   async validateUrl(url: string): Promise<boolean> {
     // Implementation using Google Safe Browsing API
     // For MVP, you can skip this or use a simple blocklist
-    return true
+    return true;
   }
 }
 
-export const linkPreviewService = new LinkPreviewService()
+export const linkPreviewService = new LinkPreviewService();
 ```
 
 ---
@@ -415,13 +424,13 @@ export function CouponShareCard({ preview, onClick }: Props) {
   const Icon = preview.type === 'coupon' ? Gift : Tag
 
   return (
-    <div 
+    <div
       onClick={onClick}
       className="border rounded-lg overflow-hidden cursor-pointer hover:border-primary transition-colors"
     >
       {preview.image && (
-        <img 
-          src={preview.image} 
+        <img
+          src={preview.image}
           alt={preview.title}
           className="w-full h-40 object-cover"
         />
@@ -448,6 +457,7 @@ export function CouponShareCard({ preview, onClick }: Props) {
 ```
 
 **🎨 MCP Integration:**
+
 ```bash
 # Scaffold UI components with Shadcn MCP
 warp mcp run shadcn "getComponent card"
@@ -566,7 +576,7 @@ export function MessageComposer({ conversationId, onTyping }: Props) {
       {/* Link Preview */}
       {linkPreview && (
         <div className="mb-2">
-          <CouponShareCard 
+          <CouponShareCard
             preview={linkPreview}
             onClick={() => {/* Navigate to coupon/deal */}}
           />
@@ -630,6 +640,7 @@ export function MessageComposer({ conversationId, onTyping }: Props) {
 ## 📋 **Story Breakdown**
 
 ### **Story 8.3.1: Image Upload & Compression** (2 days)
+
 - [ ] Implement image compression with browser-image-compression
 - [ ] Create thumbnail generation logic
 - [ ] Upload to message-attachments bucket
@@ -637,18 +648,21 @@ export function MessageComposer({ conversationId, onTyping }: Props) {
 - **🛢 MCP**: Test uploads via Supabase MCP
 
 ### **Story 8.3.2: Video Upload** (1 day)
+
 - [ ] Implement video upload with size validation
 - [ ] Generate video thumbnails (first frame)
 - [ ] Handle large file uploads with progress bar
 - **🌐 MCP**: Debug upload flow with Chrome DevTools
 
 ### **Story 8.3.3: Link Preview Generation** (2 days)
+
 - [ ] Implement URL detection in messages
 - [ ] Fetch Open Graph metadata for external links
 - [ ] Create link preview UI component
 - **🧠 MCP**: Analyze preview logic with Context7
 
 ### **Story 8.3.4: Coupon/Deal Sharing Integration** (2 days)
+
 - [ ] Detect SynC coupon/deal URLs automatically
 - [ ] Fetch coupon/deal data from existing tables
 - [ ] Create rich preview cards for coupons/deals
@@ -656,28 +670,41 @@ export function MessageComposer({ conversationId, onTyping }: Props) {
 - **🛢 MCP**: Verify shares table integration
 
 ### **Story 8.3.5: Media Display in Messages** (1 day)
+
 - [ ] Create ImageMessage component with lightbox
 - [ ] Create VideoMessage component with player
 - [ ] Handle signed URL expiration
 - **🎨 MCP**: Use Shadcn for image viewer components
+
+### **Story 8.3.6: Native Share Integration** (1-2 days)
+
+- [ ] Install and configure @capacitor/share plugin
+- [ ] Implement share service for images, videos, links, coupons, deals
+- [ ] Platform-specific implementations (Web Share API, iOS share sheet, Android intent)
+- [ ] Share tracking in shares table
+- [ ] UI integration (share buttons in messages, lightbox, preview cards)
+- **🛢 MCP**: Verify share tracking in database
 
 ---
 
 ## 🧪 **Testing with MCP**
 
 ### **E2E Tests with Puppeteer MCP**
+
 ```bash
 # Test image upload flow
 warp mcp run puppeteer "e2e test image upload in messages"
 ```
 
 ### **Database Validation with Supabase MCP**
+
 ```bash
 # Verify media URLs stored correctly
 warp mcp run supabase "execute_sql SELECT * FROM messages WHERE media_urls IS NOT NULL LIMIT 5;"
 ```
 
 ### **UI Debugging with Chrome DevTools MCP**
+
 ```bash
 # Debug media upload UI
 warp mcp run chrome-devtools "inspect http://localhost:5173/messages/conv-123 and check network tab"

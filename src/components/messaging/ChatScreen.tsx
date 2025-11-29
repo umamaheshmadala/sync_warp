@@ -79,24 +79,30 @@ export function ChatScreen() {
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return
 
-    // Keyboard will show listener
-    const showListener = Keyboard.addListener('keyboardWillShow', (info) => {
-      console.log('⌨️ Keyboard showing, height:', info.keyboardHeight)
-      setKeyboardPadding(info.keyboardHeight)
-      
-      // Auto-scroll to bottom when keyboard shows
-      setTimeout(() => scrollToBottom('auto'), 100)
-    })
-    
-    // Keyboard will hide listener
-    const hideListener = Keyboard.addListener('keyboardWillHide', () => {
-      console.log('⌨️ Keyboard hiding')
-      setKeyboardPadding(0)
-    })
+    // Keyboard listeners
+    let showListener: any;
+    let hideListener: any;
+
+    const setupListeners = async () => {
+      showListener = await Keyboard.addListener('keyboardWillShow', (info) => {
+        console.log('⌨️ Keyboard showing, height:', info.keyboardHeight)
+        setKeyboardPadding(info.keyboardHeight)
+        
+        // Auto-scroll to bottom when keyboard shows
+        setTimeout(() => scrollToBottom('auto'), 100)
+      })
+
+      hideListener = await Keyboard.addListener('keyboardWillHide', () => {
+        console.log('⌨️ Keyboard hiding')
+        setKeyboardPadding(0)
+      })
+    }
+
+    setupListeners()
     
     return () => {
-      showListener.remove()
-      hideListener.remove()
+      if (showListener) showListener.remove()
+      if (hideListener) hideListener.remove()
     }
   }, [])
 
@@ -104,13 +110,19 @@ export function ChatScreen() {
   useEffect(() => {
     if (Capacitor.getPlatform() !== 'android') return
 
-    const listener = App.addListener('backButton', () => {
-      // Navigate back to conversation list
-      navigate('/messages')
-    })
+    let backListener: any;
+
+    const setupBackListener = async () => {
+      backListener = await App.addListener('backButton', () => {
+        // Navigate back to conversation list
+        navigate('/messages')
+      })
+    }
+
+    setupBackListener()
 
     return () => {
-      listener.remove()
+      if (backListener) backListener.remove()
     }
   }, [navigate])
 

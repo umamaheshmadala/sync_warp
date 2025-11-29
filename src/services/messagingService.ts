@@ -283,7 +283,11 @@ class MessagingService {
       
       if (error) throw error;
       
-      return data || [];
+      return (data || []).map((conv: any) => ({
+        ...conv,
+        participant1_id: conv.participants?.[0],
+        participant2_id: conv.participants?.[1]
+      }));
     } catch (error) {
       console.error('❌ Error fetching conversations:', error);
       throw error;

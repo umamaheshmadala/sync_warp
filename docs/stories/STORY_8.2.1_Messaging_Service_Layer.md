@@ -4,7 +4,15 @@
 **Story Owner:** Backend Engineering / Frontend Engineering  
 **Estimated Effort:** 3 days  
 **Priority:** P0 - Critical  
-**Status:** 📋 Ready for Implementation
+**Status:** ✅ **COMPLETE** - Implemented 2025-02-01
+
+**Implementation Files:**
+
+- `src/services/messagingService.ts` (704 lines)
+- Platform-specific network handling with Capacitor
+- 17 core methods implemented
+- Retry logic with exponential backoff
+- Network status monitoring
 
 ---
 
@@ -23,37 +31,38 @@ The messaging service layer works identically across all platforms, but requires
 #### **Platform-Specific Network Handling**
 
 **1. Network Timeouts:**
+
 - **Web**: Standard browser timeout (default: 30 seconds)
 - **Mobile (iOS/Android)**: Extended timeout for slower networks
 
 ```typescript
 // src/services/messagingService.ts
-import { Capacitor } from '@capacitor/core'
+import { Capacitor } from "@capacitor/core";
 
 class MessagingService {
   private getTimeout(): number {
     // Mobile networks can be slower, especially on 3G/4G
-    return Capacitor.isNativePlatform() ? 60000 : 30000 // 60s mobile, 30s web
+    return Capacitor.isNativePlatform() ? 60000 : 30000; // 60s mobile, 30s web
   }
 
   async createOrGetConversation(friendId: string): Promise<string> {
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), this.getTimeout())
-    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.getTimeout());
+
     try {
       const { data, error } = await supabase
-        .rpc('create_or_get_conversation', { p_participant_id: friendId })
-        .abortSignal(controller.signal)
-      
-      if (error) throw error
-      return data as string
+        .rpc("create_or_get_conversation", { p_participant_id: friendId })
+        .abortSignal(controller.signal);
+
+      if (error) throw error;
+      return data as string;
     } catch (error: any) {
-      if (error.name === 'AbortError') {
-        throw new Error('Request timed out. Please check your connection.')
+      if (error.name === "AbortError") {
+        throw new Error("Request timed out. Please check your connection.");
       }
-      throw error
+      throw error;
     } finally {
-      clearTimeout(timeoutId)
+      clearTimeout(timeoutId);
     }
   }
 }
@@ -70,14 +79,14 @@ private async retryWithBackoff<T>(
 ): Promise<T> {
   const isMobile = Capacitor.isNativePlatform()
   const retries = isMobile ? maxRetries : 1 // Only retry on mobile
-  
+
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
       return await operation()
     } catch (error: any) {
-      const isNetworkError = error.message?.includes('network') || 
+      const isNetworkError = error.message?.includes('network') ||
                             error.message?.includes('timeout')
-      
+
       if (isNetworkError && attempt < retries - 1) {
         // Exponential backoff: 1s, 2s, 4s
         const delay = Math.pow(2, attempt) * 1000
@@ -104,28 +113,33 @@ async sendMessage(params: SendMessageParams): Promise<string> {
 **3. Offline Detection:**
 
 ```typescript
-import { Network } from '@capacitor/network'
+import { Network } from "@capacitor/network";
 
 class MessagingService {
-  private isOnline: boolean = true
+  private isOnline: boolean = true;
 
   async init() {
     if (Capacitor.isNativePlatform()) {
       // Listen to network status changes
-      Network.addListener('networkStatusChange', status => {
-        this.isOnline = status.connected
-        console.log('📡 Network status:', status.connected ? 'Online' : 'Offline')
-      })
-      
+      Network.addListener("networkStatusChange", (status) => {
+        this.isOnline = status.connected;
+        console.log(
+          "📡 Network status:",
+          status.connected ? "Online" : "Offline"
+        );
+      });
+
       // Get initial status
-      const status = await Network.getStatus()
-      this.isOnline = status.connected
+      const status = await Network.getStatus();
+      this.isOnline = status.connected;
     }
   }
 
   async sendMessage(params: SendMessageParams): Promise<string> {
     if (!this.isOnline && Capacitor.isNativePlatform()) {
-      throw new Error('No internet connection. Message will be sent when online.')
+      throw new Error(
+        "No internet connection. Message will be sent when online."
+      );
     }
     // ... rest of send logic
   }
@@ -139,21 +153,21 @@ class MessagingService {
 ```typescript
 private getErrorMessage(error: any): string {
   const platform = Capacitor.getPlatform() // 'web', 'ios', 'android'
-  
+
   if (error.message?.includes('timeout')) {
     if (platform === 'ios' || platform === 'android') {
       return 'Poor connection. Please check your network and try again.'
     }
     return 'Request timed out. Please try again.'
   }
-  
+
   if (error.message?.includes('network')) {
     if (platform === 'ios' || platform === 'android') {
       return 'Connection lost. Make sure you have WiFi or mobile data enabled.'
     }
     return 'Network error. Please check your connection.'
   }
-  
+
   return error.message || 'An unexpected error occurred'
 }
 ```
@@ -163,7 +177,7 @@ private getErrorMessage(error: any): string {
 ```json
 {
   "dependencies": {
-    "@capacitor/network": "^5.0.0"  // Network status monitoring
+    "@capacitor/network": "^5.0.0" // Network status monitoring
   }
 }
 ```
@@ -181,18 +195,19 @@ private getErrorMessage(error: any): string {
 
 #### **Performance Targets by Platform**
 
-| Operation | Web | iOS/Android (WiFi) | iOS/Android (4G) |
-|-----------|-----|-------------------|------------------|
-| **Create Conversation** | < 200ms | < 300ms | < 500ms |
-| **Send Message** | < 100ms | < 200ms | < 400ms |
-| **Fetch Messages (50)** | < 150ms | < 250ms | < 500ms |
-| **Mark as Read** | < 50ms | < 100ms | < 200ms |
+| Operation               | Web     | iOS/Android (WiFi) | iOS/Android (4G) |
+| ----------------------- | ------- | ------------------ | ---------------- |
+| **Create Conversation** | < 200ms | < 300ms            | < 500ms          |
+| **Send Message**        | < 100ms | < 200ms            | < 400ms          |
+| **Fetch Messages (50)** | < 150ms | < 250ms            | < 500ms          |
+| **Mark as Read**        | < 50ms  | < 100ms            | < 200ms          |
 
 ---
 
 ## 📖 **User Stories**
 
 ### As a developer, I want:
+
 1. A clean service interface to create or retrieve 1:1 conversations
 2. A reliable method to send messages through Supabase RPC functions
 3. Efficient pagination for loading message history
@@ -200,6 +215,7 @@ private getErrorMessage(error: any): string {
 5. Proper error handling for all database operations
 
 ### Acceptance Criteria:
+
 - ✅ All service methods return consistent promise-based responses
 - ✅ Error handling covers network failures, RLS violations, and edge cases
 - ✅ Pagination uses cursor-based approach for performance
@@ -213,61 +229,79 @@ private getErrorMessage(error: any): string {
 ### **Phase 1: Setup and Type Definitions** (0.5 days)
 
 #### Task 1.1: Create Type Definitions
+
 ```typescript
 // src/types/messaging.ts
 export interface Message {
-  id: string
-  conversation_id: string
-  sender_id: string
-  content: string
-  type: 'text' | 'image' | 'video' | 'audio' | 'file' | 'link' | 'coupon' | 'deal'
-  media_urls?: string[] | null
-  thumbnail_url?: string | null
-  link_preview?: LinkPreview | null
-  shared_coupon_id?: string | null
-  shared_deal_id?: string | null
-  reply_to_id?: string | null
-  is_edited: boolean
-  edited_at?: string | null
-  is_deleted: boolean
-  deleted_at?: string | null
-  created_at: string
-  updated_at: string
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  content: string;
+  type:
+    | "text"
+    | "image"
+    | "video"
+    | "audio"
+    | "file"
+    | "link"
+    | "coupon"
+    | "deal";
+  media_urls?: string[] | null;
+  thumbnail_url?: string | null;
+  link_preview?: LinkPreview | null;
+  shared_coupon_id?: string | null;
+  shared_deal_id?: string | null;
+  reply_to_id?: string | null;
+  is_edited: boolean;
+  edited_at?: string | null;
+  is_deleted: boolean;
+  deleted_at?: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface ConversationWithDetails {
-  conversation_id: string
-  other_participant_id: string
-  other_participant_name: string
-  other_participant_avatar?: string | null
-  last_message_content?: string | null
-  last_message_at?: string | null
-  last_message_sender_id?: string | null
-  unread_count: number
-  created_at: string
+  conversation_id: string;
+  other_participant_id: string;
+  other_participant_name: string;
+  other_participant_avatar?: string | null;
+  last_message_content?: string | null;
+  last_message_at?: string | null;
+  last_message_sender_id?: string | null;
+  unread_count: number;
+  created_at: string;
 }
 
 export interface SendMessageParams {
-  conversationId: string
-  content: string
-  type?: 'text' | 'image' | 'video' | 'audio' | 'file' | 'link' | 'coupon' | 'deal'
-  mediaUrls?: string[] | null
-  thumbnailUrl?: string | null
-  linkPreview?: LinkPreview | null
-  sharedCouponId?: string | null
-  sharedDealId?: string | null
-  replyToId?: string | null
+  conversationId: string;
+  content: string;
+  type?:
+    | "text"
+    | "image"
+    | "video"
+    | "audio"
+    | "file"
+    | "link"
+    | "coupon"
+    | "deal";
+  mediaUrls?: string[] | null;
+  thumbnailUrl?: string | null;
+  linkPreview?: LinkPreview | null;
+  sharedCouponId?: string | null;
+  sharedDealId?: string | null;
+  replyToId?: string | null;
 }
 
 export interface LinkPreview {
-  url: string
-  title?: string
-  description?: string
-  image?: string
+  url: string;
+  title?: string;
+  description?: string;
+  image?: string;
 }
 ```
 
 **🛢 MCP Integration:**
+
 ```bash
 # Verify message table structure
 warp mcp run supabase "execute_sql SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'messages';"
@@ -278,17 +312,18 @@ warp mcp run supabase "execute_sql SELECT column_name, data_type FROM informatio
 ### **Phase 2: Core Service Methods** (1.5 days)
 
 #### Task 2.1: Create/Get Conversation Method
+
 ```typescript
 // src/services/messagingService.ts
 async createOrGetConversation(friendId: string): Promise<string> {
   try {
     console.log('🔄 Creating/getting conversation with:', friendId)
-    
+
     const { data, error } = await supabase
       .rpc('create_or_get_conversation', { p_participant_id: friendId })
-    
+
     if (error) throw error
-    
+
     console.log('✅ Conversation ID:', data)
     return data as string
   } catch (error) {
@@ -299,6 +334,7 @@ async createOrGetConversation(friendId: string): Promise<string> {
 ```
 
 **🛢 MCP Testing:**
+
 ```bash
 # Test the database function directly
 warp mcp run supabase "execute_sql SELECT create_or_get_conversation('friend-uuid-here');"
@@ -308,6 +344,7 @@ warp mcp run supabase "execute_sql SELECT * FROM conversations WHERE id = 'conv-
 ```
 
 **🧠 MCP Code Analysis:**
+
 ```bash
 # Check for error handling gaps
 warp mcp run context7 "analyze createOrGetConversation method and identify edge cases"
@@ -316,6 +353,7 @@ warp mcp run context7 "analyze createOrGetConversation method and identify edge 
 ---
 
 #### Task 2.2: Send Message Method
+
 ```typescript
 async sendMessage(params: SendMessageParams): Promise<string> {
   try {
@@ -331,9 +369,9 @@ async sendMessage(params: SendMessageParams): Promise<string> {
         p_shared_deal_id: params.sharedDealId || null,
         p_reply_to_id: params.replyToId || null
       })
-    
+
     if (error) throw error
-    
+
     console.log('✅ Message sent:', data)
     return data as string
   } catch (error) {
@@ -344,6 +382,7 @@ async sendMessage(params: SendMessageParams): Promise<string> {
 ```
 
 **🛢 MCP Testing:**
+
 ```bash
 # Test sending a message
 warp mcp run supabase "execute_sql SELECT send_message('conv-id', 'Hello World', 'text', NULL, NULL, NULL, NULL, NULL, NULL);"
@@ -355,9 +394,10 @@ warp mcp run supabase "execute_sql SELECT * FROM messages WHERE conversation_id 
 ---
 
 #### Task 2.3: Fetch Messages with Pagination
+
 ```typescript
 async fetchMessages(
-  conversationId: string, 
+  conversationId: string,
   limit: number = 50,
   beforeMessageId?: string
 ): Promise<{ messages: Message[], hasMore: boolean }> {
@@ -369,7 +409,7 @@ async fetchMessages(
       .eq('is_deleted', false)
       .order('created_at', { ascending: false })
       .limit(limit + 1) // Fetch one extra to check hasMore
-    
+
     // Cursor-based pagination
     if (beforeMessageId) {
       const { data: cursorMsg } = await supabase
@@ -377,19 +417,19 @@ async fetchMessages(
         .select('created_at')
         .eq('id', beforeMessageId)
         .single()
-      
+
       if (cursorMsg) {
         query = query.lt('created_at', cursorMsg.created_at)
       }
     }
-    
+
     const { data, error } = await query
-    
+
     if (error) throw error
-    
+
     const hasMore = data.length > limit
     const messages = data.slice(0, limit).reverse() // Reverse for chronological order
-    
+
     return { messages, hasMore }
   } catch (error) {
     console.error('❌ Error fetching messages:', error)
@@ -399,6 +439,7 @@ async fetchMessages(
 ```
 
 **🛢 MCP Testing:**
+
 ```bash
 # Test pagination
 warp mcp run supabase "execute_sql SELECT * FROM messages WHERE conversation_id = 'conv-id' ORDER BY created_at DESC LIMIT 51;"
@@ -408,6 +449,7 @@ warp mcp run supabase "execute_sql SELECT * FROM messages WHERE conversation_id 
 ```
 
 **🧠 MCP Performance Analysis:**
+
 ```bash
 # Analyze pagination performance
 warp mcp run context7 "analyze fetchMessages pagination logic and suggest optimizations"
@@ -416,6 +458,7 @@ warp mcp run context7 "analyze fetchMessages pagination logic and suggest optimi
 ---
 
 #### Task 2.4: Fetch Conversations List
+
 ```typescript
 async fetchConversations(): Promise<ConversationWithDetails[]> {
   try {
@@ -423,9 +466,9 @@ async fetchConversations(): Promise<ConversationWithDetails[]> {
       .from('conversation_list')
       .select('*')
       .order('last_message_at', { ascending: false })
-    
+
     if (error) throw error
-    
+
     return data || []
   } catch (error) {
     console.error('❌ Error fetching conversations:', error)
@@ -435,6 +478,7 @@ async fetchConversations(): Promise<ConversationWithDetails[]> {
 ```
 
 **🛢 MCP Testing:**
+
 ```bash
 # Test conversation_list view
 warp mcp run supabase "execute_sql SELECT * FROM conversation_list ORDER BY last_message_at DESC LIMIT 10;"
@@ -445,12 +489,13 @@ warp mcp run supabase "execute_sql SELECT * FROM conversation_list ORDER BY last
 ### **Phase 3: Read Receipts & Additional Methods** (1 day)
 
 #### Task 3.1: Mark Message as Read
+
 ```typescript
 async markMessageAsRead(messageId: string): Promise<void> {
   try {
     const { error } = await supabase
       .rpc('mark_message_as_read', { p_message_id: messageId })
-    
+
     if (error) throw error
   } catch (error) {
     console.error('❌ Error marking message as read:', error)
@@ -460,6 +505,7 @@ async markMessageAsRead(messageId: string): Promise<void> {
 ```
 
 **🛢 MCP Testing:**
+
 ```bash
 # Test marking message as read
 warp mcp run supabase "execute_sql SELECT mark_message_as_read('msg-id');"
@@ -471,6 +517,7 @@ warp mcp run supabase "execute_sql SELECT * FROM message_read_receipts WHERE mes
 ---
 
 #### Task 3.2: Mark Conversation as Read
+
 ```typescript
 async markConversationAsRead(conversationId: string): Promise<void> {
   try {
@@ -482,12 +529,12 @@ async markConversationAsRead(conversationId: string): Promise<void> {
       .eq('is_deleted', false)
       .neq('sender_id', (await supabase.auth.getUser()).data.user?.id)
       .not('id', 'in', `(
-        SELECT message_id 
-        FROM message_read_receipts 
-        WHERE user_id = auth.uid() 
+        SELECT message_id
+        FROM message_read_receipts
+        WHERE user_id = auth.uid()
         AND read_at IS NOT NULL
       )`)
-    
+
     // Mark each as read
     if (unreadMessages && unreadMessages.length > 0) {
       await Promise.all(
@@ -503,14 +550,15 @@ async markConversationAsRead(conversationId: string): Promise<void> {
 ---
 
 #### Task 3.3: Get Unread Count
+
 ```typescript
 async getUnreadCount(): Promise<number> {
   try {
     const { data, error } = await supabase
       .rpc('get_unread_message_count')
-    
+
     if (error) throw error
-    
+
     return data as number
   } catch (error) {
     console.error('❌ Error getting unread count:', error)
@@ -520,6 +568,7 @@ async getUnreadCount(): Promise<number> {
 ```
 
 **🛢 MCP Testing:**
+
 ```bash
 # Test unread count function
 warp mcp run supabase "execute_sql SELECT get_unread_message_count();"
@@ -528,17 +577,18 @@ warp mcp run supabase "execute_sql SELECT get_unread_message_count();"
 ---
 
 #### Task 3.4: Delete & Edit Messages
+
 ```typescript
 async deleteMessage(messageId: string): Promise<void> {
   try {
     const { error } = await supabase
       .from('messages')
-      .update({ 
-        is_deleted: true, 
-        deleted_at: new Date().toISOString() 
+      .update({
+        is_deleted: true,
+        deleted_at: new Date().toISOString()
       })
       .eq('id', messageId)
-    
+
     if (error) throw error
   } catch (error) {
     console.error('❌ Error deleting message:', error)
@@ -550,13 +600,13 @@ async editMessage(messageId: string, newContent: string): Promise<void> {
   try {
     const { error } = await supabase
       .from('messages')
-      .update({ 
+      .update({
         content: newContent,
         is_edited: true,
         edited_at: new Date().toISOString()
       })
       .eq('id', messageId)
-    
+
     if (error) throw error
   } catch (error) {
     console.error('❌ Error editing message:', error)
@@ -566,6 +616,7 @@ async editMessage(messageId: string, newContent: string): Promise<void> {
 ```
 
 **🛢 MCP Testing:**
+
 ```bash
 # Test soft delete
 warp mcp run supabase "execute_sql UPDATE messages SET is_deleted = true WHERE id = 'msg-id'; SELECT * FROM messages WHERE id = 'msg-id';"
@@ -579,6 +630,7 @@ warp mcp run supabase "execute_sql UPDATE messages SET content = 'Edited', is_ed
 ## 🧪 **Testing Checklist**
 
 ### Unit Tests
+
 - [ ] Test `createOrGetConversation` with valid friend ID
 - [ ] Test `createOrGetConversation` with invalid friend ID (should throw)
 - [ ] Test `sendMessage` with all parameter variations
@@ -590,27 +642,29 @@ warp mcp run supabase "execute_sql UPDATE messages SET content = 'Edited', is_ed
 - [ ] Test `editMessage` updates content correctly
 
 ### Integration Tests with Supabase MCP
+
 ```bash
 # End-to-end conversation flow
-warp mcp run supabase "execute_sql 
+warp mcp run supabase "execute_sql
   -- Create conversation
   SELECT create_or_get_conversation('friend-uuid');
-  
+
   -- Send message
   SELECT send_message('conv-id', 'Test message', 'text');
-  
+
   -- Verify message exists
   SELECT * FROM messages WHERE conversation_id = 'conv-id';
-  
+
   -- Mark as read
   SELECT mark_message_as_read((SELECT id FROM messages WHERE conversation_id = 'conv-id' LIMIT 1));
-  
+
   -- Verify read receipt
   SELECT * FROM message_read_receipts;
 "
 ```
 
 ### Code Quality with Context7 MCP
+
 ```bash
 # Analyze service for potential bugs
 warp mcp run context7 "analyze messagingService.ts and identify potential race conditions or error handling gaps"
@@ -623,18 +677,19 @@ warp mcp run context7 "review messagingService.ts type definitions and suggest i
 
 ## 📊 **Success Metrics**
 
-| Metric | Target | Verification Method |
-|--------|--------|-------------------|
-| **Method Response Time** | < 100ms for all methods | MCP performance testing |
-| **Error Handling Coverage** | 100% of methods | Context7 code analysis |
-| **Type Safety** | Zero TypeScript errors | `npm run type-check` |
-| **Test Coverage** | > 90% | Vitest coverage report |
+| Metric                      | Target                  | Verification Method     |
+| --------------------------- | ----------------------- | ----------------------- |
+| **Method Response Time**    | < 100ms for all methods | MCP performance testing |
+| **Error Handling Coverage** | 100% of methods         | Context7 code analysis  |
+| **Type Safety**             | Zero TypeScript errors  | `npm run type-check`    |
+| **Test Coverage**           | > 90%                   | Vitest coverage report  |
 
 ---
 
 ## 🔗 **Dependencies**
 
 ### Required Before Starting:
+
 - ✅ Epic 8.1 database tables must be deployed
 - ✅ RLS policies must be active
 - ✅ Database functions must exist:
@@ -644,6 +699,7 @@ warp mcp run context7 "review messagingService.ts type definitions and suggest i
   - `get_unread_message_count()`
 
 ### Verify Dependencies with MCP:
+
 ```bash
 # Check database functions exist
 warp mcp run supabase "execute_sql SELECT proname FROM pg_proc WHERE proname LIKE '%message%' OR proname LIKE '%conversation%';"
@@ -673,6 +729,7 @@ warp mcp run supabase "execute_sql SELECT tablename, policyname FROM pg_policies
 ## 📝 **MCP Command Quick Reference**
 
 ### Supabase MCP
+
 ```bash
 # Test conversation creation
 warp mcp run supabase "execute_sql SELECT create_or_get_conversation('friend-uuid');"
@@ -688,6 +745,7 @@ warp mcp run supabase "execute_sql SELECT mark_message_as_read('msg-id');"
 ```
 
 ### Context7 MCP
+
 ```bash
 # Analyze service patterns
 warp mcp run context7 "analyze messagingService.ts and suggest optimizations"

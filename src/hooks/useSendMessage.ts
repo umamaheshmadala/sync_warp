@@ -28,7 +28,7 @@ import type { SendMessageParams, Message } from '../types/messaging'
  *       await sendMessage({
  *         conversationId,
  *         content: text,
- *         contentType: 'text'
+ *         type: 'text'
  *       })
  *       setText('') // Clear input on success
  *     } catch (error) {
@@ -76,7 +76,13 @@ export function useSendMessage() {
       conversation_id: params.conversationId,
       sender_id: 'current_user', // TODO: Get from auth context
       content: params.content,
-      type: params.contentType === 'text' ? 'text' : 'media',
+      type: params.type || 'text',
+      media_urls: params.mediaUrls || null,
+      thumbnail_url: params.thumbnailUrl || null,
+      link_preview: params.linkPreview || null,
+      shared_coupon_id: params.sharedCouponId || null,
+      shared_deal_id: params.sharedDealId || null,
+      reply_to_id: params.replyToId || null,
       is_edited: false,
       is_deleted: false,
       created_at: new Date().toISOString(),
@@ -137,7 +143,7 @@ export function useSendMessage() {
       await sendMessage({
         conversationId: failedMessage.conversation_id,
         content: failedMessage.content,
-        contentType: failedMessage.type === 'text' ? 'text' : 'media'
+        type: failedMessage.type
       })
 
       // Note: The failed message will be replaced by the new optimistic message

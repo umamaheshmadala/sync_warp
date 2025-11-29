@@ -90,6 +90,8 @@ export interface ConversationWithDetails {
   other_participant_avatar?: string | null;
   other_participant_online?: boolean | null;
   unread_count: number;
+  participant1_id?: string;
+  participant2_id?: string;
 }
 
 /**

@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Send } from 'lucide-react'
+import { Send, Image, Paperclip, Smile } from 'lucide-react'
 import { Textarea } from '../ui/textarea'
 import { Button } from '../ui/button'
+import { ImageUploadButton } from './ImageUploadButton'
 import { useSendMessage } from '../../hooks/useSendMessage'
 import { Capacitor } from '@capacitor/core'
 import { Haptics, NotificationType } from '@capacitor/haptics'
@@ -11,31 +12,6 @@ interface MessageComposerProps {
   onTyping: () => void
 }
 
-/**
- * MessageComposer Component
- * 
- * Message input with:
- * - Auto-resizing textarea
- * - Send button (disabled when empty)
- * - Enter to send (Shift+Enter for new line)
- * - Typing indicator integration
- * - Mobile haptic feedback on send
- * - Full accessibility support (Story 8.2.8)
- * 
- * Accessibility Features:
- * - aria-label for screen readers
- * - aria-describedby with keyboard shortcut hint
- * - Proper button labels
- * - Icons marked as aria-hidden
- * 
- * @example
- * ```tsx
- * <MessageComposer
- *   conversationId={conversationId}
- *   onTyping={handleTyping}
- * />
- * ```
- */
 export function MessageComposer({ conversationId, onTyping }: MessageComposerProps) {
   const [content, setContent] = useState('')
   const { sendMessage, isSending } = useSendMessage()
@@ -45,7 +21,7 @@ export function MessageComposer({ conversationId, onTyping }: MessageComposerPro
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto'
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`
     }
   }, [content])
 
@@ -53,7 +29,6 @@ export function MessageComposer({ conversationId, onTyping }: MessageComposerPro
     if (!content.trim() || isSending) return
 
     try {
-      // Haptic feedback on send (mobile only)
       if (Capacitor.isNativePlatform()) {
         try {
           await Haptics.notification({ type: NotificationType.Success })
@@ -65,23 +40,20 @@ export function MessageComposer({ conversationId, onTyping }: MessageComposerPro
       await sendMessage({
         conversationId,
         content: content.trim(),
-        contentType: 'text'
+        type: 'text'
       })
       
       setContent('')
       
-      // Reset textarea height
       if (textareaRef.current) {
         textareaRef.current.style.height = 'auto'
       }
     } catch (error) {
-      // Error toast is handled in useSendMessage
       console.error('Failed to send message:', error)
     }
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    // Enter to send (unless Shift is held)
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSend()
@@ -90,37 +62,51 @@ export function MessageComposer({ conversationId, onTyping }: MessageComposerPro
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setContent(e.target.value)
-    onTyping() // Broadcast typing indicator
+    onTyping()
   }
 
   return (
-    <div className="border-t bg-white px-4 py-3 safe-area-bottom">
-      <div className="flex items-end gap-2">
+    <div className="bg-white px-4 py-3 border-t">
+      <div className="flex flex-col gap-2 bg-gray-100 rounded-xl p-2 border border-gray-200 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
         <Textarea
           ref={textareaRef}
           value={content}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
-          placeholder="Type a message..."
-          className="min-h-[44px] max-h-[120px] resize-none"
+          placeholder="Write a message..."
+          className="min-h-[24px] max-h-[120px] resize-none border-none bg-transparent p-0 focus-visible:ring-0 placeholder:text-gray-500 text-sm"
           rows={1}
           disabled={isSending}
-          aria-label="Type a message"
-          aria-describedby="message-hint"
         />
-        {/* Screen reader hint for keyboard shortcuts */}
-        <span id="message-hint" className="sr-only">
-          Press Enter to send, Shift+Enter for new line
-        </span>
-        <Button
-          onClick={handleSend}
-          disabled={!content.trim() || isSending}
-          size="icon"
-          className="h-11 w-11 flex-shrink-0"
-          aria-label="Send message"
-        >
-          <Send className="h-5 w-5" aria-hidden="true" />
-        </Button>
+        
+        <div className="flex items-center justify-between pt-1">
+          <div className="flex items-center gap-1">
+            <ImageUploadButton 
+              conversationId={conversationId}
+              onUploadStart={() => {}}
+              onUploadComplete={() => {}}
+            />
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-gray-700 hover:bg-gray-200/50">
+              <Paperclip className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-gray-700 hover:bg-gray-200/50">
+              <Smile className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {content.trim() && (
+              <Button
+                onClick={handleSend}
+                disabled={isSending}
+                size="sm"
+                className="h-7 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-xs font-semibold"
+              >
+                Send
+              </Button>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   )
