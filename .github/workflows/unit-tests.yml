@@ -1,0 +1,60 @@
+name: Unit Tests
+
+on:
+  pull_request:
+    branches: [main, develop, mobile_app_setup_antigravity]
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm test -- --run --coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage/coverage-final.json
+          flags: unit
+          name: unit-tests
+          fail_ci_if_error: false
+
+      - name: Comment PR with test results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let comment = '## ✅ Unit Test Results\n\n';
+            comment += '**All tests passed!**\n\n';
+
+            if (fs.existsSync('coverage/coverage-summary.json')) {
+              const coverage = JSON.parse(fs.readFileSync('coverage/coverage-summary.json'));
+              comment += '**Coverage:**\n';
+              comment += `- Lines: ${coverage.total.lines.pct}%\n`;
+              comment += `- Branches: ${coverage.total.branches.pct}%\n`;
+              comment += `- Functions: ${coverage.total.functions.pct}%\n`;
+              comment += `- Statements: ${coverage.total.statements.pct}%\n`;
+            }
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
