@@ -183,37 +183,9 @@ class ConversationManagementService {
   async markConversationAsRead(conversationId: string): Promise<void> {
     console.log('✅ Marking conversation as read:', conversationId)
 
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      throw new Error('User not authenticated')
-    }
-
-    // First, get all message IDs in the conversation
-    const { data: messages, error: messagesError } = await supabase
-      .from('messages')
-      .select('id')
-      .eq('conversation_id', conversationId)
-
-    if (messagesError) {
-      console.error('Failed to fetch messages:', messagesError)
-      throw messagesError
-    }
-
-    if (!messages || messages.length === 0) {
-      console.log('No messages to mark as read')
-      return
-    }
-
-    const messageIds = messages.map(m => m.id)
-
-    // Update read receipts for these messages
-    const { error } = await supabase
-      .from('message_read_receipts')
-      .update({ read_at: new Date().toISOString() })
-      .eq('user_id', user.id)
-      .is('read_at', null)
-      .in('message_id', messageIds)
+    const { error } = await supabase.rpc('mark_conversation_as_read', {
+      p_conversation_id: conversationId
+    })
 
     if (error) {
       console.error('Failed to mark conversation as read:', error)
@@ -221,6 +193,68 @@ class ConversationManagementService {
     }
 
     console.log('✅ Conversation marked as read')
+  }
+
+  /**
+   * Mark conversation as unread (manually)
+   * This sets the read_at of the last received message to NULL
+   */
+  async markConversationAsUnread(conversationId: string): Promise<void> {
+    console.log('Marking conversation as unread:', conversationId)
+    const user = await supabase.auth.getUser()
+    const userId = user.data.user?.id
+
+    if (!userId) throw new Error('User not authenticated')
+
+    // 1. Get the last message received by this user
+    const { data: lastMessage } = await supabase
+      .from('messages')
+      .select('id')
+      .eq('conversation_id', conversationId)
+      .neq('sender_id', userId) // Only messages sent by others
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (!lastMessage) {
+      console.log('No received messages to mark as unread')
+      return
+    }
+
+    // 2. Set read_at to NULL for this message in receipts
+    const { error } = await supabase
+      .from('message_read_receipts')
+      .update({ read_at: null })
+      .eq('message_id', lastMessage.id)
+      .eq('user_id', userId)
+
+    if (error) {
+      console.error('Failed to mark conversation as unread:', error)
+      throw error
+    }
+
+    console.log('✅ Conversation marked as unread')
+  }
+
+  /**
+   * Clear all messages in a conversation
+   * WARNING: This currently performs a hard delete of all messages in the conversation.
+   * Ideally, this should be a soft delete per user, but that requires schema changes.
+   */
+  async clearConversationMessages(conversationId: string): Promise<void> {
+    console.log('🧹 Clearing chat history for:', conversationId)
+
+    const { error } = await supabase
+      .from('messages')
+      .delete()
+      .eq('conversation_id', conversationId)
+
+    if (error) {
+      console.error('Failed to clear chat history:', error)
+      throw error
+    }
+
+    console.log('✅ Chat history cleared')
   }
 
   /**

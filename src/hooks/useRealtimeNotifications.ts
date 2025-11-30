@@ -10,11 +10,11 @@ export function useRealtimeNotifications() {
 
     useEffect(() => {
         if (!user?.id) {
-            console.error('[useRealtimeNotifications] No user ID, skipping subscription');
+            // console.debug('[useRealtimeNotifications] No user ID, skipping subscription');
             return;
         }
 
-        console.error('[useRealtimeNotifications] Subscribing to notifications for user:', user.id);
+        console.log('[useRealtimeNotifications] Subscribing to notifications for user:', user.id);
 
         const channel = supabase
             .channel('notifications_changes')
@@ -27,18 +27,22 @@ export function useRealtimeNotifications() {
                     filter: `user_id=eq.${user.id}`,
                 },
                 (payload) => {
-                    console.error('[useRealtimeNotifications] Received INSERT event:', payload);
+                    console.log('[useRealtimeNotifications] Received INSERT event:', payload);
 
                     // Invalidate notifications query
                     queryClient.invalidateQueries({ queryKey: ['notifications'] });
                     queryClient.invalidateQueries({ queryKey: ['all-notifications'] });
 
-                    // Show toast for new notification
+                    // Show toast for new notification (excluding messages)
                     const notification = payload.new as any;
-                    toast(notification.message, {
-                        icon: '🔔',
-                        duration: 4000,
-                    });
+                    const messageTypes = ['message_received', 'message_reply', 'coupon_shared_message', 'deal_shared_message'];
+                    
+                    if (!messageTypes.includes(notification.type)) {
+                        toast(notification.message, {
+                            icon: '🔔',
+                            duration: 4000,
+                        });
+                    }
                 }
             )
             .on(
@@ -50,19 +54,19 @@ export function useRealtimeNotifications() {
                     filter: `user_id=eq.${user.id}`,
                 },
                 (payload) => {
-                    console.error('[useRealtimeNotifications] Received UPDATE event:', payload);
+                    console.log('[useRealtimeNotifications] Received UPDATE event:', payload);
                     // Invalidate on updates (mark as read)
                     queryClient.invalidateQueries({ queryKey: ['notifications'] });
                     queryClient.invalidateQueries({ queryKey: ['all-notifications'] });
                 }
             )
             .subscribe((status) => {
-                console.error('[useRealtimeNotifications] Subscription status:', status);
+                console.log('[useRealtimeNotifications] Subscription status:', status);
             });
 
         // Listen for foreground push notifications as a backup/trigger
         const handleForegroundPush = (event: Event) => {
-            console.error('[useRealtimeNotifications] Received foreground push event');
+            console.log('[useRealtimeNotifications] Received foreground push event');
             queryClient.invalidateQueries({ queryKey: ['notifications'] });
             queryClient.invalidateQueries({ queryKey: ['all-notifications'] });
         };

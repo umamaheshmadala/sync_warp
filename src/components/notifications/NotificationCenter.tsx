@@ -54,6 +54,10 @@ export function NotificationCenter() {
             const { data, error } = await supabase
                 .from('notifications')
                 .select('*')
+                .neq('type', 'message_received')
+                .neq('type', 'message_reply')
+                .neq('type', 'coupon_shared_message')
+                .neq('type', 'deal_shared_message')
                 .order('created_at', { ascending: false })
                 .limit(20);
 

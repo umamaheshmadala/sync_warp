@@ -402,7 +402,7 @@ export const useAuthStore = create<AuthState>()(
           // Add timeout to user check
           const userCheckPromise = supabase.auth.getUser()
           const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error('User check timeout')), 15000) // 15 second timeout
+            setTimeout(() => reject(new Error('User check timeout')), 30000) // 30 second timeout
           })
 
           const { data: { user } } = await Promise.race([userCheckPromise, timeoutPromise]) as any

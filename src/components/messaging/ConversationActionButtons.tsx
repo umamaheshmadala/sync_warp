@@ -1,6 +1,7 @@
 import React from 'react'
 import { Archive, Pin, MoreVertical, ArchiveX, PinOff } from 'lucide-react'
 import { conversationManagementService } from '../../services/conversationManagementService'
+import { useMessagingStore } from '../../store/messagingStore'
 import { toast } from 'react-hot-toast'
 import { cn } from '../../lib/utils'
 
@@ -12,6 +13,7 @@ interface Props {
 
 export function ConversationActionButtons({ conversation, onUpdate, className }: Props) {
   const [showActions, setShowActions] = React.useState(false)
+  const { togglePinOptimistic, toggleArchiveOptimistic } = useMessagingStore()
 
   const handleArchive = async (e: React.MouseEvent) => {
     e.preventDefault()
@@ -19,9 +21,11 @@ export function ConversationActionButtons({ conversation, onUpdate, className }:
     console.log('🔘 Archive button clicked')
     try {
       if (conversation.is_archived) {
+        toggleArchiveOptimistic(conversation.conversation_id)
         await conversationManagementService.unarchiveConversation(conversation.conversation_id)
         toast.success('Conversation unarchived')
       } else {
+        toggleArchiveOptimistic(conversation.conversation_id)
         await conversationManagementService.archiveConversation(conversation.conversation_id)
         toast.success('Conversation archived', {
           action: {
@@ -47,9 +51,11 @@ export function ConversationActionButtons({ conversation, onUpdate, className }:
     console.log('🔘 Pin button clicked')
     try {
       if (conversation.is_pinned) {
+        togglePinOptimistic(conversation.conversation_id)
         await conversationManagementService.unpinConversation(conversation.conversation_id)
         toast.success('Conversation unpinned')
       } else {
+        togglePinOptimistic(conversation.conversation_id)
         await conversationManagementService.pinConversation(conversation.conversation_id)
         toast.success('Conversation pinned', {
           action: {

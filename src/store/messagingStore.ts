@@ -85,6 +85,13 @@ interface MessagingState {
   setTotalUnreadCount: (count: number) => void;
   
   // ============================================================================
+  // Optimistic Conversation Actions
+  // ============================================================================
+  
+  togglePinOptimistic: (conversationId: string) => void;
+  toggleArchiveOptimistic: (conversationId: string) => void;
+  
+  // ============================================================================
   // Typing Indicator Actions
   // ============================================================================
   
@@ -137,7 +144,23 @@ export const useMessagingStore = create<MessagingState>()(
           ? conversations.slice(0, MAX_CACHED_CONVERSATIONS)
           : conversations;
         
-        set({ conversations: limitedConversations }, false, 'setConversations');
+        // Calculate unread counts
+        const unreadCounts = new Map<string, number>();
+        let totalUnreadCount = 0;
+        
+        limitedConversations.forEach(c => {
+          const count = c.unread_count || 0;
+          if (count > 0) {
+            unreadCounts.set(c.conversation_id, count);
+            totalUnreadCount += count;
+          }
+        });
+
+        set({ 
+          conversations: limitedConversations,
+          unreadCounts,
+          totalUnreadCount
+        }, false, 'setConversations');
       },
 
       addConversation: (conversation) =>
@@ -149,17 +172,47 @@ export const useMessagingStore = create<MessagingState>()(
             ? updatedConversations.slice(0, MAX_CACHED_CONVERSATIONS)
             : updatedConversations;
           
-          return { conversations: finalConversations };
+          // Update counts
+          const newCounts = new Map(state.unreadCounts);
+          const count = conversation.unread_count || 0;
+          if (count > 0) {
+            newCounts.set(conversation.conversation_id, count);
+          }
+          
+          return { 
+            conversations: finalConversations,
+            unreadCounts: newCounts,
+            totalUnreadCount: state.totalUnreadCount + count
+          };
         }, false, 'addConversation'),
 
       updateConversation: (conversationId, updates) =>
-        set((state) => ({
-          conversations: state.conversations.map(conv =>
+        set((state) => {
+          const updatedConversations = state.conversations.map(conv =>
             conv.conversation_id === conversationId
               ? { ...conv, ...updates }
               : conv
-          )
-        }), false, 'updateConversation'),
+          );
+
+          // Recalculate if unread_count changed
+          let unreadCounts = state.unreadCounts;
+          let totalUnreadCount = state.totalUnreadCount;
+
+          if (updates.unread_count !== undefined) {
+            unreadCounts = new Map(state.unreadCounts);
+            const oldCount = state.unreadCounts.get(conversationId) || 0;
+            const newCount = updates.unread_count;
+            
+            unreadCounts.set(conversationId, newCount);
+            totalUnreadCount = totalUnreadCount - oldCount + newCount;
+          }
+
+          return {
+            conversations: updatedConversations,
+            unreadCounts,
+            totalUnreadCount
+          };
+        }, false, 'updateConversation'),
 
       setActiveConversation: (conversationId) => {
         set({ activeConversationId: conversationId }, false, 'setActiveConversation');
@@ -194,6 +247,12 @@ export const useMessagingStore = create<MessagingState>()(
         set((state) => {
           const newMessages = new Map(state.messages);
           const conversationMessages = newMessages.get(conversationId) || [];
+          
+          // Prevent duplicates (fix for double rendering on realtime + fetch race)
+          if (conversationMessages.some(m => m.id === message.id)) {
+            return {}; // No change if message already exists
+          }
+
           const updatedMessages = [...conversationMessages, message];
           
           // Enforce cache limit on mobile
@@ -360,6 +419,28 @@ export const useMessagingStore = create<MessagingState>()(
 
       setTotalUnreadCount: (count) =>
         set({ totalUnreadCount: count }, false, 'setTotalUnreadCount'),
+
+      // ========================================================================
+      // Optimistic Conversation Actions
+      // ========================================================================
+
+      togglePinOptimistic: (conversationId) =>
+        set((state) => ({
+          conversations: state.conversations.map(c =>
+            c.conversation_id === conversationId
+              ? { ...c, is_pinned: !c.is_pinned }
+              : c
+          )
+        }), false, 'togglePinOptimistic'),
+
+      toggleArchiveOptimistic: (conversationId) =>
+        set((state) => ({
+          conversations: state.conversations.map(c =>
+            c.conversation_id === conversationId
+              ? { ...c, is_archived: !c.is_archived }
+              : c
+          )
+        }), false, 'toggleArchiveOptimistic'),
 
       // ========================================================================
       // Typing Indicator Actions

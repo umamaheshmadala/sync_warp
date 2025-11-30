@@ -1,9 +1,9 @@
 import React from 'react'
-import { formatDistanceToNow } from 'date-fns'
 import { Check, CheckCheck, Clock, AlertCircle, RefreshCw } from 'lucide-react'
 import type { Message } from '../../types/messaging'
 import { cn } from '../../lib/utils'
 import { Button } from '../ui/button'
+import { formatRelativeTime, formatMessageTime } from '../../utils/dateUtils'
 
 interface MessageBubbleProps {
   message: Message
@@ -72,7 +72,7 @@ export function MessageBubble({
   }
 
   // Generate descriptive ARIA label
-  const timeAgo = formatDistanceToNow(new Date(created_at), { addSuffix: true })
+  const timeAgo = formatRelativeTime(created_at)
   const statusText = _failed ? 'Failed to send' : _optimistic ? 'Sending' : 'Sent'
   const ariaLabel = `Message from ${isOwn ? 'you' : 'friend'}: ${content}. ${statusText}. ${timeAgo}`
 
@@ -119,7 +119,7 @@ export function MessageBubble({
             )}
             
             <span className="text-[10px]">
-              {new Date(created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+              {formatMessageTime(created_at)}
             </span>
             
             {/* Message Status Icons (for own messages) */}

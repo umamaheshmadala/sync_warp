@@ -2,11 +2,11 @@ import React, { useState } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 import { Badge } from '../ui/badge'
 import { Pin } from 'lucide-react'
-import { formatDistanceToNow } from 'date-fns'
 import { useNewFriends } from '../../hooks/useNewFriends'
 import { ConversationActionButtons } from './ConversationActionButtons'
 import type { ConversationWithDetails } from '../../types/messaging'
 import { cn } from '../../lib/utils'
+import { formatConversationDate } from '../../utils/dateUtils'
 
 interface ConversationCardProps {
   conversation: ConversationWithDetails
@@ -57,17 +57,7 @@ export function ConversationCard({
 
   // Format time (e.g., "Nov 24" or "8:29 AM")
   const timeLabel = React.useMemo(() => {
-    if (!last_message_at) return ''
-    const date = new Date(last_message_at)
-    const now = new Date()
-    const isToday = date.getDate() === now.getDate() && 
-                    date.getMonth() === now.getMonth() && 
-                    date.getFullYear() === now.getFullYear()
-    
-    if (isToday) {
-      return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
-    }
-    return date.toLocaleDateString([], { month: 'short', day: 'numeric' })
+    return formatConversationDate(last_message_at)
   }, [last_message_at])
 
   return (

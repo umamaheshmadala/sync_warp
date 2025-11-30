@@ -163,7 +163,7 @@ export function ChatScreen() {
 
   return (
     <div 
-      className="flex flex-col h-screen bg-white chat-screen"
+      className="flex flex-col h-full bg-white chat-screen"
       style={{ paddingBottom: keyboardPadding }}
     >
       <ChatHeader conversationId={conversationId} />

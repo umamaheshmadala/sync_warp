@@ -10,6 +10,8 @@ import { NotificationCenter } from '../notifications/NotificationCenter';
 import MobileProfileDrawer from '../MobileProfileDrawer';
 import { SearchSuggestions } from '../search/SearchSuggestions';
 import { useSearch } from '../../hooks/useSearch';
+import { useConversations } from '../../hooks/useConversations';
+import { useMessagingStore } from '../../store/messagingStore';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,6 +37,10 @@ export default function Header() {
   const search = useSearch({ autoSearch: false });
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+
+  // Initialize conversations to get unread count
+  useConversations();
+  const totalUnreadCount = useMessagingStore((state) => state.totalUnreadCount);
 
   // Get recent searches from localStorage
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
@@ -213,6 +219,11 @@ export default function Header() {
             title="Messages"
           >
             <MessageCircle className="h-5 w-5" />
+            {totalUnreadCount > 0 && (
+              <span className="absolute top-0 right-0 h-4 w-4 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-bold ring-2 ring-white">
+                {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
+              </span>
+            )}
           </Button>
 
           {/* Wishlist - Desktop Only */}
@@ -240,11 +251,16 @@ export default function Header() {
           <Button
             variant="ghost"
             size="icon"
-            className="md:hidden text-gray-700 hover:text-indigo-600 hover:bg-indigo-50"
+            className="md:hidden text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 relative"
             onClick={() => navigate('/messages')}
             title="Messages"
           >
             <MessageCircle className="h-6 w-6" />
+            {totalUnreadCount > 0 && (
+              <span className="absolute top-0 right-0 h-4 w-4 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-bold ring-2 ring-white">
+                {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
+              </span>
+            )}
           </Button>
 
           {/* Friends Sidebar Toggle - Mobile shows on right, Desktop hidden */}

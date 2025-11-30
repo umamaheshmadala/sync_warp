@@ -64,45 +64,46 @@ export function useConversations() {
 
   // Subscribe to real-time conversation updates
   useEffect(() => {
-    const unsubscribe = realtimeService.subscribeToConversations(
-      (conversationUpdate) => {
-        const existing = conversations.find(c => c.id === conversationUpdate.id)
-        
-        if (existing) {
-          updateConversation(conversationUpdate.id, conversationUpdate)
-        } else {
-          addConversation(conversationUpdate as ConversationWithDetails)
-        }
-      }
-    )
+    const unsubscribe = realtimeService.subscribeToConversations(() => {
+      // Simple refresh on any update to ensure consistency
+      fetchConversations()
+    })
 
     return () => {
       unsubscribe()
     }
-  }, [conversations, updateConversation, addConversation])
+  }, [fetchConversations])
 
   // Mobile lifecycle: pause/resume updates based on app state
   useEffect(() => {
     if (!isMobile) return
 
-    const appStateListener = App.addListener('appStateChange', ({ isActive }) => {
-      isAppActive.current = isActive
+    let appStateListener: any;
 
-      if (isActive) {
-        // App came to foreground - refresh conversations
-        console.log('📱 App active - refreshing conversations')
-        fetchConversations()
-      } else {
-        // App went to background - stop polling
-        console.log('📱 App inactive - pausing conversation updates')
-        if (pollInterval.current) {
-          clearInterval(pollInterval.current)
+    const setupListener = async () => {
+      appStateListener = await App.addListener('appStateChange', ({ isActive }) => {
+        isAppActive.current = isActive
+
+        if (isActive) {
+          // App came to foreground - refresh conversations
+          console.log('📱 App active - refreshing conversations')
+          fetchConversations()
+        } else {
+          // App went to background - stop polling
+          console.log('📱 App inactive - pausing conversation updates')
+          if (pollInterval.current) {
+            clearInterval(pollInterval.current)
+          }
         }
-      }
-    })
+      })
+    }
+
+    setupListener()
 
     return () => {
-      appStateListener.remove()
+      if (appStateListener) {
+        appStateListener.remove()
+      }
     }
   }, [isMobile, fetchConversations])
 

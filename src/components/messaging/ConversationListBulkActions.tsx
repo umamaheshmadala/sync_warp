@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Archive, Pin, Trash, X } from 'lucide-react'
 import { conversationManagementService } from '../../services/conversationManagementService'
+import { useMessagingStore } from '../../store/messagingStore'
 import { toast } from 'react-hot-toast'
 
 interface Props {
@@ -17,14 +18,16 @@ export function ConversationListBulkActions({
   onUpdate
 }: Props) {
   const [isProcessing, setIsProcessing] = useState(false)
+  const { togglePinOptimistic, toggleArchiveOptimistic } = useMessagingStore()
 
   const handleBulkArchive = async () => {
     setIsProcessing(true)
     try {
       await Promise.all(
-        selectedConversations.map(id =>
-          conversationManagementService.archiveConversation(id)
-        )
+        selectedConversations.map(id => {
+          toggleArchiveOptimistic(id)
+          return conversationManagementService.archiveConversation(id)
+        })
       )
       
       toast.success(`Archived ${selectedConversations.length} conversation${selectedConversations.length > 1 ? 's' : ''}`, {
@@ -56,9 +59,10 @@ export function ConversationListBulkActions({
     setIsProcessing(true)
     try {
       await Promise.all(
-        selectedConversations.map(id =>
-          conversationManagementService.pinConversation(id)
-        )
+        selectedConversations.map(id => {
+          togglePinOptimistic(id)
+          return conversationManagementService.pinConversation(id)
+        })
       )
       
       toast.success(`Pinned ${selectedConversations.length} conversation${selectedConversations.length > 1 ? 's' : ''}`, {

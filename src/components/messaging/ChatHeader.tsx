@@ -1,10 +1,21 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, MoreHorizontal, Video, Phone } from 'lucide-react'
+
+import { ArrowLeft, MoreVertical, Video, Phone, Trash, Archive, Pin, MessageSquare, CheckCircle, ArchiveX, PinOff, AlertCircle } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 import { Button } from '../ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '../ui/dropdown-menu'
 import { useMessagingStore } from '../../store/messagingStore'
 import { useNewFriends } from '../../hooks/useNewFriends'
+import { conversationManagementService } from '../../services/conversationManagementService'
+import { toast } from 'react-hot-toast'
 
 interface ChatHeaderProps {
   conversationId: string
@@ -12,7 +23,7 @@ interface ChatHeaderProps {
 
 export function ChatHeader({ conversationId }: ChatHeaderProps) {
   const navigate = useNavigate()
-  const conversations = useMessagingStore(state => state.conversations)
+  const { conversations, togglePinOptimistic, toggleArchiveOptimistic } = useMessagingStore()
   const { friends } = useNewFriends()
   
   // Find the conversation
@@ -41,6 +52,59 @@ export function ChatHeader({ conversationId }: ChatHeaderProps) {
     .join('')
     .toUpperCase()
     .slice(0, 2) || '?'
+
+  const handleAction = async (action: string) => {
+    try {
+      switch (action) {
+        case 'pin':
+          togglePinOptimistic(conversationId)
+          if (conversation.is_pinned) {
+            await conversationManagementService.unpinConversation(conversationId)
+            toast.success('Conversation unpinned')
+          } else {
+            await conversationManagementService.pinConversation(conversationId)
+            toast.success('Conversation pinned')
+          }
+          break
+          
+        case 'archive':
+          toggleArchiveOptimistic(conversationId)
+          if (conversation.is_archived) {
+            await conversationManagementService.unarchiveConversation(conversationId)
+            toast.success('Conversation unarchived')
+          } else {
+            await conversationManagementService.archiveConversation(conversationId)
+            toast.success('Conversation archived')
+            navigate('/messages')
+          }
+          break
+
+        case 'mark_unread':
+          await conversationManagementService.markConversationAsUnread(conversationId)
+          toast.success('Marked as unread')
+          navigate('/messages')
+          break
+
+        case 'clear_chat':
+          if (window.confirm('Are you sure you want to clear all messages? This cannot be undone.')) {
+            await conversationManagementService.clearConversationMessages(conversationId)
+            toast.success('Chat cleared')
+          }
+          break
+
+        case 'delete':
+          if (window.confirm('Are you sure you want to delete this conversation? This cannot be undone.')) {
+            await conversationManagementService.deleteConversation(conversationId)
+            toast.success('Conversation deleted')
+            navigate('/messages')
+          }
+          break
+      }
+    } catch (error) {
+      console.error('Action failed:', error)
+      toast.error('Action failed')
+    }
+  }
 
   return (
     <div className="bg-white border-b px-3 py-2 flex items-center justify-between shadow-sm z-10">
@@ -82,15 +146,62 @@ export function ChatHeader({ conversationId }: ChatHeaderProps) {
 
       {/* Actions */}
       <div className="flex items-center gap-1">
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-600">
-          <Video className="h-5 w-5" />
-        </Button>
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-600">
-          <Phone className="h-4 w-4" />
-        </Button>
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-600">
-          <MoreHorizontal className="h-5 w-5" />
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-600">
+              <MoreVertical className="h-5 w-5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuLabel>Chat Options</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            
+            <DropdownMenuItem onClick={() => handleAction('pin')}>
+              {conversation.is_pinned ? (
+                <>
+                  <PinOff className="mr-2 h-4 w-4" />
+                  <span>Unpin</span>
+                </>
+              ) : (
+                <>
+                  <Pin className="mr-2 h-4 w-4" />
+                  <span>Pin</span>
+                </>
+              )}
+            </DropdownMenuItem>
+
+            <DropdownMenuItem onClick={() => handleAction('archive')}>
+              {conversation.is_archived ? (
+                <>
+                  <ArchiveX className="mr-2 h-4 w-4" />
+                  <span>Unarchive</span>
+                </>
+              ) : (
+                <>
+                  <Archive className="mr-2 h-4 w-4" />
+                  <span>Archive</span>
+                </>
+              )}
+            </DropdownMenuItem>
+
+            <DropdownMenuItem onClick={() => handleAction('mark_unread')}>
+              <AlertCircle className="mr-2 h-4 w-4" />
+              <span>Mark as unread</span>
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator />
+
+            <DropdownMenuItem onClick={() => handleAction('clear_chat')} className="text-red-600 focus:text-red-600">
+              <MessageSquare className="mr-2 h-4 w-4" />
+              <span>Clear chat</span>
+            </DropdownMenuItem>
+
+            <DropdownMenuItem onClick={() => handleAction('delete')} className="text-red-600 focus:text-red-600">
+              <Trash className="mr-2 h-4 w-4" />
+              <span>Delete conversation</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   )

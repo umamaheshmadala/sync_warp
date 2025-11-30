@@ -3,6 +3,7 @@ import { Archive, Pin, ArchiveX, PinOff } from 'lucide-react'
 import { Haptics, ImpactStyle } from '@capacitor/haptics'
 import { Capacitor } from '@capacitor/core'
 import { conversationManagementService } from '../../services/conversationManagementService'
+import { useMessagingStore } from '../../store/messagingStore'
 import { toast } from 'react-hot-toast'
 import { cn } from '../../lib/utils'
 
@@ -22,6 +23,8 @@ export function SwipeableConversationCard({ conversation, isSelectionMode = fals
   const currentX = useRef(0)
   const longPressTimer = useRef<NodeJS.Timeout>()
   const startTime = useRef(0)
+  
+  const { togglePinOptimistic, toggleArchiveOptimistic } = useMessagingStore()
 
   const SWIPE_THRESHOLD = 80 // pixels to trigger action
   const MAX_SWIPE = 120 // maximum swipe distance
@@ -100,6 +103,9 @@ export function SwipeableConversationCard({ conversation, isSelectionMode = fals
         console.log('📦 Archive action triggered')
         await Haptics.impact({ style: ImpactStyle.Medium })
 
+        // Optimistic update
+        toggleArchiveOptimistic(conversation.conversation_id)
+
         if (conversation.is_archived) {
           await conversationManagementService.unarchiveConversation(conversation.conversation_id)
           toast.success('Conversation unarchived')
@@ -114,6 +120,9 @@ export function SwipeableConversationCard({ conversation, isSelectionMode = fals
       else if (diff > SWIPE_THRESHOLD) {
         console.log('📌 Pin action triggered')
         await Haptics.impact({ style: ImpactStyle.Medium })
+
+        // Optimistic update
+        togglePinOptimistic(conversation.conversation_id)
 
         if (conversation.is_pinned) {
           await conversationManagementService.unpinConversation(conversation.conversation_id)

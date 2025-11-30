@@ -14,6 +14,7 @@ import { Input } from '../ui/input'
 import { FriendPickerModal } from './FriendPickerModal'
 import { conversationManagementService, type ConversationFilter } from '../../services/conversationManagementService'
 import { cn } from '../../lib/utils'
+import { parseDatabaseDate } from '../../utils/dateUtils'
 
 export function ConversationListSidebar() {
   const navigate = useNavigate()
@@ -75,8 +76,8 @@ export function ConversationListSidebar() {
         if (!a.is_pinned && b.is_pinned) return 1
         
         // Then sort by last message time
-        const timeA = new Date(a.last_message_at || a.created_at).getTime()
-        const timeB = new Date(b.last_message_at || b.created_at).getTime()
+        const timeA = parseDatabaseDate(a.last_message_at || a.created_at)?.getTime() || 0
+        const timeB = parseDatabaseDate(b.last_message_at || b.created_at)?.getTime() || 0
         return timeB - timeA
       })
   }, [conversations, searchQuery, activeFilter])

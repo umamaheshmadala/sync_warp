@@ -33,16 +33,16 @@
   .message-list-scroll::-webkit-scrollbar {
     width: 6px;
   }
-  
+
   .message-list-scroll::-webkit-scrollbar-track {
     background: transparent;
   }
-  
+
   .message-list-scroll::-webkit-scrollbar-thumb {
     background: rgba(0, 0, 0, 0.2);
     border-radius: 3px;
   }
-  
+
   .message-list-scroll::-webkit-scrollbar-thumb:hover {
     background: rgba(0, 0, 0, 0.3);
   }
@@ -98,7 +98,7 @@
     padding-left: 12px;
     padding-right: 12px;
   }
-  
+
   /* Smaller message bubbles on very small screens */
   @media (max-width: 360px) {
     .message-bubble {
@@ -109,25 +109,24 @@
 
 /* Desktop (>= 768px) */
 @media (min-width: 768px) {
-  /* Center chat on large screens */
+  /* Allow chat to fill available space */
   .chat-screen {
-    max-width: 900px;
-    margin: 0 auto;
+    width: 100%;
+    height: 100%;
     border-left: 1px solid #e5e7eb;
-    border-right: 1px solid #e5e7eb;
   }
 }
 
 /* Large Desktop (>= 1920px) */
 @media (min-width: 1920px) {
-  .chat-screen {
-    max-width: 1100px;
-  }
+  /* No specific overrides needed */
 }
 
 /* Typing Indicator Animation */
 @keyframes bounce {
-  0%, 60%, 100% {
+  0%,
+  60%,
+  100% {
     transform: translateY(0);
   }
   30% {
@@ -178,7 +177,7 @@ textarea:focus-visible {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-  
+
   .message-list-scroll {
     scroll-behavior: auto;
   }
