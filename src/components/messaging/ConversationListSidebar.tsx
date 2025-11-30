@@ -199,6 +199,8 @@ export function ConversationListSidebar() {
                 <SwipeableConversationCard
                   key={conversation.conversation_id}
                   conversation={conversation}
+                  isSelectionMode={selectionMode}
+                  onLongPress={handleLongPress}
                   onUpdate={handleUpdate}
                 >
                   <SelectableConversationCard

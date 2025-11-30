@@ -81,6 +81,10 @@ export function ChatScreen() {
   useEffect(() => {
     if (conversationId) {
       conversationManagementService.markConversationAsRead(conversationId)
+        .then(() => {
+          // Dispatch event to trigger conversation list refresh
+          window.dispatchEvent(new CustomEvent('conversation-updated', { detail: { conversationId } }))
+        })
         .catch(err => console.error('Failed to mark conversation as read:', err))
     }
   }, [conversationId])

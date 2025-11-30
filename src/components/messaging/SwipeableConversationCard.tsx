@@ -8,16 +8,20 @@ import { cn } from '../../lib/utils'
 
 interface Props {
   conversation: any
+  isSelectionMode?: boolean
+  onLongPress?: () => void
   onUpdate?: () => void
   children: React.ReactNode
 }
 
-export function SwipeableConversationCard({ conversation, onUpdate, children }: Props) {
+export function SwipeableConversationCard({ conversation, isSelectionMode = false, onLongPress, onUpdate, children }: Props) {
   const [swipeOffset, setSwipeOffset] = useState(0)
   const [isSwipingLeft, setIsSwipingLeft] = useState(false)
   const [isSwipingRight, setIsSwipingRight] = useState(false)
   const startX = useRef(0)
   const currentX = useRef(0)
+  const longPressTimer = useRef<NodeJS.Timeout>()
+  const startTime = useRef(0)
 
   const SWIPE_THRESHOLD = 80 // pixels to trigger action
   const MAX_SWIPE = 120 // maximum swipe distance
@@ -34,12 +38,33 @@ export function SwipeableConversationCard({ conversation, onUpdate, children }: 
       console.log('⚠️ Touch start ignored - not native platform')
       return
     }
+    
     startX.current = e.touches[0].clientX
+    startTime.current = Date.now()
     console.log('👆 Touch start at X:', startX.current)
+    
+    // Start long-press timer (500ms)
+    longPressTimer.current = setTimeout(() => {
+      console.log('⏱️ Long press detected')
+      if (onLongPress && !isSelectionMode) {
+        // Trigger haptic feedback
+        Haptics.impact({ style: ImpactStyle.Medium }).catch(() => {})
+        onLongPress()
+      }
+    }, 500)
   }
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!Capacitor.isNativePlatform()) return
+    
+    // Clear long-press timer if user moves finger
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current)
+    }
+    
+    // Disable swipes in selection mode
+    if (isSelectionMode) return
+    
     currentX.current = e.touches[0].clientX
     const diff = currentX.current - startX.current
 
@@ -59,6 +84,11 @@ export function SwipeableConversationCard({ conversation, onUpdate, children }: 
     if (!Capacitor.isNativePlatform()) {
       console.log('⚠️ Touch end ignored - not native platform')
       return
+    }
+
+    // Clear long-press timer
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current)
     }
 
     const diff = currentX.current - startX.current

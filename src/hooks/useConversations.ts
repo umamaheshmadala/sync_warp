@@ -111,11 +111,21 @@ export function useConversations() {
     // Initial fetch only
     fetchConversations()
 
+    // Listen for manual refresh events (e.g., after marking as read)
+    const handleConversationUpdate = () => {
+      console.log('🔄 Conversation updated - refreshing list')
+      fetchConversations()
+    }
+    
+    window.addEventListener('conversation-updated', handleConversationUpdate)
+
     // Polling disabled - we rely on realtime subscriptions for updates
     // This prevents the periodic reloading issue reported by users
     
-    // Cleanup function (no interval to clear)
-    return () => {}
+    // Cleanup function
+    return () => {
+      window.removeEventListener('conversation-updated', handleConversationUpdate)
+    }
   }, [fetchConversations])
 
   return {
