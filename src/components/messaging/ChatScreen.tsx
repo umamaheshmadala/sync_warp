@@ -12,6 +12,7 @@ import { Capacitor } from '@capacitor/core'
 import { Keyboard } from '@capacitor/keyboard'
 import { App } from '@capacitor/app'
 import { messagingService } from '../../services/messagingService'
+import { conversationManagementService } from '../../services/conversationManagementService'
 import type { Message } from '../../types/messaging'
 import './ChatScreen.css'
 
@@ -79,7 +80,7 @@ export function ChatScreen() {
   // Mark conversation as read when entering chat
   useEffect(() => {
     if (conversationId) {
-      messagingService.markConversationAsRead(conversationId)
+      conversationManagementService.markConversationAsRead(conversationId)
         .catch(err => console.error('Failed to mark conversation as read:', err))
     }
   }, [conversationId])

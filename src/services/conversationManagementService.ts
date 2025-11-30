@@ -224,16 +224,23 @@ class ConversationManagementService {
   }
 
   /**
-   * Delete a conversation (soft delete by archiving)
+   * Delete a conversation (hard delete)
    */
   async deleteConversation(conversationId: string): Promise<void> {
     console.log('🗑️ Deleting conversation:', conversationId)
 
-    // For now, we'll just archive it
-    // In a future story, we can implement hard delete
-    await this.archiveConversation(conversationId)
+    // Hard delete the conversation
+    const { error } = await supabase
+      .from('conversations')
+      .delete()
+      .eq('id', conversationId)
 
-    console.log('✅ Conversation deleted (archived)')
+    if (error) {
+      console.error('Failed to delete conversation:', error)
+      throw error
+    }
+
+    console.log('✅ Conversation deleted')
   }
 
   /**
