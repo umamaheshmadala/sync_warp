@@ -11,6 +11,7 @@ import { Loader2 } from 'lucide-react'
 import { Capacitor } from '@capacitor/core'
 import { Keyboard } from '@capacitor/keyboard'
 import { App } from '@capacitor/app'
+import { messagingService } from '../../services/messagingService'
 import type { Message } from '../../types/messaging'
 import './ChatScreen.css'
 
@@ -74,6 +75,14 @@ export function ChatScreen() {
       setTimeout(() => scrollToBottom('auto'), 100)
     }
   }, [isLoading])
+
+  // Mark conversation as read when entering chat
+  useEffect(() => {
+    if (conversationId) {
+      messagingService.markConversationAsRead(conversationId)
+        .catch(err => console.error('Failed to mark conversation as read:', err))
+    }
+  }, [conversationId])
 
   // Mobile keyboard handling
   useEffect(() => {
@@ -167,10 +176,13 @@ export function ChatScreen() {
       {/* Scroll anchor */}
       <div ref={messagesEndRef} />
       
-      <MessageComposer 
-        conversationId={conversationId}
-        onTyping={handleTyping}
-      />
+      {/* Message Composer with bottom nav padding */}
+      <div className="pb-16 md:pb-0">
+        <MessageComposer 
+          conversationId={conversationId}
+          onTyping={handleTyping}
+        />
+      </div>
     </div>
   )
 }

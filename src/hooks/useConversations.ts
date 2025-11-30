@@ -106,31 +106,22 @@ export function useConversations() {
     }
   }, [isMobile, fetchConversations])
 
-  // Platform-specific polling: 30s mobile / 10s web
+  // Platform-specific polling: DISABLED - rely on realtime subscriptions
   useEffect(() => {
-    // Initial fetch
+    // Initial fetch only
     fetchConversations()
 
-    // Set up polling interval
-    const interval = isMobile ? 30000 : 10000 // 30s mobile, 10s web
+    // Polling disabled - we rely on realtime subscriptions for updates
+    // This prevents the periodic reloading issue reported by users
     
-    pollInterval.current = setInterval(() => {
-      // Only poll if app is active (for mobile)
-      if (!isMobile || isAppActive.current) {
-        fetchConversations()
-      }
-    }, interval)
-
-    return () => {
-      if (pollInterval.current) {
-        clearInterval(pollInterval.current)
-      }
-    }
-  }, [isMobile, fetchConversations])
+    // Cleanup function (no interval to clear)
+    return () => {}
+  }, [fetchConversations])
 
   return {
     conversations,
     isLoading: isLoadingConversations,
+    fetchConversations,
     refresh: fetchConversations
   }
 }

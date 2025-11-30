@@ -121,7 +121,60 @@ export interface RouteConfig {
 }
 
 export const routes: RouteConfig[] = [
-  // ... (existing routes)
+  // Home / Landing Page
+  {
+    path: '/',
+    element: <Landing />,
+    protected: false,
+    title: 'SynC - Connect, Collaborate, Create',
+    description: 'Discover local businesses and share amazing deals'
+  },
+
+  // Dashboard (Protected)
+  {
+    path: '/dashboard',
+    element: <Dashboard />,
+    protected: true,
+    title: 'Dashboard - SynC',
+    description: 'Your personalized dashboard'
+  },
+
+  // Authentication Routes
+  {
+    path: '/auth/login',
+    element: <Login />,
+    protected: false,
+    title: 'Login - SynC',
+    description: 'Login to your SynC account'
+  },
+  {
+    path: '/auth/signup',
+    element: <SignUp />,
+    protected: false,
+    title: 'Sign Up - SynC',
+    description: 'Create your SynC account'
+  },
+  {
+    path: '/auth/forgot-password',
+    element: <ForgotPassword />,
+    protected: false,
+    title: 'Forgot Password - SynC',
+    description: 'Reset your password'
+  },
+  {
+    path: '/auth/reset-password',
+    element: <ResetPassword />,
+    protected: false,
+    title: 'Reset Password - SynC',
+    description: 'Set a new password'
+  },
+  {
+    path: '/onboarding',
+    element: <Onboarding />,
+    protected: true,
+    title: 'Onboarding - SynC',
+    description: 'Complete your profile setup'
+  },
 
   // Epic 8.2: Messaging Routes
   {
