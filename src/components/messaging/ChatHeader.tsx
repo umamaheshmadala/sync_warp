@@ -18,19 +18,21 @@ export function ChatHeader({ conversationId }: ChatHeaderProps) {
   // Find the conversation
   const conversation = conversations.find(c => c.conversation_id === conversationId)
   
+  // Get friend's online status - MUST be called before any early returns
+  const friendProfile = React.useMemo(() => {
+    if (!conversation) return null
+    return friends.find(f =>
+      f.friend_profile.user_id === conversation.participant1_id ||
+      f.friend_profile.user_id === conversation.participant2_id
+    )?.friend_profile
+  }, [friends, conversation])
+
+  // Early return AFTER all hooks
   if (!conversation) {
     return null
   }
 
-  const { other_participant_name, other_participant_avatar, participant1_id, participant2_id } = conversation
-
-  // Get friend's online status
-  const friendProfile = React.useMemo(() => {
-    return friends.find(f =>
-      f.friend_profile.user_id === participant1_id ||
-      f.friend_profile.user_id === participant2_id
-    )?.friend_profile
-  }, [friends, participant1_id, participant2_id])
+  const { other_participant_name, other_participant_avatar } = conversation
 
   // Generate initials
   const initials = other_participant_name
