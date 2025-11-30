@@ -135,31 +135,31 @@ export function ConversationListBulkActions({
         <button
           onClick={handleBulkPin}
           disabled={isProcessing || selectedConversations.length === 0}
-          className="flex items-center gap-2 px-3 py-1.5 bg-blue-700 hover:bg-blue-800 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="p-2 bg-blue-700 hover:bg-blue-800 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           aria-label="Pin selected conversations"
+          title="Pin selected conversations"
         >
           <Pin className="w-4 h-4" />
-          Pin
         </button>
 
         <button
           onClick={handleBulkArchive}
           disabled={isProcessing || selectedConversations.length === 0}
-          className="flex items-center gap-2 px-3 py-1.5 bg-blue-700 hover:bg-blue-800 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="p-2 bg-blue-700 hover:bg-blue-800 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           aria-label="Archive selected conversations"
+          title="Archive selected conversations"
         >
           <Archive className="w-4 h-4" />
-          Archive
         </button>
 
         <button
           onClick={handleBulkDelete}
           disabled={isProcessing || selectedConversations.length === 0}
-          className="flex items-center gap-2 px-3 py-1.5 bg-red-600 hover:bg-red-700 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="p-2 bg-red-600 hover:bg-red-700 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           aria-label="Delete selected conversations"
+          title="Delete selected conversations"
         >
           <Trash className="w-4 h-4" />
-          Delete
         </button>
       </div>
     </div>
