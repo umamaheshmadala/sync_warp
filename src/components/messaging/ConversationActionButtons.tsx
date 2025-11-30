@@ -23,7 +23,16 @@ export function ConversationActionButtons({ conversation, onUpdate, className }:
         toast.success('Conversation unarchived')
       } else {
         await conversationManagementService.archiveConversation(conversation.conversation_id)
-        toast.success('Conversation archived')
+        toast.success('Conversation archived', {
+          action: {
+            label: 'Undo',
+            onClick: async () => {
+              await conversationManagementService.unarchiveConversation(conversation.conversation_id)
+              toast.success('Undo successful')
+              onUpdate?.()
+            }
+          }
+        })
       }
       onUpdate?.()
     } catch (error) {
@@ -42,7 +51,16 @@ export function ConversationActionButtons({ conversation, onUpdate, className }:
         toast.success('Conversation unpinned')
       } else {
         await conversationManagementService.pinConversation(conversation.conversation_id)
-        toast.success('Conversation pinned')
+        toast.success('Conversation pinned', {
+          action: {
+            label: 'Undo',
+            onClick: async () => {
+              await conversationManagementService.unpinConversation(conversation.conversation_id)
+              toast.success('Undo successful')
+              onUpdate?.()
+            }
+          }
+        })
       }
       onUpdate?.()
     } catch (error) {

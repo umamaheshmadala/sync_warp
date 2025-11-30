@@ -6,6 +6,9 @@ import { useConversations } from '../../hooks/useConversations'
 import { ConversationCard } from './ConversationCard'
 import { ConversationFilterTabs } from './ConversationFilterTabs'
 import { SwipeableConversationCard } from './SwipeableConversationCard'
+import { SelectableConversationCard } from './SelectableConversationCard'
+import { ConversationListBulkActions } from './ConversationListBulkActions'
+import { useConversationKeyboardShortcuts } from '../../hooks/useConversationKeyboardShortcuts'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { FriendPickerModal } from './FriendPickerModal'
@@ -20,8 +23,15 @@ export function ConversationListSidebar() {
   const [searchQuery, setSearchQuery] = useState('')
   const [activeFilter, setActiveFilter] = useState<ConversationFilter>('all')
   const [counts, setCounts] = useState({ all: 0, unread: 0, archived: 0, pinned: 0 })
+  
+  // Multi-select state
+  const [selectionMode, setSelectionMode] = useState(false)
+  const [selectedConversations, setSelectedConversations] = useState<string[]>([])
 
   const isNative = Capacitor.isNativePlatform()
+
+  // Keyboard shortcuts (web only)
+  useConversationKeyboardShortcuts(activeId || null, refresh)
 
   // Fetch conversation counts
   useEffect(() => {
@@ -82,6 +92,25 @@ export function ConversationListSidebar() {
     refresh()
   }
 
+  const handleToggleSelect = (id: string) => {
+    setSelectedConversations(prev =>
+      prev.includes(id)
+        ? prev.filter(convId => convId !== id)
+        : [...prev, id]
+    )
+  }
+
+  const handleClearSelection = () => {
+    setSelectedConversations([])
+    setSelectionMode(false)
+  }
+
+  const handleLongPress = () => {
+    if (!selectionMode) {
+      setSelectionMode(true)
+    }
+  }
+
   return (
     <div className="flex flex-col h-full bg-white">
       {/* Header */}
@@ -89,9 +118,16 @@ export function ConversationListSidebar() {
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-gray-900">Messaging</h1>
           <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-600">
-              <MoreHorizontal className="h-5 w-5" />
-            </Button>
+            {!selectionMode && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 text-gray-600"
+                onClick={() => setSelectionMode(true)}
+              >
+                Select
+              </Button>
+            )}
             <Button 
               variant="ghost" 
               size="icon" 
@@ -122,6 +158,13 @@ export function ConversationListSidebar() {
         counts={counts}
       />
 
+      {/* Bulk Actions Bar */}
+      <ConversationListBulkActions
+        selectedConversations={selectedConversations}
+        onClearSelection={handleClearSelection}
+        onUpdate={handleUpdate}
+      />
+
       {/* Conversation List */}
       <div className="flex-1 overflow-y-auto">
         {isLoading ? (
@@ -148,30 +191,36 @@ export function ConversationListSidebar() {
           </div>
         ) : (
           <div className="divide-y divide-gray-100">
-            {filteredConversations.map((conversation) => (
-              isNative ? (
+            {filteredConversations.map((conversation) => {
+              const isSelected = selectedConversations.includes(conversation.conversation_id)
+              
+              return isNative ? (
                 <SwipeableConversationCard
                   key={conversation.conversation_id}
                   conversation={conversation}
                   onUpdate={handleUpdate}
                 >
-                  <ConversationCard
+                  <SelectableConversationCard
                     conversation={conversation}
+                    isSelected={isSelected}
+                    isSelectionMode={selectionMode}
                     isActive={conversation.conversation_id === activeId}
+                    onToggleSelect={handleToggleSelect}
                     onClick={() => handleConversationClick(conversation.conversation_id)}
                   />
                 </SwipeableConversationCard>
               ) : (
-                <ConversationCard
+                <SelectableConversationCard
                   key={conversation.conversation_id}
                   conversation={conversation}
+                  isSelected={isSelected}
+                  isSelectionMode={selectionMode}
                   isActive={conversation.conversation_id === activeId}
+                  onToggleSelect={handleToggleSelect}
                   onClick={() => handleConversationClick(conversation.conversation_id)}
-                  showActions={true}
-                  onUpdate={handleUpdate}
                 />
               )
-            ))}
+            })}
           </div>
         )}
       </div>

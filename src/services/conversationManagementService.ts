@@ -178,6 +178,65 @@ class ConversationManagementService {
   }
 
   /**
+   * Mark all messages in a conversation as read
+   */
+  async markConversationAsRead(conversationId: string): Promise<void> {
+    console.log('✅ Marking conversation as read:', conversationId)
+
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      throw new Error('User not authenticated')
+    }
+
+    // First, get all message IDs in the conversation
+    const { data: messages, error: messagesError } = await supabase
+      .from('messages')
+      .select('id')
+      .eq('conversation_id', conversationId)
+
+    if (messagesError) {
+      console.error('Failed to fetch messages:', messagesError)
+      throw messagesError
+    }
+
+    if (!messages || messages.length === 0) {
+      console.log('No messages to mark as read')
+      return
+    }
+
+    const messageIds = messages.map(m => m.id)
+
+    // Update read receipts for these messages
+    const { error } = await supabase
+      .from('message_read_receipts')
+      .update({ read_at: new Date().toISOString() })
+      .eq('user_id', user.id)
+      .is('read_at', null)
+      .in('message_id', messageIds)
+
+    if (error) {
+      console.error('Failed to mark conversation as read:', error)
+      throw error
+    }
+
+    console.log('✅ Conversation marked as read')
+  }
+
+  /**
+   * Delete a conversation (soft delete by archiving)
+   */
+  async deleteConversation(conversationId: string): Promise<void> {
+    console.log('🗑️ Deleting conversation:', conversationId)
+
+    // For now, we'll just archive it
+    // In a future story, we can implement hard delete
+    await this.archiveConversation(conversationId)
+
+    console.log('✅ Conversation deleted (archived)')
+  }
+
+  /**
    * Get conversation counts for each filter
    */
   async getConversationCounts(): Promise<{
