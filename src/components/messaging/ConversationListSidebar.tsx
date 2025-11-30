@@ -1,21 +1,40 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Plus, Search, MoreHorizontal, Edit } from 'lucide-react'
+import { Capacitor } from '@capacitor/core'
 import { useConversations } from '../../hooks/useConversations'
 import { ConversationCard } from './ConversationCard'
+import { ConversationFilterTabs } from './ConversationFilterTabs'
+import { SwipeableConversationCard } from './SwipeableConversationCard'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
-import { Tabs, TabsList, TabsTrigger } from '../ui/tabs'
 import { FriendPickerModal } from './FriendPickerModal'
+import { conversationManagementService, type ConversationFilter } from '../../services/conversationManagementService'
 import { cn } from '../../lib/utils'
 
 export function ConversationListSidebar() {
   const navigate = useNavigate()
   const { conversationId: activeId } = useParams<{ conversationId: string }>()
-  const { conversations, isLoading } = useConversations()
+  const { conversations, isLoading, refresh } = useConversations()
   const [showFriendPicker, setShowFriendPicker] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [filter, setFilter] = useState<'all' | 'unread' | 'groups'>('all')
+  const [activeFilter, setActiveFilter] = useState<ConversationFilter>('all')
+  const [counts, setCounts] = useState({ all: 0, unread: 0, archived: 0, pinned: 0 })
+
+  const isNative = Capacitor.isNativePlatform()
+
+  // Fetch conversation counts
+  useEffect(() => {
+    const fetchCounts = async () => {
+      try {
+        const countsData = await conversationManagementService.getConversationCounts()
+        setCounts(countsData)
+      } catch (error) {
+        console.error('Failed to fetch counts:', error)
+      }
+    }
+    fetchCounts()
+  }, [conversations])
 
   // Filter conversations
   const filteredConversations = useMemo(() => {
@@ -27,20 +46,40 @@ export function ConversationListSidebar() {
         if (!matchesSearch) return false
 
         // Tab filter
-        if (filter === 'unread') return c.unread_count > 0
-        if (filter === 'groups') return c.type === 'group'
-        return true
+        switch (activeFilter) {
+          case 'unread':
+            return c.unread_count > 0 && !c.is_archived
+          case 'archived':
+            return c.is_archived
+          case 'pinned':
+            return c.is_pinned && !c.is_archived
+          case 'all':
+          default:
+            return !c.is_archived
+        }
       })
       .sort((a, b) => {
-        // Sort by last message time
+        // Pinned conversations first
+        if (a.is_pinned && !b.is_pinned) return -1
+        if (!a.is_pinned && b.is_pinned) return 1
+        
+        // Then sort by last message time
         const timeA = new Date(a.last_message_at || a.created_at).getTime()
         const timeB = new Date(b.last_message_at || b.created_at).getTime()
         return timeB - timeA
       })
-  }, [conversations, searchQuery, filter])
+  }, [conversations, searchQuery, activeFilter])
 
   const handleConversationClick = (id: string) => {
     navigate(`/messages/${id}`)
+  }
+
+  const handleFilterChange = (filter: ConversationFilter) => {
+    setActiveFilter(filter)
+  }
+
+  const handleUpdate = () => {
+    refresh()
   }
 
   return (
@@ -76,58 +115,62 @@ export function ConversationListSidebar() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="px-4 py-2 border-b">
-        <Tabs defaultValue="all" value={filter} onValueChange={(v) => setFilter(v as any)} className="w-full">
-          <TabsList className="w-full justify-start h-8 bg-transparent p-0 gap-2">
-            <TabsTrigger 
-              value="all" 
-              className="data-[state=active]:bg-green-700 data-[state=active]:text-white rounded-full px-4 h-7 text-xs border border-gray-200 data-[state=active]:border-green-700"
-            >
-              All
-            </TabsTrigger>
-            <TabsTrigger 
-              value="unread" 
-              className="data-[state=active]:bg-green-700 data-[state=active]:text-white rounded-full px-4 h-7 text-xs border border-gray-200 data-[state=active]:border-green-700"
-            >
-              Unread
-            </TabsTrigger>
-            {/* <TabsTrigger 
-              value="groups" 
-              className="data-[state=active]:bg-green-700 data-[state=active]:text-white rounded-full px-4 h-7 text-xs border border-gray-200 data-[state=active]:border-green-700"
-            >
-              Groups
-            </TabsTrigger> */}
-          </TabsList>
-        </Tabs>
-      </div>
+      {/* Filter Tabs */}
+      <ConversationFilterTabs
+        activeFilter={activeFilter}
+        onFilterChange={handleFilterChange}
+        counts={counts}
+      />
 
       {/* Conversation List */}
       <div className="flex-1 overflow-y-auto">
         {isLoading ? (
           <div className="flex justify-center p-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600" />
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
           </div>
         ) : filteredConversations.length === 0 ? (
           <div className="text-center py-12 px-4">
-            <p className="text-gray-500 text-sm">No messages found</p>
-            <Button 
-              variant="link" 
-              className="mt-2 text-green-600"
-              onClick={() => setShowFriendPicker(true)}
-            >
-              Start a new conversation
-            </Button>
+            <p className="text-gray-500 text-sm">
+              {activeFilter === 'archived' ? 'No archived conversations' :
+               activeFilter === 'pinned' ? 'No pinned conversations' :
+               activeFilter === 'unread' ? 'No unread conversations' :
+               'No messages found'}
+            </p>
+            {activeFilter === 'all' && (
+              <Button 
+                variant="link" 
+                className="mt-2 text-blue-600"
+                onClick={() => setShowFriendPicker(true)}
+              >
+                Start a new conversation
+              </Button>
+            )}
           </div>
         ) : (
           <div className="divide-y divide-gray-100">
             {filteredConversations.map((conversation) => (
-              <ConversationCard
-                key={conversation.conversation_id}
-                conversation={conversation}
-                isActive={conversation.conversation_id === activeId}
-                onClick={() => handleConversationClick(conversation.conversation_id)}
-              />
+              isNative ? (
+                <SwipeableConversationCard
+                  key={conversation.conversation_id}
+                  conversation={conversation}
+                  onUpdate={handleUpdate}
+                >
+                  <ConversationCard
+                    conversation={conversation}
+                    isActive={conversation.conversation_id === activeId}
+                    onClick={() => handleConversationClick(conversation.conversation_id)}
+                  />
+                </SwipeableConversationCard>
+              ) : (
+                <ConversationCard
+                  key={conversation.conversation_id}
+                  conversation={conversation}
+                  isActive={conversation.conversation_id === activeId}
+                  onClick={() => handleConversationClick(conversation.conversation_id)}
+                  showActions={true}
+                  onUpdate={handleUpdate}
+                />
+              )
             ))}
           </div>
         )}

@@ -1,23 +1,29 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 import { Badge } from '../ui/badge'
+import { Pin } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { useNewFriends } from '../../hooks/useNewFriends'
+import { ConversationActionButtons } from './ConversationActionButtons'
 import type { ConversationWithDetails } from '../../types/messaging'
 import { cn } from '../../lib/utils'
 
 interface ConversationCardProps {
   conversation: ConversationWithDetails
-  onClick: () => void
+  onClick: (e?: React.MouseEvent) => void
   isActive?: boolean
   onLongPress?: (conversation: ConversationWithDetails) => void
+  showActions?: boolean
+  onUpdate?: () => void
 }
 
 export function ConversationCard({ 
   conversation, 
   onClick, 
   isActive = false,
-  onLongPress
+  onLongPress,
+  showActions = false,
+  onUpdate
 }: ConversationCardProps) {
   const {
     other_participant_name,
@@ -26,10 +32,12 @@ export function ConversationCard({
     last_message_at,
     unread_count,
     participant1_id,
-    participant2_id
+    participant2_id,
+    is_pinned
   } = conversation
 
   const { friends } = useNewFriends()
+  const [isHovered, setIsHovered] = useState(false)
 
   // Get friend's online status
   const friendProfile = React.useMemo(() => {
@@ -66,9 +74,11 @@ export function ConversationCard({
     <div
       role="button"
       tabIndex={0}
-      onClick={onClick}
+      onClick={(e) => onClick(e)}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       className={cn(
-        "flex items-start gap-3 p-3 hover:bg-gray-50 cursor-pointer transition-colors border-l-4 border-transparent",
+        "flex items-start gap-3 p-3 hover:bg-gray-50 cursor-pointer transition-colors border-l-4 border-transparent relative",
         isActive && "bg-blue-50 border-l-green-700"
       )}
     >
@@ -95,12 +105,17 @@ export function ConversationCard({
       {/* Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline justify-between mb-0.5">
-          <h3 className={cn(
-            "text-sm font-semibold truncate",
-            unread_count > 0 ? "text-gray-900" : "text-gray-900"
-          )}>
-            {other_participant_name || 'Unknown User'}
-          </h3>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <h3 className={cn(
+              "text-sm font-semibold truncate",
+              unread_count > 0 ? "text-gray-900" : "text-gray-900"
+            )}>
+              {other_participant_name || 'Unknown User'}
+            </h3>
+            {is_pinned && (
+              <Pin className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" title="Pinned" />
+            )}
+          </div>
           {last_message_at && (
             <span className={cn(
               "text-xs flex-shrink-0 ml-2",
@@ -128,6 +143,16 @@ export function ConversationCard({
           )}
         </div>
       </div>
+
+      {/* Action Buttons (Web Only - shown on hover) */}
+      {showActions && isHovered && (
+        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+          <ConversationActionButtons
+            conversation={conversation}
+            onUpdate={onUpdate}
+          />
+        </div>
+      )}
     </div>
   )
 }
