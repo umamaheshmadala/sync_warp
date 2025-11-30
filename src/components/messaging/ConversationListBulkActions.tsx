@@ -111,7 +111,7 @@ export function ConversationListBulkActions({
   if (selectedConversations.length === 0) return null
 
   return (
-    <div className="sticky top-0 z-20 bg-blue-600 text-white px-4 py-3 flex items-center justify-between shadow-md">
+    <div className="bg-blue-600 text-white px-4 py-3 flex items-center justify-between shadow-md border-b border-blue-700">
       <div className="flex items-center gap-2">
         <button
           onClick={onClearSelection}
