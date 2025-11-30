@@ -49,6 +49,7 @@ export function ConversationListSidebar() {
   // Filter conversations
   const filteredConversations = useMemo(() => {
     return conversations
+      .filter(c => c != null) // Filter out null/undefined entries first
       .filter(c => {
         // Search filter
         const matchesSearch = c.other_participant_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
