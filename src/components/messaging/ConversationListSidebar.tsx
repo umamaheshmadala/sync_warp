@@ -161,6 +161,7 @@ export function ConversationListSidebar() {
       {/* Bulk Actions Bar */}
       <ConversationListBulkActions
         selectedConversations={selectedConversations}
+        selectionMode={selectionMode}
         onClearSelection={handleClearSelection}
         onUpdate={handleUpdate}
       />

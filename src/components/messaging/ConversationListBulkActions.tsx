@@ -5,12 +5,14 @@ import { toast } from 'react-hot-toast'
 
 interface Props {
   selectedConversations: string[]
+  selectionMode: boolean
   onClearSelection: () => void
   onUpdate: () => void
 }
 
 export function ConversationListBulkActions({
   selectedConversations,
+  selectionMode,
   onClearSelection,
   onUpdate
 }: Props) {
@@ -85,7 +87,10 @@ export function ConversationListBulkActions({
   }
 
   const handleBulkDelete = async () => {
-    if (!confirm(`Delete ${selectedConversations.length} conversation${selectedConversations.length > 1 ? 's' : ''}? This will archive them.`)) {
+    console.log('🗑️ Bulk delete clicked')
+    const confirmed = window.confirm(`Delete ${selectedConversations.length} conversation${selectedConversations.length > 1 ? 's' : ''}? This action cannot be undone.`)
+    console.log('  - Confirmed:', confirmed)
+    if (!confirmed) {
       return
     }
 
@@ -108,7 +113,8 @@ export function ConversationListBulkActions({
     }
   }
 
-  if (selectedConversations.length === 0) return null
+  // Show bar in selection mode even with 0 items (for cancel button)
+  if (!selectionMode) return null
 
   return (
     <div className="bg-blue-600 text-white px-4 py-3 flex items-center justify-between shadow-md border-b border-blue-700">
@@ -121,14 +127,14 @@ export function ConversationListBulkActions({
           <X className="w-5 h-5" />
         </button>
         <span className="font-medium">
-          {selectedConversations.length} selected
+          {selectedConversations.length > 0 ? `${selectedConversations.length} selected` : 'Select conversations'}
         </span>
       </div>
 
       <div className="flex items-center gap-2">
         <button
           onClick={handleBulkPin}
-          disabled={isProcessing}
+          disabled={isProcessing || selectedConversations.length === 0}
           className="flex items-center gap-2 px-3 py-1.5 bg-blue-700 hover:bg-blue-800 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           aria-label="Pin selected conversations"
         >
@@ -138,7 +144,7 @@ export function ConversationListBulkActions({
 
         <button
           onClick={handleBulkArchive}
-          disabled={isProcessing}
+          disabled={isProcessing || selectedConversations.length === 0}
           className="flex items-center gap-2 px-3 py-1.5 bg-blue-700 hover:bg-blue-800 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           aria-label="Archive selected conversations"
         >
@@ -148,7 +154,7 @@ export function ConversationListBulkActions({
 
         <button
           onClick={handleBulkDelete}
-          disabled={isProcessing}
+          disabled={isProcessing || selectedConversations.length === 0}
           className="flex items-center gap-2 px-3 py-1.5 bg-red-600 hover:bg-red-700 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           aria-label="Delete selected conversations"
         >
