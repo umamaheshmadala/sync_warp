@@ -71,10 +71,10 @@ export function SwipeableConversationCard({ conversation, onUpdate, children }: 
         await Haptics.impact({ style: ImpactStyle.Medium })
 
         if (conversation.is_archived) {
-          await conversationManagementService.unarchiveConversation(conversation.id)
+          await conversationManagementService.unarchiveConversation(conversation.conversation_id)
           toast.success('Conversation unarchived')
         } else {
-          await conversationManagementService.archiveConversation(conversation.id)
+          await conversationManagementService.archiveConversation(conversation.conversation_id)
           toast.success('Conversation archived')
         }
 
@@ -86,10 +86,10 @@ export function SwipeableConversationCard({ conversation, onUpdate, children }: 
         await Haptics.impact({ style: ImpactStyle.Medium })
 
         if (conversation.is_pinned) {
-          await conversationManagementService.unpinConversation(conversation.id)
+          await conversationManagementService.unpinConversation(conversation.conversation_id)
           toast.success('Conversation unpinned')
         } else {
-          await conversationManagementService.pinConversation(conversation.id)
+          await conversationManagementService.pinConversation(conversation.conversation_id)
           toast.success('Conversation pinned')
         }
 
@@ -99,6 +99,8 @@ export function SwipeableConversationCard({ conversation, onUpdate, children }: 
       }
     } catch (error) {
       console.error('❌ Swipe action failed:', error)
+      console.error('  - Failed to archive conversation:', conversation.conversation_id)
+      console.error('  - Error message:', error instanceof Error ? error.message : String(error))
       toast.error('Action failed')
     } finally {
       // Reset
