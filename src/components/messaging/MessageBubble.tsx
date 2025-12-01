@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { Check, CheckCheck, Clock, AlertCircle, RefreshCw, CornerDownRight } from 'lucide-react'
 import type { Message } from '../../types/messaging'
 import { cn } from '../../lib/utils'
@@ -234,8 +235,8 @@ export function MessageBubble({
         </div>
       </div>
 
-      {/* Context Menu */}
-      {showContextMenu && (
+      {/* Context Menu - Rendered at document body level to avoid scroll container issues */}
+      {showContextMenu && createPortal(
         <MessageContextMenu
           message={message}
           position={contextMenuPosition}
@@ -243,7 +244,8 @@ export function MessageBubble({
           onClose={() => setShowContextMenu(false)}
           onReply={() => onReply?.(message)}
           onCopy={handleCopy}
-        />
+        />,
+        document.body
       )}
     </div>
   )
