@@ -10,7 +10,7 @@ export type MessageType = 'text' | 'image' | 'video' | 'audio' | 'file' | 'link'
 /**
  * Message delivery status
  */
-export type MessageStatus = 'sent' | 'delivered' | 'read';
+export type MessageStatus = 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
 
 /**
  * Link preview metadata for shared URLs
@@ -32,12 +32,19 @@ export interface Message {
   sender_id: string;
   content: string;
   type: MessageType;
+  status?: MessageStatus; // Story 8.10.7
   media_urls?: string[] | null;
   thumbnail_url?: string | null;
   link_preview?: LinkPreview | null;
   shared_coupon_id?: string | null;
   shared_deal_id?: string | null;
   reply_to_id?: string | null;
+  
+  // Forwarding fields (Story 8.10.6)
+  is_forwarded?: boolean;
+  original_message_id?: string | null;
+  forward_count?: number;
+
   is_edited: boolean;
   edited_at?: string | null;
   is_deleted: boolean;

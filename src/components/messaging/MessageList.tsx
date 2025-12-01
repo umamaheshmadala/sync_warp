@@ -11,6 +11,7 @@ interface MessageListProps {
   isLoading?: boolean
   onRetry?: (message: Message) => void // Story 8.2.7 - Retry failed messages
   onReply?: (message: Message) => void // Story 8.10.5 - Reply to message
+  onForward?: (message: Message) => void // Story 8.10.6 - Forward message
   onQuoteClick?: (messageId: string) => void // Story 8.10.5 - Click quoted message
 }
 
@@ -41,6 +42,7 @@ export function MessageList({
   isLoading = false,
   onRetry,
   onReply,
+  onForward,
   onQuoteClick
 }: MessageListProps) {
   const currentUserId = useAuthStore(state => state.user?.id)
@@ -130,6 +132,7 @@ export function MessageList({
               showTimestamp={showTimestamp}
               onRetry={onRetry}
               onReply={onReply}
+              onForward={onForward}
               onQuoteClick={onQuoteClick}
             />
           </div>

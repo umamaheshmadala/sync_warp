@@ -108,7 +108,8 @@ export function useSendMessage() {
       updated_at: new Date().toISOString(),
       _optimistic: true,
       _tempId: tempId,
-      _failed: false
+      _failed: false,
+      status: 'sending'
     }
 
     try {
@@ -128,7 +129,8 @@ export function useSendMessage() {
         id: messageId,
         _optimistic: undefined,
         _failed: undefined,
-        _tempId: undefined
+        _tempId: undefined,
+        status: 'sent'
       })
 
       console.log('✅ Message sent:', messageId)

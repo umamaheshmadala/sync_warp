@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { Check, CheckCheck, Clock, AlertCircle, RefreshCw, CornerDownRight } from 'lucide-react'
+import { RefreshCw, CornerDownRight, Forward } from 'lucide-react'
+import { MessageStatusIcon } from './MessageStatusIcon'
 import type { Message } from '../../types/messaging'
 import { cn } from '../../lib/utils'
 import { Button } from '../ui/button'
@@ -16,6 +17,7 @@ interface MessageBubbleProps {
   showTimestamp?: boolean
   onRetry?: (message: Message) => void // Callback for retry button (Story 8.2.7)
   onReply?: (message: Message) => void // Callback for reply action (Story 8.10.5)
+  onForward?: (message: Message) => void // Callback for forward action (Story 8.10.6)
   onQuoteClick?: (messageId: string) => void // Callback for clicking quoted message (Story 8.10.5)
 }
 
@@ -54,6 +56,7 @@ export function MessageBubble({
   showTimestamp = false,
   onRetry,
   onReply,
+  onForward,
   onQuoteClick
 }: MessageBubbleProps) {
   const {
@@ -61,6 +64,7 @@ export function MessageBubble({
     created_at,
     is_edited,
     is_deleted,
+    is_forwarded,
     _optimistic,
     _failed
   } = message
@@ -140,6 +144,14 @@ export function MessageBubble({
   return (
     <div className={cn("flex mb-1", isOwn ? "justify-end" : "justify-start")}>
       <div className="flex flex-col gap-1 max-w-[85%]">
+        {/* Forwarded Label */}
+        {is_forwarded && (
+          <div className="flex items-center gap-1 text-xs text-gray-500 mb-0.5 ml-1">
+            <Forward className="w-3 h-3" />
+            <span className="italic">Forwarded</span>
+          </div>
+        )}
+
         {/* Quoted Message (if reply) */}
         {message.parent_message && (
           <button
@@ -221,13 +233,13 @@ export function MessageBubble({
             {/* Message Status Icons (for own messages) */}
             {isOwn && (
               <span className="ml-0.5">
-                {_failed ? (
-                  <AlertCircle className="h-3 w-3 text-red-300" />
-                ) : _optimistic ? (
-                  <Clock className="h-3 w-3 animate-pulse" />
-                ) : (
-                  <CheckCheck className="h-3 w-3" />
-                )}
+                <MessageStatusIcon 
+                  status={_failed ? 'failed' : _optimistic ? 'sending' : message.status || 'sent'} 
+                  className={cn(
+                    "h-3 w-3",
+                    isOwn ? "text-blue-100/80" : "text-gray-400"
+                  )}
+                />
               </span>
             )}
           </div>
@@ -243,6 +255,7 @@ export function MessageBubble({
           isOwn={isOwn}
           onClose={() => setShowContextMenu(false)}
           onReply={() => onReply?.(message)}
+          onForward={() => onForward?.(message)}
           onCopy={handleCopy}
         />,
         document.body

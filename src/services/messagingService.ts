@@ -215,6 +215,89 @@ class MessagingService {
     });
   }
 
+  /**
+   * Forward message to multiple conversations
+   * 
+   * @param messageId - Original message ID
+   * @param conversationIds - Target conversation IDs
+   */
+  async forwardMessage(
+    messageId: string,
+    conversationIds: string[]
+  ): Promise<void> {
+    return this.retryWithBackoff(async () => {
+      if (!this.isOnline && Capacitor.isNativePlatform()) {
+        throw new Error('No internet connection. Forwarding will be processed when online.');
+      }
+
+      console.log(
+        "📤 Forwarding message to",
+        conversationIds.length,
+        "conversations"
+      );
+
+      const { data, error } = await supabase.rpc(
+        "forward_message_to_conversations",
+        {
+          p_message_id: messageId,
+          p_conversation_ids: conversationIds,
+        }
+      );
+
+      if (error) throw error;
+
+      console.log("✅ Message forwarded to", data?.length, "conversations");
+    });
+  }
+
+  /**
+   * Update message status
+   */
+  async updateMessageStatus(
+    messageId: string,
+    status: 'sent' | 'delivered' | 'read'
+  ): Promise<void> {
+    const { error } = await supabase
+      .from('messages')
+      .update({ status })
+      .eq('id', messageId);
+
+    if (error) {
+      console.error('Failed to update message status:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Mark message as delivered
+   */
+  async markMessageAsDelivered(messageId: string): Promise<void> {
+    await this.updateMessageStatus(messageId, 'delivered');
+  }
+
+  /**
+   * Get forward count for a message
+   * 
+   * @param messageId - Message UUID
+   * @returns Forward count
+   */
+  async getForwardCount(messageId: string): Promise<number> {
+    try {
+      const { data, error } = await supabase
+        .from("messages")
+        .select("forward_count")
+        .eq("id", messageId)
+        .single();
+
+      if (error) throw error;
+
+      return data?.forward_count || 0;
+    } catch (error) {
+      console.error("Failed to get forward count:", error);
+      return 0;
+    }
+  }
+
   // ============================================================================
   // Message Fetching with Pagination
   // ============================================================================

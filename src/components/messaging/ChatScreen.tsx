@@ -7,6 +7,7 @@ import { MessageList } from './MessageList'
 import { MessageComposer } from './MessageComposer'
 import { ChatHeader } from './ChatHeader'
 import { TypingIndicator } from './TypingIndicator'
+import { ForwardMessageDialog } from './ForwardMessageDialog'
 import { Loader2 } from 'lucide-react'
 import { Capacitor } from '@capacitor/core'
 import { Keyboard } from '@capacitor/keyboard'
@@ -52,6 +53,9 @@ export function ChatScreen() {
   
   // Reply state (Story 8.10.5)
   const [replyToMessage, setReplyToMessage] = useState<Message | null>(null)
+
+  // Forward state (Story 8.10.6)
+  const [forwardMessage, setForwardMessage] = useState<Message | null>(null)
 
   // Scroll to bottom helper
   const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
@@ -200,6 +204,16 @@ export function ChatScreen() {
     )
   }
 
+
+
+  // Forward handler (Story 8.10.6)
+  const handleForward = (message: Message) => {
+    console.log('↪️ Forwarding message:', message.id)
+    setForwardMessage(message)
+  }
+
+
+
   return (
     <div 
       className="flex flex-col h-full bg-white chat-screen"
@@ -214,6 +228,7 @@ export function ChatScreen() {
         isLoading={isLoading}
         onRetry={handleRetry}
         onReply={handleReply}
+        onForward={handleForward}
         onQuoteClick={handleQuoteClick}
       />
       
@@ -231,6 +246,18 @@ export function ChatScreen() {
           onCancelReply={handleCancelReply}
         />
       </div>
+
+      {/* Forward Dialog */}
+      {forwardMessage && (
+        <ForwardMessageDialog
+          message={forwardMessage}
+          onClose={() => setForwardMessage(null)}
+          onForwarded={() => {
+            console.log('✅ Message forwarded successfully')
+            // Optional: Scroll to bottom or show toast
+          }}
+        />
+      )}
     </div>
   )
 }
