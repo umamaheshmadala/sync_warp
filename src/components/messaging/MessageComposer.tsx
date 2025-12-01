@@ -80,7 +80,7 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
             parentMessage={{
               id: replyToMessage.id,
               content: replyToMessage.content,
-              sender_name: replyToMessage.parent_message?.sender_name || 'User',
+              sender_name: 'You', // Will be replaced with actual sender name from backend
               type: replyToMessage.type
             }}
             onCancel={onCancelReply!}
