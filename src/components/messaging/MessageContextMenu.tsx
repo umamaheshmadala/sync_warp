@@ -64,32 +64,6 @@ export function MessageContextMenu({
     }
   }, [onClose])
 
-  // Auto-position menu to stay within viewport
-  useEffect(() => {
-    if (menuRef.current) {
-      const menu = menuRef.current
-      const rect = menu.getBoundingClientRect()
-      const viewportWidth = window.innerWidth
-      const viewportHeight = window.innerHeight
-
-      let adjustedX = position.x
-      let adjustedY = position.y
-
-      // Adjust horizontal position
-      if (rect.right > viewportWidth) {
-        adjustedX = viewportWidth - rect.width - 10
-      }
-
-      // Adjust vertical position
-      if (rect.bottom > viewportHeight) {
-        adjustedY = viewportHeight - rect.height - 10
-      }
-
-      menu.style.left = `${adjustedX}px`
-      menu.style.top = `${adjustedY}px`
-    }
-  }, [position])
-
   const handleAction = (action: () => void) => {
     action()
     onClose()
