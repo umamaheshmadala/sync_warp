@@ -1,5 +1,6 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Capacitor } from '@capacitor/core'
 
 import { ArrowLeft, MoreVertical, Video, Phone, Trash, Archive, Pin, MessageSquare, CheckCircle, ArchiveX, PinOff, AlertCircle } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
@@ -15,6 +16,9 @@ import {
 import { useMessagingStore } from '../../store/messagingStore'
 import { useNewFriends } from '../../hooks/useNewFriends'
 import { conversationManagementService } from '../../services/conversationManagementService'
+import { DeleteConversationDialog } from './DeleteConversationDialog'
+import { ClearChatDialog } from './ClearChatDialog'
+import { showDeleteConversationSheet } from './DeleteConversationSheet'
 import { toast } from 'react-hot-toast'
 
 interface ChatHeaderProps {
@@ -25,6 +29,8 @@ export function ChatHeader({ conversationId }: ChatHeaderProps) {
   const navigate = useNavigate()
   const { conversations, togglePinOptimistic, toggleArchiveOptimistic } = useMessagingStore()
   const { friends } = useNewFriends()
+  const [showDeleteDialog, setShowDeleteDialog] = React.useState(false)
+  const [showClearDialog, setShowClearDialog] = React.useState(false)
   
   // Find the conversation
   const conversation = conversations.find(c => c.conversation_id === conversationId)
@@ -60,10 +66,10 @@ export function ChatHeader({ conversationId }: ChatHeaderProps) {
           togglePinOptimistic(conversationId)
           if (conversation.is_pinned) {
             await conversationManagementService.unpinConversation(conversationId)
-            toast.success('Conversation unpinned')
+            toast.success('Conversation unpinned', { duration: 3000 })
           } else {
             await conversationManagementService.pinConversation(conversationId)
-            toast.success('Conversation pinned')
+            toast.success('Conversation pinned', { duration: 3000 })
           }
           break
           
@@ -71,10 +77,10 @@ export function ChatHeader({ conversationId }: ChatHeaderProps) {
           toggleArchiveOptimistic(conversationId)
           if (conversation.is_archived) {
             await conversationManagementService.unarchiveConversation(conversationId)
-            toast.success('Conversation unarchived')
+            toast.success('Conversation unarchived', { duration: 3000 })
           } else {
             await conversationManagementService.archiveConversation(conversationId)
-            toast.success('Conversation archived')
+            toast.success('Conversation archived', { duration: 3000 })
             navigate('/messages')
           }
           break
@@ -86,17 +92,31 @@ export function ChatHeader({ conversationId }: ChatHeaderProps) {
           break
 
         case 'clear_chat':
-          if (window.confirm('Are you sure you want to clear all messages? This cannot be undone.')) {
-            await conversationManagementService.clearConversationMessages(conversationId)
-            toast.success('Chat cleared')
+          // Use native action sheet on mobile, dialog on web
+          if (Capacitor.isNativePlatform()) {
+            showDeleteConversationSheet({
+              conversationId,
+              conversationName: other_participant_name || 'Unknown User',
+              onDeleted: () => {
+                // Navigate back to messages list
+                navigate('/messages')
+              }
+            })
+          } else {
+            setShowClearDialog(true)
           }
           break
 
         case 'delete':
-          if (window.confirm('Are you sure you want to delete this conversation? This cannot be undone.')) {
-            await conversationManagementService.deleteConversation(conversationId)
-            toast.success('Conversation deleted')
-            navigate('/messages')
+          // Use native action sheet on mobile, dialog on web
+          if (Capacitor.isNativePlatform()) {
+            showDeleteConversationSheet({
+              conversationId,
+              conversationName: other_participant_name || 'Unknown User',
+              onDeleted: handleDeleted
+            })
+          } else {
+            setShowDeleteDialog(true)
           }
           break
       }
@@ -104,6 +124,30 @@ export function ChatHeader({ conversationId }: ChatHeaderProps) {
       console.error('Action failed:', error)
       toast.error('Action failed')
     }
+  }
+
+  const handleDialogClose = () => {
+    setShowDeleteDialog(false)
+  }
+
+  const handleClearDialogClose = () => {
+    setShowClearDialog(false)
+  }
+
+  const handleDeleted = () => {
+    // Remove deleted conversation from store for instant UI update
+    const updatedConversations = conversations.filter(
+      (c) => c.conversation_id !== conversationId
+    )
+    useMessagingStore.getState().setConversations(updatedConversations)
+    
+    // Navigate back to list
+    navigate('/messages')
+  }
+
+  const handleCleared = () => {
+    // Messages are cleared, conversation remains
+    // No need to navigate, just show success
   }
 
   return (
@@ -203,6 +247,26 @@ export function ChatHeader({ conversationId }: ChatHeaderProps) {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      {/* Delete Dialog */}
+      {showDeleteDialog && (
+        <DeleteConversationDialog
+          conversationId={conversationId}
+          conversationName={other_participant_name || 'Unknown User'}
+          onClose={handleDialogClose}
+          onDeleted={handleDeleted}
+        />
+      )}
+
+      {/* Clear Chat Dialog */}
+      {showClearDialog && (
+        <ClearChatDialog
+          conversationId={conversationId}
+          conversationName={other_participant_name || 'Unknown User'}
+          onClose={handleClearDialogClose}
+          onCleared={handleCleared}
+        />
+      )}
     </div>
   )
 }

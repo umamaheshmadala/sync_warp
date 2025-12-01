@@ -237,44 +237,58 @@ class ConversationManagementService {
   }
 
   /**
-   * Clear all messages in a conversation
-   * WARNING: This currently performs a hard delete of all messages in the conversation.
-   * Ideally, this should be a soft delete per user, but that requires schema changes.
+   * Clear all messages in a conversation (soft delete via RPC)
    */
   async clearConversationMessages(conversationId: string): Promise<void> {
     console.log('🧹 Clearing chat history for:', conversationId)
 
-    const { error } = await supabase
-      .from('messages')
-      .delete()
-      .eq('conversation_id', conversationId)
+    const { error } = await supabase.rpc('clear_chat_history', {
+      p_conversation_id: conversationId,
+    })
 
     if (error) {
       console.error('Failed to clear chat history:', error)
       throw error
     }
 
-    console.log('✅ Chat history cleared')
+    console.log('✅ Chat history cleared (hidden for user)')
   }
 
   /**
-   * Delete a conversation (hard delete)
+   * Delete a conversation (soft delete via RPC)
+   * Can be undone within 10 seconds
    */
   async deleteConversation(conversationId: string): Promise<void> {
-    console.log('🗑️ Deleting conversation:', conversationId)
+    console.log('🗑️ Deleting conversation (soft delete):', conversationId)
 
-    // Hard delete the conversation
-    const { error } = await supabase
-      .from('conversations')
-      .delete()
-      .eq('id', conversationId)
+    const { error } = await supabase.rpc('delete_conversation_for_user', {
+      p_conversation_id: conversationId,
+    })
 
     if (error) {
       console.error('Failed to delete conversation:', error)
       throw error
     }
 
-    console.log('✅ Conversation deleted')
+    console.log('✅ Conversation soft deleted (can undo within 10s)')
+  }
+
+  /**
+   * Undo delete conversation (within 10 seconds)
+   */
+  async undoDeleteConversation(conversationId: string): Promise<void> {
+    console.log('↩️ Undoing delete for conversation:', conversationId)
+
+    const { error } = await supabase.rpc('undo_delete_conversation', {
+      p_conversation_id: conversationId,
+    })
+
+    if (error) {
+      console.error('Failed to undo delete:', error)
+      throw error
+    }
+
+    console.log('✅ Delete undone successfully')
   }
 
   /**

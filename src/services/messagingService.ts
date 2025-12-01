@@ -233,40 +233,39 @@ class MessagingService {
     beforeMessageId?: string
   ): Promise<FetchMessagesResponse> {
     try {
-      let query = supabase
-        .from('messages')
-        .select('*')
-        .eq('conversation_id', conversationId)
-        .eq('is_deleted', false)
-        .order('created_at', { ascending: false })
-        .limit(limit + 1); // Fetch one extra to check hasMore
+      console.log('📥 Fetching messages for conversation:', conversationId);
       
-      // Cursor-based pagination
-      if (beforeMessageId) {
-        const { data: cursorMsg } = await supabase
-          .from('messages')
-          .select('created_at')
-          .eq('id', beforeMessageId)
-          .single();
-        
-        if (cursorMsg) {
-          query = query.lt('created_at', cursorMsg.created_at);
-        }
-      }
-      
-      const { data, error } = await query;
+      const { data, error } = await supabase
+        .rpc('get_conversation_messages', {
+          p_conversation_id: conversationId,
+          p_limit: limit + 1, // Fetch one extra to check hasMore
+          p_before_id: beforeMessageId || null
+        });
       
       if (error) throw error;
       
-      const hasMore = (data?.length || 0) > limit;
-      const messages = (data?.slice(0, limit) || []).reverse(); // Reverse for chronological order
+      const messages = (data || []).map((msg: any) => ({
+        ...msg,
+        // Ensure arrays are initialized
+        media_urls: msg.media_urls || [],
+        // Ensure timestamps are valid strings
+        created_at: msg.created_at,
+        updated_at: msg.updated_at,
+        read_at: msg.read_at,
+        deleted_at: msg.deleted_at,
+        edited_at: msg.edited_at
+      }));
+
+      const hasMore = messages.length > limit;
+      const finalMessages = (messages.slice(0, limit)).reverse(); // Reverse for chronological order
       
-      return { messages, hasMore };
+      return { messages: finalMessages, hasMore };
     } catch (error) {
       console.error('❌ Error fetching messages:', error);
       throw error;
     }
   }
+
 
   /**
    * Fetch conversations list with participant details

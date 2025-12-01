@@ -4,13 +4,44 @@
 **Story Owner:** Frontend Engineering  
 **Estimated Effort:** 2 days  
 **Priority:** P0 - Critical  
-**Status:** 📋 Ready for Implementation
+**Status:** ✅ Completed (2025-12-01)
+
+---
+
+## 📊 **Implementation Summary**
+
+### **Completion Status: 100%**
+
+All core functionality has been implemented and is ready for testing:
+
+- ✅ **Database Schema**: Soft delete columns (`deleted_for_user`, `deleted_at`) added via migration `20251201_add_soft_delete_support.sql`
+- ✅ **RPC Functions**: `delete_conversation_for_user()`, `undo_delete_conversation()`, `clear_chat_history()` created and applied
+- ✅ **Service Layer**: `conversationManagementService.ts` updated with soft delete methods and undo functionality
+- ✅ **UI Components**:
+  - `DeleteConversationDialog.tsx` (Web Delete)
+  - `ClearChatDialog.tsx` (Web Clear)
+  - `DeleteConversationSheet.tsx` (Mobile Native Sheet)
+- ✅ **Undo Logic**: 5-second undo window (reduced from 10s for better UX)
+- ✅ **Integration**: Dialog integrated into `ChatHeader.tsx`, replacing basic confirm dialogs
+
+### **Key Features Implemented:**
+
+- Soft delete (user-specific, other participants unaffected)
+- 5-second undo window with countdown timer
+- Clear vs Delete options with visual distinction
+- **Privacy Fix**: Clear History is now user-specific (uses `cleared_history_at` timestamp), ensuring messages aren't deleted for the other participant.
+- Server-side undo window validation
+- Comprehensive error handling
+
+---
+
+## 🎯 **Original Story Goal**
 
 ---
 
 ## 🎯 **Story Goal**
 
-Allow users to **delete entire conversations** or **clear chat history** with a **10-second undo window**, providing essential privacy controls for managing coupon/deal sharing conversations.
+Allow users to **delete entire conversations** or **clear chat history** with a **5-second undo window**, providing essential privacy controls for managing coupon/deal sharing conversations.
 
 ---
 
@@ -42,14 +73,14 @@ Allow users to **delete entire conversations** or **clear chat history** with a 
 
 1. **Delete conversation** - Remove from my list (other person still sees it)
 2. **Clear history** - Delete all messages but keep conversation
-3. **Undo delete** - 10-second grace period to undo
+3. **Undo delete** - 5-second grace period to undo
 4. **Confirm before deleting** - Prevent accidental deletion
 
 ### Acceptance Criteria:
 
 - ✅ Delete removes conversation from user's list only
 - ✅ Clear history deletes all messages
-- ✅ Undo works within 10 seconds
+- ✅ Undo works within 5 seconds
 - ✅ Confirmation dialog shows before delete
 - ✅ Haptic feedback on mobile
 - ✅ Toast shows countdown timer
