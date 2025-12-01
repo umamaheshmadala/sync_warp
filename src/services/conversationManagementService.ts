@@ -28,50 +28,48 @@ interface Conversation {
 
 class ConversationManagementService {
   /**
-   * Archive a conversation
+   * Archive a conversation (user-specific)
    */
   async archiveConversation(conversationId: string): Promise<void> {
     console.log('📦 Archiving conversation:', conversationId)
-    console.log('  - Type:', typeof conversationId)
-    console.log('  - Value:', JSON.stringify(conversationId))
+    
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
 
-    const { data, error } = await supabase
-      .from('conversations')
+    const { error } = await supabase
+      .from('conversation_participants')
       .update({
         is_archived: true,
         archived_at: new Date().toISOString(),
       })
-      .eq('id', conversationId)
-      .select()
-
-    console.log('  - Update result:', { data, error })
+      .eq('conversation_id', conversationId)
+      .eq('user_id', user.id)
 
     if (error) {
       console.error('❌ Failed to archive conversation:', error)
       throw error
     }
 
-    if (!data || data.length === 0) {
-      console.error('⚠️ No rows updated - conversation ID may be incorrect')
-      throw new Error('No conversation found with that ID')
-    }
-
-    console.log('✅ Conversation archived successfully:', data)
+    console.log('✅ Conversation archived successfully')
   }
 
   /**
-   * Unarchive a conversation
+   * Unarchive a conversation (user-specific)
    */
   async unarchiveConversation(conversationId: string): Promise<void> {
     console.log('📤 Unarchiving conversation:', conversationId)
+    
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
 
     const { error } = await supabase
-      .from('conversations')
+      .from('conversation_participants')
       .update({
         is_archived: false,
         archived_at: null,
       })
-      .eq('id', conversationId)
+      .eq('conversation_id', conversationId)
+      .eq('user_id', user.id)
 
     if (error) {
       console.error('Failed to unarchive conversation:', error)
