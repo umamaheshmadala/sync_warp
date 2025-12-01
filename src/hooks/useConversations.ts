@@ -2,6 +2,7 @@ import { useEffect, useCallback, useRef } from 'react'
 import { useMessagingStore } from '../store/messagingStore'
 import { messagingService } from '../services/messagingService'
 import { realtimeService } from '../services/realtimeService'
+import { useAuthStore } from '../store/authStore'
 import { toast } from 'react-hot-toast'
 import { usePlatform } from './usePlatform'
 import type { ConversationWithDetails } from '../types/messaging'
@@ -42,7 +43,8 @@ export function useConversations() {
     setLoadingConversations, 
     setConversations,
     updateConversation,
-    addConversation
+    addConversation,
+    removeConversation
   } = useMessagingStore()
 
   const isAppActive = useRef(true)
@@ -62,17 +64,47 @@ export function useConversations() {
     }
   }, [setLoadingConversations, setConversations])
 
+  const { user } = useAuthStore()
+
   // Subscribe to real-time conversation updates
   useEffect(() => {
-    const unsubscribe = realtimeService.subscribeToConversations(() => {
-      // Simple refresh on any update to ensure consistency
-      fetchConversations()
-    })
+    if (!user?.id) return
+
+    const unsubscribeList = realtimeService.subscribeToConversationList(
+      user.id,
+      async (payload) => {
+        console.log('🔄 Conversation list update:', payload.eventType)
+        
+        if (payload.eventType === 'INSERT') {
+          // Fetch full details for new conversation
+          const newConv = await messagingService.getConversation(payload.new.id)
+          if (newConv) {
+            addConversation(newConv)
+          }
+        } else if (payload.eventType === 'UPDATE') {
+          updateConversation(payload.new.id, payload.new)
+        } else if (payload.eventType === 'DELETE') {
+          removeConversation(payload.old.id)
+        }
+      }
+    )
+
+    const unsubscribeMute = realtimeService.subscribeToMuteUpdates(
+      user.id,
+      (payload) => {
+        const conversationId = payload.new?.conversation_id || payload.old?.conversation_id
+        if (conversationId) {
+           const isMuted = payload.eventType !== 'DELETE'
+           updateConversation(conversationId, { is_muted: isMuted })
+        }
+      }
+    )
 
     return () => {
-      unsubscribe()
+      unsubscribeList()
+      unsubscribeMute()
     }
-  }, [fetchConversations])
+  }, [user?.id, addConversation, updateConversation, removeConversation])
 
   // Mobile lifecycle: pause/resume updates based on app state
   useEffect(() => {

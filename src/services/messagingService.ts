@@ -376,6 +376,35 @@ class MessagingService {
     }
   }
 
+  /**
+   * Get a single conversation with details
+   * 
+   * @param conversationId - Conversation UUID
+   * @returns Conversation with details
+   */
+  async getConversation(conversationId: string): Promise<ConversationWithDetails | null> {
+    try {
+      const { data, error } = await supabase
+        .from('conversation_list')
+        .select('*')
+        .eq('conversation_id', conversationId)
+        .single();
+      
+      if (error) throw error;
+      
+      if (!data) return null;
+
+      return {
+        ...data,
+        participant1_id: data.participants?.[0],
+        participant2_id: data.participants?.[1]
+      };
+    } catch (error) {
+      console.error('❌ Error fetching conversation:', error);
+      return null;
+    }
+  }
+
   // ============================================================================
   // Read Receipts
   // ============================================================================

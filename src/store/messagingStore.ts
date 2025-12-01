@@ -58,6 +58,7 @@ interface MessagingState {
   setConversations: (conversations: ConversationWithDetails[]) => void;
   addConversation: (conversation: ConversationWithDetails) => void;
   updateConversation: (conversationId: string, updates: Partial<ConversationWithDetails>) => void;
+  removeConversation: (conversationId: string) => void;
   setActiveConversation: (conversationId: string | null) => void;
   
   // ============================================================================
@@ -90,6 +91,7 @@ interface MessagingState {
   
   togglePinOptimistic: (conversationId: string) => void;
   toggleArchiveOptimistic: (conversationId: string) => void;
+  toggleMuteOptimistic: (conversationId: string, isMuted: boolean) => void;
   
   // ============================================================================
   // Typing Indicator Actions
@@ -213,6 +215,24 @@ export const useMessagingStore = create<MessagingState>()(
             totalUnreadCount
           };
         }, false, 'updateConversation'),
+
+      removeConversation: (conversationId) =>
+        set((state) => {
+          const updatedConversations = state.conversations.filter(
+            c => c.conversation_id !== conversationId
+          );
+          
+          // Also remove from unread counts
+          const newCounts = new Map(state.unreadCounts);
+          const removedCount = newCounts.get(conversationId) || 0;
+          newCounts.delete(conversationId);
+          
+          return {
+            conversations: updatedConversations,
+            unreadCounts: newCounts,
+            totalUnreadCount: Math.max(0, state.totalUnreadCount - removedCount)
+          };
+        }, false, 'removeConversation'),
 
       setActiveConversation: (conversationId) => {
         set({ activeConversationId: conversationId }, false, 'setActiveConversation');
@@ -442,6 +462,15 @@ export const useMessagingStore = create<MessagingState>()(
           )
         }), false, 'toggleArchiveOptimistic'),
 
+      toggleMuteOptimistic: (conversationId, isMuted) =>
+        set((state) => ({
+          conversations: state.conversations.map(c =>
+            c.conversation_id === conversationId
+              ? { ...c, is_muted: isMuted }
+              : c
+          )
+        }), false, 'toggleMuteOptimistic'),
+
       // ========================================================================
       // Typing Indicator Actions
       // ========================================================================
@@ -449,7 +478,7 @@ export const useMessagingStore = create<MessagingState>()(
       addTypingUser: (conversationId, userId) =>
         set((state) => {
           const newTyping = new Map(state.typingUsers);
-          const users = new Set(newTyping.get(conversationId) || new Set());
+          const users = new Set<string>(newTyping.get(conversationId) || []);
           users.add(userId);
           newTyping.set(conversationId, users);
           return { typingUsers: newTyping };
@@ -458,7 +487,7 @@ export const useMessagingStore = create<MessagingState>()(
       removeTypingUser: (conversationId, userId) =>
         set((state) => {
           const newTyping = new Map(state.typingUsers);
-          const users = new Set(newTyping.get(conversationId) || new Set());
+          const users = new Set<string>(newTyping.get(conversationId) || []);
           users.delete(userId);
           newTyping.set(conversationId, users);
           return { typingUsers: newTyping };

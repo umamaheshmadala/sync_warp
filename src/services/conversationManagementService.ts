@@ -1,4 +1,6 @@
 import { supabase } from '../lib/supabase'
+import { optimisticUpdates } from '../utils/optimisticUpdates'
+import { useMessagingStore } from '../store/messagingStore'
 
 export type ConversationFilter = 'all' | 'unread' | 'archived' | 'pinned'
 export type MuteDuration = '1h' | '8h' | '1week' | 'forever'
@@ -37,6 +39,11 @@ class ConversationManagementService {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('Not authenticated')
 
+    // Optimistic Update
+    const updateId = `archive:${conversationId}`
+    optimisticUpdates.applyOptimistic(updateId, { is_archived: true }, { is_archived: false })
+    useMessagingStore.getState().toggleArchiveOptimistic(conversationId)
+
     const { error } = await supabase
       .from('conversation_participants')
       .update({
@@ -48,9 +55,13 @@ class ConversationManagementService {
 
     if (error) {
       console.error('❌ Failed to archive conversation:', error)
+      // Rollback
+      optimisticUpdates.rollbackUpdate(updateId)
+      useMessagingStore.getState().toggleArchiveOptimistic(conversationId) // Toggle back
       throw error
     }
 
+    optimisticUpdates.confirmUpdate(updateId)
     console.log('✅ Conversation archived successfully')
   }
 
@@ -63,6 +74,11 @@ class ConversationManagementService {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('Not authenticated')
 
+    // Optimistic Update
+    const updateId = `unarchive:${conversationId}`
+    optimisticUpdates.applyOptimistic(updateId, { is_archived: false }, { is_archived: true })
+    useMessagingStore.getState().toggleArchiveOptimistic(conversationId)
+
     const { error } = await supabase
       .from('conversation_participants')
       .update({
@@ -74,9 +90,13 @@ class ConversationManagementService {
 
     if (error) {
       console.error('Failed to unarchive conversation:', error)
+      // Rollback
+      optimisticUpdates.rollbackUpdate(updateId)
+      useMessagingStore.getState().toggleArchiveOptimistic(conversationId)
       throw error
     }
 
+    optimisticUpdates.confirmUpdate(updateId)
     console.log('✅ Conversation unarchived')
   }
 
@@ -85,8 +105,11 @@ class ConversationManagementService {
    */
   async pinConversation(conversationId: string): Promise<void> {
     console.log('📌 Pinning conversation:', conversationId)
-    console.log('  - Type:', typeof conversationId)
-    console.log('  - Value:', JSON.stringify(conversationId))
+
+    // Optimistic Update
+    const updateId = `pin:${conversationId}`
+    optimisticUpdates.applyOptimistic(updateId, { is_pinned: true }, { is_pinned: false })
+    useMessagingStore.getState().togglePinOptimistic(conversationId)
 
     const { data, error } = await supabase
       .from('conversations')
@@ -97,19 +120,23 @@ class ConversationManagementService {
       .eq('id', conversationId)
       .select()
 
-    console.log('  - Update result:', { data, error })
-
     if (error) {
       console.error('❌ Failed to pin conversation:', error)
+      // Rollback
+      optimisticUpdates.rollbackUpdate(updateId)
+      useMessagingStore.getState().togglePinOptimistic(conversationId)
       throw error
     }
 
     if (!data || data.length === 0) {
-      console.error('⚠️ No rows updated - conversation ID may be incorrect')
+      // Rollback if no rows updated
+      optimisticUpdates.rollbackUpdate(updateId)
+      useMessagingStore.getState().togglePinOptimistic(conversationId)
       throw new Error('No conversation found with that ID')
     }
 
-    console.log('✅ Conversation pinned successfully:', data)
+    optimisticUpdates.confirmUpdate(updateId)
+    console.log('✅ Conversation pinned successfully')
   }
 
   /**
@@ -117,6 +144,11 @@ class ConversationManagementService {
    */
   async unpinConversation(conversationId: string): Promise<void> {
     console.log('📍 Unpinning conversation:', conversationId)
+
+    // Optimistic Update
+    const updateId = `unpin:${conversationId}`
+    optimisticUpdates.applyOptimistic(updateId, { is_pinned: false }, { is_pinned: true })
+    useMessagingStore.getState().togglePinOptimistic(conversationId)
 
     const { error } = await supabase
       .from('conversations')
@@ -128,9 +160,13 @@ class ConversationManagementService {
 
     if (error) {
       console.error('Failed to unpin conversation:', error)
+      // Rollback
+      optimisticUpdates.rollbackUpdate(updateId)
+      useMessagingStore.getState().togglePinOptimistic(conversationId)
       throw error
     }
 
+    optimisticUpdates.confirmUpdate(updateId)
     console.log('✅ Conversation unpinned')
   }
 
@@ -299,6 +335,11 @@ class ConversationManagementService {
   ): Promise<void> {
     console.log('🔕 Muting conversation:', conversationId, 'for', duration)
 
+    // Optimistic Update
+    const updateId = `mute:${conversationId}`
+    optimisticUpdates.applyOptimistic(updateId, { is_muted: true }, { is_muted: false })
+    useMessagingStore.getState().toggleMuteOptimistic(conversationId, true)
+
     const durationHours = {
       '1h': 1,
       '8h': 8,
@@ -313,9 +354,13 @@ class ConversationManagementService {
 
     if (error) {
       console.error('Failed to mute conversation:', error)
+      // Rollback
+      optimisticUpdates.rollbackUpdate(updateId)
+      useMessagingStore.getState().toggleMuteOptimistic(conversationId, false)
       throw error
     }
 
+    optimisticUpdates.confirmUpdate(updateId)
     console.log('✅ Conversation muted')
   }
 
@@ -325,15 +370,24 @@ class ConversationManagementService {
   async unmuteConversation(conversationId: string): Promise<void> {
     console.log('🔔 Unmuting conversation:', conversationId)
 
+    // Optimistic Update
+    const updateId = `unmute:${conversationId}`
+    optimisticUpdates.applyOptimistic(updateId, { is_muted: false }, { is_muted: true })
+    useMessagingStore.getState().toggleMuteOptimistic(conversationId, false)
+
     const { error } = await supabase.rpc('unmute_conversation', {
       p_conversation_id: conversationId,
     })
 
     if (error) {
       console.error('Failed to unmute conversation:', error)
+      // Rollback
+      optimisticUpdates.rollbackUpdate(updateId)
+      useMessagingStore.getState().toggleMuteOptimistic(conversationId, true)
       throw error
     }
 
+    optimisticUpdates.confirmUpdate(updateId)
     console.log('✅ Conversation unmuted')
   }
 

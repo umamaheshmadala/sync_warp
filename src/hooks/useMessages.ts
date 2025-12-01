@@ -149,12 +149,22 @@ export function useMessages(conversationId: string | null) {
       }
     )
 
+    const unsubscribeReadReceipts = realtimeService.subscribeToReadReceipts(
+      conversationId,
+      (receipt: any) => {
+        // Update message status to 'read' when a receipt is received
+        // In a real app, we might check if all participants read it, but for now simple update
+        updateMessage(conversationId, receipt.message_id, { status: 'read' })
+      }
+    )
+
     // Initial fetch
     fetchMessages()
 
     return () => {
       unsubscribeNew()
       unsubscribeUpdates()
+      unsubscribeReadReceipts()
     }
   }, [conversationId, addMessage, updateMessage, fetchMessages, currentUserId])
 
