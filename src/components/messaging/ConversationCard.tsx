@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 import { Badge } from '../ui/badge'
-import { Pin } from 'lucide-react'
+import { Pin, BellOff } from 'lucide-react'
 import { useNewFriends } from '../../hooks/useNewFriends'
 import { ConversationActionButtons } from './ConversationActionButtons'
 import type { ConversationWithDetails } from '../../types/messaging'
@@ -102,8 +102,15 @@ export function ConversationCard({
             )}>
               {other_participant_name || 'Unknown User'}
             </h3>
+            {conversation.is_muted && (
+              <div title="Muted">
+                <BellOff className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+              </div>
+            )}
             {is_pinned && (
-              <Pin className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" title="Pinned" />
+              <div title="Pinned">
+                <Pin className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
+              </div>
             )}
           </div>
           {last_message_at && (

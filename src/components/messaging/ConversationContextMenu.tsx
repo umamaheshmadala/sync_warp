@@ -1,5 +1,5 @@
 import React from 'react'
-import { Archive, Pin, Trash, ArchiveX, PinOff } from 'lucide-react'
+import { Archive, Pin, Trash, ArchiveX, PinOff, BellOff, Bell } from 'lucide-react'
 import { conversationManagementService } from '../../services/conversationManagementService'
 import { toast } from 'react-hot-toast'
 
@@ -7,6 +7,7 @@ interface Props {
   conversation: any
   onUpdate?: () => void
   onDelete?: () => void
+  onMute?: () => void
   onClose: () => void
   position: { x: number; y: number }
 }
@@ -15,6 +16,7 @@ export function ConversationContextMenu({
   conversation,
   onUpdate,
   onDelete,
+  onMute,
   onClose,
   position
 }: Props) {
@@ -96,6 +98,26 @@ export function ConversationContextMenu({
             <>
               <Archive className="w-4 h-4 text-gray-600" />
               <span>Archive</span>
+            </>
+          )}
+        </button>
+
+        <button
+          onClick={() => {
+            onMute?.()
+            onClose()
+          }}
+          className="flex items-center gap-3 w-full px-4 py-2 text-sm hover:bg-gray-50 text-left"
+        >
+          {conversation.is_muted ? (
+            <>
+              <Bell className="w-4 h-4 text-gray-600" />
+              <span>Unmute</span>
+            </>
+          ) : (
+            <>
+              <BellOff className="w-4 h-4 text-gray-600" />
+              <span>Mute</span>
             </>
           )}
         </button>

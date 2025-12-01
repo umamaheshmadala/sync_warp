@@ -2,7 +2,7 @@ import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Capacitor } from '@capacitor/core'
 
-import { ArrowLeft, MoreVertical, Video, Phone, Trash, Archive, Pin, MessageSquare, CheckCircle, ArchiveX, PinOff, AlertCircle } from 'lucide-react'
+import { ArrowLeft, MoreVertical, Video, Phone, Trash, Archive, Pin, MessageSquare, CheckCircle, ArchiveX, PinOff, AlertCircle, BellOff, Bell } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 import { Button } from '../ui/button'
 import {
@@ -18,6 +18,7 @@ import { useNewFriends } from '../../hooks/useNewFriends'
 import { conversationManagementService } from '../../services/conversationManagementService'
 import { DeleteConversationDialog } from './DeleteConversationDialog'
 import { ClearChatDialog } from './ClearChatDialog'
+import { MuteConversationDialog } from './MuteConversationDialog'
 import { showDeleteConversationSheet } from './DeleteConversationSheet'
 import { toast } from 'react-hot-toast'
 
@@ -31,6 +32,7 @@ export function ChatHeader({ conversationId }: ChatHeaderProps) {
   const { friends } = useNewFriends()
   const [showDeleteDialog, setShowDeleteDialog] = React.useState(false)
   const [showClearDialog, setShowClearDialog] = React.useState(false)
+  const [showMuteDialog, setShowMuteDialog] = React.useState(false)
   
   // Find the conversation
   const conversation = conversations.find(c => c.conversation_id === conversationId)
@@ -118,6 +120,10 @@ export function ChatHeader({ conversationId }: ChatHeaderProps) {
           } else {
             setShowDeleteDialog(true)
           }
+          break
+
+        case 'mute':
+          setShowMuteDialog(true)
           break
       }
     } catch (error) {
@@ -233,6 +239,20 @@ export function ChatHeader({ conversationId }: ChatHeaderProps) {
               <span>Mark as unread</span>
             </DropdownMenuItem>
 
+            <DropdownMenuItem onClick={() => handleAction('mute')}>
+              {conversation.is_muted ? (
+                <>
+                  <Bell className="mr-2 h-4 w-4" />
+                  <span>Unmute</span>
+                </>
+              ) : (
+                <>
+                  <BellOff className="mr-2 h-4 w-4" />
+                  <span>Mute</span>
+                </>
+              )}
+            </DropdownMenuItem>
+
             <DropdownMenuSeparator />
 
             <DropdownMenuItem onClick={() => handleAction('clear_chat')} className="text-red-600 focus:text-red-600">
@@ -265,6 +285,20 @@ export function ChatHeader({ conversationId }: ChatHeaderProps) {
           conversationName={other_participant_name || 'Unknown User'}
           onClose={handleClearDialogClose}
           onCleared={handleCleared}
+        />
+      )}
+
+      {/* Mute Dialog */}
+      {showMuteDialog && (
+        <MuteConversationDialog
+          conversationId={conversationId}
+          conversationName={other_participant_name || 'Unknown User'}
+          isMuted={conversation.is_muted}
+          onClose={() => setShowMuteDialog(false)}
+          onMuted={() => {
+            // Refresh conversations to update mute status
+            window.location.reload()
+          }}
         />
       )}
     </div>

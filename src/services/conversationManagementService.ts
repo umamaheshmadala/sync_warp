@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase'
 
 export type ConversationFilter = 'all' | 'unread' | 'archived' | 'pinned'
+export type MuteDuration = '1h' | '8h' | '1week' | 'forever'
 
 interface Conversation {
   id: string
@@ -287,6 +288,69 @@ class ConversationManagementService {
     }
 
     console.log('✅ Delete undone successfully')
+  }
+
+  /**
+   * Mute conversation
+   */
+  async muteConversation(
+    conversationId: string,
+    duration: MuteDuration = 'forever'
+  ): Promise<void> {
+    console.log('🔕 Muting conversation:', conversationId, 'for', duration)
+
+    const durationHours = {
+      '1h': 1,
+      '8h': 8,
+      '1week': 168, // 7 days * 24 hours
+      forever: null,
+    }[duration]
+
+    const { error } = await supabase.rpc('mute_conversation', {
+      p_conversation_id: conversationId,
+      p_duration_hours: durationHours,
+    })
+
+    if (error) {
+      console.error('Failed to mute conversation:', error)
+      throw error
+    }
+
+    console.log('✅ Conversation muted')
+  }
+
+  /**
+   * Unmute conversation
+   */
+  async unmuteConversation(conversationId: string): Promise<void> {
+    console.log('🔔 Unmuting conversation:', conversationId)
+
+    const { error } = await supabase.rpc('unmute_conversation', {
+      p_conversation_id: conversationId,
+    })
+
+    if (error) {
+      console.error('Failed to unmute conversation:', error)
+      throw error
+    }
+
+    console.log('✅ Conversation unmuted')
+  }
+
+  /**
+   * Check if conversation is muted
+   */
+  async isConversationMuted(conversationId: string): Promise<boolean> {
+    const { data, error } = await supabase.rpc('is_conversation_muted', {
+      p_conversation_id: conversationId,
+    })
+
+    if (error) {
+      console.error('Failed to check mute status:', error)
+      return false
+    }
+
+    return data as boolean
   }
 
   /**

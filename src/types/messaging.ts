@@ -75,6 +75,7 @@ export interface ConversationWithDetails {
   participants: string[];
   is_archived: boolean;
   is_muted: boolean;
+  muted_until?: string | null; // When mute expires (NULL = forever)
   is_pinned: boolean;
   created_at: string;
   last_message_at?: string | null;
