@@ -90,16 +90,12 @@ export function MessageBubble({
     e.preventDefault()
     e.stopPropagation()
     
-    // Get bubble position
-    if (bubbleRef.current) {
-      const rect = bubbleRef.current.getBoundingClientRect()
-      // Position menu near the message bubble
-      setContextMenuPosition({ 
-        x: isOwn ? rect.right - 180 : rect.left, // Align to message side
-        y: rect.bottom + 5 // Just below the message
-      })
-      setShowContextMenu(true)
-    }
+    // Use cursor position with small offset
+    setContextMenuPosition({ 
+      x: e.clientX + 2,
+      y: e.clientY + 2
+    })
+    setShowContextMenu(true)
   }
 
   const handleLongPressStart = (e: React.TouchEvent | React.MouseEvent) => {
@@ -112,15 +108,13 @@ export function MessageBubble({
           console.warn('Haptic feedback not available:', error)
         }
 
-        // Get bubble position for mobile
-        if (bubbleRef.current) {
-          const rect = bubbleRef.current.getBoundingClientRect()
-          setContextMenuPosition({ 
-            x: isOwn ? rect.right - 180 : rect.left,
-            y: rect.bottom + 5
-          })
-          setShowContextMenu(true)
-        }
+        // Get touch position
+        const touch = 'touches' in e ? e.touches[0] : e as React.MouseEvent
+        setContextMenuPosition({ 
+          x: touch.clientX + 2,
+          y: touch.clientY + 2
+        })
+        setShowContextMenu(true)
       }, 500) // 500ms long press
     }
   }
