@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { PushNotifications, PushNotificationSchema, ActionPerformed } from '@capacitor/push-notifications'
 import { Capacitor } from '@capacitor/core'
 import { NotificationRouter, NotificationData } from '../services/notificationRouter'
+import { conversationManagementService } from '../services/conversationManagementService'
 
 interface ForegroundNotification {
   title: string
@@ -20,6 +21,7 @@ interface ForegroundNotification {
  * - Routes to appropriate screen when notification is tapped
  * - Works for both foreground and background/killed states
  * - Validates notification data structure
+ * - Respects conversation mute settings
  * 
  * Usage:
  * ```tsx
@@ -50,7 +52,7 @@ export const useNotificationHandler = () => {
     // Handle notifications received while app is in foreground
     const notificationReceivedListener = PushNotifications.addListener(
       'pushNotificationReceived',
-      (notification: PushNotificationSchema) => {
+      async (notification: PushNotificationSchema) => {
         console.log('[useNotificationHandler] Received in foreground:', notification)
         
         try {
@@ -60,6 +62,20 @@ export const useNotificationHandler = () => {
           if (!NotificationRouter.isValid(data)) {
             console.warn('[useNotificationHandler] Invalid notification data:', data)
             return
+          }
+          
+          // Check if this is a message notification and if the conversation is muted
+          if (data.type === 'message' && data.messageId) {
+            try {
+              const isMuted = await conversationManagementService.isConversationMuted(data.messageId)
+              if (isMuted) {
+                console.log('[useNotificationHandler] Conversation is muted - suppressing notification')
+                return
+              }
+            } catch (error) {
+              console.error('[useNotificationHandler] Error checking mute status:', error)
+              // Continue showing notification if check fails
+            }
           }
           
           // Show in-app toast
