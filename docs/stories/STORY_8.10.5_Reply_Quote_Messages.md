@@ -584,18 +584,18 @@ warp mcp run supabase "execute_sql
 
 **Web:**
 
-- [ ] Click reply button shows reply context
-- [ ] Quoted message appears in bubble
-- [ ] Click quoted message scrolls to original
-- [ ] Cancel reply works
-- [ ] Reply sends with parent reference
+- [x] Click reply button shows reply context
+- [x] Quoted message appears in bubble
+- [x] Click quoted message scrolls to original
+- [x] Cancel reply works
+- [x] Reply sends with parent reference
 
 **Mobile:**
 
-- [ ] Long-press triggers reply (haptic feedback)
-- [ ] Reply context appears
-- [ ] Quoted message clickable
-- [ ] Haptic on reply action
+- [x] Long-press triggers reply (haptic feedback)
+- [x] Reply context appears
+- [x] Quoted message clickable
+- [x] Haptic on reply action
 
 ---
 
@@ -623,6 +623,6 @@ warp mcp run supabase "execute_sql
 
 ---
 
-**Story Status:** 📋 **Ready for Implementation**  
+**Story Status:** ✅ **COMPLETE**  
 **Estimated Completion:** 2 days  
 **Risk Level:** Low (straightforward parent-child relationship)

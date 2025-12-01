@@ -117,7 +117,8 @@ export function useMessages(conversationId: string | null) {
       (newMessage: Message) => {
         // Populate parent_message for replies if missing (Story 8.10.5)
         if (newMessage.reply_to_id && !newMessage.parent_message) {
-          const currentMessages = messages.get(conversationId) || []
+          // Use getState() to get fresh messages without adding dependency
+          const currentMessages = useMessagingStore.getState().messages.get(conversationId) || []
           const parentMsg = currentMessages.find(m => m.id === newMessage.reply_to_id)
           
           if (parentMsg) {
