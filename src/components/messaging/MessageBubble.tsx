@@ -1,5 +1,5 @@
 import React from 'react'
-import { Check, CheckCheck, Clock, AlertCircle, RefreshCw } from 'lucide-react'
+import { Check, CheckCheck, Clock, AlertCircle, RefreshCw, CornerDownRight } from 'lucide-react'
 import type { Message } from '../../types/messaging'
 import { cn } from '../../lib/utils'
 import { Button } from '../ui/button'
@@ -10,6 +10,8 @@ interface MessageBubbleProps {
   isOwn: boolean
   showTimestamp?: boolean
   onRetry?: (message: Message) => void // Callback for retry button (Story 8.2.7)
+  onReply?: (message: Message) => void // Callback for reply action (Story 8.10.5)
+  onQuoteClick?: (messageId: string) => void // Callback for clicking quoted message (Story 8.10.5)
 }
 
 /**
@@ -45,7 +47,9 @@ export function MessageBubble({
   message, 
   isOwn, 
   showTimestamp = false,
-  onRetry
+  onRetry,
+  onReply,
+  onQuoteClick
 }: MessageBubbleProps) {
   const {
     content,
@@ -78,7 +82,35 @@ export function MessageBubble({
 
   return (
     <div className={cn("flex mb-1", isOwn ? "justify-end" : "justify-start")}>
-      <div className="flex items-end gap-2 max-w-[85%]">
+      <div className="flex flex-col gap-1 max-w-[85%]">
+        {/* Quoted Message (if reply) */}
+        {message.parent_message && (
+          <button
+            onClick={() => onQuoteClick?.(message.parent_message!.id)}
+            className={cn(
+              'flex items-start gap-2 p-2 rounded text-xs max-w-full',
+              'border-l-2 hover:bg-gray-100 transition-colors text-left',
+              isOwn
+                ? 'bg-blue-100 border-blue-400 self-end'
+                : 'bg-gray-100 border-gray-400 self-start'
+            )}
+          >
+            <CornerDownRight className="w-3 h-3 mt-0.5 flex-shrink-0 text-gray-500" />
+            <div className="flex-1 min-w-0">
+              <div className="font-medium text-gray-700 truncate">
+                {message.parent_message.sender_name}
+              </div>
+              <div className="text-gray-600 truncate">
+                {message.parent_message.type === 'text'
+                  ? message.parent_message.content
+                  : `[${message.parent_message.type}]`
+                }
+              </div>
+            </div>
+          </button>
+        )}
+
+        <div className="flex items-end gap-2">
         {/* Failed Retry Button */}
         {_failed && isOwn && onRetry && (
           <Button
@@ -135,6 +167,7 @@ export function MessageBubble({
               </span>
             )}
           </div>
+        </div>
         </div>
       </div>
     </div>

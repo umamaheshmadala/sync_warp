@@ -3,16 +3,20 @@ import { Send, Image, Paperclip, Smile } from 'lucide-react'
 import { Textarea } from '../ui/textarea'
 import { Button } from '../ui/button'
 import { ImageUploadButton } from './ImageUploadButton'
+import { ReplyContext } from './ReplyContext'
 import { useSendMessage } from '../../hooks/useSendMessage'
 import { Capacitor } from '@capacitor/core'
 import { Haptics, NotificationType } from '@capacitor/haptics'
+import type { Message } from '../../types/messaging'
 
 interface MessageComposerProps {
   conversationId: string
   onTyping: () => void
+  replyToMessage?: Message | null  // Message being replied to (Story 8.10.5)
+  onCancelReply?: () => void  // Callback to cancel reply (Story 8.10.5)
 }
 
-export function MessageComposer({ conversationId, onTyping }: MessageComposerProps) {
+export function MessageComposer({ conversationId, onTyping, replyToMessage, onCancelReply }: MessageComposerProps) {
   const [content, setContent] = useState('')
   const { sendMessage, isSending } = useSendMessage()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -40,10 +44,12 @@ export function MessageComposer({ conversationId, onTyping }: MessageComposerPro
       await sendMessage({
         conversationId,
         content: content.trim(),
-        type: 'text'
+        type: 'text',
+        replyToId: replyToMessage?.id  // Include reply_to_id if replying
       })
       
       setContent('')
+      onCancelReply?.()  // Clear reply context after sending
       
       if (textareaRef.current) {
         textareaRef.current.style.height = 'auto'
@@ -67,6 +73,21 @@ export function MessageComposer({ conversationId, onTyping }: MessageComposerPro
 
   return (
     <div className="bg-white px-4 py-3 border-t">
+      {/* Reply Context */}
+      {replyToMessage && (
+        <div className="mb-2">
+          <ReplyContext
+            parentMessage={{
+              id: replyToMessage.id,
+              content: replyToMessage.content,
+              sender_name: replyToMessage.parent_message?.sender_name || 'User',
+              type: replyToMessage.type
+            }}
+            onCancel={onCancelReply!}
+          />
+        </div>
+      )}
+
       <div className="flex flex-col gap-2 bg-gray-100 rounded-xl p-2 border border-gray-200 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
         <Textarea
           ref={textareaRef}

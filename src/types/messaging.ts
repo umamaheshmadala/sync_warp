@@ -45,6 +45,16 @@ export interface Message {
   created_at: string;
   updated_at: string;
   
+  // Parent message for replies (populated by query)
+  parent_message?: {
+    id: string;
+    content: string;
+    type: MessageType;
+    sender_id: string;
+    sender_name: string;
+    created_at: string;
+  } | null;
+  
   // Optimistic UI fields (client-side only)
   _optimistic?: boolean;   // True if message is being sent
   _failed?: boolean;       // True if message failed to send
