@@ -49,6 +49,9 @@ export function ChatScreen() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [keyboardPadding, setKeyboardPadding] = useState(0)
   const prevMessageCount = useRef(messages.length)
+  
+  // Reply state (Story 8.10.5)
+  const [replyToMessage, setReplyToMessage] = useState<Message | null>(null)
 
   // Scroll to bottom helper
   const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
@@ -146,6 +149,35 @@ export function ChatScreen() {
     retryMessage(message)
   }
 
+  // Reply handler (Story 8.10.5)
+  const handleReply = (message: Message) => {
+    console.log('💬 Replying to message:', message.id)
+    setReplyToMessage(message)
+  }
+
+  // Cancel reply handler (Story 8.10.5)
+  const handleCancelReply = () => {
+    console.log('❌ Cancelled reply')
+    setReplyToMessage(null)
+  }
+
+  // Scroll to message handler (Story 8.10.5)
+  const handleQuoteClick = (messageId: string) => {
+    console.log('📍 Scrolling to message:', messageId)
+    const messageElement = document.getElementById(`message-${messageId}`)
+    if (messageElement) {
+      messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      // Highlight the message briefly
+      messageElement.classList.add('message-highlight')
+      setTimeout(() => {
+        messageElement.classList.remove('message-highlight')
+      }, 2000)
+    } else {
+      console.warn('Message not found in current view:', messageId)
+      // TODO: Load more messages if needed
+    }
+  }
+
   // Redirect if no conversation ID
   if (!conversationId) {
     navigate('/messages')
@@ -174,6 +206,8 @@ export function ChatScreen() {
         onLoadMore={loadMore}
         isLoading={isLoading}
         onRetry={handleRetry}
+        onReply={handleReply}
+        onQuoteClick={handleQuoteClick}
       />
       
       {isTyping && <TypingIndicator userIds={typingUserIds} />}
@@ -186,6 +220,8 @@ export function ChatScreen() {
         <MessageComposer 
           conversationId={conversationId}
           onTyping={handleTyping}
+          replyToMessage={replyToMessage}
+          onCancelReply={handleCancelReply}
         />
       </div>
     </div>

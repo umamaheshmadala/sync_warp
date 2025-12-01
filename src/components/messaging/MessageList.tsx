@@ -10,6 +10,8 @@ interface MessageListProps {
   onLoadMore: () => void
   isLoading?: boolean
   onRetry?: (message: Message) => void // Story 8.2.7 - Retry failed messages
+  onReply?: (message: Message) => void // Story 8.10.5 - Reply to message
+  onQuoteClick?: (messageId: string) => void // Story 8.10.5 - Click quoted message
 }
 
 /**
@@ -37,7 +39,9 @@ export function MessageList({
   hasMore, 
   onLoadMore,
   isLoading = false,
-  onRetry
+  onRetry,
+  onReply,
+  onQuoteClick
 }: MessageListProps) {
   const currentUserId = useAuthStore(state => state.user?.id)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -119,13 +123,16 @@ export function MessageList({
         const showTimestamp = index === 0 || index % 10 === 0
         
         return (
-          <MessageBubble
-            key={message.id}
-            message={message}
-            isOwn={message.sender_id === currentUserId}
-            showTimestamp={showTimestamp}
-            onRetry={onRetry}
-          />
+          <div key={message.id} id={`message-${message.id}`}>
+            <MessageBubble
+              message={message}
+              isOwn={message.sender_id === currentUserId}
+              showTimestamp={showTimestamp}
+              onRetry={onRetry}
+              onReply={onReply}
+              onQuoteClick={onQuoteClick}
+            />
+          </div>
         )
       })}
     </div>
