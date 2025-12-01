@@ -1,9 +1,13 @@
-import React from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { Check, CheckCheck, Clock, AlertCircle, RefreshCw, CornerDownRight } from 'lucide-react'
 import type { Message } from '../../types/messaging'
 import { cn } from '../../lib/utils'
 import { Button } from '../ui/button'
 import { formatRelativeTime, formatMessageTime } from '../../utils/dateUtils'
+import { MessageContextMenu } from './MessageContextMenu'
+import { Capacitor } from '@capacitor/core'
+import { Haptics, ImpactStyle } from '@capacitor/haptics'
+import toast from 'react-hot-toast'
 
 interface MessageBubbleProps {
   message: Message
@@ -60,6 +64,12 @@ export function MessageBubble({
     _failed
   } = message
 
+  // Context menu state
+  const [showContextMenu, setShowContextMenu] = useState(false)
+  const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 })
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null)
+  const bubbleRef = useRef<HTMLDivElement>(null)
+
   // Deleted message
   if (is_deleted) {
     return (
@@ -73,6 +83,43 @@ export function MessageBubble({
         </div>
       </div>
     )
+  }
+
+  // Context menu handlers
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault()
+    setContextMenuPosition({ x: e.clientX, y: e.clientY })
+    setShowContextMenu(true)
+  }
+
+  const handleLongPressStart = (e: React.TouchEvent | React.MouseEvent) => {
+    if (Capacitor.isNativePlatform()) {
+      longPressTimer.current = setTimeout(async () => {
+        // Haptic feedback
+        try {
+          await Haptics.impact({ style: ImpactStyle.Medium })
+        } catch (error) {
+          console.warn('Haptic feedback not available:', error)
+        }
+
+        // Get touch position or mouse position
+        const touch = 'touches' in e ? e.touches[0] : e as React.MouseEvent
+        setContextMenuPosition({ x: touch.clientX, y: touch.clientY })
+        setShowContextMenu(true)
+      }, 500) // 500ms long press
+    }
+  }
+
+  const handleLongPressEnd = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current)
+      longPressTimer.current = null
+    }
+  }
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(content)
+    toast.success('Message copied')
   }
 
   // Generate descriptive ARIA label
@@ -125,11 +172,18 @@ export function MessageBubble({
         )}
         
         <div 
+          ref={bubbleRef}
           role="article"
           aria-label={ariaLabel}
           tabIndex={0}
+          onContextMenu={handleContextMenu}
+          onTouchStart={handleLongPressStart}
+          onTouchEnd={handleLongPressEnd}
+          onMouseDown={handleLongPressStart}
+          onMouseUp={handleLongPressEnd}
+          onMouseLeave={handleLongPressEnd}
           className={cn(
-            "px-4 py-2 rounded-2xl break-words text-[15px] leading-relaxed shadow-sm",
+            "px-4 py-2 rounded-2xl break-words text-[15px] leading-relaxed shadow-sm cursor-pointer",
             "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1",
             isOwn 
               ? _failed
@@ -170,6 +224,18 @@ export function MessageBubble({
         </div>
         </div>
       </div>
+
+      {/* Context Menu */}
+      {showContextMenu && (
+        <MessageContextMenu
+          message={message}
+          position={contextMenuPosition}
+          isOwn={isOwn}
+          onClose={() => setShowContextMenu(false)}
+          onReply={() => onReply?.(message)}
+          onCopy={handleCopy}
+        />
+      )}
     </div>
   )
 }
