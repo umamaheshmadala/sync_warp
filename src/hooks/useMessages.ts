@@ -115,6 +115,23 @@ export function useMessages(conversationId: string | null) {
     const unsubscribeNew = realtimeService.subscribeToMessages(
       conversationId,
       (newMessage: Message) => {
+        // Populate parent_message for replies if missing (Story 8.10.5)
+        if (newMessage.reply_to_id && !newMessage.parent_message) {
+          const currentMessages = messages.get(conversationId) || []
+          const parentMsg = currentMessages.find(m => m.id === newMessage.reply_to_id)
+          
+          if (parentMsg) {
+            newMessage.parent_message = {
+              id: parentMsg.id,
+              content: parentMsg.content,
+              type: parentMsg.type,
+              sender_id: parentMsg.sender_id,
+              sender_name: parentMsg.sender_id === currentUserId ? 'You' : 'User', // Fallback as Message type doesn't have sender_name
+              created_at: parentMsg.created_at
+            }
+          }
+        }
+
         addMessage(conversationId, newMessage)
         
         // Auto-mark as read if conversation is active and user is not sender

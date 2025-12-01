@@ -64,13 +64,20 @@ export function ChatScreen() {
   }
 
   // Auto-scroll to bottom on new messages
+  // Auto-scroll to bottom on new messages
   useEffect(() => {
-    // Only scroll if a new message was added (not on load more)
-    if (messages.length > prevMessageCount.current) {
-      scrollToBottom()
+    const lastMessage = messages[messages.length - 1]
+    const isUserMessage = lastMessage?.sender_id === 'current_user' || (lastMessage?._optimistic)
+    
+    // Scroll if new message added OR if it's a user message (ensure visibility)
+    if (messages.length > prevMessageCount.current || isUserMessage) {
+      // Use a small timeout to ensure DOM is updated with new message height
+      setTimeout(() => {
+        scrollToBottom('smooth')
+      }, 100)
     }
     prevMessageCount.current = messages.length
-  }, [messages.length])
+  }, [messages.length, messages[messages.length - 1]?.id])
 
   // Initial scroll to bottom
   useEffect(() => {
