@@ -53,7 +53,8 @@ export function useSendMessage() {
     setSendingMessage, 
     addOptimisticMessage, 
     replaceOptimisticMessage, 
-    markMessageFailed 
+    markMessageFailed,
+    messages // Access messages to look up parent message
   } = useMessagingStore()
 
   /**
@@ -70,6 +71,23 @@ export function useSendMessage() {
     // Generate temporary ID for optimistic message
     const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     
+    // Look up parent message if this is a reply
+    let parentMessage = null
+    if (params.replyToId) {
+      const conversationMessages = messages.get(params.conversationId) || []
+      const parentMsg = conversationMessages.find(m => m.id === params.replyToId)
+      if (parentMsg) {
+        parentMessage = {
+          id: parentMsg.id,
+          content: parentMsg.content,
+          type: parentMsg.type,
+          sender_id: parentMsg.sender_id,
+          sender_name: 'User', // Will be populated from backend
+          created_at: parentMsg.created_at
+        }
+      }
+    }
+    
     // Create optimistic message
     const optimisticMessage: Message = {
       id: tempId, // Temporary ID
@@ -83,6 +101,7 @@ export function useSendMessage() {
       shared_coupon_id: params.sharedCouponId || null,
       shared_deal_id: params.sharedDealId || null,
       reply_to_id: params.replyToId || null,
+      parent_message: parentMessage, // Include parent message data for replies
       is_edited: false,
       is_deleted: false,
       created_at: new Date().toISOString(),
