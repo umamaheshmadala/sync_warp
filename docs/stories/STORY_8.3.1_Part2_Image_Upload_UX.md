@@ -5,7 +5,7 @@
 **Story Owner:** Frontend Engineering  
 **Estimated Effort:** 3-4 days  
 **Priority:** P0 - Critical  
-**Status:** 📋 Ready for Implementation
+**Status:** ✅ Complete
 
 > **Note:** This story implements **industry-standard UX** for image uploads, matching the user experience of WhatsApp, Facebook Messenger, and Instagram. Core upload infrastructure is in [Story 8.3.1](./STORY_8.3.1_Image_Upload_Compression.md).
 
@@ -549,26 +549,33 @@ This story implements UX patterns from:
 **Status:** 📋 Ready for Implementation  
 **Estimated Start:** After Story 8.3.1 completion
 
-##  **Additional Enhancements Implemented**
+## **Additional Enhancements Implemented**
 
 During implementation, several enhancements were made to improve robustness and user experience beyond the original scope:
 
 ### 1. WhatsApp-style Cancellation & Persistence
+
 Instead of simply removing cancelled uploads, we now persist the failed message state (locally).
+
 - **Behavior:** If a user cancels an upload or it fails, the message remains in the chat with a 'Failed' status (Red ).
 - **Benefit:** Users don't lose the context of what they were trying to send and can easily retry.
 
 ### 2. Robust Retry Mechanism with Blob Retention
+
 We implemented a smart retry system that doesn't require re-selecting the file.
+
 - **Mechanism:** The browser's Blob URL is preserved in memory even after a failure/cancellation.
 - **Action:** Clicking 'Retry' fetches the original image data from memory and restarts the upload process seamlessly.
 
 ### 3. Race Condition Protection
+
 Added strict checks to prevent 'Ghost Messages'.
+
 - **Issue:** Previously, cancelling an upload at the very last second could still result in the message being sent.
 - **Fix:** Added a final verification step right before the API call to ensure the message hasn't been flagged as cancelled or failed in the store.
 
 ### 4. Fallback UI for Missing Media
-Improved the receiver experience for edge cases.
-- **Feature:** If a message arrives with type image but missing media_urls (e.g., due to a data consistency issue), we now show a graceful 'Image unavailable' placeholder instead of an invisible message or broken image icon.
 
+Improved the receiver experience for edge cases.
+
+- **Feature:** If a message arrives with type image but missing media_urls (e.g., due to a data consistency issue), we now show a graceful 'Image unavailable' placeholder instead of an invisible message or broken image icon.
