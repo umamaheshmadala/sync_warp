@@ -119,14 +119,22 @@ class LinkPreviewService {
    */
   private async fetchOpenGraphPreview(url: string): Promise<LinkPreview | null> {
     try {
+      console.log('🔍 Fetching Open Graph preview for:', url)
+      
       // Call Supabase Edge Function for Open Graph fetching
       const { data, error } = await supabase.functions.invoke('link-preview', {
         body: { url }
       })
 
-      if (error) throw error
+      console.log('📦 Edge Function response:', { data, error })
+
+      if (error) {
+        console.error('❌ Edge Function error:', error)
+        throw error
+      }
 
       if (data && data.title) {
+        console.log('✅ Successfully fetched Open Graph data:', data)
         return {
           url,
           title: data.title,
@@ -138,13 +146,15 @@ class LinkPreviewService {
       }
 
       // Fallback if no data returned
+      console.warn('⚠️ No metadata returned from Edge Function')
       throw new Error('No metadata returned')
     } catch (error) {
-      console.error('Failed to fetch Open Graph preview:', error)
+      console.error('❌ Failed to fetch Open Graph preview:', error)
       
       // Fallback: use hostname as title with favicon
       try {
         const hostname = new URL(url).hostname
+        console.log('🔄 Using hostname fallback:', hostname)
         return {
           url,
           title: hostname,
