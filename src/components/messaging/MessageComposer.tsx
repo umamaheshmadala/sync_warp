@@ -49,7 +49,7 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
         conversationId,
         content: content.trim(),
         type: 'text',
-        linkPreview: previews.length > 0 ? previews[0] : null,  // Include first link preview
+        linkPreviews: previews.length > 0 ? previews : undefined,
         replyToId: replyToMessage?.id  // Include reply_to_id if replying
       })
       

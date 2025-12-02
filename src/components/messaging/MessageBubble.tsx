@@ -431,7 +431,20 @@ export function MessageBubble({
               </div>
             )
           ) : (
-            <p className="whitespace-pre-wrap">{content}</p>
+            <div className="flex flex-col gap-2">
+              {message.link_previews && message.link_previews.length > 0 && (
+                <div className="space-y-2">
+                  {message.link_previews.map((preview, index) => (
+                    <LinkPreviewCard 
+                      key={`${preview.url}-${index}`}
+                      preview={preview}
+                      showRemoveButton={false}
+                    />
+                  ))}
+                </div>
+              )}
+              <p className="whitespace-pre-wrap">{content}</p>
+            </div>
           )}
           
           {/* Timestamp & Status Row */}

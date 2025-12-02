@@ -101,7 +101,7 @@ export function useSendMessage() {
       type: params.type || 'text',
       media_urls: params.mediaUrls || null,
       thumbnail_url: params.thumbnailUrl || null,
-      link_preview: params.linkPreview || null,
+      link_previews: params.linkPreviews || null,
       shared_coupon_id: params.sharedCouponId || null,
       shared_deal_id: params.sharedDealId || null,
       reply_to_id: params.replyToId || null,

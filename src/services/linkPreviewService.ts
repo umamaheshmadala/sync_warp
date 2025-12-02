@@ -1,15 +1,8 @@
 // src/services/linkPreviewService.ts
 import { supabase } from '../lib/supabase'
 
-export interface LinkPreview {
-  url: string
-  title: string
-  description: string
-  image?: string
-  favicon?: string
-  type: 'generic' | 'sync-coupon' | 'sync-deal'
-  metadata?: Record<string, any>
-}
+import { LinkPreview } from '../types/messaging'
+export type { LinkPreview }
 
 class LinkPreviewService {
   private readonly URL_REGEX = /(https?:\/\/[^\s]+)/g

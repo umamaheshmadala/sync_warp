@@ -17,9 +17,12 @@ export type MessageStatus = 'sending' | 'sent' | 'delivered' | 'read' | 'failed'
  */
 export interface LinkPreview {
   url: string;
-  title?: string;
-  description?: string;
+  title: string;
+  description: string;
   image?: string;
+  favicon?: string;
+  type: 'generic' | 'sync-coupon' | 'sync-deal';
+  metadata?: Record<string, any>;
   siteName?: string;
 }
 
@@ -35,7 +38,7 @@ export interface Message {
   status?: MessageStatus; // Story 8.10.7
   media_urls?: string[] | null;
   thumbnail_url?: string | null;
-  link_preview?: LinkPreview | null;
+  link_previews?: LinkPreview[] | null;
   shared_coupon_id?: string | null;
   shared_deal_id?: string | null;
   reply_to_id?: string | null;
@@ -122,7 +125,7 @@ export interface SendMessageParams {
   type?: MessageType;
   mediaUrls?: string[];
   thumbnailUrl?: string;
-  linkPreview?: LinkPreview;
+  linkPreviews?: LinkPreview[];
   sharedCouponId?: string;
   sharedDealId?: string;
   replyToId?: string;

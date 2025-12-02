@@ -202,7 +202,7 @@ class MessagingService {
         p_type: params.type || 'text',
         p_media_urls: params.mediaUrls || null,
         p_thumbnail_url: params.thumbnailUrl || null,
-        p_link_preview: params.linkPreview || null,
+        p_link_previews: params.linkPreviews || null,
         p_shared_coupon_id: params.sharedCouponId || null,
         p_shared_deal_id: params.sharedDealId || null,
         p_reply_to_id: params.replyToId || null
