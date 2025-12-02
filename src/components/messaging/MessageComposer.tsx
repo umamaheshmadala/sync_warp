@@ -4,8 +4,10 @@ import { Textarea } from '../ui/textarea'
 import { Button } from '../ui/button'
 import { ImageUploadButton } from './ImageUploadButton'
 import { VideoUploadButton } from './VideoUploadButton'
+import { LinkPreviewCard } from './LinkPreviewCard'
 import { ReplyContext } from './ReplyContext'
 import { useSendMessage } from '../../hooks/useSendMessage'
+import { useLinkPreview } from '../../hooks/useLinkPreview'
 import { Capacitor } from '@capacitor/core'
 import { Haptics, NotificationType } from '@capacitor/haptics'
 import type { Message } from '../../types/messaging'
@@ -20,6 +22,7 @@ interface MessageComposerProps {
 export function MessageComposer({ conversationId, onTyping, replyToMessage, onCancelReply }: MessageComposerProps) {
   const [content, setContent] = useState('')
   const { sendMessage, isSending } = useSendMessage()
+  const { previews, removePreview, reset: resetPreviews } = useLinkPreview(content)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   // Auto-resize textarea
@@ -46,10 +49,12 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
         conversationId,
         content: content.trim(),
         type: 'text',
+        linkPreview: previews.length > 0 ? previews[0] : null,  // Include first link preview
         replyToId: replyToMessage?.id  // Include reply_to_id if replying
       })
       
       setContent('')
+      resetPreviews()  // Clear link previews after sending
       onCancelReply?.()  // Clear reply context after sending
       
       if (textareaRef.current) {
@@ -86,6 +91,19 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
             }}
             onCancel={onCancelReply!}
           />
+        </div>
+      )}
+
+      {/* Link Previews */}
+      {previews.length > 0 && (
+        <div className="mb-3 space-y-2">
+          {previews.map(preview => (
+            <LinkPreviewCard 
+              key={preview.url}
+              preview={preview}
+              onRemove={() => removePreview(preview.url)}
+            />
+          ))}
         </div>
       )}
 

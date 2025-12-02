@@ -5,6 +5,7 @@ import { MessageStatusIcon } from './MessageStatusIcon'
 import { OptimisticImageMessage } from './OptimisticImageMessage'
 import { OptimisticVideoMessage } from './OptimisticVideoMessage'
 import { VideoPlayer } from './VideoPlayer'
+import { LinkPreviewCard } from './LinkPreviewCard'
 import type { Message } from '../../types/messaging'
 import { cn } from '../../lib/utils'
 import { Button } from '../ui/button'
@@ -17,6 +18,7 @@ import { useMessagingStore } from '../../store/messagingStore'
 import { supabase } from '../../lib/supabase'
 import { mediaUploadService } from '../../services/mediaUploadService'
 import { messagingService } from '../../services/messagingService'
+import type { LinkPreview } from '../../services/linkPreviewService'
 
 interface MessageBubbleProps {
   message: Message
