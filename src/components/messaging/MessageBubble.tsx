@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom'
 import { RefreshCw, CornerDownRight, Forward } from 'lucide-react'
 import { MessageStatusIcon } from './MessageStatusIcon'
 import { OptimisticImageMessage } from './OptimisticImageMessage'
+import { OptimisticVideoMessage } from './OptimisticVideoMessage'
+import { VideoPlayer } from './VideoPlayer'
 import type { Message } from '../../types/messaging'
 import { cn } from '../../lib/utils'
 import { Button } from '../ui/button'
@@ -65,6 +67,7 @@ export function MessageBubble({
 }: MessageBubbleProps) {
   const [showContextMenu, setShowContextMenu] = useState(false)
   const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 })
+  const [showVideoPlayer, setShowVideoPlayer] = useState(false)
   const longPressTimer = useRef<NodeJS.Timeout | null>(null)
   const isLongPress = useRef(false)
   const content = message.content || ''
@@ -367,6 +370,64 @@ export function MessageBubble({
                 {content && <p className="whitespace-pre-wrap mt-2 text-left">{content}</p>}
               </div>
             )
+          ) : message.type === 'video' ? (
+            // Video message display
+            message.media_urls && message.media_urls.length > 0 ? (
+              message._optimistic ? (
+                // Optimistic UI: Show thumbnail with loading state
+                <OptimisticVideoMessage
+                  thumbnailUrl={message.thumbnail_url || message.media_urls[0]}
+                  fullResUrl={message.media_urls[0]}
+                  uploadProgress={message._uploadProgress || 0}
+                  status={message._failed ? 'failed' : 'uploading'}
+                  caption={content}
+                  isOwn={isOwn}
+                  onCancel={() => {
+                    // Cancel upload by marking as failed
+                    if (message._tempId) {
+                      console.log('🛑 User cancelled video upload via UI')
+                      useMessagingStore.getState().updateMessage(message.conversation_id, message._tempId, {
+                        _failed: true,
+                        _uploadProgress: 0
+                      })
+                    }
+                  }}
+                />
+              ) : (
+                // Regular video display
+                <div className="space-y-2 relative">
+                  <div className="relative rounded-lg overflow-hidden" style={{ maxHeight: '300px' }}>
+                    {/* Video thumbnail */}
+                    <img 
+                      src={message.thumbnail_url || message.media_urls[0]} 
+                      alt="Video thumbnail"
+                      className="max-w-full h-auto rounded-lg"
+                      style={{ maxHeight: '300px' }}
+                      loading="lazy"
+                    />
+                    {/* Play button overlay */}
+                    <div 
+                      className="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/40 transition-colors cursor-pointer"
+                      onClick={() => setShowVideoPlayer(true)}
+                    >
+                      <div className="w-16 h-16 bg-white/90 rounded-full flex items-center justify-center shadow-lg">
+                        <svg className="w-8 h-8 text-gray-800 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                  {content && <p className="whitespace-pre-wrap mt-2">{content}</p>}
+                </div>
+              )
+            ) : (
+              // Fallback for missing video URLs
+              <div className="p-4 bg-gray-100 rounded-lg border border-gray-200 text-center min-w-[200px]">
+                <p className="text-sm text-gray-500 italic">Video unavailable</p>
+                <p className="text-xs text-gray-400 mt-1">Media URL missing</p>
+                {content && <p className="whitespace-pre-wrap mt-2 text-left">{content}</p>}
+              </div>
+            )
           ) : (
             <p className="whitespace-pre-wrap">{content}</p>
           )}
@@ -413,6 +474,15 @@ export function MessageBubble({
           onCopy={handleCopy}
         />,
         document.body
+      )}
+
+      {/* Video Player Modal */}
+      {showVideoPlayer && message.type === 'video' && message.media_urls && message.media_urls.length > 0 && (
+        <VideoPlayer
+          videoUrl={message.media_urls[0]}
+          thumbnailUrl={message.thumbnail_url || message.media_urls[0]}
+          onClose={() => setShowVideoPlayer(false)}
+        />
       )}
     </div>
   )

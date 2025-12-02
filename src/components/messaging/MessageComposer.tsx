@@ -3,6 +3,7 @@ import { Send, Image, Paperclip, Smile } from 'lucide-react'
 import { Textarea } from '../ui/textarea'
 import { Button } from '../ui/button'
 import { ImageUploadButton } from './ImageUploadButton'
+import { VideoUploadButton } from './VideoUploadButton'
 import { ReplyContext } from './ReplyContext'
 import { useSendMessage } from '../../hooks/useSendMessage'
 import { Capacitor } from '@capacitor/core'
@@ -103,6 +104,11 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
         <div className="flex items-center justify-between pt-1">
           <div className="flex items-center gap-1">
             <ImageUploadButton 
+              conversationId={conversationId}
+              onUploadStart={() => {}}
+              onUploadComplete={() => {}}
+            />
+            <VideoUploadButton 
               conversationId={conversationId}
               onUploadStart={() => {}}
               onUploadComplete={() => {}}

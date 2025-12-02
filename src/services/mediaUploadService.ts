@@ -12,6 +12,7 @@ interface UploadProgress {
 
 class MediaUploadService {
   private uploadCallbacks: Map<string, (progress: UploadProgress) => void> = new Map()
+  private readonly MAX_VIDEO_SIZE = 25 * 1024 * 1024 // 25MB
 
   /**
    * 📱 Platform-conditional image picker
@@ -32,7 +33,7 @@ class MediaUploadService {
         })
         
         // Convert URI to File
-        return await this.uriToFile(photo.webPath!, photo.format)
+        return await this.uriToFile(photo.webPath!, photo.format, 'image')
       } catch (error: any) {
         console.error('❌ Camera access failed:', error)
         
@@ -52,11 +53,11 @@ class MediaUploadService {
   /**
    * 📱 MOBILE ONLY: Convert native file URI to File object
    */
-  private async uriToFile(uri: string, format: string): Promise<File> {
+  private async uriToFile(uri: string, format: string, type: 'image' | 'video' = 'image'): Promise<File> {
     const response = await fetch(uri)
     const blob = await response.blob()
     const fileName = `capture-${Date.now()}.${format}`
-    return new File([blob], fileName, { type: `image/${format}` })
+    return new File([blob], fileName, { type: `${type}/${format}` })
   }
 
   /**
@@ -127,39 +128,66 @@ class MediaUploadService {
       // Check abort signal
       if (abortSignal?.aborted) throw new Error('Upload cancelled')
 
+      // Simulate progress: 0-20% for compression
+      onProgress?.({ loaded: 0, total: file.size, percentage: 5 })
+
       // Compress image
       const compressed = await this.compressImage(file)
+      onProgress?.({ loaded: compressed.size * 0.2, total: file.size, percentage: 20 })
 
       // Check abort signal again after compression
       if (abortSignal?.aborted) throw new Error('Upload cancelled')
 
+      // 20-30% for thumbnail generation
+      onProgress?.({ loaded: compressed.size * 0.3, total: file.size, percentage: 25 })
+
       // Generate thumbnail
       const thumbnail = await this.generateThumbnail(compressed)
+      onProgress?.({ loaded: compressed.size * 0.3, total: file.size, percentage: 30 })
 
       // Generate unique file path
       const timestamp = Date.now()
       const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
       const basePath = `${user.id}/${conversationId}/${timestamp}-${sanitizedFileName}`
       
-      // Upload original (compressed) image
-      // Note: Supabase JS v2 doesn't natively support abort signal in upload() yet in all versions,
-      // but we can check before starting. If the library updates, we can pass it.
-      // For now, we rely on checking signal between steps and handling cleanup if needed.
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('message-attachments')
-        .upload(basePath, compressed, {
-          cacheControl: '3600',
-          upsert: false,
+      // Simulate upload progress: 30-85% for main image upload
+      const uploadStartTime = Date.now()
+      const estimatedUploadTime = Math.max(1000, compressed.size / 200000) // ~200KB/s estimate
+      
+      const progressInterval = setInterval(() => {
+        const elapsed = Date.now() - uploadStartTime
+        const progress = Math.min(85, 30 + (elapsed / estimatedUploadTime) * 55)
+        onProgress?.({ 
+          loaded: Math.round(compressed.size * (progress / 100)), 
+          total: file.size, 
+          percentage: Math.round(progress) 
         })
+      }, 100)
 
-      if (uploadError) throw uploadError
+      try {
+        // Upload original (compressed) image
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('message-attachments')
+          .upload(basePath, compressed, {
+            cacheControl: '3600',
+            upsert: false,
+          })
 
-      // Check abort signal after main upload
-      if (abortSignal?.aborted) {
-        // Cleanup: Delete the uploaded file if cancelled
-        await supabase.storage.from('message-attachments').remove([basePath])
-        throw new Error('Upload cancelled')
-      }
+        clearInterval(progressInterval)
+
+        if (uploadError) throw uploadError
+
+        onProgress?.({ loaded: compressed.size * 0.85, total: file.size, percentage: 85 })
+
+        // Check abort signal after main upload
+        if (abortSignal?.aborted) {
+          // Cleanup: Delete the uploaded file if cancelled
+          await supabase.storage.from('message-attachments').remove([basePath])
+          throw new Error('Upload cancelled')
+        }
+
+        // 85-95% for thumbnail upload
+        onProgress?.({ loaded: compressed.size * 0.9, total: file.size, percentage: 90 })
 
       // Upload thumbnail
       const thumbnailPath = `${user.id}/${conversationId}/${timestamp}-thumb.jpg`
@@ -172,20 +200,25 @@ class MediaUploadService {
 
       if (thumbError) console.warn('Thumbnail upload failed:', thumbError)
 
-      // Final check
-      if (abortSignal?.aborted) {
-        // Cleanup both files
-        await supabase.storage.from('message-attachments').remove([basePath, thumbnailPath])
-        throw new Error('Upload cancelled')
-      }
+        // Final check
+        if (abortSignal?.aborted) {
+          // Cleanup both files
+          await supabase.storage.from('message-attachments').remove([basePath, thumbnailPath])
+          throw new Error('Upload cancelled')
+        }
 
-      if (thumbError) console.warn('Thumbnail upload failed:', thumbError)
+        if (thumbError) console.warn('Thumbnail upload failed:', thumbError)
 
-      console.log('✅ Upload complete:', uploadData.path)
+        onProgress?.({ loaded: compressed.size, total: file.size, percentage: 100 })
 
-      return {
-        url: uploadData.path,
-        thumbnailUrl: thumbnailPath
+        console.log('✅ Upload complete:', uploadData.path)
+
+        return {
+          url: uploadData.path,
+          thumbnailUrl: thumbnailPath
+        }
+      } finally {
+        clearInterval(progressInterval)
       }
     } catch (error) {
       console.error('❌ Upload failed:', error)
@@ -223,6 +256,207 @@ class MediaUploadService {
       console.log('✅ Image deleted:', path)
     } catch (error) {
       console.error('❌ Failed to delete image:', error)
+      throw error
+    }
+  }
+
+  // ============================================================================
+  // VIDEO UPLOAD METHODS
+  // ============================================================================
+
+  /**
+   * Generate video thumbnail from first frame
+   * Works on BOTH web and mobile (Canvas API via WebView)
+   */
+  async generateVideoThumbnail(file: File): Promise<Blob> {
+    return new Promise((resolve, reject) => {
+      const video = document.createElement('video')
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+
+      video.preload = 'metadata'
+      video.muted = true
+      video.playsInline = true  // 📱 Important for iOS
+
+      video.onloadedmetadata = () => {
+        video.currentTime = 1 // Seek to 1 second for better thumbnail
+      }
+
+      video.onseeked = () => {
+        try {
+          // Set canvas size to video dimensions (max 300px)
+          const scale = Math.min(300 / video.videoWidth, 300 / video.videoHeight)
+          canvas.width = video.videoWidth * scale
+          canvas.height = video.videoHeight * scale
+
+          // Draw video frame to canvas
+          ctx?.drawImage(video, 0, 0, canvas.width, canvas.height)
+
+          // Convert canvas to blob
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                console.log('✅ Video thumbnail generated:', blob.size)
+                resolve(blob)
+              } else {
+                reject(new Error('Failed to generate thumbnail'))
+              }
+            },
+            'image/jpeg',
+            0.8
+          )
+        } catch (error) {
+          reject(error)
+        } finally {
+          // Cleanup
+          URL.revokeObjectURL(video.src)
+        }
+      }
+
+      video.onerror = () => {
+        reject(new Error('Failed to load video'))
+        URL.revokeObjectURL(video.src)
+      }
+
+      // Load video
+      video.src = URL.createObjectURL(file)
+    })
+  }
+
+  /**
+   * Get video duration in seconds
+   */
+  private async getVideoDuration(file: File): Promise<number> {
+    return new Promise((resolve) => {
+      const video = document.createElement('video')
+      video.preload = 'metadata'
+      video.muted = true
+      video.playsInline = true
+
+      video.onloadedmetadata = () => {
+        resolve(Math.round(video.duration))
+        URL.revokeObjectURL(video.src)
+      }
+
+      video.onerror = () => {
+        resolve(0)
+        URL.revokeObjectURL(video.src)
+      }
+
+      video.src = URL.createObjectURL(file)
+    })
+  }
+
+  /**
+   * Upload video to Supabase Storage
+   */
+  async uploadVideo(
+    file: File,
+    conversationId: string,
+    onProgress?: (progress: number) => void,
+    abortSignal?: AbortSignal
+  ): Promise<{ url: string; thumbnailUrl: string; duration: number }> {
+    try {
+      // Validate file size
+      if (file.size > this.MAX_VIDEO_SIZE) {
+        throw new Error(`Video size must be less than ${this.MAX_VIDEO_SIZE / 1024 / 1024}MB`)
+      }
+
+      // Get current user
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError || !user) throw new Error('User not authenticated')
+
+      // Check abort signal
+      if (abortSignal?.aborted) throw new Error('Upload cancelled')
+
+      console.log('🔄 Uploading video:', file.size, 'bytes')
+
+      // Simulate progress: 0-10% for thumbnail generation
+      onProgress?.(5)
+
+      // Generate thumbnail
+      const thumbnail = await this.generateVideoThumbnail(file)
+      onProgress?.(10)
+
+      // Check abort signal after thumbnail generation
+      if (abortSignal?.aborted) throw new Error('Upload cancelled')
+
+      // 10-15% for duration detection
+      const duration = await this.getVideoDuration(file)
+      onProgress?.(15)
+
+      // Generate unique file path
+      const timestamp = Date.now()
+      const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
+      const basePath = `${user.id}/${conversationId}/${timestamp}-${sanitizedFileName}`
+
+      // Simulate upload progress: 15-85% for main video upload
+      const uploadStartTime = Date.now()
+      const estimatedUploadTime = Math.max(2000, file.size / 100000) // ~100KB/s estimate
+      
+      const progressInterval = setInterval(() => {
+        const elapsed = Date.now() - uploadStartTime
+        const progress = Math.min(85, 15 + (elapsed / estimatedUploadTime) * 70)
+        onProgress?.(Math.round(progress))
+      }, 100)
+
+      try {
+        // Upload video
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('message-attachments')
+          .upload(basePath, file, {
+            cacheControl: '3600',
+            upsert: false
+          })
+
+        clearInterval(progressInterval)
+
+        if (uploadError) throw uploadError
+
+        onProgress?.(85)
+
+        // Check abort signal after main upload
+        if (abortSignal?.aborted) {
+          // Cleanup: Delete the uploaded file if cancelled
+          await supabase.storage.from('message-attachments').remove([basePath])
+          throw new Error('Upload cancelled')
+        }
+
+        // 85-95% for thumbnail upload
+        onProgress?.(90)
+
+      // Upload thumbnail
+      const thumbnailPath = `${user.id}/${conversationId}/${timestamp}-thumb.jpg`
+      const { error: thumbError } = await supabase.storage
+        .from('message-attachments')
+        .upload(thumbnailPath, thumbnail, {
+          cacheControl: '3600',
+          upsert: false
+        })
+
+      if (thumbError) console.warn('Thumbnail upload failed:', thumbError)
+
+        // Final check
+        if (abortSignal?.aborted) {
+          // Cleanup both files
+          await supabase.storage.from('message-attachments').remove([basePath, thumbnailPath])
+          throw new Error('Upload cancelled')
+        }
+
+        onProgress?.(100)
+
+        console.log('✅ Video upload complete:', uploadData.path)
+
+        return {
+          url: uploadData.path,
+          thumbnailUrl: thumbnailPath,
+          duration
+        }
+      } finally {
+        clearInterval(progressInterval)
+      }
+    } catch (error) {
+      console.error('❌ Video upload failed:', error)
       throw error
     }
   }
