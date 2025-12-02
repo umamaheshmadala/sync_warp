@@ -66,6 +66,7 @@ export interface Message {
   _optimistic?: boolean;   // True if message is being sent
   _failed?: boolean;       // True if message failed to send
   _tempId?: string;        // Temporary ID for optimistic messages
+  _uploadProgress?: number; // Upload progress (0-100) for media uploads
 }
 
 /**

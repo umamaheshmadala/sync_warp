@@ -116,15 +116,22 @@ class MediaUploadService {
   async uploadImage(
     file: File, 
     conversationId: string,
-    onProgress?: (progress: UploadProgress) => void
+    onProgress?: (progress: UploadProgress) => void,
+    abortSignal?: AbortSignal
   ): Promise<{ url: string; thumbnailUrl: string }> {
     try {
       // Get current user
       const { data: { user }, error: authError } = await supabase.auth.getUser()
       if (authError || !user) throw new Error('User not authenticated')
 
+      // Check abort signal
+      if (abortSignal?.aborted) throw new Error('Upload cancelled')
+
       // Compress image
       const compressed = await this.compressImage(file)
+
+      // Check abort signal again after compression
+      if (abortSignal?.aborted) throw new Error('Upload cancelled')
 
       // Generate thumbnail
       const thumbnail = await this.generateThumbnail(compressed)
@@ -135,14 +142,24 @@ class MediaUploadService {
       const basePath = `${user.id}/${conversationId}/${timestamp}-${sanitizedFileName}`
       
       // Upload original (compressed) image
+      // Note: Supabase JS v2 doesn't natively support abort signal in upload() yet in all versions,
+      // but we can check before starting. If the library updates, we can pass it.
+      // For now, we rely on checking signal between steps and handling cleanup if needed.
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('message-attachments')
         .upload(basePath, compressed, {
           cacheControl: '3600',
-          upsert: false
+          upsert: false,
         })
 
       if (uploadError) throw uploadError
+
+      // Check abort signal after main upload
+      if (abortSignal?.aborted) {
+        // Cleanup: Delete the uploaded file if cancelled
+        await supabase.storage.from('message-attachments').remove([basePath])
+        throw new Error('Upload cancelled')
+      }
 
       // Upload thumbnail
       const thumbnailPath = `${user.id}/${conversationId}/${timestamp}-thumb.jpg`
@@ -152,6 +169,15 @@ class MediaUploadService {
           cacheControl: '3600',
           upsert: false
         })
+
+      if (thumbError) console.warn('Thumbnail upload failed:', thumbError)
+
+      // Final check
+      if (abortSignal?.aborted) {
+        // Cleanup both files
+        await supabase.storage.from('message-attachments').remove([basePath, thumbnailPath])
+        throw new Error('Upload cancelled')
+      }
 
       if (thumbError) console.warn('Thumbnail upload failed:', thumbError)
 

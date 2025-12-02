@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { RefreshCw, CornerDownRight, Forward } from 'lucide-react'
 import { MessageStatusIcon } from './MessageStatusIcon'
+import { OptimisticImageMessage } from './OptimisticImageMessage'
 import type { Message } from '../../types/messaging'
 import { cn } from '../../lib/utils'
 import { Button } from '../ui/button'
@@ -10,6 +11,10 @@ import { MessageContextMenu } from './MessageContextMenu'
 import { Capacitor } from '@capacitor/core'
 import { Haptics, ImpactStyle } from '@capacitor/haptics'
 import toast from 'react-hot-toast'
+import { useMessagingStore } from '../../store/messagingStore'
+import { supabase } from '../../lib/supabase'
+import { mediaUploadService } from '../../services/mediaUploadService'
+import { messagingService } from '../../services/messagingService'
 
 interface MessageBubbleProps {
   message: Message
@@ -46,82 +51,160 @@ interface MessageBubbleProps {
  *   message={message}
  *   isOwn={message.sender_id === currentUserId}
  *   showTimestamp={true}
- *   onRetry={(msg) => handleRetry(msg)}
  * />
  * ```
  */
 export function MessageBubble({ 
   message, 
   isOwn, 
-  showTimestamp = false,
+  showTimestamp = true,
   onRetry,
   onReply,
   onForward,
   onQuoteClick
 }: MessageBubbleProps) {
-  const {
-    content,
-    created_at,
-    is_edited,
-    is_deleted,
-    is_forwarded,
-    _optimistic,
-    _failed
-  } = message
-
-  // Context menu state
   const [showContextMenu, setShowContextMenu] = useState(false)
   const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 })
   const longPressTimer = useRef<NodeJS.Timeout | null>(null)
-  const bubbleRef = useRef<HTMLDivElement>(null)
+  const isLongPress = useRef(false)
+  const content = message.content || ''
+  const isDeleted = !!message.deleted_at
+  
+  // Determine styling based on sender
+  const isSystem = message.type === 'system'
+  const _failed = message._failed
+  const {
+    created_at,
+    is_edited,
+    is_forwarded,
+    _optimistic
+  } = message
 
-  // Deleted message
-  if (is_deleted) {
-    return (
-      <div className={cn("flex mb-2", isOwn ? "justify-end" : "justify-start")}>
-        <div 
-          role="article"
-          aria-label={`Deleted message from ${isOwn ? 'you' : 'friend'}`}
-          className="px-3 py-2 rounded-lg bg-gray-50 text-gray-400 italic text-sm border border-gray-100"
-        >
-          Message deleted
-        </div>
-      </div>
-    )
+  // Handle retry for failed image uploads
+  const handleRetryUpload = async () => {
+    if (!message.media_urls?.[0]) return
+    
+    console.log('🔄 Retrying message:', message._tempId)
+    const blobUrl = message.media_urls[0]
+    const conversationId = message.conversation_id
+    const tempId = message._tempId
+    
+    try {
+      // 1. Reset state to uploading
+      useMessagingStore.getState().updateMessage(conversationId, tempId!, {
+        _failed: false,
+        _uploadProgress: 0
+      })
+      
+      // 2. Fetch blob
+      const response = await fetch(blobUrl)
+      const blob = await response.blob()
+      const file = new File([blob], "retry_image.jpg", { type: blob.type })
+      
+      // 3. Upload
+      const { url, thumbnailUrl } = await mediaUploadService.uploadImage(
+        file,
+        conversationId,
+        (progress) => {
+           // Check for cancellation during retry
+           const currentMessages = useMessagingStore.getState().messages.get(conversationId) || []
+           const currentMsg = currentMessages.find(m => m._tempId === tempId)
+           if (currentMsg?._failed) {
+             throw new Error('Cancelled')
+           }
+
+           useMessagingStore.getState().updateMessage(conversationId, tempId!, {
+             _uploadProgress: progress
+           })
+        }
+      )
+      
+      // Check for cancellation AFTER upload completes
+      const currentMsg = useMessagingStore.getState().messages.get(conversationId)?.find(m => m._tempId === tempId)
+      if (currentMsg?._failed) {
+        console.log('🛑 Retry cancelled after upload, aborting send')
+        await mediaUploadService.deleteImage(url)
+        await mediaUploadService.deleteImage(thumbnailUrl)
+        return
+      }
+
+      // 4. Get Public URLs
+      const { data: { publicUrl } } = supabase.storage
+        .from('message-attachments')
+        .getPublicUrl(url)
+
+      const { data: { publicUrl: thumbPublicUrl } } = supabase.storage
+        .from('message-attachments')
+        .getPublicUrl(thumbnailUrl)
+        
+      console.log('🔄 Retry sending message with mediaUrls:', [publicUrl])
+
+      // 5. Send Message
+      await messagingService.sendMessage({
+        conversationId,
+        content: message.content || '',
+        type: 'image',
+        mediaUrls: [publicUrl],
+        thumbnailUrl: thumbPublicUrl
+      })
+      
+      // 6. Remove optimistic message
+      useMessagingStore.getState().removeMessage(conversationId, tempId!)
+      
+      toast.success('Image sent successfully')
+      
+    } catch (error) {
+      console.error('Retry failed:', error)
+      if (error instanceof Error && error.message === 'Cancelled') {
+        console.log('⏹️ Retry cancelled')
+      } else {
+        toast.error('Retry failed')
+      }
+      
+      // Mark as failed again
+      useMessagingStore.getState().updateMessage(conversationId, tempId!, {
+        _failed: true,
+        _uploadProgress: 0
+      })
+    }
   }
 
-  // Context menu handlers
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault()
-    e.stopPropagation()
+    if (isDeleted || isSystem) return // No menu for deleted/system messages
     
-    // Use cursor position with small offset
-    setContextMenuPosition({ 
-      x: e.clientX + 2,
-      y: e.clientY + 2
-    })
+    // Calculate position to keep menu on screen
+    const x = Math.min(e.clientX, window.innerWidth - 220)
+    const y = Math.min(e.clientY, window.innerHeight - 300)
+    
+    setContextMenuPosition({ x, y })
     setShowContextMenu(true)
+    
+    // Haptic feedback
+    if (Capacitor.isNativePlatform()) {
+      Haptics.impact({ style: ImpactStyle.Medium })
+    }
   }
 
   const handleLongPressStart = (e: React.TouchEvent | React.MouseEvent) => {
-    if (Capacitor.isNativePlatform()) {
-      longPressTimer.current = setTimeout(async () => {
-        // Haptic feedback
-        try {
-          await Haptics.impact({ style: ImpactStyle.Medium })
-        } catch (error) {
-          console.warn('Haptic feedback not available:', error)
-        }
-
-        // Get touch position
-        const touch = 'touches' in e ? e.touches[0] : e as React.MouseEvent
-        setContextMenuPosition({ 
-          x: touch.clientX + 2,
-          y: touch.clientY + 2
-        })
-        setShowContextMenu(true)
-      }, 500) // 500ms long press
-    }
+    if (isDeleted || isSystem) return
+    isLongPress.current = false
+    longPressTimer.current = setTimeout(() => {
+      isLongPress.current = true
+      // Use touch coordinates for mobile
+      const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX
+      const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY
+      
+      const x = Math.min(clientX, window.innerWidth - 220)
+      const y = Math.min(clientY, window.innerHeight - 300)
+      
+      setContextMenuPosition({ x, y })
+      setShowContextMenu(true)
+      
+      if (Capacitor.isNativePlatform()) {
+        Haptics.impact({ style: ImpactStyle.Medium })
+      }
+    }, 500)
   }
 
   const handleLongPressEnd = () => {
@@ -136,13 +219,34 @@ export function MessageBubble({
     toast.success('Message copied')
   }
 
-  // Generate descriptive ARIA label
-  const timeAgo = formatRelativeTime(created_at)
-  const statusText = _failed ? 'Failed to send' : _optimistic ? 'Sending' : 'Sent'
-  const ariaLabel = `Message from ${isOwn ? 'you' : 'friend'}: ${content}. ${statusText}. ${timeAgo}`
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClick = () => setShowContextMenu(false)
+    window.addEventListener('click', handleClick)
+    return () => window.removeEventListener('click', handleClick)
+  }, [])
+
+  if (isSystem) {
+    return (
+      <div className="flex justify-center my-4">
+        <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+          {content}
+        </span>
+      </div>
+    )
+  }
+
+  // Determine aria label
+  const senderName = isOwn ? 'You' : 'Friend' // In real app, get actual name
+  const ariaLabel = `${senderName} said: ${content}, ${formatRelativeTime(message.created_at)}`
 
   return (
-    <div className={cn("flex mb-1", isOwn ? "justify-end" : "justify-start")}>
+    <div 
+      className={cn(
+        "flex w-full mb-4 group relative",
+        isOwn ? "justify-end" : "justify-start"
+      )}
+    >
       <div className="flex flex-col gap-1 max-w-[85%]">
         {/* Forwarded Label */}
         {is_forwarded && (
@@ -194,7 +298,6 @@ export function MessageBubble({
         )}
         
         <div 
-          ref={bubbleRef}
           role="article"
           aria-label={ariaLabel}
           tabIndex={0}
@@ -215,7 +318,58 @@ export function MessageBubble({
           )}
         >
           {/* Message Content */}
-          <p className="whitespace-pre-wrap">{content}</p>
+          {message.type === 'image' ? (
+            message.media_urls && message.media_urls.length > 0 ? (
+              message._optimistic ? (
+                // Optimistic UI: Show thumbnail with loading state
+                <OptimisticImageMessage
+                  thumbnailUrl={message.thumbnail_url || message.media_urls[0]}
+                  fullResUrl={message.media_urls[0]}
+                  uploadProgress={message._uploadProgress || 0}
+                  status={message._failed ? 'failed' : 'uploading'}
+                  caption={content}
+                  isOwn={isOwn}
+                  onRetry={handleRetryUpload}
+                  onCancel={() => {
+                    // Cancel upload by marking as failed (WhatsApp style)
+                    if (message._tempId) {
+                      console.log('🛑 User cancelled upload via UI')
+                      useMessagingStore.getState().updateMessage(message.conversation_id, message._tempId, {
+                        _failed: true,
+                        _uploadProgress: 0
+                      })
+                    }
+                  }}
+                />
+              ) : (
+                // Regular image display
+                <div className="space-y-2">
+                  <img 
+                    src={message.media_urls[0]} 
+                    alt="Shared image"
+                    className="max-w-full h-auto rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                    style={{ maxHeight: '300px' }}
+                    loading="lazy"
+                    onClick={() => window.open(message.media_urls![0], '_blank')}
+                    onError={(e) => {
+                      console.error('❌ Image failed to load:', message.media_urls![0])
+                      e.currentTarget.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><text x="10" y="50">Image failed to load</text></svg>'
+                    }}
+                  />
+                  {content && <p className="whitespace-pre-wrap mt-2">{content}</p>}
+                </div>
+              )
+            ) : (
+              // Fallback for missing media URLs
+              <div className="p-4 bg-gray-100 rounded-lg border border-gray-200 text-center min-w-[200px]">
+                <p className="text-sm text-gray-500 italic">Image unavailable</p>
+                <p className="text-xs text-gray-400 mt-1">Media URL missing</p>
+                {content && <p className="whitespace-pre-wrap mt-2 text-left">{content}</p>}
+              </div>
+            )
+          ) : (
+            <p className="whitespace-pre-wrap">{content}</p>
+          )}
           
           {/* Timestamp & Status Row */}
           <div className={cn(

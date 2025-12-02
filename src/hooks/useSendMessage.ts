@@ -1,5 +1,6 @@
 import { useCallback } from 'react'
 import { useMessagingStore } from '../store/messagingStore'
+import { useAuthStore } from '../store/authStore'
 import { messagingService } from '../services/messagingService'
 import { toast } from 'react-hot-toast'
 import type { SendMessageParams, Message } from '../types/messaging'
@@ -57,6 +58,9 @@ export function useSendMessage() {
     messages // Access messages to look up parent message
   } = useMessagingStore()
 
+  // Get current user ID from auth store
+  const currentUserId = useAuthStore(state => state.user?.id)
+
   /**
    * Send a message with optimistic UI updates
    * 
@@ -92,7 +96,7 @@ export function useSendMessage() {
     const optimisticMessage: Message = {
       id: tempId, // Temporary ID
       conversation_id: params.conversationId,
-      sender_id: 'current_user', // TODO: Get from auth context
+      sender_id: currentUserId || 'unknown', // Use actual user ID from auth store
       content: params.content,
       type: params.type || 'text',
       media_urls: params.mediaUrls || null,
@@ -134,7 +138,7 @@ export function useSendMessage() {
       })
 
       console.log('✅ Message sent:', messageId)
-      return messageId
+      return tempId // Return tempId for progress tracking
     } catch (error) {
       console.error('❌ Failed to send message:', error)
       

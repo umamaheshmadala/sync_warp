@@ -45,7 +45,7 @@ export function OfferShareModal({
   });
 
   // Generate share URL with offer code parameter - use slug
-  const { getBusinessUrl } = require('../../hooks/useBusinessUrl');
+import { getBusinessUrl } from '../../hooks/useBusinessUrl';
   const businessSlug = getBusinessUrl(offer.business_id);
   const shareUrl = `${window.location.origin}${businessSlug}?offer=${offer.offer_code}`;
 

@@ -639,13 +639,28 @@ export function MessageComposer({ conversationId, onTyping }: Props) {
 
 ## 📋 **Story Breakdown**
 
-### **Story 8.3.1: Image Upload & Compression** (2 days)
+### **Story 8.3.1: Image Upload & Compression (Core Infrastructure)** (2-3 days)
 
-- [ ] Implement image compression with browser-image-compression
-- [ ] Create thumbnail generation logic
-- [ ] Upload to message-attachments bucket
-- [ ] Handle upload progress UI
+- [x] Implement image compression with browser-image-compression
+- [x] Create thumbnail generation logic
+- [x] Upload to message-attachments bucket
+- [x] Platform-conditional logic (web/iOS/Android)
+- [x] Basic image display in MessageBubble
+- [ ] **FIX**: Broken image display (public URL issue)
 - **🛢 MCP**: Test uploads via Supabase MCP
+- **Status:** 🔄 In Progress (Fixing Bugs)
+
+### **Story 8.3.1_Part2: Image Upload UX Enhancements** (3-4 days) ⭐ NEW
+
+- [ ] Implement preview modal before sending
+- [ ] Add caption input field
+- [ ] Add send/cancel buttons
+- [ ] Implement optimistic UI (thumbnail appears immediately)
+- [ ] Add upload progress indicator (0-100%)
+- [ ] Implement error handling with retry button
+- [ ] Add status indicators (⏱️ → ✓ → ✓✓ → ❌)
+- **🎨 Industry Standard**: Match WhatsApp/Messenger UX
+- **Status:** 📋 Ready for Implementation
 
 ### **Story 8.3.2: Video Upload** (1 day)
 

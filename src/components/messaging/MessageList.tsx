@@ -120,24 +120,34 @@ export function MessageList({
       )}
       
       {/* Message Bubbles */}
-      {messages.map((message, index) => {
-        // Show timestamp every 10 messages or on first message
-        const showTimestamp = index === 0 || index % 10 === 0
-        
-        return (
-          <div key={message.id} id={`message-${message.id}`}>
-            <MessageBubble
-              message={message}
-              isOwn={message.sender_id === currentUserId}
-              showTimestamp={showTimestamp}
-              onRetry={onRetry}
-              onReply={onReply}
-              onForward={onForward}
-              onQuoteClick={onQuoteClick}
-            />
-          </div>
-        )
-      })}
+      {(() => {
+        // Deduplicate messages by ID (handles optimistic + realtime duplicates)
+        const uniqueMessages = messages.reduce((acc, message) => {
+          if (!acc.find(m => m.id === message.id)) {
+            acc.push(message)
+          }
+          return acc
+        }, [] as Message[])
+
+        return uniqueMessages.map((message, index) => {
+          // Show timestamp every 10 messages or on first message
+          const showTimestamp = index === 0 || index % 10 === 0
+          
+          return (
+            <div key={message.id} id={`message-${message.id}`}>
+              <MessageBubble
+                message={message}
+                isOwn={message.sender_id === currentUserId}
+                showTimestamp={showTimestamp}
+                onRetry={onRetry}
+                onReply={onReply}
+                onForward={onForward}
+                onQuoteClick={onQuoteClick}
+              />
+            </div>
+          )
+        })
+      })()}
     </div>
   )
 }

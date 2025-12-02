@@ -75,6 +75,7 @@ interface MessagingState {
   addOptimisticMessage: (conversationId: string, message: Message) => void;
   replaceOptimisticMessage: (conversationId: string, tempId: string, realMessage: Message) => void;
   markMessageFailed: (conversationId: string, tempId: string) => void;
+  updateMessageProgress: (conversationId: string, tempId: string, progress: number) => void;
   
   // ============================================================================
   // Unread Count Actions
@@ -379,6 +380,26 @@ export const useMessagingStore = create<MessagingState>()(
           newMessages.set(conversationId, updatedMessages);
           return { messages: newMessages };
         }, false, 'markMessageFailed'),
+
+      /**
+       * Update upload progress for optimistic message
+       * Used for real-time progress tracking during media uploads
+       */
+      updateMessageProgress: (conversationId, tempId, progress) =>
+        set((state) => {
+          const newMessages = new Map(state.messages);
+          const conversationMessages = newMessages.get(conversationId) || [];
+          
+          // Update progress for optimistic message
+          const updatedMessages = conversationMessages.map(msg =>
+            msg._tempId === tempId
+              ? { ...msg, _uploadProgress: progress }
+              : msg
+          );
+          
+          newMessages.set(conversationId, updatedMessages);
+          return { messages: newMessages };
+        }, false, 'updateMessageProgress'),
 
       // ========================================================================
       // Unread Count Actions
