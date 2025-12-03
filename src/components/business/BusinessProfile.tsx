@@ -96,7 +96,8 @@ interface BusinessCategory {
 }
 
 const BusinessProfile: React.FC = () => {
-  const { businessId } = useParams<{ businessId: string }>();
+  const params = useParams<{ businessId?: string; slug?: string }>();
+  const businessId = params.businessId || params.slug;
   const navigate = useNavigate();
   const { getBusinessUrl } = useBusinessUrl();
   const [searchParams] = useSearchParams();

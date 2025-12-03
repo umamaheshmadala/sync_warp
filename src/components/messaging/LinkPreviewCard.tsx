@@ -140,11 +140,90 @@ export function LinkPreviewCard({ preview, onRemove, showRemoveButton = true }: 
     </div>
   )
 
+  const renderCouponShared = () => (
+    <div className="bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-300 rounded-lg p-4 shadow-sm">
+      <div className="flex gap-3">
+        <div className="flex-shrink-0">
+          <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+            <Gift className="w-7 h-7 text-white" />
+          </div>
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2 mb-2">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <Gift className="w-4 h-4 text-purple-600" />
+                <span className="text-xs font-semibold text-purple-600 uppercase tracking-wide">
+                  Coupon Shared
+                </span>
+              </div>
+              <h4 className="font-bold text-gray-900 text-base line-clamp-1">
+                {preview.title}
+              </h4>
+            </div>
+          </div>
+          
+          {preview.description && (
+            <p className="text-sm text-gray-700 mb-2">
+              {preview.description}
+            </p>
+          )}
+          
+          {preview.metadata && (
+            <div className="space-y-1 text-xs text-gray-600">
+              {preview.metadata.business_name && (
+                <div className="flex items-center gap-1">
+                  <Tag className="w-3 h-3" />
+                  <span>{preview.metadata.business_name}</span>
+                </div>
+              )}
+              {preview.metadata.valid_until && (
+                <div className="flex items-center gap-1">
+                  <span className="font-medium">Expires:</span>
+                  <span>{new Date(preview.metadata.valid_until).toLocaleDateString()}</span>
+                </div>
+              )}
+              {preview.metadata.discount_value && (
+                <div className="inline-block mt-2 px-3 py-1 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-full font-bold text-sm">
+                  {preview.metadata.discount_value}% OFF
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+
+  const renderCouponShareFailed = () => (
+    <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
+      <div className="flex gap-3">
+        <div className="flex-shrink-0">
+          <div className="w-12 h-12 bg-red-500 rounded-lg flex items-center justify-center">
+            <X className="w-6 h-6 text-white" />
+          </div>
+        </div>
+        <div className="flex-1 min-w-0">
+          <h4 className="font-semibold text-red-900 text-sm mb-1">
+            {preview.title}
+          </h4>
+          <p className="text-xs text-red-700">
+            {preview.description}
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+
   switch (preview.type) {
     case 'sync-coupon':
       return renderSyncCouponPreview()
     case 'sync-deal':
       return renderSyncDealPreview()
+    case 'coupon_shared':
+      return renderCouponShared()
+    case 'coupon_share_failed':
+      return renderCouponShareFailed()
     case 'generic':
     default:
       return renderGenericPreview()

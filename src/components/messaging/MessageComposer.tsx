@@ -12,6 +12,7 @@ import { shareTrackingService } from '../../services/shareTrackingService'
 import { Capacitor } from '@capacitor/core'
 import { Haptics, NotificationType } from '@capacitor/haptics'
 import type { Message } from '../../types/messaging'
+import { toast } from 'react-hot-toast'
 
 interface MessageComposerProps {
   conversationId: string
@@ -103,7 +104,18 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setContent(e.target.value)
+    const newValue = e.target.value
+    
+    // Block coupon URLs (Story 8.3.4 Part 2)
+    if (newValue.includes('sync://coupon/')) {
+      toast.error('Please use the Share button in your wallet to share coupons', {
+        duration: 3000,
+        icon: '🎫'
+      })
+      return // Don't update content
+    }
+    
+    setContent(newValue)
     onTyping()
   }
 

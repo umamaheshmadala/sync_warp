@@ -8,6 +8,8 @@ export interface Coupon {
   // Basic Coupon Information
   title: string;
   description: string;
+  image_url?: string;
+  business_name?: string;
   
   // Coupon Type and Value
   type: CouponType;

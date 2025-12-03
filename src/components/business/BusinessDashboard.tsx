@@ -317,7 +317,7 @@ const BusinessDashboard: React.FC = () => {
             </Link>
             
             <Link
-              to={`${getBusinessUrl(business.id, business.business_name)}/products`}
+              to={`/business/${business.id}/manage/products`}
               className="w-full flex items-center justify-center px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Package className="w-4 h-4 mr-1" />
@@ -325,7 +325,7 @@ const BusinessDashboard: React.FC = () => {
             </Link>
             
             <Link
-              to={`${getBusinessUrl(business.id, business.business_name)}/coupons`}
+              to={`/business/${business.id}/manage/coupons`}
               className="w-full flex items-center justify-center px-3 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors"
             >
               <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -335,7 +335,7 @@ const BusinessDashboard: React.FC = () => {
             </Link>
             
             <Link
-              to={`${getBusinessUrl(business.id, business.business_name)}/campaigns`}
+              to={`/business/${business.id}/manage/campaigns`}
               className="w-full flex items-center justify-center px-3 py-2 bg-pink-600 text-white text-sm font-medium rounded-lg hover:bg-pink-700 transition-colors"
             >
               <TrendingUp className="w-4 h-4 mr-1" />

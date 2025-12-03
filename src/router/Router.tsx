@@ -210,6 +210,423 @@ export const routes: RouteConfig[] = [
     title: 'My Wallet - SynC',
     description: 'View and manage your saved coupons'
   },
+
+  // Following Page (Protected)
+  {
+    path: '/following',
+    element: (
+      <RouteLoader>
+        <FollowingPage />
+      </RouteLoader>
+    ),
+    protected: true,
+    title: 'Following - SynC',
+    description: 'Businesses you follow'
+  },
+
+  // Favorites Page (Protected)
+  {
+    path: '/favorites',
+    element: (
+      <RouteLoader>
+        <UnifiedFavoritesPage />
+      </RouteLoader>
+    ),
+    protected: true,
+    title: 'Favorites - SynC',
+    description: 'Your favorite businesses and deals'
+  },
+
+  // Friends Page (Protected)
+  {
+    path: '/friends',
+    element: <FriendsPage />,
+    protected: true,
+    title: 'Friends - SynC',
+    description: 'Manage your friends and connections'
+  },
+
+  // Notifications Page (Protected)
+  {
+    path: '/notifications',
+    element: (
+      <RouteLoader>
+        <NotificationsPage />
+      </RouteLoader>
+    ),
+    protected: true,
+    title: 'Notifications - SynC',
+    description: 'Your notifications and alerts'
+  },
+
+  // Business Dashboard (Protected)
+  {
+    path: '/business/dashboard',
+    element: <BusinessDashboard />,
+    protected: true,
+    title: 'Business Dashboard - SynC',
+    description: 'Manage your business'
+  },
+
+  // Business Registration (Protected)
+  {
+    path: '/business/register',
+    element: <BusinessRegistration />,
+    protected: true,
+    title: 'Register Business - SynC',
+    description: 'Register your business on SynC'
+  },
+
+  // Business Profile (Public)
+  {
+    path: '/business/:slug',
+    element: <BusinessProfile />,
+    protected: false,
+    title: 'Business Profile - SynC',
+    description: 'View business details and offers'
+  },
+  {
+    path: '/business/:slug/coupons',
+    element: <BusinessProfile />,
+    protected: false,
+    title: 'Business Coupons - SynC'
+  },
+  {
+    path: '/business/:slug/products',
+    element: <BusinessProfile />,
+    protected: false,
+    title: 'Business Products - SynC'
+  },
+
+  // Business Tools (Protected)
+  {
+    path: '/business/onboarding',
+    element: <BusinessOnboardingPage />,
+    protected: true,
+    title: 'Business Onboarding - SynC'
+  },
+  {
+    path: '/business/analytics',
+    element: <BusinessAnalyticsPage />,
+    protected: true,
+    title: 'Business Analytics - SynC'
+  },
+  {
+    path: '/business/qr-code',
+    element: <BusinessQRCodePage />,
+    protected: true,
+    title: 'Business QR Code - SynC'
+  },
+  {
+    path: '/business/:businessId/manage/products',
+    element: <ProductManagerPage />,
+    protected: true,
+    title: 'Product Manager - SynC'
+  },
+  {
+    path: '/business/:businessId/manage/coupons',
+    element: <CouponManagerPage />,
+    protected: true,
+    title: 'Coupon Manager - SynC'
+  },
+  {
+    path: '/business/:businessId/manage/offers',
+    element: <OfferManagerPage />,
+    protected: true,
+    title: 'Offer Manager - SynC'
+  },
+  {
+    path: '/business/:businessId/manage/campaigns',
+    element: <CampaignManagerPage />,
+    protected: true,
+    title: 'Campaign Manager - SynC'
+  },
+  {
+    path: '/business/campaigns/new',
+    element: <CampaignWizard />,
+    protected: true,
+    title: 'Create Campaign - SynC'
+  },
+  {
+    path: '/business/campaigns/:id/analytics',
+    element: <CampaignAnalyticsPage />,
+    protected: true,
+    title: 'Campaign Analytics - SynC'
+  },
+  {
+    path: '/business/followers',
+    element: <FollowerList />,
+    protected: true,
+    title: 'Followers - SynC'
+  },
+  {
+    path: '/business/followers/analytics',
+    element: <FollowerAnalyticsDashboard />,
+    protected: true,
+    title: 'Follower Analytics - SynC'
+  },
+  {
+    path: '/business/checkins',
+    element: (
+      <RouteLoader>
+        <BusinessCheckinsPage />
+      </RouteLoader>
+    ),
+    protected: true,
+    title: 'Check-ins - SynC'
+  },
+
+  // Products (Public/Protected)
+  {
+    path: '/products',
+    element: <AllProducts />,
+    protected: false,
+    title: 'Products - SynC'
+  },
+  {
+    path: '/products/:id',
+    element: <ProductDetails />,
+    protected: false,
+    title: 'Product Details - SynC'
+  },
+
+  // Social & Friends (Protected)
+  {
+    path: '/friends/search',
+    element: <FriendSearchPage />,
+    protected: true,
+    title: 'Find Friends - SynC'
+  },
+  {
+    path: '/friends/pymk',
+    element: <PYMKPage />,
+    protected: true,
+    title: 'People You May Know - SynC'
+  },
+  {
+    path: '/friends/requests',
+    element: <FriendRequestsList />,
+    protected: true,
+    title: 'Friend Requests - SynC'
+  },
+  {
+    path: '/friends/manage',
+    element: <FriendsManagementPage />,
+    protected: true,
+    title: 'Manage Friends - SynC'
+  },
+  {
+    path: '/social',
+    element: (
+      <RouteLoader>
+        <Social />
+      </RouteLoader>
+    ),
+    protected: true,
+    title: 'Social - SynC'
+  },
+  {
+    path: '/wishlist',
+    element: (
+      <RouteLoader>
+        <WishlistPage />
+      </RouteLoader>
+    ),
+    protected: true,
+    title: 'Wishlist - SynC'
+  },
+  {
+    path: '/reviews',
+    element: (
+      <RouteLoader>
+        <MyReviewsPage />
+      </RouteLoader>
+    ),
+    protected: true,
+    title: 'My Reviews - SynC'
+  },
+
+  // Settings (Protected)
+  {
+    path: '/settings',
+    element: (
+      <RouteLoader>
+        <Settings />
+      </RouteLoader>
+    ),
+    protected: true,
+    title: 'Settings - SynC'
+  },
+  {
+    path: '/settings/privacy/friends',
+    element: <FriendsPrivacySettings />,
+    protected: true,
+    title: 'Friend Privacy Settings - SynC'
+  },
+  {
+    path: '/settings/notifications',
+    element: <NotificationSettings />,
+    protected: true,
+    title: 'Notification Settings - SynC'
+  },
+  {
+    path: '/profile',
+    element: (
+      <RouteLoader>
+        <Profile />
+      </RouteLoader>
+    ),
+    protected: true,
+    title: 'My Profile - SynC'
+  },
+
+  // Discovery & Search (Public/Protected)
+  {
+    path: '/search',
+    element: (
+      <RouteLoader>
+        <Search />
+      </RouteLoader>
+    ),
+    protected: false,
+    title: 'Search - SynC'
+  },
+  {
+    path: '/search/advanced',
+    element: (
+      <RouteLoader>
+        <AdvancedSearchPage />
+      </RouteLoader>
+    ),
+    protected: false,
+    title: 'Advanced Search - SynC'
+  },
+  {
+    path: '/discovery',
+    element: (
+      <RouteLoader>
+        <BusinessDiscoveryPage />
+      </RouteLoader>
+    ),
+    protected: false,
+    title: 'Discover - SynC'
+  },
+  {
+    path: '/categories',
+    element: (
+      <RouteLoader>
+        <CategoryBrowserPage />
+      </RouteLoader>
+    ),
+    protected: false,
+    title: 'Categories - SynC'
+  },
+  {
+    path: '/trending',
+    element: (
+      <RouteLoader>
+        <TrendingCouponsPage />
+      </RouteLoader>
+    ),
+    protected: false,
+    title: 'Trending - SynC'
+  },
+  {
+    path: '/locations',
+    element: (
+      <RouteLoader>
+        <LocationManager />
+      </RouteLoader>
+    ),
+    protected: true,
+    title: 'Locations - SynC'
+  },
+
+  // Test Pages (Development Only)
+  ...(isDevelopment ? [
+    {
+      path: '/test/profile-modal',
+      element: <TestProfileModal />,
+      protected: true,
+      title: 'Test Profile Modal'
+    },
+    {
+      path: '/test/activity-feed',
+      element: <TestActivityFeed />,
+      protected: true,
+      title: 'Test Activity Feed'
+    },
+    {
+      path: '/test/search-filters',
+      element: <TestSearchFilters />,
+      protected: true,
+      title: 'Test Search Filters'
+    },
+    {
+      path: '/test/deal-comments',
+      element: <TestDealComments />,
+      protected: true,
+      title: 'Test Deal Comments'
+    },
+    {
+      path: '/test/share-deal',
+      element: <ShareDealDemo />,
+      protected: true,
+      title: 'Test Share Deal'
+    },
+    {
+      path: '/test/sharing-analytics',
+      element: <SharingAnalyticsDemo />,
+      protected: true,
+      title: 'Test Sharing Analytics'
+    },
+    {
+      path: '/test/search-performance',
+      element: <TestSearchPerformance />,
+      protected: true,
+      title: 'Test Search Performance'
+    },
+    {
+      path: '/test/search-analytics',
+      element: (
+        <RouteLoader>
+          <SearchAnalyticsDashboard />
+        </RouteLoader>
+      ),
+      protected: true,
+      title: 'Test Search Analytics'
+    },
+    {
+      path: '/test/follower-targeting',
+      element: (
+        <RouteLoader>
+          <FollowerTargetingDemo />
+        </RouteLoader>
+      ),
+      protected: true,
+      title: 'Test Follower Targeting'
+    },
+    {
+      path: '/test/storage',
+      element: (
+        <RouteLoader>
+          <StorageTest />
+        </RouteLoader>
+      ),
+      protected: true,
+      title: 'Test Storage'
+    },
+    {
+      path: '/test/contact-sync',
+      element: (
+        <RouteLoader>
+          <ContactSyncTestPage />
+        </RouteLoader>
+      ),
+      protected: true,
+      title: 'Test Contact Sync'
+    }
+  ] : []),
   
   // ... (other routes)
 ]
@@ -244,11 +661,20 @@ export default function AppRouter() {
       )
     }
 
+    if (route.index) {
+      return (
+        <Route
+          key={route.path || 'index'}
+          index
+          element={element}
+        />
+      )
+    }
+
     return (
       <Route
         key={route.path || 'index'}
-        path={route.index ? undefined : route.path}
-        index={route.index}
+        path={route.path}
         element={element}
       >
         {route.children?.map(renderRoute)}

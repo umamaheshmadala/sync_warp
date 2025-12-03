@@ -67,7 +67,7 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
   };
 
   const handleManageProducts = () => {
-    navigate(`${getBusinessUrl(businessId, businessName)}/products`);
+    navigate(`/business/${businessId}/manage/products`);
   };
 
   const handleEditProduct = (product: Product) => {
@@ -134,7 +134,7 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
                 </button>
                 
                 <button
-                  onClick={() => navigate(`${getBusinessUrl(businessId, businessName)}/coupons`)}
+                  onClick={() => navigate(`/business/${businessId}/manage/coupons`)}
                   className="inline-flex items-center px-3 py-2 border border-purple-300 rounded-md text-sm font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 transition-colors"
                 >
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
