@@ -6,6 +6,9 @@ import { OptimisticImageMessage } from './OptimisticImageMessage'
 import { OptimisticVideoMessage } from './OptimisticVideoMessage'
 import { VideoPlayer } from './VideoPlayer'
 import { LinkPreviewCard } from './LinkPreviewCard'
+import { ImageMessage } from './ImageMessage'
+import { ImageLightbox } from './ImageLightbox'
+import { VideoMessage } from './VideoMessage'
 import type { Message } from '../../types/messaging'
 import { cn } from '../../lib/utils'
 import { Button } from '../ui/button'
@@ -70,6 +73,9 @@ export function MessageBubble({
   const [showContextMenu, setShowContextMenu] = useState(false)
   const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 })
   const [showVideoPlayer, setShowVideoPlayer] = useState(false)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [lightboxImages, setLightboxImages] = useState<string[]>([])
+  const [lightboxInitialIndex, setLightboxInitialIndex] = useState(0)
   const longPressTimer = useRef<NodeJS.Timeout | null>(null)
   const isLongPress = useRef(false)
   const content = message.content || ''
@@ -347,18 +353,31 @@ export function MessageBubble({
                   }}
                 />
               ) : (
-                // Regular image display
+                // Regular image display with lightbox
                 <div className="space-y-2">
-                  <img 
-                    src={message.media_urls[0]} 
+                  <ImageMessage
+                    imageUrl={message.media_urls[0]}
+                    thumbnailUrl={message.thumbnail_url}
                     alt="Shared image"
-                    className="max-w-full h-auto rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                    style={{ maxHeight: '300px' }}
-                    loading="lazy"
-                    onClick={() => window.open(message.media_urls![0], '_blank')}
-                    onError={(e) => {
-                      console.error('❌ Image failed to load:', message.media_urls![0])
-                      e.currentTarget.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><text x="10" y="50">Image failed to load</text></svg>'
+                    onImageClick={() => {
+                      // Get all images from the conversation for gallery navigation
+                      const conversationMessages = useMessagingStore.getState().messages.get(message.conversation_id) || []
+                      const allImages: string[] = []
+                      let currentImageIndex = 0
+                      
+                      conversationMessages.forEach((msg) => {
+                        if (msg.type === 'image' && msg.media_urls && msg.media_urls.length > 0 && !msg._optimistic) {
+                          // Track the index of the current image
+                          if (msg.id === message.id) {
+                            currentImageIndex = allImages.length
+                          }
+                          allImages.push(...msg.media_urls)
+                        }
+                      })
+                      
+                      setLightboxImages(allImages)
+                      setLightboxInitialIndex(currentImageIndex)
+                      setLightboxOpen(true)
                     }}
                   />
                   {content && <p className="whitespace-pre-wrap mt-2">{content}</p>}
@@ -396,29 +415,13 @@ export function MessageBubble({
                   }}
                 />
               ) : (
-                // Regular video display
-                <div className="space-y-2 relative">
-                  <div className="relative rounded-lg overflow-hidden" style={{ maxHeight: '300px' }}>
-                    {/* Video thumbnail */}
-                    <img 
-                      src={message.thumbnail_url || message.media_urls[0]} 
-                      alt="Video thumbnail"
-                      className="max-w-full h-auto rounded-lg"
-                      style={{ maxHeight: '300px' }}
-                      loading="lazy"
-                    />
-                    {/* Play button overlay */}
-                    <div 
-                      className="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/40 transition-colors cursor-pointer"
-                      onClick={() => setShowVideoPlayer(true)}
-                    >
-                      <div className="w-16 h-16 bg-white/90 rounded-full flex items-center justify-center shadow-lg">
-                        <svg className="w-8 h-8 text-gray-800 ml-1" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
+                // Regular video display with controls
+                <div className="space-y-2">
+                  <VideoMessage
+                    videoUrl={message.media_urls[0]}
+                    thumbnailUrl={message.thumbnail_url}
+                    duration={undefined}
+                  />
                   {content && <p className="whitespace-pre-wrap mt-2">{content}</p>}
                 </div>
               )
@@ -499,6 +502,14 @@ export function MessageBubble({
           onClose={() => setShowVideoPlayer(false)}
         />
       )}
+
+      {/* Image Lightbox */}
+      <ImageLightbox
+        images={lightboxImages}
+        initialIndex={lightboxInitialIndex}
+        isOpen={lightboxOpen}
+        onClose={() => setLightboxOpen(false)}
+      />
     </div>
   )
 }

@@ -766,6 +766,10 @@ warp mcp run supabase "execute_sql SELECT * FROM offers LIMIT 1;"
 
 ---
 
+## 🔗 Related Stories
+
+- [STORY 8.3.4 Part 2: Coupon Sharing via Messaging Integration](./STORY_8.3.4_Part2_Coupon_Sharing_Messaging_Integration.md)
+
 ## 🔄 **Next Story**
 
 ➡️ [STORY 8.3.5: Media Display Components](./STORY_8.3.5_Media_Display_Components.md)
