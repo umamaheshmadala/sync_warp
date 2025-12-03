@@ -197,6 +197,19 @@ export const routes: RouteConfig[] = [
       }
     ]
   },
+
+  // Wallet Page (Protected)
+  {
+    path: '/wallet',
+    element: (
+      <RouteLoader>
+        <Wallet />
+      </RouteLoader>
+    ),
+    protected: true,
+    title: 'My Wallet - SynC',
+    description: 'View and manage your saved coupons'
+  },
   
   // ... (other routes)
 ]

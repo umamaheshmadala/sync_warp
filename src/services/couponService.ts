@@ -525,6 +525,9 @@ class CouponService {
   /**
    * Fetch user's collected coupons
    */
+  /**
+   * Fetch user's collected coupons
+   */
   async fetchUserCoupons(userId: string): Promise<UserCouponCollection[]> {
     const cacheKey = `user_coupons_${userId}`;
     const cachedData = this.cache.get<UserCouponCollection[]>(cacheKey);
@@ -543,7 +546,7 @@ class CouponService {
           )
         `)
         .eq('user_id', userId)
-        .eq('status', 'active')
+        // .eq('status', 'active') // Removed to show all coupons (used, expired, etc)
         .order('collected_at', { ascending: false });
 
       if (error) throw error;
@@ -558,6 +561,13 @@ class CouponService {
       console.error('Error fetching user coupons:', error);
       throw new Error(`Failed to fetch user coupons: ${error.message}`);
     }
+  }
+
+  /**
+   * Alias for fetchUserCoupons to match hook usage
+   */
+  async getUserCollectedCoupons(userId: string): Promise<UserCouponCollection[]> {
+    return this.fetchUserCoupons(userId);
   }
 
   /**

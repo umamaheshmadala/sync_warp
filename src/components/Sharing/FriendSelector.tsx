@@ -56,21 +56,19 @@ const FriendSelector: React.FC<FriendSelectorProps> = ({
       setLoading(true);
       setError(null);
 
-      // Query profiles table for all users except current user
-      const { data, error: queryError } = await supabase
-        .from('profiles')
-        .select('id, email, full_name, avatar_url, created_at')
-        .neq('id', currentUserId)
-        .order('created_at', { ascending: false })
-        .limit(50);
+      const { data: friendships, error } = await supabase
+        .from('friendships')
+        .select(`
+          friend:profiles!friendships_friend_id_fkey(*)
+        `)
+        .eq('user_id', currentUserId)
+        .eq('status', 'active');
 
-      if (queryError) {
-        console.error('Error fetching users:', queryError);
-        setError('Failed to load users');
-        return;
-      }
+      if (error) throw error;
 
-      setUsers(data || []);
+      const friends = (friendships || []).map((f: any) => f.friend).filter(Boolean);
+      
+      setUsers(friends);
     } catch (err) {
       console.error('Error in loadUsers:', err);
       setError('An unexpected error occurred');
@@ -214,8 +212,13 @@ const FriendSelector: React.FC<FriendSelectorProps> = ({
           <div className="flex flex-col items-center justify-center py-12 px-4">
             <User className="w-12 h-12 text-gray-300 mb-3" />
             <p className="text-sm text-gray-600 text-center">
-              {searchTerm ? 'No users found matching your search' : 'No users available'}
+              {searchTerm ? 'No friends found matching your search' : 'No friends yet'}
             </p>
+            {!searchTerm && (
+              <p className="text-xs text-gray-500 text-center mt-2">
+                Add friends to share coupons with them
+              </p>
+            )}
           </div>
         ) : (
           <AnimatePresence>

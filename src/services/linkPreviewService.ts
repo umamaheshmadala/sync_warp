@@ -57,6 +57,7 @@ class LinkPreviewService {
         image: brand?.logo_url,
         type: 'sync-coupon',
         metadata: {
+          couponId: data.id,
           discountValue: data.discount_value,
           discountType: data.discount_type,
           brandName: brand?.name
@@ -95,6 +96,7 @@ class LinkPreviewService {
         image: data.image_url || brand?.logo_url,
         type: 'sync-deal',
         metadata: {
+          offerId: data.id,
           price: data.price,
           originalPrice: data.original_price,
           savings,

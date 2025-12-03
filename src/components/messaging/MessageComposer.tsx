@@ -8,6 +8,7 @@ import { LinkPreviewCard } from './LinkPreviewCard'
 import { ReplyContext } from './ReplyContext'
 import { useSendMessage } from '../../hooks/useSendMessage'
 import { useLinkPreview } from '../../hooks/useLinkPreview'
+import { shareTrackingService } from '../../services/shareTrackingService'
 import { Capacitor } from '@capacitor/core'
 import { Haptics, NotificationType } from '@capacitor/haptics'
 import type { Message } from '../../types/messaging'
@@ -52,6 +53,35 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
         linkPreviews: previews.length > 0 ? previews : undefined,
         replyToId: replyToMessage?.id  // Include reply_to_id if replying
       })
+
+      // Track shares for coupon/deal link previews (Story 8.3.4)
+      if (previews.length > 0) {
+        for (const preview of previews) {
+          if (preview.type === 'sync-coupon' && preview.metadata?.couponId) {
+            await shareTrackingService.trackShare({
+              shareableType: 'coupon',
+              shareableId: preview.metadata.couponId,
+              conversationId,
+              shareMethod: 'message',
+              metadata: {
+                title: preview.title,
+                via: 'message_composer'
+              }
+            })
+          } else if (preview.type === 'sync-deal' && preview.metadata?.offerId) {
+            await shareTrackingService.trackShare({
+              shareableType: 'offer',
+              shareableId: preview.metadata.offerId,
+              conversationId,
+              shareMethod: 'message',
+              metadata: {
+                title: preview.title,
+                via: 'message_composer'
+              }
+            })
+          }
+        }
+      }
       
       setContent('')
       resetPreviews()  // Clear link previews after sending
