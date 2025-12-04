@@ -1,11 +1,11 @@
-# 🧪 STORY 8.4.7: Integration & End-to-End Testing
+# 🧪 STORY 8.4.8: Integration & End-to-End Testing
 
 **Parent Epic:** [EPIC 8.4 - Offline Support & Message Synchronization](../epics/EPIC_8.4_Offline_Support.md)  
 **Story Owner:** Frontend Engineering + QA  
 **Estimated Effort:** 2 days  
 **Priority:** P0 - Critical  
 **Status:** 📋 Ready for Implementation  
-**Dependencies:** All previous stories (8.4.1 - 8.4.6)
+**Dependencies:** All previous stories (8.4.1 - 8.4.7)
 
 ---
 
@@ -350,3 +350,4 @@ warp mcp run supabase "execute_sql SELECT COUNT(DISTINCT idempotency_key) as uni
 ---
 
 **Epic Status:** Ready for implementation after all stories complete
+

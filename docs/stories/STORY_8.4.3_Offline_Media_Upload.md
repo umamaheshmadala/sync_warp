@@ -1,11 +1,11 @@
-# 📤 STORY 8.4.8: Offline Media Upload Handling
+# 📤 STORY 8.4.3: Offline Media Upload Handling
 
 **Parent Epic:** [EPIC 8.4 - Offline Support & Message Synchronization](../epics/EPIC_8.4_Offline_Support.md)  
 **Story Owner:** Frontend Engineering  
 **Estimated Effort:** 2 days  
 **Priority:** P0 - Critical  
 **Status:** 📋 Ready for Implementation  
-**Dependencies:** Story 8.4.1 (Queue), Story 8.4.3 (Sync Logic)
+**Dependencies:** Story 8.4.1 (Queue), Story 8.4.4 (Sync Logic)
 
 ---
 

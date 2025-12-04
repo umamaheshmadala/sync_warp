@@ -1,4 +1,4 @@
-# 💾 STORY 8.4.4: Message Caching for Faster Loading
+# 💾 STORY 8.4.5: Message Caching for Faster Loading
 
 **Parent Epic:** [EPIC 8.4 - Offline Support & Message Synchronization](../epics/EPIC_8.4_Offline_Support.md)  
 **Story Owner:** Frontend Engineering  
@@ -255,3 +255,4 @@ warp mcp run chrome-devtools "open Application tab, check Storage quota usage"
 ---
 
 **Next Story:** [STORY_8.4.5_Offline_UI_Components.md](./STORY_8.4.5_Offline_UI_Components.md)
+

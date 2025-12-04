@@ -1,4 +1,4 @@
-# 🔄 STORY 8.4.3: Message Synchronization Logic
+# 🔄 STORY 8.4.4: Message Synchronization Logic
 
 **Parent Epic:** [EPIC 8.4 - Offline Support & Message Synchronization](../epics/EPIC_8.4_Offline_Support.md)  
 **Story Owner:** Frontend Engineering  
@@ -574,3 +574,4 @@ warp mcp run chrome-devtools "record Performance, sync 20 messages, analyze timi
 ---
 
 **Next Story:** [STORY_8.4.4_Message_Caching.md](./STORY_8.4.4_Message_Caching.md)
+

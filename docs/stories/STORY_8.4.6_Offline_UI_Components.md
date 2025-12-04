@@ -1,11 +1,11 @@
-# 🎨 STORY 8.4.5: Offline UI Components & Indicators
+# 🎨 STORY 8.4.6: Offline UI Components & Indicators
 
 **Parent Epic:** [EPIC 8.4 - Offline Support & Message Synchronization](../epics/EPIC_8.4_Offline_Support.md)  
 **Story Owner:** Frontend Engineering  
 **Estimated Effort:** 1.5 days  
 **Priority:** P1 - High  
 **Status:** 📋 Ready for Implementation  
-**Dependencies:** Story 8.4.2 (Network Detection), Story 8.4.3 (Sync Logic)
+**Dependencies:** Story 8.4.2 (Network Detection), Story 8.4.4 (Sync Logic)
 
 ---
 
@@ -394,3 +394,4 @@ warp mcp run chrome-devtools "open Device Mode, test offline UI on mobile viewpo
 ---
 
 **Next Story:** [STORY_8.4.6_Conflict_Resolution.md](./STORY_8.4.6_Conflict_Resolution.md)
+

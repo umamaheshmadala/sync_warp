@@ -1,4 +1,4 @@
-# ⚔️ STORY 8.4.6: Conflict Resolution & Duplicate Prevention
+# ⚔️ STORY 8.4.7: Conflict Resolution & Duplicate Prevention
 
 **Parent Epic:** [EPIC 8.4 - Offline Support & Message Synchronization](../epics/EPIC_8.4_Offline_Support.md)  
 **Story Owner:** Frontend Engineering  
@@ -327,3 +327,4 @@ warp mcp run supabase "execute_sql SELECT idempotency_key, COUNT(*) FROM message
 ---
 
 **Next Story:** [STORY_8.4.7_Integration_Testing.md](./STORY_8.4.7_Integration_Testing.md)
+
