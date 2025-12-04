@@ -279,6 +279,12 @@ export function MessageBubble({
         "flex w-full mb-4 group relative",
         isOwn ? "justify-end" : "justify-start"
       )}
+      onContextMenu={handleContextMenu}
+      onTouchStart={handleLongPressStart}
+      onTouchEnd={handleLongPressEnd}
+      onMouseDown={handleLongPressStart}
+      onMouseUp={handleLongPressEnd}
+      onMouseLeave={handleLongPressEnd}
     >
       <div className="flex flex-col gap-1 max-w-[85%]">
         {/* Forwarded Label */}
@@ -334,12 +340,6 @@ export function MessageBubble({
           role="article"
           aria-label={ariaLabel}
           tabIndex={0}
-          onContextMenu={handleContextMenu}
-          onTouchStart={handleLongPressStart}
-          onTouchEnd={handleLongPressEnd}
-          onMouseDown={handleLongPressStart}
-          onMouseUp={handleLongPressEnd}
-          onMouseLeave={handleLongPressEnd}
           className={cn(
             "px-4 py-2 rounded-2xl break-words text-[15px] leading-relaxed shadow-sm cursor-pointer",
             "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1",
