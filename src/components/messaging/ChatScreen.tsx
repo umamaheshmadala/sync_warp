@@ -83,12 +83,12 @@ export function ChatScreen() {
     prevMessageCount.current = messages.length
   }, [messages.length, messages[messages.length - 1]?.id])
 
-  // Initial scroll to latest message (bottom of chat)
+  // Initial scroll to latest message (instant, no animation)
   // Messages are sorted DESC by created_at, so latest is at END of array
   useEffect(() => {
-    if (messages.length > 0 && !isLoading) {
-      // Delay to ensure DOM is ready
-      setTimeout(() => scrollToBottom('auto'), 100)
+    if (messages.length > 0 && !isLoading && messagesEndRef.current) {
+      // Instant scroll to bottom - no animation to avoid slow scroll with many messages
+      messagesEndRef.current.scrollIntoView({ behavior: 'instant', block: 'end' })
     }
   }, [isLoading])
 
