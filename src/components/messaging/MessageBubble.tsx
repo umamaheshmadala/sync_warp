@@ -22,6 +22,7 @@ import { supabase } from '../../lib/supabase'
 import { mediaUploadService } from '../../services/mediaUploadService'
 import { messagingService } from '../../services/messagingService'
 import type { LinkPreview } from '../../services/linkPreviewService'
+import { useShare } from '../../hooks/useShare'
 
 interface MessageBubbleProps {
   message: Message
@@ -228,6 +229,27 @@ export function MessageBubble({
   const handleCopy = () => {
     navigator.clipboard.writeText(content)
     toast.success('Message copied')
+  }
+
+  // Share handlers
+  const { shareImage, shareVideo, shareLink } = useShare()
+
+  const handleShare = async () => {
+    try {
+      if (message.type === 'image' && message.media_urls?.[0]) {
+        await shareImage(message.media_urls[0], message.id)
+      } else if (message.type === 'video' && message.media_urls?.[0]) {
+        await shareVideo(message.media_urls[0], message.id)
+      } else if (message.link_previews?.[0]?.url) {
+        await shareLink(
+          message.link_previews[0].url,
+          message.link_previews[0].title || 'Check this out!',
+          message.id
+        )
+      }
+    } catch (error) {
+      console.error('Share failed:', error)
+    }
   }
 
   // Close menu when clicking outside
@@ -490,6 +512,11 @@ export function MessageBubble({
           onReply={() => onReply?.(message)}
           onForward={() => onForward?.(message)}
           onCopy={handleCopy}
+          onShare={
+            (message.type === 'image' || message.type === 'video' || message.link_previews?.length)
+              ? handleShare
+              : undefined
+          }
         />,
         document.body
       )}
