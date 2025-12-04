@@ -61,3 +61,57 @@ export interface QueueStorageStats {
   /** Maximum queue size for current platform */
   maxSize: number
 }
+
+/**
+ * Queued media upload for offline handling
+ */
+export interface QueuedMediaUpload {
+  /** Media upload ID */
+  id: string
+  
+  /** Associated message queue ID */
+  messageId: string
+  
+  /** Target conversation */
+  conversationId: string
+  
+  /** Actual file (web) or file data (mobile) */
+  file: File
+  
+  /** Original file name */
+  fileName: string
+  
+  /** Media type */
+  fileType: 'image' | 'video'
+  
+  /** MIME type (image/jpeg, video/mp4, etc.) */
+  mimeType: string
+  
+  /** File size in bytes */
+  fileSize: number
+  
+  /** Local file path (mobile only) */
+  localPath?: string
+  
+  /** Upload progress (0-100) */
+  uploadProgress: number
+  
+  /** Current status */
+  status: 'pending' | 'uploading' | 'uploaded' | 'failed'
+  
+  /** Supabase Storage URL after upload */
+  uploadedUrl?: string
+  
+  /** Thumbnail URL (for videos) */
+  thumbnailUrl?: string
+  
+  /** Error message if failed */
+  error?: string
+  
+  /** Queue timestamp */
+  timestamp: number
+  
+  /** Upload retry attempts */
+  retryCount: number
+}
+
