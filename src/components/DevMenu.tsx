@@ -36,12 +36,16 @@ const DevMenu = () => {
     timeStyle: 'short'
   })
 
+  // Git commit ID (set during build)
+  const gitCommit = import.meta.env.VITE_GIT_COMMIT || '0d70fbc'
+  const gitBranch = import.meta.env.VITE_GIT_BRANCH || 'mobile_app_setup_antigravity'
+
   return (
     <div className="fixed bottom-4 right-4 z-50">
       {/* Floating Action Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="bg-purple-600 hover:bg-purple-700 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-110"
+        className="bg-purple-600 hover:bg-purple-700 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-110 relative"
         aria-label="Developer Menu"
       >
         <svg
@@ -58,6 +62,10 @@ const DevMenu = () => {
             d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
           />
         </svg>
+        {/* Git commit badge */}
+        <span className="absolute -top-1 -right-1 bg-green-500 text-white text-[8px] font-mono px-1 rounded-full">
+          {gitCommit.substring(0, 7)}
+        </span>
       </button>
 
       {/* Menu Popup */}
@@ -75,8 +83,14 @@ const DevMenu = () => {
               <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wide">
                 Dev Menu
               </h3>
-              <p className="text-xs text-gray-500 mt-1">Story 9.3.6</p>
+              <p className="text-xs text-gray-500 mt-1">Story 8.3.6</p>
               <p className="text-xs text-purple-600 font-mono mt-0.5">Build: {buildTime}</p>
+              <p className="text-xs text-green-600 font-mono mt-0.5">
+                Commit: {gitCommit.substring(0, 7)}
+              </p>
+              <p className="text-xs text-blue-600 font-mono mt-0.5 truncate" title={gitBranch}>
+                Branch: {gitBranch.length > 25 ? gitBranch.substring(0, 25) + '...' : gitBranch}
+              </p>
             </div>
 
             <div className="space-y-1">
