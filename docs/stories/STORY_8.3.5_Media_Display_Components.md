@@ -4,7 +4,8 @@
 **Story Owner:** Frontend Engineering  
 **Estimated Effort:** 1 day  
 **Priority:** P1 - High  
-**Status:** 📋 Ready for Implementation
+**Status:** ✅ Complete  
+**Completed:** 2024-12-04
 
 ---
 
@@ -16,13 +17,14 @@ Implement **rich media display components** for rendering images and videos in m
 
 ## 📱 **Platform Support**
 
-| Platform | Support | Implementation Notes |
-|----------|---------|---------------------|
-| **Web** | ✅ Full | Standard image viewer with lightbox, HTML5 video player |
-| **iOS** | ✅ Full | Native gestures (pinch-to-zoom), haptic feedback, action sheets, fullscreen video with orientation lock |
+| Platform    | Support | Implementation Notes                                                                                    |
+| ----------- | ------- | ------------------------------------------------------------------------------------------------------- |
+| **Web**     | ✅ Full | Standard image viewer with lightbox, HTML5 video player                                                 |
+| **iOS**     | ✅ Full | Native gestures (pinch-to-zoom), haptic feedback, action sheets, fullscreen video with orientation lock |
 | **Android** | ✅ Full | Native gestures (pinch-to-zoom), haptic feedback, bottom sheets, fullscreen video with orientation lock |
 
 ### Required Capacitor Plugins
+
 ```bash
 # Install for mobile app support
 npm install @capacitor/haptics@^5.0.0              # Haptic feedback for interactions
@@ -34,6 +36,7 @@ npm install @capacitor/share@^5.0.0                # Share images/videos
 ### iOS Configuration
 
 **1. Add Photo Library permissions to `ios/App/Info.plist`:**
+
 ```xml
 <key>NSPhotoLibraryAddUsageDescription</key>
 <string>Save images from messages to your photo library</string>
@@ -42,8 +45,9 @@ npm install @capacitor/share@^5.0.0                # Share images/videos
 ### Android Configuration
 
 **1. Add storage permissions to `android/app/src/main/AndroidManifest.xml`:**
+
 ```xml
-<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" 
+<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
                  android:maxSdkVersion="28" />
 <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
 ```
@@ -53,6 +57,7 @@ npm install @capacitor/share@^5.0.0                # Share images/videos
 ## 📖 **User Stories**
 
 ### As a user, I want to:
+
 1. See image thumbnails in messages
 2. Click on an image to view it full-screen
 3. Swipe between multiple images in a gallery
@@ -61,6 +66,7 @@ npm install @capacitor/share@^5.0.0                # Share images/videos
 6. Have images/videos load efficiently with lazy loading
 
 ### Acceptance Criteria:
+
 - ✅ Images display as thumbnails (max 300px)
 - ✅ Image lightbox opens on click
 - ✅ Video player shows duration overlay
@@ -75,6 +81,7 @@ npm install @capacitor/share@^5.0.0                # Share images/videos
 ### **Phase 1: Image Message Component** (0.25 days)
 
 #### Task 1.1: Create ImageMessage Component
+
 ```typescript
 // src/components/messaging/ImageMessage.tsx
 import React, { useState } from 'react'
@@ -137,6 +144,7 @@ export function ImageMessage({ imageUrl, thumbnailUrl, alt = '', onImageClick }:
 ### **Phase 2: Image Lightbox Component** (0.25 days)
 
 #### Task 2.1: Install Dependencies for Mobile Gestures
+
 ```bash
 # Install Shadcn Dialog component for lightbox
 warp mcp run shadcn "add dialog"
@@ -146,6 +154,7 @@ npm install react-zoom-pan-pinch
 ```
 
 #### Task 2.2: Create ImageLightbox Component with Mobile Support
+
 ```typescript
 // src/components/messaging/ImageLightbox.tsx
 import React from 'react'
@@ -193,25 +202,25 @@ export function ImageLightbox({ images, initialIndex = 0, isOpen, onClose }: Pro
       if (isMobile) {
         // Mobile: Save to device storage
         await Haptics.impact({ style: ImpactStyle.Light })
-        
+
         const response = await fetch(currentImage)
         const blob = await response.blob()
         const reader = new FileReader()
-        
+
         reader.onloadend = async () => {
           const base64 = reader.result as string
           const base64Data = base64.split(',')[1]
-          
+
           await Filesystem.writeFile({
             path: `sync-image-${Date.now()}.jpg`,
             data: base64Data,
             directory: Directory.Documents
           })
-          
+
           // Show success feedback (implement toast/alert)
           console.log('✅ Image saved to device')
         }
-        
+
         reader.readAsDataURL(blob)
       } else {
         // Web: Traditional download
@@ -230,7 +239,7 @@ export function ImageLightbox({ images, initialIndex = 0, isOpen, onClose }: Pro
       console.error('Save/download failed:', error)
     }
   }
-  
+
   /**
    * Share image via native share sheet (mobile) or Web Share API
    */
@@ -238,7 +247,7 @@ export function ImageLightbox({ images, initialIndex = 0, isOpen, onClose }: Pro
     try {
       if (isMobile) {
         await Haptics.impact({ style: ImpactStyle.Light })
-        
+
         await Share.share({
           title: 'Share Image',
           url: currentImage,
@@ -254,33 +263,33 @@ export function ImageLightbox({ images, initialIndex = 0, isOpen, onClose }: Pro
       console.log('Share cancelled or failed:', error)
     }
   }
-  
+
   /**
    * Handle long-press on mobile to show actions
    */
   const handleTouchStart = () => {
     if (!isMobile) return
-    
+
     longPressTimer.current = setTimeout(async () => {
       await Haptics.impact({ style: ImpactStyle.Medium })
       setShowMobileActions(true)
     }, 500) // 500ms long-press
   }
-  
+
   const handleTouchEnd = () => {
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current)
       longPressTimer.current = null
     }
   }
-  
+
   // Legacy download method for web
   const handleDownload = handleSaveImage
 
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isOpen) return
-      
+
       if (e.key === 'ArrowLeft') goToPrevious()
       if (e.key === 'ArrowRight') goToNext()
       if (e.key === 'Escape') onClose()
@@ -344,7 +353,7 @@ export function ImageLightbox({ images, initialIndex = 0, isOpen, onClose }: Pro
           )}
 
           {/* Image with Pinch-to-Zoom (Mobile) */}
-          <div 
+          <div
             className="flex items-center justify-center w-full h-full p-8"
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
@@ -374,7 +383,7 @@ export function ImageLightbox({ images, initialIndex = 0, isOpen, onClose }: Pro
               />
             )}
           </div>
-          
+
           {/* Mobile Action Sheet */}
           {showMobileActions && isMobile && (
             <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl p-4 animate-slide-up">
@@ -388,7 +397,7 @@ export function ImageLightbox({ images, initialIndex = 0, isOpen, onClose }: Pro
                 <Save className="w-5 h-5" />
                 <span className="font-medium">Save Image</span>
               </button>
-              
+
               <button
                 onClick={() => {
                   handleShareImage()
@@ -399,7 +408,7 @@ export function ImageLightbox({ images, initialIndex = 0, isOpen, onClose }: Pro
                 <Share2 className="w-5 h-5" />
                 <span className="font-medium">Share</span>
               </button>
-              
+
               <button
                 onClick={() => setShowMobileActions(false)}
                 className="w-full flex items-center justify-center p-4 text-red-600 font-medium"
@@ -420,6 +429,7 @@ export function ImageLightbox({ images, initialIndex = 0, isOpen, onClose }: Pro
 ### **Phase 3: Video Message Component** (0.25 days)
 
 #### Task 3.1: Create VideoMessage Component with Mobile Fullscreen Support
+
 ```typescript
 // src/components/messaging/VideoMessage.tsx
 import React, { useRef, useState, useEffect } from 'react'
@@ -449,7 +459,7 @@ export function VideoMessage({ videoUrl, thumbnailUrl, duration }: Props) {
       if (isMobile) {
         await Haptics.impact({ style: ImpactStyle.Light })
       }
-      
+
       if (isPlaying) {
         videoRef.current.pause()
       } else {
@@ -477,41 +487,41 @@ export function VideoMessage({ videoUrl, thumbnailUrl, duration }: Props) {
       if (isMobile) {
         await Haptics.impact({ style: ImpactStyle.Medium })
       }
-      
+
       if (document.fullscreenElement || isFullscreen) {
         // Exit fullscreen
         if (document.exitFullscreen) {
           await document.exitFullscreen()
         }
-        
+
         // Unlock orientation on mobile
         if (isMobile) {
           await ScreenOrientation.unlock()
         }
-        
+
         setIsFullscreen(false)
       } else {
         // Enter fullscreen
         if (videoRef.current.requestFullscreen) {
           await videoRef.current.requestFullscreen()
         }
-        
+
         // Lock to landscape on mobile
         if (isMobile) {
           await ScreenOrientation.lock({ orientation: OrientationType.LANDSCAPE })
         }
-        
+
         setIsFullscreen(true)
       }
     }
   }
-  
+
   // Handle fullscreen change events
   useEffect(() => {
     const handleFullscreenChange = async () => {
       const isNowFullscreen = !!document.fullscreenElement
       setIsFullscreen(isNowFullscreen)
-      
+
       if (isMobile) {
         if (isNowFullscreen) {
           await ScreenOrientation.lock({ orientation: OrientationType.LANDSCAPE })
@@ -520,7 +530,7 @@ export function VideoMessage({ videoUrl, thumbnailUrl, duration }: Props) {
         }
       }
     }
-    
+
     document.addEventListener('fullscreenchange', handleFullscreenChange)
     return () => {
       document.removeEventListener('fullscreenchange', handleFullscreenChange)
@@ -648,6 +658,7 @@ export function VideoMessage({ videoUrl, thumbnailUrl, duration }: Props) {
 ### **Phase 4: Integration with MessageBubble** (0.25 days)
 
 #### Task 4.1: Update MessageBubble to Support Media
+
 ```typescript
 // src/components/messaging/MessageBubble.tsx (update)
 import { ImageMessage } from './ImageMessage'
@@ -715,6 +726,7 @@ export function MessageBubble({ message }: { message: Message }) {
 ## 🧪 **Testing Checklist**
 
 ### Unit Tests
+
 - [ ] Test ImageMessage renders thumbnail
 - [ ] Test ImageMessage handles load error
 - [ ] Test ImageLightbox navigation (prev/next)
@@ -724,6 +736,7 @@ export function MessageBubble({ message }: { message: Message }) {
 - [ ] Test lazy loading for images
 
 ### Integration Tests with Chrome DevTools MCP
+
 ```bash
 # Test image loading performance
 warp mcp run chrome-devtools "open Network tab, load chat with images, verify lazy loading works"
@@ -739,6 +752,7 @@ warp mcp run chrome-devtools "open Device Mode, test image/video rendering on mo
 ```
 
 ### E2E Tests with Puppeteer MCP
+
 ```bash
 # Test image lightbox (web only)
 warp mcp run puppeteer "click image, verify lightbox opens, navigate with arrows"
@@ -760,7 +774,6 @@ warp mcp run puppeteer "click play button, verify video plays, test seek bar"
    - [ ] Double-tap → Zooms to 2x instantly
    - [ ] Double-tap again → Zooms back to 1x
    - [ ] Swipe left/right → Navigates between images (if multiple)
-   
 2. **Long-Press Action Sheet:**
    - [ ] Long-press image (500ms) → Haptic feedback (medium)
    - [ ] Action sheet appears with "Save Image", "Share", "Cancel"
@@ -778,7 +791,6 @@ warp mcp run puppeteer "click play button, verify video plays, test seek bar"
    - [ ] Rotate device manually in fullscreen → Stays landscape (locked)
    - [ ] Exit fullscreen → Returns to portrait + orientation unlocks
    - [ ] Tap mute button → Haptic feedback + audio mutes
-   
 4. **Performance Tests:**
    - [ ] Load image gallery (10 images) → Scrolling is smooth (60fps)
    - [ ] Zoom large image (5MB+) → No lag, loads progressively
@@ -820,6 +832,7 @@ warp mcp run puppeteer "click play button, verify video plays, test seek bar"
    - [ ] Switch between images quickly → No ANR (Application Not Responding)
 
 #### Cross-Platform Mobile Edge Cases
+
 - [ ] 📱 **Permissions**: First "Save Image" → Requests storage permission (Android)
 - [ ] 📱 **Permissions denied**: Deny storage → Shows "Permission required" message
 - [ ] 📱 **Orientation lock**: Enter fullscreen → Lock landscape → Exit → Unlock portrait
@@ -832,6 +845,7 @@ warp mcp run puppeteer "click play button, verify video plays, test seek bar"
 - [ ] 📱 **Memory management**: Load 50+ images → Old images unloaded, no crash
 
 #### Platform-Specific Testing
+
 ```bash
 # Test storage permissions (Android)
 adb shell pm revoke com.sync.app android.permission.WRITE_EXTERNAL_STORAGE
@@ -852,14 +866,18 @@ adb shell dumpsys gfxinfo com.sync.app
 ```
 
 ---
+
 warp mcp run puppeteer "click image thumbnail, verify lightbox opens, test navigation, close lightbox"
 
 # Test video controls
+
 warp mcp run puppeteer "click play on video, verify playback starts, test seek, test mute"
 
 # Test gallery navigation
+
 warp mcp run puppeteer "open lightbox with 3 images, navigate using arrow keys, verify correct image displays"
-```
+
+````
 
 ---
 
@@ -895,7 +913,7 @@ npm list @radix-ui/react-dialog
 
 # Verify image/video uploads working
 # (Manual test: upload image/video and check Supabase storage)
-```
+````
 
 ---
 
@@ -919,6 +937,7 @@ npm list @radix-ui/react-dialog
 
 ✅ **Epic 8.3 Complete!**  
 All 5 stories implemented:
+
 - Story 8.3.1: Image Upload & Compression ✅
 - Story 8.3.2: Video Upload & Handling ✅
 - Story 8.3.3: Link Preview Generation ✅
@@ -932,6 +951,7 @@ All 5 stories implemented:
 ## 📝 **MCP Command Quick Reference**
 
 ### Shadcn MCP
+
 ```bash
 # Install Dialog component
 warp mcp run shadcn "add dialog"
@@ -942,6 +962,7 @@ warp mcp run shadcn "add slider"
 ```
 
 ### Chrome DevTools MCP
+
 ```bash
 # Monitor image loading
 warp mcp run chrome-devtools "open Network tab, filter images, check load times"
@@ -957,6 +978,7 @@ warp mcp run chrome-devtools "test image/video rendering on different devices"
 ```
 
 ### Puppeteer MCP
+
 ```bash
 # Test lightbox
 warp mcp run puppeteer "click image, verify lightbox opens"
@@ -966,6 +988,7 @@ warp mcp run puppeteer "play video, seek to 50%, verify playback"
 ```
 
 ### Context7 MCP
+
 ```bash
 # Analyze component performance
 warp mcp run context7 "review ImageMessage for optimization opportunities"
