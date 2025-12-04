@@ -231,14 +231,87 @@ import { offlineQueueService } from "../services/offlineQueueService";
 
 interface MessagingState {
   // ... existing state ...
+  messages: Record<string, Message[]>;
+  optimisticMessageMap: Map<string, string>; // queueId -> serverId
   syncStatus: "idle" | "syncing" | "error";
   syncProgress: { success: number; failed: number };
 }
 
 const useMessagingStore = create<MessagingState>((set, get) => ({
   // ... existing state ...
+  messages: {},
+  optimisticMessageMap: new Map(),
   syncStatus: "idle",
   syncProgress: { success: 0, failed: 0 },
+
+  /**
+   * Add optimistic message (Industry Best Practice: WhatsApp/Slack)
+   */
+  addOptimisticMessage: (
+    conversationId: string,
+    message: Partial<Message> & { id: string }
+  ) => {
+    const optimisticMessage: Message = {
+      ...(message as Message),
+      _optimistic: true,
+      status: "sending",
+    };
+
+    set((state) => ({
+      messages: {
+        ...state.messages,
+        [conversationId]: [
+          ...(state.messages[conversationId] || []),
+          optimisticMessage,
+        ],
+      },
+    }));
+  },
+
+  /**
+   * Replace optimistic message with real message (Industry Best Practice)
+   */
+  replaceOptimisticMessage: (queueId: string, realMessage: Message) => {
+    set((state) => {
+      const newMessages = { ...state.messages };
+
+      // Find and replace in the conversation
+      for (const convId in newMessages) {
+        const index = newMessages[convId].findIndex((m) => m.id === queueId);
+
+        if (index !== -1) {
+          newMessages[convId] = [
+            ...newMessages[convId].slice(0, index),
+            realMessage,
+            ...newMessages[convId].slice(index + 1),
+          ];
+
+          // Store mapping
+          state.optimisticMessageMap.set(queueId, realMessage.id);
+          break;
+        }
+      }
+
+      return { messages: newMessages };
+    });
+  },
+
+  /**
+   * Remove optimistic message (if sync failed permanently)
+   */
+  removeOptimisticMessage: (queueId: string) => {
+    set((state) => {
+      const newMessages = { ...state.messages };
+
+      for (const convId in newMessages) {
+        newMessages[convId] = newMessages[convId].filter(
+          (m) => m.id !== queueId
+        );
+      }
+
+      return { messages: newMessages };
+    });
+  },
 
   /**
    * Sync pending messages

@@ -37,10 +37,11 @@ Create **user-friendly offline UI components**:
 
 ```typescript
 // src/components/messaging/OfflineIndicator.tsx
-import React, { useEffect } from 'react'
-import { WifiOff, RefreshCw, AlertCircle } from 'lucide-react'
+import React, { useEffect, useState } from 'react'
+import { WifiOff, RefreshCw, AlertCircle, X } from 'lucide-react'
 import { useMessagingStore } from '../../store/messagingStore'
 import { Button } from '../ui/button'
+import { Capacitor } from '@capacitor/core'
 
 export function OfflineIndicator() {
   const {
@@ -53,6 +54,30 @@ export function OfflineIndicator() {
     syncPendingMessages,
     retryFailedMessages
   } = useMessagingStore()
+
+  const [isAnnounced, setIsAnnounced] = useState(false)
+  const [isDismissed, setIsDismissed] = useState(false)
+  const isMobile = Capacitor.isNativePlatform()
+
+  // Announce status changes to screen readers (Industry Best Practice: Slack)
+  useEffect(() => {
+    if (isOffline && !isAnnounced) {
+      setIsAnnounced(true)
+    } else if (!isOffline && isAnnounced) {
+      setIsAnnounced(false)
+    }
+  }, [isOffline])
+
+  // Auto-hide on mobile after 5 seconds (Industry Best Practice: Telegram)
+  useEffect(() => {
+    if (isMobile && !isOffline && pendingMessageCount > 0) {
+      const timer = setTimeout(() => {
+        setIsDismissed(true)
+      }, 5000)
+
+      return () => clearTimeout(timer)
+    }
+  }, [isOffline, pendingMessageCount, isMobile])
 
   useEffect(() => {
     // Listen for network status
@@ -80,23 +105,68 @@ export function OfflineIndicator() {
     return null
   }
 
+  // Show minimal badge if dismissed on mobile
+  if (isDismissed && isMobile) {
+    return (
+      <button
+        onClick={() => setIsDismissed(false)}
+        className="fixed bottom-20 right-4 bg-blue-500 text-white rounded-full px-3 py-1 text-xs shadow-lg z-50"
+        aria-label={`${pendingMessageCount} messages pending. Tap to show details.`}
+      >
+        {pendingMessageCount} pending
+      </button>
+    )
+  }
+
+  const totalMessages = syncProgress.success + syncProgress.failed + pendingMessageCount
+  const showProgressBar = totalMessages > 20
+
   return (
-    <div className={`border-b px-4 py-3 ${
-      isOffline ? 'bg-yellow-50 border-yellow-200' :
-      syncStatus === 'error' ? 'bg-red-50 border-red-200' :
-      'bg-blue-50 border-blue-200'
-    }`}>
+    <div
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+      className={`border-b px-4 py-3 relative ${
+        isOffline ? 'bg-yellow-50 border-yellow-200' :
+        syncStatus === 'error' ? 'bg-red-50 border-red-200' :
+        'bg-blue-50 border-blue-200'
+      }`}
+    >
+      {/* Screen reader announcement */}
+      <span className="sr-only">
+        {isOffline
+          ? `You are offline. ${pendingMessageCount} messages will be sent when back online.`
+          : syncStatus === 'syncing'
+          ? `Syncing ${pendingMessageCount} pending messages.`
+          : syncStatus === 'error'
+          ? `Sync failed for ${syncProgress.failed} messages.`
+          : `${pendingMessageCount} messages pending.`
+        }
+      </span>
+
       <div className=\"flex items-center justify-between\">
-        <div className=\"flex items-center gap-3\">
+        <div className=\"flex items-center gap-3 flex-1\">
           {/* Icon */}
           {isOffline ? (
-            <WifiOff className=\"w-5 h-5 text-yellow-600\" />
+            <WifiOff
+              className=\"w-5 h-5 text-yellow-600\"
+              aria-hidden=\"true\"
+            />
           ) : syncStatus === 'syncing' ? (
-            <RefreshCw className=\"w-5 h-5 text-blue-600 animate-spin\" />
+            <RefreshCw
+              className=\"w-5 h-5 text-blue-600 animate-spin\"
+              aria-hidden=\"true\"
+            />
           ) : syncStatus === 'error' ? (
-            <AlertCircle className=\"w-5 h-5 text-red-600\" />
+            <AlertCircle
+              className=\"w-5 h-5 text-red-600\"
+              aria-hidden=\"true\"
+            />
           ) : (
-            <RefreshCw className=\"w-5 h-5 text-blue-600\" />
+            <RefreshCw
+              className=\"w-5 h-5 text-blue-600\"
+              aria-hidden=\"true\"
+            />
           )}
 
           {/* Message */}
@@ -137,31 +207,71 @@ export function OfflineIndicator() {
         </div>
 
         {/* Actions */}
-        {!isOffline && (
-          <div className=\"flex items-center gap-2\">
-            {syncStatus === 'error' && (
-              <Button
-                size=\"sm\"
-                variant=\"outline\"
-                onClick={retryFailedMessages}
-                className=\"text-xs\"
-              >
-                Retry Failed
-              </Button>
-            )}
+        <div className=\"flex items-center gap-2\">
+          {!isOffline && (
+            <>
+              {syncStatus === 'error' && (
+                <Button
+                  size=\"sm\"
+                  variant=\"outline\"
+                  onClick={retryFailedMessages}
+                  className=\"text-xs\"
+                  aria-label=\"Retry failed messages\"
+                >
+                  Retry Failed
+                </Button>
+              )}
 
-            {pendingMessageCount > 0 && syncStatus !== 'syncing' && (
-              <Button
-                size=\"sm\"
-                onClick={syncPendingMessages}
-                className=\"text-xs\"
-              >
-                Sync Now
-              </Button>
-            )}
-          </div>
-        )}
+              {pendingMessageCount > 0 && syncStatus !== 'syncing' && (
+                <Button
+                  size=\"sm\"
+                  onClick={syncPendingMessages}
+                  disabled={syncStatus === 'syncing'}
+                  className=\"text-xs\"
+                  aria-label=\"Sync pending messages now\"
+                >
+                  Sync Now
+                </Button>
+              )}
+            </>
+          )}
+
+          {/* Dismiss button (mobile only) */}
+          {isMobile && (
+            <button
+              onClick={() => setIsDismissed(true)}
+              className=\"p-1 hover:bg-black/10 rounded focus:outline-none focus:ring-2 focus:ring-blue-500\"
+              aria-label=\"Dismiss notification\"
+            >
+              <X className=\"w-4 h-4\" aria-hidden=\"true\" />
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* Progress bar for large batches (Industry Best Practice: Discord) */}
+      {showProgressBar && syncStatus === 'syncing' && (
+        <div className=\"mt-2\">
+          <div className=\"flex items-center justify-between text-xs text-gray-600 mb-1\">
+            <span>Syncing messages...</span>
+            <span>{Math.round((syncProgress.success / totalMessages) * 100)}%</span>
+          </div>
+
+          <div
+            className=\"w-full bg-gray-200 rounded-full h-2\"
+            role=\"progressbar\"
+            aria-valuenow={syncProgress.success}
+            aria-valuemin={0}
+            aria-valuemax={totalMessages}
+            aria-label={`Syncing progress: ${syncProgress.success} of ${totalMessages} messages`}
+          >
+            <div
+              className=\"bg-blue-500 h-2 rounded-full transition-all duration-300\"
+              style={{ width: `${(syncProgress.success / totalMessages) * 100}%` }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
