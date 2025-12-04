@@ -60,10 +60,47 @@ class OfflineQueueService {
       // WEB: Initialize IndexedDB
       this.db = new OfflineQueueDB()
       console.log('📦 Offline queue initialized (IndexedDB)')
+      
+      // WEB: Set up network listener for auto-sync (Industry Best Practice: WhatsApp/Slack)
+      this.setupWebNetworkListener()
     } else {
       // MOBILE: Use Capacitor Preferences
       console.log('📦 Offline queue initialized (Capacitor Preferences)')
     }
+  }
+
+  /**
+   * WEB ONLY: Set up browser network listener for auto-sync
+   * Triggers sync when coming back online
+   */
+  private setupWebNetworkListener(): void {
+    if (typeof window === 'undefined') return
+
+    window.addEventListener('online', async () => {
+      console.log('🔄 [OfflineQueue] Network online - auto-syncing queued messages...')
+      
+      // Small delay to ensure network is stable
+      await this.delay(500)
+      
+      const count = await this.getPendingCount()
+      if (count > 0) {
+        console.log(`📤 [OfflineQueue] Syncing ${count} queued messages...`)
+        try {
+          const result = await this.syncPendingMessages()
+          console.log(`✅ [OfflineQueue] Sync complete: ${result.success} sent, ${result.failed} failed`)
+        } catch (error) {
+          console.error('❌ [OfflineQueue] Sync failed:', error)
+        }
+      } else {
+        console.log('📭 [OfflineQueue] No pending messages to sync')
+      }
+    })
+
+    window.addEventListener('offline', () => {
+      console.log('📴 [OfflineQueue] Network offline - messages will be queued')
+    })
+
+    console.log('🔗 [OfflineQueue] Web network listener set up for auto-sync')
   }
 
   /**
