@@ -79,6 +79,7 @@ class ShareService {
 
   /**
    * Share image from message
+   * On mobile, Capacitor Share handles remote URLs automatically
    */
   async shareImage(imageUrl: string, messageId: string): Promise<boolean> {
     return await this.share(
@@ -86,7 +87,7 @@ class ShareService {
         title: 'Check out this image!',
         text: 'Shared from SynC',
         url: imageUrl,
-        files: [imageUrl],
+        // Don't pass files array for remote URLs - let Capacitor handle it
       },
       {
         contentType: 'image',
@@ -97,6 +98,7 @@ class ShareService {
 
   /**
    * Share video from message
+   * On mobile, Capacitor Share handles remote URLs automatically
    */
   async shareVideo(videoUrl: string, messageId: string): Promise<boolean> {
     return await this.share(
@@ -104,7 +106,7 @@ class ShareService {
         title: 'Check out this video!',
         text: 'Shared from SynC',
         url: videoUrl,
-        files: [videoUrl],
+        // Don't pass files array for remote URLs - let Capacitor handle it
       },
       {
         contentType: 'video',

@@ -512,11 +512,7 @@ export function MessageBubble({
           onReply={() => onReply?.(message)}
           onForward={() => onForward?.(message)}
           onCopy={handleCopy}
-          onShare={
-            (message.type === 'image' || message.type === 'video' || message.link_previews?.length)
-              ? handleShare
-              : undefined
-          }
+          onShare={handleShare}
         />,
         document.body
       )}
