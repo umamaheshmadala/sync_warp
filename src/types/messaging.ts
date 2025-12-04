@@ -10,7 +10,7 @@ export type MessageType = 'text' | 'image' | 'video' | 'audio' | 'file' | 'link'
 /**
  * Message delivery status
  */
-export type MessageStatus = 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
+export type MessageStatus = 'sending' | 'sent' | 'delivered' | 'read' | 'failed' | 'queued';
 
 /**
  * Link preview metadata for shared URLs
@@ -70,6 +70,8 @@ export interface Message {
   _failed?: boolean;       // True if message failed to send
   _tempId?: string;        // Temporary ID for optimistic messages
   _uploadProgress?: number; // Upload progress (0-100) for media uploads
+  _queued?: boolean;       // True if message is queued for offline sync (Epic 8.4)
+  _queueId?: string;       // ID of queued message in offline queue (Epic 8.4)
 }
 
 /**

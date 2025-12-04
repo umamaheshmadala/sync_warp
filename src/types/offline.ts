@@ -12,17 +12,23 @@ export interface QueuedMessage {
   /** Target conversation ID */
   conversationId: string
   
+  /** Sender ID */
+  senderId: string
+  
   /** Message content/text */
   content: string
   
   /** Message type */
-  type: 'text' | 'image' | 'video' | 'link'
+  type: 'text' | 'image' | 'video' | 'link' | 'audio' | 'file' | 'coupon' | 'deal'
   
   /** Optional media URLs (for images/videos) */
   mediaUrls?: string[]
   
   /** Optional thumbnail URL (for videos) */
   thumbnailUrl?: string
+  
+  /** Optional reply-to message ID */
+  replyToId?: string
   
   /** Optional link preview data */
   linkPreview?: {

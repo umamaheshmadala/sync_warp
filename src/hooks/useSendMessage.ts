@@ -2,6 +2,8 @@ import { useCallback } from 'react'
 import { useMessagingStore } from '../store/messagingStore'
 import { useAuthStore } from '../store/authStore'
 import { messagingService } from '../services/messagingService'
+import { offlineQueueService } from '../services/offlineQueueService'
+import { useNetworkStatus } from './useNetworkStatus'
 import { toast } from 'react-hot-toast'
 import type { SendMessageParams, Message } from '../types/messaging'
 
@@ -61,15 +63,19 @@ export function useSendMessage() {
   // Get current user ID from auth store
   const currentUserId = useAuthStore(state => state.user?.id)
 
+  // Get network status for offline detection
+  const { isOnline } = useNetworkStatus()
+
   /**
-   * Send a message with optimistic UI updates
+   * Send a message with optimistic UI updates and offline support
    * 
    * Flow:
    * 1. Generate temp message with _optimistic flag
    * 2. Add temp message to store immediately (optimistic UI)
-   * 3. Send actual message to server
-   * 4. On success: replace temp message with real message
-   * 5. On failure: mark temp message as failed
+   * 3. Check if online:
+   *    - Online: Send to server, replace with real message on success
+   *    - Offline: Queue for later, mark as 'queued' status
+   * 4. On failure: mark temp message as failed
    */
   const sendMessage = useCallback(async (params: SendMessageParams) => {
     // Generate temporary ID for optimistic message
@@ -122,10 +128,38 @@ export function useSendMessage() {
       
       setSendingMessage(true)
 
-      // 2. Send actual message to server
+      // 2. Check if online - if offline, queue message for later
+      if (!isOnline) {
+        console.log('📴 Offline - queueing message for later sync')
+        
+        // Queue the message for later sync
+        const queueId = await offlineQueueService.queueMessage({
+          conversationId: params.conversationId,
+          senderId: currentUserId || 'unknown',
+          content: params.content,
+          type: params.type || 'text',
+          mediaUrls: params.mediaUrls || undefined,
+          thumbnailUrl: params.thumbnailUrl || undefined,
+          replyToId: params.replyToId || undefined
+        })
+
+        // Mark message as queued (not failed)
+        replaceOptimisticMessage(params.conversationId, tempId, {
+          ...optimisticMessage,
+          _queued: true,
+          _queueId: queueId,
+          status: 'queued'
+        })
+
+        console.log(`📤 Message queued: ${queueId}`)
+        toast('Message saved. Will send when back online.', { icon: '📴' })
+        return tempId
+      }
+
+      // 3. Online - send actual message to server
       const messageId = await messagingService.sendMessage(params)
 
-      // 3. Replace optimistic message with real message from server
+      // 4. Replace optimistic message with real message from server
       // Note: The real message should be received via realtime subscription
       // but we also replace it here immediately for better UX
       replaceOptimisticMessage(params.conversationId, tempId, {
@@ -134,6 +168,8 @@ export function useSendMessage() {
         _optimistic: undefined,
         _failed: undefined,
         _tempId: undefined,
+        _queued: undefined,
+        _queueId: undefined,
         status: 'sent'
       })
 
@@ -141,6 +177,38 @@ export function useSendMessage() {
       return tempId // Return tempId for progress tracking
     } catch (error) {
       console.error('❌ Failed to send message:', error)
+      
+      // Check if it's a network error - queue instead of fail
+      const isNetworkError = error instanceof TypeError && 
+        (error.message.includes('fetch') || error.message.includes('network'))
+      
+      if (isNetworkError) {
+        console.log('📴 Network error - queueing message for later sync')
+        
+        try {
+          const queueId = await offlineQueueService.queueMessage({
+            conversationId: params.conversationId,
+            senderId: currentUserId || 'unknown',
+            content: params.content,
+            type: params.type || 'text',
+            mediaUrls: params.mediaUrls || undefined,
+            thumbnailUrl: params.thumbnailUrl || undefined,
+            replyToId: params.replyToId || undefined
+          })
+
+          replaceOptimisticMessage(params.conversationId, tempId, {
+            ...optimisticMessage,
+            _queued: true,
+            _queueId: queueId,
+            status: 'queued'
+          })
+
+          toast('Message saved. Will send when back online.', { icon: '📴' })
+          return tempId
+        } catch (queueError) {
+          console.error('❌ Failed to queue message:', queueError)
+        }
+      }
       
       // Mark message as failed (show retry button)
       markMessageFailed(params.conversationId, tempId)
@@ -150,7 +218,7 @@ export function useSendMessage() {
     } finally {
       setSendingMessage(false)
     }
-  }, [setSendingMessage, addOptimisticMessage, replaceOptimisticMessage, markMessageFailed])
+  }, [setSendingMessage, addOptimisticMessage, replaceOptimisticMessage, markMessageFailed, isOnline, currentUserId])
 
   /**
    * Retry sending a failed message
