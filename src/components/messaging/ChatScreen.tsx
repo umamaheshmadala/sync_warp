@@ -83,7 +83,8 @@ export function ChatScreen() {
     prevMessageCount.current = messages.length
   }, [messages.length, messages[messages.length - 1]?.id])
 
-  // Initial scroll to bottom
+  // Initial scroll to latest message (bottom of chat)
+  // Messages are sorted DESC by created_at, so latest is at END of array
   useEffect(() => {
     if (messages.length > 0 && !isLoading) {
       // Delay to ensure DOM is ready
