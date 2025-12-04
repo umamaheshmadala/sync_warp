@@ -37,7 +37,7 @@ const DevMenu = () => {
   })
 
   // Git commit ID (set during build)
-  const gitCommit = import.meta.env.VITE_GIT_COMMIT || '7ea23cd'
+  const gitCommit = import.meta.env.VITE_GIT_COMMIT || 'b153e86'
   const gitBranch = import.meta.env.VITE_GIT_BRANCH || 'mobile_app_setup_antigravity'
 
   return (
