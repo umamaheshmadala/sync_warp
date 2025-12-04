@@ -45,6 +45,20 @@ export function ImagePreviewModal({
   const [caption, setCaption] = useState('')
   const [useHD, setUseHD] = useState(false)
   const [isSending, setIsSending] = useState(false)
+  const [previewUrl, setPreviewUrl] = useState<string>('')
+
+  // Create blob URL from File when modal opens
+  useEffect(() => {
+    if (isOpen && imageFile) {
+      const url = URL.createObjectURL(imageFile)
+      setPreviewUrl(url)
+      
+      // Cleanup blob URL when modal closes
+      return () => {
+        URL.revokeObjectURL(url)
+      }
+    }
+  }, [isOpen, imageFile])
 
   // Reset state when modal closes
   useEffect(() => {
@@ -135,12 +149,14 @@ export function ImagePreviewModal({
 
         {/* Image Preview */}
         <div className="flex-1 flex items-center justify-center mb-4 overflow-hidden">
-          <img
-            src={imageUrl}
-            alt="Preview"
-            className="max-w-full max-h-full object-contain rounded-lg"
-            style={{ maxHeight: '70vh' }}
-          />
+          {previewUrl && (
+            <img
+              src={previewUrl}
+              alt="Preview"
+              className="max-w-full max-h-full object-contain rounded-lg"
+              style={{ maxHeight: '70vh' }}
+            />
+          )}
         </div>
 
         {/* Caption Input */}
