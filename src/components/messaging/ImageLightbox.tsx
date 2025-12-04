@@ -264,15 +264,26 @@ export function ImageLightbox({
                 doubleClick={{ disabled: false, step: 0.5 }}  // Double-tap to zoom
                 wheel={{ disabled: true }}  // Disable mouse wheel on mobile
                 pinch={{ disabled: false }}  // Enable pinch-to-zoom
+                panning={{ disabled: false, velocityDisabled: true }}  // Enable panning only when zoomed
+                limitToBounds={true}
+                centerOnInit={true}
               >
-                <TransformComponent>
-                  <img
-                    src={currentImage}
-                    alt={`Image ${currentIndex + 1}`}
-                    className="max-w-full max-h-full object-contain"
-                    style={{ maxHeight: 'calc(100vh - 4rem)' }}
-                  />
-                </TransformComponent>
+                {({ state, zoomIn, zoomOut, resetTransform }) => (
+                  <TransformComponent
+                    wrapperStyle={{
+                      width: '100%',
+                      height: '100%',
+                      touchAction: state.scale === 1 ? 'pan-y' : 'none'  // Allow vertical scroll when not zoomed
+                    }}
+                  >
+                    <img
+                      src={currentImage}
+                      alt={`Image ${currentIndex + 1}`}
+                      className="max-w-full max-h-full object-contain"
+                      style={{ maxHeight: 'calc(100vh - 4rem)' }}
+                    />
+                  </TransformComponent>
+                )}
               </TransformWrapper>
             ) : (
               <img

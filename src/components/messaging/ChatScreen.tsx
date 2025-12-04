@@ -237,8 +237,8 @@ export function ChatScreen() {
       {/* Scroll anchor */}
       <div ref={messagesEndRef} />
       
-      {/* Message Composer with bottom nav padding */}
-      <div className="pb-16 md:pb-0">
+      {/* Message Composer - No bottom padding on mobile */}
+      <div className="md:pb-0">
         <MessageComposer 
           conversationId={conversationId}
           onTyping={handleTyping}
