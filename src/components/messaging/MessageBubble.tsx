@@ -246,6 +246,13 @@ export function MessageBubble({
           message.link_previews[0].title || 'Check this out!',
           message.id
         )
+      } else if (content) {
+        // Share text message content
+        await shareLink(
+          window.location.href,
+          content,
+          message.id
+        )
       }
     } catch (error) {
       console.error('Share failed:', error)
