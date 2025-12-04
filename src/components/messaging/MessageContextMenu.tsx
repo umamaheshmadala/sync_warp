@@ -1,7 +1,8 @@
 import React, { useEffect, useRef } from 'react'
-import { Reply, Copy, Forward, Star, Trash2, CheckSquare } from 'lucide-react'
+import { Reply, Copy, Forward, Star, Trash2, CheckSquare, Share2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Message } from '@/types/messaging'
+import { useShare } from '@/hooks/useShare'
 
 interface MessageContextMenuProps {
   message: Message
@@ -14,6 +15,7 @@ interface MessageContextMenuProps {
   onStar?: () => void
   onDelete?: () => void
   onSelect?: () => void
+  onShare?: () => void
 }
 
 /**
@@ -37,7 +39,8 @@ export function MessageContextMenu({
   onForward,
   onStar,
   onDelete,
-  onSelect
+  onSelect,
+  onShare
 }: MessageContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -97,6 +100,17 @@ export function MessageContextMenu({
           <Copy className="w-4 h-4 text-gray-600" />
           <span className="text-sm text-gray-900">Copy</span>
         </button>
+
+        {/* Share (for media and links) */}
+        {onShare && (
+          <button
+            onClick={() => handleAction(onShare)}
+            className="flex items-center gap-3 w-full px-4 py-2.5 hover:bg-gray-100 transition-colors text-left"
+          >
+            <Share2 className="w-4 h-4 text-gray-600" />
+            <span className="text-sm text-gray-900">Share</span>
+          </button>
+        )}
 
         {/* Forward (future feature) */}
         {onForward && (

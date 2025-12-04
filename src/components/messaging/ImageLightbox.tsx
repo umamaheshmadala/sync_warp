@@ -114,27 +114,17 @@ export function ImageLightbox({
   
   /**
    * Share image via native share sheet (mobile) or Web Share API
+   * Now using centralized shareService for tracking
    */
   const handleShareImage = async () => {
     try {
       if (isMobile) {
         await Haptics.impact({ style: ImpactStyle.Light })
-        
-        await Share.share({
-          title: 'Share Image',
-          url: currentImage,
-          dialogTitle: 'Share this image'
-        })
-      } else if (navigator.share) {
-        await navigator.share({
-          title: 'Share Image',
-          url: currentImage
-        })
-      } else {
-        // Fallback: Copy to clipboard
-        await navigator.clipboard.writeText(currentImage)
-        toast.success('Image URL copied to clipboard')
       }
+      
+      // Use shareService for cross-platform sharing with tracking
+      const { shareService } = await import('../../services/shareService')
+      await shareService.shareImage(currentImage, 'lightbox-share')
     } catch (error) {
       // User cancelled or error
       console.log('Share cancelled or failed:', error)
