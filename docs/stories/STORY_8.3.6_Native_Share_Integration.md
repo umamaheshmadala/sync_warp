@@ -772,6 +772,105 @@ warp mcp run puppeteer "e2e test share button functionality"
 
 ---
 
+## 🐛 **Mobile Bug Fixes & UX Enhancements (December 2024)**
+
+### Issue #1: Conversation Tap Triggering Archive
+
+**Commit:** `b153e86`
+
+**Problem:**
+
+- Tapping conversations in list was archiving/unarchiving them instead of opening the chat
+- `currentX.current` was only set in `touchMove`
+- On tap (no movement), `diff = 0 - startX` could be negative, triggering archive action
+
+**Solution:**
+
+- Initialize `currentX.current` in `handleTouchStart`
+- Added tap detection: `movement < 10px AND duration < 300ms`
+- Taps now return early, letting click handler open chat
+
+**Files Modified:**
+
+- `src/components/messaging/SwipeableConversationCard.tsx`
+
+**Result:** ✅ Tap opens chat, swipe left archives, swipe right pins
+
+---
+
+### Issue #2: Chat Opening at Oldest Message
+
+**Commits:** `8c5683b`, `4f53491`
+
+**Problem:**
+
+- Chat was scrolling to TOP (oldest messages) instead of BOTTOM (latest)
+- Slow animation when opening chats with many messages
+- `messagesEndRef` was positioned OUTSIDE MessageList component
+
+**Solution:**
+
+- Moved `messagesEndRef` inside MessageList at end of messages
+- Changed scroll behavior from 'auto' to 'instant'
+- Chat now opens immediately at latest message
+
+**Files Modified:**
+
+- `src/components/messaging/ChatScreen.tsx`
+- `src/components/messaging/MessageList.tsx`
+
+**Result:** ✅ Chat opens instantly at latest message, no slow animation
+
+---
+
+### Enhancement #1: WhatsApp-Style Input Box
+
+**Commit:** `4f53491`
+
+**Problem:**
+
+- Input box had multi-row layout with excessive padding
+- Taking up too much screen space
+- Last message often obscured by input box
+
+**Solution:**
+
+- Redesigned to single-line inline layout
+- Rounded-full design
+- Attachment buttons on left, send button appears when typing on right
+- Much more compact design
+
+**Files Modified:**
+
+- `src/components/messaging/MessageComposer.tsx`
+
+**Result:** ✅ Compact single-line input, better screen space usage
+
+---
+
+### Enhancement #2: Input Box Spacing Optimization
+
+**Commit:** `6701c9c`
+
+**Problem:**
+
+- Considerable gap between bottom navigation bar and text input box
+- Wasted screen real estate on mobile
+
+**Solution:**
+
+- Removed wrapper div with `md:pb-0` class
+- Eliminates gap between input box and bottom nav
+
+**Files Modified:**
+
+- `src/components/messaging/ChatScreen.tsx`
+
+**Result:** ✅ Efficient use of limited screen space
+
+---
+
 **Story Created:** 2025-11-29  
-**Status:** 📋 Ready for Implementation  
+**Status:** ✅ **Complete** (including mobile bug fixes and UX enhancements)  
+**Completed:** 2024-12-04  
 **Priority:** P0 - Critical (Required for 100% Epic 8.3 coverage)

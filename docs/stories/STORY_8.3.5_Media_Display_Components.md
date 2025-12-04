@@ -999,6 +999,68 @@ warp mcp run context7 "analyze VideoMessage for ARIA labels and keyboard navigat
 
 ---
 
-**Story Status:** 📋 **Ready for Implementation**  
+## 🐛 **Mobile Bug Fixes (December 2024)**
+
+### Issue #1: Lightbox Swipe Navigation Broken on Mobile
+
+**Commit:** `be0cba9`
+
+**Problem:**
+
+- Swiping on images in lightbox was panning the image instead of navigating to next/previous
+- `TransformWrapper` (zoom/pan library) was intercepting swipe gestures
+
+**Solution:**
+
+- Disabled panning in `TransformWrapper` (`panning={{ disabled: true }}`)
+- Added custom swipe detection with touch start/end tracking
+- Horizontal swipes (>50px) now navigate between images
+- Vertical swipes ignored (for scrolling)
+
+**Files Modified:**
+
+- `src/components/messaging/ImageLightbox.tsx`
+
+**Result:** ✅ Swipe left/right now navigates, pinch-to-zoom still works
+
+---
+
+### Issue #2: Image Preview Broken on Android
+
+**Commits:** `c30a559`, `6701c9c`
+
+**Problem:**
+
+- Image preview showing broken icon with error: `ERR_UPLOAD_FILE_CHANGED`
+- On Android, File objects from picker become invalid after picker closes
+- Blob URL created from invalid File object fails to load
+
+**Solution:**
+
+- Read file data immediately into ArrayBuffer when file is selected
+- Create persistent File object from blob before picker closes
+- Use persistent File object for preview and upload
+
+**Files Modified:**
+
+- `src/components/messaging/ImageUploadButton.tsx`
+- `src/components/messaging/ImagePreviewModal.tsx`
+
+**Code Changes:**
+
+```typescript
+// Read file data immediately to create persistent blob for Android
+const arrayBuffer = await file.arrayBuffer();
+const blob = new Blob([arrayBuffer], { type: file.type });
+const persistentFile = new File([blob], file.name, { type: file.type });
+const blobUrl = URL.createObjectURL(persistentFile);
+```
+
+**Result:** ✅ Image preview now works correctly on Android
+
+---
+
+**Story Status:** ✅ **Complete** (including mobile bug fixes)  
+**Completed:** 2024-12-04  
 **Estimated Completion:** 1.5 days (includes mobile support)  
 **Risk Level:** Low (standard media components, established patterns, storage permissions)
