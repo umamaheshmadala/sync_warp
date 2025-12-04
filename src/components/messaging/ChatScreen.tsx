@@ -236,15 +236,13 @@ export function ChatScreen() {
       
       {isTyping && <TypingIndicator userIds={typingUserIds} />}
       
-      {/* Message Composer - No bottom padding on mobile */}
-      <div className="md:pb-0">
-        <MessageComposer 
-          conversationId={conversationId}
-          onTyping={handleTyping}
-          replyToMessage={replyToMessage}
-          onCancelReply={handleCancelReply}
-        />
-      </div>
+      {/* Message Composer */}
+      <MessageComposer 
+        conversationId={conversationId}
+        onTyping={handleTyping}
+        replyToMessage={replyToMessage}
+        onCancelReply={handleCancelReply}
+      />
 
       {/* Forward Dialog */}
       {forwardMessage && (

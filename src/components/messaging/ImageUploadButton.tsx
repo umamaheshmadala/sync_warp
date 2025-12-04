@@ -38,10 +38,22 @@ export function ImageUploadButton({
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const blobUrl = URL.createObjectURL(file)
-    setSelectedFile(file)
-    setPreviewUrl(blobUrl)
-    setShowPreview(true)
+    
+    try {
+      // Read file data immediately to create persistent blob for Android
+      // On Android, the File object becomes invalid after picker closes
+      const arrayBuffer = await file.arrayBuffer()
+      const blob = new Blob([arrayBuffer], { type: file.type })
+      const persistentFile = new File([blob], file.name, { type: file.type })
+      const blobUrl = URL.createObjectURL(persistentFile)
+      
+      setSelectedFile(persistentFile)
+      setPreviewUrl(blobUrl)
+      setShowPreview(true)
+    } catch (error) {
+      console.error('Failed to read file:', error)
+      toast.error('Failed to load image')
+    }
   }
 
   const handleSendFromPreview = async (caption: string, useHD: boolean) => {
