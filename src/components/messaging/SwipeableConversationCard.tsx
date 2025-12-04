@@ -43,6 +43,7 @@ export function SwipeableConversationCard({ conversation, isSelectionMode = fals
     }
     
     startX.current = e.touches[0].clientX
+    currentX.current = e.touches[0].clientX  // Initialize to prevent false swipes on tap
     startTime.current = Date.now()
     console.log('👆 Touch start at X:', startX.current)
     
@@ -95,7 +96,19 @@ export function SwipeableConversationCard({ conversation, isSelectionMode = fals
     }
 
     const diff = currentX.current - startX.current
-    console.log('🏁 Touch end - diff:', diff, 'threshold:', SWIPE_THRESHOLD)
+    const touchDuration = Date.now() - startTime.current
+    console.log('🏁 Touch end - diff:', diff, 'duration:', touchDuration, 'threshold:', SWIPE_THRESHOLD)
+
+    // Detect tap: minimal movement and short duration
+    const isTap = Math.abs(diff) < 10 && touchDuration < 300
+    
+    if (isTap) {
+      console.log('👆 Detected as tap - no swipe action')
+      setSwipeOffset(0)
+      setIsSwipingLeft(false)
+      setIsSwipingRight(false)
+      return  // Let click handler open the chat
+    }
 
     try {
       // Swipe left = Archive
