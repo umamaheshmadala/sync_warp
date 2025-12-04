@@ -207,6 +207,13 @@ class NetworkService {
   private appStateCallbacks: Set<AppStateCallback> = new Set();
   private isMobile: boolean;
 
+  // Heartbeat for accurate connectivity detection (Industry Best Practice: Slack/Discord)
+  private heartbeatInterval: NodeJS.Timeout | null = null;
+  private readonly HEARTBEAT_INTERVAL = 30000; // 30 seconds
+  private readonly HEARTBEAT_TIMEOUT = 10000; // 10 seconds
+  private consecutiveFailures = 0;
+  private readonly MAX_FAILURES = 3;
+
   constructor() {
     this.isMobile = Capacitor.isNativePlatform();
     this.init();
@@ -224,12 +231,16 @@ class NetworkService {
   }
 
   /**
-   * WEB ONLY: Monitor browser events
+   * WEB ONLY: Monitor browser events with heartbeat verification
    */
   private initWebMonitoring() {
-    window.addEventListener("online", () => {
-      console.log("[NetworkService] Online (web)");
-      this.notifyNetworkChange(true);
+    window.addEventListener("online", async () => {
+      console.log("[NetworkService] Browser reports online, verifying...");
+      // Verify before notifying (navigator.onLine can be unreliable)
+      const isConnected = await this.verifyConnectivity();
+      if (isConnected) {
+        this.notifyNetworkChange(true);
+      }
     });
 
     window.addEventListener("offline", () => {
@@ -244,6 +255,9 @@ class NetworkService {
         this.notifyAppStateChange(true);
       }
     });
+
+    // Start heartbeat for accurate detection (Industry Best Practice)
+    this.startHeartbeat();
   }
 
   /**
@@ -318,6 +332,104 @@ class NetworkService {
         connectionType: navigator.onLine ? "unknown" : "none",
       };
     }
+  }
+
+  /**
+   * Verify actual connectivity (not just navigator.onLine)
+   * Industry Best Practice: Slack/Discord pattern
+   */
+  async verifyConnectivity(): Promise<boolean> {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(
+        () => controller.abort(),
+        this.HEARTBEAT_TIMEOUT
+      );
+
+      // Ping Supabase health endpoint
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/`,
+        {
+          method: "HEAD",
+          signal: controller.signal,
+          headers: {
+            apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
+        }
+      );
+
+      clearTimeout(timeoutId);
+
+      if (response.ok) {
+        this.consecutiveFailures = 0;
+        return true;
+      } else {
+        this.consecutiveFailures++;
+        return this.consecutiveFailures < this.MAX_FAILURES;
+      }
+    } catch (error) {
+      this.consecutiveFailures++;
+      console.warn(
+        `Connectivity check failed (${this.consecutiveFailures}/${this.MAX_FAILURES})`
+      );
+      return this.consecutiveFailures < this.MAX_FAILURES;
+    }
+  }
+
+  /**
+   * Start heartbeat monitoring (Industry Best Practice)
+   */
+  private startHeartbeat() {
+    if (this.heartbeatInterval) return;
+
+    this.heartbeatInterval = setInterval(async () => {
+      const isConnected = await this.verifyConnectivity();
+
+      // Only notify if status changed
+      const currentStatus = await this.getStatus();
+      if (currentStatus.isOnline !== isConnected) {
+        this.notifyNetworkChange(isConnected);
+      }
+    }, this.HEARTBEAT_INTERVAL);
+  }
+
+  /**
+   * Stop heartbeat (cleanup)
+   */
+  private stopHeartbeat() {
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = null;
+    }
+  }
+
+  /**
+   * Cleanup on logout (Industry Best Practice)
+   */
+  destroy() {
+    console.log("🧹 Cleaning up NetworkService");
+
+    // Remove all listeners
+    this.networkCallbacks.clear();
+    this.appStateCallbacks.clear();
+
+    // Stop heartbeat
+    this.stopHeartbeat();
+
+    // Mobile: Remove Capacitor listeners
+    if (this.isMobile) {
+      Network.removeAllListeners();
+      App.removeAllListeners();
+    }
+  }
+
+  /**
+   * Reinitialize after login
+   */
+  async reinitialize() {
+    console.log("🔄 Reinitializing NetworkService");
+    this.consecutiveFailures = 0;
+    await this.init();
   }
 }
 

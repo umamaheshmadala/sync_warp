@@ -165,6 +165,12 @@ class OfflineQueueService {
   private readonly QUEUE_KEY = "offline_message_queue"; // Mobile storage key
   private readonly isMobile: boolean;
 
+  // Storage limits (Industry Best Practice: WhatsApp/Slack)
+  private readonly MAX_QUEUE_SIZE_WEB = 1000; // messages
+  private readonly MAX_QUEUE_SIZE_MOBILE = 500; // messages (due to 10MB Capacitor limit)
+  private readonly MAX_STORAGE_MB = 8; // Leave 2MB buffer for mobile
+  private readonly AUTO_CLEANUP_DAYS = 7; // Cleanup messages older than 7 days
+
   constructor() {
     this.isMobile = Capacitor.isNativePlatform();
 
@@ -180,11 +186,14 @@ class OfflineQueueService {
   }
 
   /**
-   * Add message to queue
+   * Add message to queue with storage limit enforcement
    */
   async queueMessage(
     message: Omit<QueuedMessage, "id" | "timestamp" | "retryCount" | "status">
   ): Promise<string> {
+    // Check storage limits BEFORE adding (Industry Best Practice)
+    await this.enforceStorageLimits();
+
     const queuedMessage: QueuedMessage = {
       ...message,
       id: uuidv4(),
@@ -321,6 +330,107 @@ class OfflineQueueService {
     } else {
       await this.db!.messages.clear();
     }
+  }
+
+  /**
+   * Enforce storage limits (Industry Best Practice: WhatsApp/Slack)
+   */
+  private async enforceStorageLimits(): Promise<void> {
+    const count = await this.getPendingCount();
+    const maxSize = this.isMobile
+      ? this.MAX_QUEUE_SIZE_MOBILE
+      : this.MAX_QUEUE_SIZE_WEB;
+
+    if (count >= maxSize) {
+      console.warn(
+        `⚠️ Queue limit reached (${count}/${maxSize}), cleaning up...`
+      );
+      await this.cleanupOldMessages();
+    }
+
+    // Mobile-specific: Check actual storage size
+    if (this.isMobile) {
+      const sizeInMB = await this.getQueueSizeInMB();
+      if (sizeInMB > this.MAX_STORAGE_MB) {
+        console.warn(
+          `⚠️ Storage limit reached (${sizeInMB}MB), cleaning up...`
+        );
+        await this.cleanupOldMessages();
+      }
+    }
+  }
+
+  /**
+   * Get queue size in MB (mobile only)
+   */
+  private async getQueueSizeInMB(): Promise<number> {
+    const { value } = await Preferences.get({ key: this.QUEUE_KEY });
+    if (!value) return 0;
+
+    // Calculate size in bytes, convert to MB
+    const sizeInBytes = new Blob([value]).size;
+    return sizeInBytes / (1024 * 1024);
+  }
+
+  /**
+   * Cleanup old messages (LRU strategy - Industry Best Practice)
+   */
+  private async cleanupOldMessages(): Promise<void> {
+    const cutoffTime =
+      Date.now() - this.AUTO_CLEANUP_DAYS * 24 * 60 * 60 * 1000;
+
+    if (this.isMobile) {
+      const queue = await this.getMobileQueue();
+
+      // Remove messages older than 7 days OR keep only newest 400 (leave room for 100 more)
+      const cleaned = queue
+        .filter((msg) => msg.timestamp > cutoffTime)
+        .sort((a, b) => b.timestamp - a.timestamp)
+        .slice(0, 400);
+
+      await Preferences.set({
+        key: this.QUEUE_KEY,
+        value: JSON.stringify(cleaned),
+      });
+
+      console.log(
+        `🗑️ Cleaned up ${queue.length - cleaned.length} old messages`
+      );
+    } else {
+      // Web: Remove old messages
+      const deleted = await this.db!.messages.where("timestamp")
+        .below(cutoffTime)
+        .delete();
+
+      console.log(`🗑️ Cleaned up ${deleted} old messages`);
+    }
+  }
+
+  /**
+   * Get storage stats (for UI display)
+   */
+  async getStorageStats(): Promise<{
+    count: number;
+    sizeInMB: number;
+    percentUsed: number;
+    maxSize: number;
+  }> {
+    const count = await this.getPendingCount();
+    const maxSize = this.isMobile
+      ? this.MAX_QUEUE_SIZE_MOBILE
+      : this.MAX_QUEUE_SIZE_WEB;
+
+    let sizeInMB = 0;
+    if (this.isMobile) {
+      sizeInMB = await this.getQueueSizeInMB();
+    }
+
+    return {
+      count,
+      sizeInMB,
+      percentUsed: (count / maxSize) * 100,
+      maxSize,
+    };
   }
 }
 
