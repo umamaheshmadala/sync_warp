@@ -46,6 +46,11 @@ export function ImageLightbox({
   const [currentIndex, setCurrentIndex] = useState(initialIndex)
   const [showMobileActions, setShowMobileActions] = useState(false)
   const longPressTimer = useRef<NodeJS.Timeout | null>(null)
+  
+  // Swipe detection
+  const touchStartX = useRef<number>(0)
+  const touchStartY = useRef<number>(0)
+  const MIN_SWIPE_DISTANCE = 50
 
   const currentImage = images[currentIndex]
   const hasMultiple = images.length > 1
@@ -132,9 +137,12 @@ export function ImageLightbox({
   }
   
   /**
-   * Handle long-press on mobile to show actions
+   * Handle touch start - track position for swipe detection
    */
-  const handleTouchStart = () => {
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
+    
     if (!isMobile) return
     
     longPressTimer.current = setTimeout(async () => {
@@ -143,10 +151,30 @@ export function ImageLightbox({
     }, 500) // 500ms long-press
   }
   
-  const handleTouchEnd = () => {
+  /**
+   * Handle touch end - detect swipe for navigation
+   */
+  const handleTouchEnd = (e: React.TouchEvent) => {
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current)
       longPressTimer.current = null
+    }
+
+    // Calculate swipe distance
+    const touchEndX = e.changedTouches[0].clientX
+    const touchEndY = e.changedTouches[0].clientY
+    const deltaX = touchEndX - touchStartX.current
+    const deltaY = touchEndY - touchStartY.current
+
+    // Only process horizontal swipes (ignore vertical scrolling)
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > MIN_SWIPE_DISTANCE) {
+      if (deltaX > 0) {
+        // Swipe right - go to previous
+        goToPrevious()
+      } else {
+        // Swipe left - go to next
+        goToNext()
+      }
     }
   }
 
@@ -264,7 +292,7 @@ export function ImageLightbox({
                 doubleClick={{ disabled: false, step: 0.5 }}  // Double-tap to zoom
                 wheel={{ disabled: true }}  // Disable mouse wheel on mobile
                 pinch={{ disabled: false }}  // Enable pinch-to-zoom
-                panning={{ disabled: false, velocityDisabled: true }}
+                panning={{ disabled: true }}  // DISABLE panning to allow swipe navigation
                 limitToBounds={true}
                 centerOnInit={true}
               >
