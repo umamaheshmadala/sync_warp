@@ -13,6 +13,7 @@ interface MessageListProps {
   onReply?: (message: Message) => void // Story 8.10.5 - Reply to message
   onForward?: (message: Message) => void // Story 8.10.6 - Forward message
   onQuoteClick?: (messageId: string) => void // Story 8.10.5 - Click quoted message
+  messagesEndRef?: React.RefObject<HTMLDivElement> // Scroll anchor for auto-scroll
 }
 
 /**
@@ -43,7 +44,8 @@ export function MessageList({
   onRetry,
   onReply,
   onForward,
-  onQuoteClick
+  onQuoteClick,
+  messagesEndRef
 }: MessageListProps) {
   const currentUserId = useAuthStore(state => state.user?.id)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -148,6 +150,9 @@ export function MessageList({
           )
         })
       })()}
+      
+      {/* Scroll anchor - positioned at end of messages */}
+      {messagesEndRef && <div ref={messagesEndRef} />}
     </div>
   )
 }

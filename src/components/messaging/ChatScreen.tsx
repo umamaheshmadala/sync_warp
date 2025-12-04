@@ -231,12 +231,10 @@ export function ChatScreen() {
         onReply={handleReply}
         onForward={handleForward}
         onQuoteClick={handleQuoteClick}
+        messagesEndRef={messagesEndRef}
       />
       
       {isTyping && <TypingIndicator userIds={typingUserIds} />}
-      
-      {/* Scroll anchor */}
-      <div ref={messagesEndRef} />
       
       {/* Message Composer - No bottom padding on mobile */}
       <div className="md:pb-0">
