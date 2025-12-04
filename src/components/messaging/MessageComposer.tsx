@@ -149,50 +149,54 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
         </div>
       )}
 
-      <div className="flex flex-col gap-2 bg-gray-100 rounded-xl p-2 border border-gray-200 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
+      <div className="flex items-center gap-2 bg-gray-100 rounded-full px-3 py-2 border border-gray-200 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
+        {/* Left action buttons */}
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <ImageUploadButton 
+            conversationId={conversationId}
+            onUploadStart={() => {}}
+            onUploadComplete={() => {}}
+          />
+          <VideoUploadButton 
+            conversationId={conversationId}
+            onUploadStart={() => {}}
+            onUploadComplete={() => {}}
+          />
+        </div>
+
+        {/* Text input - grows to fill space */}
         <Textarea
           ref={textareaRef}
           value={content}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
-          placeholder="Write a message..."
-          className="min-h-[24px] max-h-[120px] resize-none border-none bg-transparent p-0 focus-visible:ring-0 placeholder:text-gray-500 text-sm"
+          placeholder="Type a message"
+          className="flex-1 min-h-[24px] max-h-[120px] resize-none border-none bg-transparent p-0 focus-visible:ring-0 placeholder:text-gray-500 text-sm"
           rows={1}
           disabled={isSending}
         />
-        
-        <div className="flex items-center justify-between pt-1">
-          <div className="flex items-center gap-1">
-            <ImageUploadButton 
-              conversationId={conversationId}
-              onUploadStart={() => {}}
-              onUploadComplete={() => {}}
-            />
-            <VideoUploadButton 
-              conversationId={conversationId}
-              onUploadStart={() => {}}
-              onUploadComplete={() => {}}
-            />
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-gray-700 hover:bg-gray-200/50">
-              <Paperclip className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-gray-700 hover:bg-gray-200/50">
-              <Smile className="h-4 w-4" />
-            </Button>
-          </div>
 
-          <div className="flex items-center gap-2">
-            {content.trim() && (
-              <Button
-                onClick={handleSend}
-                disabled={isSending}
-                size="sm"
-                className="h-7 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-xs font-semibold"
-              >
-                Send
+        {/* Right action buttons */}
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {!content.trim() ? (
+            <>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-gray-700 hover:bg-gray-200/50">
+                <Paperclip className="h-4 w-4" />
               </Button>
-            )}
-          </div>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-gray-700 hover:bg-gray-200/50">
+                <Smile className="h-4 w-4" />
+              </Button>
+            </>
+          ) : (
+            <Button
+              onClick={handleSend}
+              disabled={isSending}
+              size="icon"
+              className="h-8 w-8 bg-blue-600 hover:bg-blue-700 text-white rounded-full"
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </div>
     </div>
