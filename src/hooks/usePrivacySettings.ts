@@ -48,11 +48,35 @@ export function usePrivacySettings() {
 
             return results.map(r => r.data);
         },
+        // Optimistic update: update cache immediately before server response
+        onMutate: async (newSettings: Partial<PrivacySettings>) => {
+            // Cancel any outgoing refetches to prevent overwriting optimistic update
+            await queryClient.cancelQueries({ queryKey: ['privacySettings'] });
+
+            // Snapshot the previous value
+            const previousSettings = queryClient.getQueryData<PrivacySettings>(['privacySettings']);
+
+            // Optimistically update to the new value
+            if (previousSettings) {
+                queryClient.setQueryData<PrivacySettings>(['privacySettings'], {
+                    ...previousSettings,
+                    ...newSettings,
+                    last_updated: new Date().toISOString(),
+                });
+            }
+
+            // Return a context object with the snapshot
+            return { previousSettings };
+        },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['privacySettings'] });
             // Toast handled in component for bulk update
         },
-        onError: (error: any) => {
+        onError: (error: any, _newSettings, context) => {
+            // Rollback to previous value on error
+            if (context?.previousSettings) {
+                queryClient.setQueryData(['privacySettings'], context.previousSettings);
+            }
             // Toast handled in component
             throw error;
         },
