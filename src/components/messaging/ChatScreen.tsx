@@ -57,6 +57,9 @@ export function ChatScreen() {
   // Forward state (Story 8.10.6)
   const [forwardMessage, setForwardMessage] = useState<Message | null>(null)
 
+  // Edit state (Story 8.5.2 - WhatsApp-style editing)
+  const [editingMessage, setEditingMessage] = useState<Message | null>(null)
+
   // Scroll to bottom helper
   const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
     if (messagesEndRef.current) {
@@ -206,6 +209,20 @@ export function ChatScreen() {
     setReplyToMessage(null)
   }
 
+  // Edit handler (Story 8.5.2 - WhatsApp-style)
+  const handleEdit = (message: Message) => {
+    console.log('✏️ Editing message:', message.id)
+    setEditingMessage(message)
+    // Clear reply if any
+    setReplyToMessage(null)
+  }
+
+  // Cancel edit handler (Story 8.5.2)
+  const handleCancelEdit = () => {
+    console.log('❌ Cancelled edit')
+    setEditingMessage(null)
+  }
+
   // Scroll to message handler (Story 8.10.5)
   const handleQuoteClick = (messageId: string) => {
     console.log('📍 Scrolling to message:', messageId)
@@ -263,6 +280,7 @@ export function ChatScreen() {
         onRetry={handleRetry}
         onReply={handleReply}
         onForward={handleForward}
+        onEdit={handleEdit}
         onQuoteClick={handleQuoteClick}
         messagesEndRef={messagesEndRef}
       />
@@ -275,6 +293,8 @@ export function ChatScreen() {
         onTyping={handleTyping}
         replyToMessage={replyToMessage}
         onCancelReply={handleCancelReply}
+        editingMessage={editingMessage}
+        onCancelEdit={handleCancelEdit}
       />
 
       {/* Forward Dialog */}

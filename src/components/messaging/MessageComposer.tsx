@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Send, Plus, Image, Video, Paperclip, Smile, X } from 'lucide-react'
+import { Send, Plus, Image, Video, Paperclip, Smile, X, Pencil } from 'lucide-react'
 import { Textarea } from '../ui/textarea'
 import { Button } from '../ui/button'
 import { ImageUploadButton } from './ImageUploadButton'
@@ -9,6 +9,7 @@ import { ReplyContext } from './ReplyContext'
 import { useSendMessage } from '../../hooks/useSendMessage'
 import { useLinkPreview } from '../../hooks/useLinkPreview'
 import { shareTrackingService } from '../../services/shareTrackingService'
+import { messageEditService } from '../../services/messageEditService'
 import { Capacitor } from '@capacitor/core'
 import { Haptics, NotificationType } from '@capacitor/haptics'
 import type { Message } from '../../types/messaging'
@@ -19,6 +20,8 @@ interface MessageComposerProps {
   onTyping: () => void
   replyToMessage?: Message | null  // Message being replied to (Story 8.10.5)
   onCancelReply?: () => void  // Callback to cancel reply (Story 8.10.5)
+  editingMessage?: Message | null  // Message being edited (Story 8.5.2 - WhatsApp style)
+  onCancelEdit?: () => void  // Callback to cancel edit (Story 8.5.2)
 }
 
 /**
@@ -32,13 +35,23 @@ interface MessageComposerProps {
  * - Emoji button inside text field (right side)
  * - Send button appears only when there's text
  */
-export function MessageComposer({ conversationId, onTyping, replyToMessage, onCancelReply }: MessageComposerProps) {
+export function MessageComposer({ conversationId, onTyping, replyToMessage, onCancelReply, editingMessage, onCancelEdit }: MessageComposerProps) {
   const [content, setContent] = useState('')
   const [showAttachMenu, setShowAttachMenu] = useState(false)
+  const [isEditSaving, setIsEditSaving] = useState(false)
   const { sendMessage, isSending } = useSendMessage()
   const { previews, removePreview, reset: resetPreviews } = useLinkPreview(content)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const attachMenuRef = useRef<HTMLDivElement>(null)
+
+  // Populate content when editing message (WhatsApp-style)
+  useEffect(() => {
+    if (editingMessage) {
+      setContent(editingMessage.content || '')
+      // Focus the input
+      setTimeout(() => textareaRef.current?.focus(), 100)
+    }
+  }, [editingMessage])
 
   // Auto-resize textarea
   useEffect(() => {
@@ -62,8 +75,37 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
   }, [showAttachMenu])
 
   const handleSend = async () => {
-    if (!content.trim() || isSending) return
+    if (!content.trim() || isSending || isEditSaving) return
 
+    // Handle edit mode (Story 8.5.2 - WhatsApp style)
+    if (editingMessage) {
+      if (content.trim() === editingMessage.content) {
+        // No changes, just cancel
+        onCancelEdit?.()
+        setContent('')
+        return
+      }
+
+      setIsEditSaving(true)
+      try {
+        const result = await messageEditService.editMessage(editingMessage.id, content.trim())
+        if (result.success) {
+          toast.success('Message edited')
+          onCancelEdit?.()
+          setContent('')
+        } else {
+          toast.error(result.message || 'Failed to edit message')
+        }
+      } catch (error) {
+        console.error('Edit failed:', error)
+        toast.error('Failed to edit message')
+      } finally {
+        setIsEditSaving(false)
+      }
+      return
+    }
+
+    // Normal send flow
     try {
       if (Capacitor.isNativePlatform()) {
         try {
@@ -122,12 +164,6 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
     }
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
-    }
-  }
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value
@@ -147,10 +183,46 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
 
   const hasText = content.trim().length > 0
 
+  // Handle Escape key to cancel editing
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape' && editingMessage) {
+      e.preventDefault()
+      onCancelEdit?.()
+      setContent('')
+      return
+    }
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSend()
+    }
+  }
+
   return (
     <div className="bg-white px-3 py-2 border-t">
+      {/* Edit Context - WhatsApp style indicator */}
+      {editingMessage && (
+        <div className="mb-2 flex items-center gap-2 bg-blue-50 rounded-lg p-2 border-l-4 border-blue-500">
+          <Pencil className="h-4 w-4 text-blue-600 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-medium text-blue-600">Editing message</p>
+            <p className="text-sm text-gray-600 truncate">{editingMessage.content}</p>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              onCancelEdit?.()
+              setContent('')
+            }}
+            className="h-6 w-6 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-200 flex-shrink-0"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+
       {/* Reply Context */}
-      {replyToMessage && (
+      {replyToMessage && !editingMessage && (
         <div className="mb-2">
           <ReplyContext
             parentMessage={{

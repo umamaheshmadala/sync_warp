@@ -26,7 +26,6 @@ import { useShare } from '../../hooks/useShare'
 import { usePrivacySettings } from '../../hooks/usePrivacySettings'
 import { messageEditService } from '../../services/messageEditService'
 import { EditedBadge } from './EditedBadge'
-import { InlineMessageEditor } from './InlineMessageEditor'
 
 interface MessageBubbleProps {
   message: Message
@@ -35,6 +34,7 @@ interface MessageBubbleProps {
   onRetry?: (message: Message) => void // Callback for retry button (Story 8.2.7)
   onReply?: (message: Message) => void // Callback for reply action (Story 8.10.5)
   onForward?: (message: Message) => void // Callback for forward action (Story 8.10.6)
+  onEdit?: (message: Message) => void // Callback for edit action (Story 8.5.2 - WhatsApp-style)
   onQuoteClick?: (messageId: string) => void // Callback for clicking quoted message (Story 8.10.5)
 }
 
@@ -73,6 +73,7 @@ export function MessageBubble({
   onRetry,
   onReply,
   onForward,
+  onEdit,
   onQuoteClick
 }: MessageBubbleProps) {
   const [showContextMenu, setShowContextMenu] = useState(false)
@@ -85,10 +86,6 @@ export function MessageBubble({
   const isLongPress = useRef(false)
   const content = message.content || ''
   const isDeleted = !!message.deleted_at
-  
-  // Edit state - must come after content is defined
-  const [isEditing, setIsEditing] = useState(false)
-  const [editedContent, setEditedContent] = useState(content)
   
   // Privacy settings for reciprocal read receipts
   // If user disabled read receipts, they also can't see when others read their messages
@@ -285,34 +282,6 @@ export function MessageBubble({
     } catch (error) {
       console.error('Share failed:', error)
     }
-  }
-
-  // Handle edit save
-  const handleEditSave = async () => {
-    if (!editedContent.trim() || editedContent === content) {
-      setIsEditing(false)
-      setEditedContent(content)
-      return
-    }
-
-    try {
-      const result = await messageEditService.editMessage(message.id, editedContent.trim())
-      if (result.success) {
-        toast.success('Message edited')
-        setIsEditing(false)
-      } else {
-        toast.error(result.message || 'Failed to edit message')
-      }
-    } catch (error) {
-      console.error('Edit failed:', error)
-      toast.error('Failed to edit message')
-    }
-  }
-
-  // Handle edit cancel
-  const handleEditCancel = () => {
-    setEditedContent(content)
-    setIsEditing(false)
   }
 
   // Close menu when clicking outside
@@ -532,19 +501,8 @@ export function MessageBubble({
                 </div>
               )}
               
-              {/* Show inline editor when editing, otherwise show text */}
-              {isEditing && isOwn && message.type === 'text' ? (
-                <InlineMessageEditor
-                  content={editedContent}
-                  onChange={setEditedContent}
-                  onSave={handleEditSave}
-                  onCancel={handleEditCancel}
-                  remainingTime={editRemainingTime}
-                  isSaving={false}
-                />
-              ) : (
-                <p className="whitespace-pre-wrap">{content}</p>
-              )}
+              {/* Text content - editing now handled by MessageComposer */}
+              <p className="whitespace-pre-wrap">{content}</p>
             </div>
           )}
           
@@ -598,7 +556,7 @@ export function MessageBubble({
           onForward={() => onForward?.(message)}
           onCopy={handleCopy}
           onShare={handleShare}
-          onEdit={() => setIsEditing(true)}
+          onEdit={() => onEdit?.(message)}
           canEdit={canEditMessage}
           editRemainingTime={editRemainingTime}
         />,

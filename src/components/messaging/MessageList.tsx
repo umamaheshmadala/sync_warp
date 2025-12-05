@@ -12,6 +12,7 @@ interface MessageListProps {
   onRetry?: (message: Message) => void // Story 8.2.7 - Retry failed messages
   onReply?: (message: Message) => void // Story 8.10.5 - Reply to message
   onForward?: (message: Message) => void // Story 8.10.6 - Forward message
+  onEdit?: (message: Message) => void // Story 8.5.2 - Edit message (WhatsApp-style)
   onQuoteClick?: (messageId: string) => void // Story 8.10.5 - Click quoted message
   messagesEndRef?: React.RefObject<HTMLDivElement> // Scroll anchor for auto-scroll
 }
@@ -44,6 +45,7 @@ export function MessageList({
   onRetry,
   onReply,
   onForward,
+  onEdit,
   onQuoteClick,
   messagesEndRef
 }: MessageListProps) {
@@ -144,6 +146,7 @@ export function MessageList({
                 onRetry={onRetry}
                 onReply={onReply}
                 onForward={onForward}
+                onEdit={onEdit}
                 onQuoteClick={onQuoteClick}
               />
             </div>
