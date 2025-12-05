@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Send, Image, Paperclip, Smile } from 'lucide-react'
+import { Send, Plus, Image, Video, Paperclip, Smile, X } from 'lucide-react'
 import { Textarea } from '../ui/textarea'
 import { Button } from '../ui/button'
 import { ImageUploadButton } from './ImageUploadButton'
@@ -21,11 +21,24 @@ interface MessageComposerProps {
   onCancelReply?: () => void  // Callback to cancel reply (Story 8.10.5)
 }
 
+/**
+ * MessageComposer with WhatsApp-style layout
+ * 
+ * Layout: [+] [________Type a message________😊] [Send]
+ * 
+ * Features:
+ * - Single '+' button opens attachment menu (Image, Video, File)
+ * - Text input takes MAXIMUM width
+ * - Emoji button inside text field (right side)
+ * - Send button appears only when there's text
+ */
 export function MessageComposer({ conversationId, onTyping, replyToMessage, onCancelReply }: MessageComposerProps) {
   const [content, setContent] = useState('')
+  const [showAttachMenu, setShowAttachMenu] = useState(false)
   const { sendMessage, isSending } = useSendMessage()
   const { previews, removePreview, reset: resetPreviews } = useLinkPreview(content)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const attachMenuRef = useRef<HTMLDivElement>(null)
 
   // Auto-resize textarea
   useEffect(() => {
@@ -34,6 +47,19 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
       textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`
     }
   }, [content])
+
+  // Close attach menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (attachMenuRef.current && !attachMenuRef.current.contains(e.target as Node)) {
+        setShowAttachMenu(false)
+      }
+    }
+    if (showAttachMenu) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showAttachMenu])
 
   const handleSend = async () => {
     if (!content.trim() || isSending) return
@@ -119,8 +145,10 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
     onTyping()
   }
 
+  const hasText = content.trim().length > 0
+
   return (
-    <div className="bg-white px-4 py-3 border-t">
+    <div className="bg-white px-3 py-2 border-t">
       {/* Reply Context */}
       {replyToMessage && (
         <div className="mb-2">
@@ -138,7 +166,7 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
 
       {/* Link Previews */}
       {previews.length > 0 && (
-        <div className="mb-3 space-y-2">
+        <div className="mb-2 space-y-2">
           {previews.map(preview => (
             <LinkPreviewCard 
               key={preview.url}
@@ -149,55 +177,95 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
         </div>
       )}
 
-      <div className="flex items-center gap-2 bg-gray-100 rounded-full px-3 py-2 border border-gray-200 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
-        {/* Left action buttons */}
-        <div className="flex items-center gap-1 flex-shrink-0">
-          <ImageUploadButton 
-            conversationId={conversationId}
-            onUploadStart={() => {}}
-            onUploadComplete={() => {}}
-          />
-          <VideoUploadButton 
-            conversationId={conversationId}
-            onUploadStart={() => {}}
-            onUploadComplete={() => {}}
-          />
-        </div>
+      {/* Main Input Row - WhatsApp Style */}
+      <div className="flex items-end gap-2">
+        {/* Attachment Menu Button */}
+        <div className="relative flex-shrink-0" ref={attachMenuRef}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowAttachMenu(!showAttachMenu)}
+            className={`h-10 w-10 rounded-full transition-all ${
+              showAttachMenu 
+                ? 'bg-blue-100 text-blue-600 rotate-45' 
+                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            {showAttachMenu ? <X className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
+          </Button>
 
-        {/* Text input - grows to fill space */}
-        <Textarea
-          ref={textareaRef}
-          value={content}
-          onChange={handleChange}
-          onKeyDown={handleKeyDown}
-          placeholder="Type a message"
-          className="flex-1 min-h-[24px] max-h-[120px] resize-none border-none bg-transparent p-0 focus-visible:ring-0 placeholder:text-gray-500 text-sm"
-          rows={1}
-          disabled={isSending}
-        />
+          {/* Attachment Popup Menu */}
+          {showAttachMenu && (
+            <div className="absolute bottom-12 left-0 bg-white rounded-xl shadow-lg border border-gray-200 py-2 min-w-[160px] z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
+              <div className="space-y-1">
+                {/* Image Upload */}
+                <div onClick={() => setShowAttachMenu(false)}>
+                  <ImageUploadButton 
+                    conversationId={conversationId}
+                    onUploadStart={() => setShowAttachMenu(false)}
+                    onUploadComplete={() => {}}
+                    variant="menu"
+                  />
+                </div>
+                
+                {/* Video Upload */}
+                <div onClick={() => setShowAttachMenu(false)}>
+                  <VideoUploadButton 
+                    conversationId={conversationId}
+                    onUploadStart={() => setShowAttachMenu(false)}
+                    onUploadComplete={() => {}}
+                    variant="menu"
+                  />
+                </div>
 
-        {/* Right action buttons */}
-        <div className="flex items-center gap-1 flex-shrink-0">
-          {!content.trim() ? (
-            <>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-gray-700 hover:bg-gray-200/50">
-                <Paperclip className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-gray-700 hover:bg-gray-200/50">
-                <Smile className="h-4 w-4" />
-              </Button>
-            </>
-          ) : (
-            <Button
-              onClick={handleSend}
-              disabled={isSending}
-              size="icon"
-              className="h-8 w-8 bg-blue-600 hover:bg-blue-700 text-white rounded-full"
-            >
-              <Send className="h-4 w-4" />
-            </Button>
+                {/* Document/File (placeholder for future) */}
+                <button className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-gray-50 transition-colors">
+                  <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
+                    <Paperclip className="h-4 w-4 text-purple-600" />
+                  </div>
+                  <span className="text-sm font-medium text-gray-700">Document</span>
+                </button>
+              </div>
+            </div>
           )}
         </div>
+
+        {/* Text Input Container - Takes Maximum Width */}
+        <div className="flex-1 flex items-end bg-gray-100 rounded-3xl border border-gray-200 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all overflow-hidden">
+          <Textarea
+            ref={textareaRef}
+            value={content}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            placeholder="Type a message"
+            className="flex-1 min-h-[40px] max-h-[120px] resize-none border-none bg-transparent px-4 py-2.5 focus-visible:ring-0 placeholder:text-gray-400 text-sm leading-5"
+            rows={1}
+            disabled={isSending}
+          />
+          
+          {/* Emoji Button - Inside text field */}
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-10 w-10 text-gray-400 hover:text-gray-600 hover:bg-transparent flex-shrink-0 mr-1"
+          >
+            <Smile className="h-5 w-5" />
+          </Button>
+        </div>
+
+        {/* Send Button - Only shows when there's text */}
+        <Button
+          onClick={handleSend}
+          disabled={!hasText || isSending}
+          size="icon"
+          className={`h-10 w-10 rounded-full flex-shrink-0 transition-all ${
+            hasText 
+              ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md' 
+              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+          }`}
+        >
+          <Send className={`h-5 w-5 ${hasText ? '' : 'opacity-50'}`} />
+        </Button>
       </div>
     </div>
   )

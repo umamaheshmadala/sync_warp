@@ -15,12 +15,14 @@ interface Props {
   conversationId: string
   onUploadStart?: () => void
   onUploadComplete?: () => void
+  variant?: 'icon' | 'menu'  // 'icon' = small icon button, 'menu' = full menu item
 }
 
 export function ImageUploadButton({ 
   conversationId, 
   onUploadStart, 
-  onUploadComplete 
+  onUploadComplete,
+  variant = 'icon'
 }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const cancelledRef = useRef<boolean>(false) // Track cancellation
@@ -242,6 +244,47 @@ export function ImageUploadButton({
     }
   }
 
+  // Menu variant - full width menu item with icon and text
+  if (variant === 'menu') {
+    return (
+      <>
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isUploading}
+          className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-gray-50 transition-colors disabled:opacity-50"
+        >
+          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+            {isUploading ? (
+              <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+            ) : (
+              <ImageIcon className="w-4 h-4 text-blue-600" />
+            )}
+          </div>
+          <span className="text-sm font-medium text-gray-700">Photo</span>
+        </button>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+          onChange={handleFileSelect}
+          className="hidden"
+        />
+
+        {selectedFile && showPreview && (
+          <ImagePreviewModal
+            isOpen={showPreview}
+            imageFile={selectedFile}
+            imageUrl={previewUrl}
+            onSend={handleSendFromPreview}
+            onCancel={handleCancelPreview}
+          />
+        )}
+      </>
+    )
+  }
+
+  // Icon variant (default) - small icon button
   return (
     <>
       <button

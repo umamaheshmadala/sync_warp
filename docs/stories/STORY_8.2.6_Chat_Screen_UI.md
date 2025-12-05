@@ -4,7 +4,7 @@
 **Story Owner:** Frontend Engineering / UX  
 **Estimated Effort:** 4 days  
 **Priority:** P0 - Critical  
-**Status:** ✅ **COMPLETE** - Implemented 2025-02-01
+**Status:** ✅ **COMPLETE** - Implemented 2025-02-01, Enhanced 2025-12-05
 
 **Implementation Files:**
 
@@ -12,9 +12,56 @@
 - `src/components/messaging/ChatHeader.tsx`
 - `src/components/messaging/MessageList.tsx`
 - `src/components/messaging/MessageBubble.tsx`
-- `src/components/messaging/MessageComposer.tsx`
+- `src/components/messaging/MessageComposer.tsx` _(Enhanced Dec 2025)_
+- `src/components/messaging/ImageUploadButton.tsx` _(Enhanced Dec 2025)_
+- `src/components/messaging/VideoUploadButton.tsx` _(Enhanced Dec 2025)_
 - Keyboard handling with Capacitor integration
 - Auto-scroll and pagination support
+
+---
+
+## 🔄 **December 2025 Enhancements: MessageComposer Redesign**
+
+The MessageComposer was completely redesigned with a **WhatsApp-style compact layout**:
+
+### **Before (4 icons visible):**
+
+```
+[📷][🎥] | Type a message | [📎][😊]
+```
+
+### **After (WhatsApp-style):**
+
+```
+[+] [________________Type a message________________😊] [➤]
+```
+
+### **Key Changes:**
+
+1. **Single '+' Attachment Button**
+   - Opens popup menu with: Photo, Video, Document options
+   - Each option has colored circular icon background
+   - Menu animates in with `animate-in fade-in slide-in-from-bottom-2`
+
+2. **Maximum Text Input Width**
+   - Text input now takes ALL available horizontal space
+   - Pill-shaped container with rounded-3xl corners
+   - Focus ring effect on input focus
+
+3. **Emoji Button Inside Text Field**
+   - Positioned at right edge of text input
+   - Maintains minimal visual footprint
+
+4. **Send Button Always Visible**
+   - Blue when there's text (active)
+   - Gray when empty (disabled state)
+   - Circular button with shadow
+
+### **Files Updated:**
+
+- `MessageComposer.tsx`: Complete layout redesign
+- `ImageUploadButton.tsx`: Added `variant="menu"` prop for popup menu style
+- `VideoUploadButton.tsx`: Added `variant="menu"` prop for popup menu style
 
 ---
 

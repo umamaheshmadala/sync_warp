@@ -4,7 +4,7 @@
 **Stakeholders:** Frontend Engineering, UX/UI, Backend Engineering, QA  
 **Dependencies:** Epic 8.1 ✅ Complete, Epic 8.2 ✅ Complete  
 **Timeline:** Week 9-10 (2 weeks)  
-**Status:** ⏳ In Progress
+**Status:** ⏳ In Progress (Stories 8.10.7 & 8.10.8 Complete)
 
 **Implementation Summary:**
 
@@ -218,20 +218,22 @@ warp mcp run supabase "execute_sql SELECT * FROM <table> WHERE <condition>"
 - Mobile: Native share sheet integration
 - **File:** [STORY_8.10.6_Forward_Messages.md](../stories/STORY_8.10.6_Forward_Messages.md)
 
-### **Story 8.10.7: Message Delivery Status UI** (1 day)
+### **Story 8.10.7: Message Delivery Status UI** ✅ (1 day)
 
-- UI: Checkmark icons (sending/sent/delivered/read)
-- Service: Status tracking
-- Realtime: Status updates
+- UI: Checkmark icons (sending/delivered/read) - CYAN for read
+- Service: Status tracking with read receipts
+- Realtime: Status updates via subscriptions
 - Mobile: Consistent icon display
+- **Enhanced Dec 2025**: WhatsApp-style lifecycle, CYAN read ticks
 - **File:** [STORY_8.10.7_Delivery_Status_UI.md](../stories/STORY_8.10.7_Delivery_Status_UI.md)
 
-### **Story 8.10.8: Realtime Updates Enhancement** (1.5 days)
+### **Story 8.10.8: Realtime Updates Enhancement** ✅ (1.5 days)
 
 - Service: Subscribe to UPDATE events
-- Realtime: Edit/delete/reaction sync
-- UI: Optimistic updates
+- Realtime: Read receipts, message sync
+- UI: Visibility-based read marking
 - Testing: Comprehensive realtime tests
+- **Enhanced Dec 2025**: Client-side filtering fix, visibility-based reads
 - **File:** [STORY_8.10.8_Realtime_Enhancement.md](../stories/STORY_8.10.8_Realtime_Enhancement.md)
 
 **Total Effort:** 12.5 days (~2 weeks with buffer)

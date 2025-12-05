@@ -14,12 +14,14 @@ interface Props {
   conversationId: string
   onUploadStart?: () => void
   onUploadComplete?: () => void
+  variant?: 'icon' | 'menu'  // 'icon' = small icon button, 'menu' = full menu item
 }
 
 export function VideoUploadButton({ 
   conversationId, 
   onUploadStart, 
-  onUploadComplete 
+  onUploadComplete,
+  variant = 'icon'
 }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const cancelledRef = useRef<boolean>(false)
@@ -155,6 +157,37 @@ export function VideoUploadButton({
     }
   }
 
+  // Menu variant - full width menu item with icon and text
+  if (variant === 'menu') {
+    return (
+      <>
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isUploading}
+          className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-gray-50 transition-colors disabled:opacity-50"
+        >
+          <div className="w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center">
+            {isUploading ? (
+              <Loader2 className="w-4 h-4 animate-spin text-rose-600" />
+            ) : (
+              <Video className="w-4 h-4 text-rose-600" />
+            )}
+          </div>
+          <span className="text-sm font-medium text-gray-700">Video</span>
+        </button>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="video/mp4,video/quicktime,video/webm"
+          onChange={handleFileSelect}
+          className="hidden"
+        />
+      </>
+    )
+  }
+
+  // Icon variant (default) - small icon button
   return (
     <>
       <button

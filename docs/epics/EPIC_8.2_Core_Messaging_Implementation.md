@@ -15,6 +15,7 @@
 - Hooks: 5 custom hooks (125% coverage)
 - UI: 11+ components with full platform support (Web, iOS, Android)
 - LinkedIn-style UI redesign (Story 8.2.10 - Nov 2025)
+- **MessageComposer WhatsApp-style redesign (Dec 2025)** - Compact layout with attachment popup
 - Critical bug fixes: bottom nav overlap, unread badges, periodic reloading
 - Routes & navigation integrated
 - 100% production-ready
