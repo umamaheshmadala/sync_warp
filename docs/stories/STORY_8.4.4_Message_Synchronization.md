@@ -4,7 +4,7 @@
 **Story Owner:** Frontend Engineering  
 **Estimated Effort:** 2 days  
 **Priority:** P0 - Critical  
-**Status:** 📋 Ready for Implementation  
+**Status:** ⏳ **IN PROGRESS** - Tested 2025-12-05 (3/4 tests passed, 1 remaining)  
 **Dependencies:** Story 8.4.1 (Queue), Story 8.4.2 (Network Detection)
 
 ---
@@ -574,4 +574,3 @@ warp mcp run chrome-devtools "record Performance, sync 20 messages, analyze timi
 ---
 
 **Next Story:** [STORY_8.4.4_Message_Caching.md](./STORY_8.4.4_Message_Caching.md)
-
