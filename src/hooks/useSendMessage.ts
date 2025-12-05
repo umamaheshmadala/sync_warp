@@ -170,7 +170,7 @@ export function useSendMessage() {
         _tempId: undefined,
         _queued: undefined,
         _queueId: undefined,
-        status: 'sent'
+        status: 'delivered' // In DB = delivered (recipient can fetch it)
       })
 
       console.log('✅ Message sent:', messageId)

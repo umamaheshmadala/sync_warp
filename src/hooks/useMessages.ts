@@ -133,12 +133,17 @@ export function useMessages(conversationId: string | null) {
           }
         }
 
+        // Derive status for own messages arriving via realtime
+        // If this is our own message (got it back from server), mark as delivered
+        if (newMessage.sender_id === currentUserId && !newMessage.status) {
+          newMessage.status = 'delivered'
+        }
+
         addMessage(conversationId, newMessage)
         
-        // Auto-mark as read if conversation is active and user is not sender
-        if (newMessage.sender_id !== currentUserId) {
-          messagingService.markMessageAsRead(newMessage.id)
-        }
+        // NOTE: DO NOT auto-mark messages as read here!
+        // Messages should only be marked as read when the user is actively viewing 
+        // the ChatScreen component. See ChatScreen.tsx for visibility-based marking.
       }
     )
 

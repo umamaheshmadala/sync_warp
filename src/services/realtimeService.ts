@@ -185,6 +185,10 @@ class RealtimeService {
   /**
    * Subscribe to new messages in a conversation
    * 
+   * NOTE: We subscribe to ALL message inserts and filter client-side because
+   * Supabase Realtime filters on non-primary-key columns (like conversation_id)
+   * can be unreliable and fail silently.
+   * 
    * @param conversationId - Conversation UUID
    * @param onNewMessage - Callback when new message arrives
    * @returns Unsubscribe function
@@ -198,6 +202,8 @@ class RealtimeService {
     // Remove existing subscription if any
     this.unsubscribe(channelName);
     
+    console.log(`🔔 [RealtimeService] Setting up message subscription for conversation: ${conversationId}`);
+    
     const channel = supabase
       .channel(channelName)
       .on(
@@ -205,17 +211,30 @@ class RealtimeService {
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'messages',
-          filter: `conversation_id=eq.${conversationId}`
+          table: 'messages'
+          // NO FILTER - we filter client-side for reliability
         },
         (payload: RealtimePostgresChangesPayload<Message>) => {
           const newMessage = payload.new as Message;
-          console.log('📨 New message received:', newMessage.id);
-          onNewMessage(newMessage);
+          
+          // Client-side filter: Only process messages for this conversation
+          if (newMessage.conversation_id === conversationId) {
+            console.log('📨 [RealtimeService] New message received for conversation:', {
+              messageId: newMessage.id,
+              conversationId: newMessage.conversation_id,
+              content: newMessage.content?.substring(0, 30) + '...'
+            });
+            onNewMessage(newMessage);
+          }
         }
       )
       .subscribe((status) => {
-        console.log(`🔔 Message subscription status [${channelName}]:`, status);
+        console.log(`🔔 [RealtimeService] Message subscription status [${channelName}]:`, status);
+        if (status === 'SUBSCRIBED') {
+          console.log(`✅ [RealtimeService] Successfully subscribed to messages for ${conversationId}`);
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error(`❌ [RealtimeService] Channel error for ${channelName}`);
+        }
       });
     
     this.channels.set(channelName, channel);
@@ -266,6 +285,9 @@ class RealtimeService {
   /**
    * Subscribe to read receipts
    * 
+   * NOTE: We subscribe to ALL read receipt inserts and filter client-side
+   * because the filter on conversation_id may not work reliably.
+   * 
    * @param conversationId - Conversation UUID
    * @param onReadReceipt - Callback when read receipt arrives
    * @returns Unsubscribe function
@@ -279,6 +301,8 @@ class RealtimeService {
     // Remove existing subscription if any
     this.unsubscribe(channelName);
     
+    console.log(`🔔 [RealtimeService] Setting up read receipt subscription for conversation: ${conversationId}`);
+    
     const channel = supabase
       .channel(channelName)
       .on(
@@ -286,22 +310,26 @@ class RealtimeService {
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'message_read_receipts',
-          filter: `conversation_id=eq.${conversationId}` // Assuming conversation_id is in the table or we filter by message_id if needed, but usually RLS handles it. 
-          // Wait, message_read_receipts might not have conversation_id. Let's check the schema or types.
-          // The type MessageReadReceipt has message_id. 
-          // If we can't filter by conversation_id directly, we might need to rely on RLS or client-side filtering if we subscribe to all.
-          // However, standard pattern is usually to include conversation_id for this exact reason.
-          // Let's assume for now we filter by message_id IN (select id from messages where conversation_id = ...) which is hard in realtime.
-          // Or maybe the table has conversation_id.
-          // Let's check the type definition again.
+          table: 'message_read_receipts'
+          // NO FILTER - we filter client-side for reliability
         },
         (payload) => {
-          console.log('✓ Read receipt:', payload.new.message_id);
-          onReadReceipt(payload.new);
+          const receipt = payload.new as any;
+          console.log('✓ [RealtimeService] Read receipt received:', {
+            messageId: receipt.message_id,
+            readBy: receipt.user_id,
+            readAt: receipt.read_at
+          });
+          // Pass all receipts - the callback will handle filtering by message IDs
+          onReadReceipt(receipt);
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log(`🔔 [RealtimeService] Read receipt subscription status [${channelName}]:`, status);
+        if (status === 'SUBSCRIBED') {
+          console.log(`✅ [RealtimeService] Successfully subscribed to read receipts for ${conversationId}`);
+        }
+      });
     
     this.channels.set(channelName, channel);
     

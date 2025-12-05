@@ -92,15 +92,47 @@ export function ChatScreen() {
     }
   }, [isLoading])
 
-  // Mark conversation as read when entering chat
+  // Mark conversation as read ONLY when user is actively viewing
+  // This is the proper WhatsApp-style behavior
   useEffect(() => {
-    if (conversationId) {
-      conversationManagementService.markConversationAsRead(conversationId)
-        .then(() => {
-          // Dispatch event to trigger conversation list refresh
-          window.dispatchEvent(new CustomEvent('conversation-updated', { detail: { conversationId } }))
-        })
-        .catch(err => console.error('Failed to mark conversation as read:', err))
+    if (!conversationId) return
+
+    // Helper to mark as read only if document is visible and focused
+    const markAsReadIfVisible = () => {
+      if (document.visibilityState === 'visible' && document.hasFocus()) {
+        console.log('👁️ User viewing chat - marking as read:', conversationId)
+        conversationManagementService.markConversationAsRead(conversationId)
+          .then(() => {
+            // Dispatch event to trigger conversation list refresh
+            window.dispatchEvent(new CustomEvent('conversation-updated', { detail: { conversationId } }))
+          })
+          .catch(err => console.error('Failed to mark conversation as read:', err))
+      } else {
+        console.log('👁️ Chat not in focus/visible - NOT marking as read')
+      }
+    }
+
+    // Mark as read on mount (if visible)
+    markAsReadIfVisible()
+
+    // Mark as read when user returns to this tab/window
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        markAsReadIfVisible()
+      }
+    }
+
+    const handleFocus = () => {
+      markAsReadIfVisible()
+    }
+
+    // Listen for visibility and focus changes
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('focus', handleFocus)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('focus', handleFocus)
     }
   }, [conversationId])
 

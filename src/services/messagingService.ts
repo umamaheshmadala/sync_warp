@@ -304,6 +304,7 @@ class MessagingService {
 
   /**
    * Fetch messages with cursor-based pagination
+   * Now includes status derivation from read receipts (WhatsApp-style tick marks)
    * 
    * @param conversationId - Conversation UUID
    * @param limit - Max messages to fetch (default 50)
@@ -318,6 +319,10 @@ class MessagingService {
     try {
       console.log('📥 Fetching messages for conversation:', conversationId);
       
+      // Get current user for status derivation
+      const { data: userData } = await supabase.auth.getUser();
+      const currentUserId = userData?.user?.id;
+      
       const { data, error } = await supabase
         .rpc('get_conversation_messages', {
           p_conversation_id: conversationId,
@@ -327,21 +332,58 @@ class MessagingService {
       
       if (error) throw error;
       
-      const messages = (data || []).map((msg: any) => ({
-        ...msg,
-        // Ensure arrays are initialized
-        media_urls: msg.media_urls || [],
-        // Ensure timestamps are valid strings
-        created_at: msg.created_at,
-        updated_at: msg.updated_at,
-        read_at: msg.read_at,
-        deleted_at: msg.deleted_at,
-        edited_at: msg.edited_at
-      }));
+      // Get message IDs that the current user sent (for status derivation)
+      const sentMessageIds = (data || [])
+        .filter((msg: any) => msg.sender_id === currentUserId)
+        .map((msg: any) => msg.id);
+      
+      // Fetch read receipts for sent messages
+      let readReceiptsByMessageId: Record<string, boolean> = {};
+      if (sentMessageIds.length > 0) {
+        const { data: receipts } = await supabase
+          .from('message_read_receipts')
+          .select('message_id, read_at')
+          .in('message_id', sentMessageIds)
+          .not('read_at', 'is', null);
+        
+        // Create a map of message_id -> has been read 
+        readReceiptsByMessageId = (receipts || []).reduce((acc: Record<string, boolean>, receipt: any) => {
+          acc[receipt.message_id] = true;
+          return acc;
+        }, {});
+      }
+      
+      const messages = (data || []).map((msg: any) => {
+        // Derive status for own messages
+        let status: 'sent' | 'delivered' | 'read' | undefined;
+        if (msg.sender_id === currentUserId) {
+          // Own message - derive status from read receipts
+          if (readReceiptsByMessageId[msg.id]) {
+            status = 'read'; // Double blue check ✓✓
+          } else {
+            status = 'delivered'; // Double gray check ✓✓ (message exists in DB = delivered)
+          }
+        }
+        // For received messages, status is not needed (we don't show ticks on received messages)
+        
+        return {
+          ...msg,
+          status,
+          // Ensure arrays are initialized
+          media_urls: msg.media_urls || [],
+          // Ensure timestamps are valid strings
+          created_at: msg.created_at,
+          updated_at: msg.updated_at,
+          read_at: msg.read_at,
+          deleted_at: msg.deleted_at,
+          edited_at: msg.edited_at
+        };
+      });
 
       const hasMore = messages.length > limit;
       const finalMessages = (messages.slice(0, limit)).reverse(); // Reverse for chronological order
       
+      console.log(`✅ Fetched ${finalMessages.length} messages with status derived`);
       return { messages: finalMessages, hasMore };
     } catch (error) {
       console.error('❌ Error fetching messages:', error);

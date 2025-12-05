@@ -66,26 +66,17 @@ export function useConversations() {
 
   const { user } = useAuthStore()
 
-  // Subscribe to real-time conversation updates
+  // Subscribe to real-time conversation updates (conversations + new messages)
   useEffect(() => {
     if (!user?.id) return
 
-    const unsubscribeList = realtimeService.subscribeToConversationList(
-      user.id,
-      async (payload) => {
-        console.log('🔄 Conversation list update:', payload.eventType)
-        
-        if (payload.eventType === 'INSERT') {
-          // Fetch full details for new conversation
-          const newConv = await messagingService.getConversation(payload.new.id)
-          if (newConv) {
-            addConversation(newConv)
-          }
-        } else if (payload.eventType === 'UPDATE') {
-          updateConversation(payload.new.id, payload.new)
-        } else if (payload.eventType === 'DELETE') {
-          removeConversation(payload.old.id)
-        }
+    // Use subscribeToConversations which subscribes to BOTH:
+    // 1. Conversation table changes (INSERT/UPDATE/DELETE)
+    // 2. Message INSERT events (to update last_message_content in sidebar)
+    const unsubscribeConversations = realtimeService.subscribeToConversations(
+      () => {
+        console.log('🔄 [useConversations] Realtime update received - refreshing list')
+        fetchConversations()
       }
     )
 
@@ -101,10 +92,10 @@ export function useConversations() {
     )
 
     return () => {
-      unsubscribeList()
+      unsubscribeConversations()
       unsubscribeMute()
     }
-  }, [user?.id, addConversation, updateConversation, removeConversation])
+  }, [user?.id, fetchConversations, updateConversation])
 
   // Mobile lifecycle: pause/resume updates based on app state
   useEffect(() => {
