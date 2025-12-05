@@ -74,6 +74,9 @@ class ReadReceiptService {
    * Mark all unread messages in a conversation as read
    * Only marks messages not sent by current user
    * 
+   * PRIVACY: Checks if current user has read receipts enabled
+   * If disabled, messages won't be marked as read (senders won't see 'read' status)
+   * 
    * @param conversationId - Conversation UUID
    * @returns Number of messages marked as read
    */
@@ -81,6 +84,14 @@ class ReadReceiptService {
     try {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) return 0;
+
+      // PRIVACY CHECK: If user has disabled read receipts, don't mark as read
+      // This prevents senders from seeing 'read' status
+      const readReceiptsEnabled = await this.isReadReceiptsEnabled();
+      if (!readReceiptsEnabled) {
+        console.log('📖 Read receipts disabled - not marking conversation as read');
+        return 0;
+      }
 
       // Get unread messages not from current user
       const { data: unreadMessages, error } = await supabase
@@ -125,12 +136,21 @@ class ReadReceiptService {
   /**
    * Mark messages as read when the document becomes visible
    * Call this when entering a conversation
+   * 
+   * PRIVACY: Checks if current user has read receipts enabled before marking
    */
   async markVisibleMessagesAsRead(
     conversationId: string,
     messageIds: string[]
   ): Promise<void> {
     if (!this.isDocumentVisible) {
+      return;
+    }
+
+    // PRIVACY CHECK: If user has disabled read receipts, don't mark as read
+    const readReceiptsEnabled = await this.isReadReceiptsEnabled();
+    if (!readReceiptsEnabled) {
+      console.log('📖 Read receipts disabled - not marking visible messages as read');
       return;
     }
 

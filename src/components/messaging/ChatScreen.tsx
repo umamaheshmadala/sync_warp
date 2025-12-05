@@ -14,6 +14,7 @@ import { Keyboard } from '@capacitor/keyboard'
 import { App } from '@capacitor/app'
 import { messagingService } from '../../services/messagingService'
 import { conversationManagementService } from '../../services/conversationManagementService'
+import { readReceiptService } from '../../services/readReceiptService'
 import type { Message } from '../../types/messaging'
 import './ChatScreen.css'
 
@@ -101,10 +102,14 @@ export function ChatScreen() {
     const markAsReadIfVisible = () => {
       if (document.visibilityState === 'visible' && document.hasFocus()) {
         console.log('👁️ User viewing chat - marking as read:', conversationId)
-        conversationManagementService.markConversationAsRead(conversationId)
-          .then(() => {
-            // Dispatch event to trigger conversation list refresh
-            window.dispatchEvent(new CustomEvent('conversation-updated', { detail: { conversationId } }))
+        // Use readReceiptService for privacy-aware marking
+        // This checks user's read_receipts_enabled setting before marking
+        readReceiptService.markConversationAsRead(conversationId)
+          .then((count) => {
+            if (count > 0) {
+              // Dispatch event to trigger conversation list refresh
+              window.dispatchEvent(new CustomEvent('conversation-updated', { detail: { conversationId } }))
+            }
           })
           .catch(err => console.error('Failed to mark conversation as read:', err))
       } else {
