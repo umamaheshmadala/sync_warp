@@ -23,6 +23,7 @@ import { mediaUploadService } from '../../services/mediaUploadService'
 import { messagingService } from '../../services/messagingService'
 import type { LinkPreview } from '../../services/linkPreviewService'
 import { useShare } from '../../hooks/useShare'
+import { usePrivacySettings } from '../../hooks/usePrivacySettings'
 
 interface MessageBubbleProps {
   message: Message
@@ -81,6 +82,11 @@ export function MessageBubble({
   const isLongPress = useRef(false)
   const content = message.content || ''
   const isDeleted = !!message.deleted_at
+  
+  // Privacy settings for reciprocal read receipts
+  // If user disabled read receipts, they also can't see when others read their messages
+  const { settings: privacySettings } = usePrivacySettings()
+  const showReadAsDelivered = privacySettings?.read_receipts_enabled === false
   
   // Determine styling based on sender
   const isSystem = message.type === 'system'
@@ -496,7 +502,13 @@ export function MessageBubble({
             {isOwn && (
               <span className="ml-0.5">
                 <MessageStatusIcon 
-                  status={_failed ? 'failed' : _optimistic ? 'sending' : message.status || 'sent'} 
+                  status={_failed ? 'failed' : _optimistic ? 'sending' : (
+                    // Reciprocal privacy: if user disabled read receipts, they can't see 'read' status
+                    // Downgrade 'read' to 'delivered' to enforce fairness
+                    message.status === 'read' && showReadAsDelivered
+                      ? 'delivered'
+                      : message.status || 'sent'
+                  )} 
                   className={cn(
                     "h-3 w-3",
                     isOwn ? "text-blue-100/80" : "text-gray-400"
