@@ -4,7 +4,7 @@
 **Story Owner:** Frontend Engineering  
 **Estimated Effort:** 2 days  
 **Priority:** P0 - Critical  
-**Status:** 📋 Ready for Implementation  
+**Status:** 🚧 In Progress  
 **Dependencies:** Story 8.5.1 (Read Receipts), Epic 8.1 (`message_edits` table)
 
 ---
