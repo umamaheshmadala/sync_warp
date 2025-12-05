@@ -3,13 +3,14 @@
 **Epic Owner:** Frontend Engineering  
 **Dependencies:** Epic 8.1 (Database), Epic 8.2 (Core Messaging)  
 **Timeline:** Week 7 (1 week)  
-**Status:** 📋 Planning
+**Status:** 📋 Ready for Implementation (8 stories created)
 
 ---
 
 ## 🎯 **Epic Goal**
 
 Implement **game-changing advanced features** that differentiate SynC from competitors **on web browsers, iOS, and Android native apps**:
+
 - ✅ **Read receipts** (seen by 👀)
 - ✏️ **Edit messages** (15-minute window)
 - 🗑️ **Delete messages** (15-minute window)
@@ -23,28 +24,31 @@ Implement **game-changing advanced features** that differentiate SynC from compe
 ## 📱 **Platform Support**
 
 **Target Platforms:**
+
 - ✅ **Web Browsers** (Chrome, Firefox, Safari, Edge)
 - ✅ **iOS Native App** (via Capacitor framework)
 - ✅ **Android Native App** (via Capacitor framework)
 
 **Cross-Platform Advanced Features:**
 
-| Feature | Web Implementation | iOS/Android Implementation |
-|---------|-------------------|---------------------------|
-| **Read Receipts** | Visual indicators | Visual indicators + haptic feedback |
-| **Edit/Delete UI** | Context menu | Long-press gesture + native action sheet |
-| **Message Search** | Text input search | Native search bar with keyboard integration |
-| **Reactions** | Click/hover UI | Tap + hold + native haptic feedback |
-| **Haptic Feedback** | Not available | `@capacitor/haptics` - Native vibration patterns |
+| Feature             | Web Implementation | iOS/Android Implementation                       |
+| ------------------- | ------------------ | ------------------------------------------------ |
+| **Read Receipts**   | Visual indicators  | Visual indicators + haptic feedback              |
+| **Edit/Delete UI**  | Context menu       | Long-press gesture + native action sheet         |
+| **Message Search**  | Text input search  | Native search bar with keyboard integration      |
+| **Reactions**       | Click/hover UI     | Tap + hold + native haptic feedback              |
+| **Haptic Feedback** | Not available      | `@capacitor/haptics` - Native vibration patterns |
 
 **Required Capacitor Plugins:**
+
 ```json
 {
-  "@capacitor/haptics": "^5.0.0"  // Native haptic feedback (iOS/Android)
+  "@capacitor/haptics": "^5.0.0" // Native haptic feedback (iOS/Android)
 }
 ```
 
 **Mobile UX Enhancements:**
+
 - **iOS**: Light haptic feedback on reactions (UIImpactFeedbackGenerator)
 - **Android**: Vibration patterns for reactions (VibrationEffect)
 - **Long-press gestures** for edit/delete on mobile (more intuitive than web context menu)
@@ -54,15 +58,15 @@ Implement **game-changing advanced features** that differentiate SynC from compe
 
 ## ✅ **Success Criteria**
 
-| Objective | Target |
-|-----------|--------|
-| **Read Receipt Accuracy** | 100% (all platforms) |
-| **Edit Success Rate** | > 99% within 15min window (all platforms) |
-| **Delete Success Rate** | > 99% within 15min window (all platforms) |
-| **Search Performance** | < 200ms for keyword search (all platforms) |
-| **Reaction Latency** | < 500ms (all platforms) |
+| Objective                    | Target                                         |
+| ---------------------------- | ---------------------------------------------- | ----------------------------------------- |
+| **Read Receipt Accuracy**    | 100% (all platforms)                           |
+| **Edit Success Rate**        | > 99% within 15min window (all platforms)      |
+| **Delete Success Rate**      | > 99% within 15min window (all platforms)      |
+| **Search Performance**       | < 200ms for keyword search (all platforms)     |
+| **Reaction Latency**         | < 500ms (all platforms)                        |
 | **Haptic Feedback (Mobile)** | Triggers on reaction/edit/delete (iOS/Android) |
-|| **Long-press Gesture (Mobile)** | Activates edit/delete menu on iOS/Android |
+|                              | **Long-press Gesture (Mobile)**                | Activates edit/delete menu on iOS/Android |
 
 ---
 
@@ -104,6 +108,7 @@ Implement **game-changing advanced features** that differentiate SynC from compe
    - Create read receipt indicator badges
 
 **🔄 Automatic Routing:** Per global MCP rule, commands automatically route to appropriate servers based on keywords:
+
 - SQL/database/RLS queries → Supabase MCP
 - explain/analyze/refactor → Context7 MCP
 - inspect/debug → Chrome DevTools MCP
@@ -123,8 +128,8 @@ Implement **game-changing advanced features** that differentiate SynC from compe
 
 ```typescript
 // src/services/readReceiptService.ts
-import { supabase } from '../lib/supabase'
-import { realtimeService } from './realtimeService'
+import { supabase } from "../lib/supabase";
+import { realtimeService } from "./realtimeService";
 
 class ReadReceiptService {
   /**
@@ -132,39 +137,39 @@ class ReadReceiptService {
    * Triggers RPC function from Epic 8.1
    */
   async markAsRead(messageId: string): Promise<void> {
-    const userId = (await supabase.auth.getUser()).data.user!.id
+    const userId = (await supabase.auth.getUser()).data.user!.id;
 
-    const { error } = await supabase.rpc('mark_message_as_read', {
+    const { error } = await supabase.rpc("mark_message_as_read", {
       p_message_id: messageId,
-      p_user_id: userId
-    })
+      p_user_id: userId,
+    });
 
-    if (error) throw error
-    console.log(`📖 Marked message ${messageId} as read`)
+    if (error) throw error;
+    console.log(`📖 Marked message ${messageId} as read`);
   }
 
   /**
    * Mark all messages in conversation as read
    */
   async markConversationAsRead(conversationId: string): Promise<void> {
-    const userId = (await supabase.auth.getUser()).data.user!.id
+    const userId = (await supabase.auth.getUser()).data.user!.id;
 
     // Get unread messages
     const { data: unreadMessages } = await supabase
-      .from('messages')
-      .select('id')
-      .eq('conversation_id', conversationId)
-      .neq('sender_id', userId)
-      .is('read_at', null)
+      .from("messages")
+      .select("id")
+      .eq("conversation_id", conversationId)
+      .neq("sender_id", userId)
+      .is("read_at", null);
 
-    if (!unreadMessages?.length) return
+    if (!unreadMessages?.length) return;
 
     // Mark each as read
-    await Promise.all(
-      unreadMessages.map(msg => this.markAsRead(msg.id))
-    )
+    await Promise.all(unreadMessages.map((msg) => this.markAsRead(msg.id)));
 
-    console.log(`📚 Marked ${unreadMessages.length} messages as read in ${conversationId}`)
+    console.log(
+      `📚 Marked ${unreadMessages.length} messages as read in ${conversationId}`
+    );
   }
 
   /**
@@ -177,14 +182,15 @@ class ReadReceiptService {
     return realtimeService.subscribeToReadReceipts(
       conversationId,
       onReadReceipt
-    )
+    );
   }
 }
 
-export const readReceiptService = new ReadReceiptService()
+export const readReceiptService = new ReadReceiptService();
 ```
 
 **🛢 MCP Integration:**
+
 ```bash
 # Verify read receipts are being tracked
 warp mcp run supabase "execute_sql SELECT * FROM message_read_receipts WHERE message_id IN (SELECT id FROM messages WHERE conversation_id = 'conv-123') ORDER BY read_at DESC LIMIT 10;"
@@ -200,20 +206,20 @@ warp mcp run supabase "execute_sql SELECT * FROM message_read_receipts WHERE mes
 
 ```typescript
 // src/services/messageEditService.ts
-import { supabase } from '../lib/supabase'
+import { supabase } from "../lib/supabase";
 
 class MessageEditService {
-  private EDIT_WINDOW_MS = 15 * 60 * 1000 // 15 minutes
+  private EDIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 
   /**
    * Check if message can be edited
    */
   canEdit(message: { createdAt: string; senderId: string }): boolean {
-    const currentUserId = (await supabase.auth.getUser()).data.user!.id
-    if (message.senderId !== currentUserId) return false
+    const currentUserId = (await supabase.auth.getUser()).data.user!.id;
+    if (message.senderId !== currentUserId) return false;
 
-    const messageAge = Date.now() - new Date(message.createdAt).getTime()
-    return messageAge < this.EDIT_WINDOW_MS
+    const messageAge = Date.now() - new Date(message.createdAt).getTime();
+    return messageAge < this.EDIT_WINDOW_MS;
   }
 
   /**
@@ -222,35 +228,35 @@ class MessageEditService {
   async editMessage(messageId: string, newContent: string): Promise<void> {
     // Fetch original message to check edit window
     const { data: message, error: fetchError } = await supabase
-      .from('messages')
-      .select('created_at, sender_id')
-      .eq('id', messageId)
-      .single()
+      .from("messages")
+      .select("created_at, sender_id")
+      .eq("id", messageId)
+      .single();
 
-    if (fetchError) throw fetchError
+    if (fetchError) throw fetchError;
     if (!this.canEdit(message)) {
-      throw new Error('Edit window expired (15 minutes)')
+      throw new Error("Edit window expired (15 minutes)");
     }
 
     // Update message content
     const { error: updateError } = await supabase
-      .from('messages')
-      .update({ 
+      .from("messages")
+      .update({
         content: newContent,
-        edited_at: new Date().toISOString()
+        edited_at: new Date().toISOString(),
       })
-      .eq('id', messageId)
+      .eq("id", messageId);
 
-    if (updateError) throw updateError
+    if (updateError) throw updateError;
 
     // Log edit history
-    await supabase.from('message_edits').insert({
+    await supabase.from("message_edits").insert({
       message_id: messageId,
       old_content: message.content,
-      new_content: newContent
-    })
+      new_content: newContent,
+    });
 
-    console.log(`✏️ Edited message ${messageId}`)
+    console.log(`✏️ Edited message ${messageId}`);
   }
 
   /**
@@ -259,28 +265,28 @@ class MessageEditService {
   async deleteMessage(messageId: string): Promise<void> {
     // Fetch original message to check edit window
     const { data: message, error: fetchError } = await supabase
-      .from('messages')
-      .select('created_at, sender_id')
-      .eq('id', messageId)
-      .single()
+      .from("messages")
+      .select("created_at, sender_id")
+      .eq("id", messageId)
+      .single();
 
-    if (fetchError) throw fetchError
+    if (fetchError) throw fetchError;
     if (!this.canEdit(message)) {
-      throw new Error('Delete window expired (15 minutes)')
+      throw new Error("Delete window expired (15 minutes)");
     }
 
     // Soft delete
     const { error: deleteError } = await supabase
-      .from('messages')
-      .update({ 
+      .from("messages")
+      .update({
         is_deleted: true,
-        deleted_at: new Date().toISOString()
+        deleted_at: new Date().toISOString(),
       })
-      .eq('id', messageId)
+      .eq("id", messageId);
 
-    if (deleteError) throw deleteError
+    if (deleteError) throw deleteError;
 
-    console.log(`🗑️ Deleted message ${messageId}`)
+    console.log(`🗑️ Deleted message ${messageId}`);
   }
 
   /**
@@ -288,20 +294,21 @@ class MessageEditService {
    */
   async getEditHistory(messageId: string): Promise<any[]> {
     const { data, error } = await supabase
-      .from('message_edits')
-      .select('*')
-      .eq('message_id', messageId)
-      .order('edited_at', { ascending: true })
+      .from("message_edits")
+      .select("*")
+      .eq("message_id", messageId)
+      .order("edited_at", { ascending: true });
 
-    if (error) throw error
-    return data
+    if (error) throw error;
+    return data;
   }
 }
 
-export const messageEditService = new MessageEditService()
+export const messageEditService = new MessageEditService();
 ```
 
 **🧠 MCP Integration:**
+
 ```bash
 # Analyze edit logic with Context7
 warp mcp run context7 "explain the 15-minute edit window enforcement in messageEditService"
@@ -315,8 +322,8 @@ warp mcp run context7 "explain the 15-minute edit window enforcement in messageE
 
 ```typescript
 // src/services/messageSearchService.ts
-import { supabase } from '../lib/supabase'
-import type { Message } from '../types/messaging'
+import { supabase } from "../lib/supabase";
+import type { Message } from "../types/messaging";
 
 class MessageSearchService {
   /**
@@ -328,73 +335,78 @@ class MessageSearchService {
     query: string
   ): Promise<Message[]> {
     const { data, error } = await supabase
-      .from('messages')
-      .select(`
+      .from("messages")
+      .select(
+        `
         *,
         sender:users!messages_sender_id_fkey(id, username, avatar_url)
-      `)
-      .eq('conversation_id', conversationId)
-      .eq('is_deleted', false)
-      .textSearch('content', query, {
-        type: 'websearch',
-        config: 'english'
+      `
+      )
+      .eq("conversation_id", conversationId)
+      .eq("is_deleted", false)
+      .textSearch("content", query, {
+        type: "websearch",
+        config: "english",
       })
-      .order('created_at', { ascending: false })
-      .limit(50)
+      .order("created_at", { ascending: false })
+      .limit(50);
 
-    if (error) throw error
-    return data
+    if (error) throw error;
+    return data;
   }
 
   /**
    * Search across all conversations (global search)
    */
   async searchAllConversations(query: string): Promise<Message[]> {
-    const userId = (await supabase.auth.getUser()).data.user!.id
+    const userId = (await supabase.auth.getUser()).data.user!.id;
 
     // Only search in conversations user is part of
     const { data: userConvos } = await supabase
-      .from('conversation_participants')
-      .select('conversation_id')
-      .eq('user_id', userId)
+      .from("conversation_participants")
+      .select("conversation_id")
+      .eq("user_id", userId);
 
-    if (!userConvos?.length) return []
+    if (!userConvos?.length) return [];
 
-    const conversationIds = userConvos.map(c => c.conversation_id)
+    const conversationIds = userConvos.map((c) => c.conversation_id);
 
     const { data, error } = await supabase
-      .from('messages')
-      .select(`
+      .from("messages")
+      .select(
+        `
         *,
         sender:users!messages_sender_id_fkey(id, username, avatar_url),
         conversation:conversations(id, name)
-      `)
-      .in('conversation_id', conversationIds)
-      .eq('is_deleted', false)
-      .textSearch('content', query, {
-        type: 'websearch',
-        config: 'english'
+      `
+      )
+      .in("conversation_id", conversationIds)
+      .eq("is_deleted", false)
+      .textSearch("content", query, {
+        type: "websearch",
+        config: "english",
       })
-      .order('created_at', { ascending: false })
-      .limit(100)
+      .order("created_at", { ascending: false })
+      .limit(100);
 
-    if (error) throw error
-    return data
+    if (error) throw error;
+    return data;
   }
 
   /**
    * Highlight search query in message content
    */
   highlightQuery(content: string, query: string): string {
-    const regex = new RegExp(`(${query})`, 'gi')
-    return content.replace(regex, '<mark>$1</mark>')
+    const regex = new RegExp(`(${query})`, "gi");
+    return content.replace(regex, "<mark>$1</mark>");
   }
 }
 
-export const messageSearchService = new MessageSearchService()
+export const messageSearchService = new MessageSearchService();
 ```
 
 **🛢 MCP Integration:**
+
 ```bash
 # Test full-text search performance
 warp mcp run supabase "execute_sql EXPLAIN ANALYZE SELECT * FROM messages WHERE to_tsvector('english', content) @@ to_tsquery('english', 'pizza') AND conversation_id = 'conv-123';"
@@ -410,12 +422,12 @@ warp mcp run supabase "execute_sql EXPLAIN ANALYZE SELECT * FROM messages WHERE 
 
 ```typescript
 // src/services/reactionService.ts
-import { supabase } from '../lib/supabase'
+import { supabase } from "../lib/supabase";
 
 interface Reaction {
-  emoji: string
-  userIds: string[]
-  count: number
+  emoji: string;
+  userIds: string[];
+  count: number;
 }
 
 class ReactionService {
@@ -423,62 +435,62 @@ class ReactionService {
    * Add reaction to message
    */
   async addReaction(messageId: string, emoji: string): Promise<void> {
-    const userId = (await supabase.auth.getUser()).data.user!.id
+    const userId = (await supabase.auth.getUser()).data.user!.id;
 
     // Fetch current reactions
     const { data: message } = await supabase
-      .from('messages')
-      .select('reactions')
-      .eq('id', messageId)
-      .single()
+      .from("messages")
+      .select("reactions")
+      .eq("id", messageId)
+      .single();
 
-    const reactions = message?.reactions || {}
-    
+    const reactions = message?.reactions || {};
+
     // Add user to reaction
     if (!reactions[emoji]) {
-      reactions[emoji] = []
+      reactions[emoji] = [];
     }
     if (!reactions[emoji].includes(userId)) {
-      reactions[emoji].push(userId)
+      reactions[emoji].push(userId);
     }
 
     // Update
     const { error } = await supabase
-      .from('messages')
+      .from("messages")
       .update({ reactions })
-      .eq('id', messageId)
+      .eq("id", messageId);
 
-    if (error) throw error
-    console.log(`❤️ Added reaction ${emoji} to message ${messageId}`)
+    if (error) throw error;
+    console.log(`❤️ Added reaction ${emoji} to message ${messageId}`);
   }
 
   /**
    * Remove reaction from message
    */
   async removeReaction(messageId: string, emoji: string): Promise<void> {
-    const userId = (await supabase.auth.getUser()).data.user!.id
+    const userId = (await supabase.auth.getUser()).data.user!.id;
 
     const { data: message } = await supabase
-      .from('messages')
-      .select('reactions')
-      .eq('id', messageId)
-      .single()
+      .from("messages")
+      .select("reactions")
+      .eq("id", messageId)
+      .single();
 
-    const reactions = message?.reactions || {}
-    
+    const reactions = message?.reactions || {};
+
     if (reactions[emoji]) {
-      reactions[emoji] = reactions[emoji].filter((id: string) => id !== userId)
+      reactions[emoji] = reactions[emoji].filter((id: string) => id !== userId);
       if (reactions[emoji].length === 0) {
-        delete reactions[emoji]
+        delete reactions[emoji];
       }
     }
 
     const { error } = await supabase
-      .from('messages')
+      .from("messages")
       .update({ reactions })
-      .eq('id', messageId)
+      .eq("id", messageId);
 
-    if (error) throw error
+    if (error) throw error;
   }
 
   /**
@@ -488,12 +500,12 @@ class ReactionService {
     return Object.entries(reactions).map(([emoji, userIds]) => ({
       emoji,
       userIds,
-      count: userIds.length
-    }))
+      count: userIds.length,
+    }));
   }
 }
 
-export const reactionService = new ReactionService()
+export const reactionService = new ReactionService();
 ```
 
 ---
@@ -529,7 +541,7 @@ export function MessageActions({ message, canEdit, canDelete, onEdit, onDelete }
 
   const handleDelete = async () => {
     if (!confirm('Delete this message?')) return
-    
+
     try {
       await messageEditService.deleteMessage(message.id)
       onDelete?.()
@@ -612,6 +624,7 @@ export function MessageActions({ message, canEdit, canDelete, onEdit, onDelete }
 ```
 
 **🎨 MCP Integration:**
+
 ```bash
 # Scaffold dropdown menu with Shadcn
 warp mcp run shadcn "getComponent dropdown-menu"
@@ -622,6 +635,7 @@ warp mcp run shadcn "getComponent dropdown-menu"
 ## 📋 **Story Breakdown**
 
 ### **Story 8.5.1: Read Receipts Implementation** (2 days)
+
 - [ ] Implement readReceiptService
 - [ ] Mark messages as read when viewed
 - [ ] Display "Seen by 👀" indicator
@@ -629,6 +643,7 @@ warp mcp run shadcn "getComponent dropdown-menu"
 - **🛢 MCP**: Test read receipts with Supabase MCP
 
 ### **Story 8.5.2: Edit & Delete Messages** (2 days)
+
 - [ ] Implement messageEditService with 15min window
 - [ ] Create edit UI (inline editing)
 - [ ] Create delete confirmation dialog
@@ -636,6 +651,7 @@ warp mcp run shadcn "getComponent dropdown-menu"
 - **🧠 MCP**: Analyze edit window logic with Context7
 
 ### **Story 8.5.3: Message Search** (2 days)
+
 - [ ] Implement full-text search with Postgres
 - [ ] Create search UI with highlighting
 - [ ] Add global search across conversations
@@ -643,6 +659,7 @@ warp mcp run shadcn "getComponent dropdown-menu"
 - **🛢 MCP**: Test search performance with Supabase MCP
 
 ### **Story 8.5.4: Message Reactions** (1 day)
+
 - [ ] Add `reactions` JSONB column to messages table
 - [ ] Implement reactionService
 - [ ] Create reaction picker UI
@@ -654,18 +671,21 @@ warp mcp run shadcn "getComponent dropdown-menu"
 ## 🧪 **Testing with MCP**
 
 ### **E2E Tests with Puppeteer MCP**
+
 ```bash
 # Test edit/delete flow
 warp mcp run puppeteer "e2e test message edit within 15 minutes and verify edited badge appears"
 ```
 
 ### **Database Tests with Supabase MCP**
+
 ```bash
 # Verify edit history is logged
 warp mcp run supabase "execute_sql SELECT * FROM message_edits WHERE message_id = 'msg-123' ORDER BY edited_at DESC;"
 ```
 
 ### **Search Performance with Supabase MCP**
+
 ```bash
 # Test full-text search query plan
 warp mcp run supabase "execute_sql EXPLAIN ANALYZE SELECT * FROM messages WHERE to_tsvector('english', content) @@ plainto_tsquery('english', 'coffee shop');"
