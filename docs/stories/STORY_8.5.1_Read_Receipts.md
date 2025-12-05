@@ -55,7 +55,7 @@ Implement **read receipts** that show when messages have been seen by recipients
 - ✅ Status icon changes from gray ✓✓ to cyan ✓✓ on read
 - ✅ Works across all platforms (web + mobile)
 - ✅ Respects visibility state (tab focus, app foreground)
-- ❌ Privacy toggle in settings (reciprocal opt-out) - **ISSUE UNRESOLVED: Privacy logic for hiding read status from sender is not working correctly.**
+- ❌ Privacy toggle in settings (reciprocal opt-out) - **PENDING: Database-side privacy check works (message.status stays 'sent'), but UI shows blue ticks via real-time subscription on `message_read_receipts` table. Fix needed: Client must check `message.status` field instead of read receipt insertions.**
 
 ---
 
