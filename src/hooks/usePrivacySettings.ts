@@ -8,6 +8,8 @@ export interface PrivacySettings {
     search_visibility: boolean;
     online_status_visibility: 'everyone' | 'friends' | 'no_one';
     who_can_follow: 'everyone' | 'friends' | 'no_one';
+    /** Read receipts enabled - reciprocal: if disabled, user can't see others' read receipts either */
+    read_receipts_enabled: boolean;
     last_updated: string | null;
 }
 

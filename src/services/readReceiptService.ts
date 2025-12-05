@@ -298,6 +298,81 @@ class ReadReceiptService {
   get isVisible(): boolean {
     return this.isDocumentVisible;
   }
+
+  /**
+   * Check if current user has read receipts enabled
+   * Reciprocal: if disabled, user won't send or see read receipts
+   */
+  async isReadReceiptsEnabled(): Promise<boolean> {
+    try {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) return false;
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('privacy_settings')
+        .eq('id', user.user.id)
+        .single();
+
+      if (error) {
+        console.error('❌ Error fetching privacy settings:', error);
+        return true; // Default to enabled if error
+      }
+
+      const settings = data?.privacy_settings;
+      // Default to true if setting doesn't exist
+      return settings?.read_receipts_enabled !== false;
+    } catch (error) {
+      console.error('❌ Error checking read receipt setting:', error);
+      return true; // Default to enabled
+    }
+  }
+
+  /**
+   * Check if read receipts can be shown for a message in a 1:1 conversation
+   * Both parties must have read receipts enabled (reciprocal)
+   * 
+   * @param otherUserId - The other participant in the conversation
+   * @returns true if both users have read receipts enabled
+   */
+  async canShowReadReceipts(otherUserId: string): Promise<boolean> {
+    try {
+      // Check current user's setting
+      const currentUserEnabled = await this.isReadReceiptsEnabled();
+      if (!currentUserEnabled) return false;
+
+      // Check other user's setting
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('privacy_settings')
+        .eq('id', otherUserId)
+        .single();
+
+      if (error) {
+        console.error('❌ Error fetching other user privacy settings:', error);
+        return true; // Default to showing if error
+      }
+
+      const settings = data?.privacy_settings;
+      return settings?.read_receipts_enabled !== false;
+    } catch (error) {
+      console.error('❌ Error checking other user read receipt setting:', error);
+      return true;
+    }
+  }
+
+  /**
+   * Mark message as read with privacy check
+   * Only marks if read receipts are enabled for current user
+   */
+  async markAsReadWithPrivacyCheck(messageId: string): Promise<boolean> {
+    const enabled = await this.isReadReceiptsEnabled();
+    if (!enabled) {
+      console.log('📖 Read receipts disabled - not marking as read');
+      return false;
+    }
+    return this.markAsRead(messageId);
+  }
 }
 
 // Export singleton instance
