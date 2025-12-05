@@ -10,8 +10,10 @@ import {
   Moon,
   Sun,
   Eye,
-  LogOut
+  LogOut,
+  CheckCheck
 } from 'lucide-react'
+import { ReadReceiptPrivacy } from './friends/privacy/ReadReceiptPrivacy'
 
 export default function Settings() {
   const { signOut } = useAuthStore()
@@ -53,6 +55,16 @@ export default function Settings() {
             <Bell className="h-4 w-4 mr-2" />
             Manage Notifications
           </a>
+        </div>
+
+        {/* Privacy - Read Receipts */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center mb-6">
+            <CheckCheck className="h-5 w-5 text-cyan-600 mr-3" />
+            <h2 className="text-xl font-semibold text-gray-900">Privacy</h2>
+          </div>
+
+          <ReadReceiptPrivacy />
         </div>
 
         {/* Appearance */}
