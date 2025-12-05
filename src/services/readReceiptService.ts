@@ -93,14 +93,15 @@ class ReadReceiptService {
         return 0;
       }
 
-      // Get unread messages not from current user
+      // Get messages not from current user that aren't already 'read'
+      // This includes: null, 'sent', 'delivered' status
       const { data: unreadMessages, error } = await supabase
         .from('messages')
-        .select('id')
+        .select('id, status')
         .eq('conversation_id', conversationId)
         .eq('is_deleted', false)
         .neq('sender_id', user.user.id)
-        .is('status', null); // Only get messages without read status
+        .or('status.is.null,status.neq.read'); // Get messages where status is null OR not 'read'
 
       if (error) {
         console.error('❌ Error fetching unread messages:', error);
