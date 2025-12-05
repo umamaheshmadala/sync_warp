@@ -52,7 +52,7 @@ Implement **native haptic feedback** and **gesture controls** for iOS and Androi
 - ✅ Native action sheet on iOS/Android for message actions
 - ✅ Different haptic patterns for different actions
 - ✅ Graceful fallback on web (no haptics)
-- ✅ Configurable haptic settings (optional)
+- ✅ Configurable haptic settings (optional)\r\n\r\n---\r\n\r\n## 🔒 **Confirmed Design Decisions**\r\n\r\n| Decision | Choice | Industry Reference |\r\n|----------|--------|--------------------|\r\n| Haptics configurable | Simple on/off toggle in Settings | Telegram |\r\n| Long-press duration | 500ms (iOS standard) | iOS system default |\r\n| Scope | 1:1 conversations only | - |
 
 ---
 

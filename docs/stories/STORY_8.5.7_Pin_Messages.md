@@ -48,7 +48,7 @@ Implement **message pinning** for important messages in conversations:
 - ✅ Click pinned message to scroll to original
 - ✅ Pinned messages persist across sessions
 - ✅ Real-time sync of pin changes
-- ✅ Group chats: Only admins can pin (optional)
+- ✅ Group chats: Only admins can pin (optional)\r\n\r\n---\r\n\r\n## 🔒 **Confirmed Design Decisions**\r\n\r\n| Decision | Choice | Industry Reference |\r\n|----------|--------|--------------------|\r\n| Pin limit | 3 per conversation | Keeps UI clean |\r\n| Pin expiration | No expiration (permanent until unpinned) | All major apps |\r\n| Who can pin (1:1) | Both participants | - |\r\n| Scope | 1:1 conversations only (group pinning deferred) | - |
 
 ---
 

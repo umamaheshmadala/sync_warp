@@ -56,7 +56,7 @@ Implement **message editing** with a **15-minute edit window** on web browsers, 
 - ✅ Real-time sync of edits to all participants
 - ✅ Web: Context menu or hover action
 - ✅ Mobile: Long-press gesture with haptic feedback
-- ✅ Graceful handling when edit window expires
+- ✅ Graceful handling when edit window expires\r\n\r\n---\r\n\r\n## 🔒 **Confirmed Design Decisions**\r\n\r\n| Decision | Choice | Industry Reference |\r\n|----------|--------|--------------------|\r\n| Edit window | 15 minutes | Consistent with delete |\r\n| Edit history visibility | Sender only can view history | Telegram |\r\n| \"Edited\" badge | Visible to all | WhatsApp, Telegram |\r\n| Media caption editing | Yes, within 15 min | Telegram |\r\n| Edit length limit | No limit (store original in history) | All major apps |\r\n| Scope | 1:1 conversations only | - |
 
 ---
 

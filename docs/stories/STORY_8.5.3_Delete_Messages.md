@@ -54,7 +54,7 @@ Implement **message deletion** with a **15-minute delete window** on web browser
 - ✅ Confirmation dialog with "Delete for everyone" text
 - ✅ Real-time deletion sync to all participants
 - ✅ Deleted messages hidden from search results
-- ✅ Mobile: Long-press with haptic feedback
+- ✅ Mobile: Long-press with haptic feedback\r\n\r\n---\r\n\r\n## 🔒 **Confirmed Design Decisions**\r\n\r\n| Decision | Choice | Industry Reference |\r\n|----------|--------|--------------------|\r\n| Delete options | Both "Delete for Me" and "Delete for Everyone" | WhatsApp, Signal |\r\n| Delete placeholder text | Contextual: "You deleted" vs "This message was deleted" | WhatsApp |\r\n| Delete window | 15 minutes (same as edit) | Consistent with edit |\r\n| Undo feature | 5-second grace period with toast | Modern UX pattern |\r\n| Scope | 1:1 conversations only | - |
 
 ---
 

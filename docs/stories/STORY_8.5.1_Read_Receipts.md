@@ -13,11 +13,13 @@
 
 Implement **read receipts** that show when messages have been seen by recipients **on web browsers, iOS, and Android**:
 
-- Track when each user reads a message
-- Display "Seen by 👀" indicator on messages
+- Track when user reads a message in 1:1 conversations
+- Display WhatsApp-style double-check marks (✓✓ → cyan when read)
 - Real-time updates when message is read
-- Support for 1:1 and group conversations
-- WhatsApp-style double-check marks (✓✓ → blue when read)
+- **Privacy toggle**: Reciprocal opt-out (if disabled, user can't see others' read receipts either)
+- Respects visibility state (tab focus, app foreground)
+
+> **Scope**: 1:1 conversations only. Group chat read receipts deferred to v2.
 
 ---
 
@@ -36,23 +38,34 @@ Implement **read receipts** that show when messages have been seen by recipients
 ### As a message sender, I want to:
 
 1. See when my message has been delivered (✓✓ gray)
-2. See when my message has been read (✓✓ cyan/blue)
-3. Know exactly who read my message in group chats
-4. Get visual confirmation that my message was seen
+2. See when my message has been read (✓✓ cyan)
+3. Get visual confirmation that my message was seen
+4. **Optionally disable read receipts** (reciprocal: I also won't see others' read status)
 
 ### As a message receiver, I want to:
 
 1. Have messages automatically marked as read when I view them
 2. Not manually mark messages as read
+3. **Control my privacy** by disabling read receipts
 
 ### Acceptance Criteria:
 
 - ✅ Messages marked as read when chat screen is visible and focused
 - ✅ Read status updates in real-time for sender
 - ✅ Status icon changes from gray ✓✓ to cyan ✓✓ on read
-- ✅ Group chats show "Seen by X people" tooltip
 - ✅ Works across all platforms (web + mobile)
 - ✅ Respects visibility state (tab focus, app foreground)
+- ✅ Privacy toggle in settings (reciprocal opt-out)
+
+---
+
+## 🔒 **Confirmed Design Decisions**
+
+| Decision         | Choice                             | Industry Reference |
+| ---------------- | ---------------------------------- | ------------------ |
+| Privacy opt-out  | Reciprocal (like WhatsApp)         | WhatsApp, Signal   |
+| Visual indicator | ✓ sent, ✓✓ delivered, cyan ✓✓ read | WhatsApp           |
+| Scope            | 1:1 conversations only             | -                  |
 
 ---
 

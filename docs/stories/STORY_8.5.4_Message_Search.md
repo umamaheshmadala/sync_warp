@@ -53,7 +53,7 @@ Implement **powerful message search** capabilities on web browsers, iOS, and And
 - ✅ Results show conversation context
 - ✅ Deleted messages excluded from search
 - ✅ Keyboard shortcut (Cmd/Ctrl+F) on web
-- ✅ Native search integration on mobile
+- ✅ Native search integration on mobile\r\n\r\n---\r\n\r\n## 🔒 **Confirmed Design Decisions**\r\n\r\n| Decision | Choice | Industry Reference |\r\n|----------|--------|--------------------|\r\n| Search scope | Text + media captions + file names | Telegram, Slack |\r\n| Fuzzy search | Stemming now, pg_trgm fuzzy in v2 | Slack |\r\n| Search context | 50 words around match with ts_headline | Google search |\r\n| Performance target | < 200ms latency | - |\r\n| Scope | 1:1 conversations only | - |
 
 ---
 

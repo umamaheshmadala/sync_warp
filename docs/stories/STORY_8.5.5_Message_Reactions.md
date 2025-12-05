@@ -51,7 +51,7 @@ Implement **emoji reactions** for messages on web browsers, iOS, and Android:
 - ✅ Show "who reacted" tooltip
 - ✅ Real-time sync of reactions
 - ✅ Haptic feedback on mobile
-- ✅ Animation on reaction add
+- ✅ Animation on reaction add\r\n\r\n---\r\n\r\n## 🔒 **Confirmed Design Decisions**\r\n\r\n| Decision | Choice | Industry Reference |\r\n|----------|--------|--------------------|\r\n| Max unique reactions | 20 per message | Discord |\r\n| Multiple reactions per user | Allowed (different emojis) | Slack, Discord |\r\n| Custom emojis | Standard emojis only for v1 | WhatsApp |\r\n| Self-reactions | Allowed | All apps |\r\n| Scope | 1:1 conversations only | - |
 
 ---
 
