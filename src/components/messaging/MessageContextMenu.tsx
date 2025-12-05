@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react'
-import { Reply, Copy, Forward, Star, Trash2, CheckSquare, Share2 } from 'lucide-react'
+import { Reply, Copy, Forward, Star, Trash2, CheckSquare, Share2, Pencil } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Message } from '@/types/messaging'
 import { useShare } from '@/hooks/useShare'
@@ -16,6 +16,9 @@ interface MessageContextMenuProps {
   onDelete?: () => void
   onSelect?: () => void
   onShare?: () => void
+  onEdit?: () => void
+  canEdit?: boolean
+  editRemainingTime?: string
 }
 
 /**
@@ -40,7 +43,10 @@ export function MessageContextMenu({
   onStar,
   onDelete,
   onSelect,
-  onShare
+  onShare,
+  onEdit,
+  canEdit = false,
+  editRemainingTime = ''
 }: MessageContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -91,6 +97,20 @@ export function MessageContextMenu({
           <Reply className="w-4 h-4 text-gray-600" />
           <span className="text-sm text-gray-900">Reply</span>
         </button>
+
+        {/* Edit (only for own messages within edit window) */}
+        {onEdit && canEdit && isOwn && (
+          <button
+            onClick={() => handleAction(onEdit)}
+            className="flex items-center gap-3 w-full px-4 py-2.5 hover:bg-gray-100 transition-colors text-left"
+          >
+            <Pencil className="w-4 h-4 text-blue-600" />
+            <span className="text-sm text-gray-900">Edit</span>
+            {editRemainingTime && (
+              <span className="ml-auto text-xs text-gray-400">{editRemainingTime}</span>
+            )}
+          </button>
+        )}
 
         {/* Copy */}
         <button

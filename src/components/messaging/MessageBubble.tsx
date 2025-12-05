@@ -24,6 +24,9 @@ import { messagingService } from '../../services/messagingService'
 import type { LinkPreview } from '../../services/linkPreviewService'
 import { useShare } from '../../hooks/useShare'
 import { usePrivacySettings } from '../../hooks/usePrivacySettings'
+import { messageEditService } from '../../services/messageEditService'
+import { EditedBadge } from './EditedBadge'
+import { InlineMessageEditor } from './InlineMessageEditor'
 
 interface MessageBubbleProps {
   message: Message
@@ -83,10 +86,29 @@ export function MessageBubble({
   const content = message.content || ''
   const isDeleted = !!message.deleted_at
   
+  // Edit state - must come after content is defined
+  const [isEditing, setIsEditing] = useState(false)
+  const [editedContent, setEditedContent] = useState(content)
+  
   // Privacy settings for reciprocal read receipts
   // If user disabled read receipts, they also can't see when others read their messages
   const { settings: privacySettings } = usePrivacySettings()
   const showReadAsDelivered = privacySettings?.read_receipts_enabled === false
+  
+  // Edit eligibility - calculate inline without a hook to avoid database calls per message
+  // Only own text messages within 15-minute window can be edited
+  const EDIT_WINDOW_MS = 15 * 60 * 1000 // 15 minutes
+  const messageAge = Date.now() - new Date(message.created_at).getTime()
+  const canEditMessage = isOwn && 
+    message.type === 'text' && 
+    !message._optimistic && 
+    !message._failed && 
+    !message.is_deleted &&
+    messageAge < EDIT_WINDOW_MS
+  
+  const editRemainingTime = canEditMessage 
+    ? messageEditService.formatRemainingTime(EDIT_WINDOW_MS - messageAge)
+    : ''
   
   // Determine styling based on sender
   const isSystem = message.type === 'system'
@@ -263,6 +285,34 @@ export function MessageBubble({
     } catch (error) {
       console.error('Share failed:', error)
     }
+  }
+
+  // Handle edit save
+  const handleEditSave = async () => {
+    if (!editedContent.trim() || editedContent === content) {
+      setIsEditing(false)
+      setEditedContent(content)
+      return
+    }
+
+    try {
+      const result = await messageEditService.editMessage(message.id, editedContent.trim())
+      if (result.success) {
+        toast.success('Message edited')
+        setIsEditing(false)
+      } else {
+        toast.error(result.message || 'Failed to edit message')
+      }
+    } catch (error) {
+      console.error('Edit failed:', error)
+      toast.error('Failed to edit message')
+    }
+  }
+
+  // Handle edit cancel
+  const handleEditCancel = () => {
+    setEditedContent(content)
+    setIsEditing(false)
   }
 
   // Close menu when clicking outside
@@ -481,7 +531,20 @@ export function MessageBubble({
                   ))}
                 </div>
               )}
-              <p className="whitespace-pre-wrap">{content}</p>
+              
+              {/* Show inline editor when editing, otherwise show text */}
+              {isEditing && isOwn && message.type === 'text' ? (
+                <InlineMessageEditor
+                  content={editedContent}
+                  onChange={setEditedContent}
+                  onSave={handleEditSave}
+                  onCancel={handleEditCancel}
+                  remainingTime={editRemainingTime}
+                  isSaving={false}
+                />
+              ) : (
+                <p className="whitespace-pre-wrap">{content}</p>
+              )}
             </div>
           )}
           
@@ -491,7 +554,10 @@ export function MessageBubble({
             isOwn ? "text-blue-100/80" : "text-gray-400"
           )}>
             {is_edited && (
-              <span className="text-[10px] italic">edited</span>
+              <EditedBadge
+                editedAt={message.edited_at || message.updated_at || ''}
+                isOwnMessage={isOwn}
+              />
             )}
             
             <span className="text-[10px]">
@@ -532,6 +598,9 @@ export function MessageBubble({
           onForward={() => onForward?.(message)}
           onCopy={handleCopy}
           onShare={handleShare}
+          onEdit={() => setIsEditing(true)}
+          canEdit={canEditMessage}
+          editRemainingTime={editRemainingTime}
         />,
         document.body
       )}
