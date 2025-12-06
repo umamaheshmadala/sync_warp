@@ -182,3 +182,32 @@ textarea:focus-visible {
     scroll-behavior: auto;
   }
 }
+
+/* ================================
+   Search Highlight (Story 8.5.4)
+   ================================ */
+
+/* Animation for highlighting message when jumped to */
+@keyframes searchHighlightFlash {
+  0% {
+    background-color: rgba(59, 130, 246, 0.4);
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: none;
+  }
+}
+
+.search-highlight-flash {
+  animation: searchHighlightFlash 2s ease-out;
+  border-radius: 8px;
+}
+
+/* Search result text highlighting */
+mark {
+  background-color: #fef08a;
+  padding: 0 2px;
+  border-radius: 2px;
+  color: inherit;
+}

@@ -8,7 +8,10 @@ import { MessageComposer } from './MessageComposer'
 import { ChatHeader } from './ChatHeader'
 import { TypingIndicator } from './TypingIndicator'
 import { ForwardMessageDialog } from './ForwardMessageDialog'
-import { Loader2 } from 'lucide-react'
+import { MessageSearchBar } from './MessageSearchBar'
+import { MessageSearchResults } from './MessageSearchResults'
+import { Loader2, Search } from 'lucide-react'
+import { useMessageSearch } from '../../hooks/useMessageSearch'
 import { Capacitor } from '@capacitor/core'
 import { Keyboard } from '@capacitor/keyboard'
 import { App } from '@capacitor/app'
@@ -59,6 +62,18 @@ export function ChatScreen() {
 
   // Edit state (Story 8.5.2 - WhatsApp-style editing)
   const [editingMessage, setEditingMessage] = useState<Message | null>(null)
+
+  // Search state (Story 8.5.4)
+  const [showSearch, setShowSearch] = useState(false)
+  const {
+    results: searchResults,
+    isSearching,
+    selectedIndex,
+    search,
+    navigate: navigateSearch,
+    clearSearch,
+    setSelectedIndex
+  } = useMessageSearch(conversationId || undefined)
 
   // Scroll to bottom helper
   const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
@@ -226,19 +241,43 @@ export function ChatScreen() {
   // Scroll to message handler (Story 8.10.5)
   const handleQuoteClick = (messageId: string) => {
     console.log('📍 Scrolling to message:', messageId)
+    scrollToMessage(messageId)
+  }
+
+  // Scroll to message with highlight (Story 8.5.4 - Search)
+  const scrollToMessage = (messageId: string) => {
     const messageElement = document.getElementById(`message-${messageId}`)
     if (messageElement) {
       messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
       // Highlight the message briefly
-      messageElement.classList.add('message-highlight')
+      messageElement.classList.add('search-highlight-flash')
       setTimeout(() => {
-        messageElement.classList.remove('message-highlight')
+        messageElement.classList.remove('search-highlight-flash')
       }, 2000)
     } else {
       console.warn('Message not found in current view:', messageId)
-      // TODO: Load more messages if needed
     }
   }
+
+  // Handle search result click
+  const handleSearchResultClick = (result: { id: string }) => {
+    scrollToMessage(result.id)
+    setShowSearch(false)
+    clearSearch()
+  }
+
+  // Keyboard shortcut for search (Ctrl/Cmd+F)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'f') {
+        e.preventDefault()
+        setShowSearch(true)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   // Redirect if no conversation ID
   if (!conversationId) {
@@ -271,6 +310,30 @@ export function ChatScreen() {
       style={{ paddingBottom: keyboardPadding }}
     >
       <ChatHeader conversationId={conversationId} />
+      
+      {/* Search UI (Story 8.5.4) */}
+      {showSearch && (
+        <div className="border-b bg-white z-10">
+          <MessageSearchBar
+            onSearch={search}
+            onClose={() => {
+              setShowSearch(false)
+              clearSearch()
+            }}
+            onNavigate={navigateSearch}
+            isLoading={isSearching}
+            resultCount={searchResults.length}
+            currentIndex={selectedIndex}
+          />
+          {searchResults.length > 0 && (
+            <MessageSearchResults
+              results={searchResults}
+              onResultClick={handleSearchResultClick}
+              selectedIndex={selectedIndex}
+            />
+          )}
+        </div>
+      )}
       
       <MessageList 
         messages={messages} 

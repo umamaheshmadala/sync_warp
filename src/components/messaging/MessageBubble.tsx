@@ -465,6 +465,7 @@ export function MessageBubble({
         )}
         
         <div 
+          id={`message-${message.id}`}
           role="article"
           aria-label={ariaLabel}
           tabIndex={0}
