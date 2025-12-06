@@ -308,9 +308,9 @@ export function MessageBubble({
     try {
       const result = await messageDeleteService.deleteForMe(message.id)
       if (result.success) {
+        // Optimistic UI: Remove message from local state immediately
+        useMessagingStore.getState().removeMessage(message.conversation_id, message.id)
         toast.success('Message deleted for you', { icon: '🙈' })
-        // Refresh messages to hide the deleted one
-        window.location.reload() // TODO: Replace with store-based refresh
       } else {
         toast.error(result.message || 'Failed to delete message')
       }
@@ -327,6 +327,11 @@ export function MessageBubble({
       const result = await messageDeleteService.deleteMessage(message.id)
       if (result.success) {
         setShowDeleteConfirm(false)
+        // Optimistic UI: Update message to show deleted placeholder immediately
+        useMessagingStore.getState().updateMessage(message.conversation_id, message.id, {
+          is_deleted: true,
+          deleted_at: new Date().toISOString()
+        })
         // Show undo toast for 5 seconds
         toast((t) => (
           <div className="flex items-center gap-3">
@@ -336,6 +341,11 @@ export function MessageBubble({
                 const undoResult = await messageDeleteService.undoDelete(message.id)
                 toast.dismiss(t.id)
                 if (undoResult.success) {
+                  // Restore message in local state
+                  useMessagingStore.getState().updateMessage(message.conversation_id, message.id, {
+                    is_deleted: false,
+                    deleted_at: null
+                  })
                   toast.success('Message restored')
                 } else {
                   toast.error('Could not restore message')
