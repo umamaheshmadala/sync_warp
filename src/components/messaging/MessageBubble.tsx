@@ -25,7 +25,10 @@ import type { LinkPreview } from '../../services/linkPreviewService'
 import { useShare } from '../../hooks/useShare'
 import { usePrivacySettings } from '../../hooks/usePrivacySettings'
 import { messageEditService } from '../../services/messageEditService'
+import { messageDeleteService } from '../../services/messageDeleteService'
 import { EditedBadge } from './EditedBadge'
+import { DeleteConfirmationDialog } from './DeleteConfirmationDialog'
+import { DeletedMessagePlaceholder } from './DeletedMessagePlaceholder'
 
 interface MessageBubbleProps {
   message: Message
@@ -106,6 +109,22 @@ export function MessageBubble({
   const editRemainingTime = canEditMessage 
     ? messageEditService.formatRemainingTime(EDIT_WINDOW_MS - messageAge)
     : ''
+  
+  // Delete eligibility - similar to edit, 15-minute window for "Delete for Everyone"
+  const DELETE_WINDOW_MS = 15 * 60 * 1000 // 15 minutes
+  const canDeleteMessage = isOwn && 
+    !message._optimistic && 
+    !message._failed && 
+    !message.is_deleted &&
+    messageAge < DELETE_WINDOW_MS
+  
+  const deleteRemainingTime = canDeleteMessage 
+    ? messageDeleteService.formatRemainingTime(DELETE_WINDOW_MS - messageAge)
+    : ''
+  
+  // Delete confirmation dialog state
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   
   // Determine styling based on sender
   const isSystem = message.type === 'system'
@@ -284,6 +303,44 @@ export function MessageBubble({
     }
   }
 
+  // Handle delete confirmation (WhatsApp-style)
+  const handleDelete = async () => {
+    setIsDeleting(true)
+    try {
+      const result = await messageDeleteService.deleteMessage(message.id)
+      if (result.success) {
+        setShowDeleteConfirm(false)
+        // Show undo toast for 5 seconds
+        toast((t) => (
+          <div className="flex items-center gap-3">
+            <span>Message deleted</span>
+            <button
+              onClick={async () => {
+                const undoResult = await messageDeleteService.undoDelete(message.id)
+                toast.dismiss(t.id)
+                if (undoResult.success) {
+                  toast.success('Message restored')
+                } else {
+                  toast.error('Could not restore message')
+                }
+              }}
+              className="text-blue-500 underline text-sm font-medium"
+            >
+              Undo
+            </button>
+          </div>
+        ), { duration: 5000, icon: '🗑️' })
+      } else {
+        toast.error(result.message || 'Failed to delete message')
+      }
+    } catch (error) {
+      console.error('Delete failed:', error)
+      toast.error('Failed to delete message')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   // Close menu when clicking outside
   useEffect(() => {
     const handleClick = () => setShowContextMenu(false)
@@ -304,6 +361,24 @@ export function MessageBubble({
   // Determine aria label
   const senderName = isOwn ? 'You' : 'Friend' // In real app, get actual name
   const ariaLabel = `${senderName} said: ${content}, ${formatRelativeTime(message.created_at)}`
+
+  // Deleted message - show placeholder (Story 8.5.3)
+  if (isDeleted) {
+    return (
+      <div 
+        className={cn(
+          "flex w-full mb-4",
+          isOwn ? "justify-end" : "justify-start"
+        )}
+      >
+        <DeletedMessagePlaceholder 
+          isOwnMessage={isOwn} 
+          deletedAt={message.deleted_at}
+          className="max-w-[85%]"
+        />
+      </div>
+    )
+  }
 
   return (
     <div 
@@ -559,6 +634,9 @@ export function MessageBubble({
           onEdit={() => onEdit?.(message)}
           canEdit={canEditMessage}
           editRemainingTime={editRemainingTime}
+          onDelete={() => setShowDeleteConfirm(true)}
+          canDelete={canDeleteMessage}
+          deleteRemainingTime={deleteRemainingTime}
         />,
         document.body
       )}
@@ -578,6 +656,16 @@ export function MessageBubble({
         initialIndex={lightboxInitialIndex}
         isOpen={lightboxOpen}
         onClose={() => setLightboxOpen(false)}
+      />
+
+      {/* Delete Confirmation Dialog (Story 8.5.3) */}
+      <DeleteConfirmationDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDelete}
+        remainingTime={deleteRemainingTime}
+        isDeleting={isDeleting}
+        showDeleteForMe={false}
       />
     </div>
   )

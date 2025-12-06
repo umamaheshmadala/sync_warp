@@ -14,6 +14,8 @@ interface MessageContextMenuProps {
   onForward?: () => void
   onStar?: () => void
   onDelete?: () => void
+  canDelete?: boolean
+  deleteRemainingTime?: string
   onSelect?: () => void
   onShare?: () => void
   onEdit?: () => void
@@ -42,6 +44,8 @@ export function MessageContextMenu({
   onForward,
   onStar,
   onDelete,
+  canDelete = false,
+  deleteRemainingTime = '',
   onSelect,
   onShare,
   onEdit,
@@ -157,14 +161,17 @@ export function MessageContextMenu({
         {/* Divider */}
         {(onDelete || onSelect) && <div className="h-px bg-gray-200 my-1" />}
 
-        {/* Delete for me (only for own messages) */}
-        {onDelete && isOwn && (
+        {/* Delete for Everyone (only for own messages within delete window) */}
+        {onDelete && canDelete && isOwn && (
           <button
             onClick={() => handleAction(onDelete)}
             className="flex items-center gap-3 w-full px-4 py-2.5 hover:bg-red-50 transition-colors text-left"
           >
             <Trash2 className="w-4 h-4 text-red-600" />
-            <span className="text-sm text-red-600">Delete for me</span>
+            <span className="text-sm text-red-600">Delete for Everyone</span>
+            {deleteRemainingTime && (
+              <span className="ml-auto text-xs text-red-400">{deleteRemainingTime}</span>
+            )}
           </button>
         )}
 
