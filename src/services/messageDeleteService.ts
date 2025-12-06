@@ -228,6 +228,67 @@ class MessageDeleteService {
   get undoGracePeriodMs(): number {
     return this.UNDO_GRACE_PERIOD_MS;
   }
+
+  // ============================================
+  // "Delete for Me" functionality (client-side)
+  // ============================================
+
+  private readonly HIDDEN_MESSAGES_KEY = 'sync_hidden_messages';
+
+  /**
+   * Delete a message for the current user only (client-side)
+   * Stores the message ID in localStorage
+   * 
+   * @param messageId - Message UUID
+   * @returns DeleteResult with success status
+   */
+  deleteForMe(messageId: string): DeleteResult {
+    try {
+      const hiddenMessages = this.getHiddenMessages();
+      if (!hiddenMessages.includes(messageId)) {
+        hiddenMessages.push(messageId);
+        localStorage.setItem(this.HIDDEN_MESSAGES_KEY, JSON.stringify(hiddenMessages));
+      }
+      console.log(`🙈 Hidden message ${messageId} for current user`);
+      return { success: true };
+    } catch (error: any) {
+      console.error('❌ Error hiding message:', error);
+      return { success: false, message: error.message || 'Failed to hide message' };
+    }
+  }
+
+  /**
+   * Get list of message IDs hidden by current user
+   */
+  getHiddenMessages(): string[] {
+    try {
+      const stored = localStorage.getItem(this.HIDDEN_MESSAGES_KEY);
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Check if a message is hidden for current user
+   */
+  isMessageHidden(messageId: string): boolean {
+    return this.getHiddenMessages().includes(messageId);
+  }
+
+  /**
+   * Unhide a message (undo delete for me)
+   */
+  clearHiddenMessage(messageId: string): DeleteResult {
+    try {
+      const hiddenMessages = this.getHiddenMessages().filter(id => id !== messageId);
+      localStorage.setItem(this.HIDDEN_MESSAGES_KEY, JSON.stringify(hiddenMessages));
+      console.log(`👁️ Unhidden message ${messageId}`);
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, message: error.message || 'Failed to unhide message' };
+    }
+  }
 }
 
 // Export singleton instance

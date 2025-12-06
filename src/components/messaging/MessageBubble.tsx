@@ -303,8 +303,20 @@ export function MessageBubble({
     }
   }
 
-  // Handle delete confirmation (WhatsApp-style)
-  const handleDelete = async () => {
+  // Handle "Delete for me" - hides locally only (WhatsApp-style)
+  const handleDeleteForMe = () => {
+    const result = messageDeleteService.deleteForMe(message.id)
+    if (result.success) {
+      toast.success('Message hidden', { icon: '🙈' })
+      // Force re-render by updating local state or using store
+      window.location.reload() // Simple approach - in production, use store
+    } else {
+      toast.error(result.message || 'Failed to hide message')
+    }
+  }
+
+  // Handle "Delete for everyone" confirmation (WhatsApp-style)
+  const handleDeleteForEveryone = async () => {
     setIsDeleting(true)
     try {
       const result = await messageDeleteService.deleteMessage(message.id)
@@ -313,7 +325,7 @@ export function MessageBubble({
         // Show undo toast for 5 seconds
         toast((t) => (
           <div className="flex items-center gap-3">
-            <span>Message deleted</span>
+            <span>Message deleted for everyone</span>
             <button
               onClick={async () => {
                 const undoResult = await messageDeleteService.undoDelete(message.id)
@@ -634,8 +646,9 @@ export function MessageBubble({
           onEdit={() => onEdit?.(message)}
           canEdit={canEditMessage}
           editRemainingTime={editRemainingTime}
-          onDelete={() => setShowDeleteConfirm(true)}
-          canDelete={canDeleteMessage}
+          onDeleteForMe={handleDeleteForMe}
+          onDeleteForEveryone={() => setShowDeleteConfirm(true)}
+          canDeleteForEveryone={canDeleteMessage}
           deleteRemainingTime={deleteRemainingTime}
         />,
         document.body
@@ -662,7 +675,7 @@ export function MessageBubble({
       <DeleteConfirmationDialog
         isOpen={showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(false)}
-        onConfirm={handleDelete}
+        onConfirm={handleDeleteForEveryone}
         remainingTime={deleteRemainingTime}
         isDeleting={isDeleting}
         showDeleteForMe={false}

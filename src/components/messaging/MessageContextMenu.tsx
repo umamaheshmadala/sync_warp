@@ -13,8 +13,9 @@ interface MessageContextMenuProps {
   onCopy: () => void
   onForward?: () => void
   onStar?: () => void
-  onDelete?: () => void
-  canDelete?: boolean
+  onDeleteForMe?: () => void  // Delete for current user only (WhatsApp-style)
+  onDeleteForEveryone?: () => void  // Delete for all participants (WhatsApp-style)
+  canDeleteForEveryone?: boolean  // Only within 15-min window for own messages
   deleteRemainingTime?: string
   onSelect?: () => void
   onShare?: () => void
@@ -43,8 +44,9 @@ export function MessageContextMenu({
   onCopy,
   onForward,
   onStar,
-  onDelete,
-  canDelete = false,
+  onDeleteForMe,
+  onDeleteForEveryone,
+  canDeleteForEveryone = false,
   deleteRemainingTime = '',
   onSelect,
   onShare,
@@ -159,16 +161,27 @@ export function MessageContextMenu({
         )}
 
         {/* Divider */}
-        {(onDelete || onSelect) && <div className="h-px bg-gray-200 my-1" />}
+        {(onDeleteForMe || onDeleteForEveryone || onSelect) && <div className="h-px bg-gray-200 my-1" />}
+
+        {/* Delete for Me (always available for own messages) */}
+        {onDeleteForMe && (
+          <button
+            onClick={() => handleAction(onDeleteForMe)}
+            className="flex items-center gap-3 w-full px-4 py-2.5 hover:bg-gray-100 transition-colors text-left"
+          >
+            <Trash2 className="w-4 h-4 text-gray-600" />
+            <span className="text-sm text-gray-900">Delete for me</span>
+          </button>
+        )}
 
         {/* Delete for Everyone (only for own messages within delete window) */}
-        {onDelete && canDelete && isOwn && (
+        {onDeleteForEveryone && canDeleteForEveryone && isOwn && (
           <button
-            onClick={() => handleAction(onDelete)}
+            onClick={() => handleAction(onDeleteForEveryone)}
             className="flex items-center gap-3 w-full px-4 py-2.5 hover:bg-red-50 transition-colors text-left"
           >
             <Trash2 className="w-4 h-4 text-red-600" />
-            <span className="text-sm text-red-600">Delete for Everyone</span>
+            <span className="text-sm text-red-600">Delete for everyone</span>
             {deleteRemainingTime && (
               <span className="ml-auto text-xs text-red-400">{deleteRemainingTime}</span>
             )}
