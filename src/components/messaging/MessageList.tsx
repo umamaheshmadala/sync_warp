@@ -148,6 +148,7 @@ export function MessageList({
                 onForward={onForward}
                 onEdit={onEdit}
                 onQuoteClick={onQuoteClick}
+                currentUserId={currentUserId || ''}
               />
             </div>
           )

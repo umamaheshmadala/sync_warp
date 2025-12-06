@@ -8,6 +8,7 @@ interface OptimisticImageMessageProps {
   uploadProgress: number
   status: 'uploading' | 'uploaded' | 'failed'
   onCancel?: () => void
+  onRetry?: () => void
   caption?: string
   isOwn?: boolean
 }

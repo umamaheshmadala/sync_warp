@@ -5,7 +5,7 @@
 /**
  * Message content types
  */
-export type MessageType = 'text' | 'image' | 'video' | 'audio' | 'file' | 'link' | 'coupon' | 'deal';
+export type MessageType = 'text' | 'image' | 'video' | 'audio' | 'file' | 'link' | 'coupon' | 'deal' | 'system';
 
 /**
  * Message delivery status
@@ -47,6 +47,9 @@ export interface Message {
   is_forwarded?: boolean;
   original_message_id?: string | null;
   forward_count?: number;
+
+  // Reactions (Story 8.5.5)
+  reactions?: Record<string, string[]>;
 
   is_edited: boolean;
   edited_at?: string | null;

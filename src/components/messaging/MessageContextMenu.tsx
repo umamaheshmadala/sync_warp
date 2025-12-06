@@ -3,6 +3,7 @@ import { Reply, Copy, Forward, Star, Trash2, CheckSquare, Share2, Pencil } from 
 import { cn } from '@/lib/utils'
 import type { Message } from '@/types/messaging'
 import { useShare } from '@/hooks/useShare'
+import { QuickReactionBar } from './QuickReactionBar'
 
 interface MessageContextMenuProps {
   message: Message
@@ -22,6 +23,9 @@ interface MessageContextMenuProps {
   onEdit?: () => void
   canEdit?: boolean
   editRemainingTime?: string
+  onReact?: (emoji: string) => void
+  onOpenPicker?: () => void
+  userReactions?: string[]
 }
 
 /**
@@ -32,6 +36,7 @@ interface MessageContextMenuProps {
  * - Flips up when near bottom edge
  * - Flips left when near right edge
  * - Compact design with reduced padding
+ * - Integrated Emoji Reactions (Story 8.5.5)
  * 
  * Story: 8.10.5 - Reply/Quote Messages
  */
@@ -52,7 +57,10 @@ export function MessageContextMenu({
   onShare,
   onEdit,
   canEdit = false,
-  editRemainingTime = ''
+  editRemainingTime = '',
+  onReact,
+  onOpenPicker,
+  userReactions = []
 }: MessageContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null)
   const [adjustedPosition, setAdjustedPosition] = useState(position)
@@ -134,9 +142,27 @@ export function MessageContextMenu({
       {/* Context Menu - Compact styling */}
       <div
         ref={menuRef}
-        className="fixed z-50 bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[160px] max-w-[200px] animate-in fade-in zoom-in-95 duration-100"
+        className="fixed z-50 bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[280px] max-w-[320px] animate-in fade-in zoom-in-95 duration-100"
         style={{ left: adjustedPosition.x, top: adjustedPosition.y }}
       >
+        {/* Reactions Bar (Mobile/Touch) */}
+        {onReact && (
+          <div className="px-1 py-1 mb-1 border-b border-gray-100 flex justify-center">
+            <QuickReactionBar 
+              onReact={(emoji) => {
+                onReact(emoji)
+                onClose()
+              }}
+              userReactions={userReactions}
+              className="shadow-none border-none bg-transparent"
+              onOpenPicker={() => {
+                onOpenPicker?.()
+                onClose()
+              }}
+            />
+          </div>
+        )}
+
         {/* Reply */}
         <button
           onClick={() => handleAction(onReply)}

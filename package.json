@@ -103,6 +103,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "dexie": "^4.2.1",
+    "emoji-picker-react": "^4.16.1",
     "framer-motion": "^12.23.18",
     "localforage": "^1.10.0",
     "lucide-react": "^0.294.0",

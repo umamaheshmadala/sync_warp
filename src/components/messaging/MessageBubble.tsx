@@ -29,6 +29,11 @@ import { messageDeleteService } from '../../services/messageDeleteService'
 import { EditedBadge } from './EditedBadge'
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog'
 import { DeletedMessagePlaceholder } from './DeletedMessagePlaceholder'
+import { useReactions } from '../../hooks/useReactions'
+import { QuickReactionBar } from './QuickReactionBar'
+import { MessageReactions } from './MessageReactions'
+import { ReactionUserList } from './ReactionUserList'
+import { MessageEmojiPicker } from './MessageEmojiPicker'
 
 interface MessageBubbleProps {
   message: Message
@@ -39,6 +44,7 @@ interface MessageBubbleProps {
   onForward?: (message: Message) => void // Callback for forward action (Story 8.10.6)
   onEdit?: (message: Message) => void // Callback for edit action (Story 8.5.2 - WhatsApp-style)
   onQuoteClick?: (messageId: string) => void // Callback for clicking quoted message (Story 8.10.5)
+  currentUserId?: string
 }
 
 /**
@@ -53,6 +59,7 @@ interface MessageBubbleProps {
  * - Optimistic UI state (sending...)
  * - Failed state with retry button (Story 8.2.7)
  * - Full accessibility support (Story 8.2.8)
+ * - Message Reactions (Story 8.5.5)
  * 
  * Accessibility Features:
  * - role="article" for screen readers
@@ -77,7 +84,8 @@ export function MessageBubble({
   onReply,
   onForward,
   onEdit,
-  onQuoteClick
+  onQuoteClick,
+  currentUserId
 }: MessageBubbleProps) {
   const [showContextMenu, setShowContextMenu] = useState(false)
   const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 })
@@ -85,6 +93,8 @@ export function MessageBubble({
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [lightboxImages, setLightboxImages] = useState<string[]>([])
   const [lightboxInitialIndex, setLightboxInitialIndex] = useState(0)
+  // const [showReactionBar, setShowReactionBar] = useState(false) // Removed per user feedback
+  const [showPicker, setShowPicker] = useState(false)
   const longPressTimer = useRef<NodeJS.Timeout | null>(null)
   const isLongPress = useRef(false)
   const content = message.content || ''
@@ -94,6 +104,30 @@ export function MessageBubble({
   // If user disabled read receipts, they also can't see when others read their messages
   const { settings: privacySettings } = usePrivacySettings()
   const showReadAsDelivered = privacySettings?.read_receipts_enabled === false
+
+  // Reactions hook
+  const {
+    reactionsSummary,
+    toggleReaction,
+    selectedEmoji,
+    emojiUsers,
+    loadingUsers,
+    viewReactionUsers,
+    closeReactionUsers
+  } = useReactions(message, currentUserId || '')
+  
+  const [popupPosition, setPopupPosition] = useState<{ x: number, y: number } | undefined>(undefined)
+
+  const handleViewReactionUsers = (emoji: string, event: React.MouseEvent) => {
+    // Calculate position relative to the clicked element
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
+    // Position slightly below and centered to the click
+    setPopupPosition({
+      x: rect.left,
+      y: rect.bottom + 8
+    })
+    viewReactionUsers(emoji)
+  }
   
   // Edit eligibility - calculate inline without a hook to avoid database calls per message
   // Only own text messages within 15-minute window can be edited
@@ -170,7 +204,7 @@ export function MessageBubble({
            }
 
            useMessagingStore.getState().updateMessage(conversationId, tempId!, {
-             _uploadProgress: progress
+             _uploadProgress: progress.percentage
            })
         }
       )
@@ -388,6 +422,11 @@ export function MessageBubble({
   // Determine aria label
   const senderName = isOwn ? 'You' : 'Friend' // In real app, get actual name
   const ariaLabel = `${senderName} said: ${content}, ${formatRelativeTime(message.created_at)}`
+  
+  // Calculate user's reactions for highlighting
+  const userReactions = Object.entries(message.reactions || {})
+    .filter(([_, ids]) => currentUserId && ids.includes(currentUserId))
+    .map(([emoji]) => emoji)
 
   // Deleted message - show placeholder (Story 8.5.3)
   if (isDeleted) {
@@ -410,10 +449,30 @@ export function MessageBubble({
   return (
     <div 
       className={cn(
-        "flex w-full mb-4 group relative",
+        "flex w-full mb-4 group relative items-end gap-2",
         isOwn ? "justify-end" : "justify-start"
       )}
+      // onMouseEnter={() => !Capacitor.isNativePlatform() && setShowReactionBar(true)} // Removed hover trigger
+      // onMouseLeave={() => !Capacitor.isNativePlatform() && setShowReactionBar(false)}
     >
+      {/* Quick Reaction Bar (Desktop Hover) - REMOVED per user feedback to reduce clutter
+      {showReactionBar && !isDeleted && (
+        <div className={cn(
+          "absolute -top-10 z-10",
+          isOwn ? "right-0" : "left-0"
+        )}>
+          <QuickReactionBar
+            onReact={toggleReaction}
+            userReactions={userReactions}
+            onOpenPicker={() => {
+              setShowReactionBar(false)
+              setShowPicker(true)
+            }}
+          />
+        </div>
+      )} 
+      */}
+
       <div className="flex flex-col gap-1 max-w-[85%]">
         {/* Forwarded Label */}
         {is_forwarded && (
@@ -464,184 +523,195 @@ export function MessageBubble({
           </Button>
         )}
         
-        <div 
-          id={`message-${message.id}`}
-          role="article"
-          aria-label={ariaLabel}
-          tabIndex={0}
-          onContextMenu={handleContextMenu}
-          onTouchStart={handleLongPressStart}
-          onTouchEnd={handleLongPressEnd}
-          onTouchCancel={handleLongPressEnd}
-          className={cn(
-            "px-4 py-2 rounded-2xl break-words text-[15px] leading-relaxed shadow-sm cursor-pointer select-none",
-            "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1",
-            isOwn 
-              ? _failed
-                ? "bg-red-50 text-red-900 border border-red-200" 
-                : "bg-[#0a66c2] text-white rounded-br-sm" // LinkedIn Blue
-              : "bg-[#f3f2ef] text-gray-900 rounded-bl-sm" // LinkedIn Gray
-          )}
-        >
-          {/* Message Content */}
-          {message.type === 'image' ? (
-            message.media_urls && message.media_urls.length > 0 ? (
-              message._optimistic ? (
-                // Optimistic UI: Show thumbnail with loading state
-                <OptimisticImageMessage
-                  thumbnailUrl={message.thumbnail_url || message.media_urls[0]}
-                  fullResUrl={message.media_urls[0]}
-                  uploadProgress={message._uploadProgress || 0}
-                  status={message._failed ? 'failed' : 'uploading'}
-                  caption={content}
-                  isOwn={isOwn}
-                  onRetry={handleRetryUpload}
-                  onCancel={() => {
-                    // Cancel upload by marking as failed (WhatsApp style)
-                    if (message._tempId) {
-                      console.log('🛑 User cancelled upload via UI')
-                      useMessagingStore.getState().updateMessage(message.conversation_id, message._tempId, {
-                        _failed: true,
-                        _uploadProgress: 0
-                      })
-                    }
-                  }}
-                />
-              ) : (
-                // Regular image display with lightbox
-                <div className="space-y-2">
-                  <ImageMessage
-                    imageUrl={message.media_urls[0]}
-                    thumbnailUrl={message.thumbnail_url}
-                    alt="Shared image"
-                    onImageClick={() => {
-                      // Get all images from the conversation for gallery navigation
-                      const conversationMessages = useMessagingStore.getState().messages.get(message.conversation_id) || []
-                      const allImages: string[] = []
-                      let currentImageIndex = 0
-                      
-                      conversationMessages.forEach((msg) => {
-                        if (msg.type === 'image' && msg.media_urls && msg.media_urls.length > 0 && !msg._optimistic) {
-                          // Track the index of the current image
-                          if (msg.id === message.id) {
-                            currentImageIndex = allImages.length
-                          }
-                          allImages.push(...msg.media_urls)
-                        }
-                      })
-                      
-                      setLightboxImages(allImages)
-                      setLightboxInitialIndex(currentImageIndex)
-                      setLightboxOpen(true)
+        <div className="flex flex-col">
+          <div 
+            id={`message-${message.id}`}
+            role="article"
+            aria-label={ariaLabel}
+            tabIndex={0}
+            onContextMenu={handleContextMenu}
+            onTouchStart={handleLongPressStart}
+            onTouchEnd={handleLongPressEnd}
+            onTouchCancel={handleLongPressEnd}
+            className={cn(
+              "px-4 py-2 rounded-2xl break-words text-[15px] leading-relaxed shadow-sm cursor-pointer select-none",
+              "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1",
+              isOwn 
+                ? _failed
+                  ? "bg-red-50 text-red-900 border border-red-200" 
+                  : "bg-[#0a66c2] text-white rounded-br-sm" // LinkedIn Blue
+                : "bg-[#f3f2ef] text-gray-900 rounded-bl-sm" // LinkedIn Gray
+            )}
+          >
+            {/* Message Content */}
+            {message.type === 'image' ? (
+              message.media_urls && message.media_urls.length > 0 ? (
+                message._optimistic ? (
+                  // Optimistic UI: Show thumbnail with loading state
+                  <OptimisticImageMessage
+                    thumbnailUrl={message.thumbnail_url || message.media_urls[0]}
+                    fullResUrl={message.media_urls[0]}
+                    uploadProgress={message._uploadProgress || 0}
+                    status={message._failed ? 'failed' : 'uploading'}
+                    caption={content}
+                    isOwn={isOwn}
+                    onRetry={handleRetryUpload}
+                    onCancel={() => {
+                      // Cancel upload by marking as failed (WhatsApp style)
+                      if (message._tempId) {
+                        console.log('🛑 User cancelled upload via UI')
+                        useMessagingStore.getState().updateMessage(message.conversation_id, message._tempId, {
+                          _failed: true,
+                          _uploadProgress: 0
+                        })
+                      }
                     }}
                   />
-                  {content && <p className="whitespace-pre-wrap mt-2">{content}</p>}
-                </div>
-              )
-            ) : (
-              // Fallback for missing media URLs
-              <div className="p-4 bg-gray-100 rounded-lg border border-gray-200 text-center min-w-[200px]">
-                <p className="text-sm text-gray-500 italic">Image unavailable</p>
-                <p className="text-xs text-gray-400 mt-1">Media URL missing</p>
-                {content && <p className="whitespace-pre-wrap mt-2 text-left">{content}</p>}
-              </div>
-            )
-          ) : message.type === 'video' ? (
-            // Video message display
-            message.media_urls && message.media_urls.length > 0 ? (
-              message._optimistic ? (
-                // Optimistic UI: Show thumbnail with loading state
-                <OptimisticVideoMessage
-                  thumbnailUrl={message.thumbnail_url || message.media_urls[0]}
-                  fullResUrl={message.media_urls[0]}
-                  uploadProgress={message._uploadProgress || 0}
-                  status={message._failed ? 'failed' : 'uploading'}
-                  caption={content}
-                  isOwn={isOwn}
-                  onCancel={() => {
-                    // Cancel upload by marking as failed
-                    if (message._tempId) {
-                      console.log('🛑 User cancelled video upload via UI')
-                      useMessagingStore.getState().updateMessage(message.conversation_id, message._tempId, {
-                        _failed: true,
-                        _uploadProgress: 0
-                      })
-                    }
-                  }}
-                />
-              ) : (
-                // Regular video display with controls
-                <div className="space-y-2">
-                  <VideoMessage
-                    videoUrl={message.media_urls[0]}
-                    thumbnailUrl={message.thumbnail_url}
-                    duration={undefined}
-                  />
-                  {content && <p className="whitespace-pre-wrap mt-2">{content}</p>}
-                </div>
-              )
-            ) : (
-              // Fallback for missing video URLs
-              <div className="p-4 bg-gray-100 rounded-lg border border-gray-200 text-center min-w-[200px]">
-                <p className="text-sm text-gray-500 italic">Video unavailable</p>
-                <p className="text-xs text-gray-400 mt-1">Media URL missing</p>
-                {content && <p className="whitespace-pre-wrap mt-2 text-left">{content}</p>}
-              </div>
-            )
-          ) : (
-            <div className="flex flex-col gap-2">
-              {message.link_previews && message.link_previews.length > 0 && (
-                <div className="space-y-2">
-                  {message.link_previews.map((preview, index) => (
-                    <LinkPreviewCard 
-                      key={`${preview.url}-${index}`}
-                      preview={preview}
-                      showRemoveButton={false}
+                ) : (
+                  // Regular image display with lightbox
+                  <div className="space-y-2">
+                    <ImageMessage
+                      imageUrl={message.media_urls[0]}
+                      thumbnailUrl={message.thumbnail_url}
+                      alt="Shared image"
+                      onImageClick={() => {
+                        // Get all images from the conversation for gallery navigation
+                        const conversationMessages = useMessagingStore.getState().messages.get(message.conversation_id) || []
+                        const allImages: string[] = []
+                        let currentImageIndex = 0
+                        
+                        conversationMessages.forEach((msg) => {
+                          if (msg.type === 'image' && msg.media_urls && msg.media_urls.length > 0 && !msg._optimistic) {
+                            // Track the index of the current image
+                            if (msg.id === message.id) {
+                              currentImageIndex = allImages.length
+                            }
+                            allImages.push(...msg.media_urls)
+                          }
+                        })
+                        
+                        setLightboxImages(allImages)
+                        setLightboxInitialIndex(currentImageIndex)
+                        setLightboxOpen(true)
+                      }}
                     />
-                  ))}
+                    {content && <p className="whitespace-pre-wrap mt-2">{content}</p>}
+                  </div>
+                )
+              ) : (
+                // Fallback for missing media URLs
+                <div className="p-4 bg-gray-100 rounded-lg border border-gray-200 text-center min-w-[200px]">
+                  <p className="text-sm text-gray-500 italic">Image unavailable</p>
+                  <p className="text-xs text-gray-400 mt-1">Media URL missing</p>
+                  {content && <p className="whitespace-pre-wrap mt-2 text-left">{content}</p>}
                 </div>
+              )
+            ) : message.type === 'video' ? (
+              // Video message display
+              message.media_urls && message.media_urls.length > 0 ? (
+                message._optimistic ? (
+                  // Optimistic UI: Show thumbnail with loading state
+                  <OptimisticVideoMessage
+                    thumbnailUrl={message.thumbnail_url || message.media_urls[0]}
+                    fullResUrl={message.media_urls[0]}
+                    uploadProgress={message._uploadProgress || 0}
+                    status={message._failed ? 'failed' : 'uploading'}
+                    caption={content}
+                    isOwn={isOwn}
+                    onCancel={() => {
+                      // Cancel upload by marking as failed
+                      if (message._tempId) {
+                        console.log('🛑 User cancelled video upload via UI')
+                        useMessagingStore.getState().updateMessage(message.conversation_id, message._tempId, {
+                          _failed: true,
+                          _uploadProgress: 0
+                        })
+                      }
+                    }}
+                  />
+                ) : (
+                  // Regular video display with controls
+                  <div className="space-y-2">
+                    <VideoMessage
+                      videoUrl={message.media_urls[0]}
+                      thumbnailUrl={message.thumbnail_url}
+                      duration={undefined}
+                    />
+                    {content && <p className="whitespace-pre-wrap mt-2">{content}</p>}
+                  </div>
+                )
+              ) : (
+                // Fallback for missing video URLs
+                <div className="p-4 bg-gray-100 rounded-lg border border-gray-200 text-center min-w-[200px]">
+                  <p className="text-sm text-gray-500 italic">Video unavailable</p>
+                  <p className="text-xs text-gray-400 mt-1">Media URL missing</p>
+                  {content && <p className="whitespace-pre-wrap mt-2 text-left">{content}</p>}
+                </div>
+              )
+            ) : (
+              <div className="flex flex-col gap-2">
+                {message.link_previews && message.link_previews.length > 0 && (
+                  <div className="space-y-2">
+                    {message.link_previews.map((preview, index) => (
+                      <LinkPreviewCard 
+                        key={`${preview.url}-${index}`}
+                        preview={preview}
+                        showRemoveButton={false}
+                      />
+                    ))}
+                  </div>
+                )}
+                
+                {/* Text content - editing now handled by MessageComposer */}
+                <p className="whitespace-pre-wrap">{content}</p>
+              </div>
+            )}
+            
+            {/* Timestamp & Status Row */}
+            <div className={cn(
+              "flex items-center justify-end gap-1 mt-0.5",
+              isOwn ? "text-blue-100/80" : "text-gray-400"
+            )}>
+              {is_edited && (
+                <EditedBadge
+                  editedAt={message.edited_at || message.updated_at || ''}
+                  isOwnMessage={isOwn}
+                />
               )}
               
-              {/* Text content - editing now handled by MessageComposer */}
-              <p className="whitespace-pre-wrap">{content}</p>
-            </div>
-          )}
-          
-          {/* Timestamp & Status Row */}
-          <div className={cn(
-            "flex items-center justify-end gap-1 mt-0.5",
-            isOwn ? "text-blue-100/80" : "text-gray-400"
-          )}>
-            {is_edited && (
-              <EditedBadge
-                editedAt={message.edited_at || message.updated_at || ''}
-                isOwnMessage={isOwn}
-              />
-            )}
-            
-            <span className="text-[10px]">
-              {formatMessageTime(created_at)}
-            </span>
-            
-            {/* Message Status Icons (for own messages) */}
-            {isOwn && (
-              <span className="ml-0.5">
-                <MessageStatusIcon 
-                  status={_failed ? 'failed' : _optimistic ? 'sending' : (
-                    // Reciprocal privacy: if user disabled read receipts, they can't see 'read' status
-                    // Downgrade 'read' to 'delivered' to enforce fairness
-                    message.status === 'read' && showReadAsDelivered
-                      ? 'delivered'
-                      : message.status || 'sent'
-                  )} 
-                  className={cn(
-                    "h-3 w-3",
-                    isOwn ? "text-blue-100/80" : "text-gray-400"
-                  )}
-                />
+              <span className="text-[10px]">
+                {formatMessageTime(created_at)}
               </span>
-            )}
+              
+              {/* Message Status Icons (for own messages) */}
+              {isOwn && (
+                <span className="ml-0.5">
+                  <MessageStatusIcon 
+                    status={_failed ? 'failed' : _optimistic ? 'sending' : (
+                      // Reciprocal privacy: if user disabled read receipts, they can't see 'read' status
+                      // Downgrade 'read' to 'delivered' to enforce fairness
+                      message.status === 'read' && showReadAsDelivered
+                        ? 'delivered'
+                        : message.status || 'sent'
+                    )} 
+                    className={cn(
+                      "h-3 w-3",
+                      isOwn ? "text-blue-100/80" : "text-gray-400"
+                    )}
+                  />
+                </span>
+              )}
+            </div>
           </div>
+          {/* Message Reactions (Displays below bubble) */}
+          <MessageReactions
+            reactions={reactionsSummary}
+            currentUserId={currentUserId || ''}
+            onReactionClick={toggleReaction}
+            onReactionClick={(emoji) => toggleReaction(emoji)}
+            onViewUsers={(emoji, e) => handleViewReactionUsers(emoji, e)}  // Pass event for positioning
+            isOwnMessage={isOwn}
+          />
         </div>
         </div>
       </div>
@@ -664,9 +734,45 @@ export function MessageBubble({
           onDeleteForEveryone={() => setShowDeleteConfirm(true)}
           canDeleteForEveryone={canDeleteMessage}
           deleteRemainingTime={deleteRemainingTime}
+          onReact={toggleReaction}
+          onOpenPicker={() => {
+            setShowContextMenu(false)
+            setShowPicker(true)
+          }}
+          userReactions={userReactions}
         />,
         document.body
       )}
+
+      {/* Reaction User List Dialog */}
+      <ReactionUserList
+        isOpen={!!selectedEmoji}
+        onClose={closeReactionUsers}
+        emoji={selectedEmoji}
+        users={emojiUsers}
+        isLoading={loadingUsers}
+        currentUserId={currentUserId}
+        position={popupPosition}
+        onRemoveReaction={() => {
+          if (selectedEmoji) {
+            toggleReaction(selectedEmoji);
+            closeReactionUsers(); // Optional: close list after removing? Or keep open?
+            // WhatsApp keeps open if there are other reactions, but if I remove mine, maybe I want to close or see updated list.
+            // Since toggleReaction updates state, the list *should* update if we re-fetch or if optimistic updates propagate.
+            // But `emojiUsers` in `useReactions` is fetched on `viewReactionUsers`.
+            // If I remove reaction, `emojiUsers` needs to be updated or closed.
+            // Closing is safer to avoid stale state for now.
+             closeReactionUsers();
+          }
+        }}
+      />
+
+      {/* Full Emoji Picker Dialog */}
+      <MessageEmojiPicker
+        isOpen={showPicker}
+        onClose={() => setShowPicker(false)}
+        onEmojiClick={toggleReaction}
+      />
 
       {/* Video Player Modal */}
       {showVideoPlayer && message.type === 'video' && message.media_urls && message.media_urls.length > 0 && (
