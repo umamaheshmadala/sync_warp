@@ -230,27 +230,43 @@ class MessageDeleteService {
   }
 
   // ============================================
-  // "Delete for Me" functionality (client-side)
+  // "Delete for Me" functionality (database-backed)
+  // Works across all devices (web, iOS, Android)
   // ============================================
 
-  private readonly HIDDEN_MESSAGES_KEY = 'sync_hidden_messages';
-
   /**
-   * Delete a message for the current user only (client-side)
-   * Stores the message ID in localStorage
+   * Delete a message for the current user only (server-side)
+   * Stores the hide in the database, works across all devices
    * 
    * @param messageId - Message UUID
    * @returns DeleteResult with success status
    */
-  deleteForMe(messageId: string): DeleteResult {
+  async deleteForMe(messageId: string): Promise<DeleteResult> {
     try {
-      const hiddenMessages = this.getHiddenMessages();
-      if (!hiddenMessages.includes(messageId)) {
-        hiddenMessages.push(messageId);
-        localStorage.setItem(this.HIDDEN_MESSAGES_KEY, JSON.stringify(hiddenMessages));
+      const { data, error } = await supabase.rpc('hide_message_for_user', {
+        p_message_id: messageId
+      });
+
+      if (error) {
+        console.error('❌ Error hiding message:', error);
+        return { success: false, message: error.message };
       }
-      console.log(`🙈 Hidden message ${messageId} for current user`);
-      return { success: true };
+
+      // RPC returns JSONB with success field
+      if (data && data.success) {
+        // Haptic feedback on mobile
+        if (Capacitor.isNativePlatform()) {
+          try {
+            await Haptics.notification({ type: NotificationType.Success });
+          } catch (e) {
+            // Ignore haptic errors
+          }
+        }
+        console.log(`🙈 Hidden message ${messageId} for current user (synced to all devices)`);
+        return { success: true };
+      } else {
+        return { success: false, message: data?.message || 'Failed to hide message' };
+      }
     } catch (error: any) {
       console.error('❌ Error hiding message:', error);
       return { success: false, message: error.message || 'Failed to hide message' };
@@ -258,35 +274,72 @@ class MessageDeleteService {
   }
 
   /**
-   * Get list of message IDs hidden by current user
+   * Check if a message is hidden for current user (server-side)
    */
-  getHiddenMessages(): string[] {
+  async isMessageHidden(messageId: string): Promise<boolean> {
     try {
-      const stored = localStorage.getItem(this.HIDDEN_MESSAGES_KEY);
-      return stored ? JSON.parse(stored) : [];
+      const { data, error } = await supabase.rpc('is_message_hidden', {
+        p_message_id: messageId
+      });
+
+      if (error) {
+        console.error('❌ Error checking if message is hidden:', error);
+        return false;
+      }
+
+      return data === true;
     } catch {
-      return [];
+      return false;
     }
   }
 
   /**
-   * Check if a message is hidden for current user
+   * Unhide a message (undo delete for me) - server-side
    */
-  isMessageHidden(messageId: string): boolean {
-    return this.getHiddenMessages().includes(messageId);
+  async clearHiddenMessage(messageId: string): Promise<DeleteResult> {
+    try {
+      const { data, error } = await supabase.rpc('unhide_message_for_user', {
+        p_message_id: messageId
+      });
+
+      if (error) {
+        console.error('❌ Error unhiding message:', error);
+        return { success: false, message: error.message };
+      }
+
+      if (data && data.success) {
+        console.log(`👁️ Unhidden message ${messageId} (synced to all devices)`);
+        return { success: true };
+      } else {
+        return { success: false, message: data?.message || 'Failed to unhide message' };
+      }
+    } catch (error: any) {
+      return { success: false, message: error.message || 'Failed to unhide message' };
+    }
   }
 
   /**
-   * Unhide a message (undo delete for me)
+   * Get list of message IDs hidden by current user
+   * Returns IDs from the database for filtering
    */
-  clearHiddenMessage(messageId: string): DeleteResult {
+  async getHiddenMessageIds(): Promise<string[]> {
     try {
-      const hiddenMessages = this.getHiddenMessages().filter(id => id !== messageId);
-      localStorage.setItem(this.HIDDEN_MESSAGES_KEY, JSON.stringify(hiddenMessages));
-      console.log(`👁️ Unhidden message ${messageId}`);
-      return { success: true };
-    } catch (error: any) {
-      return { success: false, message: error.message || 'Failed to unhide message' };
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+
+      const { data, error } = await supabase
+        .from('message_hides')
+        .select('message_id')
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('❌ Error fetching hidden messages:', error);
+        return [];
+      }
+
+      return data?.map(row => row.message_id) || [];
+    } catch {
+      return [];
     }
   }
 }

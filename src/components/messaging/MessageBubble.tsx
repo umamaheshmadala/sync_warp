@@ -303,15 +303,20 @@ export function MessageBubble({
     }
   }
 
-  // Handle "Delete for me" - hides locally only (WhatsApp-style)
-  const handleDeleteForMe = () => {
-    const result = messageDeleteService.deleteForMe(message.id)
-    if (result.success) {
-      toast.success('Message hidden', { icon: '🙈' })
-      // Force re-render by updating local state or using store
-      window.location.reload() // Simple approach - in production, use store
-    } else {
-      toast.error(result.message || 'Failed to hide message')
+  // Handle "Delete for me" - hides in database (synced across devices)
+  const handleDeleteForMe = async () => {
+    try {
+      const result = await messageDeleteService.deleteForMe(message.id)
+      if (result.success) {
+        toast.success('Message deleted for you', { icon: '🙈' })
+        // Refresh messages to hide the deleted one
+        window.location.reload() // TODO: Replace with store-based refresh
+      } else {
+        toast.error(result.message || 'Failed to delete message')
+      }
+    } catch (error) {
+      console.error('Delete for me failed:', error)
+      toast.error('Failed to delete message')
     }
   }
 
