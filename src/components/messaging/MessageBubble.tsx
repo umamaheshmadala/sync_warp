@@ -685,14 +685,17 @@ export function MessageBubble({
       />
 
       {/* Delete Confirmation Dialog (Story 8.5.3) */}
-      <DeleteConfirmationDialog
-        isOpen={showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(false)}
-        onConfirm={handleDeleteForEveryone}
-        remainingTime={deleteRemainingTime}
-        isDeleting={isDeleting}
-        showDeleteForMe={false}
-      />
+      {showDeleteConfirm && createPortal(
+        <DeleteConfirmationDialog
+          isOpen={showDeleteConfirm}
+          onClose={() => setShowDeleteConfirm(false)}
+          onConfirm={handleDeleteForEveryone}
+          remainingTime={deleteRemainingTime}
+          isDeleting={isDeleting}
+          showDeleteForMe={false}
+        />,
+        document.body
+      )}
     </div>
   )
 }
