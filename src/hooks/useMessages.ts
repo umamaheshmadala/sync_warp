@@ -1,6 +1,7 @@
 import { useEffect, useCallback, useRef } from 'react'
 import { useMessagingStore } from '../store/messagingStore'
 import { messagingService } from '../services/messagingService'
+import { messageDeleteService } from '../services/messageDeleteService'
 import { realtimeService } from '../services/realtimeService'
 import { useAuthStore } from '../store/authStore'
 import { toast } from 'react-hot-toast'
@@ -16,6 +17,7 @@ import type { Message } from '../types/messaging'
  * - Auto-marks messages as read when received
  * - Subscribes to realtime new messages and edits
  * - Prevents duplicate message fetches
+ * - Filters out messages hidden by "Delete for me" (Story 8.5.3)
  * 
  * @param conversationId - ID of the conversation to fetch messages for
  * @returns Messages, loading state, and pagination controls
@@ -67,10 +69,17 @@ export function useMessages(conversationId: string | null) {
       isFetching.current = true
       setLoadingMessages(true)
       
-      const { messages: fetchedMessages, hasMore: more } = 
-        await messagingService.fetchMessages(conversationId, pageSize)
+      // Fetch messages and hidden message IDs in parallel
+      const [{ messages: fetchedMessages, hasMore: more }, hiddenIds] = await Promise.all([
+        messagingService.fetchMessages(conversationId, pageSize),
+        messageDeleteService.getHiddenMessageIds()
+      ])
       
-      setMessages(conversationId, fetchedMessages)
+      // Filter out messages hidden by "Delete for me" (Story 8.5.3)
+      const hiddenSet = new Set(hiddenIds)
+      const visibleMessages = fetchedMessages.filter(msg => !hiddenSet.has(msg.id))
+      
+      setMessages(conversationId, visibleMessages)
       hasMore.current = more
     } catch (error) {
       console.error('Failed to fetch messages:', error)
@@ -91,14 +100,17 @@ export function useMessages(conversationId: string | null) {
     try {
       isLoadingMore.current = true
       
-      const { messages: olderMessages, hasMore: more } = 
-        await messagingService.fetchMessages(
-          conversationId,
-          pageSize,
-          oldestMessage.id
-        )
+      // Fetch messages and hidden IDs in parallel
+      const [{ messages: olderMessages, hasMore: more }, hiddenIds] = await Promise.all([
+        messagingService.fetchMessages(conversationId, pageSize, oldestMessage.id),
+        messageDeleteService.getHiddenMessageIds()
+      ])
       
-      prependMessages(conversationId, olderMessages)
+      // Filter out hidden messages (Story 8.5.3)
+      const hiddenSet = new Set(hiddenIds)
+      const visibleMessages = olderMessages.filter(msg => !hiddenSet.has(msg.id))
+      
+      prependMessages(conversationId, visibleMessages)
       hasMore.current = more
     } catch (error) {
       console.error('Failed to load more messages:', error)
