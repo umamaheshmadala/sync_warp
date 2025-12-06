@@ -309,7 +309,17 @@ export function ChatScreen() {
       className="flex flex-col h-full bg-white chat-screen"
       style={{ paddingBottom: keyboardPadding }}
     >
-      <ChatHeader conversationId={conversationId} />
+      <ChatHeader 
+        conversationId={conversationId} 
+        onSearchClick={() => {
+          setShowSearch(true)
+          // Focus search input after a short delay to allow render
+          setTimeout(() => {
+            const searchInput = document.querySelector('input[placeholder="Search messages..."]') as HTMLInputElement
+            if (searchInput) searchInput.focus()
+          }, 100)
+        }}
+      />
       
       {/* Search UI (Story 8.5.4) */}
       {showSearch && (

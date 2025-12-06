@@ -2,7 +2,7 @@ import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Capacitor } from '@capacitor/core'
 
-import { ArrowLeft, MoreVertical, Video, Phone, Trash, Archive, Pin, MessageSquare, CheckCircle, ArchiveX, PinOff, AlertCircle, BellOff, Bell } from 'lucide-react'
+import { ArrowLeft, MoreVertical, Video, Phone, Trash, Archive, Pin, MessageSquare, CheckCircle, ArchiveX, PinOff, AlertCircle, BellOff, Bell, Search } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 import { Button } from '../ui/button'
 import {
@@ -24,9 +24,10 @@ import { toast } from 'react-hot-toast'
 
 interface ChatHeaderProps {
   conversationId: string
+  onSearchClick?: () => void
 }
 
-export function ChatHeader({ conversationId }: ChatHeaderProps) {
+export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
   const navigate = useNavigate()
   const { conversations, togglePinOptimistic, toggleArchiveOptimistic } = useMessagingStore()
   const { friends } = useNewFriends()
@@ -205,6 +206,17 @@ export function ChatHeader({ conversationId }: ChatHeaderProps) {
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuLabel>Chat Options</DropdownMenuLabel>
             <DropdownMenuSeparator />
+
+            <DropdownMenuItem onClick={() => {
+              if (onSearchClick) {
+                onSearchClick()
+              } else {
+                console.warn('Search handler not implemented')
+              }
+            }}>
+              <Search className="mr-2 h-4 w-4" />
+              <span>Search</span>
+            </DropdownMenuItem>
             
             <DropdownMenuItem onClick={() => handleAction('pin')}>
               {conversation.is_pinned ? (
