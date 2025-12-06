@@ -15,6 +15,9 @@ interface MessageListProps {
   onEdit?: (message: Message) => void // Story 8.5.2 - Edit message (WhatsApp-style)
   onQuoteClick?: (messageId: string) => void // Story 8.10.5 - Click quoted message
   messagesEndRef?: React.RefObject<HTMLDivElement> // Scroll anchor for auto-scroll
+  onPin?: (messageId: string) => void
+  onUnpin?: (messageId: string) => void
+  isMessagePinned?: (messageId: string) => boolean
 }
 
 /**
@@ -47,7 +50,10 @@ export function MessageList({
   onForward,
   onEdit,
   onQuoteClick,
-  messagesEndRef
+  messagesEndRef,
+  onPin,
+  onUnpin,
+  isMessagePinned
 }: MessageListProps) {
   const currentUserId = useAuthStore(state => state.user?.id)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -149,6 +155,9 @@ export function MessageList({
                 onEdit={onEdit}
                 onQuoteClick={onQuoteClick}
                 currentUserId={currentUserId || ''}
+                onPin={onPin}
+                onUnpin={onUnpin}
+                isMessagePinned={isMessagePinned}
               />
             </div>
           )

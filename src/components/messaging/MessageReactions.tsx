@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Reaction } from '../../services/reactionService';
+import { hapticService } from '../../services/hapticService';
 import { cn } from '../../lib/utils';
 
 interface Props {
@@ -33,6 +34,7 @@ export function MessageReactions({
             onClick={(e) => {
               e.stopPropagation();
               // WhatsApp behavior: Click -> View Users
+              hapticService.trigger('light');
               onViewUsers(emoji, e);
             }}
             onContextMenu={(e) => {

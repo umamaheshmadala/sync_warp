@@ -1,16 +1,3 @@
-# 📱 STORY 8.5.6: Mobile Haptic Feedback & Gestures
-
-**Parent Epic:** [EPIC 8.5 - Advanced Messaging Features](../epics/EPIC_8.5_Advanced_Features.md)  
-**Story Owner:** Frontend Engineering  
-**Estimated Effort:** 1 day  
-**Priority:** P1 - High  
-**Status:** 📋 Ready for Implementation  
-**Dependencies:** All previous 8.5 stories (features to add haptics to)
-
----
-
-## 🎯 **Story Goal**
-
 Implement **native haptic feedback** and **gesture controls** for iOS and Android:
 
 - Long-press gesture for message actions

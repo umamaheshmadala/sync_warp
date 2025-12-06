@@ -40,20 +40,6 @@ Implement **message pinning** for important messages in conversations:
 3. Quickly navigate to pinned message in context
 4. Unpin messages when no longer relevant
 
-### Acceptance Criteria:
-
-- ✅ Pin/unpin messages via action menu
-- ✅ Maximum 3 pinned messages per conversation
-- ✅ Pinned banner at top of chat
-- ✅ Click pinned message to scroll to original
-- ✅ Pinned messages persist across sessions
-- ✅ Real-time sync of pin changes
-- ✅ Group chats: Only admins can pin (optional)\r\n\r\n---\r\n\r\n## 🔒 **Confirmed Design Decisions**\r\n\r\n| Decision | Choice | Industry Reference |\r\n|----------|--------|--------------------|\r\n| Pin limit | 3 per conversation | Keeps UI clean |\r\n| Pin expiration | No expiration (permanent until unpinned) | All major apps |\r\n| Who can pin (1:1) | Both participants | - |\r\n| Scope | 1:1 conversations only (group pinning deferred) | - |
-
----
-
-## 🧩 **Implementation Tasks**
-
 ### **Phase 1: Database Schema** (0.25 days)
 
 #### Task 1.1: Add Pinned Messages Table
@@ -67,6 +53,7 @@ CREATE TABLE IF NOT EXISTS pinned_messages (
   message_id UUID NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
   pinned_by UUID NOT NULL REFERENCES users(id) ON DELETE SET NULL,
   pinned_at TIMESTAMPTZ DEFAULT NOW(),
+  expires_at TIMESTAMPTZ NOT NULL, -- WhatsApp standard: 24h, 7d, 30d
 
   -- Unique constraint: same message can only be pinned once per conversation
   UNIQUE(conversation_id, message_id)

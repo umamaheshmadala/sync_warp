@@ -1,13 +1,14 @@
 import React from 'react';
 import { QUICK_REACTIONS } from '../../services/reactionService';
+import { hapticService } from '../../services/hapticService';
 import { Plus } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 interface Props {
   onReact: (emoji: string) => void;
-  onOpenPicker?: () => void; // Optional for now
+  onOpenPicker?: () => void;
   userReactions: string[];
-  className?: string; // Allow custom positioning
+  className?: string;
 }
 
 export function QuickReactionBar({ onReact, onOpenPicker, userReactions, className }: Props) {
@@ -19,7 +20,8 @@ export function QuickReactionBar({ onReact, onOpenPicker, userReactions, classNa
           <button
             key={emoji}
             onClick={(e) => {
-              e.stopPropagation(); // Prevent message click
+              e.stopPropagation();
+              hapticService.trigger('light');
               onReact(emoji);
             }}
             className={cn(
@@ -33,10 +35,10 @@ export function QuickReactionBar({ onReact, onOpenPicker, userReactions, classNa
         );
       })}
 
-      {/* More emoji button - simplified to log for now until picker is implemented */}
       <button
         onClick={(e) => {
           e.stopPropagation();
+          hapticService.trigger('light');
           onOpenPicker?.();
         }}
         className="text-gray-400 p-1.5 rounded-full hover:bg-gray-100 hover:text-gray-600 transition-colors"

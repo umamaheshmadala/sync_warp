@@ -18,6 +18,10 @@ import { App } from '@capacitor/app'
 import { messagingService } from '../../services/messagingService'
 import { conversationManagementService } from '../../services/conversationManagementService'
 import type { Message } from '../../types/messaging'
+import { usePinnedMessages } from '../../hooks/usePinnedMessages'
+import { PinnedMessagesBanner } from './PinnedMessagesBanner'
+import { PinDurationDialog } from './PinDurationDialog'
+import type { PinDuration } from '../../services/pinnedMessageService'
 import './ChatScreen.css'
 
 /**
@@ -62,6 +66,11 @@ export function ChatScreen() {
 
   // Edit state (Story 8.5.2 - WhatsApp-style editing)
   const [editingMessage, setEditingMessage] = useState<Message | null>(null)
+
+  // Pin state (Story 8.5.7)
+  const { pinnedMessages, pinMessage, unpinMessage, isMessagePinned, canPin } = usePinnedMessages(conversationId || '')
+  const [showPinDialog, setShowPinDialog] = useState(false)
+  const [pinningMessageId, setPinningMessageId] = useState<string | null>(null)
 
   // Search state (Story 8.5.4)
   const [showSearch, setShowSearch] = useState(false)
@@ -266,6 +275,18 @@ export function ChatScreen() {
     clearSearch()
   }
 
+  // Pin handlers (Story 8.5.7)
+  const handlePinRequest = (messageId: string) => {
+    setPinningMessageId(messageId)
+    setShowPinDialog(true)
+  }
+
+  const handleConfirmPin = (duration: PinDuration) => {
+    if (pinningMessageId) {
+      pinMessage(pinningMessageId, duration)
+    }
+  }
+
   // Keyboard shortcut for search (Ctrl/Cmd+F)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -321,6 +342,13 @@ export function ChatScreen() {
         }}
       />
       
+      {/* Pinned Messages Banner (Story 8.5.7) */}
+      <PinnedMessagesBanner
+        pinnedMessages={pinnedMessages}
+        onMessageClick={scrollToMessage}
+        onUnpin={unpinMessage}
+      />
+      
       {/* Search UI (Story 8.5.4) */}
       {showSearch && (
         <div className="border-b bg-white z-10">
@@ -356,6 +384,9 @@ export function ChatScreen() {
         onEdit={handleEdit}
         onQuoteClick={handleQuoteClick}
         messagesEndRef={messagesEndRef}
+        onPin={handlePinRequest}
+        onUnpin={unpinMessage}
+        isMessagePinned={isMessagePinned}
       />
       
       {isTyping && <TypingIndicator userIds={typingUserIds} />}
@@ -381,6 +412,13 @@ export function ChatScreen() {
           }}
         />
       )}
+
+      {/* Pin Duration Dialog */}
+      <PinDurationDialog
+        open={showPinDialog}
+        onOpenChange={setShowPinDialog}
+        onConfirm={handleConfirmPin}
+      />
     </div>
   )
 }

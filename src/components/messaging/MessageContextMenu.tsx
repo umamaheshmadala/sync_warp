@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState, useLayoutEffect } from 'react'
-import { Reply, Copy, Forward, Star, Trash2, CheckSquare, Share2, Pencil } from 'lucide-react'
+import { Reply, Copy, Forward, Star, Trash2, CheckSquare, Share2, Pencil, Pin, PinOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Message } from '@/types/messaging'
 import { useShare } from '@/hooks/useShare'
 import { QuickReactionBar } from './QuickReactionBar'
+import { hapticService } from '../../services/hapticService'
 
 interface MessageContextMenuProps {
   message: Message
@@ -26,6 +27,9 @@ interface MessageContextMenuProps {
   onReact?: (emoji: string) => void
   onOpenPicker?: () => void
   userReactions?: string[]
+  onPin?: () => void
+  onUnpin?: () => void
+  isPinned?: boolean
 }
 
 /**
@@ -60,7 +64,10 @@ export function MessageContextMenu({
   editRemainingTime = '',
   onReact,
   onOpenPicker,
-  userReactions = []
+  userReactions = [],
+  onPin,
+  onUnpin,
+  isPinned
 }: MessageContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null)
   const [adjustedPosition, setAdjustedPosition] = useState(position)
@@ -130,6 +137,7 @@ export function MessageContextMenu({
   }, [onClose])
 
   const handleAction = (action: () => void) => {
+    hapticService.trigger('selection')
     action()
     onClose()
   }
@@ -195,6 +203,27 @@ export function MessageContextMenu({
           <span className="text-sm text-gray-800">Copy</span>
         </button>
 
+        {/* Pin/Unpin */}
+        {onPin && !isPinned && (
+          <button
+            onClick={() => handleAction(onPin)}
+            className="flex items-center gap-2 w-full px-3 py-1.5 hover:bg-gray-100 transition-colors text-left"
+          >
+            <Pin className="w-4 h-4 text-gray-500" />
+            <span className="text-sm text-gray-800">Pin</span>
+          </button>
+        )}
+
+        {onUnpin && isPinned && (
+          <button
+            onClick={() => handleAction(onUnpin)}
+            className="flex items-center gap-2 w-full px-3 py-1.5 hover:bg-gray-100 transition-colors text-left"
+          >
+            <PinOff className="w-4 h-4 text-gray-500" />
+            <span className="text-sm text-gray-800">Unpin</span>
+          </button>
+        )}
+
         {/* Share (for media and links) */}
         {onShare && (
           <button
@@ -234,7 +263,11 @@ export function MessageContextMenu({
         {/* Delete for Me */}
         {onDeleteForMe && (
           <button
-            onClick={() => handleAction(onDeleteForMe)}
+            onClick={() => {
+              hapticService.trigger('warning')
+              onDeleteForMe?.()
+              onClose()
+            }}
             className="flex items-center gap-2 w-full px-3 py-1.5 hover:bg-gray-100 transition-colors text-left"
           >
             <Trash2 className="w-4 h-4 text-gray-500" />
@@ -245,7 +278,11 @@ export function MessageContextMenu({
         {/* Delete for Everyone (only for own messages within delete window) */}
         {onDeleteForEveryone && canDeleteForEveryone && isOwn && (
           <button
-            onClick={() => handleAction(onDeleteForEveryone)}
+            onClick={() => {
+              hapticService.trigger('warning')
+              onDeleteForEveryone?.()
+              onClose()
+            }}
             className="flex items-center gap-2 w-full px-3 py-1.5 hover:bg-red-50 transition-colors text-left"
           >
             <Trash2 className="w-4 h-4 text-red-500" />

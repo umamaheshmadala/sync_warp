@@ -1,5 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react'
+
 import { createPortal } from 'react-dom'
+import { motion } from 'framer-motion'
+import { useLongPress } from '../../hooks/useLongPress'
+import { useSwipeToReply } from '../../hooks/useSwipeToReply'
+import { hapticService } from '../../services/hapticService'
 import { RefreshCw, CornerDownRight, Forward } from 'lucide-react'
 import { MessageStatusIcon } from './MessageStatusIcon'
 import { OptimisticImageMessage } from './OptimisticImageMessage'
@@ -45,6 +50,9 @@ interface MessageBubbleProps {
   onEdit?: (message: Message) => void // Callback for edit action (Story 8.5.2 - WhatsApp-style)
   onQuoteClick?: (messageId: string) => void // Callback for clicking quoted message (Story 8.10.5)
   currentUserId?: string
+  onPin?: (messageId: string) => void
+  onUnpin?: (messageId: string) => void
+  isMessagePinned?: (messageId: string) => boolean
 }
 
 /**
@@ -85,7 +93,10 @@ export function MessageBubble({
   onForward,
   onEdit,
   onQuoteClick,
-  currentUserId
+  currentUserId,
+  onPin,
+  onUnpin,
+  isMessagePinned
 }: MessageBubbleProps) {
   const [showContextMenu, setShowContextMenu] = useState(false)
   const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 })
@@ -95,8 +106,8 @@ export function MessageBubble({
   const [lightboxInitialIndex, setLightboxInitialIndex] = useState(0)
   // const [showReactionBar, setShowReactionBar] = useState(false) // Removed per user feedback
   const [showPicker, setShowPicker] = useState(false)
-  const longPressTimer = useRef<NodeJS.Timeout | null>(null)
-  const isLongPress = useRef(false)
+  // const longPressTimer = useRef<NodeJS.Timeout | null>(null) // Replaced by useLongPress
+  // const isLongPress = useRef(false) // Replaced by useLongPress
   const content = message.content || ''
   const isDeleted = !!message.deleted_at
   
@@ -144,6 +155,46 @@ export function MessageBubble({
     ? messageEditService.formatRemainingTime(EDIT_WINDOW_MS - messageAge)
     : ''
   
+  // -- Gesture Hooks --
+  
+  // 1. Long Press (Context Menu)
+  const { 
+    onMouseDown: onLPMouseDown, 
+    onMouseUp: onLPMouseUp, 
+    onMouseLeave: onLPMouseLeave,
+    onTouchStart: onLPTouchStart,
+    onTouchEnd: onLPTouchEnd,
+    onTouchMove: onLPTouchMove
+  } = useLongPress({
+    onLongPress: () => {
+      // Trigger user's context menu logic
+      // We need to calculate position similar to existing logic
+      // But since this runs async, we might not have the event.
+      // Actually, useLongPress is designed to fire the callback. 
+      // We already have a handleContextMenu but it expects an event.
+      
+      // We can synthesize a position or just center it/use last touch?
+      // For now, let's just create a simpler open handler that uses stored position or centers
+      // BUT WAIT, the original logic used the start event clientX/Y.
+      // My useLongPress hook needs to pass coordinates or I need to track them.
+      // Let's modify handleContextMenu to be flexible or store last touch.
+      setShowContextMenu(true);
+    }
+  });
+
+  // 2. Swipe to Reply
+  const { 
+    x: swipeX, 
+    controls: swipeControls, 
+    onDrag: onSwipeDrag, 
+    onDragEnd: onSwipeDragEnd 
+  } = useSwipeToReply({
+    onReply: () => {
+       hapticService.trigger('selection'); // Ensure haptic
+       onReply?.(message);
+    }
+  });
+
   // Delete eligibility - similar to edit, 15-minute window for "Delete for Everyone"
   const DELETE_WINDOW_MS = 15 * 60 * 1000 // 15 minutes
   const canDeleteMessage = isOwn && 
@@ -259,50 +310,48 @@ export function MessageBubble({
     }
   }
 
-  const handleContextMenu = (e: React.MouseEvent) => {
+  // Refactored Context Menu Handler (works with both native context menu event and our Long Press)
+  const handleContextMenu = (e: React.MouseEvent | React.TouchEvent | Event) => {
     e.preventDefault()
-    if (isDeleted || isSystem) return // No menu for deleted/system messages
+    if (isDeleted) return // No menu for deleted messages
     
-    // Calculate position to keep menu on screen
-    const x = Math.min(e.clientX, window.innerWidth - 220)
-    const y = Math.min(e.clientY, window.innerHeight - 300)
+    // Calculate position
+    let clientX = 0;
+    let clientY = 0;
+
+    if ('touches' in e) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+    } else if ('clientX' in e) {
+        clientX = (e as React.MouseEvent).clientX;
+        clientY = (e as React.MouseEvent).clientY;
+    }
+
+    const x = Math.min(clientX, window.innerWidth - 220)
+    const y = Math.min(clientY, window.innerHeight - 300)
     
     setContextMenuPosition({ x, y })
     setShowContextMenu(true)
     
     // Haptic feedback
-    if (Capacitor.isNativePlatform()) {
-      Haptics.impact({ style: ImpactStyle.Medium })
-    }
+    hapticService.trigger('medium')
   }
 
-  const handleLongPressStart = (e: React.TouchEvent | React.MouseEvent) => {
-    if (isDeleted || isSystem) return
-    isLongPress.current = false
-    longPressTimer.current = setTimeout(() => {
-      isLongPress.current = true
-      // Use touch coordinates for mobile
-      const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX
-      const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY
-      
-      const x = Math.min(clientX, window.innerWidth - 220)
-      const y = Math.min(clientY, window.innerHeight - 300)
-      
-      setContextMenuPosition({ x, y })
-      setShowContextMenu(true)
-      
-      if (Capacitor.isNativePlatform()) {
-        Haptics.impact({ style: ImpactStyle.Medium })
-      }
-    }, 500)
-  }
+  // NOTE: Previous long press handlers removed in favor of useLongPress hook below
 
-  const handleLongPressEnd = () => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current)
-      longPressTimer.current = null
-    }
-  }
+  /* 
+   * Long press logic is now handled by usage of useLongPress hook in the render method 
+   * and the modified useLongPress signature that captures coordinates would be better 
+   * but for now we rely on the native hook.
+   * 
+   * Actually, my useLongPress hook doesn't pass coordinates to onLongPress.
+   * I should update the hook OR jus use the separate onContextMenu event for desktop
+   * and maybe simple center positioning for mobile long press if coords are missing.
+   * 
+   * WAIT: The useLongPress hook we created doesn't return the start coordinates in the callback.
+   * That is a limitation. 
+   * However, we can track the touch start in the wrapper.
+   */
 
   const handleCopy = () => {
     navigator.clipboard.writeText(content)
@@ -523,24 +572,61 @@ export function MessageBubble({
           </Button>
         )}
         
-        <div className="flex flex-col">
-          <div 
+          <div className="flex flex-col relative"> 
+            {/* Added relative wrapper for swipe context */}
+            
+          <motion.div 
             id={`message-${message.id}`}
             role="article"
             aria-label={ariaLabel}
             tabIndex={0}
+            
+            // Gestures
+            drag="x"
+            dragConstraints={{ left: 0, right: 80 }} // Allow drag right to reply
+            dragElastic={0.1} // Rubber band effect
+            onDrag={onSwipeDrag}
+            onDragEnd={onSwipeDragEnd}
+            style={{ x: swipeX }}
+            animate={swipeControls}
+            
+            // Long Press & Mouse Events
+            // We combine manual handlers with hook handlers
             onContextMenu={handleContextMenu}
-            onTouchStart={handleLongPressStart}
-            onTouchEnd={handleLongPressEnd}
-            onTouchCancel={handleLongPressEnd}
+            onMouseDown={(e) => {
+                onLPMouseDown(e);
+                // Also capture position for potential long press?
+                setContextMenuPosition({ 
+                    x: Math.min(e.clientX, window.innerWidth - 220), 
+                    y: Math.min(e.clientY, window.innerHeight - 300) 
+                });
+            }}
+            onMouseUp={onLPMouseUp}
+            onMouseLeave={onLPMouseLeave}
+            onTouchStart={(e) => {
+                onLPTouchStart(e);
+                // Capture touch position for menu
+                const touch = e.touches[0];
+                setContextMenuPosition({ 
+                    x: Math.min(touch.clientX, window.innerWidth - 220), 
+                    y: Math.min(touch.clientY, window.innerHeight - 300) 
+                });
+            }}
+            onTouchEnd={onLPTouchEnd}
+            // onTouchMove is handled by onDrag usually, but we need strictly for long press cancel
+            // If dragging starts, onTouchMove might fire.
+            // But we actually want dragging to Cancel long press.
+            // Our useLongPress hook cancels on movement > 10px.
+            onTouchMove={onLPTouchMove}
+
             className={cn(
-              "px-4 py-2 rounded-2xl break-words text-[15px] leading-relaxed shadow-sm cursor-pointer select-none",
+              "px-4 py-2 rounded-2xl break-words text-[15px] leading-relaxed shadow-sm cursor-pointer select-none relative z-10 touch-pan-y", // touch-pan-y allows vertical scroll but captures horizontal
               "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1",
               isOwn 
                 ? _failed
                   ? "bg-red-50 text-red-900 border border-red-200" 
-                  : "bg-[#0a66c2] text-white rounded-br-sm" // LinkedIn Blue
-                : "bg-[#f3f2ef] text-gray-900 rounded-bl-sm" // LinkedIn Gray
+                  : "bg-[#0a66c2] text-white rounded-br-sm" 
+                : "bg-[#f3f2ef] text-gray-900 rounded-bl-sm"
             )}
           >
             {/* Message Content */}
@@ -702,13 +788,12 @@ export function MessageBubble({
                 </span>
               )}
             </div>
-          </div>
+          </motion.div>
           {/* Message Reactions (Displays below bubble) */}
           <MessageReactions
             reactions={reactionsSummary}
             currentUserId={currentUserId || ''}
             onReactionClick={toggleReaction}
-            onReactionClick={(emoji) => toggleReaction(emoji)}
             onViewUsers={(emoji, e) => handleViewReactionUsers(emoji, e)}  // Pass event for positioning
             isOwnMessage={isOwn}
           />
@@ -740,6 +825,9 @@ export function MessageBubble({
             setShowPicker(true)
           }}
           userReactions={userReactions}
+          onPin={() => onPin?.(message.id)}
+          onUnpin={() => onUnpin?.(message.id)}
+          isPinned={isMessagePinned?.(message.id)}
         />,
         document.body
       )}

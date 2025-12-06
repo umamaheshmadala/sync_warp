@@ -15,8 +15,8 @@ Implement **game-changing advanced features** that differentiate SynC from compe
 - ✏️ **Edit messages** (15-minute window)
 - 🗑️ **Delete messages** (15-minute window)
 - 🔍 **Search messages** within conversations
-- ❤️ **Message reactions** (emoji responses)
-- 📱 **Native haptic feedback** on iOS/Android for reactions and interactions
+- ✅ **Message reactions** (emoji responses)
+- ✅ **Native haptic feedback** on iOS/Android for reactions and interactions
 - 📌 **Pin important messages** (optional for v2)
 
 ---
