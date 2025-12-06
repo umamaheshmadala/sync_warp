@@ -20,6 +20,11 @@ CREATE INDEX IF NOT EXISTS idx_message_hides_user_message ON message_hides(user_
 -- Enable RLS
 ALTER TABLE message_hides ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies first (in case of re-run)
+DROP POLICY IF EXISTS "Users can view own hidden messages" ON message_hides;
+DROP POLICY IF EXISTS "Users can hide messages in their conversations" ON message_hides;
+DROP POLICY IF EXISTS "Users can unhide own messages" ON message_hides;
+
 -- RLS Policy: Users can only see their own hidden messages
 CREATE POLICY "Users can view own hidden messages"
   ON message_hides FOR SELECT
