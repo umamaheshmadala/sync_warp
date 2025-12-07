@@ -3,13 +3,14 @@
 **Epic Owner:** Mobile Engineering  
 **Dependencies:** Epic 8.1 (Database), Epic 8.2 (Core Messaging)  
 **Timeline:** Week 8 (1 week)  
-**Status:** 📋 Planning
+**Status:** ✅ Complete
 
 ---
 
 ## 🎯 **Epic Goal**
 
 Implement **push notifications** so users never miss a message:
+
 - Integrate with **Capacitor Push Notifications** (already installed!)
 - Handle FCM (Firebase Cloud Messaging) for Android
 - Handle APNs (Apple Push Notification service) for iOS
@@ -21,12 +22,12 @@ Implement **push notifications** so users never miss a message:
 
 ## ✅ **Success Criteria**
 
-| Objective | Target |
-|-----------|--------|
-| **Notification Delivery Rate** | > 95% |
-| **Notification Latency** | < 3s from message send |
-| **Token Registration Success** | > 99% |
-|| **Tap-to-Conversation Navigation** | 100% |
+| Objective                      | Target                             |
+| ------------------------------ | ---------------------------------- | ---- |
+| **Notification Delivery Rate** | > 95%                              |
+| **Notification Latency**       | < 3s from message send             |
+| **Token Registration Success** | > 99%                              |
+|                                | **Tap-to-Conversation Navigation** | 100% |
 
 ---
 
@@ -66,6 +67,7 @@ Implement **push notifications** so users never miss a message:
    - Generate in-app notification banners
 
 **🔄 Automatic Routing:** Per global MCP rule, commands automatically route to appropriate servers based on keywords:
+
 - SQL/database/edge functions → Supabase MCP
 - explain/analyze/review → Context7 MCP
 - inspect/debug → Chrome DevTools MCP
@@ -106,82 +108,82 @@ CREATE INDEX idx_user_push_tokens_user_id ON user_push_tokens(user_id);
 
 ```typescript
 // src/services/pushNotificationService.ts
-import { PushNotifications } from '@capacitor/push-notifications'
-import { supabase } from '../lib/supabase'
-import { Device } from '@capacitor/device'
-import { App } from '@capacitor/app'
+import { PushNotifications } from "@capacitor/push-notifications";
+import { supabase } from "../lib/supabase";
+import { Device } from "@capacitor/device";
+import { App } from "@capacitor/app";
 
 class PushNotificationService {
-  private isInitialized = false
+  private isInitialized = false;
 
   /**
    * Initialize push notifications
    * Call this on app startup after user login
    */
   async initialize(): Promise<void> {
-    if (this.isInitialized) return
+    if (this.isInitialized) return;
 
     // Request permission
-    const permission = await PushNotifications.requestPermissions()
-    if (permission.receive === 'granted') {
-      await PushNotifications.register()
+    const permission = await PushNotifications.requestPermissions();
+    if (permission.receive === "granted") {
+      await PushNotifications.register();
     } else {
-      console.warn('❌ Push notification permission denied')
-      return
+      console.warn("❌ Push notification permission denied");
+      return;
     }
 
     // Listen for registration success
-    await PushNotifications.addListener('registration', async (token) => {
-      console.log('✅ Push token:', token.value)
-      await this.saveToken(token.value)
-    })
+    await PushNotifications.addListener("registration", async (token) => {
+      console.log("✅ Push token:", token.value);
+      await this.saveToken(token.value);
+    });
 
     // Listen for registration errors
-    await PushNotifications.addListener('registrationError', (error) => {
-      console.error('❌ Push registration error:', error)
-    })
+    await PushNotifications.addListener("registrationError", (error) => {
+      console.error("❌ Push registration error:", error);
+    });
 
     // Listen for notifications received while app is open
     await PushNotifications.addListener(
-      'pushNotificationReceived',
+      "pushNotificationReceived",
       (notification) => {
-        console.log('📬 Notification received:', notification)
+        console.log("📬 Notification received:", notification);
         // Handle in-app notification display
-        this.handleInAppNotification(notification)
+        this.handleInAppNotification(notification);
       }
-    )
+    );
 
     // Listen for notification taps
     await PushNotifications.addListener(
-      'pushNotificationActionPerformed',
+      "pushNotificationActionPerformed",
       (action) => {
-        console.log('👆 Notification tapped:', action)
-        this.handleNotificationTap(action)
+        console.log("👆 Notification tapped:", action);
+        this.handleNotificationTap(action);
       }
-    )
+    );
 
-    this.isInitialized = true
+    this.isInitialized = true;
   }
 
   /**
    * Save push token to database
    */
   private async saveToken(token: string): Promise<void> {
-    const userId = (await supabase.auth.getUser()).data.user!.id
-    const deviceInfo = await Device.getInfo()
-    const deviceId = await Device.getId()
+    const userId = (await supabase.auth.getUser()).data.user!.id;
+    const deviceInfo = await Device.getInfo();
+    const deviceId = await Device.getId();
 
-    const { error } = await supabase.from('user_push_tokens').upsert({
+    const { error } = await supabase.from("user_push_tokens").upsert({
       user_id: userId,
       device_token: token,
       device_platform: deviceInfo.platform, // 'ios' | 'android' | 'web'
-      device_id: deviceId.identifier
-    })
+      device_id: deviceId.identifier,
+    });
 
     if (error) {
-      console.error('Failed to save push token:', error)
+      console.error("Failed to save push token:", error);
     } else {
-      console.log('✅ Push token saved to database')
+      console.log("✅ Push token saved to database");
     }
   }
 
@@ -190,8 +192,8 @@ class PushNotificationService {
    */
   private handleInAppNotification(notification: any): void {
     // Show a toast or banner if app is in foreground
-    const { title, body, data } = notification
-    
+    const { title, body, data } = notification;
+
     // Use your toast library
     // toast.info(`${title}: ${body}`, {
     //   onClick: () => this.handleNotificationTap({ notification })
@@ -202,14 +204,14 @@ class PushNotificationService {
    * Handle notification tap - navigate to conversation
    */
   private async handleNotificationTap(action: any): void {
-    const { notification } = action
-    const { data } = notification
+    const { notification } = action;
+    const { data } = notification;
 
     if (data.conversationId) {
       // Navigate to the conversation
       // Replace with your navigation logic
       // router.push(`/messages/${data.conversationId}`)
-      console.log(`🚀 Navigating to conversation: ${data.conversationId}`)
+      console.log(`🚀 Navigating to conversation: ${data.conversationId}`);
     }
   }
 
@@ -217,34 +219,35 @@ class PushNotificationService {
    * Remove token on logout
    */
   async removeToken(): Promise<void> {
-    const userId = (await supabase.auth.getUser()).data.user?.id
-    if (!userId) return
+    const userId = (await supabase.auth.getUser()).data.user?.id;
+    if (!userId) return;
 
-    const deviceInfo = await Device.getInfo()
-    const deviceId = await Device.getId()
+    const deviceInfo = await Device.getInfo();
+    const deviceId = await Device.getId();
 
     await supabase
-      .from('user_push_tokens')
+      .from("user_push_tokens")
       .delete()
-      .eq('user_id', userId)
-      .eq('device_id', deviceId.identifier)
+      .eq("user_id", userId)
+      .eq("device_id", deviceId.identifier);
 
-    console.log('🗑️ Push token removed')
+    console.log("🗑️ Push token removed");
   }
 
   /**
    * Clean up listeners
    */
   async cleanup(): Promise<void> {
-    await PushNotifications.removeAllListeners()
-    this.isInitialized = false
+    await PushNotifications.removeAllListeners();
+    this.isInitialized = false;
   }
 }
 
-export const pushNotificationService = new PushNotificationService()
+export const pushNotificationService = new PushNotificationService();
 ```
 
 **🛢 MCP Integration:**
+
 ```bash
 # Verify tokens are being saved
 warp mcp run supabase "execute_sql SELECT * FROM user_push_tokens ORDER BY created_at DESC LIMIT 10;"
@@ -258,93 +261,96 @@ warp mcp run supabase "execute_sql SELECT * FROM user_push_tokens ORDER BY creat
 
 ```typescript
 // supabase/functions/send-message-notification/index.ts
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // FCM Server Key (store in Supabase secrets)
-const FCM_SERVER_KEY = Deno.env.get('FCM_SERVER_KEY')!
+const FCM_SERVER_KEY = Deno.env.get("FCM_SERVER_KEY")!;
 
 serve(async (req) => {
   try {
-    const { messageId, conversationId, senderId } = await req.json()
+    const { messageId, conversationId, senderId } = await req.json();
 
     // Initialize Supabase client
     const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    )
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
 
     // Get message details
     const { data: message } = await supabase
-      .from('messages')
-      .select(`
+      .from("messages")
+      .select(
+        `
         content,
         sender:users!messages_sender_id_fkey(username)
-      `)
-      .eq('id', messageId)
-      .single()
+      `
+      )
+      .eq("id", messageId)
+      .single();
 
     // Get conversation participants (excluding sender)
     const { data: participants } = await supabase
-      .from('conversation_participants')
-      .select('user_id')
-      .eq('conversation_id', conversationId)
-      .neq('user_id', senderId)
+      .from("conversation_participants")
+      .select("user_id")
+      .eq("conversation_id", conversationId)
+      .neq("user_id", senderId);
 
     if (!participants?.length) {
-      return new Response('No recipients', { status: 200 })
+      return new Response("No recipients", { status: 200 });
     }
 
     // Get push tokens for all participants
-    const userIds = participants.map(p => p.user_id)
+    const userIds = participants.map((p) => p.user_id);
     const { data: tokens } = await supabase
-      .from('user_push_tokens')
-      .select('device_token, device_platform')
-      .in('user_id', userIds)
+      .from("user_push_tokens")
+      .select("device_token, device_platform")
+      .in("user_id", userIds);
 
     if (!tokens?.length) {
-      return new Response('No push tokens found', { status: 200 })
+      return new Response("No push tokens found", { status: 200 });
     }
 
     // Send notifications via FCM
-    const notifications = tokens.map(token => ({
+    const notifications = tokens.map((token) => ({
       to: token.device_token,
       notification: {
         title: message.sender.username,
         body: message.content.substring(0, 100), // Truncate long messages
-        sound: 'default'
+        sound: "default",
       },
       data: {
         conversationId,
         messageId,
-        type: 'new_message'
-      }
-    }))
+        type: "new_message",
+      },
+    }));
 
     // Send to FCM
     const responses = await Promise.all(
-      notifications.map(notification =>
-        fetch('https://fcm.googleapis.com/fcm/send', {
-          method: 'POST',
+      notifications.map((notification) =>
+        fetch("https://fcm.googleapis.com/fcm/send", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `key=${FCM_SERVER_KEY}`
+            "Content-Type": "application/json",
+            Authorization: `key=${FCM_SERVER_KEY}`,
           },
-          body: JSON.stringify(notification)
+          body: JSON.stringify(notification),
         })
       )
-    )
+    );
 
-    console.log(`✅ Sent ${responses.length} push notifications`)
-    return new Response('Notifications sent', { status: 200 })
+    console.log(`✅ Sent ${responses.length} push notifications`);
+    return new Response("Notifications sent", { status: 200 });
   } catch (error) {
-    console.error('Error sending notifications:', error)
-    return new Response('Error', { status: 500 })
+    console.error("Error sending notifications:", error);
+    return new Response("Error", { status: 500 });
   }
-})
+});
 ```
 
 **🛢 MCP Integration:**
+
 ```bash
 # Deploy edge function via Supabase MCP
 warp mcp run supabase "deploy_edge_function send-message-notification"
@@ -375,7 +381,7 @@ BEGIN
         'senderId', NEW.sender_id
       )
     );
-  
+
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -395,24 +401,24 @@ CREATE TRIGGER on_message_insert
 
 ```typescript
 // src/hooks/usePushNotifications.ts
-import { useEffect } from 'react'
-import { pushNotificationService } from '../services/pushNotificationService'
-import { useAuthStore } from '../store/authStore'
+import { useEffect } from "react";
+import { pushNotificationService } from "../services/pushNotificationService";
+import { useAuthStore } from "../store/authStore";
 
 export function usePushNotifications() {
-  const { user } = useAuthStore()
+  const { user } = useAuthStore();
 
   useEffect(() => {
-    if (!user) return
+    if (!user) return;
 
     // Initialize push notifications
-    pushNotificationService.initialize()
+    pushNotificationService.initialize();
 
     // Cleanup on unmount or logout
     return () => {
-      pushNotificationService.cleanup()
-    }
-  }, [user])
+      pushNotificationService.cleanup();
+    };
+  }, [user]);
 }
 ```
 
@@ -421,6 +427,7 @@ export function usePushNotifications() {
 ## 📋 **Story Breakdown**
 
 ### **Story 8.6.1: Capacitor Push Setup** (2 days)
+
 - [ ] Configure FCM for Android (google-services.json)
 - [ ] Configure APNs for iOS (certificates, provisioning profiles)
 - [ ] Initialize PushNotifications plugin
@@ -428,12 +435,14 @@ export function usePushNotifications() {
 - **🧠 MCP**: Analyze Capacitor config with Context7
 
 ### **Story 8.6.2: Token Management** (1 day)
+
 - [ ] Save tokens to user_push_tokens table
 - [ ] Handle token updates on app reopen
 - [ ] Remove tokens on logout
 - **🛢 MCP**: Test token storage with Supabase MCP
 
 ### **Story 8.6.3: Backend Notification Sender** (2 days)
+
 - [ ] Create send-message-notification edge function
 - [ ] Integrate FCM API for Android notifications
 - [ ] Integrate APNs API for iOS notifications (via Firebase)
@@ -441,12 +450,14 @@ export function usePushNotifications() {
 - **🛢 MCP**: Deploy edge function via Supabase MCP
 
 ### **Story 8.6.4: Notification Handling** (1 day)
+
 - [ ] Handle in-app notification display (foreground)
 - [ ] Handle notification tap navigation
 - [ ] Test on real devices (Android + iOS)
 - **🤖 MCP**: E2E test notification flow with Puppeteer
 
 ### **Story 8.6.5: Notification Customization** (1 day)
+
 - [ ] Add notification settings (mute conversations)
 - [ ] Add sound/vibration preferences
 - [ ] Add quiet hours (Do Not Disturb)
@@ -457,18 +468,21 @@ export function usePushNotifications() {
 ## 🧪 **Testing with MCP**
 
 ### **E2E Tests with Puppeteer MCP**
+
 ```bash
 # Test notification tap navigation
 warp mcp run puppeteer "e2e test push notification tap navigates to correct conversation"
 ```
 
 ### **Database Verification with Supabase MCP**
+
 ```bash
 # Check tokens are being registered
 warp mcp run supabase "execute_sql SELECT user_id, device_platform, created_at FROM user_push_tokens ORDER BY created_at DESC LIMIT 20;"
 ```
 
 ### **Edge Function Testing with Supabase MCP**
+
 ```bash
 # Manually trigger notification
 warp mcp run supabase "execute_sql SELECT notify_new_message() FROM messages WHERE id = 'msg-123';"
