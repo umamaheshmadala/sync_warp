@@ -6,19 +6,19 @@
 
 export const TEST_USERS = {
   regularUser1: {
-    email: 'test1@syncwarp.test',
-    password: 'TestPassword123!',
-    name: 'Test User One',
+    email: 'testuser1@gmail.com',
+    password: 'Testuser@1',
+    name: 'Test User 1',
   },
   regularUser2: {
-    email: 'test2@syncwarp.test',
-    password: 'TestPassword123!',
-    name: 'Test User Two',
+    email: 'testuser2@gmail.com',
+    password: 'Testuser@1',
+    name: 'Test User 2',
   },
   businessOwner: {
-    email: 'owner@syncwarp.test',
-    password: 'OwnerPassword123!',
-    name: 'Business Owner',
+    email: 'testuser3@gmail.com',
+    password: 'Testuser@1',
+    name: 'Test User 3',
   },
 } as const;
 
