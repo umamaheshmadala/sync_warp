@@ -3,6 +3,7 @@ import { useMessagingStore } from '../store/messagingStore'
 import { useAuthStore } from '../store/authStore'
 import { messagingService } from '../services/messagingService'
 import { offlineQueueService } from '../services/offlineQueueService'
+import { triggerPushNotification } from '../services/pushNotificationSender'
 import { useNetworkStatus } from './useNetworkStatus'
 import { toast } from 'react-hot-toast'
 import type { SendMessageParams, Message } from '../types/messaging'
@@ -172,6 +173,15 @@ export function useSendMessage() {
         _queueId: undefined,
         status: 'delivered' // In DB = delivered (recipient can fetch it)
       })
+
+      // 5. Trigger push notification to other participants (async, non-blocking)
+      // REVERTED: Using backend trigger via pg_net to handle this reliably without CORS issues
+      // triggerPushNotification({
+      //   conversationId: params.conversationId,
+      //   senderId: currentUserId || 'unknown',
+      //   content: params.content || '',
+      //   messageType: params.type || 'text'
+      // }).catch(err => console.error('[Push] Failed to trigger:', err))
 
       console.log('✅ Message sent:', messageId)
       return tempId // Return tempId for progress tracking

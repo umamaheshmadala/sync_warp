@@ -202,20 +202,35 @@ async function sendToAPNs(
 console.log('send-push-notification Edge Function initialized')
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    // Initialize Supabase client with service role key for database access
+    // Check for authorization header (optional but good practice to debug)
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      console.warn('Missing Authorization header')
+    }
+
+    // Initialize Supabase client
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
     // Parse request body
-    const payload: NotificationPayload = await req.json()
+    let payload: NotificationPayload
+    try {
+      payload = await req.json()
+    } catch (e) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON body' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     const { userId, title, body, data = {} } = payload
 
     // Validate required fields
@@ -229,7 +244,7 @@ Deno.serve(async (req) => {
 
     console.log(`Processing notification for userId: ${userId}`)
 
-    // Fetch all push tokens for user from database
+    // Fetch all push tokens for user
     const { data: tokens, error: tokenError } = await supabaseClient
       .from('push_tokens')
       .select('token, platform')
@@ -251,7 +266,6 @@ Deno.serve(async (req) => {
     console.log(`Found ${tokens.length} push token(s) for user`)
 
     // Send notifications to all devices
-    // Use Promise.allSettled to attempt all sends even if some fail
     const results = await Promise.allSettled(
       tokens.map(async ({ token, platform }: PushToken) => {
         if (platform === 'android') {
@@ -266,15 +280,15 @@ Deno.serve(async (req) => {
     // Count successes and failures
     const successful = results.filter(r => r.status === 'fulfilled').length
     const failed = results.filter(r => r.status === 'rejected').length
-
-    // Log failures for debugging
+    
+    // Log failures
     results.forEach((result, index) => {
       if (result.status === 'rejected') {
         console.error(`Failed to send to device ${index + 1}:`, result.reason)
       }
     })
 
-    console.log(`Notification summary: ${successful} sent, ${failed} failed out of ${tokens.length} total`)
+    console.log(`Notification summary: ${successful} sent, ${failed} failed`)
 
     return new Response(
       JSON.stringify({
@@ -282,6 +296,10 @@ Deno.serve(async (req) => {
         sent: successful,
         failed,
         total: tokens.length,
+        results: results.map(r => ({
+          status: r.status,
+          reason: r.status === 'rejected' ? r.reason?.message || String(r.reason) : 'sent'
+        }))
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
@@ -289,7 +307,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Edge Function Error:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message || 'Internal Server Error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }

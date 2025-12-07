@@ -30,19 +30,16 @@ export const usePushNotifications = (userId: string | null) => {
 
       // Upsert token to database
       const { error } = await supabase
-        .from('user_push_tokens')
+        .from('push_tokens')
         .upsert({
           user_id: userId,
           token: token,
           platform: platform,
-          device_info: {
-            platform,
-            timestamp: new Date().toISOString()
-          },
+          device_name: platform, // Storing platform as device name for now
           is_active: true,
           updated_at: new Date().toISOString()
         }, {
-          onConflict: 'token'
+          onConflict: 'user_id, token'
         });
 
       if (error) {
@@ -73,17 +70,22 @@ export const usePushNotifications = (userId: string | null) => {
       return;
     }
 
-    const setupListeners = () => {
+  const registerPushNotifications = async () => {
+    try {
+      console.log('[usePushNotifications] Starting registration for user:', userId);
+      console.log('[usePushNotifications] Platform:', Capacitor.getPlatform());
+
+      // Set up listeners FIRST before registering
+      // Note: We might be setting up duplicate listeners if called multiple times.
+      // Ideally we should check if they are already set or use a ref.
+      // For now, let's remove verification/debug simplicity concerns, we'll verify listeners below.
+      await PushNotifications.removeAllListeners();
+      
       // Token registered successfully
       PushNotifications.addListener('registration', async (token: Token) => {
         console.log('[usePushNotifications] Token registered:', token.value);
-
-        // Store token in secure storage
         await SecureStorage.setPushToken(token.value);
-
-        // Sync token with Supabase
         const syncSuccess = await syncTokenWithSupabase(token.value, userId!);
-
         setState(prev => ({
           ...prev,
           isRegistered: true,
@@ -103,107 +105,54 @@ export const usePushNotifications = (userId: string | null) => {
         }));
       });
 
-      // Notification received while app is in foreground
-      PushNotifications.addListener('pushNotificationReceived',
-        (notification: PushNotificationSchema) => {
-          console.log('[usePushNotifications] Notification received:', notification);
+      // Notification received
+      PushNotifications.addListener('pushNotificationReceived', (notification: PushNotificationSchema) => {
+        console.log('[usePushNotifications] Notification received:', notification);
+        window.dispatchEvent(new CustomEvent('foreground-notification', { detail: notification }));
+      });
 
-          // Show toast for foreground notification
-          const title = notification.title || 'New Notification';
-          const body = notification.body || '';
+      // Notification tapped
+      PushNotifications.addListener('pushNotificationActionPerformed', (action: ActionPerformed) => {
+        console.log('[usePushNotifications] Notification tapped:', action);
+        const data = action.notification.data;
+        if (data.action_url) window.location.href = data.action_url;
+      });
 
-          // Use a custom event or a global toast handler if available
-          // For now, we'll dispatch a custom event that the app can listen to
-          // or use the browser's Notification API if permission granted
-
-          // Dispatch event for UI components to pick up
-          window.dispatchEvent(new CustomEvent('foreground-notification', {
-            detail: notification
-          }));
-
-          // Also try to show a system notification if possible (for web/PWA)
-          if (Notification.permission === 'granted') {
-            new Notification(title, { body });
-          }
-        }
-      );
-
-      // User tapped on notification
-      PushNotifications.addListener('pushNotificationActionPerformed',
-        (action: ActionPerformed) => {
-          console.log('[usePushNotifications] Notification tapped:', action);
-          const data = action.notification.data;
-
-          // Navigate based on notification type
-          if (data.action_url) {
-            window.location.href = data.action_url;
-          }
-        }
-      );
-    };
-
-    const registerPushNotifications = async () => {
-      try {
-        console.log('[usePushNotifications] Starting registration for user:', userId);
-        console.log('[usePushNotifications] Platform:', Capacitor.getPlatform());
-
-        // Set up listeners FIRST before registering
-        setupListeners();
-
-        // Create notification channel (required for Android O+)
-        if (Capacitor.getPlatform() === 'android') {
-          await PushNotifications.createChannel({
-            id: 'friend_notifications',
-            name: 'Friend Notifications',
-            description: 'Notifications for friend requests and updates',
-            importance: 5,
-            visibility: 1,
-            vibration: true,
-          });
-          console.log('[usePushNotifications] Notification channel created');
-        }
-
-        // Check current permission status
-        const currentPermission = await PushNotifications.checkPermissions();
-        console.log('[usePushNotifications] Current permission status:', currentPermission);
-
-        let finalPermissionStatus = currentPermission;
-
-        // If permission is prompt, request it
-        if (currentPermission.receive === 'prompt') {
-          console.log('[usePushNotifications] Requesting permissions...');
-          finalPermissionStatus = await PushNotifications.requestPermissions();
-          console.log('[usePushNotifications] Permission request result:', finalPermissionStatus);
-        }
-
-        if (finalPermissionStatus.receive === 'granted') {
-          setState(prev => ({ ...prev, permissionGranted: true }));
-
-          console.log('[usePushNotifications] Permission granted, registering with FCM/APNs...');
-          // Register with OS (FCM for Android, APNs for iOS)
-          await PushNotifications.register();
-
-          console.log('[usePushNotifications] Registration called successfully');
-        } else if (finalPermissionStatus.receive === 'denied') {
-          setState(prev => ({
-            ...prev,
-            permissionGranted: false,
-            error: 'Push notification permission denied'
-          }));
-          console.warn('[usePushNotifications] Permission denied by user');
-        }
-      } catch (error) {
-        setState(prev => ({
-          ...prev,
-          error: error instanceof Error ? error.message : 'Failed to initialize push notifications'
-        }));
-        console.error('[usePushNotifications] Initialization failed:', error);
+      // Create channel (Android)
+      if (Capacitor.getPlatform() === 'android') {
+        await PushNotifications.createChannel({
+          id: 'friend_notifications',
+          name: 'Friend Notifications',
+          description: 'Notifications for friend requests and updates',
+          importance: 5,
+          visibility: 1,
+          vibration: true,
+        });
       }
-    };
 
-    registerPushNotifications();
+      // Permissions
+      const currentPermission = await PushNotifications.checkPermissions();
+      let finalPermissionStatus = currentPermission;
+      if (currentPermission.receive === 'prompt') {
+        finalPermissionStatus = await PushNotifications.requestPermissions();
+      }
 
-    // Cleanup listeners on unmount
+      if (finalPermissionStatus.receive === 'granted') {
+        setState(prev => ({ ...prev, permissionGranted: true }));
+        await PushNotifications.register();
+      } else {
+         setState(prev => ({ ...prev, permissionGranted: false, error: 'Permission denied' }));
+      }
+    } catch (error) {
+      console.error('[usePushNotifications] Init failed:', error);
+      setState(prev => ({ ...prev, error: error instanceof Error ? error.message : 'Init failed' }));
+    }
+  };
+
+  useEffect(() => {
+    if (Capacitor.isNativePlatform() && userId) {
+      registerPushNotifications();
+    }
     return () => {
       PushNotifications.removeAllListeners();
     };
@@ -215,7 +164,7 @@ export const usePushNotifications = (userId: string | null) => {
 
     try {
       const { error } = await supabase
-        .from('user_push_tokens')
+        .from('push_tokens')
         .delete()
         .eq('token', state.token);
 
@@ -231,6 +180,7 @@ export const usePushNotifications = (userId: string | null) => {
 
   return {
     ...state,
+    syncNow: registerPushNotifications,
     removeTokenFromDatabase
   };
 };

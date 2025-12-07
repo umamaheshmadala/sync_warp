@@ -4,6 +4,17 @@ import path from 'path'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  define: {
+    '__BUILD_TIMESTAMP__': JSON.stringify(new Date().toLocaleString('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    })),
+  },
   plugins: [
     react(),
     // VitePWA is temporarily disabled to debug build issues
