@@ -2,10 +2,21 @@
 
 **Parent Epic:** [EPIC 8.6 - Push Notifications & Real-time Updates](../epics/EPIC_8.6_Push_Notifications.md)  
 **Story Owner:** Frontend Engineering  
-**Estimated Effort:** 1 day  
+**Estimated Effort:** 1 day → **0.5 days (Partially Implemented)**  
 **Priority:** P1 - High  
-**Status:** 📋 Ready for Implementation  
+**Status:** 🟡 Partially Implemented - Missing Quiet Hours & Mute  
 **Dependencies:** Story 8.6.4 (Notification Handling)
+
+> [!NOTE]
+> **Existing implementation:**
+>
+> - `src/pages/settings/NotificationSettings.tsx` - Settings page with toggles
+> - `src/hooks/useNotificationPreferences.ts` - Preferences hook
+>
+> **Remaining work:**
+>
+> - Add quiet hours (DND) feature
+> - Add mute conversations feature
 
 ---
 

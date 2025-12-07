@@ -2,10 +2,20 @@
 
 **Parent Epic:** [EPIC 8.6 - Push Notifications & Real-time Updates](../epics/EPIC_8.6_Push_Notifications.md)  
 **Story Owner:** Backend Engineering  
-**Estimated Effort:** 2 days  
+**Estimated Effort:** 2 days → **0.5 days (Mostly Implemented)**  
 **Priority:** P0 - Critical  
-**Status:** 📋 Ready for Implementation  
+**Status:** 🟡 Mostly Implemented - Need Message Trigger  
 **Dependencies:** Story 8.6.2 (Token Management)
+
+> [!NOTE]
+> **Existing implementation:**
+>
+> - `supabase/functions/send-push-notification/` - Edge function with FCM V1 API
+>
+> **Remaining work:**
+>
+> - Add database trigger to auto-send notification on new message insert
+> - Integrate with messaging system
 
 ---
 

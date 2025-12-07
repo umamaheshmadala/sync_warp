@@ -2,10 +2,17 @@
 
 **Parent Epic:** [EPIC 8.6 - Push Notifications & Real-time Updates](../epics/EPIC_8.6_Push_Notifications.md)  
 **Story Owner:** Mobile Engineering  
-**Estimated Effort:** 1 day  
+**Estimated Effort:** 1 day → **0 days (Already Implemented)**  
 **Priority:** P0 - Critical  
-**Status:** 📋 Ready for Implementation  
+**Status:** ✅ Already Implemented  
 **Dependencies:** Story 8.6.1 (Capacitor Push Setup)
+
+> [!NOTE]
+> **This story is already implemented.** The following features exist:
+>
+> - Token saved to `user_push_tokens` table via `usePushNotifications.ts`
+> - Token upsert with conflict handling
+> - Token removal via `removeTokenFromDatabase()`
 
 ---
 

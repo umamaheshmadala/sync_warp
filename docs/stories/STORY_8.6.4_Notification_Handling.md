@@ -2,10 +2,17 @@
 
 **Parent Epic:** [EPIC 8.6 - Push Notifications & Real-time Updates](../epics/EPIC_8.6_Push_Notifications.md)  
 **Story Owner:** Mobile Engineering  
-**Estimated Effort:** 1 day  
+**Estimated Effort:** 1 day → **0 days (Already Implemented)**  
 **Priority:** P0 - Critical  
-**Status:** 📋 Ready for Implementation  
+**Status:** ✅ Already Implemented  
 **Dependencies:** Story 8.6.3 (Backend Notification Sender)
+
+> [!NOTE]
+> **This story is already implemented.** The following features exist in `usePushNotifications.ts`:
+>
+> - Foreground notifications with custom event dispatch
+> - Notification tap handling with `action_url` navigation
+> - Notification channel setup for Android
 
 ---
 
