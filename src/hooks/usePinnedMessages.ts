@@ -33,31 +33,17 @@ export function usePinnedMessages(conversationId: string) {
 
   const pinMessage = useCallback(
     async (messageId: string, duration: PinDuration) => {
-      // Optimistic update
-      const tempPin: PinnedMessage = {
-        id: 'temp-' + Date.now(),
-        messageId,
-        conversationId,
-        pinnedBy: 'current-user', // backend handles real ID
-        pinnedAt: new Date().toISOString(),
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // rough 7d default
-      };
-      
-      setPinnedMessages(prev => [tempPin, ...prev]);
-
       try {
         await pinnedMessageService.pinMessage(messageId, conversationId, duration);
         toast.success("Message pinned");
-        // Realtime subscription will fetch the real pin, or we can fetch manually
-        // fetchPins(); // subscription handles it
+        // Immediately fetch to show real data with content and sender
+        await fetchPins();
       } catch (error: any) {
-        // Revert optimistic update on failure
-        setPinnedMessages(prev => prev.filter(p => p.id !== tempPin.id));
         console.error(error);
         toast.error(error.message || "Failed to pin message");
       }
     },
-    [conversationId]
+    [conversationId, fetchPins]
   );
 
   const unpinMessage = useCallback(
