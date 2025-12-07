@@ -13,6 +13,7 @@ export interface PinnedMessage {
   message?: {
     id: string;
     content: string;
+    type: 'text' | 'image' | 'video' | 'system';
     senderName: string;
     createdAt: string;
   };
@@ -37,6 +38,7 @@ class PinnedMessageService {
         message:messages!pinned_messages_message_id_fkey(
           id,
           content,
+          type,
           created_at,
           sender_id
         )
@@ -78,6 +80,7 @@ class PinnedMessageService {
             ? {
                 id: pin.message.id,
                 content: pin.message.content,
+                type: pin.message.type || 'text',
                 senderName: sender?.full_name || sender?.email || "Unknown",
                 createdAt: pin.message.created_at,
               }

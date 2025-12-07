@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import { useLongPress } from '../../hooks/useLongPress'
 import { useSwipeToReply } from '../../hooks/useSwipeToReply'
 import { hapticService } from '../../services/hapticService'
-import { RefreshCw, CornerDownRight, Forward } from 'lucide-react'
+import { RefreshCw, CornerDownRight, Forward, Pin } from 'lucide-react'
 import { MessageStatusIcon } from './MessageStatusIcon'
 import { OptimisticImageMessage } from './OptimisticImageMessage'
 import { OptimisticVideoMessage } from './OptimisticVideoMessage'
@@ -752,7 +752,6 @@ export function MessageBubble({
                 <p className="whitespace-pre-wrap">{content}</p>
               </div>
             )}
-            
             {/* Timestamp & Status Row */}
             <div className={cn(
               "flex items-center justify-end gap-1 mt-0.5",
@@ -763,6 +762,14 @@ export function MessageBubble({
                   editedAt={message.edited_at || message.updated_at || ''}
                   isOwnMessage={isOwn}
                 />
+              )}
+              
+              {/* Pin Icon (if message is pinned) */}
+              {isMessagePinned?.(message.id) && (
+                <Pin className={cn(
+                  "w-3 h-3 rotate-45",
+                  isOwn ? "text-blue-200" : "text-gray-400"
+                )} />
               )}
               
               <span className="text-[10px]">
