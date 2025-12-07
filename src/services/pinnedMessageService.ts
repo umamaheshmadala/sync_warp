@@ -26,66 +26,83 @@ class PinnedMessageService {
    * Get pinned messages for a conversation
    */
   async getPinnedMessages(conversationId: string): Promise<PinnedMessage[]> {
-    const { data, error } = await supabase
+    // Step 1: Fetch pinned_messages
+    const { data: pins, error: pinsError } = await supabase
       .from("pinned_messages")
-      .select(`
-        id,
-        message_id,
-        conversation_id,
-        pinned_by,
-        pinned_at,
-        expires_at,
-        message:messages!pinned_messages_message_id_fkey(
-          id,
-          content,
-          type,
-          created_at,
-          sender_id
-        )
-      `)
+      .select("id, message_id, conversation_id, pinned_by, pinned_at, expires_at")
       .eq("conversation_id", conversationId)
       .gt("expires_at", new Date().toISOString())
       .order("pinned_at", { ascending: false });
 
-    if (error) throw error;
+    if (pinsError) {
+      console.error("Error fetching pinned_messages:", pinsError);
+      throw pinsError;
+    }
     
-    // Manual profile fetching
-    const senderIds = [...new Set((data || []).map((p: any) => p.message?.sender_id).filter(Boolean))];
-    let profiles: Record<string, { full_name: string, email: string }> = {};
-
-    if (senderIds.length > 0) {
-      const { data: profilesData } = await supabase
-        .from('profiles')
-        .select('id, full_name, email')
-        .in('id', senderIds);
-      
-      if (profilesData) {
-        profiles = profilesData.reduce((acc, profile) => {
-          acc[profile.id] = profile;
-          return acc;
-        }, {} as Record<string, any>);
-      }
+    if (!pins || pins.length === 0) {
+      return [];
     }
 
-    return (data || []).map((pin: any) => {
-        const sender = pin.message?.sender_id ? profiles[pin.message.sender_id] : null;
-        return {
-          id: pin.id,
-          messageId: pin.message_id,
-          conversationId: pin.conversation_id,
-          pinnedBy: pin.pinned_by,
-          pinnedAt: pin.pinned_at,
-          expiresAt: pin.expires_at,
-          message: pin.message
-            ? {
-                id: pin.message.id,
-                content: pin.message.content,
-                type: pin.message.type || 'text',
-                senderName: sender?.full_name || sender?.email || "Unknown",
-                createdAt: pin.message.created_at,
-              }
-            : undefined,
-        };
+    // Step 2: Fetch the actual messages
+    const messageIds = pins.map(p => p.message_id);
+    const { data: messages, error: messagesError } = await supabase
+      .from("messages")
+      .select("id, content, type, sender_id, created_at")
+      .in("id", messageIds);
+
+    if (messagesError) {
+      console.error("Error fetching messages:", messagesError);
+      // Continue without message data
+    }
+
+    // Create a lookup map for messages
+    const messageMap: Record<string, any> = {};
+    (messages || []).forEach(msg => {
+      messageMap[msg.id] = msg;
+    });
+
+    // Step 3: Fetch sender profiles
+    const senderIds = [...new Set((messages || []).map(m => m.sender_id).filter(Boolean))];
+    let profileMap: Record<string, { full_name: string; email: string }> = {};
+
+    if (senderIds.length > 0) {
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, full_name, email")
+        .in("id", senderIds);
+
+      if (profilesError) {
+        console.error("Error fetching profiles:", profilesError);
+        // Continue without profile data
+      }
+
+      (profiles || []).forEach(p => {
+        profileMap[p.id] = p;
+      });
+    }
+
+    // Step 4: Combine the data
+    return pins.map(pin => {
+      const message = messageMap[pin.message_id];
+      const sender = message?.sender_id ? profileMap[message.sender_id] : null;
+
+      return {
+        id: pin.id,
+        messageId: pin.message_id,
+        conversationId: pin.conversation_id,
+        pinnedBy: pin.pinned_by,
+        pinnedAt: pin.pinned_at,
+        expiresAt: pin.expires_at,
+        message: message
+          ? {
+              id: message.id,
+              content: message.content || '',
+              type: message.type || 'text',
+              senderName: sender?.full_name || sender?.email || "Unknown User",
+              createdAt: message.created_at,
+            }
+          : undefined,
+      };
     });
   }
 
