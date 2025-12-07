@@ -116,9 +116,32 @@ class PinnedMessageService {
     conversationId: string,
     duration: PinDuration = '7d'
   ): Promise<boolean> {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Not authenticated");
-
+    // Try getSession first (doesn't make network call), then getUser
+    const { data: { session } } = await supabase.auth.getSession();
+    const userId = session?.user?.id;
+    
+    if (!userId) {
+      // Session might be stale, try getUser as fallback
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error || !user) {
+        throw new Error("Not authenticated. Please log in again.");
+      }
+      // Use user.id from getUser
+      return this.doPinMessage(messageId, conversationId, duration, user.id);
+    }
+    
+    return this.doPinMessage(messageId, conversationId, duration, userId);
+  }
+  
+  /**
+   * Internal method to perform the pin operation
+   */
+  private async doPinMessage(
+    messageId: string,
+    conversationId: string,
+    duration: PinDuration,
+    userId: string
+  ): Promise<boolean> {
     // Check pin limit
     const currentPins = await this.getPinnedMessages(conversationId);
     if (currentPins.length >= this.MAX_PINS) {
@@ -136,7 +159,7 @@ class PinnedMessageService {
     const { error } = await supabase.from("pinned_messages").insert({
       message_id: messageId,
       conversation_id: conversationId,
-      pinned_by: user.id,
+      pinned_by: userId,
       expires_at: expiresAt
     });
 
