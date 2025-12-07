@@ -229,6 +229,66 @@ export const WAIT_TIMES = {
 } as const;
 
 /**
+ * Messaging-specific selectors (Story 8.5.x)
+ */
+export const MESSAGING_SELECTORS = {
+  // Conversation List
+  conversationList: '[class*="conversation-list"], [class*="chat-list"]',
+  conversationItem: '[class*="conversation-item"], [class*="chat-item"]',
+  unreadBadge: '[class*="unread"], [class*="badge"]',
+  
+  // Message Components
+  messageList: '[class*="message-list"], [class*="messages"]',
+  messageBubble: '[class*="message"], [class*="bubble"]',
+  messageInput: 'textarea, input[placeholder*="message" i]',
+  sendButton: 'button[type="submit"], [class*="send-button"]',
+  
+  // Message Actions
+  contextMenu: '[role="menu"], [class*="context-menu"]',
+  editButton: '[class*="edit"], text=/edit/i',
+  deleteButton: '[class*="delete"], text=/delete/i',
+  pinButton: '[class*="pin"], text=/pin/i',
+  replyButton: '[class*="reply"], text=/reply/i',
+  forwardButton: '[class*="forward"], text=/forward/i',
+  
+  // Read Receipts
+  messageStatus: '[class*="status"], [class*="checkmark"]',
+  readIndicator: '[class*="read"], [class*="blue"]',
+  
+  // Search
+  searchButton: '[class*="search-button"], [aria-label*="search" i]',
+  searchInput: 'input[placeholder*="search" i], input[type="search"]',
+  searchResult: '[class*="result"], [class*="search-item"]',
+  
+  // Reactions
+  reactionBar: '[class*="reaction-bar"], [class*="quick-reaction"]',
+  reactionButton: '[class*="reaction"], [class*="emoji"]',
+  reactionBadge: '[class*="reaction-badge"], [class*="reaction-count"]',
+  
+  // Pinned Messages
+  pinnedBanner: '[class*="pinned"], [class*="pin-banner"]',
+  pinnedMessage: '[class*="pinned-message"]',
+  
+  // Editing
+  editInput: '[class*="edit-input"], textarea[class*="edit"]',
+  editedBadge: '[class*="edited"], text=/edited/i',
+  editTimer: '[class*="timer"], [class*="countdown"]',
+  
+  // Deleted Messages
+  deletedPlaceholder: 'text=/deleted|removed/i',
+} as const;
+
+/**
+ * Messaging helper functions
+ */
+export async function sendMessage(page: any, text: string) {
+  const composer = page.locator(MESSAGING_SELECTORS.messageInput).first();
+  await composer.fill(text);
+  await composer.press('Enter');
+  await page.waitForTimeout(500);
+}
+
+/**
  * Expected error messages
  */
 export const ERROR_MESSAGES = {
