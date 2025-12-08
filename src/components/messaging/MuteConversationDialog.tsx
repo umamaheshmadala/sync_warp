@@ -21,13 +21,13 @@ export function MuteConversationDialog({
   onClose,
   onMuted
 }: Props) {
-  const [selectedDuration, setSelectedDuration] = useState<MuteDuration>('1h')
+  const [selectedDuration, setSelectedDuration] = useState<MuteDuration>('hour')
   const [isMuting, setIsMuting] = useState(false)
 
   const durations: Array<{ value: MuteDuration; label: string; description: string }> = [
-    { value: '1h', label: '1 hour', description: 'Mute for 1 hour' },
-    { value: '8h', label: '8 hours', description: 'Mute for 8 hours' },
-    { value: '1week', label: '1 week', description: 'Mute for 1 week' },
+    { value: 'hour', label: '1 hour', description: 'Mute for 1 hour' },
+    { value: 'day', label: '1 day', description: 'Mute for 24 hours' },
+    { value: 'week', label: '1 week', description: 'Mute for 1 week' },
     { value: 'forever', label: 'Forever', description: 'Mute until you unmute' },
   ]
 

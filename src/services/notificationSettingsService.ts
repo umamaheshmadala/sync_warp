@@ -11,6 +11,7 @@ export interface NotificationSettings {
   quiet_hours_enabled: boolean;
   quiet_hours_start: string; // "HH:MM" format
   quiet_hours_end: string;   // "HH:MM" format
+  timezone: string;
 }
 
 export interface MutedConversation {
@@ -26,6 +27,7 @@ const DEFAULT_SETTINGS: NotificationSettings = {
   quiet_hours_enabled: false,
   quiet_hours_start: '22:00',
   quiet_hours_end: '07:00',
+  timezone: 'UTC',
 };
 
 class NotificationSettingsService {
@@ -33,13 +35,13 @@ class NotificationSettingsService {
    * Get user's notification settings
    */
   async getSettings(): Promise<NotificationSettings> {
-    const { data: { user } } = await supabase.auth.getSession();
-    if (!user?.user?.id) throw new Error('Not authenticated');
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user?.id) throw new Error('Not authenticated');
 
     const { data, error } = await supabase
       .from('notification_settings')
       .select('*')
-      .eq('user_id', user.user.id)
+      .eq('user_id', session.user.id)
       .single();
 
     if (error && error.code !== 'PGRST116') { // PGRST116 = not found
@@ -56,6 +58,7 @@ class NotificationSettingsService {
       quiet_hours_enabled: data?.quiet_hours_enabled ?? DEFAULT_SETTINGS.quiet_hours_enabled,
       quiet_hours_start: data?.quiet_hours_start ?? DEFAULT_SETTINGS.quiet_hours_start,
       quiet_hours_end: data?.quiet_hours_end ?? DEFAULT_SETTINGS.quiet_hours_end,
+      timezone: data?.timezone ?? DEFAULT_SETTINGS.timezone,
     };
   }
 
@@ -63,13 +66,13 @@ class NotificationSettingsService {
    * Update notification settings
    */
   async updateSettings(settings: Partial<NotificationSettings>): Promise<void> {
-    const { data: { user } } = await supabase.auth.getSession();
-    if (!user?.user?.id) throw new Error('Not authenticated');
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user?.id) throw new Error('Not authenticated');
 
     const { error } = await supabase
       .from('notification_settings')
       .upsert({
-        user_id: user.user.id,
+        user_id: session.user.id,
         ...settings,
         updated_at: new Date().toISOString()
       }, {
@@ -118,13 +121,13 @@ class NotificationSettingsService {
    * Check if a conversation is muted
    */
   async isConversationMuted(conversationId: string): Promise<boolean> {
-    const { data: { user } } = await supabase.auth.getSession();
-    if (!user?.user?.id) return false;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user?.id) return false;
 
     const { data, error } = await supabase
       .from('muted_conversations')
       .select('muted_until')
-      .eq('user_id', user.user.id)
+      .eq('user_id', session.user.id)
       .eq('conversation_id', conversationId)
       .single();
 
@@ -147,13 +150,13 @@ class NotificationSettingsService {
    * Get all muted conversations for current user
    */
   async getMutedConversations(): Promise<MutedConversation[]> {
-    const { data: { user } } = await supabase.auth.getSession();
-    if (!user?.user?.id) return [];
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user?.id) return [];
 
     const { data, error } = await supabase
       .from('muted_conversations')
       .select('conversation_id, muted_until')
-      .eq('user_id', user.user.id);
+      .eq('user_id', session.user.id);
 
     if (error) {
       console.error('[NotificationSettings] Error fetching muted:', error);

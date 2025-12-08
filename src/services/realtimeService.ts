@@ -581,9 +581,9 @@ class RealtimeService {
       )
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages' },
+        { event: 'INSERT', schema: 'public', table: 'notification_log' },
         () => {
-          console.log('🔄 New message (updating conversation list)');
+          console.log('🔄 New notification log (updating conversation list)');
           onUpdate();
         }
       )

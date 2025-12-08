@@ -1,13 +1,27 @@
-import { Bell, Mail, UserPlus, Check, Share2, Gift } from 'lucide-react';
+import { Bell, Mail, UserPlus, Check, Share2, Gift, Moon, Clock } from 'lucide-react';
 import { useNotificationPreferences } from '@/hooks/useNotificationPreferences';
+import { useSystemNotificationSettings } from '@/hooks/useSystemNotificationSettings';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { useEffect } from 'react';
 
 export default function NotificationSettings() {
-    const { preferences, isLoading, updatePreferences, isUpdating } = useNotificationPreferences();
+    const { preferences, isLoading: isLoadingPrefs, updatePreferences, isUpdating: isUpdatingPrefs } = useNotificationPreferences();
+    const { settings: systemSettings, isLoading: isLoadingSystem, updateSettings: updateSystemSettings, isUpdating: isUpdatingSystem } = useSystemNotificationSettings();
 
-    console.log('[NotificationSettings] Component rendered', { preferences, isLoading, isUpdating });
+    const isLoading = isLoadingPrefs || isLoadingSystem;
+
+    // Auto-detect and save timezone
+    useEffect(() => {
+        if (systemSettings?.timezone) {
+            const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            if (systemSettings.timezone !== userTimezone) {
+                console.log('[NotificationSettings] Updating timezone:', userTimezone);
+                updateSystemSettings({ timezone: userTimezone });
+            }
+        }
+    }, [systemSettings?.timezone]);
 
     if (isLoading) {
         return (
@@ -20,21 +34,18 @@ export default function NotificationSettings() {
         );
     }
 
-    const handleToggle = (key: keyof typeof preferences) => {
-        console.log('[NotificationSettings] handleToggle called', { key, currentValue: preferences[key], newValue: !preferences[key] });
-        console.log('[NotificationSettings] updatePreferences function:', typeof updatePreferences);
+    const handlePrefToggle = (key: keyof typeof preferences) => {
+        updatePreferences({ [key]: !preferences[key] });
+    };
 
-        try {
-            updatePreferences({ [key]: !preferences[key] });
-            console.log('[NotificationSettings] updatePreferences called successfully');
-        } catch (error) {
-            console.error('[NotificationSettings] Error calling updatePreferences:', error);
-            window.alert(`Error in handleToggle: ${error}`);
-        }
+    const handleSystemToggle = (key: keyof typeof systemSettings) => {
+        if (!systemSettings) return;
+        // @ts-ignore - dynamic key access
+        updateSystemSettings({ [key]: !systemSettings[key] });
     };
 
     return (
-        <div className="max-w-3xl mx-auto space-y-6">
+        <div className="max-w-3xl mx-auto space-y-6 pb-12">
             {/* Header */}
             <div>
                 <h1 className="text-2xl font-bold text-gray-900">Notification Settings</h1>
@@ -51,7 +62,7 @@ export default function NotificationSettings() {
                         Global Settings
                     </CardTitle>
                     <CardDescription>
-                        Control all notifications at once
+                        Control delivery channels
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -68,8 +79,8 @@ export default function NotificationSettings() {
                         </div>
                         <Switch
                             checked={preferences.push_enabled}
-                            onCheckedChange={() => handleToggle('push_enabled')}
-                            disabled={isUpdating}
+                            onCheckedChange={() => handlePrefToggle('push_enabled')}
+                            disabled={isUpdatingPrefs}
                         />
                     </div>
 
@@ -88,12 +99,64 @@ export default function NotificationSettings() {
                         </div>
                         <Switch
                             checked={preferences.email_enabled}
-                            onCheckedChange={() => handleToggle('email_enabled')}
-                            disabled={isUpdating}
+                            onCheckedChange={() => handlePrefToggle('email_enabled')}
+                            disabled={isUpdatingPrefs}
                         />
                     </div>
                 </CardContent>
             </Card>
+
+            {/* Quiet Hours */}
+            {systemSettings && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Moon className="h-5 w-5" />
+                            Quiet Hours
+                        </CardTitle>
+                        <CardDescription>
+                            Pause notifications during specific times (Timezone: {systemSettings.timezone})
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <label className="text-sm font-medium">Enable Quiet Hours</label>
+                            <Switch
+                                checked={systemSettings.quiet_hours_enabled}
+                                onCheckedChange={() => handleSystemToggle('quiet_hours_enabled')}
+                                disabled={isUpdatingSystem}
+                            />
+                        </div>
+
+                        {systemSettings.quiet_hours_enabled && (
+                            <div className="grid grid-cols-2 gap-4 pt-2">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-medium text-gray-500 flex items-center gap-1">
+                                        <Clock className="h-3 w-3" /> Start Time
+                                    </label>
+                                    <input
+                                        type="time"
+                                        value={systemSettings.quiet_hours_start}
+                                        onChange={(e) => updateSystemSettings({ quiet_hours_start: e.target.value })}
+                                        className="w-full text-sm border rounded-md p-2"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-medium text-gray-500 flex items-center gap-1">
+                                        <Clock className="h-3 w-3" /> End Time
+                                    </label>
+                                    <input
+                                        type="time"
+                                        value={systemSettings.quiet_hours_end}
+                                        onChange={(e) => updateSystemSettings({ quiet_hours_end: e.target.value })}
+                                        className="w-full text-sm border rounded-md p-2"
+                                    />
+                                </div>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            )}
 
             {/* Notification Types */}
             <Card>
@@ -121,8 +184,8 @@ export default function NotificationSettings() {
                             </div>
                             <Switch
                                 checked={preferences.friend_requests}
-                                onCheckedChange={() => handleToggle('friend_requests')}
-                                disabled={isUpdating || !preferences.push_enabled}
+                                onCheckedChange={() => handlePrefToggle('friend_requests')}
+                                disabled={isUpdatingPrefs || !preferences.push_enabled}
                             />
                         </div>
 
@@ -139,8 +202,8 @@ export default function NotificationSettings() {
                             </div>
                             <Switch
                                 checked={preferences.friend_accepted}
-                                onCheckedChange={() => handleToggle('friend_accepted')}
-                                disabled={isUpdating || !preferences.push_enabled}
+                                onCheckedChange={() => handlePrefToggle('friend_accepted')}
+                                disabled={isUpdatingPrefs || !preferences.push_enabled}
                             />
                         </div>
                     </div>
@@ -164,8 +227,8 @@ export default function NotificationSettings() {
                             </div>
                             <Switch
                                 checked={preferences.deal_shared}
-                                onCheckedChange={() => handleToggle('deal_shared')}
-                                disabled={isUpdating || !preferences.push_enabled}
+                                onCheckedChange={() => handlePrefToggle('deal_shared')}
+                                disabled={isUpdatingPrefs || !preferences.push_enabled}
                             />
                         </div>
                     </div>
@@ -189,8 +252,8 @@ export default function NotificationSettings() {
                             </div>
                             <Switch
                                 checked={preferences.birthday_reminders}
-                                onCheckedChange={() => handleToggle('birthday_reminders')}
-                                disabled={isUpdating || !preferences.push_enabled}
+                                onCheckedChange={() => handlePrefToggle('birthday_reminders')}
+                                disabled={isUpdatingPrefs || !preferences.push_enabled}
                             />
                         </div>
                     </div>

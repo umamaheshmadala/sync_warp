@@ -69,7 +69,8 @@ BEGIN
       AND cp.user_id != NEW.sender_id
       AND cp.left_at IS NULL
       AND (cp.notification_preference IS NULL OR cp.notification_preference != 'none')
-      AND cp.is_muted = false
+      -- Use the helper function to check the new muted_conversations table
+      AND NOT is_conversation_muted(cp.user_id, NEW.conversation_id)
   LOOP
     -- Check if user has global notifications enabled
     IF should_send_notification(participant.user_id, 'messages') THEN

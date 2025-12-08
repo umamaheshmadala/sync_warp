@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { PushNotifications, Token, PushNotificationSchema, ActionPerformed } from '@capacitor/push-notifications';
 import { Capacitor } from '@capacitor/core';
+import { App } from '@capacitor/app';
 import SecureStorage from '../lib/secureStorage';
 import { supabase } from '../lib/supabase';
 
@@ -13,6 +15,7 @@ export interface PushNotificationState {
 }
 
 export const usePushNotifications = (userId: string | null) => {
+  const navigate = useNavigate();
   const [state, setState] = useState<PushNotificationState>({
     isRegistered: false,
     token: null,
@@ -97,7 +100,16 @@ export const usePushNotifications = (userId: string | null) => {
       PushNotifications.addListener('pushNotificationActionPerformed', (action: ActionPerformed) => {
         console.log('[usePushNotifications] Notification tapped:', action);
         const data = action.notification.data;
-        if (data.action_url) window.location.href = data.action_url;
+        if (data.action_url) {
+            // Check if external URL
+            if (data.action_url.startsWith('http')) {
+                window.location.href = data.action_url;
+            } else {
+                // Internal route - use Router
+                console.log('[usePushNotifications] Navigating to:', data.action_url);
+                navigate(data.action_url);
+            }
+        }
       });
 
       // Create channel (Android)
@@ -148,8 +160,20 @@ export const usePushNotifications = (userId: string | null) => {
 
     registerPushNotifications();
 
+    // Clear badge on mount
+    PushNotifications.removeAllDeliveredNotifications();
+
+    // Listen for app state changes to clear badge when app comes to foreground
+    const appStateListener = App.addListener('appStateChange', ({ isActive }) => {
+      if (isActive) {
+        console.log('[usePushNotifications] App resumed, clearing badges');
+        PushNotifications.removeAllDeliveredNotifications();
+      }
+    });
+
     return () => {
       PushNotifications.removeAllListeners();
+      appStateListener.then(listener => listener.remove());
     };
   }, [userId]);
 

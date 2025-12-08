@@ -155,7 +155,10 @@ export const useMessagingStore = create<MessagingState>()(
           const count = c.unread_count || 0;
           if (count > 0) {
             unreadCounts.set(c.conversation_id, count);
-            totalUnreadCount += count;
+            // Only add to total if NOT muted
+            if (!c.is_muted) {
+              totalUnreadCount += count;
+            }
           }
         });
 
@@ -178,14 +181,19 @@ export const useMessagingStore = create<MessagingState>()(
           // Update counts
           const newCounts = new Map(state.unreadCounts);
           const count = conversation.unread_count || 0;
+          
+          let countToAdd = 0;
           if (count > 0) {
             newCounts.set(conversation.conversation_id, count);
+            if (!conversation.is_muted) {
+              countToAdd = count;
+            }
           }
           
           return { 
             conversations: finalConversations,
             unreadCounts: newCounts,
-            totalUnreadCount: state.totalUnreadCount + count
+            totalUnreadCount: state.totalUnreadCount + countToAdd
           };
         }, false, 'addConversation'),
 
@@ -197,18 +205,39 @@ export const useMessagingStore = create<MessagingState>()(
               : conv
           );
 
-          // Recalculate if unread_count changed
+          // Recalculate if unread_count OR is_muted changed
           let unreadCounts = state.unreadCounts;
           let totalUnreadCount = state.totalUnreadCount;
 
-          if (updates.unread_count !== undefined) {
-            unreadCounts = new Map(state.unreadCounts);
-            const oldCount = state.unreadCounts.get(conversationId) || 0;
-            const newCount = updates.unread_count;
-            
-            unreadCounts.set(conversationId, newCount);
-            totalUnreadCount = totalUnreadCount - oldCount + newCount;
+          const oldConv = state.conversations.find(c => c.conversation_id === conversationId);
+          // New conversation state (merged)
+          const newConv = updatedConversations.find(c => c.conversation_id === conversationId);
+
+          if (oldConv && newConv) {
+             const oldIsMuted = oldConv.is_muted;
+             const newIsMuted = newConv.is_muted;
+             const oldCount = state.unreadCounts.get(conversationId) || 0;
+             const newCount = updates.unread_count !== undefined ? updates.unread_count : oldCount;
+
+             // Update unread map if count changed
+             if (updates.unread_count !== undefined) {
+               unreadCounts = new Map(state.unreadCounts);
+               unreadCounts.set(conversationId, newCount);
+             }
+
+             // Logic to update total count
+             // Subtract old contribution
+             if (!oldIsMuted) {
+               totalUnreadCount -= oldCount;
+             }
+             // Add new contribution
+             if (!newIsMuted) {
+               totalUnreadCount += newCount;
+             }
           }
+          
+          // Fallback safety: prevent negative
+          totalUnreadCount = Math.max(0, totalUnreadCount);
 
           return {
             conversations: updatedConversations,
@@ -228,10 +257,19 @@ export const useMessagingStore = create<MessagingState>()(
           const removedCount = newCounts.get(conversationId) || 0;
           newCounts.delete(conversationId);
           
+          // Check if conversation was muted (to know if it contributed to total)
+          const conv = state.conversations.find(c => c.conversation_id === conversationId);
+          const wasMuted = conv?.is_muted ?? false;
+
+          let countToSubtract = 0;
+          if (!wasMuted) {
+              countToSubtract = removedCount;
+          }
+          
           return {
             conversations: updatedConversations,
             unreadCounts: newCounts,
-            totalUnreadCount: Math.max(0, state.totalUnreadCount - removedCount)
+            totalUnreadCount: Math.max(0, state.totalUnreadCount - countToSubtract)
           };
         }, false, 'removeConversation'),
 
@@ -426,6 +464,10 @@ export const useMessagingStore = create<MessagingState>()(
           const current = newCounts.get(conversationId) || 0;
           newCounts.set(conversationId, current + 1);
           
+          // Check if conversation is muted
+          const conv = state.conversations.find(c => c.conversation_id === conversationId);
+          const isMuted = conv?.is_muted ?? false;
+
           // Auto-save on mobile
           if (Capacitor.isNativePlatform()) {
             get().saveUnreadCounts().catch(err => 
@@ -435,7 +477,7 @@ export const useMessagingStore = create<MessagingState>()(
           
           return {
             unreadCounts: newCounts,
-            totalUnreadCount: state.totalUnreadCount + 1
+            totalUnreadCount: isMuted ? state.totalUnreadCount : state.totalUnreadCount + 1
           };
         }, false, 'incrementUnreadCount'),
 

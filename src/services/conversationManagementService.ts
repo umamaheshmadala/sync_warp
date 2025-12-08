@@ -3,7 +3,7 @@ import { optimisticUpdates } from '../utils/optimisticUpdates'
 import { useMessagingStore } from '../store/messagingStore'
 
 export type ConversationFilter = 'all' | 'unread' | 'archived' | 'pinned'
-export type MuteDuration = '1h' | '8h' | '1week' | 'forever'
+export type MuteDuration = 'hour' | 'day' | 'week' | 'forever'
 
 interface Conversation {
   id: string
@@ -340,16 +340,9 @@ class ConversationManagementService {
     optimisticUpdates.applyOptimistic(updateId, { is_muted: true }, { is_muted: false })
     useMessagingStore.getState().toggleMuteOptimistic(conversationId, true)
 
-    const durationHours = {
-      '1h': 1,
-      '8h': 8,
-      '1week': 168, // 7 days * 24 hours
-      forever: null,
-    }[duration]
-
     const { error } = await supabase.rpc('mute_conversation', {
       p_conversation_id: conversationId,
-      p_duration_hours: durationHours,
+      p_duration: duration,
     })
 
     if (error) {

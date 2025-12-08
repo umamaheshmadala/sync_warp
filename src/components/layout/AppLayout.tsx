@@ -1,9 +1,13 @@
 import { useLocation } from 'react-router-dom';
 import Header from './Header';
 import BottomNavigation from '../BottomNavigation';
+import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
+  
+  // Initialize Realtime Notifications
+  useRealtimeNotifications();
   
   // Don't show header/nav on auth pages only (root path is now dashboard)
   const isAuthPage = location.pathname.startsWith('/auth');

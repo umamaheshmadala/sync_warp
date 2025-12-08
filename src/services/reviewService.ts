@@ -16,7 +16,7 @@ import type {
   ReviewFilters,
 } from '../types/review';
 import { REVIEW_TEXT_WORD_LIMIT, RESPONSE_TEXT_WORD_LIMIT } from '../types/review';
-import { notifyMerchantNewReview, notifyUserReviewResponse } from './notificationService';
+import { notifyMerchantNewReview, notifyUserReviewResponse } from './favoriteNotificationService';
 
 /**
  * Utility function to count words in text

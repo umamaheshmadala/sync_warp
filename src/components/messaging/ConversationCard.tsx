@@ -3,7 +3,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 import { Badge } from '../ui/badge'
 import { Pin, BellOff } from 'lucide-react'
 import { useNewFriends } from '../../hooks/useNewFriends'
-import { ConversationActionButtons } from './ConversationActionButtons'
 import type { ConversationWithDetails } from '../../types/messaging'
 import { cn } from '../../lib/utils'
 import { formatConversationDate } from '../../utils/dateUtils'
@@ -133,7 +132,12 @@ export function ConversationCard({
           {unread_count > 0 && (
             <Badge 
               variant="default" 
-              className="flex-shrink-0 bg-green-700 hover:bg-green-800 h-5 min-w-[20px] px-1.5 flex items-center justify-center"
+              className={cn(
+                "flex-shrink-0 h-5 min-w-[20px] px-1.5 flex items-center justify-center transition-colors",
+                conversation.is_muted 
+                  ? "bg-gray-200 text-gray-600 hover:bg-gray-300" 
+                  : "bg-green-700 hover:bg-green-800"
+              )}
             >
               {unread_count > 99 ? '99+' : unread_count}
             </Badge>
@@ -141,15 +145,7 @@ export function ConversationCard({
         </div>
       </div>
 
-      {/* Action Buttons (Web Only - shown on hover) */}
-      {showActions && isHovered && (
-        <div className="absolute right-3 top-1/2 -translate-y-1/2">
-          <ConversationActionButtons
-            conversation={conversation}
-            onUpdate={onUpdate}
-          />
-        </div>
-      )}
+
     </div>
   )
 }

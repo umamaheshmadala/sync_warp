@@ -308,8 +308,8 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
           isMuted={conversation.is_muted}
           onClose={() => setShowMuteDialog(false)}
           onMuted={() => {
-            // Refresh conversations to update mute status
-            window.location.reload()
+            // Optimistic update handles the UI, no need to reload
+            // invalidating queries would be better if using React Query
           }}
         />
       )}

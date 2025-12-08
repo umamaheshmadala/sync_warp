@@ -56,7 +56,14 @@ export const useNotificationHandler = () => {
         console.log('[useNotificationHandler] Received in foreground:', notification)
         
         try {
+
           const data = notification.data as NotificationData
+          
+          // STRICT SUPPRESSION: If it's a message, NEVER show a foreground toast
+          if (data.type === 'message' || data.type?.includes('message')) {
+             console.log('[useNotificationHandler] Suppressing toast/alert for message notification (user preference)')
+             return
+          }
           
           // Validate notification data
           if (!NotificationRouter.isValid(data)) {
@@ -64,21 +71,7 @@ export const useNotificationHandler = () => {
             return
           }
           
-          // Check if this is a message notification and if the conversation is muted
-          if (data.type === 'message' && data.messageId) {
-            try {
-              const isMuted = await conversationManagementService.isConversationMuted(data.messageId)
-              if (isMuted) {
-                console.log('[useNotificationHandler] Conversation is muted - suppressing notification')
-                return
-              }
-            } catch (error) {
-              console.error('[useNotificationHandler] Error checking mute status:', error)
-              // Continue showing notification if check fails
-            }
-          }
-          
-          // Show in-app toast
+          // Show in-app toast for non-message notifications
           setForegroundNotification({
             title: notification.title || 'Notification',
             body: notification.body || '',
@@ -115,8 +108,8 @@ export const useNotificationHandler = () => {
 
     // Cleanup listeners on unmount
     return () => {
-      notificationReceivedListener.remove()
-      notificationTappedListener.remove()
+      notificationReceivedListener.then(l => l.remove())
+      notificationTappedListener.then(l => l.remove())
       console.log('[useNotificationHandler] Cleanup - removed listeners')
     }
   }, [navigate])

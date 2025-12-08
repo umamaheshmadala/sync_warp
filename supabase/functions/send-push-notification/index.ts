@@ -244,6 +244,91 @@ Deno.serve(async (req) => {
 
     console.log(`Processing notification for userId: ${userId}`)
 
+    // 1. Fetch Notification Settings
+    const { data: settings } = await supabaseClient
+      .from('notification_settings')
+      .select('*')
+      .eq('user_id', userId)
+      .single()
+
+    if (settings) {
+      // Check Global Switch
+      if (!settings.push_enabled) {
+        console.log(`Push notifications disabled for user: ${userId}`)
+        return new Response(JSON.stringify({ message: 'Push disabled by user' }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      }
+
+      // Check Quiet Hours (Timezone Aware)
+      if (settings.quiet_hours_enabled && settings.quiet_hours_start && settings.quiet_hours_end) {
+        try {
+          // Get user's local time
+          const timeZone = settings.timezone || 'UTC';
+          // Create a Date object that represents the user's wall-clock time
+          // We use toLocaleString then parse it back, which gives us a Date object where 
+          // .getHours() returns the user's local hour.
+          const userTimeStr = new Date().toLocaleString('en-US', { timeZone });
+          const userDate = new Date(userTimeStr); 
+          const currentMinutes = userDate.getHours() * 60 + userDate.getMinutes();
+
+          const [startH, startM] = settings.quiet_hours_start.split(':').map(Number)
+          const [endH, endM] = settings.quiet_hours_end.split(':').map(Number)
+          const startMinutes = startH * 60 + startM
+          const endMinutes = endH * 60 + endM
+
+          let isQuiet = false
+          if (startMinutes <= endMinutes) {
+            isQuiet = currentMinutes >= startMinutes && currentMinutes < endMinutes
+          } else {
+            // Overnight
+            isQuiet = currentMinutes >= startMinutes || currentMinutes < endMinutes
+          }
+
+          if (isQuiet) {
+            console.log(`Quiet hours active for user: ${userId} (${timeZone} ${userDate.getHours()}:${userDate.getMinutes()})`)
+            return new Response(JSON.stringify({ message: 'Quiet hours active' }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+          }
+        } catch (err) {
+          console.error('Error calculating quiet hours:', err);
+          // Fallback: Proceed sending if error
+        }
+      }
+
+      // Check Show Preview
+      if (settings.show_preview === false) {
+        // Redact body
+        // Note: 'body' arg is const, need to handle this. We'll modify the payload sent to sendTo... functions
+        // But sendToFCM takes args. We should reassign variables.
+        // Or simply:
+        // body = 'New Message' (cannot assign to const)
+      }
+    }
+
+    // 2. Check Muted Conversation
+    // Extract conversationId from data (support both camelCase and snake_case)
+    const conversationId = data?.conversationId || data?.conversation_id
+    if (conversationId) {
+       const { data: muteData } = await supabaseClient
+        .from('muted_conversations')
+        .select('muted_until')
+        .eq('user_id', userId)
+        .eq('conversation_id', conversationId)
+        .single()
+      
+      if (muteData) {
+        const mutedUntil = muteData.muted_until ? new Date(muteData.muted_until) : null
+        if (!mutedUntil || mutedUntil > new Date()) {
+           console.log(`Conversation muted for user: ${userId} (Conv: ${conversationId})`)
+           return new Response(JSON.stringify({ message: 'Conversation muted' }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+        }
+      }
+    }
+
+    // Handle Body Redaction (Variable reassignment)
+    let finalBody = body
+    if (settings && settings.show_preview === false) {
+      finalBody = 'You have a new message'
+    }
+
     // Fetch all push tokens for user
     const { data: tokens, error: tokenError } = await supabaseClient
       .from('push_tokens')
@@ -269,9 +354,9 @@ Deno.serve(async (req) => {
     const results = await Promise.allSettled(
       tokens.map(async ({ token, platform }: PushToken) => {
         if (platform === 'android') {
-          return await sendToFCM(token, title, body, data)
+          return await sendToFCM(token, title, finalBody, data)
         } else if (platform === 'ios') {
-          return await sendToAPNs(token, title, body, data)
+          return await sendToAPNs(token, title, finalBody, data)
         }
         throw new Error(`Unknown platform: ${platform}`)
       })

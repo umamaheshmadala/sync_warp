@@ -66,6 +66,7 @@ export const supabase = createClient(
   supabaseConfig
 )
 
+
 // Export platform detection helpers
 export const isNativePlatform = Capacitor.isNativePlatform()
 export const platform = Capacitor.getPlatform()
