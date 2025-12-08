@@ -59,8 +59,6 @@ export const usePushNotifications = (userId: string | null) => {
   };
 
   const registerPushNotifications = async () => {
-<<<<<<< HEAD
-=======
     // Only run on native platforms
     if (!Capacitor.isNativePlatform()) {
       console.log('[usePushNotifications] Skipping - not a native platform');
@@ -72,19 +70,11 @@ export const usePushNotifications = (userId: string | null) => {
       console.log('[usePushNotifications] Skipping - no userId provided');
       return;
     }
-
-
->>>>>>> b4e7571cc7cda3da8d999a83d39fc8057e63e889
     try {
       console.log('[usePushNotifications] Starting registration for user:', userId);
       console.log('[usePushNotifications] Platform:', Capacitor.getPlatform());
 
-<<<<<<< HEAD
-      // Set up listeners FIRST before registering
-      await PushNotifications.removeAllListeners();
-=======
       // We do NOT use removeAllListeners() as it wipes listeners from other hooks (useNotificationHandler)
->>>>>>> b4e7571cc7cda3da8d999a83d39fc8057e63e889
       
       // Token registered successfully
       const registrationListener = await PushNotifications.addListener('registration', async (token: Token) => {
@@ -121,24 +111,7 @@ export const usePushNotifications = (userId: string | null) => {
       // Let's rely on the fact that AppContent mounts once.
       // We will remove the explicit removeAllListeners call here.
 
-<<<<<<< HEAD
-      // Notification tapped
-      PushNotifications.addListener('pushNotificationActionPerformed', (action: ActionPerformed) => {
-        console.log('[usePushNotifications] Notification tapped:', action);
-        const data = action.notification.data;
-        if (data.action_url) {
-            // Check if external URL
-            if (data.action_url.startsWith('http')) {
-                window.location.href = data.action_url;
-            } else {
-                // Internal route - use Router
-                console.log('[usePushNotifications] Navigating to:', data.action_url);
-                navigate(data.action_url);
-            }
-        }
-      });
-=======
->>>>>>> b4e7571cc7cda3da8d999a83d39fc8057e63e889
+
 
       // Create channel (Android)
       // We keep channel creation here as it's part of setup
@@ -173,7 +146,6 @@ export const usePushNotifications = (userId: string | null) => {
   };
 
   useEffect(() => {
-<<<<<<< HEAD
     console.log('[usePushNotifications] Hook effect triggered. UserId:', userId, 'Platform:', Capacitor.getPlatform(), 'IsNative:', Capacitor.isNativePlatform());
 
     // Only run on native platforms
@@ -202,19 +174,10 @@ export const usePushNotifications = (userId: string | null) => {
     });
 
     return () => {
-      PushNotifications.removeAllListeners();
-      appStateListener.then(listener => listener.remove());
-=======
-    console.log('[usePushNotifications] Hook effect triggered. UserId:', userId);
-
-    if (Capacitor.isNativePlatform() && userId) {
-      registerPushNotifications();
-    }
-    
-    return () => {
       // Do NOT remove all listeners, as it affects useNotificationHandler
       // PushNotifications.removeAllListeners();
->>>>>>> b4e7571cc7cda3da8d999a83d39fc8057e63e889
+      appStateListener.then(listener => listener.remove());
+    };
     };
   }, [userId]);
 

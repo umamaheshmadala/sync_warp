@@ -116,32 +116,7 @@ export function useRealtimeNotifications() {
                     table: 'notifications',
                     filter: `user_id=eq.${user.id}`,
                 },
-<<<<<<< HEAD
                 (payload) => handleNotificationPayload(payload, 'notifications')
-=======
-                (payload) => {
-                    console.log('[useRealtimeNotifications] Received INSERT event:', payload);
-
-                    // Invalidate notifications query
-                    queryClient.invalidateQueries({ queryKey: ['notifications'] });
-                    queryClient.invalidateQueries({ queryKey: ['all-notifications'] });
-
-                    // Show toast for new notification (excluding messages)
-                    const notification = payload.new as any;
-                    
-                    // Check both 'type' and 'notification_type' (DB column might be notification_type)
-                    const notifType = notification.type || notification.notification_type;
-                    
-                    const messageTypes = ['message', 'new_message', 'message_received', 'message_reply', 'coupon_shared_message', 'deal_shared_message'];
-                    
-                    if (!messageTypes.includes(notifType)) {
-                        toast(notification.message, {
-                            icon: '🔔',
-                            duration: 4000,
-                        });
-                    }
-                }
->>>>>>> b4e7571cc7cda3da8d999a83d39fc8057e63e889
             )
             .on(
                 'postgres_changes',
