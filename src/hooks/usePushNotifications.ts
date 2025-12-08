@@ -39,7 +39,7 @@ export const usePushNotifications = (userId: string | null) => {
           is_active: true,
           updated_at: new Date().toISOString()
         }, {
-          onConflict: 'user_id, token'
+          onConflict: 'user_id, platform'
         });
 
       if (error) {
@@ -55,9 +55,7 @@ export const usePushNotifications = (userId: string | null) => {
     }
   };
 
-  useEffect(() => {
-    console.log('[usePushNotifications] Hook effect triggered. UserId:', userId, 'Platform:', Capacitor.getPlatform(), 'IsNative:', Capacitor.isNativePlatform());
-
+  const registerPushNotifications = async () => {
     // Only run on native platforms
     if (!Capacitor.isNativePlatform()) {
       console.log('[usePushNotifications] Skipping - not a native platform');
@@ -70,15 +68,11 @@ export const usePushNotifications = (userId: string | null) => {
       return;
     }
 
-  const registerPushNotifications = async () => {
     try {
       console.log('[usePushNotifications] Starting registration for user:', userId);
       console.log('[usePushNotifications] Platform:', Capacitor.getPlatform());
 
       // Set up listeners FIRST before registering
-      // Note: We might be setting up duplicate listeners if called multiple times.
-      // Ideally we should check if they are already set or use a ref.
-      // For now, let's remove verification/debug simplicity concerns, we'll verify listeners below.
       await PushNotifications.removeAllListeners();
       
       // Token registered successfully
@@ -86,6 +80,7 @@ export const usePushNotifications = (userId: string | null) => {
         console.log('[usePushNotifications] Token registered:', token.value);
         await SecureStorage.setPushToken(token.value);
         const syncSuccess = await syncTokenWithSupabase(token.value, userId!);
+        
         setState(prev => ({
           ...prev,
           isRegistered: true,
@@ -150,9 +145,12 @@ export const usePushNotifications = (userId: string | null) => {
   };
 
   useEffect(() => {
+    console.log('[usePushNotifications] Hook effect triggered. UserId:', userId);
+
     if (Capacitor.isNativePlatform() && userId) {
       registerPushNotifications();
     }
+    
     return () => {
       PushNotifications.removeAllListeners();
     };

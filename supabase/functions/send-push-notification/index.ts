@@ -152,7 +152,7 @@ async function sendToFCM(
         priority: 'high',
         notification: {
           sound: 'default',
-          channel_id: 'default',
+          channel_id: 'friend_notifications',
         },
       },
     },
