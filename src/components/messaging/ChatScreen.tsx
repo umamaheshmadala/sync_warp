@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useMessages } from '../../hooks/useMessages'
+import { useAuthStore } from '../../store/authStore'
+import { useMessagingStore } from '../../store/messagingStore'
 import { useTypingIndicator } from '../../hooks/useTypingIndicator'
 import { useSendMessage } from '../../hooks/useSendMessage'
 import { MessageList } from './MessageList'
@@ -188,20 +190,40 @@ export function ChatScreen() {
       console.log(`[ChatScreen] Batching ${messagesToMark.length} read receipts`);
       pendingReadReceiptsRef.current.clear();
 
-      // Mark conversation as read (this handles all unread messages)
-      // In a real implementation, you might want to mark individual messages
-      // For now, we use the existing RPC that marks the entire conversation
-      if (conversationId) {
-        try {
-          await conversationManagementService.markConversationAsRead(conversationId);
-          // Dispatch event to trigger conversation list refresh
-          window.dispatchEvent(new CustomEvent('conversation-updated', { 
-            detail: { conversationId } 
-          }));
-          console.log(`[ChatScreen] Marked conversation ${conversationId} as read`);
-        } catch (err) {
-          console.error('Failed to mark conversation as read:', err);
+      // OPTIMISTIC UPDATE: Update local store immediately to fix badge persistence
+      const store = useMessagingStore.getState();
+      
+      // 1. Update individual messages as read by current user
+      messagesToMark.forEach(msgId => {
+        if (conversationId) {
+            store.updateMessage(conversationId, msgId, { isReadByCurrentUser: true });
         }
+      });
+
+      // 2. Decrement unread count locally
+      if (conversationId) {
+        const conversation = store.conversations.find(c => c.id === conversationId);
+        if (conversation) {
+           const newCount = Math.max(0, conversation.unread_count - messagesToMark.length);
+           console.log(`[ChatScreen] Optimistically updating unread count: ${conversation.unread_count} -> ${newCount}`);
+           store.updateConversation(conversationId, { unread_count: newCount });
+        }
+      }
+
+      // 3. Send read receipts to backend (Granular)
+      try {
+        await Promise.all(messagesToMark.map(id => messagingService.markMessageAsRead(id)));
+        
+        // Dispatch event for eventual consistency (e.g. Sidebar refresh if needed)
+        // But the store update above should have already handled the UI
+        if (conversationId) {
+             window.dispatchEvent(new CustomEvent('conversation-updated', { 
+               detail: { conversationId } 
+             }));
+        }
+      } catch (err) {
+        console.error('Failed to mark messages as read:', err);
+        // We generally don't rollback read receipts on network error, eventual consistency will handle it
       }
     }, 500); // 500ms batch window
   }, [conversationId]);

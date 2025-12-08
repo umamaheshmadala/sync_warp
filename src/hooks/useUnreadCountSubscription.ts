@@ -66,8 +66,19 @@ export function useUnreadCountSubscription() {
           schema: 'public', 
           table: 'message_read_receipts'
         },
-        async (payload) => {
-          console.log('[useUnreadCountSubscription] Message marked read - refreshing badge');
+        async (payload: any) => {
+          const newReceipt = payload.new;
+          // STORY 8.6.8 FIX: 
+          // If WE read the message, we trust our local logic (Optimistic Update)
+          // to update the store/badge immediately.
+          // Refetching here would race and likely return STALE data from the DB View,
+          // causing the badge to reappear erroneously.
+          if (newReceipt.user_id === user.id) {
+            console.log('[useUnreadCountSubscription] Skipping badge refresh for own read receipt (prevent stale overwrite)');
+            return;
+          }
+
+          console.log('[useUnreadCountSubscription] Message marked read by OTHER - refreshing badge');
           await fetchAndUpdateBadge();
         }
       )

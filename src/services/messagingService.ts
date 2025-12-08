@@ -305,6 +305,7 @@ class MessagingService {
   /**
    * Fetch messages with cursor-based pagination
    * Now includes status derivation from read receipts (WhatsApp-style tick marks)
+   * AND isReadByCurrentUser flag for scroll-to-first-unread (Story 8.6.9)
    * 
    * @param conversationId - Conversation UUID
    * @param limit - Max messages to fetch (default 50)
@@ -332,21 +333,29 @@ class MessagingService {
       
       if (error) throw error;
       
+      const allMessageIds = (data || []).map((msg: any) => msg.id);
+      
       // Get message IDs that the current user sent (for status derivation)
       const sentMessageIds = (data || [])
         .filter((msg: any) => msg.sender_id === currentUserId)
         .map((msg: any) => msg.id);
       
-      // Fetch read receipts for sent messages
+      //Get message IDs that the current user received (for scroll-to-unread)
+      const receivedMessageIds = (data || [])
+        .filter((msg: any) => msg.sender_id !== currentUserId)
+        .map((msg: any) => msg.id);
+      
+      // Fetch read receipts for ALL messages
       let readReceiptsByMessageId: Record<string, boolean> = {};
-      if (sentMessageIds.length > 0) {
+      if (allMessageIds.length > 0) {
         const { data: receipts } = await supabase
           .from('message_read_receipts')
-          .select('message_id, read_at')
-          .in('message_id', sentMessageIds)
+          .select('message_id, user_id, read_at')
+          .in('message_id', allMessageIds)
+          .eq('user_id', currentUserId) // Only current user's read receipts
           .not('read_at', 'is', null);
         
-        // Create a map of message_id -> has been read 
+        // Create a map of message_id -> has been read by current user
         readReceiptsByMessageId = (receipts || []).reduce((acc: Record<string, boolean>, receipt: any) => {
           acc[receipt.message_id] = true;
           return acc;
@@ -366,9 +375,13 @@ class MessagingService {
         }
         // For received messages, status is not needed (we don't show ticks on received messages)
         
+        // Add isReadByCurrentUser flag for scroll-to-unread (Story 8.6.9)
+        const isReadByCurrentUser = readReceiptsByMessageId[msg.id] === true;
+        
         return {
           ...msg,
           status,
+          isReadByCurrentUser, // NEW: enables scroll-to-first-unread
           // Ensure arrays are initialized
           media_urls: msg.media_urls || [],
           // Ensure timestamps are valid strings

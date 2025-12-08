@@ -39,6 +39,7 @@ import { QuickReactionBar } from './QuickReactionBar'
 import { MessageReactions } from './MessageReactions'
 import { ReactionUserList } from './ReactionUserList'
 import { MessageEmojiPicker } from './MessageEmojiPicker'
+import { useMessageVisibility } from '../../hooks/useMessageVisibility'
 
 interface MessageBubbleProps {
   message: Message
@@ -53,6 +54,7 @@ interface MessageBubbleProps {
   onPin?: (messageId: string) => void
   onUnpin?: (messageId: string) => void
   isMessagePinned?: (messageId: string) => boolean
+  onMessageVisible?: (messageId: string) => void // Story 8.6.9 - Granular read receipts
 }
 
 /**
@@ -96,7 +98,8 @@ export function MessageBubble({
   currentUserId,
   onPin,
   onUnpin,
-  isMessagePinned
+  isMessagePinned,
+  onMessageVisible
 }: MessageBubbleProps) {
   const [showContextMenu, setShowContextMenu] = useState(false)
   const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 })
@@ -133,6 +136,13 @@ export function MessageBubble({
   const [isExpanded, setIsExpanded] = useState(false)
   const [needsReadMore, setNeedsReadMore] = useState(false)
   const textRef = useRef<HTMLParagraphElement>(null)
+
+  // Message Visibility Tracking (Story 8.6.9)
+  const visibilityRef = useMessageVisibility({
+      messageId: message.id,
+      onVisible: (id) => onMessageVisible?.(id),
+      enabled: !isOwn && !isDeleted && !!onMessageVisible
+  })
 
   const handleViewReactionUsers = (emoji: string, event: React.MouseEvent) => {
     // Calculate position relative to the clicked element
@@ -594,10 +604,13 @@ export function MessageBubble({
             {/* Added relative wrapper for swipe context */}
             
           <motion.div 
+            ref={visibilityRef}
             id={`message-${message.id}`}
             role="article"
             aria-label={ariaLabel}
             tabIndex={0}
+            data-message-id={message.id}
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
             
             // Gestures
             drag="x"
@@ -770,8 +783,10 @@ export function MessageBubble({
                 <div className="relative">
                   <p 
                     ref={textRef}
-                    className="whitespace-pre-wrap break-words overflow-wrap-anywhere"
+                    className="whitespace-pre-wrap break-words"
                     style={{
+                      overflowWrap: 'anywhere',
+                      wordBreak: 'break-word',
                       maxHeight: !isExpanded && needsReadMore ? '140px' : 'none',
                       overflow: !isExpanded && needsReadMore ? 'hidden' : 'visible',
                       display: !isExpanded && needsReadMore ? '-webkit-box' : 'block',
