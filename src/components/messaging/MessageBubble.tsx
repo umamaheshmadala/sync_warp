@@ -507,7 +507,7 @@ export function MessageBubble({
         <DeletedMessagePlaceholder 
           isOwnMessage={isOwn} 
           deletedAt={message.deleted_at}
-          className="max-w-[80%]"
+          className="max-w-[75%]"
         />
       </div>
     )
@@ -540,7 +540,7 @@ export function MessageBubble({
       )} 
       */}
 
-      <div className="flex flex-col gap-1 max-w-[80%]">
+      <div className="flex flex-col gap-1 max-w-[75%]">
         {/* Forwarded Label */}
         {is_forwarded && (
           <div className="flex items-center gap-1 text-xs text-gray-500 mb-0.5 ml-1">
@@ -638,7 +638,7 @@ export function MessageBubble({
             onTouchMove={onLPTouchMove}
 
             className={cn(
-              "px-4 py-2 rounded-2xl break-words text-[15px] leading-relaxed shadow-sm cursor-pointer select-none relative z-10 touch-pan-y max-w-full", // touch-pan-y allows vertical scroll but captures horizontal
+              "px-4 py-2 rounded-2xl break-words text-[15px] leading-relaxed shadow-sm cursor-pointer select-none relative z-10 touch-pan-y min-w-0", // touch-pan-y allows vertical scroll but captures horizontal
               "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1",
               isOwn 
                 ? _failed
