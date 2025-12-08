@@ -49,13 +49,17 @@ BEGIN
   END CASE;
 
   -- Get Supabase URL and service role key from app settings
-  supabase_url := current_setting('app.settings.supabase_url', true);
-  service_role_key := current_setting('app.settings.supabase_service_role_key', true);
+  -- Fallback to hardcoded values if settings are missing (e.g. during migration or different context)
+  supabase_url := COALESCE(
+    current_setting('app.settings.supabase_url', true),
+    current_setting('supabase.url', true),
+    'https://ysxmgbblljoyebvugrfo.supabase.co'
+  );
 
-  -- If settings not available, try from environment
-  IF supabase_url IS NULL THEN
-    supabase_url := current_setting('supabase.url', true);
-  END IF;
+  service_role_key := COALESCE(
+    current_setting('app.settings.supabase_service_role_key', true),
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzeG1nYmJsbGpveWVidnVncmZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxMDU2MjksImV4cCI6MjA3MzY4MTYyOX0.m1zCtG-Rvrga_g-YX0QqMLVQ0uLxogUqGLqNVTrQBqI'
+  );
 
   -- Loop through all participants except sender
   FOR participant IN
@@ -96,6 +100,29 @@ BEGIN
       -- The frontend will call the edge function or use pg_net if available
       RAISE NOTICE 'Queued push notification for user % - message from %', 
         participant.user_id, sender_name;
+
+      -- Call Edge Function via pg_net
+      -- Uses the URL and Service Role Key resolved earlier
+      -- Call Edge Function via pg_net
+      -- Uses the URL and Service Role Key resolved earlier (with fallbacks)
+      PERFORM net.http_post(
+        url := supabase_url || '/functions/v1/send-push-notification',
+        headers := jsonb_build_object(
+          'Content-Type', 'application/json',
+          'Authorization', 'Bearer ' || service_role_key
+        ),
+        body := jsonb_build_object(
+          'userId', participant.user_id,
+          'title', sender_name,
+          'body', message_preview,
+          'data', jsonb_build_object(
+            'conversation_id', NEW.conversation_id,
+            'message_id', NEW.id,
+            'type', 'new_message',
+            'action_url', '/messages/' || NEW.conversation_id
+          )
+        )
+      );
     END IF;
   END LOOP;
 
