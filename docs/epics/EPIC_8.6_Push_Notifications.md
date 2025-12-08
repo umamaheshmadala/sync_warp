@@ -443,10 +443,10 @@ export function usePushNotifications() {
 
 ### **Story 8.6.3: Backend Notification Sender** (2 days)
 
-- [ ] Create send-message-notification edge function
-- [ ] Integrate FCM API for Android notifications
-- [ ] Integrate APNs API for iOS notifications (via Firebase)
-- [ ] Add database trigger to auto-send notifications
+- [x] Create send-message-notification edge function
+- [x] Integrate FCM API for Android notifications
+- [x] Integrate APNs API for iOS notifications (via Firebase)
+- [x] Add database trigger to auto-send notifications
 - **🛢 MCP**: Deploy edge function via Supabase MCP
 
 ### **Story 8.6.4: Notification Handling** (1 day)
