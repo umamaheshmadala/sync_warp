@@ -428,39 +428,39 @@ export function usePushNotifications() {
 
 ### **Story 8.6.1: Capacitor Push Setup** (2 days)
 
-- [ ] Configure FCM for Android (google-services.json)
-- [ ] Configure APNs for iOS (certificates, provisioning profiles)
-- [ ] Initialize PushNotifications plugin
-- [ ] Request permissions on app startup
+- [x] Configure FCM for Android (google-services.json)
+- [x] Configure APNs for iOS (certificates, provisioning profiles)
+- [x] Initialize PushNotifications plugin
+- [x] Request permissions on app startup
 - **🧠 MCP**: Analyze Capacitor config with Context7
 
 ### **Story 8.6.2: Token Management** (1 day)
 
-- [ ] Save tokens to user_push_tokens table
-- [ ] Handle token updates on app reopen
-- [ ] Remove tokens on logout
+- [x] Save tokens to user_push_tokens table
+- [x] Handle token updates on app reopen
+- [x] Remove tokens on logout
 - **🛢 MCP**: Test token storage with Supabase MCP
 
 ### **Story 8.6.3: Backend Notification Sender** (2 days)
 
-- [ ] Create send-message-notification edge function
-- [ ] Integrate FCM API for Android notifications
-- [ ] Integrate APNs API for iOS notifications (via Firebase)
-- [ ] Add database trigger to auto-send notifications
+- [x] Create send-message-notification edge function
+- [x] Integrate FCM API for Android notifications
+- [x] Integrate APNs API for iOS notifications (via Firebase)
+- [x] Add database trigger to auto-send notifications
 - **🛢 MCP**: Deploy edge function via Supabase MCP
 
 ### **Story 8.6.4: Notification Handling** (1 day)
 
-- [ ] Handle in-app notification display (foreground)
-- [ ] Handle notification tap navigation
-- [ ] Test on real devices (Android + iOS)
+- [x] Handle in-app notification display (foreground)
+- [x] Handle notification tap navigation
+- [x] Test on real devices (Android + iOS)
 - **🤖 MCP**: E2E test notification flow with Puppeteer
 
 ### **Story 8.6.5: Notification Customization** (1 day)
 
-- [ ] Add notification settings (mute conversations)
-- [ ] Add sound/vibration preferences
-- [ ] Add quiet hours (Do Not Disturb)
+- [x] Add notification settings (mute conversations)
+- [x] Add sound/vibration preferences
+- [x] Add quiet hours (Do Not Disturb)
 - **🎨 MCP**: Use Shadcn for settings UI
 
 ---

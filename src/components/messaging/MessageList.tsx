@@ -1,6 +1,7 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, Fragment } from 'react'
 import { useAuthStore } from '../../store/authStore'
 import { MessageBubble } from './MessageBubble'
+import { NewMessagesDivider } from './NewMessagesDivider'
 import { Loader2 } from 'lucide-react'
 import type { Message } from '../../types/messaging'
 
@@ -18,6 +19,7 @@ interface MessageListProps {
   onPin?: (messageId: string) => void
   onUnpin?: (messageId: string) => void
   isMessagePinned?: (messageId: string) => boolean
+  onMessageVisible?: (messageId: string) => void // Visibility-based read receipts
 }
 
 /**
@@ -53,7 +55,8 @@ export function MessageList({
   messagesEndRef,
   onPin,
   onUnpin,
-  isMessagePinned
+  isMessagePinned,
+  onMessageVisible
 }: MessageListProps) {
   const currentUserId = useAuthStore(state => state.user?.id)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -139,27 +142,46 @@ export function MessageList({
           return acc
         }, [] as Message[])
 
+        // Find first unread message index for divider (Story 8.6.9)
+        const firstUnreadIndex = uniqueMessages.findIndex(m => 
+          !m.isReadByCurrentUser && m.sender_id !== currentUserId
+        )
+
+        // Count unread messages for divider
+        const unreadCount = uniqueMessages.filter(m => 
+          !m.isReadByCurrentUser && m.sender_id !== currentUserId
+        ).length
+
         return uniqueMessages.map((message, index) => {
           // Show timestamp every 10 messages or on first message
           const showTimestamp = index === 0 || index % 10 === 0
           
+          // Show divider above first unread message (Story 8.6.9)
+          const showDivider = index === firstUnreadIndex && unreadCount > 0
+          
           return (
-            <div key={message.id} id={`message-${message.id}`}>
-              <MessageBubble
-                message={message}
-                isOwn={message.sender_id === currentUserId}
-                showTimestamp={showTimestamp}
-                onRetry={onRetry}
-                onReply={onReply}
-                onForward={onForward}
-                onEdit={onEdit}
-                onQuoteClick={onQuoteClick}
-                currentUserId={currentUserId || ''}
-                onPin={onPin}
-                onUnpin={onUnpin}
-                isMessagePinned={isMessagePinned}
-              />
-            </div>
+            <Fragment key={message.id}>
+              {showDivider && (
+                <NewMessagesDivider unreadCount={unreadCount} />
+              )}
+              <div id={`message-${message.id}`}>
+                <MessageBubble
+                  message={message}
+                  isOwn={message.sender_id === currentUserId}
+                  showTimestamp={showTimestamp}
+                  onRetry={onRetry}
+                  onReply={onReply}
+                  onForward={onForward}
+                  onEdit={onEdit}
+                  onQuoteClick={onQuoteClick}
+                  currentUserId={currentUserId || ''}
+                  onPin={onPin}
+                  onUnpin={onUnpin}
+                  isMessagePinned={isMessagePinned}
+                  onMessageVisible={onMessageVisible}
+                />
+              </div>
+            </Fragment>
           )
         })
       })()}

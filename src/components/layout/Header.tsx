@@ -39,7 +39,8 @@ export default function Header() {
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
 
   // Initialize conversations to get unread count
-  useConversations();
+  // MOVED TO App.tsx (useUnreadCountSubscription) for global reliability
+  // useConversations();
   const totalUnreadCount = useMessagingStore((state) => state.totalUnreadCount);
 
   // Get recent searches from localStorage

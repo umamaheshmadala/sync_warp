@@ -75,6 +75,9 @@ export interface Message {
   _uploadProgress?: number; // Upload progress (0-100) for media uploads
   _queued?: boolean;       // True if message is queued for offline sync (Epic 8.4)
   _queueId?: string;       // ID of queued message in offline queue (Epic 8.4)
+  
+  // Read receipt for scroll-to-unread (Story 8.6.9)
+  isReadByCurrentUser?: boolean; // True if current user has read this message
 }
 
 /**

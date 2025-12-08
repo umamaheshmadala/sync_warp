@@ -383,7 +383,8 @@ class RealtimeService {
     userId: string,
     onMuteUpdate: (payload: any) => void
   ): () => void {
-    const channelName = `mute-updates:${userId}`;
+    const subscriptionId = Math.random().toString(36).substring(7);
+    const channelName = `mute-updates:${userId}-${subscriptionId}`;
     
     this.unsubscribe(channelName);
     
@@ -563,10 +564,10 @@ class RealtimeService {
    * @returns Unsubscribe function
    */
   subscribeToConversations(onUpdate: ConversationUpdateCallback): () => void {
-    const channelName = 'user-conversations';
-    
-    // Remove existing subscription if any
-    this.unsubscribe(channelName);
+    // Generate unique channel ID to allow multiple subscribers (e.g. Header and MessagesPage)
+    // without clobbering each other's subscriptions on unmount
+    const subscriptionId = Math.random().toString(36).substring(7);
+    const channelName = `user-conversations-${subscriptionId}`;
     
     // Subscribe to both conversations and messages tables
     const channel = supabase
@@ -641,15 +642,18 @@ class RealtimeService {
    * @param channelName - Name of the channel to unsubscribe
    */
   private async unsubscribe(channelName: string): Promise<void> {
+    console.log(`🔌 [RealtimeService] Unsubscribing from channel: ${channelName}`);
     const channel = this.channels.get(channelName);
     if (channel) {
       try {
         await supabase.removeChannel(channel);
         this.channels.delete(channelName);
-        console.log('🔌 Unsubscribed from:', channelName);
+        console.log(`✅ [RealtimeService] Successfully unsubscribed from: ${channelName}`);
       } catch (error) {
-        console.error(`❌ Failed to unsubscribe from ${channelName}:`, error);
+        console.error(`❌ [RealtimeService] Failed to unsubscribe from ${channelName}:`, error);
       }
+    } else {
+      console.warn(`⚠️ [RealtimeService] Channel not found for unsubscribe: ${channelName}`);
     }
   }
 

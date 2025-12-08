@@ -17,6 +17,7 @@ import DevMenu from './components/DevMenu'
 import { useUpdateOnlineStatus } from './hooks/useUpdateOnlineStatus'
 import { usePresence } from './hooks/usePresence'
 import { useRealtimeFriends } from './hooks/friends/useRealtimeFriends'
+import { useUnreadCountSubscription } from './hooks/useUnreadCountSubscription'
 
 // Configure React Query with optimistic updates and caching
 const queryClient = new QueryClient({
@@ -51,6 +52,9 @@ function AppContent() {
 
   // Track real-time friends via Supabase Realtime
   useRealtimeFriends()
+
+  // Track global unread badge count
+  useUnreadCountSubscription()
 
   // Handle notification routing and foreground display (needs Router context)
   const { foregroundNotification, handleToastTap, handleToastDismiss } = useNotificationHandler()

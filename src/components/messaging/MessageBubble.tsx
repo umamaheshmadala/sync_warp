@@ -39,6 +39,7 @@ import { QuickReactionBar } from './QuickReactionBar'
 import { MessageReactions } from './MessageReactions'
 import { ReactionUserList } from './ReactionUserList'
 import { MessageEmojiPicker } from './MessageEmojiPicker'
+import { useMessageVisibility } from '../../hooks/useMessageVisibility'
 
 interface MessageBubbleProps {
   message: Message
@@ -53,6 +54,7 @@ interface MessageBubbleProps {
   onPin?: (messageId: string) => void
   onUnpin?: (messageId: string) => void
   isMessagePinned?: (messageId: string) => boolean
+  onMessageVisible?: (messageId: string) => void // Story 8.6.9 - Granular read receipts
 }
 
 /**
@@ -96,7 +98,8 @@ export function MessageBubble({
   currentUserId,
   onPin,
   onUnpin,
-  isMessagePinned
+  isMessagePinned,
+  onMessageVisible
 }: MessageBubbleProps) {
   const [showContextMenu, setShowContextMenu] = useState(false)
   const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 })
@@ -129,6 +132,18 @@ export function MessageBubble({
   
   const [popupPosition, setPopupPosition] = useState<{ x: number, y: number } | undefined>(undefined)
 
+  // Expandable text state (WhatsApp-style "Read More" - Story 8.6.7)
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [needsReadMore, setNeedsReadMore] = useState(false)
+  const textRef = useRef<HTMLParagraphElement>(null)
+
+  // Message Visibility Tracking (Story 8.6.9)
+  const visibilityRef = useMessageVisibility({
+      messageId: message.id,
+      onVisible: (id) => onMessageVisible?.(id),
+      enabled: !isOwn && !isDeleted && !!onMessageVisible
+  })
+
   const handleViewReactionUsers = (emoji: string, event: React.MouseEvent) => {
     // Calculate position relative to the clicked element
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
@@ -152,6 +167,19 @@ export function MessageBubble({
     messageAge < EDIT_WINDOW_MS
   
   const editRemainingTime = canEditMessage 
+
+  // Detect if text needs \"Read More\" button (Story 8.6.7)
+  useEffect(() => {
+    if (!textRef.current || message.type !== 'text') return
+    
+    const MAX_COLLAPSED_HEIGHT = 140 // 7 lines  20px line-height
+    const fullHeight = textRef.current.scrollHeight
+    
+    if (fullHeight > MAX_COLLAPSED_HEIGHT) {
+      setNeedsReadMore(true)
+    }
+  }, [content, message.type])
+
     ? messageEditService.formatRemainingTime(EDIT_WINDOW_MS - messageAge)
     : ''
   
@@ -489,7 +517,7 @@ export function MessageBubble({
         <DeletedMessagePlaceholder 
           isOwnMessage={isOwn} 
           deletedAt={message.deleted_at}
-          className="max-w-[85%]"
+          className="max-w-[75%]"
         />
       </div>
     )
@@ -522,7 +550,7 @@ export function MessageBubble({
       )} 
       */}
 
-      <div className="flex flex-col gap-1 max-w-[85%]">
+      <div className="flex flex-col gap-1 max-w-[75%]">
         {/* Forwarded Label */}
         {is_forwarded && (
           <div className="flex items-center gap-1 text-xs text-gray-500 mb-0.5 ml-1">
@@ -576,10 +604,13 @@ export function MessageBubble({
             {/* Added relative wrapper for swipe context */}
             
           <motion.div 
+            ref={visibilityRef}
             id={`message-${message.id}`}
             role="article"
             aria-label={ariaLabel}
             tabIndex={0}
+            data-message-id={message.id}
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
             
             // Gestures
             drag="x"
@@ -620,7 +651,7 @@ export function MessageBubble({
             onTouchMove={onLPTouchMove}
 
             className={cn(
-              "px-4 py-2 rounded-2xl break-words text-[15px] leading-relaxed shadow-sm cursor-pointer select-none relative z-10 touch-pan-y", // touch-pan-y allows vertical scroll but captures horizontal
+              "px-4 py-2 rounded-2xl break-words text-[15px] leading-relaxed shadow-sm cursor-pointer select-none relative z-10 touch-pan-y min-w-0", // touch-pan-y allows vertical scroll but captures horizontal
               "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1",
               isOwn 
                 ? _failed
@@ -748,8 +779,35 @@ export function MessageBubble({
                   </div>
                 )}
                 
-                {/* Text content - editing now handled by MessageComposer */}
-                <p className="whitespace-pre-wrap">{content}</p>
+                {/* Text content with WhatsApp-style Read More (Story 8.6.7) */}
+                <div className="relative">
+                  <p 
+                    ref={textRef}
+                    className="whitespace-pre-wrap break-words"
+                    style={{
+                      overflowWrap: 'anywhere',
+                      wordBreak: 'break-word',
+                      maxHeight: !isExpanded && needsReadMore ? '140px' : 'none',
+                      overflow: !isExpanded && needsReadMore ? 'hidden' : 'visible',
+                      display: !isExpanded && needsReadMore ? '-webkit-box' : 'block',
+                      WebkitLineClamp: !isExpanded && needsReadMore ? 7 : 'unset',
+                      WebkitBoxOrient: !isExpanded && needsReadMore ? 'vertical' : undefined
+                    } as React.CSSProperties}
+                  >
+                    {content}
+                  </p>
+                  {!isExpanded && needsReadMore && (
+                    <button
+                      onClick={() => setIsExpanded(true)}
+                      className={cn(
+                        "text-sm font-medium mt-1 transition-opacity hover:opacity-80",
+                        isOwn ? "text-blue-100" : "text-blue-600"
+                      )}
+                    >
+                      Read more
+                    </button>
+                  )}
+                </div>
               </div>
             )}
             {/* Timestamp & Status Row */}

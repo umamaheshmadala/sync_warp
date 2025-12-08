@@ -66,38 +66,48 @@ export function useConversations() {
 
   const { user } = useAuthStore()
 
+  // Debug: Track hook instances
+  const instanceId = useRef(Math.random().toString(36).substring(7)).current;
+  
   // Subscribe to real-time conversation updates (conversations + new messages)
   useEffect(() => {
     if (!user?.id) return
 
-    // Use subscribeToConversations which subscribes to BOTH:
-    // 1. Conversation table changes (INSERT/UPDATE/DELETE)
-    // 2. Message INSERT events (to update last_message_content in sidebar)
+    console.log(`[useConversations:${instanceId}] Mounting & Subscribing`);
+
     const unsubscribeConversations = realtimeService.subscribeToConversations(
       () => {
-        console.log('🔄 [useConversations] Realtime update received - refreshing list')
+        console.log(`[useConversations:${instanceId}] Realtime update received - refreshing list`)
         fetchConversations()
       }
     )
-
+    
+    // Subscribe to mute status updates
     const unsubscribeMute = realtimeService.subscribeToMuteUpdates(
       user.id,
       (payload) => {
         const conversationId = payload.new?.conversation_id || payload.old?.conversation_id
         if (conversationId) {
+           // If record exists and not deleted, check is_muted. 
+           // Mute table usually has (user_id, conversation_id). Existence = muted? 
+           // Or does it have is_muted column? 
+           // Assuming existence = muted for now based on previous code logic inferred.
+           // Wait, previous code: 'const isMuted = payload.eventType !== 'DELETE''
+           // This implies the table tracks MUTED conversations.
            const isMuted = payload.eventType !== 'DELETE'
+           console.log(`[useConversations:${instanceId}] Mute update: ${conversationId} -> ${isMuted}`)
            updateConversation(conversationId, { is_muted: isMuted })
         }
       }
     )
 
     return () => {
+      console.log(`[useConversations:${instanceId}] Unmounting & Cleaning up`);
       unsubscribeConversations()
       unsubscribeMute()
     }
   }, [user?.id, fetchConversations, updateConversation])
 
-  // Mobile lifecycle: pause/resume updates based on app state
   useEffect(() => {
     if (!isMobile) return
 

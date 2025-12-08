@@ -43,6 +43,7 @@ export const NotificationToast: React.FC<NotificationToastProps> = ({
   }, [])
 
   const handleDismiss = () => {
+    console.log('[NotificationToast] Dismissing...')
     setIsExiting(true)
     setTimeout(() => {
       setIsVisible(false)
@@ -51,10 +52,13 @@ export const NotificationToast: React.FC<NotificationToastProps> = ({
   }
 
   const handleTap = () => {
+    console.log('[NotificationToast] Tapped! Triggering navigation immediately.')
+    onTap() // Trigger navigation immediately
+    
     setIsExiting(true)
     setTimeout(() => {
+      console.log('[NotificationToast] Dismissing after animation')
       setIsVisible(false)
-      onTap()
       onDismiss()
     }, 200)
   }

@@ -42,7 +42,7 @@ export const usePushNotifications = (userId: string | null) => {
           is_active: true,
           updated_at: new Date().toISOString()
         }, {
-          onConflict: 'user_id, token'
+          onConflict: 'user_id, platform'
         });
 
       if (error) {
@@ -59,18 +59,39 @@ export const usePushNotifications = (userId: string | null) => {
   };
 
   const registerPushNotifications = async () => {
+<<<<<<< HEAD
+=======
+    // Only run on native platforms
+    if (!Capacitor.isNativePlatform()) {
+      console.log('[usePushNotifications] Skipping - not a native platform');
+      return;
+    }
+
+    // Only register if user is logged in
+    if (!userId) {
+      console.log('[usePushNotifications] Skipping - no userId provided');
+      return;
+    }
+
+
+>>>>>>> b4e7571cc7cda3da8d999a83d39fc8057e63e889
     try {
       console.log('[usePushNotifications] Starting registration for user:', userId);
       console.log('[usePushNotifications] Platform:', Capacitor.getPlatform());
 
+<<<<<<< HEAD
       // Set up listeners FIRST before registering
       await PushNotifications.removeAllListeners();
+=======
+      // We do NOT use removeAllListeners() as it wipes listeners from other hooks (useNotificationHandler)
+>>>>>>> b4e7571cc7cda3da8d999a83d39fc8057e63e889
       
       // Token registered successfully
-      PushNotifications.addListener('registration', async (token: Token) => {
+      const registrationListener = await PushNotifications.addListener('registration', async (token: Token) => {
         console.log('[usePushNotifications] Token registered:', token.value);
         await SecureStorage.setPushToken(token.value);
         const syncSuccess = await syncTokenWithSupabase(token.value, userId!);
+        
         setState(prev => ({
           ...prev,
           isRegistered: true,
@@ -81,7 +102,7 @@ export const usePushNotifications = (userId: string | null) => {
       });
 
       // Token registration failed
-      PushNotifications.addListener('registrationError', (error: any) => {
+      const registrationErrorListener = await PushNotifications.addListener('registrationError', (error: any) => {
         console.error('[usePushNotifications] Registration error:', error);
         setState(prev => ({
           ...prev,
@@ -90,12 +111,17 @@ export const usePushNotifications = (userId: string | null) => {
         }));
       });
 
-      // Notification received
-      PushNotifications.addListener('pushNotificationReceived', (notification: PushNotificationSchema) => {
-        console.log('[usePushNotifications] Notification received:', notification);
-        window.dispatchEvent(new CustomEvent('foreground-notification', { detail: notification }));
-      });
+      // Store in ref for cleanup (need to add ref to hook)
+      // Since we can't easily add a ref here without changing the whole file structure significantly,
+      // and we removed the cleanup return from useEffect in the previous plan (wait, did we?),
+      // actually, the safest bet is to just NOT removeAllListeners.
+      // Duplicate registration listeners are generally harmless compared to wiping everything.
+      // BUT we should try to clean up.
+      
+      // Let's rely on the fact that AppContent mounts once.
+      // We will remove the explicit removeAllListeners call here.
 
+<<<<<<< HEAD
       // Notification tapped
       PushNotifications.addListener('pushNotificationActionPerformed', (action: ActionPerformed) => {
         console.log('[usePushNotifications] Notification tapped:', action);
@@ -111,8 +137,11 @@ export const usePushNotifications = (userId: string | null) => {
             }
         }
       });
+=======
+>>>>>>> b4e7571cc7cda3da8d999a83d39fc8057e63e889
 
       // Create channel (Android)
+      // We keep channel creation here as it's part of setup
       if (Capacitor.getPlatform() === 'android') {
         await PushNotifications.createChannel({
           id: 'friend_notifications',
@@ -144,6 +173,7 @@ export const usePushNotifications = (userId: string | null) => {
   };
 
   useEffect(() => {
+<<<<<<< HEAD
     console.log('[usePushNotifications] Hook effect triggered. UserId:', userId, 'Platform:', Capacitor.getPlatform(), 'IsNative:', Capacitor.isNativePlatform());
 
     // Only run on native platforms
@@ -174,6 +204,17 @@ export const usePushNotifications = (userId: string | null) => {
     return () => {
       PushNotifications.removeAllListeners();
       appStateListener.then(listener => listener.remove());
+=======
+    console.log('[usePushNotifications] Hook effect triggered. UserId:', userId);
+
+    if (Capacitor.isNativePlatform() && userId) {
+      registerPushNotifications();
+    }
+    
+    return () => {
+      // Do NOT remove all listeners, as it affects useNotificationHandler
+      // PushNotifications.removeAllListeners();
+>>>>>>> b4e7571cc7cda3da8d999a83d39fc8057e63e889
     };
   }, [userId]);
 

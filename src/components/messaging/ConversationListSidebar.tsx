@@ -15,6 +15,7 @@ import { FriendPickerModal } from './FriendPickerModal'
 import { conversationManagementService, type ConversationFilter } from '../../services/conversationManagementService'
 import { cn } from '../../lib/utils'
 import { parseDatabaseDate } from '../../utils/dateUtils'
+import { useMessagingStore } from '../../store/messagingStore'
 
 export function ConversationListSidebar() {
   const navigate = useNavigate()
@@ -23,7 +24,10 @@ export function ConversationListSidebar() {
   const [showFriendPicker, setShowFriendPicker] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeFilter, setActiveFilter] = useState<ConversationFilter>('all')
+  // Store provides optimistic total unread count
+  const { totalUnreadCount } = useMessagingStore()
   const [counts, setCounts] = useState({ all: 0, unread: 0, archived: 0, pinned: 0 })
+
   
   // Multi-select state
   const [selectionMode, setSelectionMode] = useState(false)
@@ -39,13 +43,18 @@ export function ConversationListSidebar() {
     const fetchCounts = async () => {
       try {
         const countsData = await conversationManagementService.getConversationCounts()
-        setCounts(countsData)
+        setCounts(prev => ({
+            ...countsData,
+            // Prefer store's optimistic count if available and reasonable
+            // We use the store's count to ensure instant feedback
+            unread: totalUnreadCount
+        }))
       } catch (error) {
         console.error('Failed to fetch counts:', error)
       }
     }
     fetchCounts()
-  }, [conversations])
+  }, [conversations, totalUnreadCount]) // Re-run when store updates total count
 
   // Filter conversations
   const filteredConversations = useMemo(() => {
