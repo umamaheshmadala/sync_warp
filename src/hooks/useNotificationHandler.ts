@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useState, useCallback, useRef } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { PushNotifications, PushNotificationSchema, ActionPerformed } from '@capacitor/push-notifications'
 import { Capacitor } from '@capacitor/core'
 import { NotificationRouter, NotificationData } from '../services/notificationRouter'
@@ -38,7 +38,14 @@ interface ForegroundNotification {
  */
 export const useNotificationHandler = () => {
   const navigate = useNavigate()
+  const location = useLocation()
+  const locationRef = useRef(location)
   const [foregroundNotification, setForegroundNotification] = useState<ForegroundNotification | null>(null)
+
+  // Keep location ref updated
+  useEffect(() => {
+    locationRef.current = location
+  }, [location])
 
   useEffect(() => {
     // Only run on native platforms
@@ -64,17 +71,28 @@ export const useNotificationHandler = () => {
             return
           }
           
-          // Check if this is a message notification and if the conversation is muted
-          if (data.type === 'message' && data.messageId) {
-            try {
-              const isMuted = await conversationManagementService.isConversationMuted(data.messageId)
-              if (isMuted) {
-                console.log('[useNotificationHandler] Conversation is muted - suppressing notification')
-                return
+          // Check if this is a message notification
+          if ((data.type === 'message' || data.type === 'new_message')) {
+            const conversationId = data.conversationId || data.conversation_id;
+            
+            if (conversationId) {
+              // Check if user is already in this conversation
+              const currentPath = locationRef.current.pathname;
+              if (currentPath.includes(`/messages/${conversationId}`) || currentPath.includes(`/messages/${conversationId}/`)) {
+                 console.log(`[useNotificationHandler] User is in conversation ${conversationId} - suppressing notification`);
+                 return;
               }
-            } catch (error) {
-              console.error('[useNotificationHandler] Error checking mute status:', error)
-              // Continue showing notification if check fails
+
+              try {
+                const isMuted = await conversationManagementService.isConversationMuted(conversationId)
+                if (isMuted) {
+                  console.log('[useNotificationHandler] Conversation is muted - suppressing notification')
+                  return
+                }
+              } catch (error) {
+                console.error('[useNotificationHandler] Error checking mute status:', error)
+                // Continue showing notification if check fails
+              }
             }
           }
           
@@ -126,9 +144,16 @@ export const useNotificationHandler = () => {
    * Routes to the appropriate screen and dismisses the toast
    */
   const handleToastTap = useCallback(() => {
-    if (foregroundNotification) {
-      console.log('[useNotificationHandler] Toast tapped, routing to:', foregroundNotification.data.type)
-      NotificationRouter.route(foregroundNotification.data, navigate)
+    console.log('[useNotificationHandler] HandleToastTap called')
+    if (foregroundNotification && foregroundNotification.data) {
+      console.log('[useNotificationHandler] Routing to:', foregroundNotification.data.type, foregroundNotification.data)
+      try {
+        NotificationRouter.route(foregroundNotification.data, navigate)
+      } catch (e) {
+        console.error('[useNotificationHandler] Routing failed:', e)
+      }
+    } else {
+      console.warn('[useNotificationHandler] Cannot route - foregroundNotification is null or missing data')
     }
   }, [foregroundNotification, navigate])
 

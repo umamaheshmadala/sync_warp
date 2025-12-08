@@ -18,6 +18,7 @@ interface MessageListProps {
   onPin?: (messageId: string) => void
   onUnpin?: (messageId: string) => void
   isMessagePinned?: (messageId: string) => boolean
+  onMessageVisible?: (messageId: string) => void // Visibility-based read receipts
 }
 
 /**
@@ -53,7 +54,8 @@ export function MessageList({
   messagesEndRef,
   onPin,
   onUnpin,
-  isMessagePinned
+  isMessagePinned,
+  onMessageVisible
 }: MessageListProps) {
   const currentUserId = useAuthStore(state => state.user?.id)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -158,6 +160,7 @@ export function MessageList({
                 onPin={onPin}
                 onUnpin={onUnpin}
                 isMessagePinned={isMessagePinned}
+                onMessageVisible={onMessageVisible}
               />
             </div>
           )

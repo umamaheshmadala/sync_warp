@@ -6,6 +6,7 @@ export type NotificationType =
   | 'follower'
   | 'business'
   | 'message'
+  | 'new_message' // Alias for message
   | 'test'
   | 'friend_request'
   | 'friend_accepted'
@@ -19,6 +20,9 @@ export interface NotificationData {
   offerId?: string
   userId?: string
   messageId?: string
+  message_id?: string // Supabase trigger payload
+  conversationId?: string
+  conversation_id?: string // Supabase trigger payload
   // Additional fields for extensibility
   [key: string]: any
 }
@@ -87,10 +91,19 @@ export class NotificationRouter {
         }
         break
 
+      case 'new_message': // Handle trigger type
       case 'message':
-        if (data.messageId) {
-          // Route to specific message thread
-          navigate(`/messages/${data.messageId}`)
+        const threadId = data.messageId || data.message_id || data.conversationId || data.conversation_id;
+        
+        // If we have a conversation ID (or message ID acting as thread ID), go there.
+        // Note: The app uses conversation_id for routing usually.
+        const conversationId = data.conversationId || data.conversation_id;
+        
+        if (conversationId) {
+           navigate(`/messages/${conversationId}`)
+        } else if (threadId) {
+          // Fallback if only message ID is present (though unusual for chat apps)
+          navigate(`/messages/${threadId}`)
         } else {
           // Route to messages inbox
           navigate('/messages')
@@ -193,7 +206,7 @@ export class NotificationRouter {
     }
 
     const validTypes: NotificationType[] = [
-      'review', 'offer', 'follower', 'business', 'message', 'test',
+      'review', 'offer', 'follower', 'business', 'message', 'new_message', 'test',
       'friend_request', 'friend_accepted', 'deal_shared', 'birthday_reminder'
     ]
 

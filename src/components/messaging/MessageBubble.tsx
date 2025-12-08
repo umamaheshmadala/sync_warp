@@ -129,6 +129,11 @@ export function MessageBubble({
   
   const [popupPosition, setPopupPosition] = useState<{ x: number, y: number } | undefined>(undefined)
 
+  // Expandable text state (WhatsApp-style "Read More" - Story 8.6.7)
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [needsReadMore, setNeedsReadMore] = useState(false)
+  const textRef = useRef<HTMLParagraphElement>(null)
+
   const handleViewReactionUsers = (emoji: string, event: React.MouseEvent) => {
     // Calculate position relative to the clicked element
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
@@ -152,6 +157,19 @@ export function MessageBubble({
     messageAge < EDIT_WINDOW_MS
   
   const editRemainingTime = canEditMessage 
+
+  // Detect if text needs \"Read More\" button (Story 8.6.7)
+  useEffect(() => {
+    if (!textRef.current || message.type !== 'text') return
+    
+    const MAX_COLLAPSED_HEIGHT = 140 // 7 lines  20px line-height
+    const fullHeight = textRef.current.scrollHeight
+    
+    if (fullHeight > MAX_COLLAPSED_HEIGHT) {
+      setNeedsReadMore(true)
+    }
+  }, [content, message.type])
+
     ? messageEditService.formatRemainingTime(EDIT_WINDOW_MS - messageAge)
     : ''
   
@@ -489,7 +507,7 @@ export function MessageBubble({
         <DeletedMessagePlaceholder 
           isOwnMessage={isOwn} 
           deletedAt={message.deleted_at}
-          className="max-w-[85%]"
+          className="max-w-[80%]"
         />
       </div>
     )
@@ -522,7 +540,7 @@ export function MessageBubble({
       )} 
       */}
 
-      <div className="flex flex-col gap-1 max-w-[85%]">
+      <div className="flex flex-col gap-1 max-w-[80%]">
         {/* Forwarded Label */}
         {is_forwarded && (
           <div className="flex items-center gap-1 text-xs text-gray-500 mb-0.5 ml-1">
@@ -620,7 +638,7 @@ export function MessageBubble({
             onTouchMove={onLPTouchMove}
 
             className={cn(
-              "px-4 py-2 rounded-2xl break-words text-[15px] leading-relaxed shadow-sm cursor-pointer select-none relative z-10 touch-pan-y", // touch-pan-y allows vertical scroll but captures horizontal
+              "px-4 py-2 rounded-2xl break-words text-[15px] leading-relaxed shadow-sm cursor-pointer select-none relative z-10 touch-pan-y max-w-full", // touch-pan-y allows vertical scroll but captures horizontal
               "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1",
               isOwn 
                 ? _failed
@@ -748,8 +766,33 @@ export function MessageBubble({
                   </div>
                 )}
                 
-                {/* Text content - editing now handled by MessageComposer */}
-                <p className="whitespace-pre-wrap">{content}</p>
+                {/* Text content with WhatsApp-style Read More (Story 8.6.7) */}
+                <div className="relative">
+                  <p 
+                    ref={textRef}
+                    className="whitespace-pre-wrap break-words overflow-wrap-anywhere"
+                    style={{
+                      maxHeight: !isExpanded && needsReadMore ? '140px' : 'none',
+                      overflow: !isExpanded && needsReadMore ? 'hidden' : 'visible',
+                      display: !isExpanded && needsReadMore ? '-webkit-box' : 'block',
+                      WebkitLineClamp: !isExpanded && needsReadMore ? 7 : 'unset',
+                      WebkitBoxOrient: !isExpanded && needsReadMore ? 'vertical' : undefined
+                    } as React.CSSProperties}
+                  >
+                    {content}
+                  </p>
+                  {!isExpanded && needsReadMore && (
+                    <button
+                      onClick={() => setIsExpanded(true)}
+                      className={cn(
+                        "text-sm font-medium mt-1 transition-opacity hover:opacity-80",
+                        isOwn ? "text-blue-100" : "text-blue-600"
+                      )}
+                    >
+                      Read more
+                    </button>
+                  )}
+                </div>
               </div>
             )}
             {/* Timestamp & Status Row */}

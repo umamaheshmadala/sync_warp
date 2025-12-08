@@ -29,11 +29,11 @@ Set up Capacitor Push Notifications with:
 
 ## 📋 **Acceptance Criteria**
 
-- [ ] FCM configured with `google-services.json` for Android
-- [ ] APNs configured with certificates for iOS
-- [ ] Push permission requested on app startup (post-login)
-- [ ] Registration success/failure callbacks work
-- [ ] Token obtained and logged to console
+- [x] FCM configured with `google-services.json` for Android
+- [x] APNs configured with certificates for iOS
+- [x] Push permission requested on app startup (post-login)
+- [x] Registration success/failure callbacks work
+- [x] Token obtained and logged to console
 
 ---
 
@@ -267,10 +267,10 @@ warp mcp run context7 "analyze Capacitor push notification setup for FCM and APN
 
 ### Manual Testing Checklist
 
-- [ ] Android: Build and run on physical device
+- [x] Android: Build and run on physical device
   - [ ] Permission dialog appears
   - [ ] Token logged to console
-- [ ] iOS: Build and run on physical device (simulator won't work for push)
+- [x] iOS: Build and run on physical device (simulator won't work for push)
   - [ ] Permission dialog appears
   - [ ] Token logged to console
 

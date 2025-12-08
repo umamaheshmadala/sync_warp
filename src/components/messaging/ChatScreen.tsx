@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useMessages } from '../../hooks/useMessages'
 import { useTypingIndicator } from '../../hooks/useTypingIndicator'
@@ -84,6 +84,11 @@ export function ChatScreen() {
     setSelectedIndex
   } = useMessageSearch(conversationId || undefined)
 
+  // Track if user is at bottom of chat
+  const [isAtBottom, setIsAtBottom] = useState(true)
+  const [hasNewMessages, setHasNewMessages] = useState(false)
+  const messageListRef = useRef<HTMLDivElement>(null)
+
   // Scroll to bottom helper
   const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
     if (messagesEndRef.current) {
@@ -91,24 +96,59 @@ export function ChatScreen() {
         behavior: Capacitor.isNativePlatform() ? 'auto' : behavior,
         block: 'end'
       })
+      setHasNewMessages(false) // Clear new messages indicator after scrolling
     }
   }
 
-  // Auto-scroll to bottom on new messages
-  // Auto-scroll to bottom on new messages
+  // Check if user is near bottom of chat (within 100px)
+  const checkIfAtBottom = useCallback(() => {
+    const container = document.querySelector('.message-list-scroll')
+    if (!container) return true
+
+    const { scrollTop, scrollHeight, clientHeight } = container
+    const distanceFromBottom = scrollHeight - scrollTop - clientHeight
+    const nearBottom = distanceFromBottom < 100
+    
+    setIsAtBottom(nearBottom)
+    if (nearBottom) {
+      setHasNewMessages(false) // Clear indicator if user scrolls to bottom
+    }
+    return nearBottom
+  }, [])
+
+  // WhatsApp-style smart auto-scroll on new messages
+  // Only auto-scroll if:
+  // 1. User sent the message (own message)
+  // 2. User is already at the bottom
   useEffect(() => {
     const lastMessage = messages[messages.length - 1]
-    const isUserMessage = lastMessage?.sender_id === 'current_user' || (lastMessage?._optimistic)
+    if (!lastMessage) return
+
+    const isOwnMessage = lastMessage.sender_id === 'current_user' || lastMessage._optimistic
+    const isNewMessage = messages.length > prevMessageCount.current
     
-    // Scroll if new message added OR if it's a user message (ensure visibility)
-    if (messages.length > prevMessageCount.current || isUserMessage) {
-      // Use a small timeout to ensure DOM is updated with new message height
-      setTimeout(() => {
-        scrollToBottom('smooth')
-      }, 100)
+    if (isNewMessage) {
+      const userIsAtBottom = checkIfAtBottom()
+      
+      if (isOwnMessage) {
+        // Always scroll for own messages
+        setTimeout(() => {
+          scrollToBottom('smooth')
+        }, 100)
+      } else if (userIsAtBottom) {
+        // Auto-scroll if user is already at bottom
+        setTimeout(() => {
+          scrollToBottom('smooth')
+        }, 100)
+      } else {
+        // User is scrolled up - show new messages indicator instead
+        console.log('[ChatScreen] New message received while scrolled up - showing indicator')
+        setHasNewMessages(true)
+      }
     }
+    
     prevMessageCount.current = messages.length
-  }, [messages.length, messages[messages.length - 1]?.id])
+  }, [messages.length, messages[messages.length - 1]?.id, checkIfAtBottom])
 
   // Initial scroll to latest message (instant, no animation)
   // Messages are sorted DESC by created_at, so latest is at END of array
@@ -119,50 +159,74 @@ export function ChatScreen() {
     }
   }, [isLoading])
 
-  // Mark conversation as read ONLY when user is actively viewing
-  // This is the proper WhatsApp-style behavior
+  // WhatsApp-style visibility-based read receipts
+  // Messages marked as read only when they scroll into viewport
+  const visibleMessagesRef = useRef<Set<string>>(new Set());
+  const batchTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingReadReceiptsRef = useRef<Set<string>>(new Set());
+
+  const handleMessageVisible = useCallback((messageId: string) => {
+    // Skip if already marked as visible
+    if (visibleMessagesRef.current.has(messageId)) {
+      return;
+    }
+
+    console.log('[ChatScreen] Message became visible:', messageId);
+    visibleMessagesRef.current.add(messageId);
+    pendingReadReceiptsRef.current.add(messageId);
+
+    // Batch read receipts: wait 500ms before sending
+    // If more messages become visible during this time, they'll be batched together
+    if (batchTimerRef.current) {
+      clearTimeout(batchTimerRef.current);
+    }
+
+    batchTimerRef.current = setTimeout(async () => {
+      const messagesToMark = Array.from(pendingReadReceiptsRef.current);
+      if (messagesToMark.length === 0) return;
+
+      console.log(`[ChatScreen] Batching ${messagesToMark.length} read receipts`);
+      pendingReadReceiptsRef.current.clear();
+
+      // Mark conversation as read (this handles all unread messages)
+      // In a real implementation, you might want to mark individual messages
+      // For now, we use the existing RPC that marks the entire conversation
+      if (conversationId) {
+        try {
+          await conversationManagementService.markConversationAsRead(conversationId);
+          // Dispatch event to trigger conversation list refresh
+          window.dispatchEvent(new CustomEvent('conversation-updated', { 
+            detail: { conversationId } 
+          }));
+          console.log(`[ChatScreen] Marked conversation ${conversationId} as read`);
+        } catch (err) {
+          console.error('Failed to mark conversation as read:', err);
+        }
+      }
+    }, 500); // 500ms batch window
+  }, [conversationId]);
+
+  // Cleanup batch timer on unmount
   useEffect(() => {
-    if (!conversationId) return
-
-    // Helper to mark as read only if document is visible and focused
-    const markAsReadIfVisible = () => {
-      if (document.visibilityState === 'visible' && document.hasFocus()) {
-        console.log('👁️ User viewing chat - marking as read:', conversationId)
-        // Use the original working RPC-based function
-        conversationManagementService.markConversationAsRead(conversationId)
-          .then(() => {
-            // Dispatch event to trigger conversation list refresh
-            window.dispatchEvent(new CustomEvent('conversation-updated', { detail: { conversationId } }))
-          })
-          .catch(err => console.error('Failed to mark conversation as read:', err))
-      } else {
-        console.log('👁️ Chat not in focus/visible - NOT marking as read')
-      }
-    }
-
-    // Mark as read on mount (if visible)
-    markAsReadIfVisible()
-
-    // Mark as read when user returns to this tab/window
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        markAsReadIfVisible()
-      }
-    }
-
-    const handleFocus = () => {
-      markAsReadIfVisible()
-    }
-
-    // Listen for visibility and focus changes
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-    window.addEventListener('focus', handleFocus)
-
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-      window.removeEventListener('focus', handleFocus)
+      if (batchTimerRef.current) {
+        clearTimeout(batchTimerRef.current);
+      }
+    };
+  }, []);
+
+  // Listen to scroll events to detect if user is at bottom
+  useEffect(() => {
+    const container = document.querySelector('.message-list-scroll')
+    if (!container) return
+
+    const handleScroll = () => {
+      checkIfAtBottom()
     }
-  }, [conversationId])
+
+    container.addEventListener('scroll', handleScroll)
+    return () => container.removeEventListener('scroll', handleScroll)
+  }, [checkIfAtBottom])
 
   // Mobile keyboard handling
   useEffect(() => {
@@ -387,7 +451,23 @@ export function ChatScreen() {
         onPin={handlePinRequest}
         onUnpin={unpinMessage}
         isMessagePinned={isMessagePinned}
+        onMessageVisible={handleMessageVisible}
       />
+      
+      {/* WhatsApp-style "New Messages" button */}
+      {hasNewMessages && !isAtBottom && (
+        <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 z-20">
+          <button
+            onClick={() => scrollToBottom('smooth')}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 text-sm font-medium transition-all"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 5v14M19 12l-7 7-7-7"/>
+            </svg>
+            New Messages
+          </button>
+        </div>
+      )}
       
       {isTyping && <TypingIndicator userIds={typingUserIds} />}
       

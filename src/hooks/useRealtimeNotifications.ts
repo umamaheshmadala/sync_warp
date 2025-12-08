@@ -35,9 +35,13 @@ export function useRealtimeNotifications() {
 
                     // Show toast for new notification (excluding messages)
                     const notification = payload.new as any;
-                    const messageTypes = ['message_received', 'message_reply', 'coupon_shared_message', 'deal_shared_message'];
                     
-                    if (!messageTypes.includes(notification.type)) {
+                    // Check both 'type' and 'notification_type' (DB column might be notification_type)
+                    const notifType = notification.type || notification.notification_type;
+                    
+                    const messageTypes = ['message', 'new_message', 'message_received', 'message_reply', 'coupon_shared_message', 'deal_shared_message'];
+                    
+                    if (!messageTypes.includes(notifType)) {
                         toast(notification.message, {
                             icon: '🔔',
                             duration: 4000,
