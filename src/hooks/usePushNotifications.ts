@@ -55,30 +55,12 @@ export const usePushNotifications = (userId: string | null) => {
     }
   };
 
-  useEffect(() => {
-    console.log('[usePushNotifications] Hook effect triggered. UserId:', userId, 'Platform:', Capacitor.getPlatform(), 'IsNative:', Capacitor.isNativePlatform());
-
-    // Only run on native platforms
-    if (!Capacitor.isNativePlatform()) {
-      console.log('[usePushNotifications] Skipping - not a native platform');
-      return;
-    }
-
-    // Only register if user is logged in
-    if (!userId) {
-      console.log('[usePushNotifications] Skipping - no userId provided');
-      return;
-    }
-
   const registerPushNotifications = async () => {
     try {
       console.log('[usePushNotifications] Starting registration for user:', userId);
       console.log('[usePushNotifications] Platform:', Capacitor.getPlatform());
 
       // Set up listeners FIRST before registering
-      // Note: We might be setting up duplicate listeners if called multiple times.
-      // Ideally we should check if they are already set or use a ref.
-      // For now, let's remove verification/debug simplicity concerns, we'll verify listeners below.
       await PushNotifications.removeAllListeners();
       
       // Token registered successfully
@@ -150,9 +132,22 @@ export const usePushNotifications = (userId: string | null) => {
   };
 
   useEffect(() => {
-    if (Capacitor.isNativePlatform() && userId) {
-      registerPushNotifications();
+    console.log('[usePushNotifications] Hook effect triggered. UserId:', userId, 'Platform:', Capacitor.getPlatform(), 'IsNative:', Capacitor.isNativePlatform());
+
+    // Only run on native platforms
+    if (!Capacitor.isNativePlatform()) {
+      console.log('[usePushNotifications] Skipping - not a native platform');
+      return;
     }
+
+    // Only register if user is logged in
+    if (!userId) {
+      console.log('[usePushNotifications] Skipping - no userId provided');
+      return;
+    }
+
+    registerPushNotifications();
+
     return () => {
       PushNotifications.removeAllListeners();
     };

@@ -55,6 +55,7 @@ export function usePinnedMessages(conversationId: string) {
       try {
         await pinnedMessageService.unpinMessage(messageId, conversationId);
         toast.success("Message unpinned");
+        // Note: Subscription callback will refresh pins automatically
       } catch (error) {
         // Revert optimistic update
         setPinnedMessages(previousPins);
