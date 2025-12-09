@@ -178,7 +178,7 @@ export const usePushNotifications = (userId: string | null) => {
       // PushNotifications.removeAllListeners();
       appStateListener.then(listener => listener.remove());
     };
-    };
+
   }, [userId]);
 
   // Function to manually remove token from database
