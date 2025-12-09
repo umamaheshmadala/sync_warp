@@ -198,7 +198,7 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
   }
 
   return (
-    <div className="bg-white px-2 py-1 border-t">
+    <div className="sticky bottom-0 bg-white px-2 py-1 border-t z-10">
       {/* Edit Context - WhatsApp style indicator */}
       {editingMessage && (
         <div className="mb-2 flex items-center gap-2 bg-blue-50 rounded-lg p-2 border-l-4 border-blue-500">
