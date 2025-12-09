@@ -1,7 +1,7 @@
 # Story 8.6.6: In-App Notifications (Notification Center)
 
 **Epic:** 8.6 - Notifications & Messaging Improvements
-**Status:** In Progress (Stalled)
+**Status:** Complete ✅
 **Priority:** High
 
 ## 1. Goal
@@ -55,26 +55,42 @@ Provide users with a centralized "Notification Center" where they can view a his
 
 ## 4. Acceptance Criteria
 
-- [ ] User can view a list of past notifications.
-- [ ] Tapping a notification navigates to the deep link (e.g., Chat).
-- [ ] Tapping marks it as read.
-- [ ] Muted conversations do **not** appear in the list (verified by checking `notification_log` is empty for them).
-- [ ] Realtime updates work (new notification appears at top).
+- [x] User can view a list of past notifications.
+- [x] Tapping a notification navigates to the deep link (e.g., Chat).
+- [x] Tapping marks it as read.
+- [x] Muted conversations do **not** appear in the list (verified by checking `notification_log` is empty for them).
+- [x] Realtime updates work (new notification appears at top).
+- [x] In-app toast banners display for new messages (when not in conversation and not muted).
 
-## 5. Known Issues (Deferred)
+## 5. Resolution Summary
 
-> [!WARNING]
-> **Regression: Message Badge vs. Toast Conflict**
-> When enabling Realtime for `notification_log` and updating `subscribeToConversations` to listen to it (for reliable badge updates), the in-app banner (toast) sometimes fails to appear. There seems to be a conflict or race condition when multiple listeners (hook + service) subscribe to the same `notification_log` table simultaneously.
+> [!NOTE]
+> **Issue Resolved: Message Badge vs. Toast Conflict**
+>
+> **Previous State:**
+>
+> - When enabling Realtime for `notification_log`, in-app banners (toasts) sometimes failed to appear on mobile.
+> - There was a conflict when multiple listeners subscribed to the same `notification_log` table.
+>
+> **Root Cause:**
+>
+> - Supabase Realtime has a limitation where only ONE subscription to a table fires when multiple subscriptions exist on the same client, even with unique channel names.
+>
+> **Solution Implemented:**
+>
+> - **Event Bridge Pattern**: `useInAppNotifications` receives the Realtime event and dispatches a custom JavaScript event (`notification-log-insert`)
+> - `useRealtimeNotifications` listens for this custom event to display toasts
+> - Both hooks maintain unique Realtime channels for future compatibility
+>
+> **Additional Fixes:**
+>
+> - Added `conversation-updated` event dispatch after mute/unmute to refresh UI
+> - Enhanced logging for mobile debugging
+> - Improved toast styling with z-index and safe area support
 >
 > **Current State:**
 >
-> - `notification_log` is enabled for Realtime.
-> - `in_app_notifications` view excludes messages (Correct).
-> - `subscribeToConversations` (RealtimeService) listens to `notification_log` for updates.
-> - **Bug:** Badge updates work, but Toasts are inconsistent (sometimes missing).
->
-> **Next Steps:**
->
-> - Debug the interaction between `useRealtimeNotifications` and `realtimeService`.
-> - Consider consolidating the listeners or investigating if Supabase Realtime is dropping events due to duplicate channel filters.
+> - ✅ Badge updates work reliably
+> - ✅ Toasts display correctly on mobile
+> - ✅ Notification list updates in real-time
+> - ✅ Mute UI updates properly after operations
