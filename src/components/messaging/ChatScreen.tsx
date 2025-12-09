@@ -55,7 +55,6 @@ export function ChatScreen() {
   const { retryMessage } = useSendMessage() // For retrying failed messages (Story 8.2.7)
   
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const [keyboardPadding, setKeyboardPadding] = useState(0)
   const prevMessageCount = useRef(messages.length)
   
   // Reply state (Story 8.10.5)
@@ -328,7 +327,6 @@ export function ChatScreen() {
   return (
     <div 
       className="flex flex-col h-full bg-white chat-screen"
-      style={{ paddingBottom: keyboardPadding }}
     >
       <ChatHeader 
         conversationId={conversationId} 
