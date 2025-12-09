@@ -42,6 +42,9 @@ export function useRealtimeNotifications() {
             queryClient.invalidateQueries({ queryKey: ['notifications'] });
             queryClient.invalidateQueries({ queryKey: ['all-notifications'] });
 
+            // Dispatch event to update conversation list (and unread badge in Header.tsx which relies on useMessagingStore)
+            window.dispatchEvent(new Event('conversation-updated'));
+
             const notification = payload.new as any;
             
             // Deduplication check
@@ -148,6 +151,7 @@ export function useRealtimeNotifications() {
             console.log('[useRealtimeNotifications] Received foreground push event');
             queryClient.invalidateQueries({ queryKey: ['notifications'] });
             queryClient.invalidateQueries({ queryKey: ['all-notifications'] });
+            window.dispatchEvent(new Event('conversation-updated'));
         };
 
         window.addEventListener('foreground-notification', handleForegroundPush);
