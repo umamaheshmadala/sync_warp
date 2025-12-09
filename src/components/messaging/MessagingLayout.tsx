@@ -22,7 +22,7 @@ export function MessagingLayout() {
   // - Always show Chat (or Empty State)
 
   return (
-    <div className="flex h-[calc(100vh-64px)] bg-gray-50"> {/* Adjust height for Navbar */}
+    <div className="flex h-[calc(100vh-128px)] md:h-[calc(100vh-64px)] bg-gray-50"> {/* Mobile: -128px for header+nav, Desktop: -64px for header only */}
       {/* Sidebar Area */}
       <div className={cn(
         "w-full md:w-[350px] lg:w-[380px] border-r bg-white flex flex-col h-full z-10",

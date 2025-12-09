@@ -14,11 +14,11 @@ interface Props {
 }
 
 export function ConversationFilterTabs({ activeFilter, onFilterChange, counts }: Props) {
-  const tabs: Array<{ key: ConversationFilter; label: string; count: number }> = [
-    { key: 'all', label: 'All', count: counts.all },
-    { key: 'unread', label: 'Unread', count: counts.unread },
-    { key: 'pinned', label: 'Pinned', count: counts.pinned },
-    { key: 'archived', label: 'Archived', count: counts.archived },
+  const tabs: Array<{ key: ConversationFilter; label: string; count: number; showBadge: boolean }> = [
+    { key: 'all', label: 'Inbox', count: counts.all, showBadge: false },
+    { key: 'unread', label: 'Unread', count: counts.unread, showBadge: true },
+    { key: 'pinned', label: 'Pinned', count: counts.pinned, showBadge: false },
+    { key: 'archived', label: 'Archived', count: counts.archived, showBadge: false },
   ]
 
   return (
@@ -38,7 +38,7 @@ export function ConversationFilterTabs({ activeFilter, onFilterChange, counts }:
           aria-current={activeFilter === tab.key ? 'page' : undefined}
         >
           <span>{tab.label}</span>
-          {tab.count > 0 && (
+          {tab.showBadge && tab.count > 0 && (
             <span
               className={cn(
                 'ml-2 px-2 py-0.5 rounded-full text-xs font-semibold',

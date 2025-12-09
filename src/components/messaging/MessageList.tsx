@@ -1,4 +1,5 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
+import { useParams } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import { MessageBubble } from './MessageBubble'
 import { Loader2 } from 'lucide-react'
@@ -18,6 +19,7 @@ interface MessageListProps {
   onPin?: (messageId: string) => void
   onUnpin?: (messageId: string) => void
   isMessagePinned?: (messageId: string) => boolean
+  lastReadMessageId?: string | null // For unread divider
 }
 
 /**
@@ -53,12 +55,31 @@ export function MessageList({
   messagesEndRef,
   onPin,
   onUnpin,
-  isMessagePinned
+  isMessagePinned,
+  lastReadMessageId
 }: MessageListProps) {
   const currentUserId = useAuthStore(state => state.user?.id)
   const scrollRef = useRef<HTMLDivElement>(null)
   const isLoadingMore = useRef(false)
   const prevScrollHeight = useRef(0)
+  const { conversationId } = useParams<{ conversationId: string }>()
+  
+  // Track if unread divider has been seen in this session
+  const [hasSeenDivider, setHasSeenDivider] = useState(false)
+  
+  // Reset divider visibility when conversation changes
+  useEffect(() => {
+    setHasSeenDivider(false)
+  }, [conversationId])
+  
+  // Mark divider as seen when user scrolls or after a delay
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setHasSeenDivider(true)
+    }, 3000) // Hide divider after 3 seconds
+    
+    return () => clearTimeout(timer)
+  }, [conversationId])
 
   // Handle scroll to load more messages
   const handleScroll = () => {
@@ -138,14 +159,37 @@ export function MessageList({
           }
           return acc
         }, [] as Message[])
+        
+        // Find index of first unread message (after last read)
+        const firstUnreadIndex = lastReadMessageId 
+          ? uniqueMessages.findIndex(m => m.id === lastReadMessageId) + 1
+          : -1
 
         return uniqueMessages.map((message, index) => {
           // Show timestamp every 10 messages or on first message
           const showTimestamp = index === 0 || index % 10 === 0
           
+          // Show unread divider before this message if:
+          // 1. This is the first unread message
+          // 2. User hasn't seen the divider yet
+          // 3. There are unread messages
+          const showUnreadDivider = !hasSeenDivider && 
+                                     firstUnreadIndex > 0 && 
+                                     index === firstUnreadIndex
+          
           return (
-            <div key={message.id} id={`message-${message.id}`}>
-              <MessageBubble
+            <React.Fragment key={message.id}>
+              {showUnreadDivider && (
+                <div className="flex items-center gap-3 py-3 px-2">
+                  <div className="flex-1 h-[1px] bg-gradient-to-r from-transparent via-blue-500 to-transparent" />
+                  <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-3 py-1 rounded-full shadow-sm">
+                    New Messages
+                  </span>
+                  <div className="flex-1 h-[1px] bg-gradient-to-r from-transparent via-blue-500 to-transparent" />
+                </div>
+              )}
+              <div id={`message-${message.id}`}>
+                <MessageBubble
                 message={message}
                 isOwn={message.sender_id === currentUserId}
                 showTimestamp={showTimestamp}
@@ -160,6 +204,7 @@ export function MessageList({
                 isMessagePinned={isMessagePinned}
               />
             </div>
+            </React.Fragment>
           )
         })
       })()}
