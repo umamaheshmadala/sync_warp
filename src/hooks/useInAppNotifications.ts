@@ -54,6 +54,10 @@ export const useInAppNotifications = () => {
     // Realtime Subscription for Notification List
     // This hook owns its own subscription to ensure the notification list updates in real-time
     // Channel name is unique to avoid conflicts with useRealtimeNotifications (which handles toasts)
+    //
+    // IMPORTANT: We also dispatch a custom event here because Supabase Realtime appears to have a
+    // limitation where multiple subscriptions to the same table don't all fire reliably.
+    // By dispatching a custom event, we can share this single working subscription with useRealtimeNotifications.
     useEffect(() => {
         if (!user) return;
         
@@ -70,6 +74,12 @@ export const useInAppNotifications = () => {
                     console.log('[useInAppNotifications] New notification detected. Refreshing list and badge.');
                     queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
                     queryClient.invalidateQueries({ queryKey: ['notifications', 'unread', user.id] });
+                    
+                    // Forward event to useRealtimeNotifications for toast handling
+                    // This works around a Supabase limitation where multiple table subscriptions don't both fire
+                    window.dispatchEvent(new CustomEvent('notification-log-insert', { 
+                        detail: payload 
+                    }));
                 }
             )
             .subscribe();

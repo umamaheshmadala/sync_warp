@@ -143,10 +143,22 @@ export function useRealtimeNotifications() {
         };
 
         // Use RealtimeService to handle subscription with robust mobile support (reconnect, etc.)
+        // NOTE: Due to a Supabase limitation, this subscription may not fire if another subscription
+        // to the same table exists. We work around this by also listening to a custom event
+        // dispatched by useInAppNotifications.
         const unsubscribe = realtimeService.subscribeToInAppNotifications(
             user.id,
             (payload) => handleNotificationPayload(payload, 'notification_log')
         );
+
+        // WORKAROUND: Listen to custom event from useInAppNotifications
+        // This ensures we receive notification events even if the direct Realtime subscription doesn't fire
+        const handleCustomEvent = (event: Event) => {
+            const customEvent = event as CustomEvent;
+            console.log('[useRealtimeNotifications] Received custom event from useInAppNotifications');
+            handleNotificationPayload(customEvent.detail, 'notification_log');
+        };
+        window.addEventListener('notification-log-insert', handleCustomEvent);
 
         // Listen for foreground push notifications as a backup/trigger
         const handleForegroundPush = (event: Event) => {
@@ -161,6 +173,7 @@ export function useRealtimeNotifications() {
         return () => {
             console.log(`[useRealtimeNotifications] Unsubscribing`);
             unsubscribe();
+            window.removeEventListener('notification-log-insert', handleCustomEvent);
             window.removeEventListener('foreground-notification', handleForegroundPush);
         };
     }, [queryClient, user?.id]);
