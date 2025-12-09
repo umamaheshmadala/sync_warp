@@ -228,14 +228,6 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentRoute }) => 
           })}
         </div>
       </div>
-
-      {/* Safe area padding for mobile devices */}
-      <div
-        className="bg-white/95"
-        style={{
-          paddingBottom: 'max(4px, env(safe-area-inset-bottom))'
-        }}
-      />
     </motion.nav>
   );
 };
