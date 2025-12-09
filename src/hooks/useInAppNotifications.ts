@@ -52,30 +52,11 @@ export const useInAppNotifications = () => {
 
 
     // Realtime Subscription
+    // DEPRECATED: We rely on the global useRealtimeNotifications (in AppLayout) to handle invalidation
+    // This prevents double-subscription and channel conflicts on mobile.
     useEffect(() => {
-        if (!user) return; // Guard
-        
-        const channel = supabase
-            .channel('notification-center-realtime-v2') // unique channel
-            .on(
-                'postgres_changes',
-                {
-                    event: 'INSERT',
-                    schema: 'public',
-                    table: 'notification_log',
-                },
-                (payload) => {
-                    console.log('[useInAppNotifications] New notification log detected. Refreshing list.');
-                    queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
-                    queryClient.invalidateQueries({ queryKey: ['notifications', 'unread', user.id] });
-                }
-            )
-            .subscribe();
-
-        return () => {
-            supabase.removeChannel(channel);
-        };
-    }, [queryClient, user]);
+        // No-op, just to keep hook structure if needed later
+    }, []);
 
     return {
         // Flatten pages into a single array

@@ -17,6 +17,7 @@ import DevMenu from './components/DevMenu'
 import { useUpdateOnlineStatus } from './hooks/useUpdateOnlineStatus'
 import { usePresence } from './hooks/usePresence'
 import { useRealtimeFriends } from './hooks/friends/useRealtimeFriends'
+import { realtimeService } from './services/realtimeService'
 
 // Configure React Query with optimistic updates and caching
 const queryClient = new QueryClient({
@@ -57,6 +58,16 @@ function AppContent() {
 
   // Monitor push notification status
   useEffect(() => {
+    // Initialize RealtimeService for robust mobile handling
+    const initRealtime = async () => {
+      try {
+        await realtimeService.init();
+      } catch (err) {
+        console.error('Failed to init realtime service', err);
+      }
+    };
+    initRealtime();
+
     if (!Capacitor.isNativePlatform()) return
 
     if (pushState.isRegistered && pushState.syncedToBackend) {

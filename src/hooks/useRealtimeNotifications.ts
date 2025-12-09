@@ -99,10 +99,40 @@ export function useRealtimeNotifications() {
 
             if (shouldShowToast) {
                 console.log(`[useRealtimeNotifications] ✅ Showing toast for: '${type}'`);
-                toast(messageConfig, {
-                    icon: '🔔',
+                // Custom 2-line banner toast
+                toast.custom((t) => (
+                    <div
+                        onClick={() => {
+                            toast.dismiss(t.id);
+                            // navigate? (future enhancement)
+                        }}
+                        style={{
+                            opacity: t.visible ? 1 : 0,
+                            transform: t.visible ? 'translateY(0)' : 'translateY(-20px)',
+                            transition: 'all 0.3s ease',
+                            background: '#333',
+                            color: '#fff',
+                            padding: '12px 16px',
+                            borderRadius: '8px',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            maxWidth: '350px',
+                            width: '100%',
+                            gap: '12px',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        <div style={{ fontSize: '24px' }}>🔔</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                            <div style={{ fontWeight: '600', fontSize: '14px' }}>{notification.title || 'New Notification'}</div>
+                            <div style={{ fontSize: '13px', opacity: 0.9, lineHeight: '1.4' }}>{messageConfig}</div>
+                        </div>
+                    </div>
+                ), {
                     duration: 4000,
                     id: notification.id,
+                    position: 'top-center', // Banners usually look best at top
                 });
             }
         };
