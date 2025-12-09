@@ -51,10 +51,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   // Hide bottom navigation when keyboard is visible on messages route
   const shouldShowBottomNav = !isKeyboardVisible || !isMessagesRoute;
   
+  // Also remove bottom padding when keyboard is visible on messages route
+  const mainClassName = isKeyboardVisible && isMessagesRoute 
+    ? "flex-1 pt-16 pb-0 md:pt-16 md:pb-0" 
+    : "flex-1 pt-16 pb-16 md:pt-16 md:pb-0";
+  
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
-      <main className="flex-1 pt-16 pb-16 md:pt-16 md:pb-0">{children}</main>
+      <main className={mainClassName}>{children}</main>
       {shouldShowBottomNav && <BottomNavigation currentRoute={location.pathname} />}
     </div>
   );

@@ -1,6 +1,7 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Capacitor } from '@capacitor/core'
+import { supabase } from '../../lib/supabase'
 
 import { ArrowLeft, MoreVertical, Video, Phone, Trash, Archive, Pin, MessageSquare, CheckCircle, ArchiveX, PinOff, AlertCircle, BellOff, Bell, Search } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
@@ -49,12 +50,22 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
     )?.friend_profile
   }, [friends, conversation])
   
-  // Get friend ID for modal
-  const friendId = React.useMemo(() => {
-    if (!conversation) return null
-    const userId = useMessagingStore.getState().userId
-    const isParticipant1 = userId === conversation.participant1_id
-    return isParticipant1 ? conversation.participant2_id : conversation.participant1_id
+  // Get other participant ID for profile modal
+  const [otherParticipantId, setOtherParticipantId] = React.useState<string | null>(null)
+  
+  React.useEffect(() => {
+    if (!conversation) return
+    
+    const getOtherParticipant = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      
+      const { participant1_id, participant2_id } = conversation
+      const otherId = user.id === participant1_id ? participant2_id : participant1_id
+      setOtherParticipantId(otherId)
+    }
+    
+    getOtherParticipant()
   }, [conversation])
 
   // Early return AFTER all hooks
@@ -329,9 +340,9 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
       )}
       
       {/* Friend Profile Modal */}
-      {showProfileModal && friendId && (
+      {showProfileModal && otherParticipantId && (
         <FriendProfileModal
-          friendId={friendId}
+          friendId={otherParticipantId}
           isOpen={showProfileModal}
           onClose={() => setShowProfileModal(false)}
         />
