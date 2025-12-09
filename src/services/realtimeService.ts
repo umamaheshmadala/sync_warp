@@ -427,6 +427,50 @@ class RealtimeService {
     // Usually we rely on RLS to only send events for rows the user can see.
     // Or we subscribe to `conversation_participants` table.
     // For now, let's assume we subscribe to conversations and RLS handles visibility, or we accept some noise.
+    // For now, let's assume we subscribe to conversations and RLS handles visibility, or we accept some noise.
+    return () => this.unsubscribe(channelName);
+  }
+
+  /**
+   * Subscribe to in-app notifications (toasts)
+   * Uses a unique channel to avoid conflicts and leverages RealtimeService's robustness
+   * 
+   * @param userId - User UUID
+   * @param onNotification - Callback with payload
+   * @returns Unsubscribe function
+   */
+  subscribeToInAppNotifications(
+    userId: string,
+    onNotification: (payload: any) => void
+  ): () => void {
+    // Unique channel name to prevent conflicts with other listeners
+    const channelName = `realtime-notifications-toast-${userId}`;
+    
+    this.unsubscribe(channelName);
+    
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notification_log',
+          filter: `user_id=eq.${userId}`
+        },
+        (payload) => {
+          console.log('🔔 [RealtimeService] New in-app notification received:', payload.new.id);
+          onNotification(payload);
+        }
+      )
+      .subscribe((status) => {
+        console.log(`🔔 [RealtimeService] In-app notification subscription status [${channelName}]:`, status);
+        if (status === 'SUBSCRIBED') {
+          console.log(`✅ [RealtimeService] Successfully subscribed to in-app notifications for ${userId}`);
+        }
+      });
+      
+    this.channels.set(channelName, channel);
     return () => this.unsubscribe(channelName);
   }
 

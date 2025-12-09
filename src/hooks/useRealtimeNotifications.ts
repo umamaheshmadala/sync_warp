@@ -106,27 +106,11 @@ export function useRealtimeNotifications() {
             }
         };
 
-        // Use a unique channel per user to prevent conflicts
-        const channelName = `realtime-notifications-toast-${user.id}`;
-        
-        const channel = supabase
-            .channel(channelName)
-            .on(
-                'postgres_changes',
-                {
-                    event: 'INSERT',
-                    schema: 'public',
-                    table: 'notification_log',
-                    filter: `user_id=eq.${user.id}`,
-                },
-                (payload) => handleNotificationPayload(payload, 'notification_log')
-            )
-            .subscribe((status) => {
-                console.log(`[useRealtimeNotifications] Subscription status for ${channelName}:`, status);
-                if (status === 'SUBSCRIBED') {
-                    console.log(`[useRealtimeNotifications] Listening for notifications on channel: ${channelName}`);
-                }
-            });
+        // Use RealtimeService to handle subscription with robust mobile support (reconnect, etc.)
+        const unsubscribe = realtimeService.subscribeToInAppNotifications(
+            user.id,
+            (payload) => handleNotificationPayload(payload, 'notification_log')
+        );
 
         // Listen for foreground push notifications as a backup/trigger
         const handleForegroundPush = (event: Event) => {
@@ -138,8 +122,8 @@ export function useRealtimeNotifications() {
         window.addEventListener('foreground-notification', handleForegroundPush);
 
         return () => {
-            console.log(`[useRealtimeNotifications] Unsubscribing from ${channelName}`);
-            supabase.removeChannel(channel);
+            console.log(`[useRealtimeNotifications] Unsubscribing`);
+            unsubscribe();
             window.removeEventListener('foreground-notification', handleForegroundPush);
         };
     }, [queryClient, user?.id]);
