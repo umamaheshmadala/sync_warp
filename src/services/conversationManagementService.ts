@@ -355,6 +355,9 @@ class ConversationManagementService {
 
     optimisticUpdates.confirmUpdate(updateId)
     console.log('✅ Conversation muted')
+    
+    // Trigger conversation list refetch to update UI
+    window.dispatchEvent(new Event('conversation-updated'))
   }
 
   /**
@@ -382,6 +385,9 @@ class ConversationManagementService {
 
     optimisticUpdates.confirmUpdate(updateId)
     console.log('✅ Conversation unmuted')
+    
+    // Trigger conversation list refetch to update UI
+    window.dispatchEvent(new Event('conversation-updated'))
   }
 
   /**
