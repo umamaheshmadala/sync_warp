@@ -19,6 +19,7 @@ import { conversationManagementService } from '../../services/conversationManage
 import { DeleteConversationDialog } from './DeleteConversationDialog'
 import { ClearChatDialog } from './ClearChatDialog'
 import { MuteConversationDialog } from './MuteConversationDialog'
+import { FriendProfileModal } from '../friends/FriendProfileModal'
 import { showDeleteConversationSheet } from './DeleteConversationSheet'
 import { toast } from 'react-hot-toast'
 
@@ -34,6 +35,7 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
   const [showDeleteDialog, setShowDeleteDialog] = React.useState(false)
   const [showClearDialog, setShowClearDialog] = React.useState(false)
   const [showMuteDialog, setShowMuteDialog] = React.useState(false)
+  const [showProfileModal, setShowProfileModal] = React.useState(false)
   
   // Find the conversation
   const conversation = conversations.find(c => c.conversation_id === conversationId)
@@ -46,6 +48,14 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
       f.friend_profile.user_id === conversation.participant2_id
     )?.friend_profile
   }, [friends, conversation])
+  
+  // Get friend ID for modal
+  const friendId = React.useMemo(() => {
+    if (!conversation) return null
+    const userId = useMessagingStore.getState().userId
+    const isParticipant1 = userId === conversation.participant1_id
+    return isParticipant1 ? conversation.participant2_id : conversation.participant1_id
+  }, [conversation])
 
   // Early return AFTER all hooks
   if (!conversation) {
@@ -87,7 +97,7 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
             navigate('/messages')
           }
           break
-
+          
         case 'mark_unread':
           await conversationManagementService.markConversationAsUnread(conversationId)
           toast.success('Marked as unread')
@@ -158,42 +168,46 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
   }
 
   return (
-    <div className="bg-white border-b px-3 py-2 flex items-center justify-between shadow-sm z-10">
-      <div className="flex items-center gap-2">
-        {/* Back Button (Mobile only) */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => navigate('/messages')}
-          className="md:hidden h-8 w-8 text-gray-600"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-
-        {/* Avatar & Info */}
-        <div className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded-lg transition-colors">
-          <div className="relative">
-            <Avatar className="h-8 w-8">
-              <AvatarImage src={other_participant_avatar || undefined} />
-              <AvatarFallback className="bg-blue-600 text-white text-xs">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
-            {friendProfile?.is_online && (
-              <div className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-green-500" />
-            )}
-          </div>
+    <div className="sticky top-0 z-40 bg-white border-b border-gray-200">
+      <div className="flex items-center justify-between px-3 py-2">
+        {/* Left section */}
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate('/messages')}
+            className="text-gray-600 hover:text-gray-900 flex-shrink-0"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
           
-          <div className="flex flex-col">
-            <h2 className="text-sm font-semibold text-gray-900 leading-none">
-              {other_participant_name || 'Unknown User'}
-            </h2>
-            <span className="text-xs text-gray-500 mt-0.5">
-              {friendProfile?.is_online ? 'Active now' : 'View profile'}
-            </span>
+          {/* Avatar + Name */}
+          <div 
+            className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => setShowProfileModal(true)}
+          >
+            <div className="relative flex-shrink-0">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={other_participant_avatar || undefined} />
+                <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white text-xs">
+                  {other_participant_name?.substring(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              {friendProfile?.is_online && (
+                <div className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-green-500" />
+              )}
+            </div>
+            
+            <div className="flex flex-col">
+              <h2 className="text-sm font-semibold text-gray-900 leading-none">
+                {other_participant_name || 'Unknown User'}
+              </h2>
+              <span className="text-xs text-blue-600 mt-0.5 hover:underline">
+                {friendProfile?.is_online ? 'Active now' : 'View profile'}
+              </span>
+            </div>
           </div>
         </div>
-      </div>
 
       {/* Actions */}
       <div className="flex items-center gap-1">
@@ -313,6 +327,16 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
           }}
         />
       )}
+      
+      {/* Friend Profile Modal */}
+      {showProfileModal && friendId && (
+        <FriendProfileModal
+          friendId={friendId}
+          isOpen={showProfileModal}
+          onClose={() => setShowProfileModal(false)}
+        />
+      )}
+      </div>
     </div>
   )
 }

@@ -126,7 +126,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentRoute }) => 
     >
       {/* Container with max width matching header */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-around py-2">
+        <div className="flex items-center justify-around py-1">
           {navItems.map((item) => {
             const IconComponent = item.icon;
             const active = isActive(item.route);
@@ -135,7 +135,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentRoute }) => 
               <motion.button
                 key={item.id}
                 onClick={() => handleNavClick(item.route, item.id)}
-                className="flex flex-col items-center justify-center p-2 rounded-lg relative min-w-0 flex-1 group"
+                className="flex flex-col items-center justify-center p-1 rounded-lg relative min-w-0 flex-1 group"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 transition={{ type: "spring", stiffness: 400, damping: 25 }}
@@ -176,7 +176,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentRoute }) => 
                   }}
                 >
                   <IconComponent
-                    className={`h-6 w-6 transition-all duration-200 ${active ? (item.activeColor || 'text-indigo-600') : (item.color || 'text-gray-500')
+                    className={`h-5 w-5 transition-all duration-200 ${active ? (item.activeColor || 'text-indigo-600') : (item.color || 'text-gray-500')
                       } group-hover:scale-110`}
                     strokeWidth={active ? 2.5 : 2}
                   />
@@ -184,7 +184,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentRoute }) => 
 
                 {/* Label with smooth transitions */}
                 <motion.span
-                  className={`mt-1 text-xs font-medium transition-all duration-200 relative z-10 ${active ? (item.activeColor || 'text-indigo-600') : (item.color || 'text-gray-500')
+                  className={`mt-0.5 text-[10px] font-medium transition-all duration-200 relative z-10 ${active ? (item.activeColor || 'text-indigo-600') : (item.color || 'text-gray-500')
                     }`}
                   animate={{
                     y: active ? -1 : 0,
@@ -233,7 +233,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentRoute }) => 
       <div
         className="bg-white/95"
         style={{
-          paddingBottom: 'max(8px, env(safe-area-inset-bottom))'
+          paddingBottom: 'max(4px, env(safe-area-inset-bottom))'
         }}
       />
     </motion.nav>
