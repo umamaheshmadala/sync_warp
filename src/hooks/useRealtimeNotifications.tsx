@@ -117,13 +117,15 @@ export function useRealtimeNotifications() {
                             color: '#fff',
                             padding: '12px 16px',
                             borderRadius: '8px',
-                            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                            boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
                             display: 'flex',
                             alignItems: 'center',
-                            maxWidth: '350px',
-                            width: '100%',
+                            maxWidth: 'calc(100vw - 32px)', // Responsive width
+                            width: '350px',
                             gap: '12px',
-                            cursor: 'pointer'
+                            cursor: 'pointer',
+                            zIndex: 99999, // Ensure it's on top
+                            marginTop: '40px' // Safe area for status bar
                         }}
                     >
                         <div style={{ fontSize: '24px' }}>🔔</div>
@@ -135,7 +137,7 @@ export function useRealtimeNotifications() {
                 ), {
                     duration: 4000,
                     id: notification.id,
-                    position: 'top-center', // Banners usually look best at top
+                    position: 'top-center',
                 });
             }
         };

@@ -455,8 +455,9 @@ class RealtimeService {
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'notification_log',
-          filter: `user_id=eq.${userId}`
+          table: 'notification_log'
+          // Filter removed: Relying on RLS policy to filter rows by user_id. 
+          // Explicit filters can sometimes cause issues if types don't match perfectly.
         },
         (payload) => {
           console.log('🔔 [RealtimeService] New in-app notification received:', payload.new.id);
@@ -665,8 +666,10 @@ class RealtimeService {
           // Reconnection is automatic with Supabase
         } else if (status === 'TIMED_OUT') {
           console.warn('⏱️ Realtime connection timed out');
+          // toast.error('Connection timed out');
         } else if (status === 'CLOSED') {
           console.warn('🔌 Realtime connection closed');
+          // toast.error('Connection closed');
         }
       });
     
