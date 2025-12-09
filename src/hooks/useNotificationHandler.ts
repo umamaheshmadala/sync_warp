@@ -60,8 +60,16 @@ export const useNotificationHandler = () => {
           const data = notification.data as NotificationData
           
           // STRICT SUPPRESSION: If it's a message, NEVER show a foreground toast
-          if (data.type === 'message' || data.type?.includes('message')) {
-             console.log('[useNotificationHandler] Suppressing toast/alert for message notification (user preference)')
+          // We rely on useRealtimeNotifications for message toasts to avoid duplicates
+          const isMessage = 
+              data.type === 'message' || 
+              data.type === 'new_message' ||
+              data.type?.includes('message') ||
+              !!data.conversationId || 
+              !!data.conversation_id;
+
+          if (isMessage) {
+             console.log('[useNotificationHandler] Suppressing toast/alert for message notification (handled by Realtime)', { type: data.type, id: data.conversation_id })
              return
           }
           
