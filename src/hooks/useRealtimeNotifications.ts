@@ -3,6 +3,7 @@ import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '@/store/authStore';
+import { realtimeService } from '@/services/realtimeService';
 import { notificationSettingsService } from '@/services/notificationSettingsService';
 
 export function useRealtimeNotifications() {
