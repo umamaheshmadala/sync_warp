@@ -51,12 +51,33 @@ export const useInAppNotifications = () => {
     });
 
 
-    // Realtime Subscription
-    // DEPRECATED: We rely on the global useRealtimeNotifications (in AppLayout) to handle invalidation
-    // This prevents double-subscription and channel conflicts on mobile.
+    // Realtime Subscription for Notification List
+    // This hook owns its own subscription to ensure the notification list updates in real-time
+    // Channel name is unique to avoid conflicts with useRealtimeNotifications (which handles toasts)
     useEffect(() => {
-        // No-op, just to keep hook structure if needed later
-    }, []);
+        if (!user) return;
+        
+        const channel = supabase
+            .channel(`notification-list-realtime-${user.id}`) // Unique channel per user
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'notification_log',
+                },
+                (payload) => {
+                    console.log('[useInAppNotifications] New notification detected. Refreshing list and badge.');
+                    queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
+                    queryClient.invalidateQueries({ queryKey: ['notifications', 'unread', user.id] });
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [queryClient, user]);
 
     return {
         // Flatten pages into a single array

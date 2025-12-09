@@ -448,6 +448,10 @@ class RealtimeService {
     
     this.unsubscribe(channelName);
     
+    console.log(`[RealtimeService] 🚀 Setting up in-app notification subscription for user: ${userId}`);
+    console.log(`[RealtimeService] 📡 Channel name: ${channelName}`);
+    console.log(`[RealtimeService] 📊 Current active channels: ${this.getActiveChannelCount()}`);
+    
     const channel = supabase
       .channel(channelName)
       .on(
@@ -460,18 +464,38 @@ class RealtimeService {
           // Explicit filters can sometimes cause issues if types don't match perfectly.
         },
         (payload) => {
-          console.log('🔔 [RealtimeService] New in-app notification received:', payload.new.id);
+          console.log('🔔 [RealtimeService] ✅ In-app notification event received!');
+          console.log('🔔 [RealtimeService] 📦 Payload:', {
+            id: payload.new.id,
+            type: payload.new.notification_type,
+            userId: payload.new.user_id,
+            timestamp: new Date().toISOString()
+          });
           onNotification(payload);
         }
       )
       .subscribe((status) => {
-        console.log(`🔔 [RealtimeService] In-app notification subscription status [${channelName}]:`, status);
+        console.log(`🔔 [RealtimeService] 📡 Subscription status update [${channelName}]:`, status);
+        
         if (status === 'SUBSCRIBED') {
-          console.log(`✅ [RealtimeService] Successfully subscribed to in-app notifications for ${userId}`);
+          console.log(`✅ [RealtimeService] 🎉 Successfully subscribed to in-app notifications!`);
+          console.log(`✅ [RealtimeService] Listening for INSERT events on notification_log`);
+          console.log(`✅ [RealtimeService] User filter: ${userId} (via RLS)`);
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error(`❌ [RealtimeService] Channel error for ${channelName}`);
+          console.error(`❌ [RealtimeService] This might indicate a network or permission issue`);
+        } else if (status === 'TIMED_OUT') {
+          console.error(`⏱️ [RealtimeService] Channel subscription timed out: ${channelName}`);
+        } else if (status === 'CLOSED') {
+          console.warn(`🔌 [RealtimeService] Channel closed: ${channelName}`);
+        } else {
+          console.log(`📊 [RealtimeService] Status: ${status} for channel: ${channelName}`);
         }
       });
       
     this.channels.set(channelName, channel);
+    console.log(`[RealtimeService] 💾 Channel registered. Total channels: ${this.getActiveChannelCount()}`);
+    
     return () => this.unsubscribe(channelName);
   }
 
