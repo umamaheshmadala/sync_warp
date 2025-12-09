@@ -172,9 +172,8 @@ export function ChatScreen() {
     let hideListener: any;
 
     const setupListeners = async () => {
-      showListener = await Keyboard.addListener('keyboardWillShow', (info) => {
-        console.log('⌨️ Keyboard showing, height:', info.keyboardHeight)
-        setKeyboardPadding(info.keyboardHeight)
+      showListener = await Keyboard.addListener('keyboardWillShow', () => {
+        console.log('⌨️ Keyboard showing')
         
         // Auto-scroll to bottom when keyboard shows
         setTimeout(() => scrollToBottom('auto'), 100)
@@ -182,7 +181,6 @@ export function ChatScreen() {
 
       hideListener = await Keyboard.addListener('keyboardWillHide', () => {
         console.log('⌨️ Keyboard hiding')
-        setKeyboardPadding(0)
       })
     }
 
