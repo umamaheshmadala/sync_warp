@@ -141,7 +141,8 @@ export function MessageList({
   return (
     <div
       ref={scrollRef}
-      className="flex-1 overflow-y-auto px-4 py-4 pb-20 space-y-1 message-list-scroll bg-white"
+      className="flex-1 overflow-y-auto px-4 py-4 space-y-1 message-list-scroll bg-white"
+      style={{ paddingBottom: 'max(64px, env(safe-area-inset-bottom))' }}
     >
       {/* Load More Indicator */}
       {hasMore && (
