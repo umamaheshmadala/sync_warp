@@ -48,6 +48,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   }
 
+  // Hide bottom navigation when keyboard is visible on messages route
+  const shouldShowBottomNav = !isKeyboardVisible || !isMessagesRoute;
 
   return (
     <div className="grid h-screen" style={{
