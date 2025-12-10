@@ -22,6 +22,7 @@ import { usePinnedMessages } from '../../hooks/usePinnedMessages'
 import { PinnedMessagesBanner } from './PinnedMessagesBanner'
 import { PinDurationDialog } from './PinDurationDialog'
 import type { PinDuration } from '../../services/pinnedMessageService'
+import { supabase } from '../../services/supabase'
 import './ChatScreen.css'
 
 /**
@@ -70,6 +71,35 @@ export function ChatScreen() {
   const { pinnedMessages, pinMessage, unpinMessage, isMessagePinned, canPin } = usePinnedMessages(conversationId || '')
   const [showPinDialog, setShowPinDialog] = useState(false)
   const [pinningMessageId, setPinningMessageId] = useState<string | null>(null)
+
+  // Last read state (for unread divider)
+  const [lastReadAt, setLastReadAt] = useState<string | null>(null)
+  const currentUserId = useAuthStore(state => state.user?.id)
+
+  // Fetch last read timestamp when entering conversation
+  useEffect(() => {
+    if (!conversationId || !currentUserId) return
+
+    const fetchLastRead = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('conversation_participants')
+          .select('last_read_at')
+          .eq('conversation_id', conversationId)
+          .eq('user_id', currentUserId)
+          .single()
+
+        if (error) throw error
+
+        console.log('📖 Fetched last_read_at:', data?.last_read_at)
+        setLastReadAt(data?.last_read_at || null)
+      } catch (err) {
+        console.error('Failed to fetch last read status:', err)
+      }
+    }
+
+    fetchLastRead()
+  }, [conversationId, currentUserId])
 
   // Search state (Story 8.5.4)
   const [showSearch, setShowSearch] = useState(false)
@@ -383,6 +413,7 @@ export function ChatScreen() {
         onPin={handlePinRequest}
         onUnpin={unpinMessage}
         isMessagePinned={isMessagePinned}
+        lastReadAt={lastReadAt}
       />
 
       {isTyping && <TypingIndicator userIds={typingUserIds} />}

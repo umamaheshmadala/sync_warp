@@ -19,7 +19,7 @@ interface MessageListProps {
   onPin?: (messageId: string) => void
   onUnpin?: (messageId: string) => void
   isMessagePinned?: (messageId: string) => boolean
-  lastReadMessageId?: string | null // For unread divider
+  lastReadAt?: string | null // For persistent unread divider
 }
 
 /**
@@ -55,8 +55,9 @@ export function MessageList({
   messagesEndRef,
   onPin,
   onUnpin,
+  onUnpin,
   isMessagePinned,
-  lastReadMessageId
+  lastReadAt
 }: MessageListProps) {
   const currentUserId = useAuthStore(state => state.user?.id)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -64,23 +65,23 @@ export function MessageList({
   const prevScrollHeight = useRef(0)
   const { conversationId } = useParams<{ conversationId: string }>()
 
-  // Track the initial last read message ID for this session
-  const [frozenReadId, setFrozenReadId] = useState<string | null>(null)
+  // Track the initial last read timestamp for this session
+  const [frozenReadAt, setFrozenReadAt] = useState<string | null>(null)
   const prevConversationId = useRef<string | undefined>(conversationId)
 
-  // Reset frozen ID when conversation changes
+  // Reset frozen timestamp when conversation changes
   if (prevConversationId.current !== conversationId) {
-    setFrozenReadId(null)
+    setFrozenReadAt(null)
     prevConversationId.current = conversationId
   }
 
-  // Capture the last read message ID once it's available
+  // Capture the last read timestamp once it's available
   // This effectively "freezes" the divider position for the duration of the chat session
   useEffect(() => {
-    if (frozenReadId === null && lastReadMessageId) {
-      setFrozenReadId(lastReadMessageId)
+    if (frozenReadAt === null && lastReadAt) {
+      setFrozenReadAt(lastReadAt)
     }
-  }, [lastReadMessageId, frozenReadId])
+  }, [lastReadAt, frozenReadAt])
 
   // Handle scroll to load more messages
   const handleScroll = () => {
@@ -161,22 +162,26 @@ export function MessageList({
           return acc
         }, [] as Message[])
 
-        // Find index of first unread message using the FROZEN read ID
+        // Find index of first unread message using the FROZEN read timestamp
         let firstUnreadIndex = -1
 
-        if (frozenReadId) {
-          const foundIndex = uniqueMessages.findIndex(m => m.id === frozenReadId)
-          if (foundIndex !== -1) {
-            // Found the last read message, unread starts after it
-            firstUnreadIndex = foundIndex + 1
+        if (frozenReadAt) {
+          // Find first message OLDER than or equal to last read time? No, NEWER.
+          // Wait, last_read_at is when they last read. 
+          // So any message created AFTER last_read_at is unread.
+          // array is chronological? Usually.
+          // If messages are returned older->newer (standard), we find the first one where created_at > frozenReadAt
+
+          const firstUnread = uniqueMessages.findIndex(m => new Date(m.created_at) > new Date(frozenReadAt))
+
+          if (firstUnread !== -1) {
+            firstUnreadIndex = firstUnread
           } else {
-            // Last read message ID exists but not in this batch (older)
-            // So ALL messages in this batch are unread
-            firstUnreadIndex = 0
+            // All messages are older than last_read_at -> All read
+            firstUnreadIndex = -1
           }
         } else if (uniqueMessages.length > 0) {
-          // No last read message recorded (First time reading or cleared history)
-          // Assume all messages potentially unread
+          // No read history found. Assume all unread.
           firstUnreadIndex = 0
         }
 
@@ -185,13 +190,12 @@ export function MessageList({
           const showTimestamp = index === 0 || index % 10 === 0
 
           // Check if message is from another user to justify "New Messages" divider
-          // We generally don't want to flagging our own messages as "New"
           const isIncoming = message.sender_id !== currentUserId;
 
           // Show unread divider before this message if:
           // 1. We have a valid unread index (>= 0)
           // 2. This matches the index
-          // 3. The message is incoming (optional but better UX for new chats)
+          // 3. The message is incoming
           const showUnreadDivider = firstUnreadIndex >= 0 &&
             index === firstUnreadIndex &&
             isIncoming
