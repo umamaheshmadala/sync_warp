@@ -60,6 +60,10 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   server: getServerConfig(),
   plugins: {
+    Keyboard: {
+      resize: 'native',
+      resizeOnFullScreen: true,
+    },
     SplashScreen: {
       launchShowDuration: 0, // Disable Capacitor splash
       showSpinner: false,
