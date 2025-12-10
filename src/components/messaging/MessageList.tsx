@@ -64,22 +64,23 @@ export function MessageList({
   const prevScrollHeight = useRef(0)
   const { conversationId } = useParams<{ conversationId: string }>()
 
-  // Track if unread divider has been seen in this session
-  const [hasSeenDivider, setHasSeenDivider] = useState(false)
+  // Track the initial last read message ID for this session
+  const [frozenReadId, setFrozenReadId] = useState<string | null>(null)
+  const prevConversationId = useRef<string | undefined>(conversationId)
 
-  // Reset divider visibility when conversation changes
+  // Reset frozen ID when conversation changes
+  if (prevConversationId.current !== conversationId) {
+    setFrozenReadId(null)
+    prevConversationId.current = conversationId
+  }
+
+  // Capture the last read message ID once it's available
+  // This effectively "freezes" the divider position for the duration of the chat session
   useEffect(() => {
-    setHasSeenDivider(false)
-  }, [conversationId])
-
-  // Mark divider as seen when user scrolls or after a delay
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setHasSeenDivider(true)
-    }, 3000) // Hide divider after 3 seconds
-
-    return () => clearTimeout(timer)
-  }, [conversationId])
+    if (frozenReadId === null && lastReadMessageId) {
+      setFrozenReadId(lastReadMessageId)
+    }
+  }, [lastReadMessageId, frozenReadId])
 
   // Handle scroll to load more messages
   const handleScroll = () => {
@@ -160,9 +161,10 @@ export function MessageList({
           return acc
         }, [] as Message[])
 
-        // Find index of first unread message (after last read)
-        const firstUnreadIndex = lastReadMessageId
-          ? uniqueMessages.findIndex(m => m.id === lastReadMessageId) + 1
+        // Find index of first unread message using the FROZEN read ID
+        // This ensures the divider doesn't move if read status updates background
+        const firstUnreadIndex = frozenReadId
+          ? uniqueMessages.findIndex(m => m.id === frozenReadId) + 1
           : -1
 
         return uniqueMessages.map((message, index) => {
@@ -170,12 +172,10 @@ export function MessageList({
           const showTimestamp = index === 0 || index % 10 === 0
 
           // Show unread divider before this message if:
-          // 1. This is the first unread message
-          // 2. User hasn't seen the divider yet
-          // 3. There are unread messages
-          const showUnreadDivider = !hasSeenDivider &&
-            firstUnreadIndex > 0 &&
-            index === firstUnreadIndex
+          // 1. We have a valid unread index
+          // 2. This IS the first unread message
+          // 3. (Optional: Check if message is not from current user? No, showing read line is standard)
+          const showUnreadDivider = firstUnreadIndex > 0 && index === firstUnreadIndex
 
           return (
             <React.Fragment key={message.id}>
