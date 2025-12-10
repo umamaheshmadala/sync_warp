@@ -33,7 +33,7 @@ export function MessagingLayout() {
 
       {/* Main Content Area */}
       <div className={cn(
-        "relative flex-1 flex flex-col h-full min-w-0 bg-white",
+        "flex-1 flex flex-col h-full min-w-0 bg-white",
         !conversationId ? "hidden md:flex" : "flex"
       )}>
         <Outlet />

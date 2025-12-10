@@ -151,11 +151,11 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
           }
         }
       }
-      
+
       setContent('')
       resetPreviews()  // Clear link previews after sending
       onCancelReply?.()  // Clear reply context after sending
-      
+
       if (textareaRef.current) {
         textareaRef.current.style.height = 'auto'
       }
@@ -167,7 +167,7 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value
-    
+
     // Block coupon URLs (Story 8.3.4 Part 2)
     if (newValue.includes('sync://coupon/')) {
       toast.error('Please use the Share button in your wallet to share coupons', {
@@ -176,7 +176,7 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
       })
       return // Don't update content
     }
-    
+
     setContent(newValue)
     onTyping()
   }
@@ -198,7 +198,7 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
   }
 
   return (
-    <div className="bg-white px-2 py-1 border-t">
+    <div className="bg-white px-2 py-1 border-t mb-16 md:mb-0">
       {/* Edit Context - WhatsApp style indicator */}
       {editingMessage && (
         <div className="mb-2 flex items-center gap-2 bg-blue-50 rounded-lg p-2 border-l-4 border-blue-500">
@@ -240,7 +240,7 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
       {previews.length > 0 && (
         <div className="mb-2 space-y-2">
           {previews.map(preview => (
-            <LinkPreviewCard 
+            <LinkPreviewCard
               key={preview.url}
               preview={preview}
               onRemove={() => removePreview(preview.url)}
@@ -257,11 +257,10 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
             variant="ghost"
             size="icon"
             onClick={() => setShowAttachMenu(!showAttachMenu)}
-            className={`h-10 w-10 rounded-full transition-all ${
-              showAttachMenu 
-                ? 'bg-blue-100 text-blue-600 rotate-45' 
+            className={`h-10 w-10 rounded-full transition-all ${showAttachMenu
+                ? 'bg-blue-100 text-blue-600 rotate-45'
                 : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-            }`}
+              }`}
           >
             {showAttachMenu ? <X className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
           </Button>
@@ -272,20 +271,20 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
               <div className="space-y-1">
                 {/* Image Upload */}
                 <div onClick={() => setShowAttachMenu(false)}>
-                  <ImageUploadButton 
+                  <ImageUploadButton
                     conversationId={conversationId}
                     onUploadStart={() => setShowAttachMenu(false)}
-                    onUploadComplete={() => {}}
+                    onUploadComplete={() => { }}
                     variant="menu"
                   />
                 </div>
-                
+
                 {/* Video Upload */}
                 <div onClick={() => setShowAttachMenu(false)}>
-                  <VideoUploadButton 
+                  <VideoUploadButton
                     conversationId={conversationId}
                     onUploadStart={() => setShowAttachMenu(false)}
-                    onUploadComplete={() => {}}
+                    onUploadComplete={() => { }}
                     variant="menu"
                   />
                 </div>
@@ -314,11 +313,11 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
             rows={1}
             disabled={isSending}
           />
-          
+
           {/* Emoji Button - Inside text field */}
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             className="h-10 w-10 text-gray-400 hover:text-gray-600 hover:bg-transparent flex-shrink-0 mr-1"
           >
             <Smile className="h-5 w-5" />
@@ -330,11 +329,10 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
           onClick={handleSend}
           disabled={!hasText || isSending}
           size="icon"
-          className={`h-10 w-10 rounded-full flex-shrink-0 transition-all ${
-            hasText 
-              ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md' 
+          className={`h-10 w-10 rounded-full flex-shrink-0 transition-all ${hasText
+              ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md'
               : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-          }`}
+            }`}
         >
           <Send className={`h-5 w-5 ${hasText ? '' : 'opacity-50'}`} />
         </Button>
