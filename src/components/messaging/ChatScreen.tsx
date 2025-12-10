@@ -53,10 +53,10 @@ export function ChatScreen() {
   const { messages, isLoading, hasMore, loadMore } = useMessages(conversationId || null)
   const { isTyping, typingUserIds, handleTyping } = useTypingIndicator(conversationId || null)
   const { retryMessage } = useSendMessage() // For retrying failed messages (Story 8.2.7)
-  
+
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const prevMessageCount = useRef(messages.length)
-  
+
   // Reply state (Story 8.10.5)
   const [replyToMessage, setReplyToMessage] = useState<Message | null>(null)
 
@@ -86,7 +86,7 @@ export function ChatScreen() {
   // Scroll to bottom helper
   const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
     if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ 
+      messagesEndRef.current.scrollIntoView({
         behavior: Capacitor.isNativePlatform() ? 'auto' : behavior,
         block: 'end'
       })
@@ -98,7 +98,7 @@ export function ChatScreen() {
   useEffect(() => {
     const lastMessage = messages[messages.length - 1]
     const isUserMessage = lastMessage?.sender_id === 'current_user' || (lastMessage?._optimistic)
-    
+
     // Scroll if new message added OR if it's a user message (ensure visibility)
     if (messages.length > prevMessageCount.current || isUserMessage) {
       // Use a small timeout to ensure DOM is updated with new message height
@@ -174,7 +174,7 @@ export function ChatScreen() {
     const setupListeners = async () => {
       showListener = await Keyboard.addListener('keyboardWillShow', () => {
         console.log('⌨️ Keyboard showing')
-        
+
         // Auto-scroll to bottom when keyboard shows
         setTimeout(() => scrollToBottom('auto'), 100)
       })
@@ -185,7 +185,7 @@ export function ChatScreen() {
     }
 
     setupListeners()
-    
+
     return () => {
       if (showListener) showListener.remove()
       if (hideListener) hideListener.remove()
@@ -323,11 +323,11 @@ export function ChatScreen() {
 
 
   return (
-    <div 
-      className="flex flex-col flex-1 bg-white chat-screen"
+    <div
+      className="absolute inset-0 flex flex-col bg-white chat-screen"
     >
-      <ChatHeader 
-        conversationId={conversationId} 
+      <ChatHeader
+        conversationId={conversationId}
         onSearchClick={() => {
           setShowSearch(true)
           // Focus search input after a short delay to allow render
@@ -337,14 +337,14 @@ export function ChatScreen() {
           }, 100)
         }}
       />
-      
+
       {/* Pinned Messages Banner (Story 8.5.7) */}
       <PinnedMessagesBanner
         pinnedMessages={pinnedMessages}
         onMessageClick={scrollToMessage}
         onUnpin={unpinMessage}
       />
-      
+
       {/* Search UI (Story 8.5.4) */}
       {showSearch && (
         <div className="border-b bg-white z-10">
@@ -368,9 +368,9 @@ export function ChatScreen() {
           )}
         </div>
       )}
-      
-      <MessageList 
-        messages={messages} 
+
+      <MessageList
+        messages={messages}
         hasMore={hasMore}
         onLoadMore={loadMore}
         isLoading={isLoading}
@@ -384,11 +384,11 @@ export function ChatScreen() {
         onUnpin={unpinMessage}
         isMessagePinned={isMessagePinned}
       />
-      
+
       {isTyping && <TypingIndicator userIds={typingUserIds} />}
-      
+
       {/* Message Composer */}
-      <MessageComposer 
+      <MessageComposer
         conversationId={conversationId}
         onTyping={handleTyping}
         replyToMessage={replyToMessage}

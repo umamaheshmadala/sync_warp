@@ -42,9 +42,9 @@ interface MessageListProps {
  * />
  * ```
  */
-export function MessageList({ 
-  messages, 
-  hasMore, 
+export function MessageList({
+  messages,
+  hasMore,
   onLoadMore,
   isLoading = false,
   onRetry,
@@ -63,21 +63,21 @@ export function MessageList({
   const isLoadingMore = useRef(false)
   const prevScrollHeight = useRef(0)
   const { conversationId } = useParams<{ conversationId: string }>()
-  
+
   // Track if unread divider has been seen in this session
   const [hasSeenDivider, setHasSeenDivider] = useState(false)
-  
+
   // Reset divider visibility when conversation changes
   useEffect(() => {
     setHasSeenDivider(false)
   }, [conversationId])
-  
+
   // Mark divider as seen when user scrolls or after a delay
   useEffect(() => {
     const timer = setTimeout(() => {
       setHasSeenDivider(true)
     }, 3000) // Hide divider after 3 seconds
-    
+
     return () => clearTimeout(timer)
   }, [conversationId])
 
@@ -86,13 +86,13 @@ export function MessageList({
     if (!scrollRef.current || !hasMore || isLoadingMore.current) return
 
     const { scrollTop } = scrollRef.current
-    
+
     // Load more when scrolled near top (within 100px)
     if (scrollTop < 100) {
       isLoadingMore.current = true
       prevScrollHeight.current = scrollRef.current.scrollHeight
       onLoadMore()
-      
+
       // Reset loading flag after delay
       setTimeout(() => {
         isLoadingMore.current = false
@@ -105,7 +105,7 @@ export function MessageList({
     if (scrollRef.current && prevScrollHeight.current > 0) {
       const newScrollHeight = scrollRef.current.scrollHeight
       const heightDifference = newScrollHeight - prevScrollHeight.current
-      
+
       if (heightDifference > 0) {
         scrollRef.current.scrollTop = heightDifference
         prevScrollHeight.current = 0
@@ -139,9 +139,9 @@ export function MessageList({
   }
 
   return (
-    <div 
+    <div
       ref={scrollRef}
-      className="flex-1 overflow-y-auto px-4 py-4 space-y-1 message-list-scroll bg-white"
+      className="flex-1 overflow-y-auto px-4 py-4 pb-20 space-y-1 message-list-scroll bg-white"
     >
       {/* Load More Indicator */}
       {hasMore && (
@@ -149,7 +149,7 @@ export function MessageList({
           <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
         </div>
       )}
-      
+
       {/* Message Bubbles */}
       {(() => {
         // Deduplicate messages by ID (handles optimistic + realtime duplicates)
@@ -159,24 +159,24 @@ export function MessageList({
           }
           return acc
         }, [] as Message[])
-        
+
         // Find index of first unread message (after last read)
-        const firstUnreadIndex = lastReadMessageId 
+        const firstUnreadIndex = lastReadMessageId
           ? uniqueMessages.findIndex(m => m.id === lastReadMessageId) + 1
           : -1
 
         return uniqueMessages.map((message, index) => {
           // Show timestamp every 10 messages or on first message
           const showTimestamp = index === 0 || index % 10 === 0
-          
+
           // Show unread divider before this message if:
           // 1. This is the first unread message
           // 2. User hasn't seen the divider yet
           // 3. There are unread messages
-          const showUnreadDivider = !hasSeenDivider && 
-                                     firstUnreadIndex > 0 && 
-                                     index === firstUnreadIndex
-          
+          const showUnreadDivider = !hasSeenDivider &&
+            firstUnreadIndex > 0 &&
+            index === firstUnreadIndex
+
           return (
             <React.Fragment key={message.id}>
               {showUnreadDivider && (
@@ -190,25 +190,25 @@ export function MessageList({
               )}
               <div id={`message-${message.id}`}>
                 <MessageBubble
-                message={message}
-                isOwn={message.sender_id === currentUserId}
-                showTimestamp={showTimestamp}
-                onRetry={onRetry}
-                onReply={onReply}
-                onForward={onForward}
-                onEdit={onEdit}
-                onQuoteClick={onQuoteClick}
-                currentUserId={currentUserId || ''}
-                onPin={onPin}
-                onUnpin={onUnpin}
-                isMessagePinned={isMessagePinned}
-              />
-            </div>
+                  message={message}
+                  isOwn={message.sender_id === currentUserId}
+                  showTimestamp={showTimestamp}
+                  onRetry={onRetry}
+                  onReply={onReply}
+                  onForward={onForward}
+                  onEdit={onEdit}
+                  onQuoteClick={onQuoteClick}
+                  currentUserId={currentUserId || ''}
+                  onPin={onPin}
+                  onUnpin={onUnpin}
+                  isMessagePinned={isMessagePinned}
+                />
+              </div>
             </React.Fragment>
           )
         })
       })()}
-      
+
       {/* Scroll anchor - positioned at end of messages */}
       {messagesEndRef && <div ref={messagesEndRef} />}
     </div>

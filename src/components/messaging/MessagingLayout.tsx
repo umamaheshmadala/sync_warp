@@ -12,7 +12,7 @@ import { cn } from '../../lib/utils'
  */
 export function MessagingLayout() {
   const { conversationId } = useParams<{ conversationId: string }>()
-  
+
   // Logic to determine visibility based on route and screen size
   // On mobile:
   // - If conversationId exists -> Show Chat (Hide Sidebar)
@@ -33,7 +33,7 @@ export function MessagingLayout() {
 
       {/* Main Content Area */}
       <div className={cn(
-        "flex-1 flex flex-col h-full min-w-0 bg-white",
+        "relative flex-1 flex flex-col h-full min-w-0 bg-white",
         !conversationId ? "hidden md:flex" : "flex"
       )}>
         <Outlet />
