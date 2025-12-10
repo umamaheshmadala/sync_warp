@@ -52,13 +52,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const shouldShowBottomNav = !isKeyboardVisible || !isMessagesRoute;
 
   return (
-    <div className="grid h-screen" style={{
-      gridTemplateRows: shouldShowBottomNav
-        ? '64px 1fr 64px'  // header (64px), main content (fills remaining), bottom nav (64px)
-        : '64px 1fr'        // header (64px), main content (fills remaining) - no bottom nav when keyboard visible
-    }}>
+    <div className="flex flex-col h-screen">
       <Header />
-      <main className="h-full">{children}</main>
+      <main className="flex-1 overflow-auto">{children}</main>
       {shouldShowBottomNav && <BottomNavigation currentRoute={location.pathname} />}
     </div>
   );
