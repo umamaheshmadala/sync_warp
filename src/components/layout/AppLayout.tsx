@@ -58,7 +58,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         : '64px 1fr'        // header (64px), main content (fills remaining) - no bottom nav when keyboard visible
     }}>
       <Header />
-      <main className="overflow-hidden">{children}</main>
+      <main className="h-full">{children}</main>
       {shouldShowBottomNav && <BottomNavigation currentRoute={location.pathname} />}
     </div>
   );
