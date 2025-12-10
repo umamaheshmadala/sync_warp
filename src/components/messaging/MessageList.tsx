@@ -157,39 +157,79 @@ export function MessageList({
         const uniqueMessages = messages.reduce((acc, message) => {
           if (!acc.find(m => m.id === message.id)) {
             acc.push(message)
-            // DEBUG: Log divider state
-            console.log('[MessageList] Divider State:', {
-                      <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-3 py-1 rounded-full shadow-sm">
-                        New Messages
-                      </span>
-                      <div className="flex-1 h-[1px] bg-gradient-to-r from-transparent via-blue-500 to-transparent" />
-                    </div >
-                  )
-}
-<div id={`message-${message.id}`}>
-  <MessageBubble
-    message={message}
-    isOwn={message.sender_id === currentUserId}
-    showTimestamp={showTimestamp}
-    onRetry={onRetry}
-    onReply={onReply}
-    onForward={onForward}
-    onEdit={onEdit}
-    onQuoteClick={onQuoteClick}
-    currentUserId={currentUserId || ''}
-    onPin={onPin}
-    onUnpin={onUnpin}
-    isMessagePinned={isMessagePinned}
-  />
-</div>
-                </React.Fragment >
-              )
-            })
-          }) ()
-      }
+          }
+          return acc
+        }, [] as Message[])
 
-{/* Scroll anchor - positioned at end of messages */ }
-{ messagesEndRef && <div ref={messagesEndRef} /> }
+        // Find index of first unread message using the FROZEN read ID
+        let firstUnreadIndex = -1
+
+        if (frozenReadId) {
+          const foundIndex = uniqueMessages.findIndex(m => m.id === frozenReadId)
+          if (foundIndex !== -1) {
+            // Found the last read message, unread starts after it
+            firstUnreadIndex = foundIndex + 1
+          } else {
+            // Last read message ID exists but not in this batch (older)
+            // So ALL messages in this batch are unread
+            firstUnreadIndex = 0
+          }
+        } else if (uniqueMessages.length > 0) {
+          // No last read message recorded (First time reading or cleared history)
+          // Assume all messages potentially unread
+          firstUnreadIndex = 0
+        }
+
+        return uniqueMessages.map((message, index) => {
+          // Show timestamp every 10 messages or on first message
+          const showTimestamp = index === 0 || index % 10 === 0
+
+          // Check if message is from another user to justify "New Messages" divider
+          // We generally don't want to flagging our own messages as "New"
+          const isIncoming = message.sender_id !== currentUserId;
+
+          // Show unread divider before this message if:
+          // 1. We have a valid unread index (>= 0)
+          // 2. This matches the index
+          // 3. The message is incoming (optional but better UX for new chats)
+          const showUnreadDivider = firstUnreadIndex >= 0 &&
+            index === firstUnreadIndex &&
+            isIncoming
+
+          return (
+            <React.Fragment key={message.id}>
+              {showUnreadDivider && (
+                <div className="flex items-center gap-3 py-3 px-2">
+                  <div className="flex-1 h-[1px] bg-gradient-to-r from-transparent via-blue-500 to-transparent" />
+                  <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-3 py-1 rounded-full shadow-sm">
+                    New Messages
+                  </span>
+                  <div className="flex-1 h-[1px] bg-gradient-to-r from-transparent via-blue-500 to-transparent" />
+                </div>
+              )}
+              <div id={`message-${message.id}`}>
+                <MessageBubble
+                  message={message}
+                  isOwn={message.sender_id === currentUserId}
+                  showTimestamp={showTimestamp}
+                  onRetry={onRetry}
+                  onReply={onReply}
+                  onForward={onForward}
+                  onEdit={onEdit}
+                  onQuoteClick={onQuoteClick}
+                  currentUserId={currentUserId || ''}
+                  onPin={onPin}
+                  onUnpin={onUnpin}
+                  isMessagePinned={isMessagePinned}
+                />
+              </div>
+            </React.Fragment>
+          )
+        })
+      })()}
+
+      {/* Scroll anchor - positioned at end of messages */}
+      {messagesEndRef && <div ref={messagesEndRef} />}
     </div >
   )
 }
