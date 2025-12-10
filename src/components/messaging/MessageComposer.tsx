@@ -198,7 +198,7 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
   }
 
   return (
-    <div className="bg-white px-2 py-1 border-t mb-16 md:mb-0">
+    <div className="bg-white px-2 py-1 border-t">
       {/* Edit Context - WhatsApp style indicator */}
       {editingMessage && (
         <div className="mb-2 flex items-center gap-2 bg-blue-50 rounded-lg p-2 border-l-4 border-blue-500">
@@ -258,8 +258,8 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
             size="icon"
             onClick={() => setShowAttachMenu(!showAttachMenu)}
             className={`h-10 w-10 rounded-full transition-all ${showAttachMenu
-                ? 'bg-blue-100 text-blue-600 rotate-45'
-                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+              ? 'bg-blue-100 text-blue-600 rotate-45'
+              : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
               }`}
           >
             {showAttachMenu ? <X className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
@@ -330,8 +330,8 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
           disabled={!hasText || isSending}
           size="icon"
           className={`h-10 w-10 rounded-full flex-shrink-0 transition-all ${hasText
-              ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md'
-              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+            ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md'
+            : 'bg-gray-200 text-gray-400 cursor-not-allowed'
             }`}
         >
           <Send className={`h-5 w-5 ${hasText ? '' : 'opacity-50'}`} />
