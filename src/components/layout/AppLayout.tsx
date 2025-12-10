@@ -52,9 +52,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const shouldShowBottomNav = !isKeyboardVisible || !isMessagesRoute;
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-[100dvh]">
       <Header />
-      <main className="flex-1 overflow-auto">{children}</main>
+      <main className="flex-1 overflow-auto bg-gray-50">{children}</main>
+
+      {/* Spacer for Bottom Navigation - pushes content up so it doesn't get covered */}
+      {shouldShowBottomNav && <div className="h-16 md:hidden flex-shrink-0" />}
+
+      {/* Fixed Bottom Navigation */}
       {shouldShowBottomNav && <BottomNavigation currentRoute={location.pathname} />}
     </div>
   );
