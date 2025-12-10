@@ -9,57 +9,54 @@ import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
-  
+
   // Initialize Realtime Notifications
   useRealtimeNotifications();
-  
+
   // Don't show header/nav on auth pages only (root path is now dashboard)
   const isAuthPage = location.pathname.startsWith('/auth');
-  
+
   // Check if on messages route
   const isMessagesRoute = location.pathname.startsWith('/messages/');
-  
+
   // Keyboard visibility detection for mobile
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
-    
+
     let showListener: any;
     let hideListener: any;
-    
+
     const setupListeners = async () => {
       showListener = await Keyboard.addListener('keyboardWillShow', () => {
         setIsKeyboardVisible(true);
       });
-      
+
       hideListener = await Keyboard.addListener('keyboardWillHide', () => {
         setIsKeyboardVisible(false);
       });
     };
-    
+
     setupListeners();
-    
+
     return () => {
       showListener?.remove();
       hideListener?.remove();
     };
   }, []);
-  
+
   if (isAuthPage) {
     return <>{children}</>;
   }
-  
-  // Hide bottom navigation when keyboard is visible on messages route
-  const shouldShowBottomNav = !isKeyboardVisible || !isMessagesRoute;
-  
-  // Also remove bottom padding when keyboard is visible on messages route
-  const mainClassName = isKeyboardVisible && isMessagesRoute 
-    ? "flex-1 pt-16 pb-0 md:pt-16 md:pb-0" 
-    : "flex-1 pt-16 pb-16 md:pt-16 md:pb-0";
-  
+
+
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="grid h-screen" style={{
+      gridTemplateRows: shouldShowBottomNav
+        ? '64px 1fr 64px'  // header (64px), main content (fills remaining), bottom nav (64px)
+        : '64px 1fr'        // header (64px), main content (fills remaining) - no bottom nav when keyboard visible
+    }}>
       <Header />
-      <main className={mainClassName}>{children}</main>
+      <main className="overflow-hidden">{children}</main>
       {shouldShowBottomNav && <BottomNavigation currentRoute={location.pathname} />}
     </div>
   );
