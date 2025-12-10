@@ -324,7 +324,7 @@ export function ChatScreen() {
 
   return (
     <div
-      className="absolute inset-0 flex flex-col bg-white chat-screen"
+      className="flex flex-col flex-1 bg-white chat-screen"
     >
       <ChatHeader
         conversationId={conversationId}
