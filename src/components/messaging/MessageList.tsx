@@ -157,60 +157,39 @@ export function MessageList({
         const uniqueMessages = messages.reduce((acc, message) => {
           if (!acc.find(m => m.id === message.id)) {
             acc.push(message)
-          }
-          return acc
-        }, [] as Message[])
+            // DEBUG: Log divider state
+            console.log('[MessageList] Divider State:', {
+                      <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-3 py-1 rounded-full shadow-sm">
+                        New Messages
+                      </span>
+                      <div className="flex-1 h-[1px] bg-gradient-to-r from-transparent via-blue-500 to-transparent" />
+                    </div >
+                  )
+}
+<div id={`message-${message.id}`}>
+  <MessageBubble
+    message={message}
+    isOwn={message.sender_id === currentUserId}
+    showTimestamp={showTimestamp}
+    onRetry={onRetry}
+    onReply={onReply}
+    onForward={onForward}
+    onEdit={onEdit}
+    onQuoteClick={onQuoteClick}
+    currentUserId={currentUserId || ''}
+    onPin={onPin}
+    onUnpin={onUnpin}
+    isMessagePinned={isMessagePinned}
+  />
+</div>
+                </React.Fragment >
+              )
+            })
+          }) ()
+      }
 
-        // Find index of first unread message using the FROZEN read ID
-        // This ensures the divider doesn't move if read status updates background
-        const firstUnreadIndex = frozenReadId
-          ? uniqueMessages.findIndex(m => m.id === frozenReadId) + 1
-          : -1
-
-        return uniqueMessages.map((message, index) => {
-          // Show timestamp every 10 messages or on first message
-          const showTimestamp = index === 0 || index % 10 === 0
-
-          // Show unread divider before this message if:
-          // 1. We have a valid unread index
-          // 2. This IS the first unread message
-          // 3. (Optional: Check if message is not from current user? No, showing read line is standard)
-          const showUnreadDivider = firstUnreadIndex > 0 && index === firstUnreadIndex
-
-          return (
-            <React.Fragment key={message.id}>
-              {showUnreadDivider && (
-                <div className="flex items-center gap-3 py-3 px-2">
-                  <div className="flex-1 h-[1px] bg-gradient-to-r from-transparent via-blue-500 to-transparent" />
-                  <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-3 py-1 rounded-full shadow-sm">
-                    New Messages
-                  </span>
-                  <div className="flex-1 h-[1px] bg-gradient-to-r from-transparent via-blue-500 to-transparent" />
-                </div>
-              )}
-              <div id={`message-${message.id}`}>
-                <MessageBubble
-                  message={message}
-                  isOwn={message.sender_id === currentUserId}
-                  showTimestamp={showTimestamp}
-                  onRetry={onRetry}
-                  onReply={onReply}
-                  onForward={onForward}
-                  onEdit={onEdit}
-                  onQuoteClick={onQuoteClick}
-                  currentUserId={currentUserId || ''}
-                  onPin={onPin}
-                  onUnpin={onUnpin}
-                  isMessagePinned={isMessagePinned}
-                />
-              </div>
-            </React.Fragment>
-          )
-        })
-      })()}
-
-      {/* Scroll anchor - positioned at end of messages */}
-      {messagesEndRef && <div ref={messagesEndRef} />}
-    </div>
+{/* Scroll anchor - positioned at end of messages */ }
+{ messagesEndRef && <div ref={messagesEndRef} /> }
+    </div >
   )
 }
