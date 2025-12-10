@@ -2,7 +2,11 @@
 
 **Epic:** 8.6 - Push Notifications & Real-Time Updates  
 **Priority:** Medium  
-**Story Points:** 3
+**Story Points:** 3  
+**Status:** ✅ Complete
+
+> [!NOTE]
+> **Completed:** 2025-12-10 - Implemented in `MessageBubble.tsx` with `isExpanded` state, line-clamp-7 CSS, and "Read more" button. Verified via browser testing.
 
 ## User Story
 

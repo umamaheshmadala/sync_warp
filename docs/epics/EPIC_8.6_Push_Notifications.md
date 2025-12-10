@@ -5,6 +5,9 @@
 **Timeline:** Week 8 (1 week)  
 **Status:** ✅ Complete
 
+> [!NOTE]
+> **Status Verified:** 2025-12-10 - All core stories (8.6.1-8.6.4, 8.6.6-8.6.7) confirmed implemented. Backend infrastructure (edge functions, database triggers) verified present and working. Story 8.6.5 (Notification Customization) and 8.6.9 (Smart Scroll) remain partially complete as documented.
+
 ---
 
 ## 🎯 **Epic Goal**
