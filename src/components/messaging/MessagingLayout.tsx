@@ -22,7 +22,7 @@ export function MessagingLayout() {
   // - Always show Chat (or Empty State)
 
   return (
-    <div className="flex h-full bg-gray-50"> {/* Fill the main container from AppLayout */}
+    <div className="flex h-full bg-gray-50"> {/* Fill parent container which is already sized correctly by AppLayout */}
       {/* Sidebar Area */}
       <div className={cn(
         "w-full md:w-[350px] lg:w-[380px] border-r bg-white flex flex-col h-full z-10",
