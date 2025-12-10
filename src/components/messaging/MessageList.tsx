@@ -19,7 +19,7 @@ interface MessageListProps {
   onPin?: (messageId: string) => void
   onUnpin?: (messageId: string) => void
   isMessagePinned?: (messageId: string) => boolean
-  lastReadAt?: string | null // For persistent unread divider
+  lastReadAt?: string | null | undefined // For persistent unread divider
 }
 
 /**
@@ -55,7 +55,6 @@ export function MessageList({
   messagesEndRef,
   onPin,
   onUnpin,
-  onUnpin,
   isMessagePinned,
   lastReadAt
 }: MessageListProps) {
@@ -66,19 +65,23 @@ export function MessageList({
   const { conversationId } = useParams<{ conversationId: string }>()
 
   // Track the initial last read timestamp for this session
-  const [frozenReadAt, setFrozenReadAt] = useState<string | null>(null)
+  // undefined = waiting for data, null = no read history, string = timestamp
+  const [frozenReadAt, setFrozenReadAt] = useState<string | null | undefined>(undefined)
   const prevConversationId = useRef<string | undefined>(conversationId)
 
   // Reset frozen timestamp when conversation changes
   if (prevConversationId.current !== conversationId) {
-    setFrozenReadAt(null)
+    setFrozenReadAt(undefined) // Reset to loading
     prevConversationId.current = conversationId
   }
 
   // Capture the last read timestamp once it's available
   // This effectively "freezes" the divider position for the duration of the chat session
   useEffect(() => {
-    if (frozenReadAt === null && lastReadAt) {
+    // Only set if we haven't set it yet (frozenReadAt is undefined)
+    // AND lastReadAt has been fetched (it is not undefined)
+    if (frozenReadAt === undefined && lastReadAt !== undefined) {
+      console.log('❄️ Freezing divider at:', lastReadAt)
       setFrozenReadAt(lastReadAt)
     }
   }, [lastReadAt, frozenReadAt])
@@ -165,23 +168,38 @@ export function MessageList({
         // Find index of first unread message using the FROZEN read timestamp
         let firstUnreadIndex = -1
 
-        if (frozenReadAt) {
-          // Find first message OLDER than or equal to last read time? No, NEWER.
-          // Wait, last_read_at is when they last read. 
-          // So any message created AFTER last_read_at is unread.
-          // array is chronological? Usually.
-          // If messages are returned older->newer (standard), we find the first one where created_at > frozenReadAt
+        // Defensive check: If the latest message is sent by the current user, 
+        // effectively everything is "read" by us (we don't need a divider).
+        const lastMessage = uniqueMessages[uniqueMessages.length - 1]
+        const isLastMessageOutgoing = lastMessage?.sender_id === currentUserId
 
-          const firstUnread = uniqueMessages.findIndex(m => new Date(m.created_at) > new Date(frozenReadAt))
+        console.log('📊 MessageList Divider Calc:', {
+          frozenReadAt,
+          msgCount: uniqueMessages.length,
+          lastMsgOutgoing: isLastMessageOutgoing
+        })
+
+        if (isLastMessageOutgoing) {
+          firstUnreadIndex = -1
+        } else if (frozenReadAt === undefined) {
+          // Still loading read status, don't show divider yet
+          firstUnreadIndex = -1
+        } else if (frozenReadAt !== null) {
+          // We have a timestamp. Find first message NEWER than it.
+          const firstUnread = uniqueMessages.findIndex(m => {
+            const msgDate = new Date(m.created_at)
+            const readDate = new Date(frozenReadAt)
+            return msgDate > readDate
+          })
 
           if (firstUnread !== -1) {
+            console.log('📍 Found first unread message at index:', firstUnread)
             firstUnreadIndex = firstUnread
-          } else {
-            // All messages are older than last_read_at -> All read
-            firstUnreadIndex = -1
           }
         } else if (uniqueMessages.length > 0) {
-          // No read history found. Assume all unread.
+          // No read history found (frozenReadAt is null). Assume all unread.
+          // BUT only if we have messages.
+          console.log('⚠️ No frozenReadAt (null), treating start matching unread')
           firstUnreadIndex = 0
         }
 

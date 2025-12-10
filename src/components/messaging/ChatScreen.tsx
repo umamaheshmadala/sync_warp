@@ -22,7 +22,8 @@ import { usePinnedMessages } from '../../hooks/usePinnedMessages'
 import { PinnedMessagesBanner } from './PinnedMessagesBanner'
 import { PinDurationDialog } from './PinDurationDialog'
 import type { PinDuration } from '../../services/pinnedMessageService'
-import { supabase } from '../../services/supabase'
+import { supabase } from '../../lib/supabase'
+import { useAuthStore } from '../../store/authStore'
 import './ChatScreen.css'
 
 /**
@@ -73,7 +74,8 @@ export function ChatScreen() {
   const [pinningMessageId, setPinningMessageId] = useState<string | null>(null)
 
   // Last read state (for unread divider)
-  const [lastReadAt, setLastReadAt] = useState<string | null>(null)
+  // undefined = loading, null = no record (all unread), string = timestamp
+  const [lastReadAt, setLastReadAt] = useState<string | null | undefined>(undefined)
   const currentUserId = useAuthStore(state => state.user?.id)
 
   // Fetch last read timestamp when entering conversation
@@ -95,6 +97,7 @@ export function ChatScreen() {
         setLastReadAt(data?.last_read_at || null)
       } catch (err) {
         console.error('Failed to fetch last read status:', err)
+        setLastReadAt(null)
       }
     }
 
@@ -124,7 +127,6 @@ export function ChatScreen() {
   }
 
   // Auto-scroll to bottom on new messages
-  // Auto-scroll to bottom on new messages
   useEffect(() => {
     const lastMessage = messages[messages.length - 1]
     const isUserMessage = lastMessage?.sender_id === 'current_user' || (lastMessage?._optimistic)
@@ -139,51 +141,72 @@ export function ChatScreen() {
     prevMessageCount.current = messages.length
   }, [messages.length, messages[messages.length - 1]?.id])
 
-  // Initial scroll to latest message (instant, no animation)
-  // Messages are sorted DESC by created_at, so latest is at END of array
+  // Initial scroll to latest message
   useEffect(() => {
     if (messages.length > 0 && !isLoading && messagesEndRef.current) {
-      // Instant scroll to bottom - no animation to avoid slow scroll with many messages
       messagesEndRef.current.scrollIntoView({ behavior: 'instant', block: 'end' })
     }
   }, [isLoading])
 
   // Mark conversation as read ONLY when user is actively viewing
-  // This is the proper WhatsApp-style behavior
   useEffect(() => {
-    if (!conversationId) return
+    if (!conversationId || !currentUserId) return
+
+    // CRITICAL: Wait for lastReadAt to be fetched (not undefined)
+    if (lastReadAt === undefined) return
 
     // Helper to mark as read only if document is visible and focused
-    const markAsReadIfVisible = () => {
+    const markAsReadIfVisible = async () => {
       if (document.visibilityState === 'visible' && document.hasFocus()) {
         console.log('👁️ User viewing chat - marking as read:', conversationId)
-        // Use the original working RPC-based function
-        conversationManagementService.markConversationAsRead(conversationId)
-          .then(() => {
-            // Dispatch event to trigger conversation list refresh
-            window.dispatchEvent(new CustomEvent('conversation-updated', { detail: { conversationId } }))
-          })
-          .catch(err => console.error('Failed to mark conversation as read:', err))
+
+        try {
+          // 1. Call standard RPC (updates message statuses)
+          await conversationManagementService.markConversationAsRead(conversationId)
+
+          // 2. Manually update conversation_participants.last_read_at
+          // (Since RPC might not update it yet)
+          const now = new Date().toISOString()
+          const { error, count } = await supabase
+            .from('conversation_participants')
+            .update({ last_read_at: now })
+            .eq('conversation_id', conversationId)
+            .eq('user_id', currentUserId)
+            .select() // Select to confirm update
+
+          if (error) {
+            console.error('❌ Failed to update participant last_read_at:', error)
+          } else {
+            console.log('✅ Updated last_read_at to:', now)
+          }
+
+          // Dispatch event to trigger conversation list refresh
+          window.dispatchEvent(new CustomEvent('conversation-updated', { detail: { conversationId } }))
+
+        } catch (err) {
+          console.error('Failed to mark conversation as read:', err)
+        }
       } else {
         console.log('👁️ Chat not in focus/visible - NOT marking as read')
       }
     }
 
-    // Mark as read on mount (if visible)
+    // Mark as read on mount
     markAsReadIfVisible()
 
-    // Mark as read when user returns to this tab/window
+    // Mark as read when user returns
     const handleVisibilityChange = () => {
+      console.log('👁️ Visibility changed:', document.visibilityState)
       if (document.visibilityState === 'visible') {
         markAsReadIfVisible()
       }
     }
 
     const handleFocus = () => {
+      console.log('👁️ Window focused')
       markAsReadIfVisible()
     }
 
-    // Listen for visibility and focus changes
     document.addEventListener('visibilitychange', handleVisibilityChange)
     window.addEventListener('focus', handleFocus)
 
@@ -191,7 +214,7 @@ export function ChatScreen() {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       window.removeEventListener('focus', handleFocus)
     }
-  }, [conversationId])
+  }, [conversationId, currentUserId, lastReadAt])
 
   // Mobile keyboard handling
   useEffect(() => {
@@ -333,14 +356,14 @@ export function ChatScreen() {
     return null
   }
 
-  // Loading state
-  if (isLoading && messages.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-white">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-      </div>
-    )
-  }
+  // Loading state handled inside the main return now
+  // if (isLoading && messages.length === 0) {
+  //   return (
+  //     <div className="flex items-center justify-center h-screen bg-white">
+  //       <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+  //     </div>
+  //   )
+  // }
 
 
 
@@ -399,22 +422,28 @@ export function ChatScreen() {
         </div>
       )}
 
-      <MessageList
-        messages={messages}
-        hasMore={hasMore}
-        onLoadMore={loadMore}
-        isLoading={isLoading}
-        onRetry={handleRetry}
-        onReply={handleReply}
-        onForward={handleForward}
-        onEdit={handleEdit}
-        onQuoteClick={handleQuoteClick}
-        messagesEndRef={messagesEndRef}
-        onPin={handlePinRequest}
-        onUnpin={unpinMessage}
-        isMessagePinned={isMessagePinned}
-        lastReadAt={lastReadAt}
-      />
+      {isLoading && messages.length === 0 ? (
+        <div className="flex-1 flex items-center justify-center bg-white">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        </div>
+      ) : (
+        <MessageList
+          messages={messages}
+          hasMore={hasMore}
+          onLoadMore={loadMore}
+          isLoading={isLoading}
+          onRetry={handleRetry}
+          onReply={handleReply}
+          onForward={handleForward}
+          onEdit={handleEdit}
+          onQuoteClick={handleQuoteClick}
+          messagesEndRef={messagesEndRef}
+          onPin={handlePinRequest}
+          onUnpin={unpinMessage}
+          isMessagePinned={isMessagePinned}
+          lastReadAt={lastReadAt}
+        />
+      )}
 
       {isTyping && <TypingIndicator userIds={typingUserIds} />}
 

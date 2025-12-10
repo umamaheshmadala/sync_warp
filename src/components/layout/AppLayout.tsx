@@ -60,7 +60,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="fixed inset-0 w-full h-full flex flex-col overflow-hidden bg-gray-50">
       <Header />
       <main
-        className="flex-1 flex flex-col min-h-0 overflow-hidden relative"
+        className="flex-1 flex flex-col min-h-0 overflow-hidden relative pt-16"
         style={{
           paddingBottom: shouldShowBottomNav ? 'calc(64px + env(safe-area-inset-bottom))' : '0px'
         }}

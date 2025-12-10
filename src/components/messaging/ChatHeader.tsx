@@ -37,10 +37,10 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
   const [showClearDialog, setShowClearDialog] = React.useState(false)
   const [showMuteDialog, setShowMuteDialog] = React.useState(false)
   const [showProfileModal, setShowProfileModal] = React.useState(false)
-  
+
   // Find the conversation
   const conversation = conversations.find(c => c.conversation_id === conversationId)
-  
+
   // Get friend's online status - MUST be called before any early returns
   const friendProfile = React.useMemo(() => {
     if (!conversation) return null
@@ -49,28 +49,47 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
       f.friend_profile.user_id === conversation.participant2_id
     )?.friend_profile
   }, [friends, conversation])
-  
+
   // Get other participant ID for profile modal
   const [otherParticipantId, setOtherParticipantId] = React.useState<string | null>(null)
-  
+
   React.useEffect(() => {
     if (!conversation) return
-    
+
     const getOtherParticipant = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      
+
       const { participant1_id, participant2_id } = conversation
       const otherId = user.id === participant1_id ? participant2_id : participant1_id
       setOtherParticipantId(otherId)
     }
-    
+
     getOtherParticipant()
   }, [conversation])
 
-  // Early return AFTER all hooks
+  // Early return with skeletons if no conversation
   if (!conversation) {
-    return null
+    return (
+      <div className="w-full z-40 bg-white border-b border-gray-200" data-testid="chat-header-skeleton">
+        <div className="flex items-center justify-between px-3 py-2">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate('/messages')}
+              className="text-gray-600 hover:text-gray-900 flex-shrink-0"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-full bg-gray-200 animate-pulse" />
+              <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   const { other_participant_name, other_participant_avatar } = conversation
@@ -96,7 +115,7 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
             toast.success('Conversation pinned', { duration: 3000 })
           }
           break
-          
+
         case 'archive':
           toggleArchiveOptimistic(conversationId)
           if (conversation.is_archived) {
@@ -108,7 +127,7 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
             navigate('/messages')
           }
           break
-          
+
         case 'mark_unread':
           await conversationManagementService.markConversationAsUnread(conversationId)
           toast.success('Marked as unread')
@@ -168,7 +187,7 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
       (c) => c.conversation_id !== conversationId
     )
     useMessagingStore.getState().setConversations(updatedConversations)
-    
+
     // Navigate back to list
     navigate('/messages')
   }
@@ -178,8 +197,10 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
     // No need to navigate, just show success
   }
 
+  console.log('ChatHeader render cycle:', { id: conversationId, found: !!conversation })
+
   return (
-    <div className="sticky top-0 z-40 bg-white border-b border-gray-200">
+    <div className="w-full z-40 bg-white border-b border-gray-200">
       <div className="flex items-center justify-between px-3 py-2">
         {/* Left section */}
         <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -191,9 +212,9 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          
+
           {/* Avatar + Name */}
-          <div 
+          <div
             className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
             onClick={() => setShowProfileModal(true)}
           >
@@ -208,7 +229,7 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
                 <div className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-green-500" />
               )}
             </div>
-            
+
             <div className="flex flex-col">
               <h2 className="text-sm font-semibold text-gray-900 leading-none">
                 {other_participant_name || 'Unknown User'}
@@ -220,133 +241,133 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
           </div>
         </div>
 
-      {/* Actions */}
-      <div className="flex items-center gap-1">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-600">
-              <MoreVertical className="h-5 w-5" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuLabel>Chat Options</DropdownMenuLabel>
-            <DropdownMenuSeparator />
+        {/* Actions */}
+        <div className="flex items-center gap-1">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-600">
+                <MoreVertical className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuLabel>Chat Options</DropdownMenuLabel>
+              <DropdownMenuSeparator />
 
-            <DropdownMenuItem onClick={() => {
-              if (onSearchClick) {
-                onSearchClick()
-              } else {
-                console.warn('Search handler not implemented')
-              }
-            }}>
-              <Search className="mr-2 h-4 w-4" />
-              <span>Search</span>
-            </DropdownMenuItem>
-            
-            <DropdownMenuItem onClick={() => handleAction('pin')}>
-              {conversation.is_pinned ? (
-                <>
-                  <PinOff className="mr-2 h-4 w-4" />
-                  <span>Unpin</span>
-                </>
-              ) : (
-                <>
-                  <Pin className="mr-2 h-4 w-4" />
-                  <span>Pin</span>
-                </>
-              )}
-            </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {
+                if (onSearchClick) {
+                  onSearchClick()
+                } else {
+                  console.warn('Search handler not implemented')
+                }
+              }}>
+                <Search className="mr-2 h-4 w-4" />
+                <span>Search</span>
+              </DropdownMenuItem>
 
-            <DropdownMenuItem onClick={() => handleAction('archive')}>
-              {conversation.is_archived ? (
-                <>
-                  <ArchiveX className="mr-2 h-4 w-4" />
-                  <span>Unarchive</span>
-                </>
-              ) : (
-                <>
-                  <Archive className="mr-2 h-4 w-4" />
-                  <span>Archive</span>
-                </>
-              )}
-            </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleAction('pin')}>
+                {conversation.is_pinned ? (
+                  <>
+                    <PinOff className="mr-2 h-4 w-4" />
+                    <span>Unpin</span>
+                  </>
+                ) : (
+                  <>
+                    <Pin className="mr-2 h-4 w-4" />
+                    <span>Pin</span>
+                  </>
+                )}
+              </DropdownMenuItem>
 
-            <DropdownMenuItem onClick={() => handleAction('mark_unread')}>
-              <AlertCircle className="mr-2 h-4 w-4" />
-              <span>Mark as unread</span>
-            </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleAction('archive')}>
+                {conversation.is_archived ? (
+                  <>
+                    <ArchiveX className="mr-2 h-4 w-4" />
+                    <span>Unarchive</span>
+                  </>
+                ) : (
+                  <>
+                    <Archive className="mr-2 h-4 w-4" />
+                    <span>Archive</span>
+                  </>
+                )}
+              </DropdownMenuItem>
 
-            <DropdownMenuItem onClick={() => handleAction('mute')}>
-              {conversation.is_muted ? (
-                <>
-                  <Bell className="mr-2 h-4 w-4" />
-                  <span>Unmute</span>
-                </>
-              ) : (
-                <>
-                  <BellOff className="mr-2 h-4 w-4" />
-                  <span>Mute</span>
-                </>
-              )}
-            </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleAction('mark_unread')}>
+                <AlertCircle className="mr-2 h-4 w-4" />
+                <span>Mark as unread</span>
+              </DropdownMenuItem>
 
-            <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => handleAction('mute')}>
+                {conversation.is_muted ? (
+                  <>
+                    <Bell className="mr-2 h-4 w-4" />
+                    <span>Unmute</span>
+                  </>
+                ) : (
+                  <>
+                    <BellOff className="mr-2 h-4 w-4" />
+                    <span>Mute</span>
+                  </>
+                )}
+              </DropdownMenuItem>
 
-            <DropdownMenuItem onClick={() => handleAction('clear_chat')} className="text-red-600 focus:text-red-600">
-              <MessageSquare className="mr-2 h-4 w-4" />
-              <span>Clear chat</span>
-            </DropdownMenuItem>
+              <DropdownMenuSeparator />
 
-            <DropdownMenuItem onClick={() => handleAction('delete')} className="text-red-600 focus:text-red-600">
-              <Trash className="mr-2 h-4 w-4" />
-              <span>Delete conversation</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+              <DropdownMenuItem onClick={() => handleAction('clear_chat')} className="text-red-600 focus:text-red-600">
+                <MessageSquare className="mr-2 h-4 w-4" />
+                <span>Clear chat</span>
+              </DropdownMenuItem>
 
-      {/* Delete Dialog */}
-      {showDeleteDialog && (
-        <DeleteConversationDialog
-          conversationId={conversationId}
-          conversationName={other_participant_name || 'Unknown User'}
-          onClose={handleDialogClose}
-          onDeleted={handleDeleted}
-        />
-      )}
+              <DropdownMenuItem onClick={() => handleAction('delete')} className="text-red-600 focus:text-red-600">
+                <Trash className="mr-2 h-4 w-4" />
+                <span>Delete conversation</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
 
-      {/* Clear Chat Dialog */}
-      {showClearDialog && (
-        <ClearChatDialog
-          conversationId={conversationId}
-          conversationName={other_participant_name || 'Unknown User'}
-          onClose={handleClearDialogClose}
-          onCleared={handleCleared}
-        />
-      )}
+        {/* Delete Dialog */}
+        {showDeleteDialog && (
+          <DeleteConversationDialog
+            conversationId={conversationId}
+            conversationName={other_participant_name || 'Unknown User'}
+            onClose={handleDialogClose}
+            onDeleted={handleDeleted}
+          />
+        )}
 
-      {/* Mute Dialog */}
-      {showMuteDialog && (
-        <MuteConversationDialog
-          conversationId={conversationId}
-          conversationName={other_participant_name || 'Unknown User'}
-          isMuted={conversation.is_muted}
-          onClose={() => setShowMuteDialog(false)}
-          onMuted={() => {
-            // Optimistic update handles the UI, no need to reload
-            // invalidating queries would be better if using React Query
-          }}
-        />
-      )}
-      
-      {/* Friend Profile Modal */}
-      {showProfileModal && otherParticipantId && (
-        <FriendProfileModal
-          friendId={otherParticipantId}
-          isOpen={showProfileModal}
-          onClose={() => setShowProfileModal(false)}
-        />
-      )}
+        {/* Clear Chat Dialog */}
+        {showClearDialog && (
+          <ClearChatDialog
+            conversationId={conversationId}
+            conversationName={other_participant_name || 'Unknown User'}
+            onClose={handleClearDialogClose}
+            onCleared={handleCleared}
+          />
+        )}
+
+        {/* Mute Dialog */}
+        {showMuteDialog && (
+          <MuteConversationDialog
+            conversationId={conversationId}
+            conversationName={other_participant_name || 'Unknown User'}
+            isMuted={conversation.is_muted}
+            onClose={() => setShowMuteDialog(false)}
+            onMuted={() => {
+              // Optimistic update handles the UI, no need to reload
+              // invalidating queries would be better if using React Query
+            }}
+          />
+        )}
+
+        {/* Friend Profile Modal */}
+        {showProfileModal && otherParticipantId && (
+          <FriendProfileModal
+            friendId={otherParticipantId}
+            isOpen={showProfileModal}
+            onClose={() => setShowProfileModal(false)}
+          />
+        )}
       </div>
     </div>
   )
