@@ -37,11 +37,12 @@ import { App } from '@capacitor/app'
  */
 export function useConversations() {
   const { isMobile } = usePlatform()
-  const { 
-    conversations, 
-    isLoadingConversations, 
-    setLoadingConversations, 
+  const {
+    conversations,
+    isLoadingConversations,
+    setLoadingConversations,
     setConversations,
+    upsertConversation,
     updateConversation,
     addConversation,
     removeConversation
@@ -49,10 +50,18 @@ export function useConversations() {
 
   const isAppActive = useRef(true)
   const pollInterval = useRef<NodeJS.Timeout>()
+  const isFetchingRef = useRef(false)
 
-  // Fetch conversations
-  const fetchConversations = useCallback(async () => {
+  // Fetch conversations - using useRef to make it stable
+  const fetchConversationsRef = useRef(async () => {
+    // Prevent concurrent fetches
+    if (isFetchingRef.current) {
+      console.log('⏭️ Skipping fetch - already in progress')
+      return
+    }
+
     try {
+      isFetchingRef.current = true
       setLoadingConversations(true)
       const data = await messagingService.fetchConversations()
       setConversations(data)
@@ -61,8 +70,14 @@ export function useConversations() {
       toast.error('Failed to load conversations')
     } finally {
       setLoadingConversations(false)
+      isFetchingRef.current = false
     }
-  }, [setLoadingConversations, setConversations])
+  })
+
+  // Stable fetch function
+  const fetchConversations = useCallback(() => {
+    return fetchConversationsRef.current()
+  }, [])
 
   const { user } = useAuthStore()
 
@@ -74,19 +89,55 @@ export function useConversations() {
     // 1. Conversation table changes (INSERT/UPDATE/DELETE)
     // 2. Message INSERT events (to update last_message_content in sidebar)
     const unsubscribeConversations = realtimeService.subscribeToConversations(
-      () => {
-        console.log('🔄 [useConversations] Realtime update received - refreshing list')
-        fetchConversations()
+      async (payload) => {
+        console.log('🔄 [useConversations] Realtime update received:', payload?.table)
+
+        // OPTIMIZED: Fetch only the updated conversation instead of entire list
+        try {
+          let conversationId: string | null = null;
+
+          // Extract conversation ID from payload
+          if (payload?.table === 'conversations') {
+            conversationId = payload.new?.id || payload.old?.id;
+          } else if (payload?.table === 'notification_log') {
+            conversationId = payload.new?.data?.conversation_id;
+          }
+
+          if (conversationId) {
+            console.log(`✨ [useConversations] Fetching single conversation: ${conversationId}`);
+
+            // Fetch only this conversation
+            const updatedConversation = await messagingService.fetchSingleConversation(conversationId);
+
+            if (updatedConversation) {
+              // Upsert into store (add if new, update and move to top if exists)
+              upsertConversation(updatedConversation);
+              console.log(`✅ [useConversations] Single conversation updated successfully`);
+            } else {
+              console.log(`ℹ️ [useConversations] Conversation ${conversationId} not found, might be deleted`);
+              // Could potentially remove from list here if needed
+            }
+          } else {
+            // Fallback: If we can't extract ID, do full refresh
+            console.log('⚠️ [useConversations] Could not extract conversation ID, doing full refresh');
+            fetchConversations();
+          }
+        } catch (err) {
+          console.error('Failed to handle conversation update:', err);
+          // On error, fall back to full refresh
+          fetchConversations();
+        }
       }
     )
+
 
     const unsubscribeMute = realtimeService.subscribeToMuteUpdates(
       user.id,
       (payload) => {
         const conversationId = payload.new?.conversation_id || payload.old?.conversation_id
         if (conversationId) {
-           const isMuted = payload.eventType !== 'DELETE'
-           updateConversation(conversationId, { is_muted: isMuted })
+          const isMuted = payload.eventType !== 'DELETE'
+          updateConversation(conversationId, { is_muted: isMuted })
         }
       }
     )
@@ -130,27 +181,25 @@ export function useConversations() {
     }
   }, [isMobile, fetchConversations])
 
-  // Platform-specific polling: DISABLED - rely on realtime subscriptions
+  // Initial fetch and manual refresh event listener
   useEffect(() => {
-    // Initial fetch only
+    // Initial fetch only ONCE
     fetchConversations()
 
-    // Listen for manual refresh events (e.g., after marking as read)
+    // Listen for manual refresh events (e.g., after blocking/unblocking)
     const handleConversationUpdate = () => {
       console.log('🔄 Conversation updated - refreshing list')
       fetchConversations()
     }
-    
+
     window.addEventListener('conversation-updated', handleConversationUpdate)
 
-    // Polling disabled - we rely on realtime subscriptions for updates
-    // This prevents the periodic reloading issue reported by users
-    
     // Cleanup function
     return () => {
       window.removeEventListener('conversation-updated', handleConversationUpdate)
     }
-  }, [fetchConversations])
+    // Empty deps array - only run once on mount
+  }, [])
 
   return {
     conversations,

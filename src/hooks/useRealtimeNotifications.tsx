@@ -16,9 +16,9 @@ export function useRealtimeNotifications() {
     useQuery({
         queryKey: ['muted_conversations', user?.id],
         queryFn: async () => {
-             if (!user?.id) return [];
-             const muted = await notificationSettingsService.getMutedConversations();
-             return muted.map(m => m.conversation_id);
+            if (!user?.id) return [];
+            const muted = await notificationSettingsService.getMutedConversations();
+            return muted.map(m => m.conversation_id);
         },
         enabled: !!user?.id,
         staleTime: 1000 * 60 * 5, // 5 minutes
@@ -31,22 +31,22 @@ export function useRealtimeNotifications() {
         }
 
         console.log('[useRealtimeNotifications] Subscribing to notifications for user:', user.id);
-        
+
         // Track recently processed notification IDs to prevent duplicates
         const processedIds = new Set<string>();
 
         const handleNotificationPayload = (payload: any, source: 'notifications' | 'notification_log') => {
             console.log(`[useRealtimeNotifications] 🔔 Received INSERT from ${source}:`, JSON.stringify(payload));
-            
+
             // Invalidate queries
             queryClient.invalidateQueries({ queryKey: ['notifications'] });
             queryClient.invalidateQueries({ queryKey: ['all-notifications'] });
 
-            // Dispatch event to update conversation list (and unread badge in Header.tsx which relies on useMessagingStore)
-            window.dispatchEvent(new Event('conversation-updated'));
+            // NOTE: Conversation list updates are now handled by realtime subscription in useConversations
+            // No need to dispatch conversation-updated event - it triggers unnecessary full refreshes
 
             const notification = payload.new as any;
-            
+
             // Deduplication check
             if (notification.id && processedIds.has(notification.id)) {
                 console.log(`[useRealtimeNotifications] ⚠️ Duplicate notification ID ${notification.id}, skipping toast.`);
@@ -62,24 +62,24 @@ export function useRealtimeNotifications() {
             const type = notification.type || notification.notification_type || 'unknown';
             const messageConfig = notification.message || notification.body || 'New notification';
             const data = notification.data || {};
-            
+
             // Comprehensive list of message-related types to suppress
             const messageTypes = [
-                'message', 'new_message', 
-                'message_received', 'message_reply', 
+                'message', 'new_message',
+                'message_received', 'message_reply',
                 'text', 'image', 'video', 'voice', 'location',
-                'group_message', 'direct_message' 
+                'group_message', 'direct_message'
             ];
-            
-            const isMessage = messageTypes.some(t => t.toLowerCase() === type.toLowerCase()) || 
-                                type.toLowerCase().includes('message');
+
+            const isMessage = messageTypes.some(t => t.toLowerCase() === type.toLowerCase()) ||
+                type.toLowerCase().includes('message');
 
             let shouldShowToast = true;
 
             if (isMessage) {
                 try {
                     const conversationId = data.conversation_id || notification.conversation_id;
-                    
+
                     // A. Check if user is currently reading this conversation
                     const currentPath = window.location.pathname;
                     if (conversationId && currentPath.includes(`/messages/${conversationId}`)) {
@@ -91,8 +91,8 @@ export function useRealtimeNotifications() {
                     if (shouldShowToast && conversationId) {
                         const mutedList = queryClient.getQueryData<string[]>(['muted_conversations', user.id]) || [];
                         if (mutedList.includes(conversationId)) {
-                                console.log(`[useRealtimeNotifications] 🚫 Suppressing toast: Conversation ${conversationId} is muted`);
-                                shouldShowToast = false;
+                            console.log(`[useRealtimeNotifications] 🚫 Suppressing toast: Conversation ${conversationId} is muted`);
+                            shouldShowToast = false;
                         }
                     }
                 } catch (err) {
@@ -165,7 +165,7 @@ export function useRealtimeNotifications() {
             console.log('[useRealtimeNotifications] Received foreground push event');
             queryClient.invalidateQueries({ queryKey: ['notifications'] });
             queryClient.invalidateQueries({ queryKey: ['all-notifications'] });
-            window.dispatchEvent(new Event('conversation-updated'));
+            // NOTE: Conversation list updates handled by realtime subscription
         };
 
         window.addEventListener('foreground-notification', handleForegroundPush);

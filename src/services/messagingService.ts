@@ -463,6 +463,71 @@ class MessagingService {
   }
 
   /**
+   * Fetch a single conversation from conversation_list view
+   * Used for optimized updates instead of refetching entire list
+   * 
+   * @param conversationId - Conversation UUID
+   * @returns Single conversation with details, or null if not found
+   */
+  async fetchSingleConversation(conversationId: string): Promise<ConversationWithDetails | null> {
+    try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // Fetch single conversation from view
+      const { data, error } = await supabase
+        .from('conversation_list')
+        .select('*')
+        .eq('conversation_id', conversationId)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) {
+        console.log(`ℹ️ [fetchSingleConversation] Conversation ${conversationId} not found`);
+        return null;
+      }
+
+      // Get blocked user IDs for this conversation
+      const { data: blockedData } = await supabase
+        .from('blocked_users')
+        .select('blocker_id, blocked_id')
+        .or(`blocker_id.eq.${user.id},blocked_id.eq.${user.id}`);
+
+      // Create a Set of blocked user IDs
+      const blockedUserIds = new Set<string>();
+      (blockedData || []).forEach(block => {
+        if (block.blocker_id === user.id) {
+          blockedUserIds.add(block.blocked_id);
+        } else {
+          blockedUserIds.add(block.blocker_id);
+        }
+      });
+
+      // Enrich with blocking status
+      const participant1_id = data.participants?.[0];
+      const participant2_id = data.participants?.[1];
+      const otherParticipantId = user.id === participant1_id ? participant2_id : participant1_id;
+      const is_blocked = blockedUserIds.has(otherParticipantId);
+
+      console.log(`✨ [fetchSingleConversation] Fetched conversation: ${conversationId}`, {
+        is_blocked,
+        lastMessage: data.last_message_content?.substring(0, 30)
+      });
+
+      return {
+        ...data,
+        participant1_id,
+        participant2_id,
+        is_blocked,
+      };
+    } catch (error) {
+      console.error(`❌ Error fetching single conversation ${conversationId}:`, error);
+      return null;
+    }
+  }
+
+  /**
    * Get a single conversation with details
    * 
    * @param conversationId - Conversation UUID

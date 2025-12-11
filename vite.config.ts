@@ -27,7 +27,7 @@ export default defineConfig({
   server: {
     port: 5173,
     host: '0.0.0.0', // Allow external connections (for mobile testing)
-    open: true,
+    open: false, // Disabled - manually open in Antigravity browser agent
     hmr: {
       // Prevent HMR from triggering on tab focus changes
       overlay: false

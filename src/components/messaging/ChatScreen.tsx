@@ -24,6 +24,7 @@ import { PinDurationDialog } from './PinDurationDialog'
 import type { PinDuration } from '../../services/pinnedMessageService'
 import { supabase } from '../../lib/supabase'
 import { useAuthStore } from '../../store/authStore'
+import { useMessagingStore } from '../../store/messagingStore'
 import './ChatScreen.css'
 
 /**
@@ -50,8 +51,9 @@ import './ChatScreen.css'
  * ```
  */
 export function ChatScreen() {
-  const { conversationId } = useParams<{ conversationId: string }>()
+  const { conversationId } = useParams()
   const navigate = useNavigate()
+  const { updateConversation } = useMessagingStore() // For clearing unread count
   const { messages, isLoading, hasMore, loadMore } = useMessages(conversationId || null)
   const { isTyping, typingUserIds, handleTyping } = useTypingIndicator(conversationId || null)
   const { retryMessage } = useSendMessage() // For retrying failed messages (Story 8.2.7)
@@ -180,8 +182,9 @@ export function ChatScreen() {
             console.log('✅ Updated last_read_at to:', now)
           }
 
-          // Dispatch event to trigger conversation list refresh
-          window.dispatchEvent(new CustomEvent('conversation-updated', { detail: { conversationId } }))
+          // 3. Update store to clear unread count (fixes badge not updating)
+          updateConversation(conversationId, { unread_count: 0 })
+          console.log('✅ Cleared unread count in store for conversation:', conversationId)
 
         } catch (err) {
           console.error('Failed to mark conversation as read:', err)

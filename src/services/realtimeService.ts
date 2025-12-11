@@ -16,7 +16,7 @@ import type { Message, Conversation } from '../types/messaging';
 export type MessageCallback = (message: Message) => void;
 export type TypingCallback = (userId: string, isTyping: boolean) => void;
 export type PresenceCallback = (userId: string, isOnline: boolean) => void;
-export type ConversationUpdateCallback = () => void;
+export type ConversationUpdateCallback = (payload?: any) => void;
 export type ConnectionStatusCallback = (status: string) => void;
 
 export interface PresenceState {
@@ -68,7 +68,7 @@ class RealtimeService {
     // Handle app state changes (background/foreground)
     this.appStateListener = await App.addListener('appStateChange', ({ isActive }) => {
       this.isAppActive = isActive;
-      
+
       if (!isActive) {
         console.log('📱 App went to background');
         // Disconnect after 1 minute in background to save battery
@@ -92,11 +92,11 @@ class RealtimeService {
     // Monitor network changes (WiFi ↔ Cellular)
     this.networkListener = await Network.addListener('networkStatusChange', status => {
       console.log('📡 Network status changed:', status);
-      
+
       if (status.connected && status.connectionType !== this.previousConnectionType) {
         console.log(`📡 Network switched: ${this.previousConnectionType} → ${status.connectionType}`);
         this.previousConnectionType = status.connectionType;
-        
+
         // Reconnect all channels on network switch
         this.reconnectAll();
       } else if (!status.connected) {
@@ -104,7 +104,7 @@ class RealtimeService {
         this.previousConnectionType = null;
       }
     });
-    
+
     // Get initial network status
     const status = await Network.getStatus();
     this.previousConnectionType = status.connectionType;
@@ -118,14 +118,14 @@ class RealtimeService {
     if (!Capacitor.isNativePlatform()) {
       return 1000; // Web: 1 second
     }
-    
+
     try {
       const networkStatus = await Network.getStatus();
-      
+
       if (networkStatus.connectionType === 'wifi') {
         return 2000; // Mobile WiFi: 2 seconds
       }
-      
+
       return 5000; // Mobile 4G/5G: 5 seconds (higher latency)
     } catch (error) {
       console.warn('⚠️ Failed to get network status, using default delay');
@@ -144,10 +144,10 @@ class RealtimeService {
 
     const delay = await this.getReconnectionDelay();
     console.log(`🔄 Reconnecting all WebSocket channels (delay: ${delay}ms)...`);
-    
+
     // Wait for network to stabilize
     await new Promise(resolve => setTimeout(resolve, delay));
-    
+
     // Resubscribe to all active channels
     for (const [channelName, channel] of this.channels.entries()) {
       try {
@@ -164,7 +164,7 @@ class RealtimeService {
    */
   private async disconnectAll(): Promise<void> {
     console.log('🔌 Disconnecting all WebSocket channels...');
-    
+
     for (const [channelName, channel] of this.channels.entries()) {
       try {
         await supabase.removeChannel(channel);
@@ -173,7 +173,7 @@ class RealtimeService {
         console.error(`❌ Failed to disconnect channel ${channelName}:`, error);
       }
     }
-    
+
     // Clear the channels map but keep references for reconnection
     this.channels.clear();
   }
@@ -198,12 +198,12 @@ class RealtimeService {
     onNewMessage: MessageCallback
   ): () => void {
     const channelName = `messages:${conversationId}`;
-    
+
     // Remove existing subscription if any
     this.unsubscribe(channelName);
-    
+
     console.log(`🔔 [RealtimeService] Setting up message subscription for conversation: ${conversationId}`);
-    
+
     const channel = supabase
       .channel(channelName)
       .on(
@@ -216,7 +216,7 @@ class RealtimeService {
         },
         (payload: RealtimePostgresChangesPayload<Message>) => {
           const newMessage = payload.new as Message;
-          
+
           // Client-side filter: Only process messages for this conversation
           if (newMessage.conversation_id === conversationId) {
             console.log('📨 [RealtimeService] New message received for conversation:', {
@@ -236,9 +236,9 @@ class RealtimeService {
           console.error(`❌ [RealtimeService] Channel error for ${channelName}`);
         }
       });
-    
+
     this.channels.set(channelName, channel);
-    
+
     // Return unsubscribe function
     return () => this.unsubscribe(channelName);
   }
@@ -255,10 +255,10 @@ class RealtimeService {
     onMessageUpdate: MessageCallback
   ): () => void {
     const channelName = `message-updates:${conversationId}`;
-    
+
     // Remove existing subscription if any
     this.unsubscribe(channelName);
-    
+
     const channel = supabase
       .channel(channelName)
       .on(
@@ -276,9 +276,9 @@ class RealtimeService {
         }
       )
       .subscribe();
-    
+
     this.channels.set(channelName, channel);
-    
+
     return () => this.unsubscribe(channelName);
   }
 
@@ -297,12 +297,12 @@ class RealtimeService {
     onReadReceipt: (payload: any) => void
   ): () => void {
     const channelName = `read-receipts:${conversationId}`;
-    
+
     // Remove existing subscription if any
     this.unsubscribe(channelName);
-    
+
     console.log(`🔔 [RealtimeService] Setting up read receipt subscription for conversation: ${conversationId}`);
-    
+
     const channel = supabase
       .channel(channelName)
       .on(
@@ -330,9 +330,9 @@ class RealtimeService {
           console.log(`✅ [RealtimeService] Successfully subscribed to read receipts for ${conversationId}`);
         }
       });
-    
+
     this.channels.set(channelName, channel);
-    
+
     return () => this.unsubscribe(channelName);
   }
 
@@ -348,9 +348,9 @@ class RealtimeService {
     onUpdate: (payload: any) => void
   ): () => void {
     const channelName = `conversation-updates:${conversationId}`;
-    
+
     this.unsubscribe(channelName);
-    
+
     const channel = supabase
       .channel(channelName)
       .on(
@@ -367,7 +367,7 @@ class RealtimeService {
         }
       )
       .subscribe();
-      
+
     this.channels.set(channelName, channel);
     return () => this.unsubscribe(channelName);
   }
@@ -384,9 +384,9 @@ class RealtimeService {
     onMuteUpdate: (payload: any) => void
   ): () => void {
     const channelName = `mute-updates:${userId}`;
-    
+
     this.unsubscribe(channelName);
-    
+
     const channel = supabase
       .channel(channelName)
       .on(
@@ -403,7 +403,7 @@ class RealtimeService {
         }
       )
       .subscribe();
-      
+
     this.channels.set(channelName, channel);
     return () => this.unsubscribe(channelName);
   }
@@ -420,9 +420,9 @@ class RealtimeService {
     onListUpdate: (payload: any) => void
   ): () => void {
     const channelName = `conversation-list:${userId}`;
-    
+
     this.unsubscribe(channelName);
-    
+
     // Note: We can't easily filter conversations by user_id in the participants array via realtime filter.
     // Usually we rely on RLS to only send events for rows the user can see.
     // Or we subscribe to `conversation_participants` table.
@@ -445,13 +445,13 @@ class RealtimeService {
   ): () => void {
     // Unique channel name to prevent conflicts with other listeners
     const channelName = `realtime-notifications-toast-${userId}`;
-    
+
     this.unsubscribe(channelName);
-    
+
     console.log(`[RealtimeService] 🚀 Setting up in-app notification subscription for user: ${userId}`);
     console.log(`[RealtimeService] 📡 Channel name: ${channelName}`);
     console.log(`[RealtimeService] 📊 Current active channels: ${this.getActiveChannelCount()}`);
-    
+
     const channel = supabase
       .channel(channelName)
       .on(
@@ -476,7 +476,7 @@ class RealtimeService {
       )
       .subscribe((status) => {
         console.log(`🔔 [RealtimeService] 📡 Subscription status update [${channelName}]:`, status);
-        
+
         if (status === 'SUBSCRIBED') {
           console.log(`✅ [RealtimeService] 🎉 Successfully subscribed to in-app notifications!`);
           console.log(`✅ [RealtimeService] Listening for INSERT events on notification_log`);
@@ -492,10 +492,10 @@ class RealtimeService {
           console.log(`📊 [RealtimeService] Status: ${status} for channel: ${channelName}`);
         }
       });
-      
+
     this.channels.set(channelName, channel);
     console.log(`[RealtimeService] 💾 Channel registered. Total channels: ${this.getActiveChannelCount()}`);
-    
+
     return () => this.unsubscribe(channelName);
   }
 
@@ -515,10 +515,10 @@ class RealtimeService {
     onTypingChange: TypingCallback
   ): () => void {
     const channelName = `typing:${conversationId}`;
-    
+
     // Remove existing subscription if any
     this.unsubscribe(channelName);
-    
+
     const channel = supabase
       .channel(channelName)
       .on('broadcast', { event: 'typing' }, (payload) => {
@@ -527,9 +527,9 @@ class RealtimeService {
         onTypingChange(userId, isTyping);
       })
       .subscribe();
-    
+
     this.channels.set(channelName, channel);
-    
+
     return () => this.unsubscribe(channelName);
   }
 
@@ -542,7 +542,7 @@ class RealtimeService {
   async broadcastTyping(conversationId: string, isTyping: boolean): Promise<void> {
     const channelName = `typing:${conversationId}`;
     const channel = this.channels.get(channelName);
-    
+
     if (channel) {
       try {
         const user = (await supabase.auth.getUser()).data.user;
@@ -575,16 +575,16 @@ class RealtimeService {
     onPresenceChange: PresenceCallback
   ): () => void {
     const channelName = `presence:${conversationId}`;
-    
+
     // Remove existing subscription if any
     this.unsubscribe(channelName);
-    
+
     const channel = supabase
       .channel(channelName)
       .on('presence', { event: 'sync' }, () => {
         const state = channel.presenceState();
         console.log('👥 Presence sync:', state);
-        
+
         // Notify about each user's presence
         Object.entries(state).forEach(([userId, presences]) => {
           const isOnline = (presences as any[]).length > 0;
@@ -614,9 +614,9 @@ class RealtimeService {
           }
         }
       });
-    
+
     this.channels.set(channelName, channel);
-    
+
     return () => this.unsubscribe(channelName);
   }
 
@@ -633,33 +633,33 @@ class RealtimeService {
    */
   subscribeToConversations(onUpdate: ConversationUpdateCallback): () => void {
     const channelName = 'user-conversations';
-    
+
     // Remove existing subscription if any
     this.unsubscribe(channelName);
-    
+
     // Subscribe to both conversations and messages tables
     const channel = supabase
       .channel(channelName)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'conversations' },
-        () => {
+        (payload) => {
           console.log('🔄 Conversations table updated');
-          onUpdate();
+          onUpdate(payload); // Pass payload for future optimization
         }
       )
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'notification_log' },
-        () => {
+        (payload) => {
           console.log('🔄 New notification log (updating conversation list)');
-          onUpdate();
+          onUpdate(payload); // Pass payload for future optimization
         }
       )
       .subscribe();
-    
+
     this.channels.set(channelName, channel);
-    
+
     return () => this.unsubscribe(channelName);
   }
 
@@ -675,13 +675,13 @@ class RealtimeService {
    */
   monitorConnectionStatus(onStatusChange: ConnectionStatusCallback): () => void {
     const channelName = 'connection-monitor';
-    
+
     const channel = supabase
       .channel(channelName)
       .subscribe((status) => {
         console.log('📡 Connection status:', status);
         onStatusChange(status);
-        
+
         // Handle reconnection
         if (status === 'SUBSCRIBED') {
           console.log('✅ Realtime connection established');
@@ -696,9 +696,9 @@ class RealtimeService {
           // toast.error('Connection closed');
         }
       });
-    
+
     this.channels.set(channelName, channel);
-    
+
     return () => this.unsubscribe(channelName);
   }
 
@@ -729,28 +729,28 @@ class RealtimeService {
    */
   async cleanup(): Promise<void> {
     console.log('🧹 Cleaning up all Realtime subscriptions...');
-    
+
     // Clear background timer
     if (this.backgroundDisconnectTimer) {
       clearTimeout(this.backgroundDisconnectTimer);
       this.backgroundDisconnectTimer = null;
     }
-    
+
     // Remove all channels
     const channelNames = Array.from(this.channels.keys());
     await Promise.all(channelNames.map(name => this.unsubscribe(name)));
-    
+
     // Remove mobile listeners
     if (this.appStateListener) {
       await this.appStateListener.remove();
       this.appStateListener = null;
     }
-    
+
     if (this.networkListener) {
       await this.networkListener.remove();
       this.networkListener = null;
     }
-    
+
     console.log('✅ RealtimeService cleanup complete');
   }
 
