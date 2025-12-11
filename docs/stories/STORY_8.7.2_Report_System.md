@@ -3,7 +3,7 @@
 **Parent Epic:** [EPIC 8.7 - Moderation & Safety](../epics/EPIC_8.7_Moderation_Safety.md)
 **Priority:** P1 - High
 **Estimated Effort:** 2 Days
-**Status:** ⏸️ **WAITING FOR ADMIN PANEL** - Core reporting functionality can be implemented, but full report review and moderation requires admin panel (see Admin Requirements section)
+**Status:** ✅ **COMPLETE** - Core reporting functionality implemented. Admin panel features (report review, moderation actions) deferred to Admin Epic.
 **Dependencies:** Admin Panel Module (for report review, moderation actions, and analytics)
 
 ---
@@ -25,7 +25,11 @@ Empower users to report inappropriate content (spam, harassment, scams). The sys
     - Modal/Action Sheet asking for "Reason" (Spam, Harassment, etc.).
     - Optional text area for "Description".
     - "Submit" and "Cancel" buttons.
-- [ ] **Feedback**: Success toast "Report submitted. Thank you for making SynC safer."
+- [x] **Feedback**: Success toast "Report submitted. Thank you for making SynC safer."
+- [x] **Visual Indicator**: Reported messages show a "Reported" tag (orange) next to the timestamp.
+- [ ] **Block Prompt**: After reporting, ask user "Would you like to block this user?" with Yes/No options.
+    - If "Yes": Execute block user action (using existing blocking service).
+    - If "No": Close dialog.
 
 ### 3. Logic & Automation
 - [ ] **Duplicate Check**: User cannot report the same message twice.
@@ -303,11 +307,25 @@ const ReportMessageDialog = ({ messageId, onClose }) => {
     try {
       await reportingService.reportMessage(messageId, selectedReason, description);
       toast.success('Report submitted. Thank you for making SynC safer.');
-      onClose();
+      // Show Block Prompt
+      setShowBlockPrompt(true);
     } catch (error) {
       toast.error(error.message);
     }
   };
+
+  if (showBlockPrompt) {
+    return (
+        <BlockUserConfirmDialog 
+            userId={senderId} 
+            onBlock={() => {
+                blockingService.blockUser(senderId);
+                onClose();
+            }}
+            onCancel={onClose}
+        />
+    );
+  }
 
   return (
     <Dialog>

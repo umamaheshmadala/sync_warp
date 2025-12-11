@@ -52,19 +52,28 @@ export function useConversations() {
   const pollInterval = useRef<NodeJS.Timeout>()
   const isFetchingRef = useRef(false)
 
+  const shouldRefetchRef = useRef(false)
+
   // Fetch conversations - using useRef to make it stable
   const fetchConversationsRef = useRef(async () => {
-    // Prevent concurrent fetches
+    // Prevent concurrent fetches but mark for retry
     if (isFetchingRef.current) {
-      console.log('⏭️ Skipping fetch - already in progress')
+      console.log('⏭️ Fetch in progress - marking for retry')
+      shouldRefetchRef.current = true
       return
     }
 
     try {
       isFetchingRef.current = true
       setLoadingConversations(true)
-      const data = await messagingService.fetchConversations()
-      setConversations(data)
+
+      // Loop to handle queued refreshes (e.g., block action while polling)
+      do {
+        shouldRefetchRef.current = false
+        const data = await messagingService.fetchConversations()
+        setConversations(data)
+      } while (shouldRefetchRef.current)
+
     } catch (error) {
       console.error('Failed to fetch conversations:', error)
       toast.error('Failed to load conversations')

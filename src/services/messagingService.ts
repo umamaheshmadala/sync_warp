@@ -353,6 +353,21 @@ class MessagingService {
         }, {});
       }
 
+      // Fetch reported status for the current user
+      let reportedMessageIds: Set<string> = new Set();
+      if (data && data.length > 0) {
+        const messageIds = data.map((m: any) => m.id);
+        const { data: reports } = await supabase
+          .from('message_reports')
+          .select('message_id')
+          .eq('reporter_id', currentUserId)
+          .in('message_id', messageIds);
+
+        if (reports) {
+          reports.forEach((r: any) => reportedMessageIds.add(r.message_id));
+        }
+      }
+
       const messages = (data || []).map((msg: any) => {
         // Derive status for own messages
         let status: 'sent' | 'delivered' | 'read' | undefined;
@@ -369,6 +384,7 @@ class MessagingService {
         return {
           ...msg,
           status,
+          viewer_has_reported: reportedMessageIds.has(msg.id),
           // Ensure arrays are initialized
           media_urls: msg.media_urls || [],
           // Ensure timestamps are valid strings

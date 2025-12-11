@@ -39,6 +39,7 @@ import { QuickReactionBar } from './QuickReactionBar'
 import { MessageReactions } from './MessageReactions'
 import { ReactionUserList } from './ReactionUserList'
 import { MessageEmojiPicker } from './MessageEmojiPicker'
+import { ReportDialog } from '../reporting/ReportDialog'
 
 interface MessageBubbleProps {
   message: Message
@@ -145,7 +146,10 @@ export function MessageBubble({
     closeReactionUsers
   } = useReactions(message, currentUserId || '')
 
+
+
   const [popupPosition, setPopupPosition] = useState<{ x: number, y: number } | undefined>(undefined)
+  const [showReportDialog, setShowReportDialog] = useState(false)
 
   const handleViewReactionUsers = (emoji: string, event: React.MouseEvent) => {
     // Calculate position relative to the clicked element
@@ -819,6 +823,13 @@ export function MessageBubble({
                   {formatMessageTime(created_at)}
                 </span>
 
+                {/* Reported Indicator */}
+                {message.viewer_has_reported && (
+                  <span className="text-[10px] text-orange-600 font-medium ml-1">
+                    Reported
+                  </span>
+                )}
+
                 {/* Message Status Icons (for own messages) */}
                 {isOwn && (
                   <span className="ml-0.5">
@@ -866,7 +877,7 @@ export function MessageBubble({
           canEdit={canEditMessage}
           editRemainingTime={editRemainingTime}
           onDeleteForMe={handleDeleteForMe}
-          onDeleteForEveryone={() => setShowDeleteConfirm(true)}
+          onDeleteForEveryone={() => handleDeleteForEveryone()}
           canDeleteForEveryone={canDeleteMessage}
           deleteRemainingTime={deleteRemainingTime}
           onReact={toggleReaction}
@@ -878,9 +889,22 @@ export function MessageBubble({
           onPin={() => onPin?.(message.id)}
           onUnpin={() => onUnpin?.(message.id)}
           isPinned={isMessagePinned?.(message.id)}
+          onReport={() => {
+            setShowContextMenu(false)
+            setShowReportDialog(true)
+          }}
         />,
         document.body
       )}
+
+      {/* Report Dialog */}
+      <ReportDialog
+        messageId={message.id}
+        conversationId={message.conversation_id}
+        senderId={message.sender_id}
+        isOpen={showReportDialog}
+        onClose={() => setShowReportDialog(false)}
+      />
 
       {/* Reaction User List Dialog */}
       <ReactionUserList

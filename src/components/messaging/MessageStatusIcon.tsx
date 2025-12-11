@@ -2,7 +2,7 @@ import React from 'react'
 import { Clock, Check, CheckCheck, AlertCircle } from 'lucide-react'
 import { cn } from '../../lib/utils'
 
-type MessageStatus = 'sending' | 'sent' | 'delivered' | 'read' | 'failed'
+import type { MessageStatus } from '../../types/messaging'
 
 interface Props {
   status: MessageStatus
@@ -23,10 +23,11 @@ interface Props {
 export function MessageStatusIcon({ status, className, showTooltip = false }: Props) {
   // Increased size for better visibility
   const iconSize = "w-[18px] h-[18px]"
-  
+
   const getIcon = () => {
     switch (status) {
       case 'sending':
+      case 'queued':
         return <Clock className={cn(iconSize, "animate-pulse")} />
       case 'sent':
         // Single check - white
@@ -49,6 +50,8 @@ export function MessageStatusIcon({ status, className, showTooltip = false }: Pr
     switch (status) {
       case 'sending':
         return 'Sending...'
+      case 'queued':
+        return 'Queued'
       case 'sent':
         return 'Sent'
       case 'delivered':
@@ -63,8 +66,8 @@ export function MessageStatusIcon({ status, className, showTooltip = false }: Pr
   }
 
   // Default color for sent/delivered - full white for visibility on blue bubbles
-  const defaultColor = (status === 'sending' || status === 'sent' || status === 'delivered') 
-    ? 'text-white' 
+  const defaultColor = (status === 'sending' || status === 'queued' || status === 'sent' || status === 'delivered')
+    ? 'text-white'
     : ''
 
   return (

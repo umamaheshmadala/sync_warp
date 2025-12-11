@@ -75,6 +75,9 @@ export interface Message {
   _uploadProgress?: number; // Upload progress (0-100) for media uploads
   _queued?: boolean;       // True if message is queued for offline sync (Epic 8.4)
   _queueId?: string;       // ID of queued message in offline queue (Epic 8.4)
+
+  // Report status (Story 8.7.2)
+  viewer_has_reported?: boolean; // True if the current viewer has reported this message
 }
 
 /**

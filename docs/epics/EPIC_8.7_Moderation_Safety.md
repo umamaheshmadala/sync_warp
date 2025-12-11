@@ -3,7 +3,7 @@
 **Epic Owner:** Backend Engineering / Product Safety  
 **Dependencies:** Epic 8.1 (Database), Epic 8.2 (Core Messaging)  
 **Timeline:** Week 9 (1 week)  
-**Status:** 🚧 **In Progress** (Story 8.7.1 Complete)
+**Status:** 🚧 **In Progress** (Stories 8.7.1 & 8.7.2 Complete)
 
 ---
 
@@ -539,11 +539,13 @@ export function useSendMessage() {
 - [x] **Mobile Testing**: Verified on Android (Samsung SM-M315F)
 - **🛢 MCP**: Test blocking via Supabase MCP
 
-### **Story 8.7.2: Report System** (2 days)
-- [ ] Create message_reports table
-- [ ] Implement reportingService
-- [ ] Create report UI (modal with reason selection)
-- [ ] Auto-flag messages with 3+ reports
+### **Story 8.7.2: Report System** (2 days) ✅ **COMPLETE**
+- [x] Create message_reports table
+- [x] Implement reportingService
+- [x] Create report UI (modal with reason selection)
+- [x] Block user prompt after reporting
+- [x] Visual "Reported" indicator on messages
+- [ ] Auto-flag messages with 3+ reports (Deferred - needs admin threshold config)
 - **🛢 MCP**: Create table with Supabase MCP
 
 ### **Story 8.7.3: Spam Detection** (2 days)

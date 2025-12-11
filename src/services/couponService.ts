@@ -3,7 +3,7 @@
 // Handles all database operations, caching, validation, and error handling
 
 import { supabase } from '../lib/supabase';
-import { 
+import {
   Coupon,
   CouponFormData,
   CouponFilters,
@@ -75,12 +75,12 @@ class CouponService {
    * Fetch all coupons for a business with advanced filtering and caching
    */
   async fetchCoupons(
-    businessId: string, 
+    businessId: string,
     filters?: CouponFilters,
     useCache: boolean = true
   ): Promise<Coupon[]> {
     const cacheKey = `coupons_${businessId}_${JSON.stringify(filters)}`;
-    
+
     if (useCache) {
       const cachedData = this.cache.get<Coupon[]>(cacheKey);
       if (cachedData) return cachedData;
@@ -108,11 +108,11 @@ class CouponService {
       }
 
       const { data, error } = await query;
-      
+
       if (error) throw error;
 
       const coupons = data || [];
-      
+
       // Cache the results
       if (useCache) {
         this.cache.set(cacheKey, coupons);
@@ -130,7 +130,7 @@ class CouponService {
    */
   async fetchCoupon(couponId: string, useCache: boolean = true): Promise<Coupon | null> {
     const cacheKey = `coupon_${couponId}`;
-    
+
     if (useCache) {
       const cachedData = this.cache.get<Coupon>(cacheKey);
       if (cachedData) return cachedData;
@@ -163,8 +163,8 @@ class CouponService {
    * Create a new coupon with comprehensive validation
    */
   async createCoupon(
-    couponData: CouponFormData, 
-    businessId: string, 
+    couponData: CouponFormData,
+    businessId: string,
     userId: string
   ): Promise<Coupon> {
     try {
@@ -205,7 +205,7 @@ class CouponService {
 
       // Invalidate cache
       this.cache.invalidate(`coupons_${businessId}`);
-      
+
       // Initialize analytics record
       await this.initializeCouponAnalytics(data.id);
 
@@ -223,8 +223,8 @@ class CouponService {
    * Update an existing coupon
    */
   async updateCoupon(
-    couponId: string, 
-    updates: Partial<CouponFormData>, 
+    couponId: string,
+    updates: Partial<CouponFormData> & { status?: CouponStatus },
     userId: string
   ): Promise<Coupon> {
     try {
@@ -321,7 +321,7 @@ class CouponService {
       if (!coupon) throw new Error('Coupon not found');
 
       const newStatus: CouponStatus = coupon.status === 'active' ? 'paused' : 'active';
-      
+
       return await this.updateCoupon(couponId, { status: newStatus }, userId);
     } catch (error) {
       console.error('Toggle status error:', error);
@@ -337,7 +337,7 @@ class CouponService {
   async fetchCouponAnalytics(couponId: string): Promise<CouponAnalytics | null> {
     const cacheKey = `analytics_${couponId}`;
     const cachedData = this.cache.get<CouponAnalytics>(cacheKey);
-    
+
     if (cachedData) return cachedData;
 
     try {
@@ -377,13 +377,13 @@ class CouponService {
   }> {
     const cacheKey = `business_analytics_${businessId}`;
     const cachedData = this.cache.get<any>(cacheKey);
-    
+
     if (cachedData) return cachedData;
 
     try {
       // Get all coupons for the business
       const coupons = await this.fetchCoupons(businessId, undefined, false);
-      
+
       // Get analytics for each coupon
       const analyticsPromises = coupons.map(async (coupon) => {
         const analytics = await this.fetchCouponAnalytics(coupon.id);
@@ -396,10 +396,10 @@ class CouponService {
       const result = {
         totalCoupons: coupons.length,
         activeCoupons: coupons.filter(c => c.status === 'active').length,
-        totalRedemptions: couponsWithAnalytics.reduce((sum, c) => 
+        totalRedemptions: couponsWithAnalytics.reduce((sum, c) =>
           sum + (c.analytics?.total_redemptions || 0), 0
         ),
-        totalRevenue: couponsWithAnalytics.reduce((sum, c) => 
+        totalRevenue: couponsWithAnalytics.reduce((sum, c) =>
           sum + (c.analytics?.estimated_revenue_generated || 0), 0
         ),
         topPerformingCoupons: couponsWithAnalytics
@@ -424,7 +424,7 @@ class CouponService {
    * Validate coupon for redemption
    */
   async validateCouponRedemption(
-    couponCode: string, 
+    couponCode: string,
     userId: string,
     originalAmount: number = 0
   ): Promise<RedemptionResponse> {
@@ -525,13 +525,10 @@ class CouponService {
   /**
    * Fetch user's collected coupons
    */
-  /**
-   * Fetch user's collected coupons
-   */
   async fetchUserCoupons(userId: string): Promise<UserCouponCollection[]> {
     const cacheKey = `user_coupons_${userId}`;
     const cachedData = this.cache.get<UserCouponCollection[]>(cacheKey);
-    
+
     if (cachedData) return cachedData;
 
     try {
@@ -552,7 +549,7 @@ class CouponService {
       if (error) throw error;
 
       const collections = data || [];
-      
+
       // Cache for 3 minutes
       this.cache.set(cacheKey, collections, 3 * 60 * 1000);
 
@@ -563,19 +560,14 @@ class CouponService {
     }
   }
 
-  /**
-   * Alias for fetchUserCoupons to match hook usage
-   */
-  async getUserCollectedCoupons(userId: string): Promise<UserCouponCollection[]> {
-    return this.fetchUserCoupons(userId);
-  }
+
 
   /**
    * Collect a coupon for a user
    */
   async collectCoupon(
-    couponId: string, 
-    userId: string, 
+    couponId: string,
+    userId: string,
     source: string = 'direct_search'
   ): Promise<boolean> {
     try {
@@ -603,7 +595,7 @@ class CouponService {
         .maybeSingle();
 
       if (existingError) throw existingError;
-      
+
       if (existing) {
         // If the coupon was shared, don't allow re-collection
         if (existing.has_been_shared) {
@@ -670,7 +662,7 @@ class CouponService {
 
     while (attempts < maxAttempts) {
       const code = this.generateCouponCode(type);
-      
+
       // Check if code already exists
       const { data } = await supabase
         .from('business_coupons')
@@ -679,7 +671,7 @@ class CouponService {
         .maybeSingle();
 
       if (!data) return code;
-      
+
       attempts++;
     }
 
@@ -710,15 +702,15 @@ class CouponService {
     if (filters.status && filters.status.length > 0) {
       query = query.in('status', filters.status);
     }
-    
+
     if (filters.type && filters.type.length > 0) {
       query = query.in('type', filters.type);
     }
-    
+
     if (filters.search_query) {
       query = query.or(`title.ilike.%${filters.search_query}%,description.ilike.%${filters.search_query}%`);
     }
-    
+
     if (filters.date_range) {
       query = query
         .gte('valid_from', filters.date_range.start)
@@ -787,7 +779,7 @@ class CouponService {
     if (data.valid_from && data.valid_until) {
       const startDate = new Date(data.valid_from);
       const endDate = new Date(data.valid_until);
-      
+
       if (endDate <= startDate) {
         throw new Error('End date must be after start date');
       }
@@ -846,7 +838,7 @@ class CouponService {
         coupon_id_param: couponId,
         discount_amount_param: discountAmount
       });
-      
+
       // Invalidate analytics cache
       this.cache.invalidate(`analytics_${couponId}`);
     } catch (error) {
@@ -862,7 +854,7 @@ class CouponService {
       await supabase.rpc('update_coupon_analytics_collection', {
         coupon_id_param: couponId
       });
-      
+
       // Invalidate analytics cache
       this.cache.invalidate(`analytics_${couponId}`);
     } catch (error) {
@@ -893,9 +885,9 @@ class CouponService {
     if (!this.subscribers.has(key)) {
       this.subscribers.set(key, new Set());
     }
-    
+
     this.subscribers.get(key)!.add(callback);
-    
+
     // Return unsubscribe function
     return () => {
       const subscribers = this.subscribers.get(key);
@@ -926,7 +918,7 @@ class CouponService {
   async getUserCollectedCoupons(userId: string): Promise<UserCouponCollection[]> {
     try {
       console.log('🔍 [couponService] Getting collected coupons for user:', userId);
-      
+
       const { data, error } = await supabase
         .from('user_coupon_collections')
         .select(`

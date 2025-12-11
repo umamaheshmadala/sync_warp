@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useLayoutEffect } from 'react'
-import { Reply, Copy, Forward, Star, Trash2, CheckSquare, Share2, Pencil, Pin, PinOff } from 'lucide-react'
+import { Reply, Copy, Forward, Star, Trash2, CheckSquare, Share2, Pencil, Pin, PinOff, ShieldAlert } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Message } from '@/types/messaging'
 import { useShare } from '@/hooks/useShare'
@@ -30,6 +30,7 @@ interface MessageContextMenuProps {
   onPin?: () => void
   onUnpin?: () => void
   isPinned?: boolean
+  onReport?: () => void
 }
 
 /**
@@ -67,7 +68,8 @@ export function MessageContextMenu({
   userReactions = [],
   onPin,
   onUnpin,
-  isPinned
+  isPinned,
+  onReport
 }: MessageContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null)
   const [adjustedPosition, setAdjustedPosition] = useState(position)
@@ -75,41 +77,41 @@ export function MessageContextMenu({
   // Smart positioning: Calculate optimal position after menu renders
   useLayoutEffect(() => {
     if (!menuRef.current) return
-    
+
     const menu = menuRef.current
     const menuRect = menu.getBoundingClientRect()
     const menuWidth = menuRect.width
     const menuHeight = menuRect.height
-    
+
     // Viewport dimensions with padding for safety
     const viewportWidth = window.innerWidth
     const viewportHeight = window.innerHeight
     const padding = 10 // Minimum distance from edges
     const bottomReserved = 80 // Space for input field at bottom
-    
+
     let x = position.x
     let y = position.y
-    
+
     // Check right edge overflow - flip to left
     if (x + menuWidth + padding > viewportWidth) {
       x = Math.max(padding, position.x - menuWidth)
     }
-    
+
     // Check bottom edge overflow - flip to top
     if (y + menuHeight + bottomReserved > viewportHeight) {
       y = Math.max(padding, position.y - menuHeight)
     }
-    
+
     // Check left edge (in case we flipped)
     if (x < padding) {
       x = padding
     }
-    
+
     // Check top edge (in case we flipped)
     if (y < padding) {
       y = padding
     }
-    
+
     setAdjustedPosition({ x, y })
   }, [position])
 
@@ -156,7 +158,7 @@ export function MessageContextMenu({
         {/* Reactions Bar (Mobile/Touch) */}
         {onReact && (
           <div className="px-1 py-1 mb-1 border-b border-gray-100 flex justify-center">
-            <QuickReactionBar 
+            <QuickReactionBar
               onReact={(emoji) => {
                 onReact(emoji)
                 onClose()
@@ -254,6 +256,17 @@ export function MessageContextMenu({
           >
             <Star className="w-4 h-4 text-gray-500" />
             <span className="text-sm text-gray-800">Star</span>
+          </button>
+        )}
+
+        {/* Report (only for other's messages) */}
+        {onReport && !isOwn && (
+          <button
+            onClick={() => handleAction(onReport)}
+            className="flex items-center gap-2 w-full px-3 py-1.5 hover:bg-red-50 transition-colors text-left"
+          >
+            <ShieldAlert className="w-4 h-4 text-red-500" />
+            <span className="text-sm text-red-600">Report</span>
           </button>
         )}
 

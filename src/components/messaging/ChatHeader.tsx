@@ -89,6 +89,16 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
     }
 
     checkBlockStatus()
+
+    // Listen for updates (from ReportDialog or other sources)
+    const handleUpdate = () => {
+      checkBlockStatus()
+    }
+    window.addEventListener('conversation-updated', handleUpdate)
+
+    return () => {
+      window.removeEventListener('conversation-updated', handleUpdate)
+    }
   }, [otherParticipantId])
 
   // Early return with skeletons if no conversation
@@ -195,19 +205,34 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
           break
       }
     } catch (error) {
-      console.error('Action failed:', error)
+      console.error('❌ handleAction failed:', error)
+      console.error('❌ Action type:', action)
+      console.error('❌ Error details:', JSON.stringify(error, null, 2))
       toast.error('Action failed')
     }
   }
 
   const handleBlockToggle = async () => {
-    if (!otherParticipantId) return
+    console.log('🔴 handleBlockToggle called', {
+      conversationId,
+      otherParticipantId,
+      isBlocked
+    })
+
+    if (!otherParticipantId) {
+      console.error('❌ Cannot block/unblock: otherParticipantId is missing')
+      toast.error('Cannot perform action: User ID missing')
+      return
+    }
 
     try {
+      console.log('🟡 About to show confirmation dialog...')
+
       let confirmed = false
 
       // Use native dialog on mobile, browser confirm on web
       if (Capacitor.isNativePlatform()) {
+        console.log('📱 Using native dialog')
         const { value } = await Dialog.confirm({
           title: isBlocked ? 'Unblock User?' : 'Block User?',
           message: isBlocked
@@ -218,22 +243,34 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
         })
         confirmed = value
       } else {
-        // Web fallback using native browser confirm
+        console.log('💻 Using browser confirm dialog')
+        // CRITICAL: Use setTimeout to ensure menu closes first
+        await new Promise(resolve => setTimeout(resolve, 100))
+
         const message = isBlocked
           ? 'Are you sure you want to unblock this user? They will be able to message you again.'
           : 'Are you sure you want to block this user? You will no longer receive messages from them. They will not be notified.'
+
+        console.log('💬 Showing confirm dialog with message:', message.substring(0, 50) + '...')
         confirmed = window.confirm(message)
+        console.log('💬 Confirm returned:', confirmed)
       }
+
+      console.log('🤔 Confirmation dialog result:', confirmed)
 
       if (confirmed) {
         if (isBlocked) {
+          console.log('🔓 Unblocking user:', otherParticipantId)
           await blockService.unblockUser(otherParticipantId)
+          console.log('✅ User unblocked successfully')
           toast.success('User unblocked')
           setIsBlocked(false)
           // Trigger conversation list refresh
           window.dispatchEvent(new Event('conversation-updated'))
         } else {
+          console.log('🚫 Blocking user:', otherParticipantId)
           await blockService.blockUser(otherParticipantId)
+          console.log('✅ User blocked successfully')
           toast.success('User blocked')
           setIsBlocked(true)
           // Trigger conversation list refresh
@@ -243,7 +280,9 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
         }
       }
     } catch (error: any) {
-      console.error('Block/unblock failed:', error)
+      console.error('❌ handleBlockToggle failed:', error)
+      console.error('❌ Error message:', error.message || 'Unknown')
+      console.error('❌ Full error:', JSON.stringify(error, null, 2))
       toast.error(error.message || 'Operation failed')
     }
   }

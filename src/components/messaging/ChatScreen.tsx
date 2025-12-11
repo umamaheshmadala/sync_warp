@@ -91,7 +91,7 @@ export function ChatScreen() {
           .select('last_read_at')
           .eq('conversation_id', conversationId)
           .eq('user_id', currentUserId)
-          .single()
+          .maybeSingle()
 
         if (error) throw error
 

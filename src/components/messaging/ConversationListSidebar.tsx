@@ -59,7 +59,13 @@ export function ConversationListSidebar() {
     return conversations
       .filter(c => c != null) // Filter out null/undefined entries first
       .filter(c => {
+        // Debug log for blocked status
+        if (c.is_blocked) {
+          console.log(`🔒 Sidebar: Conversation ${c.conversation_id} is BLOCKED in render`);
+        }
+
         // Search filter
+
         const matchesSearch = c.other_participant_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
           c.last_message_content?.toLowerCase().includes(searchQuery.toLowerCase())
         if (!matchesSearch) return false
@@ -86,6 +92,17 @@ export function ConversationListSidebar() {
         return timeB - timeA
       })
   }, [conversations, searchQuery, activeFilter])
+
+  // Debug logging
+  useEffect(() => {
+    const blocked = conversations.filter(c => c.is_blocked);
+    console.log(`📊 Sidebar Stats:
+      Total: ${conversations.length}
+      Blocked: ${blocked.length}
+      Active Filter: ${activeFilter}
+      Blocked IDs: ${blocked.map(c => c.conversation_id).join(', ')}
+    `);
+  }, [conversations, activeFilter]);
 
   const handleConversationClick = (id: string) => {
     navigate(`/messages/${id}`)
