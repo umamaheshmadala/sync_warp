@@ -1,12 +1,6 @@
-/**
- * FriendCard Component
- * Story 9.3.1: Friends List Component
- * 
- * Individual friend card with avatar, status, and quick actions
- */
-
 import React, { useState } from 'react';
 import { MessageCircle, UserMinus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { OnlineStatusBadge, OnlineStatusDot } from '../status/OnlineStatusBadge';
 import { useFriendActions } from '../../hooks/friends/useFriendActions';
 import type { Friend } from '../../types/friends';
@@ -18,8 +12,9 @@ interface FriendCardProps {
 }
 
 export function FriendCard({ friend, style, onClick }: FriendCardProps) {
-  const { unfriend, sendMessage } = useFriendActions();
+  const { unfriend } = useFriendActions();
   const [showConfirm, setShowConfirm] = useState(false);
+  const navigate = useNavigate();
 
   const handleUnfriend = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -28,7 +23,7 @@ export function FriendCard({ friend, style, onClick }: FriendCardProps) {
 
   const handleSendMessage = (e: React.MouseEvent) => {
     e.stopPropagation();
-    sendMessage(friend.id);
+    navigate(`/messages?userId=${friend.id}`);
   };
 
   const confirmUnfriend = () => {
@@ -48,7 +43,7 @@ export function FriendCard({ friend, style, onClick }: FriendCardProps) {
     <>
       <div
         style={style}
-        className="flex items-center gap-3 p-4 hover:bg-gray-50 transition border-b border-gray-100 cursor-pointer"
+        className="flex items-center gap-3 p-4 hover:bg-gray-50 transition border-b border-gray-100 cursor-pointer border-4 border-green-500"
         data-testid="friend-card"
         onClick={onClick}
       >

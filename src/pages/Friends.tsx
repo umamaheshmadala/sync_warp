@@ -63,7 +63,7 @@ export function FriendsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50" {...bind()} ref={containerRef}>
+    <div className="min-h-screen bg-gray-50" ref={containerRef}>
       {/* Pull-to-refresh indicator */}
       {(pullDistance > 0 || isRefreshing) && (
         <div

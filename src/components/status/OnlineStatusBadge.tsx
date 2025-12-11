@@ -11,12 +11,14 @@ interface OnlineStatusBadgeProps {
     userId: string;
     lastActive?: string | null; // Added fallback from DB
     showText?: boolean;
+    className?: string;
 }
 
 export function OnlineStatusBadge({
     userId,
     lastActive: dbLastActive,
-    showText = true
+    showText = true,
+    className
 }: OnlineStatusBadgeProps) {
     const { isUserOnline, getLastSeen } = useOnlineStatus();
 
@@ -27,7 +29,7 @@ export function OnlineStatusBadge({
     const displayLastSeen = realtimeLastSeen || dbLastActive;
 
     return (
-        <div className="flex items-center gap-2">
+        <div className={`flex items-center gap-2 ${className || ''}`}>
             {online ? (
                 <>
                     <span className="relative flex h-3 w-3" aria-label="Online">

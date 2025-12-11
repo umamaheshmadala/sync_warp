@@ -21,6 +21,7 @@ import { useRealtimeFriends } from '../../hooks/friends/useRealtimeFriends';
 export function FriendsList({ searchQuery = '' }: FriendsListProps) {
   useRealtimeFriends(); // Enable realtime updates
   const { friends, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage, error } = useFriendsList();
+
   const [selectedFriendId, setSelectedFriendId] = React.useState<string | null>(null);
 
   // Filter friends based on search query
@@ -81,7 +82,7 @@ export function FriendsList({ searchQuery = '' }: FriendsListProps) {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
+    <div className="bg-white rounded-lg shadow" data-testid="friends-list-container">
       {/* Results count when searching */}
       {searchQuery && (
         <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">

@@ -3,6 +3,8 @@
 **Parent Epic:** [EPIC 8.7 - Moderation & Safety](../epics/EPIC_8.7_Moderation_Safety.md)
 **Priority:** P1 - High
 **Estimated Effort:** 2 Days
+**Status:** ⏸️ **WAITING FOR ADMIN PANEL** - Core reporting functionality can be implemented, but full report review and moderation requires admin panel (see Admin Requirements section)
+**Dependencies:** Admin Panel Module (for report review, moderation actions, and analytics)
 
 ---
 
@@ -27,7 +29,15 @@ Empower users to report inappropriate content (spam, harassment, scams). The sys
 
 ### 3. Logic & Automation
 - [ ] **Duplicate Check**: User cannot report the same message twice.
-- [ ] **Auto-Flagging**: If a message receives 3+ unique reports, mark `messages.is_flagged = true`.
+- [ ] **Auto-Flagging**: If a message receives 3+ unique reports (weighted by reputation), mark `messages.is_flagged = true`.
+
+### 4. Admin Requirements (Blocked - Awaiting Admin Panel)
+- [ ] **Admin Dashboard**: Report queue showing pending/reviewed/actioned reports
+- [ ] **Review Actions**: Approve (action), Dismiss, or Escalate reports
+- [ ] **Moderation Tools**: Ability to delete messages, warn users, or suspend accounts
+- [ ] **Analytics**: Report trends, top reporters, false positive rates
+- [ ] **Bulk Actions**: Review multiple reports for the same message simultaneously
+- [ ] **Reputation Management**: Override reporter reputation scores for abusive reporters
 
 ---
 
@@ -80,7 +90,12 @@ CREATE POLICY "Users can insert their own reports" ON message_reports
 CREATE POLICY "Users can view their own reports" ON message_reports
   FOR SELECT USING (auth.uid() = reporter_id);
 
--- Admins can view all (add admin role check if applicable)
+-- ⏸️ ADMIN POLICIES (Implement when admin panel is ready)
+-- CREATE POLICY "Admins can view all reports" ON message_reports
+--   FOR SELECT USING (auth.jwt() ->> 'role' = 'admin');
+-- 
+-- CREATE POLICY "Admins can update report status" ON message_reports
+--   FOR UPDATE USING (auth.jwt() ->> 'role' = 'admin');
 ```
 
 ### 2. Reporting Service (Enhanced with Reputation)
@@ -193,6 +208,69 @@ class ReportingService {
     if (error) throw error;
     return data || [];
   }
+
+  // ⏸️ ADMIN METHODS (Implement when admin panel is ready)
+  /**
+   * Admin: Review a report and take action
+   * @requires Admin role authentication
+   */
+  async reviewReport(
+    reportId: string, 
+    action: 'actioned' | 'dismissed',
+    adminNotes?: string
+  ): Promise<void> {
+    const adminId = (await supabase.auth.getUser()).data.user!.id;
+    
+    // TODO: Verify admin role before proceeding
+    
+    const { error } = await supabase
+      .from('message_reports')
+      .update({
+        status: action,
+        reviewed_by: adminId,
+        reviewed_at: new Date().toISOString(),
+        admin_notes: adminNotes
+      })
+      .eq('id', reportId);
+
+    if (error) throw error;
+    
+    console.log(`✅ Admin reviewed report ${reportId}: ${action}`);
+  }
+
+  /**
+   * Admin: Get all pending reports with aggregation
+   * @requires Admin role authentication
+   */
+  async getPendingReports(): Promise<any[]> {
+    // TODO: Add admin role check
+    
+    const { data, error } = await supabase
+      .from('message_reports')
+      .select(`
+        *,
+        message:messages(content, sender_id),
+        reporter:users!message_reports_reporter_id_fkey(username, email)
+      `)
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  }
+
+  /**
+   * Admin: Get report analytics
+   * @requires Admin role authentication
+   */
+  async getReportAnalytics(): Promise<any> {
+    // TODO: Add admin role check
+    
+    const { data, error } = await supabase.rpc('get_report_analytics');
+    
+    if (error) throw error;
+    return data;
+  }
 }
 ```
 
@@ -262,6 +340,137 @@ const ReportMessageDialog = ({ messageId, onClose }) => {
 };
 ```
 
+### 4. Admin Panel Integration (Future Implementation)
+
+> [!WARNING]
+> **Admin Panel Dependency**: The following features require a fully functional admin panel with role-based access control. Implementation is blocked until the admin module is complete.
+
+**Required Admin Features:**
+
+```typescript
+// AdminReportQueue.tsx (Future Implementation)
+const AdminReportQueue = () => {
+  const [reports, setReports] = useState([]);
+  const [filter, setFilter] = useState<'pending' | 'all'>('pending');
+
+  useEffect(() => {
+    loadReports();
+  }, [filter]);
+
+  const loadReports = async () => {
+    const data = filter === 'pending' 
+      ? await reportingService.getPendingReports()
+      : await reportingService.getAllReports();
+    setReports(data);
+  };
+
+  const handleReview = async (reportId: string, action: 'actioned' | 'dismissed') => {
+    await reportingService.reviewReport(reportId, action);
+    toast.success(`Report ${action}`);
+    loadReports();
+  };
+
+  return (
+    <div className="admin-report-queue">
+      <h2>Report Moderation Queue</h2>
+      
+      {/* Filter Tabs */}
+      <Tabs value={filter} onChange={setFilter}>
+        <Tab value="pending">Pending ({reports.length})</Tab>
+        <Tab value="all">All Reports</Tab>
+      </Tabs>
+
+      {/* Report List */}
+      {reports.map(report => (
+        <ReportCard 
+          key={report.id}
+          report={report}
+          onAction={handleReview}
+        />
+      ))}
+    </div>
+  );
+};
+
+// ReportCard.tsx - Individual report display
+const ReportCard = ({ report, onAction }) => (
+  <div className="report-card">
+    <div className="report-header">
+      <span className="reason-badge">{report.reason}</span>
+      <span className="reputation">
+        Reporter Trust: {(report.reporter_reputation * 100).toFixed(0)}%
+      </span>
+    </div>
+    
+    <div className="message-preview">
+      <p>{report.message.content}</p>
+      <small>From: {report.message.sender_id}</small>
+    </div>
+
+    <div className="report-details">
+      <p><strong>Reporter:</strong> {report.reporter.username}</p>
+      <p><strong>Description:</strong> {report.description || 'N/A'}</p>
+      <p><strong>Reported:</strong> {new Date(report.created_at).toLocaleString()}</p>
+    </div>
+
+    <div className="action-buttons">
+      <Button 
+        variant="destructive" 
+        onClick={() => onAction(report.id, 'actioned')}
+      >
+        ✅ Take Action
+      </Button>
+      <Button 
+        variant="secondary" 
+        onClick={() => onAction(report.id, 'dismissed')}
+      >
+        ❌ Dismiss
+      </Button>
+      <Button variant="outline">👁️ View Full Context</Button>
+    </div>
+  </div>
+);
+```
+
+**Admin Database Requirements:**
+
+```sql
+-- Additional columns for admin panel (add to message_reports)
+ALTER TABLE message_reports ADD COLUMN IF NOT EXISTS admin_notes TEXT;
+
+-- Database function for analytics (admin panel use)
+CREATE OR REPLACE FUNCTION get_report_analytics()
+RETURNS JSON AS $$
+DECLARE
+  result JSON;
+BEGIN
+  SELECT json_build_object(
+    'total_reports', COUNT(*),
+    'pending', COUNT(*) FILTER (WHERE status = 'pending'),
+    'actioned', COUNT(*) FILTER (WHERE status = 'actioned'),
+    'dismissed', COUNT(*) FILTER (WHERE status = 'dismissed'),
+    'by_reason', json_agg(
+      json_build_object(
+        'reason', reason,
+        'count', COUNT(*)
+      )
+    ),
+    'avg_review_time_hours', AVG(
+      EXTRACT(EPOCH FROM (reviewed_at - created_at)) / 3600
+    ) FILTER (WHERE reviewed_at IS NOT NULL)
+  )
+  INTO result
+  FROM message_reports;
+  
+  RETURN result;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Grant execute to admins only (when role system is ready)
+-- GRANT EXECUTE ON FUNCTION get_report_analytics() TO authenticated;
+
+```
+
 ---
 
 ## 🤖 **MCP Integration Strategy**
@@ -286,7 +495,65 @@ const ReportMessageDialog = ({ messageId, onClose }) => {
 ---
 
 ## ✅ **Definition of Done**
-- [ ] `message_reports` table active.
-- [ ] Users can report messages via UI.
+
+### Phase 1: User-Facing Features (Implementable Now)
+- [ ] `message_reports` table active with all columns.
+- [ ] Users can report messages via UI with all report categories.
 - [ ] Duplicate reports are prevented.
 - [ ] Auto-flagging logic is implemented (verified via logs/DB).
+- [ ] Reporter reputation calculation working.
+- [ ] Weighted auto-flag threshold system functioning.
+
+### Phase 2: Admin Features (⏸️ Blocked - Awaiting Admin Panel)
+- [ ] Admin authentication and role system implemented.
+- [ ] Admin can view all pending reports in dashboard.
+- [ ] Admin can review and action/dismiss reports.
+- [ ] Admin can view report analytics and trends.
+- [ ] Admin can manage reporter reputation scores.
+- [ ] Admin moderation actions (delete message, warn user, suspend account) integrated.
+- [ ] Notification system for admins when new high-priority reports arrive.
+
+---
+
+## 📌 **Implementation Notes**
+
+> [!IMPORTANT]
+> **Current Status**: This story can be partially implemented without the admin panel. The user-facing reporting system, database schema, and auto-flagging logic should be completed now. However, full utilization of the reporting system requires an admin panel for:
+> - Reviewing and moderating reports
+> - Taking action on flagged content
+> - Managing reporter reputation
+> - Viewing analytics and trends
+>
+> **Next Steps**: Mark Phase 1 features as complete, then coordinate with admin panel development to implement Phase 2 features.
+
+**Integration Points for Future Admin Panel:**
+1. **Role-Based Access Control (RBAC)**: Admin panel must implement user roles (`admin`, `moderator`, `user`)
+2. **Admin Dashboard Route**: `/admin/reports` should display the `AdminReportQueue` component
+3. **Real-time Updates**: Consider using Supabase real-time subscriptions for live report queue updates
+4. **Audit Logging**: All admin actions should be logged for accountability
+5. **Permission Levels**: Different admin tiers (e.g., `moderator` can review, `admin` can also manage reputation)
+
+**Database Schema Extensions for Admin:**
+```sql
+-- Future: Add to users table when implementing admin system
+ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user' CHECK (role IN ('user', 'moderator', 'admin'));
+
+-- Future: Create audit log table for admin actions
+CREATE TABLE IF NOT EXISTS admin_actions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  admin_id UUID REFERENCES users(id) NOT NULL,
+  action_type TEXT NOT NULL, -- 'review_report', 'delete_message', 'warn_user', etc.
+  target_type TEXT NOT NULL, -- 'report', 'message', 'user'
+  target_id UUID NOT NULL,
+  details JSONB,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+```
+
+---
+
+## 🔗 **Related Stories**
+- **STORY 8.7.1**: Block/Unblock System (users can block reported users)
+- **STORY 8.7.3**: Spam Detection (AI-powered spam filtering)
+- **STORY 8.7.4**: Link Safety (automatic link scanning)
+- **Admin Panel Epic** (TBD): Required for Phase 2 completion
