@@ -2,7 +2,7 @@ import { supabase } from '../lib/supabase'
 import { optimisticUpdates } from '../utils/optimisticUpdates'
 import { useMessagingStore } from '../store/messagingStore'
 
-export type ConversationFilter = 'all' | 'unread' | 'archived' | 'pinned'
+export type ConversationFilter = 'all' | 'archived' | 'blocked'
 export type MuteDuration = 'hour' | 'day' | 'week' | 'forever'
 
 interface Conversation {
@@ -32,10 +32,11 @@ interface Conversation {
 class ConversationManagementService {
   /**
    * Archive a conversation (user-specific)
+   * Also auto-mutes the conversation
    */
   async archiveConversation(conversationId: string): Promise<void> {
     console.log('📦 Archiving conversation:', conversationId)
-    
+
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('Not authenticated')
 
@@ -61,16 +62,28 @@ class ConversationManagementService {
       throw error
     }
 
+    // Auto-mute using RPC function
+    try {
+      await supabase.rpc('mute_conversation', {
+        p_conversation_id: conversationId,
+        p_duration: 'forever',
+      })
+    } catch (muteError) {
+      console.warn('⚠️ Failed to auto-mute archived conversation:', muteError)
+      // Don't throw - archiving succeeded even if mute failed
+    }
+
     optimisticUpdates.confirmUpdate(updateId)
-    console.log('✅ Conversation archived successfully')
+    console.log('✅ Conversation archived and muted successfully')
   }
 
   /**
    * Unarchive a conversation (user-specific)
+   * Also auto-unmutes the conversation
    */
   async unarchiveConversation(conversationId: string): Promise<void> {
     console.log('📤 Unarchiving conversation:', conversationId)
-    
+
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('Not authenticated')
 
@@ -96,8 +109,18 @@ class ConversationManagementService {
       throw error
     }
 
+    // Auto-unmute using RPC function
+    try {
+      await supabase.rpc('unmute_conversation', {
+        p_conversation_id: conversationId,
+      })
+    } catch (unmuteError) {
+      console.warn('⚠️ Failed to auto-unmute unarchived conversation:', unmuteError)
+      // Don't throw - unarchiving succeeded even if unmute failed
+    }
+
     optimisticUpdates.confirmUpdate(updateId)
-    console.log('✅ Conversation unarchived')
+    console.log('✅ Conversation unarchived and unmuted successfully')
   }
 
   /**
@@ -181,18 +204,21 @@ class ConversationManagementService {
     let query = supabase.from('conversation_list').select('*')
 
     switch (filter) {
-      case 'unread':
-        query = query.gt('unread_count', 0).eq('is_archived', false)
-        break
       case 'archived':
+        // Show archived conversations (exclude blocked)
         query = query.eq('is_archived', true)
+        // TODO: Add exclusion for blocked users once we have is_blocked in view
         break
-      case 'pinned':
-        query = query.eq('is_pinned', true).eq('is_archived', false)
+      case 'blocked':
+        // Show conversations with blocked users
+        // TODO: Filter by is_blocked once added to conversation_list view
+        query = query.eq('is_archived', false) // Temporary - will be replaced
         break
       case 'all':
       default:
+        // Show active conversations (not archived, not blocked)
         query = query.eq('is_archived', false)
+        // TODO: Add exclusion for blocked users once we have is_blocked in view
         break
     }
 
@@ -340,10 +366,12 @@ class ConversationManagementService {
     optimisticUpdates.applyOptimistic(updateId, { is_muted: true }, { is_muted: false })
     useMessagingStore.getState().toggleMuteOptimistic(conversationId, true)
 
-    const { error } = await supabase.rpc('mute_conversation', {
+    const { data, error } = await supabase.rpc('mute_conversation', {
       p_conversation_id: conversationId,
       p_duration: duration,
     })
+
+    console.log('🔕 [muteConversation] RPC response:', { data, error })
 
     if (error) {
       console.error('Failed to mute conversation:', error)
@@ -355,7 +383,7 @@ class ConversationManagementService {
 
     optimisticUpdates.confirmUpdate(updateId)
     console.log('✅ Conversation muted')
-    
+
     // Trigger conversation list refetch to update UI
     window.dispatchEvent(new Event('conversation-updated'))
   }
@@ -371,9 +399,11 @@ class ConversationManagementService {
     optimisticUpdates.applyOptimistic(updateId, { is_muted: false }, { is_muted: true })
     useMessagingStore.getState().toggleMuteOptimistic(conversationId, false)
 
-    const { error } = await supabase.rpc('unmute_conversation', {
+    const { data, error } = await supabase.rpc('unmute_conversation', {
       p_conversation_id: conversationId,
     })
+
+    console.log('🔔 [unmuteConversation] RPC response:', { data, error })
 
     if (error) {
       console.error('Failed to unmute conversation:', error)
@@ -385,7 +415,7 @@ class ConversationManagementService {
 
     optimisticUpdates.confirmUpdate(updateId)
     console.log('✅ Conversation unmuted')
-    
+
     // Trigger conversation list refetch to update UI
     window.dispatchEvent(new Event('conversation-updated'))
   }
@@ -413,9 +443,9 @@ class ConversationManagementService {
     all: number
     unread: number
     archived: number
-    pinned: number
+    blocked: number
   }> {
-    const [allResult, unreadResult, archivedResult, pinnedResult] =
+    const [allResult, unreadResult, archivedResult] =
       await Promise.all([
         supabase
           .from('conversation_list')
@@ -430,18 +460,13 @@ class ConversationManagementService {
           .from('conversation_list')
           .select('*', { count: 'exact', head: true })
           .eq('is_archived', true),
-        supabase
-          .from('conversation_list')
-          .select('*', { count: 'exact', head: true })
-          .eq('is_pinned', true)
-          .eq('is_archived', false),
       ])
 
     return {
       all: allResult.count || 0,
       unread: unreadResult.count || 0,
       archived: archivedResult.count || 0,
-      pinned: pinnedResult.count || 0,
+      blocked: 0, // TODO: Implement blocked count once is_blocked added to view
     }
   }
 }

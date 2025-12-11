@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Capacitor } from '@capacitor/core'
 import { supabase } from '../../lib/supabase'
 
-import { ArrowLeft, MoreVertical, Video, Phone, Trash, Archive, Pin, MessageSquare, CheckCircle, ArchiveX, PinOff, AlertCircle, BellOff, Bell, Search } from 'lucide-react'
+import { ArrowLeft, MoreVertical, Video, Phone, Trash, Archive, Pin, MessageSquare, CheckCircle, ArchiveX, PinOff, AlertCircle, BellOff, Bell, Search, Ban, ShieldOff } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 import { Button } from '../ui/button'
 import {
@@ -23,6 +23,8 @@ import { MuteConversationDialog } from './MuteConversationDialog'
 import { FriendProfileModal } from '../friends/FriendProfileModal'
 import { showDeleteConversationSheet } from './DeleteConversationSheet'
 import { toast } from 'react-hot-toast'
+import { Dialog } from '@capacitor/dialog'
+import * as blockService from '../../services/blockService'
 
 interface ChatHeaderProps {
   conversationId: string
@@ -37,6 +39,8 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
   const [showClearDialog, setShowClearDialog] = React.useState(false)
   const [showMuteDialog, setShowMuteDialog] = React.useState(false)
   const [showProfileModal, setShowProfileModal] = React.useState(false)
+  const [isBlocked, setIsBlocked] = React.useState(false)
+  const [isCheckingBlockStatus, setIsCheckingBlockStatus] = React.useState(true)
 
   // Find the conversation
   const conversation = conversations.find(c => c.conversation_id === conversationId)
@@ -67,6 +71,25 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
 
     getOtherParticipant()
   }, [conversation])
+
+  // Check if other participant is blocked
+  React.useEffect(() => {
+    if (!otherParticipantId) return
+
+    const checkBlockStatus = async () => {
+      setIsCheckingBlockStatus(true)
+      try {
+        const blocked = await blockService.isUserBlocked(otherParticipantId)
+        setIsBlocked(blocked)
+      } catch (error) {
+        console.error('Failed to check block status:', error)
+      } finally {
+        setIsCheckingBlockStatus(false)
+      }
+    }
+
+    checkBlockStatus()
+  }, [otherParticipantId])
 
   // Early return with skeletons if no conversation
   if (!conversation) {
@@ -166,10 +189,62 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
         case 'mute':
           setShowMuteDialog(true)
           break
+
+        case 'block':
+          await handleBlockToggle()
+          break
       }
     } catch (error) {
       console.error('Action failed:', error)
       toast.error('Action failed')
+    }
+  }
+
+  const handleBlockToggle = async () => {
+    if (!otherParticipantId) return
+
+    try {
+      let confirmed = false
+
+      // Use native dialog on mobile, browser confirm on web
+      if (Capacitor.isNativePlatform()) {
+        const { value } = await Dialog.confirm({
+          title: isBlocked ? 'Unblock User?' : 'Block User?',
+          message: isBlocked
+            ? 'This user will be able to message you again.'
+            : 'You will no longer receive messages from this user. They will not be notified.',
+          okButtonTitle: isBlocked ? 'Unblock' : 'Block',
+          cancelButtonTitle: 'Cancel',
+        })
+        confirmed = value
+      } else {
+        // Web fallback using native browser confirm
+        const message = isBlocked
+          ? 'Are you sure you want to unblock this user? They will be able to message you again.'
+          : 'Are you sure you want to block this user? You will no longer receive messages from them. They will not be notified.'
+        confirmed = window.confirm(message)
+      }
+
+      if (confirmed) {
+        if (isBlocked) {
+          await blockService.unblockUser(otherParticipantId)
+          toast.success('User unblocked')
+          setIsBlocked(false)
+          // Trigger conversation list refresh
+          window.dispatchEvent(new Event('conversation-updated'))
+        } else {
+          await blockService.blockUser(otherParticipantId)
+          toast.success('User blocked')
+          setIsBlocked(true)
+          // Trigger conversation list refresh
+          window.dispatchEvent(new Event('conversation-updated'))
+          // Navigate back to messages list after blocking
+          navigate('/messages')
+        }
+      }
+    } catch (error: any) {
+      console.error('Block/unblock failed:', error)
+      toast.error(error.message || 'Operation failed')
     }
   }
 
@@ -307,6 +382,22 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
                   <>
                     <BellOff className="mr-2 h-4 w-4" />
                     <span>Mute</span>
+                  </>
+                )}
+              </DropdownMenuItem>
+
+              <DropdownMenuSeparator />
+
+              <DropdownMenuItem onClick={() => handleAction('block')} className="text-orange-600 focus:text-orange-600">
+                {isBlocked ? (
+                  <>
+                    <ShieldOff className="mr-2 h-4 w-4" />
+                    <span>Unblock</span>
+                  </>
+                ) : (
+                  <>
+                    <Ban className="mr-2 h-4 w-4" />
+                    <span>Block User</span>
                   </>
                 )}
               </DropdownMenuItem>

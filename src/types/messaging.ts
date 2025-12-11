@@ -42,7 +42,7 @@ export interface Message {
   shared_coupon_id?: string | null;
   shared_deal_id?: string | null;
   reply_to_id?: string | null;
-  
+
   // Forwarding fields (Story 8.10.6)
   is_forwarded?: boolean;
   original_message_id?: string | null;
@@ -57,7 +57,7 @@ export interface Message {
   deleted_at?: string | null;
   created_at: string;
   updated_at: string;
-  
+
   // Parent message for replies (populated by query)
   parent_message?: {
     id: string;
@@ -67,7 +67,7 @@ export interface Message {
     sender_name: string;
     created_at: string;
   } | null;
-  
+
   // Optimistic UI fields (client-side only)
   _optimistic?: boolean;   // True if message is being sent
   _failed?: boolean;       // True if message failed to send
@@ -103,6 +103,7 @@ export interface ConversationWithDetails {
   is_muted: boolean;
   muted_until?: string | null; // When mute expires (NULL = forever)
   is_pinned: boolean;
+  is_blocked: boolean; // Whether other participant is blocked (bidirectional)
   created_at: string;
   last_message_at?: string | null;
   last_message_id?: string | null;

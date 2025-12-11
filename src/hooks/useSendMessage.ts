@@ -7,6 +7,7 @@ import { triggerPushNotification } from '../services/pushNotificationSender'
 import { useNetworkStatus } from './useNetworkStatus'
 import { toast } from 'react-hot-toast'
 import type { SendMessageParams, Message } from '../types/messaging'
+import * as blockService from '../services/blockService'
 
 /**
  * Hook to send messages with optimistic updates, loading state, and error handling
@@ -52,11 +53,11 @@ import type { SendMessageParams, Message } from '../types/messaging'
  * ```
  */
 export function useSendMessage() {
-  const { 
-    isSendingMessage, 
-    setSendingMessage, 
-    addOptimisticMessage, 
-    replaceOptimisticMessage, 
+  const {
+    isSendingMessage,
+    setSendingMessage,
+    addOptimisticMessage,
+    replaceOptimisticMessage,
     markMessageFailed,
     messages // Access messages to look up parent message
   } = useMessagingStore()
@@ -81,7 +82,7 @@ export function useSendMessage() {
   const sendMessage = useCallback(async (params: SendMessageParams) => {
     // Generate temporary ID for optimistic message
     const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-    
+
     // Look up parent message if this is a reply
     let parentMessage = null
     if (params.replyToId) {
@@ -98,7 +99,7 @@ export function useSendMessage() {
         }
       }
     }
-    
+
     // Create optimistic message
     const optimisticMessage: Message = {
       id: tempId, // Temporary ID
@@ -126,13 +127,13 @@ export function useSendMessage() {
     try {
       // 1. Add optimistic message immediately (instant UI feedback)
       addOptimisticMessage(params.conversationId, optimisticMessage)
-      
+
       setSendingMessage(true)
 
       // 2. Check if online - if offline, queue message for later
       if (!isOnline) {
         console.log('📴 Offline - queueing message for later sync')
-        
+
         // Queue the message for later sync
         const queueId = await offlineQueueService.queueMessage({
           conversationId: params.conversationId,
@@ -187,14 +188,28 @@ export function useSendMessage() {
       return tempId // Return tempId for progress tracking
     } catch (error) {
       console.error('❌ Failed to send message:', error)
-      
+
+      // Check if it's a blocking-related error (RLS policy violation)
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      const isBlockError =
+        errorMessage.includes('blocked') ||
+        errorMessage.includes('PGRST116') || // PostgreSQL RLS policy violation
+        errorMessage.includes('new row violates row-level security policy')
+
+      if (isBlockError) {
+        console.log('🚫 Message blocked by RLS policy (user is blocked)')
+        markMessageFailed(params.conversationId, tempId)
+        toast.error('Unable to send message. This user may have blocked you.')
+        throw error
+      }
+
       // Check if it's a network error - queue instead of fail
-      const isNetworkError = error instanceof TypeError && 
+      const isNetworkError = error instanceof TypeError &&
         (error.message.includes('fetch') || error.message.includes('network'))
-      
+
       if (isNetworkError) {
         console.log('📴 Network error - queueing message for later sync')
-        
+
         try {
           const queueId = await offlineQueueService.queueMessage({
             conversationId: params.conversationId,
@@ -219,10 +234,10 @@ export function useSendMessage() {
           console.error('❌ Failed to queue message:', queueError)
         }
       }
-      
+
       // Mark message as failed (show retry button)
       markMessageFailed(params.conversationId, tempId)
-      
+
       toast.error('Failed to send message. Tap to retry.')
       throw error
     } finally {
@@ -257,9 +272,9 @@ export function useSendMessage() {
     }
   }, [sendMessage])
 
-  return { 
-    sendMessage, 
+  return {
+    sendMessage,
     retryMessage,
-    isSending: isSendingMessage 
+    isSending: isSendingMessage
   }
 }

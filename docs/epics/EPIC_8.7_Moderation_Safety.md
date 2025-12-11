@@ -3,7 +3,7 @@
 **Epic Owner:** Backend Engineering / Product Safety  
 **Dependencies:** Epic 8.1 (Database), Epic 8.2 (Core Messaging)  
 **Timeline:** Week 9 (1 week)  
-**Status:** 📋 Planning
+**Status:** 🚧 **In Progress** (Story 8.7.1 Complete)
 
 ---
 
@@ -531,11 +531,12 @@ export function useSendMessage() {
 
 ## 📋 **Story Breakdown**
 
-### **Story 8.7.1: Block/Unblock System** (2 days)
-- [ ] Implement blockingService
-- [ ] Create block user UI
-- [ ] Show blocked users list
-- [ ] Prevent messaging blocked users
+### **Story 8.7.1: Block/Unblock System** (2 days) ✅ **COMPLETE**
+- [x] Implement blockingService
+- [x] Create block user UI
+- [x] Show blocked users list
+- [x] Prevent messaging blocked users
+- [x] **Mobile Testing**: Verified on Android (Samsung SM-M315F)
 - **🛢 MCP**: Test blocking via Supabase MCP
 
 ### **Story 8.7.2: Report System** (2 days)

@@ -55,7 +55,7 @@ class MessagingService {
           this.isOnline = status.connected;
           console.log('📡 Network status:', status.connected ? 'Online' : 'Offline');
         });
-        
+
         // Get initial status
         const status = await Network.getStatus();
         this.isOnline = status.connected;
@@ -89,21 +89,21 @@ class MessagingService {
    */
   private getErrorMessage(error: any): string {
     const platform = Capacitor.getPlatform(); // 'web', 'ios', 'android'
-    
+
     if (error.message?.includes('timeout')) {
       if (platform === 'ios' || platform === 'android') {
         return 'Poor connection. Please check your network and try again.';
       }
       return 'Request timed out. Please try again.';
     }
-    
+
     if (error.message?.includes('network')) {
       if (platform === 'ios' || platform === 'android') {
         return 'Connection lost. Make sure you have WiFi or mobile data enabled.';
       }
       return 'Network error. Please check your connection.';
     }
-    
+
     return error.message || 'An unexpected error occurred';
   }
 
@@ -117,14 +117,14 @@ class MessagingService {
   ): Promise<T> {
     const isMobile = Capacitor.isNativePlatform();
     const retries = isMobile ? maxRetries : 1; // Only retry on mobile
-    
+
     for (let attempt = 0; attempt < retries; attempt++) {
       try {
         return await operation();
       } catch (error: any) {
-        const isNetworkError = error.message?.includes('network') || 
-                              error.message?.includes('timeout');
-        
+        const isNetworkError = error.message?.includes('network') ||
+          error.message?.includes('timeout');
+
         if (isNetworkError && attempt < retries - 1) {
           // Exponential backoff: 1s, 2s, 4s
           const delay = Math.pow(2, attempt) * 1000;
@@ -152,20 +152,20 @@ class MessagingService {
     return this.retryWithBackoff(async () => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), this.getTimeout());
-      
+
       try {
         if (!this.isOnline && Capacitor.isNativePlatform()) {
           throw new Error('No internet connection. Please check your network.');
         }
 
         console.log('🔄 Creating/getting conversation with:', friendId);
-        
+
         const { data, error } = await supabase
           .rpc('create_or_get_conversation', { p_participant_id: friendId })
           .abortSignal(controller.signal);
-        
+
         if (error) throw error;
-        
+
         console.log('✅ Conversation ID:', data);
         return data as string;
       } catch (error: any) {
@@ -207,9 +207,9 @@ class MessagingService {
         p_shared_deal_id: params.sharedDealId || null,
         p_reply_to_id: params.replyToId || null
       });
-      
+
       if (error) throw error;
-      
+
       console.log('✅ Message sent:', data);
       return data as string;
     });
@@ -318,25 +318,25 @@ class MessagingService {
   ): Promise<FetchMessagesResponse> {
     try {
       console.log('📥 Fetching messages for conversation:', conversationId);
-      
+
       // Get current user for status derivation
       const { data: userData } = await supabase.auth.getUser();
       const currentUserId = userData?.user?.id;
-      
+
       const { data, error } = await supabase
         .rpc('get_conversation_messages', {
           p_conversation_id: conversationId,
           p_limit: limit + 1, // Fetch one extra to check hasMore
           p_before_id: beforeMessageId || null
         });
-      
+
       if (error) throw error;
-      
+
       // Get message IDs that the current user sent (for status derivation)
       const sentMessageIds = (data || [])
         .filter((msg: any) => msg.sender_id === currentUserId)
         .map((msg: any) => msg.id);
-      
+
       // Fetch read receipts for sent messages
       let readReceiptsByMessageId: Record<string, boolean> = {};
       if (sentMessageIds.length > 0) {
@@ -345,14 +345,14 @@ class MessagingService {
           .select('message_id, read_at')
           .in('message_id', sentMessageIds)
           .not('read_at', 'is', null);
-        
+
         // Create a map of message_id -> has been read 
         readReceiptsByMessageId = (receipts || []).reduce((acc: Record<string, boolean>, receipt: any) => {
           acc[receipt.message_id] = true;
           return acc;
         }, {});
       }
-      
+
       const messages = (data || []).map((msg: any) => {
         // Derive status for own messages
         let status: 'sent' | 'delivered' | 'read' | undefined;
@@ -365,7 +365,7 @@ class MessagingService {
           }
         }
         // For received messages, status is not needed (we don't show ticks on received messages)
-        
+
         return {
           ...msg,
           status,
@@ -382,7 +382,7 @@ class MessagingService {
 
       const hasMore = messages.length > limit;
       const finalMessages = (messages.slice(0, limit)).reverse(); // Reverse for chronological order
-      
+
       console.log(`✅ Fetched ${finalMessages.length} messages with status derived`);
       return { messages: finalMessages, hasMore };
     } catch (error) {
@@ -394,24 +394,68 @@ class MessagingService {
 
   /**
    * Fetch conversations list with participant details
+   * Enriches conversations with is_blocked status
    * 
    * @returns Array of conversations with details
    */
   async fetchConversations(): Promise<ConversationWithDetails[]> {
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // Fetch conversations
       const { data, error } = await supabase
         .from('conversation_list')
         .select('*')
         .order('last_message_at', { ascending: false, nullsFirst: false })
         .order('created_at', { ascending: false });
-      
+
       if (error) throw error;
-      
-      return (data || []).map((conv: any) => ({
-        ...conv,
-        participant1_id: conv.participants?.[0],
-        participant2_id: conv.participants?.[1]
-      }));
+
+      // Get all blocked user IDs (both directions)
+      const { data: blockedData } = await supabase
+        .from('blocked_users')
+        .select('blocker_id, blocked_id')
+        .or(`blocker_id.eq.${user.id},blocked_id.eq.${user.id}`);
+
+      console.log('🚫 [fetchConversations] Blocked users query result:', blockedData);
+
+      // Create a Set of blocked user IDs for quick lookup
+      const blockedUserIds = new Set<string>();
+      (blockedData || []).forEach(block => {
+        if (block.blocker_id === user.id) {
+          blockedUserIds.add(block.blocked_id);
+          console.log(`🚫 [fetchConversations] I blocked user: ${block.blocked_id}`);
+        } else {
+          blockedUserIds.add(block.blocker_id);
+          console.log(`🚫 [fetchConversations] User ${block.blocker_id} blocked me`);
+        }
+      });
+
+      console.log(`🚫 [fetchConversations] Total blocked user IDs: ${blockedUserIds.size}`, Array.from(blockedUserIds));
+
+      return (data || []).map((conv: any) => {
+        const participant1_id = conv.participants?.[0];
+        const participant2_id = conv.participants?.[1];
+
+        // Determine the other participant
+        const otherParticipantId = user.id === participant1_id ? participant2_id : participant1_id;
+
+        // Check if other participant is blocked
+        const is_blocked = blockedUserIds.has(otherParticipantId);
+
+        if (is_blocked) {
+          console.log(`🚫 [fetchConversations] Conversation ${conv.conversation_id} is BLOCKED (other participant: ${otherParticipantId})`);
+        }
+
+        return {
+          ...conv,
+          participant1_id,
+          participant2_id,
+          is_blocked,  // ✅ Add is_blocked field
+        };
+      });
     } catch (error) {
       console.error('❌ Error fetching conversations:', error);
       throw error;
@@ -431,9 +475,9 @@ class MessagingService {
         .select('*')
         .eq('conversation_id', conversationId)
         .single();
-      
+
       if (error) throw error;
-      
+
       if (!data) return null;
 
       return {
@@ -460,7 +504,7 @@ class MessagingService {
     try {
       const { error } = await supabase
         .rpc('mark_message_as_read', { p_message_id: messageId });
-      
+
       if (error) throw error;
     } catch (error) {
       console.error('❌ Error marking message as read:', error);
@@ -485,7 +529,7 @@ class MessagingService {
         .eq('conversation_id', conversationId)
         .eq('is_deleted', false)
         .neq('sender_id', user.user.id);
-      
+
       // Mark each as read (batch operation)
       if (unreadMessages && unreadMessages.length > 0) {
         await Promise.all(
@@ -505,9 +549,9 @@ class MessagingService {
   async getUnreadCount(): Promise<number> {
     try {
       const { data, error } = await supabase.rpc('get_unread_message_count');
-      
+
       if (error) throw error;
-      
+
       return data as number;
     } catch (error) {
       console.error('❌ Error getting unread count:', error);
@@ -528,12 +572,12 @@ class MessagingService {
     try {
       const { error } = await supabase
         .from('messages')
-        .update({ 
-          is_deleted: true, 
-          deleted_at: new Date().toISOString() 
+        .update({
+          is_deleted: true,
+          deleted_at: new Date().toISOString()
         })
         .eq('id', messageId);
-      
+
       if (error) throw error;
     } catch (error) {
       console.error('❌ Error deleting message:', error);
@@ -551,13 +595,13 @@ class MessagingService {
     try {
       const { error } = await supabase
         .from('messages')
-        .update({ 
+        .update({
           content: newContent,
           is_edited: true,
           edited_at: new Date().toISOString()
         })
         .eq('id', messageId);
-      
+
       if (error) throw error;
     } catch (error) {
       console.error('❌ Error editing message:', error);

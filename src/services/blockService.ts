@@ -42,6 +42,8 @@ export interface UnblockUserResult {
  * - Cancels pending friend requests
  * - Adds block entry
  * 
+ * Note: Blocked conversations appear in "Blocked" tab (not archived)
+ * 
  * @param userId - ID of user to block
  * @param reason - Optional reason for blocking (private to blocker)
  * @returns Result with counts of removed relationships
@@ -69,6 +71,7 @@ export async function blockUser(
     throw new Error('No response from block operation');
   }
 
+  console.log(`🚫 Blocked user ${userId}`);
   return data as BlockUserResult;
 }
 
@@ -275,4 +278,70 @@ export async function getBlockingStatus(userId: string): Promise<{
   ]);
 
   return { youBlockedThem, theyBlockedYou };
+}
+
+/**
+ * Archive all conversations with a specific user
+ * Called automatically when blocking a user
+ * 
+ * @param userId - ID of user whose conversations should be archived
+ * @throws Error if archiving fails
+ */
+export async function archiveConversationsWithUser(userId: string): Promise<void> {
+  if (!userId) {
+    return;
+  }
+
+  const { data: currentUser } = await supabase.auth.getUser();
+  if (!currentUser.user) {
+    throw new Error('Not authenticated');
+  }
+
+  const currentUserId = currentUser.user.id;
+
+  // Find all conversations where both users are participants
+  // Using array contains operator to check if both users are in participants array
+  const { data: conversations, error: fetchError } = await supabase
+    .from('conversations')
+    .select('id, participants, type')
+    .contains('participants', [currentUserId])
+    .contains('participants', [userId]);
+
+  if (fetchError) {
+    console.error('Failed to fetch conversations:', fetchError);
+    throw new Error('Failed to fetch conversations');
+  }
+
+  if (!conversations || conversations.length === 0) {
+    console.log('No conversations to archive');
+    return;
+  }
+
+  // Filter to only include direct (1-on-1) conversations
+  const targetConversations = conversations.filter(
+    (c) => c.type === 'direct' && c.participants.length === 2
+  );
+
+  if (targetConversations.length === 0) {
+    console.log('No direct conversations to archive');
+    return;
+  }
+
+  // Archive each conversation
+  for (const convo of targetConversations) {
+    const { error: archiveError } = await supabase
+      .from('conversation_participants')
+      .update({
+        is_archived: true,
+      })
+      .eq('conversation_id', convo.id)
+      .eq('user_id', currentUserId);
+
+    if (archiveError) {
+      console.error(`Failed to archive conversation ${convo.id}:`, archiveError);
+      // Continue archiving other conversations even if one fails
+    } else {
+      console.log(`📦 Archived conversation ${convo.id}`);
+    }
+  }
 }

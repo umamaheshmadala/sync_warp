@@ -9,16 +9,15 @@ interface Props {
     all: number
     unread: number
     archived: number
-    pinned: number
+    blocked: number
   }
 }
 
 export function ConversationFilterTabs({ activeFilter, onFilterChange, counts }: Props) {
   const tabs: Array<{ key: ConversationFilter; label: string; count: number; showBadge: boolean }> = [
-    { key: 'all', label: 'Inbox', count: counts.all, showBadge: false },
-    { key: 'unread', label: 'Unread', count: counts.unread, showBadge: true },
-    { key: 'pinned', label: 'Pinned', count: counts.pinned, showBadge: false },
+    { key: 'all', label: 'Inbox', count: counts.unread, showBadge: true }, // Show unread badge on Inbox
     { key: 'archived', label: 'Archived', count: counts.archived, showBadge: false },
+    { key: 'blocked', label: 'Blocked', count: counts.blocked, showBadge: false },
   ]
 
   return (

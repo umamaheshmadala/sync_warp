@@ -23,8 +23,8 @@ export function ConversationListSidebar() {
   const [showFriendPicker, setShowFriendPicker] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeFilter, setActiveFilter] = useState<ConversationFilter>('all')
-  const [counts, setCounts] = useState({ all: 0, unread: 0, archived: 0, pinned: 0 })
-  
+  const [counts, setCounts] = useState({ all: 0, unread: 0, archived: 0, blocked: 0 })
+
   // Multi-select state
   const [selectionMode, setSelectionMode] = useState(false)
   const [selectedConversations, setSelectedConversations] = useState<string[]>([])
@@ -39,7 +39,14 @@ export function ConversationListSidebar() {
     const fetchCounts = async () => {
       try {
         const countsData = await conversationManagementService.getConversationCounts()
-        setCounts(countsData)
+
+        // Compute blocked count from conversations (since messagingService enriches with is_blocked)
+        const blockedCount = conversations.filter(c => c.is_blocked).length
+
+        setCounts({
+          ...countsData,
+          blocked: blockedCount,  // Override with actual count
+        })
       } catch (error) {
         console.error('Failed to fetch counts:', error)
       }
@@ -54,27 +61,25 @@ export function ConversationListSidebar() {
       .filter(c => {
         // Search filter
         const matchesSearch = c.other_participant_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                              c.last_message_content?.toLowerCase().includes(searchQuery.toLowerCase())
+          c.last_message_content?.toLowerCase().includes(searchQuery.toLowerCase())
         if (!matchesSearch) return false
 
         // Tab filter
         switch (activeFilter) {
-          case 'unread':
-            return c.unread_count > 0 && !c.is_archived
           case 'archived':
-            return c.is_archived
-          case 'pinned':
-            return c.is_pinned && !c.is_archived
+            return c.is_archived && !c.is_blocked  // Exclude blocked from archived
+          case 'blocked':
+            return c.is_blocked  // Show only blocked conversations
           case 'all':
           default:
-            return !c.is_archived
+            return !c.is_archived && !c.is_blocked  // Show active, non-blocked
         }
       })
       .sort((a, b) => {
         // Pinned conversations first
         if (a.is_pinned && !b.is_pinned) return -1
         if (!a.is_pinned && b.is_pinned) return 1
-        
+
         // Then sort by last message time
         const timeA = parseDatabaseDate(a.last_message_at || a.created_at)?.getTime() || 0
         const timeB = parseDatabaseDate(b.last_message_at || b.created_at)?.getTime() || 0
@@ -121,18 +126,18 @@ export function ConversationListSidebar() {
           <h1 className="text-xl font-bold text-gray-900">Messaging</h1>
           <div className="flex items-center gap-1">
             {!selectionMode && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 className="h-8 text-gray-600"
                 onClick={() => setSelectionMode(true)}
               >
                 Select
               </Button>
             )}
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               className="h-8 w-8 text-gray-600"
               onClick={() => setShowFriendPicker(true)}
             >
@@ -178,13 +183,12 @@ export function ConversationListSidebar() {
           <div className="text-center py-12 px-4">
             <p className="text-gray-500 text-sm">
               {activeFilter === 'archived' ? 'No archived conversations' :
-               activeFilter === 'pinned' ? 'No pinned conversations' :
-               activeFilter === 'unread' ? 'No unread conversations' :
-               'No messages found'}
+                activeFilter === 'blocked' ? 'No blocked users' :
+                  'No messages found'}
             </p>
             {activeFilter === 'all' && (
-              <Button 
-                variant="link" 
+              <Button
+                variant="link"
                 className="mt-2 text-blue-600"
                 onClick={() => setShowFriendPicker(true)}
               >
@@ -196,7 +200,7 @@ export function ConversationListSidebar() {
           <div className="divide-y divide-gray-100">
             {filteredConversations.map((conversation) => {
               const isSelected = selectedConversations.includes(conversation.conversation_id)
-              
+
               return isNative ? (
                 <SwipeableConversationCard
                   key={conversation.conversation_id}

@@ -1,8 +1,10 @@
 # 🛡️ STORY 8.7.1: Block/Unblock System
 
-**Parent Epic:** [EPIC 8.7 - Moderation & Safety](../epics/EPIC_8.7_Moderation_Safety.md)
-**Priority:** P0 - Critical
-**Estimated Effort:** 2 Days
+**Parent Epic:** [EPIC 8.7 - Moderation & Safety](../epics/EPIC_8.7_Moderation_Safety.md)  
+**Priority:** P0 - Critical  
+**Estimated Effort:** 2 Days  
+**Status:** ✅ **COMPLETE**  
+**Completed:** 2025-12-11
 
 ---
 
@@ -237,8 +239,10 @@ try {
 ---
 
 ## ✅ **Definition of Done**
-- [ ] Service implemented and unit tested.
-- [ ] UI for Block/Unblock works on Desktop & Mobile.
-- [ ] Native dialogs used on mobile.
-- [ ] Blocked Users list page implemented.
-- [ ] Messaging blocked users is impossible.
+- [x] Service implemented and unit tested.
+- [x] UI for Block/Unblock works on Desktop & Mobile.
+- [x] Native dialogs used on mobile.
+- [x] Blocked Users list page implemented.
+- [x] Messaging blocked users is impossible.
+- [x] **VERIFIED ON MOBILE** (Android - Samsung SM-M315F)
+

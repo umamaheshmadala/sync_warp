@@ -40,6 +40,7 @@ import TestProfileModal from '../pages/TestProfileModal'
 // Story 9.5.6: Privacy Dashboard
 import { FriendsPrivacySettings } from '../pages/settings/FriendsPrivacySettings'
 import NotificationSettings from '../pages/settings/NotificationSettings'
+import BlockedUsersPage from '../pages/BlockedUsersPage'
 
 // Story 9.6.2: Activity Feed UI
 import TestActivityFeed from '../pages/TestActivityFeed'
@@ -470,6 +471,12 @@ export const routes: RouteConfig[] = [
     title: 'Notification Settings - SynC'
   },
   {
+    path: '/settings/blocked-users',
+    element: <BlockedUsersPage />,
+    protected: true,
+    title: 'Blocked Users - SynC'
+  },
+  {
     path: '/profile',
     element: (
       <RouteLoader>
@@ -627,7 +634,7 @@ export const routes: RouteConfig[] = [
       title: 'Test Contact Sync'
     }
   ] : []),
-  
+
   // ... (other routes)
 ]
 
@@ -651,7 +658,7 @@ export default function AppRouter() {
         </ProtectedRoute>
       )
     } else if (route.path.startsWith('/auth/') || route.path === '/') {
-       element = (
+      element = (
         <ProtectedRoute
           requireAuth={false}
           debugMode={isDevelopment}
