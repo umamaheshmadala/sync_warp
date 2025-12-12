@@ -14,14 +14,14 @@ Prevent the spread of malicious links, phishing scams, and unwanted URL shortene
 ## 📋 **Acceptance Criteria**
 
 ### 1. Validation Logic
-- [ ] **Domain Blocklist**: Block known malicious domains  
-- [ ] **Protocol Check**: Ensure URLs are well-formed (http/https)
-- [ ] **Homograph Detection**: Detect punycode and mixed-script phishing attempts
-- [ ] **Safe Browsing API**: Integrate Google Safe Browsing API for real-time threat detection
+- [x] **Domain Blocklist**: Block known malicious domains  
+- [x] **Protocol Check**: Ensure URLs are well-formed (http/https)
+- [x] **Homograph Detection**: Detect punycode and mixed-script phishing attempts
+- [x] **Safe Browsing API**: Integrate Google Safe Browsing API for real-time threat detection
 
 ### 2. User Feedback
-- [ ] If link is blocked → Toast: "This link is not allowed for safety reasons"
-- [ ] If link is suspicious → Warning badge/tooltip (non-blocking)
+- [x] If link is blocked → Toast: "This link is not allowed for safety reasons"
+- [x] If link is suspicious → Warning badge/tooltip (non-blocking)
 
 ---
 
@@ -242,6 +242,6 @@ if (!linkValidation.valid) {
 ---
 
 ## ✅ **Definition of Done**
-- [ ] `LinkValidationService` implemented.
-- [ ] Local blocklist configured.
-- [ ] Users prevented from sending blocked links.
+- [x] `LinkValidationService` implemented.
+- [x] Local blocklist configured.
+- [x] Users prevented from sending blocked links.

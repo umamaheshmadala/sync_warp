@@ -15,17 +15,17 @@ Create database-driven spam detection configuration to allow runtime updates of 
 ## 📋 **Acceptance Criteria**
 
 ### 1. Database Schema
-- [ ] `spam_keywords` table created with columns: `keyword`, `severity`, `is_active`
-- [ ] `trusted_domains` table created for whitelisted URL domains
-- [ ] Seed data populated with initial keywords and domains
+- [x] `spam_keywords` table created with columns: `keyword`, `severity`, `is_active`
+- [x] `trusted_domains` table created for whitelisted URL domains
+- [x] Seed data populated with initial keywords and domains
 
 ### 2. Service Layer
-- [ ] `SpamConfigService` implemented with caching
-- [ ] Config fetched on app initialization
-- [ ] Auto-refresh every 5 minutes or manual refresh
+- [x] `SpamConfigService` implemented with caching
+- [x] Config fetched on app initialization
+- [x] Auto-refresh every 5 minutes or manual refresh
 
 ### 3. Admin Interface (Optional)
-- [ ] Simple UI to add/remove keywords (defer to v2 if time-constrained)
+- [x] Simple UI to add/remove keywords (defer to v2 if time-constrained)
 
 ---
 
@@ -223,7 +223,7 @@ describe('SpamConfigService', () => {
 ---
 
 ## ✅ **Definition of Done**
-- [ ] Database tables created and populated
-- [ ] `SpamConfigService` implemented with caching
-- [ ] Config initializes on app startup
-- [ ] Unit tests passing
+- [x] Database tables created and populated
+- [x] `SpamConfigService` implemented with caching
+- [x] Config initializes on app startup
+- [x] Unit tests passing

@@ -3,7 +3,7 @@
 **Epic Owner:** Backend Engineering / Product Safety  
 **Dependencies:** Epic 8.1 (Database), Epic 8.2 (Core Messaging)  
 **Timeline:** Week 9 (1 week)  
-**Status:** 🚧 **In Progress** (Stories 8.7.1 & 8.7.2 Complete)
+**Status:** 🚧 **In Progress** (Stories 8.7.1, 8.7.2, 8.7.4, 8.7.5 Complete)
 
 ---
 
@@ -555,11 +555,17 @@ export function useSendMessage() {
 - [ ] Auto-flag spam messages
 - **🧠 MCP**: Analyze spam logic with Context7
 
-### **Story 8.7.4: Link Validation** (1 day)
-- [ ] Implement URL validation
-- [ ] Block suspicious domains
-- [ ] Optional: Integrate Google Safe Browsing API
+### **Story 8.7.4: Link Validation** (1 day) ✅ **COMPLETE**
+- [x] Implement URL validation
+- [x] Block suspicious domains
+- [x] Optional: Integrate Google Safe Browsing API
 - **🌐 MCP**: Debug link validation with Chrome DevTools
+
+### **Story 8.7.5: Spam Configuration Infrastructure** (0.5 Day) ✅ **COMPLETE**
+- [x] Database tables created (spam_keywords, trusted_domains)
+- [x] SpamConfigService implemented with caching
+- [x] Config loads on app startup
+- **🛢 MCP**: Create tables via Supabase MCP
 
 ---
 
