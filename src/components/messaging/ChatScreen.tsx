@@ -380,7 +380,7 @@ export function ChatScreen() {
 
   return (
     <div
-      className="flex flex-col flex-1 bg-white chat-screen"
+      className="flex flex-col flex-1 bg-white chat-screen !pb-0 !mb-0"
     >
       <ChatHeader
         conversationId={conversationId}
@@ -459,6 +459,7 @@ export function ChatScreen() {
         editingMessage={editingMessage}
         onCancelEdit={handleCancelEdit}
       />
+
 
       {/* Forward Dialog */}
       {forwardMessage && (

@@ -85,9 +85,11 @@
 }
 
 /* Message Composer Fixed to Bottom */
+/* Message Composer Fixed to Bottom - DEPRECATED
 .safe-area-bottom {
   padding-bottom: max(12px, env(safe-area-inset-bottom));
 }
+*/
 
 /* Responsive Design */
 

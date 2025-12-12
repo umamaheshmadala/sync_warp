@@ -158,6 +158,12 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
 
       if (textareaRef.current) {
         textareaRef.current.style.height = 'auto'
+        const inputToFocus = textareaRef.current;
+        // Robust focus attempt for mobile/web
+        requestAnimationFrame(() => {
+          inputToFocus.focus();
+          setTimeout(() => inputToFocus.focus(), 100);
+        });
       }
     } catch (error) {
       console.error('Failed to send message:', error)
@@ -198,7 +204,7 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
   }
 
   return (
-    <div className="bg-white px-2 py-1 border-t">
+    <div className="bg-white px-2 py-1 border-t !mb-0">
       {/* Edit Context - WhatsApp style indicator */}
       {editingMessage && (
         <div className="mb-2 flex items-center gap-2 bg-blue-50 rounded-lg p-2 border-l-4 border-blue-500">

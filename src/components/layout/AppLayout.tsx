@@ -16,8 +16,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   // Don't show header/nav on auth pages only (root path is now dashboard)
   const isAuthPage = location.pathname.startsWith('/auth');
 
-  // Check if on messages route
-  const isMessagesRoute = location.pathname.startsWith('/messages/');
+  // Check if on messages route (relaxed check to handle IDs and trailing slashes)
+  const isMessagesRoute = location.pathname.includes('/messages');
 
   // Configure Keyboard and Listeners
   useEffect(() => {
@@ -62,9 +62,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <main
         className={`flex-1 flex flex-col min-h-0 relative pt-16 ${isMessagesRoute ? 'overflow-hidden' : 'overflow-y-auto'
           }`}
-        style={{
-          paddingBottom: shouldShowBottomNav ? 'calc(112px + env(safe-area-inset-bottom))' : '0px'
-        }}
       >
         {children}
       </main>

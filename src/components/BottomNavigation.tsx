@@ -112,17 +112,10 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentRoute }) => 
 
   return (
     <motion.nav
-      className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-lg border-t border-gray-200"
+      className="w-full z-50 bg-white/95 backdrop-blur-lg border-t border-gray-200 pb-[env(safe-area-inset-bottom)]"
       initial={{ y: 100 }}
       animate={{ y: 0 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      style={{
-        position: 'fixed',
-        bottom: 0,
-        WebkitTransform: 'translateZ(0)',
-        transform: 'translateZ(0)',
-        willChange: 'transform'
-      }}
     >
       {/* Container with max width matching header */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -135,7 +128,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentRoute }) => 
               <motion.button
                 key={item.id}
                 onClick={() => handleNavClick(item.route, item.id)}
-                className="flex flex-col items-center justify-center p-1 rounded-lg relative min-w-0 flex-1 group"
+                className="flex flex-col items-center justify-center p-0.5 rounded-lg relative min-w-0 flex-1 group"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 transition={{ type: "spring", stiffness: 400, damping: 25 }}
@@ -194,21 +187,6 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentRoute }) => 
                 >
                   {item.label}
                 </motion.span>
-
-                {/* Enhanced Active Indicator */}
-                <AnimatePresence>
-                  {active && (
-                    <motion.div
-                      className={`absolute top-0 left-1/2 h-1 rounded-full ${item.activeColor?.replace('text-', 'bg-') || 'bg-indigo-600'
-                        }`}
-                      initial={{ width: 0, x: '-50%' }}
-                      animate={{ width: 24, x: '-50%' }}
-                      exit={{ width: 0, x: '-50%' }}
-                      transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                      layoutId="activeIndicator"
-                    />
-                  )}
-                </AnimatePresence>
 
                 {/* Ripple effect on tap */}
                 <motion.div
