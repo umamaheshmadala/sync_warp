@@ -18,6 +18,7 @@ import { useUpdateOnlineStatus } from './hooks/useUpdateOnlineStatus'
 import { usePresence } from './hooks/usePresence'
 import { useRealtimeFriends } from './hooks/friends/useRealtimeFriends'
 import { realtimeService } from './services/realtimeService'
+import { spamConfigService } from './services/SpamConfigService'
 
 // Configure React Query with optimistic updates and caching
 const queryClient = new QueryClient({
@@ -62,8 +63,9 @@ function AppContent() {
     const initRealtime = async () => {
       try {
         await realtimeService.init();
+        await spamConfigService.initialize(); // [Story 8.7.5] Initialize spam config
       } catch (err) {
-        console.error('Failed to init realtime service', err);
+        console.error('Failed to init services', err);
       }
     };
     initRealtime();
