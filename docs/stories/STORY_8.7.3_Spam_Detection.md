@@ -1,6 +1,7 @@
 **Parent Epic:** [EPIC 8.7 - Moderation & Safety](../epics/EPIC_8.7_Moderation_Safety.md)
 **Priority:** P1 - High
-**Dependencies:** Story 8.7.5 (Spam Config Infrastructure)
+**Status:** ⏸ ️ **WAITING FOR ADMIN PANEL** - Core spam detection implemented. Admin features (spam review queue, keyword management, user reputation controls) require admin panel.
+**Dependencies:** Story 8.7.5 (Spam Config Infrastructure) - Partially Independent (keywords seeded in DB)
 
 ---
 
@@ -258,7 +259,131 @@ export function useSendMessage() {
 ---
 
 ## ✅ **Definition of Done**
-- [ ] `SpamDetectionService` implemented.
-- [ ] Rate limiting enforced.
-- [ ] UI feedback for blocked/limited messages works.
-- [ ] Suspicious messages are flagged in DB.
+- [x] `SpamDetectionService` implemented.
+- [x] Rate limiting enforced (dual triggers: global + per-conversation).
+- [x] UI feedback for blocked/limited messages works.
+- [x] Suspicious messages are flagged in DB.
+- [x] Admin integration points documented
+
+---
+
+## ⏸️ **Admin Panel Requirements**
+
+> [!IMPORTANT]
+> **Core functionality is complete, but full spam management requires admin panel implementation.**
+
+### Admin Features Needed:
+
+#### 1. Spam Review Queue
+- **Purpose:** Review messages flagged by spam detection system
+- **UI:** 
+  - List of flagged messages with spam score, reason, timestamp
+  - Filter by score, severity, date range
+  - Bulk actions (approve/dismiss multiple flags)
+- **Actions:**
+  - Approve (confirm spam) → Delete message, warn user
+  - Dismiss (false positive) → Unflag message, improve keyword
+  - Escalate → Forward to senior moderator
+
+#### 2. Spam Keyword Management
+- **Purpose:** Configure spam keywords and severity levels
+- **UI:**
+  - Table of keywords with severity (low/medium/high)
+  - Action type (flag vs. block)
+  - Add/Edit/Delete keywords
+  - Bulk import from CSV
+- **Database:** Access to `spam_keywords` table
+- **Service:** Admin-only CRUD operations
+
+#### 3. User Reputation Dashboard
+- **Purpose:** Monitor and adjust user trust scores
+- **UI:**
+  - User reputation scores (0-100 scale)
+  - Spam flags received, rate limit violations
+  - Manual reputation adjustment controls
+- **Actions:**
+  - Reset violations (give user second chance)
+  - Manually boost/reduce reputation
+  - View violation history
+
+#### 4. Spam Analytics
+- **Purpose:** Monitor spam detection system effectiveness
+- **Metrics:**
+  - Total messages flagged/blocked per day
+  - False positive rate (dismissed flags / total flags)
+  - Top triggered keywords
+  - Rate limit violation trends
+  - Average spam score over time
+- **Charts:**
+  - Line chart: Spam detections over time
+  - Bar chart: Top spam reasons
+  - Pie chart: Severity distribution
+
+#### 5. Pattern Management (Advanced)
+- **Purpose:** Manage regex patterns for spam detection
+- **UI:** Similar to keyword management but for regex patterns
+- **Validation:** Test regex before saving to prevent errors
+
+### Database Access Required:
+- **Read:** `spam_keywords`, `spam_patterns`, `user_reputation_scores`, `rate_limit_violations`
+- **Write:** All spam tables (admin CRUD operations)
+- **Query:** Flagged messages (`messages` WHERE `is_spam_flagged = true`)
+
+### API Endpoints for Admin (To Be Implemented):
+
+```typescript
+// Admin Spam Service (future implementation)
+interface AdminSpamService {
+  // Spam Review
+  getSpamQueue(filters?: SpamQueueFilters): Promise<FlaggedMessage[]>
+  reviewFlag(messageId: string, action: 'approve' | 'dismiss', notes?: string): Promise<void>
+  bulkReviewFlags(messageIds: string[], action: 'approve' | 'dismiss'): Promise<void>
+  
+  // Keyword Management
+  getKeywords(): Promise<SpamKeyword[]>
+  createKeyword(keyword: CreateSpamKeywordDto): Promise<SpamKeyword>
+  updateKeyword(id: string, updates: UpdateSpamKeywordDto): Promise<SpamKeyword>
+  deleteKeyword(id: string): Promise<void>
+  bulkImportKeywords(csv: string): Promise<ImportResult>
+  
+  // User Reputation
+  getUserReputation(userId: string): Promise<UserReputationDetails>
+  adjustReputation(userId: string, adjustment: number, reason: string): Promise<void>
+  resetViolations(userId: string): Promise<void>
+  
+  // Analytics
+  getSpamStats(dateRange?: DateRange): Promise<SpamAnalytics>
+  getTopKeywords(limit: number): Promise<KeywordStats[]>
+  getFalsePositiveRate(): Promise<number>
+}
+```
+
+### RLS Policies to Add:
+
+```sql
+-- Admin policies (add when admin role implemented)
+CREATE POLICY "admins_manage_keywords" ON spam_keywords
+  FOR ALL USING (auth.jwt() ->> 'role' = 'admin');
+
+CREATE POLICY "admins_view_all_violations" ON rate_limit_violations
+  FOR SELECT USING (auth.jwt() ->> 'role' = 'admin');
+
+CREATE POLICY "admins_view_all_reputation" ON user_reputation_scores
+  FOR SELECT USING (auth.jwt() ->> 'role' = 'admin');
+```
+
+### Integration Checklist for Admin Module:
+
+- [ ] Create Admin Spam Service (`adminSpamService.ts`)
+- [ ] Build Spam Review Queue UI component
+- [ ] Build Keyword Management UI component
+- [ ] Build User Reputation Dashboard component
+- [ ] Implement spam analytics queries
+- [ ] Add admin RLS policies to database
+- [ ] Create admin-only API routes
+- [ ] Add role-based access control (RBAC)
+- [ ] Test false positive handling workflow
+
+---
+
+**Implementation Status:** ✅ **Core Complete** | ⏸️ **Admin Features Pending**

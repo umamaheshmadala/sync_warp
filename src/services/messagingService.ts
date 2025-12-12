@@ -5,6 +5,7 @@
 import { supabase } from '../lib/supabase';
 import { Capacitor } from '@capacitor/core';
 import { Network } from '@capacitor/network';
+import { spamDetectionService } from './spamDetectionService';
 import type {
   Message,
   Conversation,
@@ -185,16 +186,56 @@ class MessagingService {
   // ============================================================================
 
   /**
-   * Send a message with retry logic
+   * Send a message with spam detection and retry logic
    * 
    * @param params - Message parameters
    * @returns Message ID
+   * @throws Error if message fails spam checks or rate limits
    */
   async sendMessage(params: SendMessageParams): Promise<string> {
     return this.retryWithBackoff(async () => {
-      if (!this.isOnline && Capacitor.isNativePlatform()) {
-        throw new Error('No internet connection. Message will be sent when online.');
+      // Get current user for spam checks
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        throw new Error('Not authenticated')
       }
+
+      // ============================================================
+      // SPAM DETECTION: Client-side pre-flight checks
+      // ============================================================
+
+      // 1. Rate limit check (prevent unnecessary network calls)
+      const rateLimitCheck = await spamDetectionService.checkRateLimits(params.conversationId)
+      if (!rateLimitCheck.allowed) {
+        console.warn('[SpamDetection] Rate limit check failed:', rateLimitCheck.reason)
+        throw new Error(rateLimitCheck.reason || 'Rate limit exceeded')
+      }
+
+      // 2. Spam content check
+      const spamCheck = await spamDetectionService.isSpam(params.content, user.id)
+      if (spamCheck.isSpam) {
+        console.warn('[SpamDetection] Spam detected:', spamCheck.reason)
+
+        // High severity: block message entirely
+        if (spamCheck.severity === 'high') {
+          throw new Error(spamCheck.reason || 'Message contains prohibited content')
+        }
+
+        // Medium/low severity: flag but allow (will be marked in DB for admin review)
+        console.log('[SpamDetection] Flagging message for review (medium/low severity)')
+      }
+
+      // ============================================================
+      // NETWORK & CONNECTIVITY CHECKS
+      // ============================================================
+
+      if (!this.isOnline && Capacitor.isNativePlatform()) {
+        throw new Error('No internet connection. Message will be sent when online.')
+      }
+
+      // ============================================================
+      // SEND MESSAGE VIA RPC
+      // ============================================================
 
       const { data, error } = await supabase.rpc('send_message', {
         p_conversation_id: params.conversationId,
@@ -206,13 +247,37 @@ class MessagingService {
         p_shared_coupon_id: params.sharedCouponId || null,
         p_shared_deal_id: params.sharedDealId || null,
         p_reply_to_id: params.replyToId || null
-      });
+      })
 
-      if (error) throw error;
+      if (error) {
+        // Check if error is from rate limit triggers
+        if (error.message?.includes('rate limit')) {
+          console.error('[RateLimit] Database trigger blocked message:', error.message)
+          throw new Error('You are sending messages too quickly. Please wait a moment.')
+        }
+        throw error
+      }
 
-      console.log('✅ Message sent:', data);
-      return data as string;
-    });
+      console.log('✅ Message sent:', data)
+
+      // ============================================================
+      // POST-SEND: Flag for review if needed
+      // ============================================================
+
+      if (spamCheck.isSpam && spamCheck.severity !== 'high') {
+        // Async flag for admin review (don't block on this)
+        const messageId = data as string
+        spamDetectionService.flagMessageForReview(
+          messageId,
+          spamCheck.reason || 'Spam detected',
+          spamCheck.score || 0.5
+        ).catch(err => {
+          console.error('[SpamDetection] Failed to flag message:', err)
+        })
+      }
+
+      return data as string
+    })
   }
 
   /**
