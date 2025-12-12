@@ -9,6 +9,12 @@ import { cleanup } from '@testing-library/react';
 import { afterEach, beforeAll, afterAll, vi } from 'vitest';
 import { setupServer } from 'msw/node';
 import { handlers } from './mocks/handlers';
+import * as matchers from '@testing-library/jest-dom/matchers';
+import { expect } from 'vitest';
+import { toHaveNoViolations } from 'jest-axe';
+
+expect.extend(matchers);
+expect.extend(toHaveNoViolations);
 
 // Setup MSW server
 export const server = setupServer(...handlers);
@@ -58,21 +64,21 @@ Object.defineProperty(window, 'matchMedia', {
 
 // Mock IntersectionObserver
 global.IntersectionObserver = class IntersectionObserver {
-  constructor() {}
-  disconnect() {}
-  observe() {}
+  constructor() { }
+  disconnect() { }
+  observe() { }
   takeRecords() {
     return [];
   }
-  unobserve() {}
+  unobserve() { }
 } as any;
 
 // Mock ResizeObserver
 global.ResizeObserver = class ResizeObserver {
-  constructor() {}
-  disconnect() {}
-  observe() {}
-  unobserve() {}
+  constructor() { }
+  disconnect() { }
+  observe() { }
+  unobserve() { }
 } as any;
 
 // ============================================

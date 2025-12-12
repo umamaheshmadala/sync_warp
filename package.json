@@ -55,6 +55,7 @@
     "mobile:run:android": "npm run mobile:sync && npx cap run android",
     "mobile:live-reload": "npx cap run android --livereload --external --host=0.0.0.0",
     "mobile:live-reload:ios": "npx cap run ios --livereload --external",
+    "db:seed:test": "supabase db reset --db-url postgresql://postgres:postgres@localhost:54322/postgres && supabase db reset --linked",
     "docs:generate": "typedoc",
     "docs:serve": "npx http-server docs/api -p 8080",
     "docs:validate": "typedoc --validation.invalidLink",
