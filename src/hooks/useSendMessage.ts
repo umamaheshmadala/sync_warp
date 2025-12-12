@@ -8,6 +8,7 @@ import { useNetworkStatus } from './useNetworkStatus'
 import { toast } from 'react-hot-toast'
 import type { SendMessageParams, Message } from '../types/messaging'
 import * as blockService from '../services/blockService'
+import { linkValidationService } from '../services/LinkValidationService'
 
 /**
  * Hook to send messages with optimistic updates, loading state, and error handling
@@ -82,6 +83,16 @@ export function useSendMessage() {
   const sendMessage = useCallback(async (params: SendMessageParams) => {
     // Generate temporary ID for optimistic message
     const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+
+    // [STORY 8.7.4] Validate links before sending
+    // Do not validate if content is empty (e.g. image-only message)
+    if (params.content) {
+      const validation = await linkValidationService.validateUrls(params.content)
+      if (!validation.valid) {
+        toast.error(validation.reason || 'Message contains unsafe links')
+        throw new Error(validation.reason || 'Link validation failed')
+      }
+    }
 
     // Look up parent message if this is a reply
     let parentMessage = null
