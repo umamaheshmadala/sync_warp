@@ -16,25 +16,25 @@ Establish a robust, industry-standard testing infrastructure to support unit, in
 ## 📋 **Acceptance Criteria**
 
 ### 1. Unit Test Infrastructure
-- [ ] **MSW Scaffolding**: `MockServiceWorker` setup for effective network mocking.
-- [ ] **Test Utils**: `test-utils.tsx` created exporting a custom `render` function that wraps components with:
+- [x] **MSW Scaffolding**: `MockServiceWorker` setup for effective network mocking.
+- [x] **Test Utils**: `test-utils.tsx` created exporting a custom `render` function that wraps components with:
   - `QueryClientProvider` (with retry=0 for tests)
   - `AuthProvider` (mocked state)
   - `MemoryRouter`
-- [ ] **Vitest Config**: Updated to include `setupTests.ts` which cleans up MSW handlers after each test.
+- [x] **Vitest Config**: Updated to include `setupTests.ts` which cleans up MSW handlers after each test.
 
 ### 2. Integration Test Infrastructure
-- [ ] **Test Database**: Docker Compose or script to spin up a *clean* Supabase instance (or dedicated cloud project) for testing.
-- [ ] **Seeding Scripts**: `npm run db:seed:test` script to populate reliable test data (User A, User B, Blocked User).
-- [ ] **Global Setup/Teardown**: Scripts to wipe the database before/after test runs.
+- [x] **Test Database**: Docker Compose or script to spin up a *clean* Supabase instance (or dedicated cloud project) for testing.
+- [x] **Seeding Scripts**: `npm run db:seed:test` script to populate reliable test data (User A, User B, Blocked User).
+- [x] **Global Setup/Teardown**: Scripts to wipe the database before/after test runs.
 
 ### 3. Accessibility & Visual Testing
-- [ ] **jest-axe Setup**: Configure `jest-axe` in test utils for accessibility assertions.
-- [ ] **Snapshot Testing**: Enable Vitest inline snapshots for component UI regression.
+- [x] **jest-axe Setup**: Configure `jest-axe` in test utils for accessibility assertions.
+- [x] **Snapshot Testing**: Enable Vitest inline snapshots for component UI regression.
 
 ### 4. CI/CD Prep
-- [ ] **Headless Config**: Ensure all tests run in headless mode via `npm test`.
-- [ ] **Playwright Trace on Failure**: Configure Playwright to save traces/videos on test failure.
+- [x] **Headless Config**: Ensure all tests run in headless mode via `npm test`.
+- [x] **Playwright Trace on Failure**: Configure Playwright to save traces/videos on test failure.
 
 ---
 

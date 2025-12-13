@@ -601,31 +601,37 @@ open coverage/index.html
 
 ## 📋 **Story Breakdown**
 
-### **Story 8.8.1: Unit Tests** (3 days)
-- [ ] Write tests for all 6 services
-- [ ] Write tests for all 6 hooks
-- [ ] Achieve > 85% coverage
-- **🧠 MCP**: Use Context7 to find untested code
+### **Story 8.8.1: Test Infrastructure** ✅ Complete
+- [x] MSW scaffolding and test utils
+- [x] Integration test setup with Supabase
+- [x] jest-axe accessibility testing
+- [x] Playwright trace on failure
 
-### **Story 8.8.2: Integration Tests** (2 days)
-- [ ] Test all RLS policies (10+ tests)
-- [ ] Test all API endpoints (10+ tests)
-- **🛢 MCP**: Use Supabase MCP for RLS testing
+### **Story 8.8.2: Unit Tests** ✅ Complete
+- [x] Service tests (messagingService, spamDetection, linkValidation)
+- [x] Hook tests (useMessages, useSendMessage)
+- [x] >85% code coverage
 
-### **Story 8.8.3: E2E Tests** (3 days)
-- [ ] Write 5 critical flow tests
-- [ ] Run on real devices
-- **🤖 MCP**: Use Puppeteer MCP for E2E
+### **Story 8.8.3: Integration Tests** ✅ Complete
+- [x] RLS policy tests (unauthorized access, blocking)
+- [x] Trigger tests (handle_new_message)
+- [x] Safe resetDatabase implementation
 
-### **Story 8.8.4: Bug Fixing** (2 days)
-- [ ] Fix all failing tests
-- [ ] Regression testing
-- **🌐 MCP**: Use Chrome DevTools for debugging
+### **Story 8.8.4: E2E Web Tests** ✅ Complete
+- [x] Messaging flow tests (send text, emoji)
+- [x] Blocking flow tests
+- [x] Offline mode tests
+- [x] data-testid selectors added
 
-### **Story 8.8.5: QA Sign-off** (1 day)
-- [ ] Final review of all tests
-- [ ] Sign-off from QA team
-- [ ] Update documentation
+### **Story 8.8.5: Mobile Automation** ✅ Complete
+- [x] Maestro setup and flows
+- [x] Login, messaging, full-journey flows
+- [x] Manual device testing checklist
+
+### **Story 8.8.6: QA Regression** ✅ Complete
+- [x] QA regression checklist created
+- [x] Repro First methodology documented
+- [x] Quality gates defined
 
 ---
 

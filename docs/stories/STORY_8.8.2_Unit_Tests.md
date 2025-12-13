@@ -16,16 +16,16 @@ Achieve >85% code coverage by implementing comprehensive unit tests for all core
 ## 📋 **Acceptance Criteria**
 
 ### 1. Service Tests (using MSW)
-- [ ] `messagingService.test.ts`: Test network success/failure using MSW handlers (no manual `vi.mock` for fetch).
-- [ ] `spamDetectionService.test.ts`: Test local logic.
-- [ ] `linkValidationService.test.ts`: Test regex and Safe Browsing API (mocked via MSW).
+- [x] `messagingService.test.ts`: Test network success/failure using MSW handlers (no manual `vi.mock` for fetch).
+- [x] `spamDetectionService.test.ts`: Test local logic.
+- [x] `linkValidationService.test.ts`: Test regex and Safe Browsing API (mocked via MSW).
 
 ### 2. Hook Tests (using custom render)
-- [ ] `useMessages.test.ts`: Verify data loading states using `renderHook` with `wrapper` from `test-utils`.
-- [ ] `useSendMessage.test.ts`: Verify optimistic updates.
+- [x] `useMessages.test.ts`: Verify data loading states using `renderHook` with `wrapper` from `test-utils`.
+- [x] `useSendMessage.test.ts`: Verify optimistic updates.
 
 ### 3. Code Coverage
-- [ ] >85% Coverage for `src/services` and `src/hooks`.
+- [x] >85% Coverage for `src/services` and `src/hooks`.
 
 ---
 
