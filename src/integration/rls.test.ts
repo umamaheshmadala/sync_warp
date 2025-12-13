@@ -1,7 +1,7 @@
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { createClient } from '@supabase/supabase-js';
-import { supabaseAdmin, resetDatabase } from './setup';
+import { supabaseAdmin, resetDatabase, addTestUserId } from './setup';
 
 const SUPABASE_URL = 'https://ysxmgbblljoyebvugrfo.supabase.co';
 const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzeG1nYmJsbGpveWVidnVncmZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxMDU2MjksImV4cCI6MjA3MzY4MTYyOX0.m1zCtG-Rvrga_g-YX0QqMLVQ0uLxogUqGLqNVTrQBqI';
@@ -36,6 +36,10 @@ describe('RLS Policies', () => {
         userB = authB.user;
 
         if (!userA || !userB) throw new Error('Failed to create test users');
+
+        // Register test users for safe cleanup
+        addTestUserId(userA.id);
+        addTestUserId(userB.id);
 
         // 2. Create Clients with Anon Key + Auth
         clientA = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
