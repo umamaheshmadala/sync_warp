@@ -4,6 +4,7 @@
 **Priority:** P1 - High
 **Estimated Effort:** 3 Days
 **Dependencies:** Story 8.8.1 (Test Infrastructure), Story 8.8.3 (Integration Tests)
+**Status:** ✅ Complete
 
 ---
 
@@ -15,14 +16,14 @@ Automate critical user journeys on the web platform using **Playwright** (alread
 ## 📋 **Acceptance Criteria**
 
 ### 1. Test Architecture
-- [ ] **Programmatic Login**: Bypass the UI login form. Use Playwright's `storageState` to persist authenticated sessions across tests.
-- [ ] **Selectors**: Frontend updated to include `data-testid="xyz"` on critical elements (send button, input, message bubble).
-- [ ] **Trace on Failure**: Configure `playwright.config.ts` to capture trace/video automatically when a test fails.
+- [x] **Programmatic Login**: Bypass the UI login form. Use Playwright's `storageState` to persist authenticated sessions across tests.
+- [x] **Selectors**: Frontend updated to include `data-testid="xyz"` on critical elements (send button, input, message bubble).
+- [x] **Trace on Failure**: Configure `playwright.config.ts` to capture trace/video automatically when a test fails.
 
 ### 2. Critical Flows
-- [ ] **Messaging**: Send text/image, verify appearance.
-- [ ] **Blocking**: Block user via UI, verify messages stop arriving.
-- [ ] **Offline**: Simulate offline mode via Playwright's `page.route` to block network, verify queue processing.
+- [x] **Messaging**: Send text/image, verify appearance.
+- [x] **Blocking**: Block user via UI, verify messages stop arriving.
+- [x] **Offline**: Simulate offline mode via Playwright's `page.route` to block network, verify queue processing.
 
 ---
 

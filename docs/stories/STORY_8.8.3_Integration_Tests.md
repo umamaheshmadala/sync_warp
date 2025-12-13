@@ -4,6 +4,7 @@
 **Priority:** P1 - High
 **Estimated Effort:** 2 Days
 **Dependencies:** Story 8.8.1 (Test Infrastructure)
+**Status:** ✅ Complete
 
 ---
 
@@ -15,16 +16,16 @@ Verify robust security and API behavior by running integration tests against a r
 ## 📋 **Acceptance Criteria**
 
 ### 1. Environment Isolation
-- [ ] Tests run against a dedicated `test` environment (not dev).
-- [ ] Data is seeded before tests (`User A`, `User B`).
-- [ ] Database is cleaned up after tests.
+- [x] Tests run against a dedicated `test` environment (not dev).
+- [x] Data is seeded before tests (`User A`, `User B`).
+- [x] Database is cleaned up after tests.
 
 ### 2. RLS Security Tests
-- [ ] **Unauthorized Access**: Verify `User A` querying `User B`'s private messages returns 0 rows.
-- [ ] **Blocking Enforcement**: Verify a blocked user's `INSERT` is rejected by the database policy.
+- [x] **Unauthorized Access**: Verify `User A` querying `User B`'s private messages returns 0 rows.
+- [x] **Blocking Enforcement**: Verify a blocked user's `INSERT` is rejected by the database policy.
 
 ### 3. API & Trigger Tests
-- [ ] **Live Features**: Test that `handle_new_message` trigger fires and updates conversation metadata.
+- [x] **Live Features**: Test that `handle_new_message` trigger fires and updates conversation metadata.
 - [ ] **Edge Functions**: Invoke real Edge Functions locally (via Supabase CLI) to verify logic.
 
 ---
