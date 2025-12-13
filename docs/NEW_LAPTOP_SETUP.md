@@ -151,6 +151,19 @@ echo "SUPABASE_SERVICE_ROLE_KEY=<your_service_role_key>" >> .env.integration
 
 ---
 
+## ⚠️ Manual File Transfer Required
+
+**These files are NOT in GitHub (for security) and MUST be copied manually:**
+
+1. **`android/app/google-services.json`**
+   - **Why?** Required for Push Notifications (Firebase).
+   - **How?** Copy from old laptop `sync_warp/android/app/google-services.json` to the same folder here.
+
+2. **`.maestro/` (Optional)**
+   - Maestro flows are in the repo, but if you had any local credentials in `.maestro/config.yaml`, check them.
+
+---
+
 ## 5. IDE Setup
 
 ### VS Code Extensions (Recommended)

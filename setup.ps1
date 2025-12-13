@@ -73,6 +73,15 @@ Write-Host "🎭 Installing Playwright browsers..." -ForegroundColor Yellow
 npx playwright install chromium
 Write-Host "✅ Playwright ready" -ForegroundColor Green
 
+# Step 8: Critical File Check
+Write-Host "🔍 Checking for manual files..." -ForegroundColor Yellow
+if (-not (Test-Path "android\app\google-services.json")) {
+    Write-Host "⚠️  MISSING: android\app\google-services.json" -ForegroundColor Red
+    Write-Host "   You MUST copy this file manually from your old laptop for Push Notifications to work!" -ForegroundColor Yellow
+} else {
+    Write-Host "✅ google-services.json found" -ForegroundColor Green
+}
+
 Write-Host ""
 Write-Host "============================================" -ForegroundColor Cyan
 Write-Host "🎉 SETUP COMPLETE!" -ForegroundColor Green
