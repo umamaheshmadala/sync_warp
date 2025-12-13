@@ -1,0 +1,48 @@
+# Login Flow
+# Automates the login process for Sync App
+# Run: maestro test .maestro/flows/login.yaml
+
+appId: com.syncapp.mobile.dev
+---
+
+# Launch the app
+- launchApp:
+    clearState: true
+
+# Wait for app to load
+- waitForAnimationToEnd
+
+# Check if we're on the login screen or already logged in
+- runFlow:
+    when:
+      visible: "Sign In"
+    commands:
+      # Fill in email
+      - tapOn:
+          text: "Email"
+      - inputText: "testuser1@gmail.com"
+      
+      # Fill in password
+      - tapOn:
+          text: "Password"
+      - inputText: "Password123!"
+      
+      # Tap Sign In button
+      - tapOn:
+          text: "Sign In"
+      
+      # Wait for navigation
+      - waitForAnimationToEnd
+      
+      # Verify we reached the home/dashboard
+      - assertVisible:
+          text: "Home|Dashboard|Messages"
+          regex: true
+
+# If already logged in, just verify we're on a main screen
+- assertVisible:
+    text: "Home|Dashboard|Messages|Profile"
+    regex: true
+
+# Take screenshot for verification
+- takeScreenshot: "login_complete"

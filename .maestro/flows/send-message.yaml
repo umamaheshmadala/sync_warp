@@ -1,0 +1,82 @@
+# Send Message Flow
+# Automates sending a message in the Sync App
+# Run: maestro test .maestro/flows/send-message.yaml
+# Prerequisite: User must be logged in
+
+appId: com.syncapp.mobile.dev
+---
+
+# Launch the app (assumes already logged in)
+- launchApp
+
+# Wait for app to load
+- waitForAnimationToEnd
+
+# Navigate to Messages tab
+- tapOn:
+    text: "Messages"
+    
+- waitForAnimationToEnd
+
+# Open first conversation (or create new if none exist)
+- runFlow:
+    when:
+      visible: "No messages"
+    commands:
+      # Create new conversation flow
+      - tapOn:
+          text: "Start.*conversation|New.*message"
+          regex: true
+      - waitForAnimationToEnd
+      # Select a contact
+      - tapOn:
+          index: 0
+          text: ".*"
+          regex: true
+      - waitForAnimationToEnd
+
+# If conversations exist, tap the first one
+- runFlow:
+    when:
+      notVisible: "No messages"
+    commands:
+      - tapOn:
+          index: 0
+
+- waitForAnimationToEnd
+
+# Verify chat view loaded (chat header visible)
+- assertVisible:
+    id: "chat-header"
+    optional: true
+
+# Type a message
+- tapOn:
+    id: "message-input"
+    optional: true
+
+- tapOn:
+    text: "Type a message|Write a message"
+    regex: true
+    optional: true
+
+- inputText: "Automated test message from Maestro"
+
+# Send the message
+- tapOn:
+    id: "send-message-btn"
+    optional: true
+
+- tapOn:
+    text: "Send"
+    optional: true
+
+# Wait for message to appear
+- waitForAnimationToEnd
+
+# Verify message was sent (appears in chat)
+- assertVisible:
+    text: "Automated test message"
+
+# Take screenshot for verification
+- takeScreenshot: "message_sent"
