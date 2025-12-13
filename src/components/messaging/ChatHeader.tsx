@@ -314,7 +314,7 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
   console.log('ChatHeader render cycle:', { id: conversationId, found: !!conversation })
 
   return (
-    <div className="w-full z-40 bg-white border-b border-gray-200">
+    <div className="w-full z-40 bg-white border-b border-gray-200" data-testid="chat-header">
       <div className="flex items-center justify-between px-3 py-2">
         {/* Left section */}
         <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -427,7 +427,7 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
 
               <DropdownMenuSeparator />
 
-              <DropdownMenuItem onClick={() => handleAction('block')} className="text-orange-600 focus:text-orange-600">
+              <DropdownMenuItem onClick={() => handleAction('block')} className="text-orange-600 focus:text-orange-600" data-testid="block-user-btn">
                 {isBlocked ? (
                   <>
                     <ShieldOff className="mr-2 h-4 w-4" />

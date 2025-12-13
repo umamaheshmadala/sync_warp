@@ -315,6 +315,7 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
             onChange={handleChange}
             onKeyDown={handleKeyDown}
             placeholder="Type a message"
+            data-testid="message-input"
             className="flex-1 min-h-[40px] max-h-[120px] resize-none border-none bg-transparent px-4 py-2.5 focus-visible:ring-0 placeholder:text-gray-400 text-sm leading-5"
             rows={1}
             disabled={isSending}
@@ -335,6 +336,7 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
           onClick={handleSend}
           disabled={!hasText || isSending}
           size="icon"
+          data-testid="send-message-btn"
           className={`h-10 w-10 rounded-full flex-shrink-0 transition-all ${hasText
             ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md'
             : 'bg-gray-200 text-gray-400 cursor-not-allowed'
