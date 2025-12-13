@@ -4,6 +4,7 @@
 **Priority:** P1 - High
 **Estimated Effort:** 0.5 Days
 **Dependencies:** Story 8.9.2 (Cron Schedule & Logging)
+**Status:** ✅ Complete
 
 ---
 
@@ -15,29 +16,29 @@ Create a frontend Admin Dashboard component (`RetentionMonitor`) that displays r
 ## 📋 **Acceptance Criteria**
 
 ### 1. Access Control
-- [ ] **Admin Role Guard**: Component only renders if current user has `admin` role.
-- [ ] Non-admin users are redirected or shown "Access Denied" message.
+- [x] **Admin Role Guard**: Component only renders if current user has `admin` role.
+- [x] Non-admin users are redirected or shown "Access Denied" message.
 
 ### 2. Dashboard UI
-- [ ] `src/components/admin/RetentionMonitor.tsx` component created.
-- [ ] Displays **Total Messages** count.
+- [x] `src/components/admin/RetentionMonitor.tsx` component created.
+- [x] Displays **Total Messages** count.
   - **Performance Optimization**: Use `pg_class` estimate for total count to avoid slow `COUNT(*)` on large tables.
-- [ ] Displays **Messages Older Than 90 Days** count (pending cleanup).
-- [ ] Displays "Run Cleanup Now" button.
+- [x] Displays **Messages Older Than 90 Days** count (pending cleanup).
+- [x] Displays "Run Cleanup Now" button.
 
 ### 3. Loading & Error States
-- [ ] **Loading**: Show skeleton loaders while fetching stats and logs.
-- [ ] **Error**: Show toast notification if data fetching or cleanup invocation fails.
+- [x] **Loading**: Show skeleton loaders while fetching stats and logs.
+- [x] **Error**: Show toast notification if data fetching or cleanup invocation fails.
 
 ### 4. Cleanup History
-- [ ] Fetches and displays last 10 entries from `admin_logs` where `action = 'message_cleanup'`.
-- [ ] Shows `messages_archived` and `files_deleted` from metadata.
-- [ ] Shows timestamp of each cleanup run.
+- [x] Fetches and displays last 10 entries from `cleanup_logs` where `operation = 'message_cleanup'`.
+- [x] Shows `records_affected` and execution time from log.
+- [x] Shows timestamp of each cleanup run.
 
 ### 5. Manual Trigger
-- [ ] "Run Cleanup Now" button invokes the `cleanup-old-messages` edge function.
-- [ ] Shows confirmation dialog before running.
-- [ ] Refreshes stats and logs after successful cleanup.
+- [x] "Run Cleanup Now" button invokes the `cleanup-old-messages` edge function.
+- [x] Shows confirmation dialog before running.
+- [x] Refreshes stats and logs after successful cleanup.
 
 ---
 

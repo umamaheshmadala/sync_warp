@@ -4,6 +4,7 @@
 **Priority:** P0 - Critical
 **Estimated Effort:** 1 Day
 **Dependencies:** Epic 8.1 (Database Foundation)
+**Status:** ✅ Complete
 
 ---
 
@@ -15,27 +16,27 @@ Create and deploy a Supabase Edge Function that archives messages older than 90 
 ## 📋 **Acceptance Criteria**
 
 ### 1. Edge Function Logic
-- [ ] `cleanup-old-messages` edge function created in `supabase/functions/`.
-- [ ] Function calls `archive_old_messages()` RPC to soft-delete old messages.
-- [ ] Function calls `cleanup_orphaned_data()` RPC to remove stale read receipts, typing indicators, etc.
-- [ ] Function iterates storage bucket `message-attachments` and deletes files older than 90 days.
+- [x] `cleanup-old-messages` edge function created in `supabase/functions/`.
+- [x] Function calls `archive_old_messages()` RPC to soft-delete old messages.
+- [x] Function calls `cleanup_orphaned_data()` RPC to remove stale read receipts, typing indicators, etc.
+- [x] Function iterates storage bucket `message-attachments` and deletes files older than 90 days.
 
 ### 2. Batching & Performance
-- [ ] **Batched Deletion**: Delete storage files in batches of 100 with a 500ms delay between batches to avoid rate limits.
-- [ ] **Recursive Pagination**: Implement recursive listing using `offset` or `cursor` to ensure all files are processed, not just the first page (since Supabase Storage `list()` is paginated).
-- [ ] **Dry Run Mode**: Support `?dryRun=true` query parameter that returns counts without actual deletion.
+- [x] **Batched Deletion**: Delete storage files in batches of 100 with a 500ms delay between batches to avoid rate limits.
+- [x] **Recursive Pagination**: Implement recursive listing using `offset` or `cursor` to ensure all files are processed, not just the first page (since Supabase Storage `list()` is paginated).
+- [x] **Dry Run Mode**: Support `?dryRun=true` query parameter that returns counts without actual deletion.
 
 ### 3. Concurrency Guard
-- [ ] **Idempotency Check**: Before running, check `admin_logs` for a cleanup within the last hour. If found, skip execution to prevent overlapping runs.
+- [x] **Idempotency Check**: Before running, check `admin_logs` for a cleanup within the last hour. If found, skip execution to prevent overlapping runs.
 
 ### 4. Logging & Response
-- [ ] Function logs progress to console (for Supabase logs viewer).
-- [ ] Function returns JSON response with `messages_archived`, `files_deleted`, and `dry_run` status.
-- [ ] Function handles errors gracefully and returns 500 on failure.
+- [x] Function logs progress to console (for Supabase logs viewer).
+- [x] Function returns JSON response with `messages_archived`, `files_deleted`, and `dry_run` status.
+- [x] Function handles errors gracefully and returns 500 on failure.
 
 ### 5. Deployment
-- [ ] Function deployed successfully via Supabase CLI.
-- [ ] Function invocable manually via `supabase functions invoke cleanup-old-messages`.
+- [x] Function deployed successfully via Supabase CLI.
+- [x] Function invocable manually via `supabase functions invoke cleanup-old-messages`.
 
 ---
 

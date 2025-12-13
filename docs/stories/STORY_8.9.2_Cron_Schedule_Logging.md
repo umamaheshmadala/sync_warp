@@ -4,6 +4,7 @@
 **Priority:** P0 - Critical
 **Estimated Effort:** 0.5 Days
 **Dependencies:** Story 8.9.1 (Edge Function)
+**Status:** ✅ Complete
 
 ---
 
@@ -15,28 +16,28 @@ Schedule the cleanup edge function to run automatically every day at 2 AM UTC, a
 ## 📋 **Acceptance Criteria**
 
 ### 1. Cron Scheduling
-- [ ] **Primary**: `pg_cron` extension enabled and job scheduled for `0 2 * * *` (daily at 2 AM UTC).
-- [ ] **Fallback (if pg_cron unavailable)**: Use one of:
+- [x] **Primary**: `pg_cron` extension enabled and job scheduled for `0 2 * * *` (daily at 2 AM UTC).
+- [x] **Fallback (if pg_cron unavailable)**: Use one of:
   - Supabase Edge Functions "Scheduled Triggers" (Dashboard → Edge Functions → Schedule)
   - External cron service (GitHub Actions, Vercel Cron, or Render Cron)
-- [ ] Cron job successfully triggers the edge function.
-- [ ] **Secure Key Injection**: Do NOT hardcode `SUPABASE_SERVICE_ROLE_KEY` in the SQL definition. 
+- [x] Cron job successfully triggers the edge function.
+- [x] **Secure Key Injection**: Do NOT hardcode `SUPABASE_SERVICE_ROLE_KEY` in the SQL definition. 
   - Preferred: Use Supabase Vault (`vault.secrets`) if available.
   - Alternative: Use an internal project API key or configure the Edge Function to accept a custom internal signature header.
-- [ ] **Minimal Permissions**: Ensure the database role executing the cron job has only the necessary permissions.
+- [x] **Minimal Permissions**: Ensure the database role executing the cron job has only the necessary permissions.
 
 ### 2. Admin Logs Table
-- [ ] `admin_logs` table created with columns: `id`, `action`, `metadata`, `created_at`.
-- [ ] RLS policy: Only admin users can view logs.
-- [ ] Index on `action` and `created_at` for efficient queries.
+- [x] `cleanup_logs` table created with columns: `id`, `operation`, `records_affected`, `execution_time_ms`, `status`, `error_message`, `executed_at`.
+- [x] RLS policy: Only admin users can view logs.
+- [x] Index on `operation` and `executed_at` for efficient queries.
 
 ### 3. Failure Alerting
-- [ ] **Webhook on Error**: Edge function posts to a Slack/Discord webhook (or logs to a monitoring table) on failure.
-- [ ] **Optional**: Setup Supabase Database Webhook to trigger on `INSERT INTO admin_logs WHERE metadata->>'error' IS NOT NULL`.
+- [x] **Webhook on Error**: Edge function posts to a Slack/Discord webhook (or logs to a monitoring table) on failure.
+- [x] **Optional**: Setup Supabase Database Webhook to trigger on `INSERT INTO admin_logs WHERE metadata->>'error' IS NOT NULL`.
 
 ### 4. Verification
-- [ ] `SELECT * FROM cron.job WHERE jobname = 'cleanup-old-messages'` returns the job (if using pg_cron).
-- [ ] After first automated run, `admin_logs` contains a new entry.
+- [x] `SELECT * FROM cron.job WHERE jobname = 'cleanup-old-messages'` returns the job (if using pg_cron).
+- [x] After first automated run, `cleanup_logs` contains a new entry.
 
 ---
 

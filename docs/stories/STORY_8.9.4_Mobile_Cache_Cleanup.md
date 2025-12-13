@@ -4,6 +4,7 @@
 **Priority:** P2 - Medium
 **Estimated Effort:** 0.5 Days
 **Dependencies:** Story 8.9.1
+**Status:** ✅ Complete
 
 ---
 
@@ -15,21 +16,21 @@ Implement local cache cleanup for iOS and Android apps to prevent uncontrolled s
 ## 📋 **Acceptance Criteria**
 
 ### 1. Preferences Cleanup (Offline Queue)
-- [ ] On app launch, scan all `Preferences` keys starting with `offline_`.
-- [ ] Delete entries older than 7 days based on stored `timestamp` field.
+- [x] On app launch, scan all `Preferences` keys starting with `offline_`.
+- [x] Delete entries older than 7 days based on stored `timestamp` field.
 
 ### 2. Filesystem Cleanup (Cached Media)
-- [ ] On app launch, read `message-cache` directory from `Directory.Cache`.
-- [ ] Check each file's `mtime` (from `FileInfo`) against a 30-day threshold.
-- [ ] **Race Condition Guard**: Before deleting, check if the file is currently being played/accessed by the media player state (Zustand store). If matches, skip deletion.
-- [ ] Delete files older than 30 days.
+- [x] On app launch, read `message-cache` directory from `Directory.Cache`.
+- [x] Check each file's `mtime` (from `FileInfo`) against a 30-day threshold.
+- [x] **Race Condition Guard**: Before deleting, check if the file is currently being played/accessed by the media player state (Zustand store). If matches, skip deletion.
+- [x] Delete files older than 30 days.
 
 ### 3. Storage Management
-- [ ] Total local cache remains under 100MB target.
-- [ ] Cleanup runs without blocking UI (async, non-blocking).
+- [x] Total local cache remains under 100MB target.
+- [x] Cleanup runs without blocking UI (async, non-blocking).
 
 ### 4. Frontend Integration
-- [ ] Cleanup function is called in `App.tsx` on app activation/launch.
+- [x] Cleanup function is called in `App.tsx` on app activation/launch.
 - [ ] **Storage Usage UI**: Add a "Storage" section in Settings showing:
   - Current cache size (MB)
   - "Clear Cache" button
