@@ -32,9 +32,9 @@ export function useSocialStats(): UseQueryResult<SocialStats> {
     queryKey: ['social-stats'],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_user_social_stats');
-      
+
       if (error) throw error;
-      
+
       return data as SocialStats;
     },
     staleTime: 30000, // 30 seconds
@@ -56,9 +56,9 @@ export function useUserSocialStats(userId: string | null): UseQueryResult<Social
         .select('friend_count, follower_count, following_count')
         .eq('user_id', userId)
         .single();
-      
+
       if (error) throw error;
-      
+
       return data as SocialStats;
     },
     enabled: !!userId,
@@ -76,9 +76,9 @@ export function usePopularUsers(limit: number = 10): UseQueryResult<UserWithSoci
       const { data, error } = await supabase.rpc('get_popular_users', {
         p_limit: limit,
       });
-      
+
       if (error) throw error;
-      
+
       return data as UserWithSocialStats[];
     },
     staleTime: 60000, // 1 minute
@@ -93,13 +93,13 @@ export function useOnlineFriends(): UseQueryResult<UserWithSocialStats[]> {
     queryKey: ['online-friends'],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_online_friends');
-      
+
       if (error) throw error;
-      
+
       return data as UserWithSocialStats[];
     },
     staleTime: 15000, // 15 seconds
-    refetchInterval: 30000, // Refetch every 30 seconds
+    // Note: Online status handled via presence, no polling needed
     refetchOnWindowFocus: true,
   });
 }
@@ -112,12 +112,12 @@ export function useOnlineFriendsCount(): UseQueryResult<number> {
     queryKey: ['online-friends-count'],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_online_friends_count');
-      
+
       if (error) throw error;
-      
+
       return (data as number) || 0;
     },
     staleTime: 15000,
-    refetchInterval: 30000,
+    // Note: Online status handled via presence, no polling needed
   });
 }

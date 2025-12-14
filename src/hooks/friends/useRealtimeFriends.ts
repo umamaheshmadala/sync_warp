@@ -73,11 +73,8 @@ export function useRealtimeFriends() {
             queryClient.invalidateQueries({ queryKey: ['friendRequests'] });
         }, 1000),
 
-        handleProfileUpdate: throttle((payload: any) => {
-            console.log('[Realtime] Profile updated:', payload);
-            // Invalidate friends query to update online status
-            queryClient.invalidateQueries({ queryKey: ['friends'] });
-        }, 2000),
+        // Note: Profile online status updates are handled through Supabase presence
+        // rather than database subscriptions to avoid excessive updates
     });
 
     useEffect(() => {
@@ -135,25 +132,12 @@ export function useRealtimeFriends() {
             )
             .subscribe();
 
-        // Subscribe to profiles for online status updates
-        const profilesChannel = supabase
-            .channel('profiles-changes')
-            .on(
-                'postgres_changes',
-                {
-                    event: 'UPDATE',
-                    schema: 'public',
-                    table: 'profiles',
-                },
-                throttledHandlers.current.handleProfileUpdate
-            )
-            .subscribe();
+        // Note: Profile online status is handled via Supabase presence, not DB subscriptions
 
         return () => {
             console.log('[Realtime] Cleaning up friend subscriptions');
             supabase.removeChannel(friendshipsChannel);
             supabase.removeChannel(requestsChannel);
-            supabase.removeChannel(profilesChannel);
         };
     }, [user, queryClient, removeFriend]);
 }

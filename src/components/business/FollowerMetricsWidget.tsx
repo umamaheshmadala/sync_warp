@@ -45,7 +45,7 @@ export const FollowerMetricsWidget: React.FC<FollowerMetricsWidgetProps> = ({ bu
       // Get new followers this week
       const oneWeekAgo = new Date();
       oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-      
+
       const { count: newFollowers } = await supabase
         .from('business_followers')
         .select('*', { count: 'exact', head: true })
@@ -60,18 +60,26 @@ export const FollowerMetricsWidget: React.FC<FollowerMetricsWidgetProps> = ({ bu
         .eq('status', 'active');
 
       // Calculate engagement rate from recent campaigns
-      const { data: recentMetrics } = await supabase
-        .from('campaign_metrics')
-        .select('impressions, clicks')
-        .in('campaign_id', 
-          supabase
-            .from('campaigns')
-            .select('id')
-            .eq('business_id', businessId)
-        )
-        .gte('metric_date', oneWeekAgo.toISOString())
-        .order('metric_date', { ascending: false })
-        .limit(10);
+      // Step 1: Get campaign IDs for this business
+      const { data: campaignData } = await supabase
+        .from('campaigns')
+        .select('id')
+        .eq('business_id', businessId);
+
+      const campaignIds = campaignData?.map(c => c.id) || [];
+
+      // Step 2: Fetch metrics using the campaign IDs
+      let recentMetrics: { impressions: number; clicks: number }[] = [];
+      if (campaignIds.length > 0) {
+        const { data: metricsData } = await supabase
+          .from('campaign_metrics')
+          .select('impressions, clicks')
+          .in('campaign_id', campaignIds)
+          .gte('metric_date', oneWeekAgo.toISOString())
+          .order('metric_date', { ascending: false })
+          .limit(10);
+        recentMetrics = metricsData || [];
+      }
 
       let engagementRate = 0;
       if (recentMetrics && recentMetrics.length > 0) {
@@ -106,92 +114,54 @@ export const FollowerMetricsWidget: React.FC<FollowerMetricsWidgetProps> = ({ bu
   }
 
   return (
-    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg shadow-sm border border-blue-100 p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-          <Users className="w-5 h-5 mr-2 text-blue-600" />
+    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg shadow-sm border border-blue-100 p-4">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-base font-semibold text-gray-900 flex items-center">
+          <Users className="w-4 h-4 mr-2 text-blue-600" />
           Follower Insights
         </h3>
         <button
           onClick={() => navigate(`${getBusinessUrl(businessId, businessName)}/followers/analytics`)}
-          className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+          className="text-xs text-blue-600 hover:text-blue-700 font-medium"
         >
           View Details →
         </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-3 gap-2">
         {/* Total Followers */}
-        <div className="bg-white rounded-lg p-4 shadow-sm">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-600">Total Followers</span>
-            <Users className="w-4 h-4 text-blue-600" />
+        <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs text-gray-500 font-medium truncate">Followers</span>
+            <Users className="w-3 h-3 text-blue-600" />
           </div>
-          <div className="text-2xl font-bold text-gray-900">
+          <div className="text-lg font-bold text-gray-900 leading-tight">
             {metrics.totalFollowers.toLocaleString()}
           </div>
-          {metrics.newFollowersThisWeek > 0 && (
-            <div className="flex items-center text-xs text-green-600 mt-1">
-              <TrendingUp className="w-3 h-3 mr-1" />
-              +{metrics.newFollowersThisWeek} this week
-            </div>
-          )}
         </div>
 
         {/* Active Campaigns */}
-        <div className="bg-white rounded-lg p-4 shadow-sm">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-600">Active Campaigns</span>
-            <Target className="w-4 h-4 text-purple-600" />
+        <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs text-gray-500 font-medium truncate">Campaigns</span>
+            <Target className="w-3 h-3 text-purple-600" />
           </div>
-          <div className="text-2xl font-bold text-gray-900">
+          <div className="text-lg font-bold text-gray-900 leading-tight">
             {metrics.activeCampaigns}
-          </div>
-          <div className="text-xs text-gray-500 mt-1">
-            Targeting followers
           </div>
         </div>
 
         {/* Engagement Rate */}
-        <div className="bg-white rounded-lg p-4 shadow-sm">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-600">Engagement Rate</span>
-            <TrendingUp className="w-4 h-4 text-green-600" />
+        <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs text-gray-500 font-medium truncate">Engagement</span>
+            <TrendingUp className="w-3 h-3 text-green-600" />
           </div>
-          <div className="text-2xl font-bold text-gray-900">
+          <div className="text-lg font-bold text-gray-900 leading-tight">
             {metrics.engagementRate}%
           </div>
-          <div className="text-xs text-gray-500 mt-1">
-            Campaign performance
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg p-4 shadow-sm flex flex-col justify-center">
-          <Bell className="w-5 h-5 text-white mb-2" />
-          <button
-            onClick={() => navigate(`${getBusinessUrl(businessId, businessName)}/campaigns/create`)}
-            className="text-sm font-medium text-white hover:underline text-left"
-          >
-            Create Campaign →
-          </button>
         </div>
       </div>
-
-      {metrics.totalFollowers === 0 && (
-        <div className="bg-blue-100 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
-          <strong>Tip:</strong> Start building your follower base! Share your business QR code or profile link to attract followers.
-        </div>
-      )}
-
-      {metrics.totalFollowers > 0 && metrics.activeCampaigns === 0 && (
-        <div className="bg-purple-100 border border-purple-200 rounded-lg p-3 text-sm text-purple-800">
-          <strong>Ready to engage?</strong> You have {metrics.totalFollowers} follower{metrics.totalFollowers > 1 ? 's' : ''}! 
-          <button onClick={() => navigate(`${getBusinessUrl(businessId, businessName)}/campaigns/create`)} className="font-semibold hover:underline ml-1">
-            Launch your first campaign →
-          </button>
-        </div>
-      )}
     </div>
   );
 };

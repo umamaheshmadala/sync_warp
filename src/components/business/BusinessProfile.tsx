@@ -24,9 +24,11 @@ import {
   ChevronRight,
   Package,
   MessageSquare,
-  Info
+  Info,
+  Navigation
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { Geolocation } from '@capacitor/geolocation';
 import { useAuthStore } from '../../store/authStore';
 import { toast } from 'react-hot-toast';
 import FeaturedProducts from './FeaturedProducts';
@@ -48,6 +50,7 @@ import { EmptyState } from '../ui/EmptyState';
 import { AllReviews } from '../reviews/AllReviews';
 import FollowButton from '../following/FollowButton';
 import { useBusinessUrl } from '../../hooks/useBusinessUrl';
+import { FollowerMetricsWidget } from './FollowerMetricsWidget';
 import { useMemo } from 'react';
 
 // TypeScript interfaces
@@ -108,8 +111,15 @@ const BusinessProfile: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [showReviewModal, setShowReviewModal] = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState(false);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [editingReview, setEditingReview] = useState<any>(null);
+
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const [reviewsKey, setReviewsKey] = useState(0);
 
   // Parse the business ID from slug (do this once at the top)
@@ -505,7 +515,7 @@ const BusinessProfile: React.FC = () => {
 
       if (error) throw error;
 
-      setBusiness(editForm);
+      setBusiness(editForm as Business);
       setEditing(false);
       toast.success('Business profile updated successfully!');
     } catch (error) {
@@ -522,34 +532,43 @@ const BusinessProfile: React.FC = () => {
     setEditing(false);
   };
 
-  // Get current location using browser geolocation
-  const getCurrentLocation = () => {
-    if (!navigator.geolocation) {
-      toast.error('Geolocation is not supported by this browser');
-      return;
-    }
+  // Get current location using Capacitor Geolocation
+  const getCurrentLocation = async () => {
+    setImageUploadLoading(prev => ({ ...prev, gallery: true }));
 
-    setImageUploadLoading(prev => ({ ...prev, gallery: true })); // Reuse loading state
+    try {
+      const permissionStatus = await Geolocation.checkPermissions();
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        handleFormChange('latitude', latitude);
-        handleFormChange('longitude', longitude);
-        toast.success('Location coordinates updated!');
+      if (permissionStatus.location === 'denied') {
+        toast.error('Location access denied. Please enable it in Settings.');
         setImageUploadLoading(prev => ({ ...prev, gallery: false }));
-      },
-      (error) => {
-        console.error('Geolocation error:', error);
-        toast.error('Failed to get current location. Please check your location permissions.');
-        setImageUploadLoading(prev => ({ ...prev, gallery: false }));
-      },
-      {
+        return;
+      }
+
+      if (permissionStatus.location === 'prompt' || permissionStatus.location === 'prompt-with-rationale') {
+        const request = await Geolocation.requestPermissions();
+        if (request.location === 'denied') {
+          setImageUploadLoading(prev => ({ ...prev, gallery: false }));
+          return;
+        }
+      }
+
+      const position = await Geolocation.getCurrentPosition({
         enableHighAccuracy: true,
         timeout: 10000,
         maximumAge: 60000
-      }
-    );
+      });
+
+      const { latitude, longitude } = position.coords;
+      handleFormChange('latitude', latitude);
+      handleFormChange('longitude', longitude);
+      toast.success('Location updated!');
+    } catch (error) {
+      console.error('Geolocation error:', error);
+      toast.error('Failed to get location.');
+    } finally {
+      setImageUploadLoading(prev => ({ ...prev, gallery: false }));
+    }
   };
 
   // Format operating hours for display
@@ -577,6 +596,14 @@ const BusinessProfile: React.FC = () => {
 
     const config = statusConfig[status] || statusConfig.inactive;
     const Icon = config.icon;
+
+    if (status === 'active') {
+      return (
+        <div className="bg-green-100 text-green-600 p-1.5 rounded-full" title="Active">
+          <CheckCircle className="w-4 h-4" />
+        </div>
+      );
+    }
 
     return (
       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.color}`}>
@@ -955,110 +982,63 @@ const BusinessProfile: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            <div>
-              <h4 className="font-medium text-gray-900 mb-2">{business?.business_name}</h4>
-              <p className="text-gray-600">{business?.description}</p>
+            {/* Desktop: Compact Grid Layout */}
+            <div className="hidden md:block">
+              <div className="flex items-start justify-between gap-6">
+                {/* Info Column */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-gray-900 font-medium mb-1 line-clamp-1">{business?.business_name}</p>
+                  <p className="text-gray-600 text-sm line-clamp-2">{business?.description}</p>
+                  <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                    <span>{business?.business_type}</span>
+                    <span>•</span>
+                    {getStatusBadge(business?.status)}
+                  </div>
+                </div>
+
+                {/* Contact/Loc Column */}
+                <div className="flex-1 min-w-0 border-l pl-6">
+                  <div className="space-y-1.5 text-sm text-gray-600">
+                    <p className="flex items-center"><MapPin className="w-3.5 h-3.5 mr-2 text-gray-400" /> {business?.address}, {business?.city}</p>
+                    {business?.business_phone && <p className="flex items-center"><Phone className="w-3.5 h-3.5 mr-2 text-gray-400" /> {business?.business_phone}</p>}
+                    {business?.business_email && <p className="flex items-center"><Mail className="w-3.5 h-3.5 mr-2 text-gray-400" /> {business?.business_email}</p>}
+                  </div>
+                </div>
+
+                {/* Hours/Link Column */}
+                <div className="border-l pl-6">
+                  <button
+                    onClick={() => setShowInfoModal(true)}
+                    className="text-indigo-600 hover:text-indigo-700 text-sm font-medium flex items-center whitespace-nowrap"
+                  >
+                    <Clock className="w-4 h-4 mr-2" />
+                    View Hours & More
+                  </button>
+                </div>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-500">Business Type</p>
-                <p className="font-medium text-gray-900">{business?.business_type}</p>
+            {/* Mobile: Summary Row */}
+            <div className="md:hidden flex items-center justify-between">
+              <div className="min-w-0 flex-1 pr-4">
+                <h4 className="font-medium text-gray-900 truncate">{business?.business_name}</h4>
+                <p className="text-xs text-gray-500 truncate flex items-center mt-1">
+                  <MapPin className="w-3 h-3 mr-1" />
+                  {business?.address}, {business?.city}
+                </p>
               </div>
-
-              <div>
-                <p className="text-sm text-gray-500">Status</p>
-                <div className="mt-1">{getStatusBadge(business?.status)}</div>
-              </div>
+              <button
+                onClick={() => setShowInfoModal(true)}
+                className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-xs font-medium text-gray-700 transition-colors whitespace-nowrap"
+              >
+                More Info
+              </button>
             </div>
-
-            {business?.business_email && (
-              <div className="flex items-center text-gray-600">
-                <Mail className="w-4 h-4 mr-2" />
-                <a href={`mailto:${business.business_email}`} className="hover:text-indigo-600">
-                  {business.business_email}
-                </a>
-              </div>
-            )}
-
-            {business?.business_phone && (
-              <div className="flex items-center text-gray-600">
-                <Phone className="w-4 h-4 mr-2" />
-                <a href={`tel:${business.business_phone}`} className="hover:text-indigo-600">
-                  {business.business_phone}
-                </a>
-              </div>
-            )}
-
-            {business?.website_url && (
-              <div className="flex items-center text-gray-600">
-                <Globe className="w-4 h-4 mr-2" />
-                <a
-                  href={business.website_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-indigo-600 flex items-center"
-                >
-                  Visit Website <ExternalLink className="w-3 h-3 ml-1" />
-                </a>
-              </div>
-            )}
           </div>
         )}
       </div>
 
-      {/* Location */}
-      <div className="bg-white rounded-lg shadow-sm border p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Location</h3>
-        <div className="space-y-3">
-          <div className="flex items-start">
-            <MapPin className="w-5 h-5 text-gray-400 mr-3 mt-0.5" />
-            <div>
-              <p className="text-gray-900">{business?.address}</p>
-              <p className="text-gray-600">{business?.city}, {business?.state} {business?.postal_code}</p>
-            </div>
-          </div>
 
-          {(business?.latitude && business?.longitude) && (
-            <div className="flex items-start pl-8">
-              <div className="text-sm text-gray-500">
-                <p>Coordinates:</p>
-                <p className="text-gray-700 font-mono">
-                  {business.latitude.toFixed(6)}, {business.longitude.toFixed(6)}
-                </p>
-                <a
-                  href={`https://maps.google.com/?q=${business.latitude},${business.longitude}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center text-indigo-600 hover:text-indigo-800 mt-1"
-                >
-                  View on Google Maps <ExternalLink className="w-3 h-3 ml-1" />
-                </a>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Operating Hours */}
-      <div className="bg-white rounded-lg shadow-sm border p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Operating Hours</h3>
-        <div className="space-y-2">
-          {business?.operating_hours && dayOrder
-            .filter(day => business.operating_hours[day]) // Only show days that have data
-            .map(day => {
-              const hours = business.operating_hours[day];
-              return (
-                <div key={day} className="flex justify-between">
-                  <span className="capitalize font-medium text-gray-700">{day}</span>
-                  <span className="text-gray-600">
-                    {hours.closed ? 'Closed' : `${hours.open} - ${hours.close}`}
-                  </span>
-                </div>
-              );
-            })}
-        </div>
-      </div>
 
       {/* Tags */}
       {business?.tags && business.tags.length > 0 && (
@@ -1099,6 +1079,9 @@ const BusinessProfile: React.FC = () => {
   // Render statistics tab
   const renderStatistics = () => (
     <div className="space-y-6">
+      {/* Follower Analytics Section */}
+      <FollowerMetricsWidget businessId={business?.id!} />
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white rounded-lg shadow-sm border p-6">
           <div className="flex items-center">
@@ -1158,6 +1141,7 @@ const BusinessProfile: React.FC = () => {
       </div>
     </div>
   );
+
 
   // Render reviews tab
   const renderReviews = () => (
@@ -1219,7 +1203,7 @@ const BusinessProfile: React.FC = () => {
       <StorefrontErrorState
         message="The business you're looking for doesn't exist."
         onRetry={() => window.location.reload()}
-        onGoBack={() => navigate('/dashboard')}
+
       />
     );
   }
@@ -1228,7 +1212,7 @@ const BusinessProfile: React.FC = () => {
   const allTabs = [
     { id: 'overview', label: 'Overview', count: null, ownerOnly: false },
     { id: 'reviews', label: 'Reviews', count: reviewStats?.total_reviews || business?.total_reviews || 0, ownerOnly: false },
-    { id: 'statistics', label: 'Statistics', count: null, ownerOnly: true },
+    { id: 'statistics', label: 'Analytics', count: null, ownerOnly: true },
     { id: 'enhanced-profile', label: 'Enhanced Profile', count: null, ownerOnly: true }
   ];
 
@@ -1255,7 +1239,6 @@ const BusinessProfile: React.FC = () => {
                 onSubmit={handleReviewSubmit}
                 onCancel={async () => {
                   if (editingReview) {
-                    // If we were editing, refresh the data
                     await refreshStats();
                     setReviewsKey(prev => prev + 1);
                   }
@@ -1269,11 +1252,100 @@ const BusinessProfile: React.FC = () => {
             </div>
           </motion.div>
         )}
+
+        {/* Info Detail Modal */}
+        {showInfoModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+            onClick={() => setShowInfoModal(false)}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden max-h-[90vh] overflow-y-auto"
+            >
+              <div className="px-6 py-4 border-b flex justify-between items-center bg-gray-50">
+                <h3 className="font-semibold text-lg text-gray-900">Business Details</h3>
+                <button onClick={() => setShowInfoModal(false)} className="p-1 hover:bg-gray-200 rounded-full">
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
+              <div className="p-6 space-y-6">
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">About</h4>
+                  <p className="text-gray-700">{business?.description}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">Contact & Location</h4>
+                  <div className="space-y-3">
+                    <div className="flex items-start">
+                      <MapPin className="w-5 h-5 text-gray-400 mr-3 mt-0.5" />
+                      <div>
+                        <p className="text-gray-900">{business?.address}</p>
+                        <p className="text-gray-600 text-sm">{business?.city}, {business?.state} {business?.postal_code}</p>
+                        {(business?.latitude && business?.longitude) && (
+                          <a
+                            href={`https://maps.google.com/?q=${business.latitude},${business.longitude}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center text-indigo-600 hover:text-indigo-800 mt-1 text-sm"
+                          >
+                            View on Google Maps <ExternalLink className="w-3 h-3 ml-1" />
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                    {business?.business_phone && (
+                      <div className="flex items-center">
+                        <Phone className="w-5 h-5 text-gray-400 mr-3" />
+                        <a href={`tel:${business.business_phone}`} className="text-indigo-600 hover:underline">{business.business_phone}</a>
+                      </div>
+                    )}
+                    {business?.business_email && (
+                      <div className="flex items-center">
+                        <Mail className="w-5 h-5 text-gray-400 mr-3" />
+                        <a href={`mailto:${business.business_email}`} className="text-indigo-600 hover:underline break-all">{business.business_email}</a>
+                      </div>
+                    )}
+                    {business?.website_url && (
+                      <div className="flex items-center">
+                        <Globe className="w-5 h-5 text-gray-400 mr-3" />
+                        <a href={business.website_url} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline break-all items-center inline-flex">
+                          Visit Website <ExternalLink className="w-3 h-3 ml-1" />
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">Operating Hours</h4>
+                  <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                    {business?.operating_hours && dayOrder
+                      .filter(day => business.operating_hours[day])
+                      .map(day => {
+                        const hours = business.operating_hours[day];
+                        return (
+                          <div key={day} className="flex justify-between text-sm">
+                            <span className="capitalize font-medium text-gray-700">{day}</span>
+                            <span className="text-gray-600">
+                              {hours.closed ? 'Closed' : `${hours.open} - ${hours.close}`}
+                            </span>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
       </AnimatePresence>
 
       <div className="min-h-screen bg-gray-50">
         {/* Breadcrumbs Navigation */}
-        <div className="bg-white border-b border-gray-100">
+        <div className="hidden md:block bg-white border-b border-gray-100">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="py-3">
               <nav className="flex items-center space-x-2 text-sm">
@@ -1300,142 +1372,240 @@ const BusinessProfile: React.FC = () => {
           </div>
         </div>
 
-        {/* Header */}
-        <div className="bg-white border-b">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="py-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <button
-                    onClick={() => navigate('/business/dashboard')}
-                    className="mr-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                    title="Back to Business Dashboard"
-                  >
-                    <ArrowLeft className="w-5 h-5" />
-                  </button>
+        {/* Facebook-style Cover & Profile Header */}
+        <div className="bg-white pb-4 border-b">
+          <div className="relative group">
+            {/* Cover Image Container - Centered and Max Width */}
+            <div className="max-w-7xl mx-auto md:px-6 lg:px-8 relative group">
+              {/* Back Button - Absolute Top Left */}
+              <button
+                onClick={() => navigate('/business/dashboard')}
+                className="absolute top-4 left-4 z-20 p-2 bg-white/80 backdrop-blur-sm rounded-full text-gray-700 hover:bg-white transition-all shadow-sm"
+                title="Back to Dashboard"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
 
+              <div className="h-48 md:h-80 bg-gray-200 overflow-hidden w-full relative md:rounded-b-lg">
+                {business?.cover_image_url ? (
+                  <img
+                    src={business.cover_image_url}
+                    alt={`${business.business_name} cover`}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-r from-gray-200 to-gray-300 flex items-center justify-center">
+                    <span className="text-gray-400 font-medium">No cover photo</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Profile Photo (Overlapping - 1/4 on cover, 3/4 below) */}
+              <div className="absolute -bottom-[4.5rem] md:-bottom-[7.5rem] left-4 md:left-8 z-30">
+                <div className="rounded-full border-[4px] border-white bg-white shadow-md overflow-hidden w-24 h-24 md:w-40 md:h-40">
                   {business?.logo_url ? (
                     <img
                       src={business.logo_url}
                       alt={`${business.business_name} logo`}
-                      className="w-16 h-16 rounded-lg object-cover mr-4"
+                      className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center mr-4">
-                      <Camera className="w-8 h-8 text-gray-400" />
+                    <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                      <Camera className="w-8 h-8 md:w-12 md:h-12 text-gray-400" />
                     </div>
                   )}
-                  <div>
-                    <h1 className="text-2xl font-bold text-gray-900">{business?.business_name}</h1>
-                    <p className="text-gray-600">{business?.city}, {business?.state}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-3">
-                  {getStatusBadge(business?.status)}
-                  {business?.verified && (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      <CheckCircle className="w-3 h-3 mr-1" />
-                      Verified
-                    </span>
-                  )}
-
-                  {/* Follow Button - Only show for non-owners */}
-                  {!isOwner && user && (
-                    <FollowButton
-                      businessId={business.id}
-                      variant="default"
-                      size="default"
-                    />
-                  )}
-
-                  <StorefrontShareButton
-                    businessId={business.id}
-                    businessName={business.business_name}
-                    businessDescription={business.description}
-                    variant="outline"
-                    size="default"
-                    onShareSuccess={() => {
-                      // Optional: Track share success analytics
-                      console.log('Storefront shared successfully');
-                    }}
-                  />
                 </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* Cover Image */}
-        {business?.cover_image_url && (
-          <div className="h-64 bg-gray-200 overflow-hidden">
-            <img
-              src={business.cover_image_url}
-              alt={`${business.business_name} cover`}
-              className="w-full h-full object-cover"
-            />
-          </div>
-        )}
+            {/* Info Section (Below Cover - In Normal Flow) */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-[0.5rem] pb-2">
+              <div className="flex flex-col md:flex-row justify-between items-start gap-4">
+                {/* Business Name & Details (Pushed right to clear profile pic) */}
+                <div className="mt-0 pl-[7.5rem] md:pl-[12rem] flex flex-col items-start text-left w-full min-h-[5rem] md:min-h-0">
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
+                    <h1 className="text-lg md:text-2xl font-bold text-gray-900 leading-tight">
+                      {business?.business_name}
+                    </h1>
 
-        {/* Tabs */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8">
-              {tabs.map((tab) => (
+                    <StorefrontShareButton
+                      businessId={business.id}
+                      businessName={business.business_name}
+                      businessDescription={business.description}
+                      variant="ghost"
+                      size="icon"
+                      showLabel={false}
+                      className="w-8 h-8 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                      onShareSuccess={() => console.log('Shared')}
+                    />
+
+                    {business?.verified && (
+                      <CheckCircle className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                    )}
+                    {getStatusBadge(business?.status)}
+                  </div>
+                  <p className="text-gray-600 text-sm mb-2 flex items-center">
+                    <MapPin className="w-3.5 h-3.5 mr-1 text-gray-400" />
+                    {business?.city}, {business?.state}
+                  </p>
+
+                  {/* Action Buttons Row - Desktop Only */}
+                  <div className="hidden md:flex flex-wrap items-center gap-2 mt-4">
+                    {!isOwner && user && (
+                      <FollowButton
+                        businessId={business.id}
+                        variant="default"
+                        size="default"
+                      />
+                    )}
+                    {/* Navigate Button */}
+                    <button
+                      onClick={() => {
+                        if (business?.latitude && business?.longitude) {
+                          window.open(`https://www.google.com/maps/dir/?api=1&destination=${business.latitude},${business.longitude}`);
+                        } else {
+                          // Fallback to searching by address
+                          const query = encodeURIComponent(`${business?.address || ''} ${business?.city || ''} ${business?.state || ''}`);
+                          window.open(`https://www.google.com/maps/search/?api=1&query=${query}`);
+                        }
+                      }}
+                      className="inline-flex flex-1 justify-center items-center px-2 py-2 border border-gray-300 shadow-sm text-xs md:text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 md:flex-none md:px-3"
+                      title="Navigate"
+                    >
+                      <Navigation className="w-3.5 h-3.5 mr-1.5 md:mr-2 md:w-4 md:h-4" />
+                      <span>Navigate</span>
+                    </button>
+
+                    {isOwner && (
+                      <>
+                        <button
+                          onClick={() => navigate(`/business/${business?.id}/manage/campaigns`)}
+                          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-pink-600 hover:bg-pink-700 transition-colors"
+                        >
+                          <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-trending-up'%3E%3Cpolyline points='22 7 13.5 15.5 8.5 10.5 2 17'/%3E%3Cpolyline points='16 7 22 7 22 13'/%3E%3C/svg%3E" alt="" className="w-4 h-4 mr-2" />
+                          Campaigns
+                        </button>
+
+                        <button
+                          onClick={() => navigate(`/business/${business?.id}/manage/coupons`)}
+                          className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50"
+                        >
+                          <Tag className="w-4 h-4 mr-2" />
+                          Manage Coupons
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons Row - Mobile Only (Full Width) */}
+              <div className="md:hidden flex flex-row items-stretch gap-2 mt-2 w-full">
+                {!isOwner && user && (
+                  <FollowButton
+                    businessId={business.id}
+                    businessName={business.business_name}
+                  />
+                )}
                 <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === tab.id
-                    ? 'border-indigo-500 text-indigo-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }`}
-                >
-                  {tab.label}
-                  {tab.count !== null && (
-                    <span className={`ml-2 py-0.5 px-2 rounded-full text-xs ${activeTab === tab.id
-                      ? 'bg-indigo-100 text-indigo-600'
-                      : 'bg-gray-100 text-gray-900'
-                      }`}>
-                      {tab.count}
-                    </span>
-                  )}
-                </button>
-              ))}
-            </nav>
-          </div>
-        </div>
-
-        {/* Tab Content */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.2 }}
-            >
-              {activeTab === 'overview' && renderOverview()}
-              {activeTab === 'reviews' && renderReviews()}
-              {activeTab === 'statistics' && renderStatistics()}
-              {activeTab === 'enhanced-profile' && (
-                <EnhancedProfileTab
-                  businessId={businessId!}
-                  business={business!}
-                  isOwner={isOwner}
-                  onUpdate={async () => {
-                    // Refresh business data after update
-                    const { data } = await supabase
-                      .from('businesses')
-                      .select('*')
-                      .eq('id', businessId)
-                      .single();
-                    if (data) setBusiness(data);
+                  onClick={() => {
+                    if (business?.latitude && business?.longitude) {
+                      window.open(`https://www.google.com/maps/dir/?api=1&destination=${business.latitude},${business.longitude}`);
+                    } else {
+                      const query = encodeURIComponent(`${business?.address || ''} ${business?.city || ''} ${business?.state || ''}`);
+                      window.open(`https://www.google.com/maps/search/?api=1&query=${query}`);
+                    }
                   }}
-                />
-              )}
-            </motion.div>
-          </AnimatePresence>
+                  className="inline-flex flex-1 justify-center items-center px-2 py-2 border border-gray-300 shadow-sm text-xs font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50"
+                  title="Navigate"
+                >
+                  <Navigation className="w-3.5 h-3.5 mr-1.5" />
+                  <span>Navigate</span>
+                </button>
+
+                {isOwner && (
+                  <>
+                    <button
+                      onClick={() => navigate(`/business/${business?.id}/manage/campaigns`)}
+                      className="inline-flex flex-1 justify-center items-center px-2 py-2 border border-transparent text-xs font-medium rounded-lg shadow-sm text-white bg-pink-600 hover:bg-pink-700 transition-colors"
+                    >
+                      <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-trending-up'%3E%3Cpolyline points='22 7 13.5 15.5 8.5 10.5 2 17'/%3E%3Cpolyline points='16 7 22 7 22 13'/%3E%3C/svg%3E" alt="" className="w-3.5 h-3.5 mr-1.5" />
+                      Campaigns
+                    </button>
+
+                    <button
+                      onClick={() => navigate(`/business/${business?.id}/manage/coupons`)}
+                      className="inline-flex flex-1 justify-center items-center px-2 py-2 border border-gray-300 shadow-sm text-xs font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50"
+                    >
+                      <Tag className="w-3.5 h-3.5 mr-1.5" />
+                      Coupons
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Tabs */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="border-b border-gray-200">
+              <nav className="-mb-px flex space-x-8">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === tab.id
+                      ? 'border-indigo-500 text-indigo-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }`}
+                  >
+                    {tab.label}
+                    {tab.count !== null && (
+                      <span className={`ml-2 py-0.5 px-2 rounded-full text-xs ${activeTab === tab.id
+                        ? 'bg-indigo-100 text-indigo-600'
+                        : 'bg-gray-100 text-gray-900'
+                        }`}>
+                        {tab.count}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </nav>
+            </div>
+          </div>
+
+          {/* Tab Content */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeTab}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.2 }}
+              >
+                {activeTab === 'overview' && renderOverview()}
+                {activeTab === 'reviews' && renderReviews()}
+                {activeTab === 'statistics' && renderStatistics()}
+                {activeTab === 'enhanced-profile' && (
+                  <EnhancedProfileTab
+                    businessId={businessId!}
+                    business={business!}
+                    isOwner={isOwner}
+                    onUpdate={async () => {
+                      // Refresh business data after update
+                      const { data } = await supabase
+                        .from('businesses')
+                        .select('*')
+                        .eq('id', businessId)
+                        .single();
+                      if (data) setBusiness(data);
+                    }}
+                  />
+                )}
+              </motion.div>
+            </AnimatePresence>
+          </div>
         </div>
       </div>
     </>

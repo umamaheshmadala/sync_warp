@@ -205,10 +205,10 @@ export default function Header() {
 
         {/* Right side - Notifications, Friends (Mobile) | Wishlist, Notifications, Profile (Desktop) */}
         <div className="flex items-center space-x-2">
-          {/* Sync Status - Desktop Only */}
-          <div className="hidden md:block">
+          {/* Sync Status - Desktop Only - REMOVED */}
+          {/* <div className="hidden md:block">
             <SyncStatusIndicator compact />
-          </div>
+          </div> */}
 
           {/* Messages - Desktop Only */}
           <Button

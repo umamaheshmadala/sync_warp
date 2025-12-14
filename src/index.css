@@ -32,6 +32,7 @@ html, body {
   overflow-x: hidden;
   position: relative;
   -webkit-overflow-scrolling: touch;
+  font-size: 16px; /* Base size for mobile readability */
 }
 
 /* Prevent iOS Safari from moving fixed elements during scroll */

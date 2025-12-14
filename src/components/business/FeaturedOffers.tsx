@@ -97,7 +97,7 @@ export default function FeaturedOffers({
         .eq('business_id', businessId)
         .eq('status', 'active')
         .order('created_at', { ascending: false })
-        .limit(4);
+        .limit(5);
 
       if (error) throw error;
       setOffers(data || []);
@@ -160,12 +160,12 @@ export default function FeaturedOffers({
           onClick={() => navigate(`${getBusinessUrl(businessId, businessName)}/offers`)}
           className="flex items-center px-4 py-2 text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors"
         >
-          {totalCount > 4 ? `View All (${totalCount})` : isOwner ? 'Manage Offers' : 'View All'}
+          {totalCount > 5 ? `View All (${totalCount})` : isOwner ? 'Manage Offers' : 'View All'}
           <ChevronRight className="w-4 h-4 ml-1" />
         </button>
       </div>
 
-      <p className="text-sm text-gray-600 mb-4">
+      <p className="hidden md:block text-sm text-gray-600 mb-4">
         {isOwner
           ? 'Your active promotional offers. Track performance and manage them anytime.'
           : 'Check out the latest deals and promotions from this business.'}
@@ -176,7 +176,7 @@ export default function FeaturedOffers({
           <div
             key={offer.id}
             onClick={() => setSelectedOffer(offer)}
-            className="border border-gray-200 rounded-lg p-4 hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer group"
+            className="border border-gray-200 rounded-lg p-3 md:p-4 hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer group"
           >
             <div className="flex items-start justify-between">
               <div className="flex-1">
@@ -184,11 +184,11 @@ export default function FeaturedOffers({
                   {offer.title}
                 </h4>
                 {offer.description && (
-                  <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                  <p className="hidden lg:block text-sm text-gray-600 mt-1 line-clamp-2">
                     {offer.description}
                   </p>
                 )}
-                <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                <div className="flex items-center gap-4 mt-1 md:mt-2 text-xs text-gray-500">
                   <span className="flex items-center">
                     <Calendar className="w-3 h-3 mr-1" />
                     Valid until {new Date(offer.valid_until).toLocaleDateString()}
@@ -211,12 +211,12 @@ export default function FeaturedOffers({
         ))}
       </div>
 
-      {totalCount > 4 && (
+      {totalCount > 5 && (
         <button
           onClick={() => navigate(`${getBusinessUrl(businessId, businessName)}/offers`)}
           className="mt-4 w-full py-2 text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors"
         >
-          View {totalCount - 4} more offer{totalCount - 4 !== 1 ? 's' : ''}
+          View {totalCount - 5} more offer{totalCount - 5 !== 1 ? 's' : ''}
         </button>
       )}
 

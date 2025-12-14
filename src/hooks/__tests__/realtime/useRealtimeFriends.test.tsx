@@ -88,26 +88,17 @@ describe('useRealtimeFriends', () => {
         expect(supabase.channel).toHaveBeenCalledWith('friend-requests-changes');
     });
 
-    it('should subscribe to profiles changes', () => {
-        renderHook(() => useRealtimeFriends(), { wrapper });
-
-        expect(supabase.channel).toHaveBeenCalledWith('profiles-changes');
-        expect(mockChannel.on).toHaveBeenCalledWith(
-            'postgres_changes',
-            expect.objectContaining({
-                event: 'UPDATE',
-                table: 'profiles',
-            }),
-            expect.any(Function)
-        );
-    });
+    // Note: profiles subscription was removed - online status is handled via Supabase presence
+    // instead of database subscriptions to avoid excessive updates for all users
 
     it('should cleanup subscriptions on unmount', () => {
         const { unmount } = renderHook(() => useRealtimeFriends(), { wrapper });
 
         unmount();
 
-        expect(supabase.removeChannel).toHaveBeenCalledTimes(3);
+        // 2 channels: friendships-changes and friend-requests-changes
+        // (profiles-changes was removed - online status handled via presence)
+        expect(supabase.removeChannel).toHaveBeenCalledTimes(2);
     });
 
     it('should invalidate queries on friend added', async () => {
