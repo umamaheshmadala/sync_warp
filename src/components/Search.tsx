@@ -15,7 +15,7 @@ import CouponDetailsModal from './modals/CouponDetailsModal'
 export default function Search() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  
+
   // Search hook with all functionality
   const search = useSearch({
     autoSearch: true,
@@ -23,7 +23,7 @@ export default function Search() {
     pageSize: 20,
     saveToUrl: true
   })
-  
+
   // Analytics tracking
   const { trackSearch, trackResultClick } = useSearchTracking()
 
@@ -52,14 +52,14 @@ export default function Search() {
   useEffect(() => {
     setLocalQuery(search.query)
   }, [search.query])
-  
+
   // Update recent searches when user changes
   useEffect(() => {
     const recentSearchKey = user?.id ? `recentSearches_${user.id}` : 'recentSearches_guest'
     const saved = localStorage.getItem(recentSearchKey)
     setRecentSearches(saved ? JSON.parse(saved) : [])
   }, [user?.id])
-  
+
   // Hide location tooltip when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -67,7 +67,7 @@ export default function Search() {
         setIsLocationTooltipVisible(false)
       }
     }
-    
+
     if (isLocationTooltipVisible) {
       document.addEventListener('mousedown', handleClickOutside)
       return () => document.removeEventListener('mousedown', handleClickOutside)
@@ -77,15 +77,15 @@ export default function Search() {
   // Handle input changes with debounced suggestions
   const handleInputChange = async (value: string) => {
     setLocalQuery(value)
-    
+
     // Show suggestions dropdown
     setIsSuggestionsVisible(true)
-    
+
     // Clear previous timeout
     if (suggestionsTimeoutRef.current) {
       clearTimeout(suggestionsTimeoutRef.current)
     }
-    
+
     // Debounce suggestions fetch
     if (value.length >= 2) {
       setSuggestionsLoading(true)
@@ -103,7 +103,7 @@ export default function Search() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     console.log('🔍 [Search] Form submitted with query:', localQuery);
-    
+
     // Allow empty queries for browse mode
     const queryToSearch = localQuery.trim();
     console.log('🔍 [Search] Processing query (empty = browse mode):', queryToSearch || '[BROWSE MODE]');
@@ -113,18 +113,18 @@ export default function Search() {
   // Perform search and save to recent searches
   const performSearch = async (query: string) => {
     console.log('🔍 [Search.tsx] performSearch called with:', query || '[BROWSE MODE]');
-    
+
     // Update local query first
     setLocalQuery(query);
     setIsSuggestionsVisible(false);
-    
+
     // Track search start time for analytics
     const searchStartTime = Date.now();
-    
+
     // Set the query in search hook (this will trigger the actual search)
     // Empty queries are allowed for browse mode
     search.setQuery(query);
-    
+
     // Save to recent searches (only non-empty queries)
     if (query.trim()) {
       const newRecentSearches = [query, ...recentSearches.filter(term => term !== query)].slice(0, 5);
@@ -132,14 +132,14 @@ export default function Search() {
       const recentSearchKey = user?.id ? `recentSearches_${user.id}` : 'recentSearches_guest';
       localStorage.setItem(recentSearchKey, JSON.stringify(newRecentSearches));
     }
-    
+
     // Track search analytics after results are loaded
     // This will be called after the search hook completes
     setTimeout(async () => {
       if (query.trim()) {
         const searchEndTime = Date.now();
         const searchTimeMs = searchEndTime - searchStartTime;
-        
+
         await trackSearch({
           searchTerm: query,
           filters: search.filters,
@@ -203,11 +203,10 @@ export default function Search() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-full whitespace-nowrap transition-all ${
-                  isActive
+                className={`flex items-center space-x-2 px-4 py-2 rounded-full whitespace-nowrap transition-all ${isActive
                     ? 'bg-indigo-100 text-indigo-700 font-semibold'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                  }`}
               >
                 <IconComponent className="w-4 h-4" />
                 <span className="text-sm">{tab.label}</span>
@@ -277,7 +276,7 @@ export default function Search() {
               {search.isSearching ? 'Searching...' : 'Search'}
             </button>
           </div>
-          
+
           {/* Search Suggestions */}
           <SearchSuggestions
             searchTerm={localQuery}
@@ -289,7 +288,7 @@ export default function Search() {
             recentSearches={recentSearches}
           />
         </form>
-        
+
         {/* Browse All Button */}
         {!search.hasSearched && (
           <div className="mt-4 text-center">
@@ -335,31 +334,29 @@ export default function Search() {
                   }
                 }}
                 disabled={search.location.isLoading || !search.location.isSupported}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-lg border transition-colors ${
-                  search.location.enabled
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg border transition-colors ${search.location.enabled
                     ? 'bg-blue-50 border-blue-200 text-blue-700'
                     : search.location.error
-                    ? 'bg-red-50 border-red-200 text-red-700'
-                    : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
-                } disabled:opacity-50 disabled:cursor-not-allowed`}
+                      ? 'bg-red-50 border-red-200 text-red-700'
+                      : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 {search.location.isLoading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : search.location.error ? (
                   <AlertCircle className="h-4 w-4 text-red-500" />
                 ) : (
-                  <Navigation className={`h-4 w-4 ${
-                    search.location.enabled ? 'text-blue-600' : 'text-gray-500'
-                  }`} />
+                  <Navigation className={`h-4 w-4 ${search.location.enabled ? 'text-blue-600' : 'text-gray-500'
+                    }`} />
                 )}
                 <span className="text-sm font-medium">
                   {search.location.isLoading
                     ? 'Locating...'
                     : search.location.error
-                    ? 'Location Denied'
-                    : search.location.enabled
-                    ? 'Near Me'
-                    : 'Enable Location'
+                      ? 'Location Denied'
+                      : search.location.enabled
+                        ? 'Near Me'
+                        : 'Enable Location'
                   }
                 </span>
                 {search.location.enabled && search.location.coords && (
@@ -368,7 +365,7 @@ export default function Search() {
                   </span>
                 )}
               </button>
-              
+
               {/* Enhanced Location Tooltip */}
               {isLocationTooltipVisible && (search.location.error || (!search.location.hasPermission && !search.location.enabled)) && (
                 <div className="absolute top-full left-0 mt-2 p-3 bg-white border border-gray-200 rounded-lg shadow-lg text-sm z-20 w-80">
@@ -405,7 +402,7 @@ export default function Search() {
                 </div>
               )}
             </div>
-            
+
             {/* Filter Panel Toggle */}
             <FilterPanel
               filters={search.filters}
@@ -415,7 +412,7 @@ export default function Search() {
               onToggle={() => setIsFilterPanelOpen(!isFilterPanelOpen)}
               activeFiltersCount={search.activeFiltersCount}
             />
-            
+
             {/* Sort Dropdown */}
             <div className="relative">
               <select
@@ -436,22 +433,20 @@ export default function Search() {
               <ArrowUpDown className="absolute right-2 top-2.5 h-4 w-4 text-gray-400 pointer-events-none" />
             </div>
           </div>
-          
+
           {/* View Toggle */}
           <div className="flex items-center space-x-2">
             <button
               onClick={() => setViewMode('grid')}
-              className={`p-2 rounded-lg transition-colors ${
-                viewMode === 'grid' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-400 hover:text-gray-600'
-              }`}
+              className={`p-2 rounded-lg transition-colors ${viewMode === 'grid' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-400 hover:text-gray-600'
+                }`}
             >
               <Grid className="h-4 w-4" />
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`p-2 rounded-lg transition-colors ${
-                viewMode === 'list' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-400 hover:text-gray-600'
-              }`}
+              className={`p-2 rounded-lg transition-colors ${viewMode === 'list' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-400 hover:text-gray-600'
+                }`}
             >
               <List className="h-4 w-4" />
             </button>
@@ -473,44 +468,41 @@ export default function Search() {
                 {search.searchTime > 0 && ` in ${search.searchTime}ms`}
               </div>
             </div>
-            
+
             {/* Result Type Tabs */}
             <div className="flex border border-gray-200 rounded-lg overflow-hidden">
               <button
                 onClick={() => setActiveTab('all')}
-                className={`px-4 py-2 text-sm font-medium transition-colors ${
-                  activeTab === 'all'
+                className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'all'
                     ? 'bg-indigo-600 text-white'
                     : 'bg-white text-gray-700 hover:bg-gray-50'
-                }`}
+                  }`}
               >
                 All ({search.totalResults})
               </button>
               <button
                 onClick={() => setActiveTab('coupons')}
-                className={`px-4 py-2 text-sm font-medium border-l border-gray-200 transition-colors ${
-                  activeTab === 'coupons'
+                className={`px-4 py-2 text-sm font-medium border-l border-gray-200 transition-colors ${activeTab === 'coupons'
                     ? 'bg-indigo-600 text-white'
                     : 'bg-white text-gray-700 hover:bg-gray-50'
-                }`}
+                  }`}
               >
                 Coupons ({search.totalCoupons})
               </button>
               <button
                 onClick={() => setActiveTab('businesses')}
-                className={`px-4 py-2 text-sm font-medium border-l border-gray-200 transition-colors ${
-                  activeTab === 'businesses'
+                className={`px-4 py-2 text-sm font-medium border-l border-gray-200 transition-colors ${activeTab === 'businesses'
                     ? 'bg-indigo-600 text-white'
                     : 'bg-white text-gray-700 hover:bg-gray-50'
-                }`}
+                  }`}
               >
                 Businesses ({search.totalBusinesses})
               </button>
             </div>
           </div>
-          
+
           {/* Search Status */}
-          {search.isSearching ? (
+          {search.isSearching && !hasResults ? (
             <div className="flex justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
               <span className="ml-3 text-gray-600">Searching...</span>
@@ -537,9 +529,9 @@ export default function Search() {
                       <span className="ml-2 text-sm font-normal text-gray-500">({coupons.length})</span>
                     </h3>
                   )}
-                  
-                  <div className={viewMode === 'grid' 
-                    ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6' 
+
+                  <div className={viewMode === 'grid'
+                    ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6'
                     : 'space-y-4'
                   }>
                     {coupons.map((coupon) => (
@@ -559,18 +551,18 @@ export default function Search() {
                           }
                           search.goToBusiness(businessId);
                         }}
-                  onCouponClick={(couponId) => {
-                    // Track click for analytics
-                    if (search.query) {
-                      trackResultClick({
-                        searchTerm: search.query,
-                        resultId: couponId,
-                        resultType: 'coupon'
-                      });
-                    }
-                    // Open coupon modal instead of navigating
-                    handleCouponClick(coupon);
-                  }}
+                        onCouponClick={(couponId) => {
+                          // Track click for analytics
+                          if (search.query) {
+                            trackResultClick({
+                              searchTerm: search.query,
+                              resultId: couponId,
+                              resultType: 'coupon'
+                            });
+                          }
+                          // Open coupon modal instead of navigating
+                          handleCouponClick(coupon);
+                        }}
                         showBusiness={true}
                         showDistance={search.location.enabled && search.location.coords}
                         getFormattedDistance={search.getFormattedDistance}
@@ -579,7 +571,7 @@ export default function Search() {
                   </div>
                 </div>
               )}
-              
+
               {/* Business Results */}
               {businesses.length > 0 && (
                 <div className="mb-8">
@@ -589,9 +581,9 @@ export default function Search() {
                       <span className="ml-2 text-sm font-normal text-gray-500">({businesses.length})</span>
                     </h3>
                   )}
-                  
-                  <div className={viewMode === 'grid' 
-                    ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6' 
+
+                  <div className={viewMode === 'grid'
+                    ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6'
                     : 'space-y-4'
                   }>
                     {businesses.map((business) => (
@@ -618,7 +610,7 @@ export default function Search() {
                   </div>
                 </div>
               )}
-              
+
               {/* Load More Button */}
               {search.hasMore && (
                 <div className="text-center mt-8">
@@ -637,8 +629,8 @@ export default function Search() {
               <SearchIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No results found</h3>
               <p className="text-gray-600 mb-4">
-                {search.query 
-                  ? `No results found for "${search.query}"` 
+                {search.query
+                  ? `No results found for "${search.query}"`
                   : 'Try adjusting your search terms or filters'
                 }
               </p>

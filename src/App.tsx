@@ -2,8 +2,8 @@ import { BrowserRouter as Router } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister'
-import { Toaster } from 'react-hot-toast'
-import { useEffect, useState } from 'react'
+import { Toaster, toast } from 'react-hot-toast'
+import React, { useEffect, useState } from 'react'
 import { Capacitor } from '@capacitor/core'
 import AppLayout from './components/layout/AppLayout'
 import AppRouter from './router/Router'
@@ -20,15 +20,30 @@ import { useRealtimeFriends } from './hooks/friends/useRealtimeFriends'
 import { realtimeService } from './services/realtimeService'
 import { spamConfigService } from './services/SpamConfigService'
 
-// Configure React Query with optimistic updates and caching
+// Configure React Query with stale-while-revalidate pattern
+// Shows cached data immediately, then fetches fresh data in background
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      gcTime: 1000 * 60 * 60 * 24, // 24 hours cache time (formerly cacheTime)
-      staleTime: 1000 * 60 * 5, // Consider data fresh for 5 minutes
-      refetchOnWindowFocus: true, // Refetch when tab becomes active
-      refetchOnReconnect: true, // Refetch when reconnecting
-      retry: 2, // Retry failed requests twice
+      // Cache data for 24 hours
+      gcTime: 1000 * 60 * 60 * 24,
+
+      // Consider data fresh for 30 minutes
+      // Within this time, won't refetch at all (instant cache hit)
+      staleTime: 1000 * 60 * 30,
+
+      // When data becomes stale (after 30min), show cached version immediately
+      // then refetch in background - this is the key setting!
+      refetchOnMount: true,  // Refetch stale data on mount (but show cache first)
+
+      // Disable refetch on window focus to prevent jarring updates
+      refetchOnWindowFocus: false,
+
+      // Refetch when reconnecting to network
+      refetchOnReconnect: true,
+
+      // Retry failed requests
+      retry: 2,
     },
   },
 })
@@ -41,6 +56,12 @@ const persister = createSyncStoragePersister({
 // Component that needs Router context
 function AppContent() {
   const user = useAuthStore(state => state.user)
+
+  // DEBUG: Verify build version
+  React.useEffect(() => {
+    console.log('🚀 APP VERSION: BUILD_TIMESTAMP_CHECK_001')
+    toast.success('New Build Loaded: v001', { duration: 5000 })
+  }, [])
 
   // Automatically register push notifications when user logs in
   const pushState = usePushNotifications(user?.id ?? null)

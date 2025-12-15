@@ -1,4 +1,5 @@
 import { useEffect, useCallback, useRef } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMessagingStore } from '../store/messagingStore'
 import { messagingService } from '../services/messagingService'
 import { messageDeleteService } from '../services/messageDeleteService'
@@ -41,54 +42,57 @@ import type { Message } from '../types/messaging'
 export function useMessages(conversationId: string | null) {
   const { isMobile } = usePlatform()
   const currentUserId = useAuthStore((state) => state.user?.id)
-  
+  const queryClient = useQueryClient()
+
   const {
-    messages,
-    isLoadingMessages,
-    setLoadingMessages,
-    setMessages,
     addMessage,
     updateMessage,
-    prependMessages
   } = useMessagingStore()
 
-  const conversationMessages = conversationId ? messages.get(conversationId) || [] : []
-  
   const hasMore = useRef(true)
   const isLoadingMore = useRef(false)
-  const isFetching = useRef(false)
+  // isFetching is no longer needed as React Query handles fetching state
 
   // Platform-specific page size
   const pageSize = isMobile ? 25 : 50
 
-  // Fetch initial messages
-  const fetchMessages = useCallback(async () => {
-    if (!conversationId || isFetching.current) return
+  // Use React Query for messages data - this enables caching!
+  const { data: messagesData, isLoading, isFetching, refetch } = useQuery({
+    queryKey: ['messages', conversationId],
+    queryFn: async () => {
+      console.log('🔄 [useMessages] Fetching messages for:', conversationId)
+      if (!conversationId) return { messages: [], hasMore: false }
 
-    try {
-      isFetching.current = true
-      setLoadingMessages(true)
-      
       // Fetch messages and hidden message IDs in parallel
       const [{ messages: fetchedMessages, hasMore: more }, hiddenIds] = await Promise.all([
         messagingService.fetchMessages(conversationId, pageSize),
         messageDeleteService.getHiddenMessageIds()
       ])
-      
-      // Filter out messages hidden by "Delete for me" (Story 8.5.3)
+
+      // Filter out messages hidden by "Delete for me"
       const hiddenSet = new Set(hiddenIds)
       const visibleMessages = fetchedMessages.filter(msg => !hiddenSet.has(msg.id))
-      
-      setMessages(conversationId, visibleMessages)
-      hasMore.current = more
-    } catch (error) {
-      console.error('Failed to fetch messages:', error)
-      toast.error('Failed to load messages')
-    } finally {
-      setLoadingMessages(false)
-      isFetching.current = false
-    }
-  }, [conversationId, pageSize, setLoadingMessages, setMessages])
+
+      console.log('✅ [useMessages] Fetched', visibleMessages.length, 'messages')
+      return { messages: visibleMessages, hasMore: more }
+    },
+    enabled: !!conversationId,
+    staleTime: 1000 * 60 * 5, // 5 minutes fresh
+    gcTime: 1000 * 60 * 60, // 1 hour cache
+  })
+
+  const conversationMessages = messagesData?.messages || []
+  hasMore.current = messagesData?.hasMore ?? true
+
+  // DEBUG: Log cache state
+  console.log('📊 [useMessages] State:', {
+    conversationId,
+    hasData: !!messagesData,
+    messageCount: conversationMessages.length,
+    isLoading,
+    isFetching,
+    fromCache: !isLoading && !!messagesData
+  })
 
   // Load more (older) messages
   const loadMore = useCallback(async () => {
@@ -99,18 +103,23 @@ export function useMessages(conversationId: string | null) {
 
     try {
       isLoadingMore.current = true
-      
+
       // Fetch messages and hidden IDs in parallel
       const [{ messages: olderMessages, hasMore: more }, hiddenIds] = await Promise.all([
         messagingService.fetchMessages(conversationId, pageSize, oldestMessage.id),
         messageDeleteService.getHiddenMessageIds()
       ])
-      
-      // Filter out hidden messages (Story 8.5.3)
+
+      // Filter out hidden messages
       const hiddenSet = new Set(hiddenIds)
       const visibleMessages = olderMessages.filter(msg => !hiddenSet.has(msg.id))
-      
-      prependMessages(conversationId, visibleMessages)
+
+      // Update React Query cache by prepending messages
+      queryClient.setQueryData(['messages', conversationId], (old: any) => ({
+        messages: [...visibleMessages, ...(old?.messages || [])],
+        hasMore: more
+      }))
+
       hasMore.current = more
     } catch (error) {
       console.error('Failed to load more messages:', error)
@@ -118,7 +127,7 @@ export function useMessages(conversationId: string | null) {
     } finally {
       isLoadingMore.current = false
     }
-  }, [conversationId, conversationMessages, pageSize, prependMessages])
+  }, [conversationId, conversationMessages, pageSize, queryClient])
 
   // Subscribe to real-time message updates
   useEffect(() => {
@@ -127,41 +136,54 @@ export function useMessages(conversationId: string | null) {
     const unsubscribeNew = realtimeService.subscribeToMessages(
       conversationId,
       (newMessage: Message) => {
-        // Populate parent_message for replies if missing (Story 8.10.5)
+        // Populate parent_message for replies if missing
         if (newMessage.reply_to_id && !newMessage.parent_message) {
-          // Use getState() to get fresh messages without adding dependency
-          const currentMessages = useMessagingStore.getState().messages.get(conversationId) || []
-          const parentMsg = currentMessages.find(m => m.id === newMessage.reply_to_id)
-          
+          // Get current messages directly from cache to avoid dependency on conversationMessages
+          const currentData = queryClient.getQueryData(['messages', conversationId]) as any
+          const currentMessages = currentData?.messages || []
+
+          const parentMsg = currentMessages.find((m: Message) => m.id === newMessage.reply_to_id)
+
           if (parentMsg) {
             newMessage.parent_message = {
               id: parentMsg.id,
               content: parentMsg.content,
               type: parentMsg.type,
               sender_id: parentMsg.sender_id,
-              sender_name: parentMsg.sender_id === currentUserId ? 'You' : 'User', // Fallback as Message type doesn't have sender_name
+              sender_name: parentMsg.sender_id === currentUserId ? 'You' : 'User',
               created_at: parentMsg.created_at
             }
           }
         }
 
         // Derive status for own messages arriving via realtime
-        // If this is our own message (got it back from server), mark as delivered
         if (newMessage.sender_id === currentUserId && !newMessage.status) {
           newMessage.status = 'delivered'
         }
 
+        // Update React Query cache
+        queryClient.setQueryData(['messages', conversationId], (old: any) => ({
+          messages: [...(old?.messages || []), newMessage],
+          hasMore: old?.hasMore ?? true
+        }))
+
+        // Also update Zustand store for backwards compatibility
         addMessage(conversationId, newMessage)
-        
-        // NOTE: DO NOT auto-mark messages as read here!
-        // Messages should only be marked as read when the user is actively viewing 
-        // the ChatScreen component. See ChatScreen.tsx for visibility-based marking.
       }
     )
 
     const unsubscribeUpdates = realtimeService.subscribeToMessageUpdates(
       conversationId,
       (updatedMessage: Message) => {
+        // Update React Query cache
+        queryClient.setQueryData(['messages', conversationId], (old: any) => ({
+          messages: (old?.messages || []).map((msg: Message) =>
+            msg.id === updatedMessage.id ? updatedMessage : msg
+          ),
+          hasMore: old?.hasMore ?? true
+        }))
+
+        // Also update Zustand store
         updateMessage(conversationId, updatedMessage.id, updatedMessage)
       }
     )
@@ -169,27 +191,31 @@ export function useMessages(conversationId: string | null) {
     const unsubscribeReadReceipts = realtimeService.subscribeToReadReceipts(
       conversationId,
       (receipt: any) => {
-        // Update message status to 'read' when a receipt is received
-        // In a real app, we might check if all participants read it, but for now simple update
+        // Update message status to 'read'
+        queryClient.setQueryData(['messages', conversationId], (old: any) => ({
+          messages: (old?.messages || []).map((msg: Message) =>
+            msg.id === receipt.message_id ? { ...msg, status: 'read' } : msg
+          ),
+          hasMore: old?.hasMore ?? true
+        }))
+
+        // Also update Zustand store
         updateMessage(conversationId, receipt.message_id, { status: 'read' })
       }
     )
-
-    // Initial fetch
-    fetchMessages()
 
     return () => {
       unsubscribeNew()
       unsubscribeUpdates()
       unsubscribeReadReceipts()
     }
-  }, [conversationId, addMessage, updateMessage, fetchMessages, currentUserId])
+  }, [conversationId, addMessage, updateMessage, currentUserId, queryClient])
 
   return {
     messages: conversationMessages,
-    isLoading: isLoadingMessages,
+    isLoading: isLoading && conversationMessages.length === 0, // Only show loading if no cached data
     hasMore: hasMore.current,
     loadMore,
-    refresh: fetchMessages
+    refresh: refetch
   }
 }

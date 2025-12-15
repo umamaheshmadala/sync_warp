@@ -15,7 +15,7 @@ const UnifiedFavoritesPage: React.FC = () => {
   const navigate = useNavigate();
   const { products: favoriteProducts, loading: productsLoading, error: productsError, removeFavorite } = useFavoriteProducts();
   const { getBusinessUrl } = useBusinessUrl();
-  
+
   // Local state
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -41,13 +41,13 @@ const UnifiedFavoritesPage: React.FC = () => {
   // Filter products based on search
   const filteredProducts = useMemo(() => {
     if (!favoriteProducts) return [];
-    
+
     if (!searchQuery.trim()) {
       return favoriteProducts;
     }
 
     const query = searchQuery.toLowerCase();
-    return favoriteProducts.filter(product => 
+    return favoriteProducts.filter(product =>
       product.name.toLowerCase().includes(query) ||
       product.description?.toLowerCase().includes(query) ||
       product.business_name.toLowerCase().includes(query) ||
@@ -83,7 +83,7 @@ const UnifiedFavoritesPage: React.FC = () => {
         </div>
 
         {/* Content */}
-        {productsLoading ? (
+        {productsLoading && (!favoriteProducts || favoriteProducts.length === 0) ? (
           <div className="flex justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
             <span className="ml-3 text-gray-600">Loading products...</span>
@@ -133,7 +133,7 @@ const UnifiedFavoritesPage: React.FC = () => {
                       <Package className="h-16 w-16 text-gray-300" />
                     </div>
                   )}
-                  
+
                   {/* Favorite Button */}
                   <div className="absolute top-2 right-2">
                     <FavoriteProductButton
@@ -145,26 +145,26 @@ const UnifiedFavoritesPage: React.FC = () => {
                       onClick={(e) => e?.stopPropagation()}
                     />
                   </div>
-                  
+
                   {!product.is_available && (
                     <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-medium">
                       Out of Stock
                     </div>
                   )}
                 </div>
-                
+
                 {/* Product Info */}
                 <div className="p-4">
                   <h3 className="font-semibold text-gray-900 line-clamp-2 mb-2 group-hover:text-indigo-600 transition-colors">
                     {product.name}
                   </h3>
-                  
+
                   {product.description && (
                     <p className="text-sm text-gray-600 line-clamp-2 mb-3">
                       {product.description}
                     </p>
                   )}
-                  
+
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="text-lg font-bold text-indigo-600">
@@ -174,7 +174,7 @@ const UnifiedFavoritesPage: React.FC = () => {
                         {product.business_name}
                       </div>
                     </div>
-                    
+
                     {product.category && (
                       <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
                         {product.category}

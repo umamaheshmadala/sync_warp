@@ -11,9 +11,9 @@ import {
   ChevronUp
 } from 'lucide-react';
 import { UnifiedCouponCard } from '../common/UnifiedCouponCard';
-import { 
+import {
   UserCouponCollection,
-  Coupon, 
+  Coupon,
   CouponCategory,
   CouponRedemption
 } from '../../types/coupon';
@@ -58,9 +58,16 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const [collectedCoupons, setCollectedCoupons] = useState<UserCouponCollection[]>([]);
+  const {
+    userCoupons: collectedCoupons,
+    loading: couponsLoading,
+    fetchUserCoupons: refreshCoupons,
+    redeemCoupon,
+    removeCouponCollection
+  } = useUserCoupons();
+
   const [redemptions, setRedemptions] = useState<CouponRedemption[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [redemptionsLoading, setRedemptionsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [loadingActions, setLoadingActions] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -73,8 +80,6 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
     businessName: ''
   });
 
-  const { getUserCollectedCoupons, redeemCoupon, removeCouponCollection } = useUserCoupons();
-  
   // Sharing limits integration
   const {
     stats: sharingStats,
@@ -83,7 +88,7 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
     canShareMore,
     refreshStats: refreshSharingStats
   } = useSharingLimits();
-  
+
   // State for share modal
   const [showShareModal, setShowShareModal] = useState(false);
   const [selectedCouponForShare, setSelectedCouponForShare] = useState<{
@@ -91,53 +96,55 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
     collectionId: string;
     coupon: Coupon;
   } | null>(null);
-  
+
   // State for details modal
   const [selectedCouponForView, setSelectedCouponForView] = useState<Coupon | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
 
-  // Load user's wallet data
+  // Load redemptions independently
   useEffect(() => {
-    loadWalletData();
+    const loadRedemptions = async () => {
+      try {
+        setRedemptionsLoading(true);
+        const userRedemptions = await couponService.getUserRedemptions(userId);
+        setRedemptions(userRedemptions);
+      } catch (error) {
+        console.error('Error loading redemptions:', error);
+      } finally {
+        setRedemptionsLoading(false);
+      }
+    };
+
+    if (userId) {
+      loadRedemptions();
+    }
   }, [userId]);
 
   // Refresh on tab visibility change
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && !loading) {
-        console.log('[CouponWallet] Tab became visible, refreshing wallet');
-        loadWalletData();
+      if (document.visibilityState === 'visible') {
+        refreshCoupons();
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [loading]);
-
-  const loadWalletData = async () => {
-    try {
-      setLoading(true);
-      const [collections, userRedemptions] = await Promise.all([
-        getUserCollectedCoupons(userId),
-        couponService.getUserRedemptions(userId)
-      ]);
-      setCollectedCoupons(collections);
-      setRedemptions(userRedemptions);
-    } catch (error) {
-      console.error('Error loading wallet data:', error);
-      toast.error('Failed to load your coupons');
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [refreshCoupons]);
 
   // Handle refresh
   const handleRefresh = async () => {
     setRefreshing(true);
-    await loadWalletData();
+    await Promise.all([
+      refreshCoupons(),
+      couponService.getUserRedemptions(userId).then(setRedemptions)
+    ]);
     setRefreshing(false);
     toast.success('Wallet refreshed!');
   };
+
+  // derived loading state (only block if no coupons AND loading)
+  const loading = couponsLoading && collectedCoupons.length === 0;
 
   // Handle coupon redemption
   const handleRedeemCoupon = async (couponId: string) => {
@@ -145,10 +152,10 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
     if (!collection) return;
 
     setLoadingActions(prev => new Set([...prev, couponId]));
-    
+
     try {
       await redeemCoupon(couponId, userId, collection.business_id);
-      await loadWalletData(); // Refresh data
+      refreshCoupons(); // Refresh data
       toast.success('Coupon redeemed successfully!');
       onCouponRedeem?.(collection.coupon);
     } catch (error) {
@@ -166,14 +173,14 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
   // Handle coupon removal
   const handleRemoveCoupon = async (collectionId: string) => {
     setLoadingActions(prev => new Set([...prev, collectionId]));
-    
+
     try {
       console.log('🗑️ [CouponWallet] Removing coupon collection:', collectionId);
       const success = await removeCouponCollection(collectionId);
-      
+
       if (success) {
         // Immediately update local state for instant UI feedback
-        setCollectedCoupons(prev => prev.filter(c => c.id !== collectionId));
+        // setCollectedCoupons handled by optimistic update in hook
         console.log('✅ [CouponWallet] Coupon removed successfully');
         // Don't show duplicate toast - hook already shows one
       }
@@ -188,18 +195,18 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
       });
     }
   };
-  
+
   // Handle coupon sharing
   const handleShareCoupon = (couponId: string, collectionId: string) => {
     const collection = collectedCoupons.find(c => c.id === collectionId);
     if (!collection) return;
-    
+
     // Check if user can share more
     if (!canShareMore) {
       toast.error('You have reached your daily sharing limit');
       return;
     }
-    
+
     // Open share modal with coupon details
     setSelectedCouponForShare({
       couponId,
@@ -213,29 +220,29 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
   const getCouponStatus = (coupon: Coupon, collection: UserCouponCollection) => {
     const isRedeemed = redemptions.some(r => r.coupon_id === coupon.id);
     if (isRedeemed) return 'redeemed';
-    
+
     if (coupon.expires_at) {
       const now = new Date();
       const expiryDate = new Date(coupon.expires_at);
       const daysUntilExpiry = Math.ceil((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-      
+
       if (daysUntilExpiry < 0) return 'expired';
       if (daysUntilExpiry <= 3) return 'expiring';
     }
-    
+
     if (coupon.usage_limit && coupon.used_count >= coupon.usage_limit) return 'expired';
     if (coupon.status !== 'active') return 'expired';
-    
+
     return 'active';
   };
-  
+
   // Check if coupon is shareable
   const isCouponShareable = (collection: any) => {
     // Check if collection has sharing-related fields
     const isShareable = collection.is_shareable !== false;
     const hasBeenShared = collection.has_been_shared === true;
     const isActive = getCouponStatus(collection.coupon, collection) === 'active';
-    
+
     return isShareable && !hasBeenShared && isActive;
   };
 
@@ -246,10 +253,10 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
       const status = getCouponStatus(coupon, collection);
 
       // Search filter
-      if (searchTerm && 
-          !coupon.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
-          !coupon.description?.toLowerCase().includes(searchTerm.toLowerCase()) &&
-          !coupon.business_name.toLowerCase().includes(searchTerm.toLowerCase())) {
+      if (searchTerm &&
+        !coupon.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
+        !coupon.description?.toLowerCase().includes(searchTerm.toLowerCase()) &&
+        !coupon.business_name.toLowerCase().includes(searchTerm.toLowerCase())) {
         return false;
       }
 
@@ -262,7 +269,7 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
       if (filters.status !== 'all' && status !== filters.status) {
         return false;
       }
-      
+
       // Acquisition filter
       if (filters.acquisition !== 'all') {
         if (filters.acquisition === 'shareable') {
@@ -274,8 +281,8 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
       }
 
       // Business name filter
-      if (filters.businessName && 
-          !coupon.business_name.toLowerCase().includes(filters.businessName.toLowerCase())) {
+      if (filters.businessName &&
+        !coupon.business_name.toLowerCase().includes(filters.businessName.toLowerCase())) {
         return false;
       }
 
@@ -286,7 +293,7 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
     filtered.sort((a, b) => {
       const statusA = getCouponStatus(a.coupon, a);
       const statusB = getCouponStatus(b.coupon, b);
-      
+
       // Always push expired/redeemed coupons to bottom
       if ((statusA === 'expired' || statusA === 'redeemed') && (statusB !== 'expired' && statusB !== 'redeemed')) {
         return 1; // a goes to bottom
@@ -294,7 +301,7 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
       if ((statusB === 'expired' || statusB === 'redeemed') && (statusA !== 'expired' && statusA !== 'redeemed')) {
         return -1; // b goes to bottom
       }
-      
+
       // If both expired or both active, then apply user's sort preference
       switch (filters.sortBy) {
         case 'expiry':
@@ -326,7 +333,7 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
     const redeemed = collectedCoupons.filter(c => getCouponStatus(c.coupon, c) === 'redeemed').length;
     const shareable = collectedCoupons.filter(c => isCouponShareable(c)).length;
     const shared = collectedCoupons.filter(c => (c as any).acquisition_method === 'shared_received').length;
-    
+
     const totalSavingsPotential = collectedCoupons
       .filter(c => getCouponStatus(c.coupon, c) === 'active')
       .reduce((sum, c) => {
@@ -470,11 +477,10 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
               </div>
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`px-4 py-3 border rounded-lg transition-colors flex items-center gap-2 ${
-                  showFilters 
-                    ? 'border-blue-500 bg-blue-50 text-blue-700' 
-                    : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                }`}
+                className={`px-4 py-3 border rounded-lg transition-colors flex items-center gap-2 ${showFilters
+                  ? 'border-blue-500 bg-blue-50 text-blue-700'
+                  : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                  }`}
               >
                 <Filter className="w-4 h-4" />
                 Filters
@@ -489,42 +495,40 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
                 <button
                   key={status}
                   onClick={() => setFilters(prev => ({ ...prev, status: status as any }))}
-                  className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                    filters.status === status
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white text-gray-600 hover:bg-gray-100'
-                  }`}
+                  className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${filters.status === status
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white text-gray-600 hover:bg-gray-100'
+                    }`}
                 >
                   {status.charAt(0).toUpperCase() + status.slice(1)}
                   {status !== 'all' && (
                     <span className="ml-1 text-xs">
-                      ({status === 'active' ? walletStats.active : 
+                      ({status === 'active' ? walletStats.active :
                         status === 'expiring' ? walletStats.expiring :
-                        status === 'expired' ? walletStats.expired :
-                        status === 'redeemed' ? walletStats.redeemed : 0})
+                          status === 'expired' ? walletStats.expired :
+                            status === 'redeemed' ? walletStats.redeemed : 0})
                     </span>
                   )}
                 </button>
               ))}
-              
+
               {/* Acquisition Filters */}
               <div className="w-px h-8 bg-gray-300" />
               {['shareable', 'collected', 'shared_received'].map((acquisition) => (
                 <button
                   key={acquisition}
                   onClick={() => setFilters(prev => ({ ...prev, acquisition: acquisition as any }))}
-                  className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                    filters.acquisition === acquisition
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white text-gray-600 hover:bg-gray-100'
-                  }`}
+                  className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${filters.acquisition === acquisition
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white text-gray-600 hover:bg-gray-100'
+                    }`}
                 >
-                  {acquisition === 'shareable' ? '🎁 Can Share' : 
-                   acquisition === 'collected' ? '📥 Collected' : '🤝 Received'}
+                  {acquisition === 'shareable' ? '🎁 Can Share' :
+                    acquisition === 'collected' ? '📥 Collected' : '🤝 Received'}
                   <span className="ml-1 text-xs">
-                    ({acquisition === 'shareable' ? walletStats.shareable : 
-                      acquisition === 'shared_received' ? walletStats.shared : 
-                      collectedCoupons.filter(c => (c as any).acquisition_method === 'collected').length})
+                    ({acquisition === 'shareable' ? walletStats.shareable :
+                      acquisition === 'shared_received' ? walletStats.shared :
+                        collectedCoupons.filter(c => (c as any).acquisition_method === 'collected').length})
                   </span>
                 </button>
               ))}
@@ -557,7 +561,7 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
                         <option value="services">Services</option>
                       </select>
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
                       <select
@@ -622,18 +626,17 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
         </div>
 
         {/* Coupons Grid */}
-        {loading ? (
+        {loading && collectedCoupons.length === 0 ? (
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
           </div>
         ) : filteredCoupons.length > 0 ? (
           <motion.div
             layout
-            className={`grid gap-6 ${
-              viewMode === 'grid' 
-                ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' 
-                : 'grid-cols-1'
-            }`}
+            className={`grid gap-6 ${viewMode === 'grid'
+              ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+              : 'grid-cols-1'
+              }`}
           >
             <AnimatePresence>
               {filteredCoupons.map((collection) => (
@@ -658,8 +661,8 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
           <div className="text-center py-12">
             <Wallet className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {searchTerm || filters.category !== 'all' || filters.status !== 'all' 
-                ? 'No Matching Coupons' 
+              {searchTerm || filters.category !== 'all' || filters.status !== 'all'
+                ? 'No Matching Coupons'
                 : 'Your Wallet is Empty'
               }
             </h3>
@@ -696,7 +699,7 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
           </div>
         )}
       </div>
-      
+
       {/* Share Coupon Modal */}
       {showShareModal && selectedCouponForShare && (
         <ShareCouponModal
@@ -711,7 +714,7 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
           currentUserId={userId}
           onShareSuccess={() => {
             // Refresh wallet after successful share
-            loadWalletData();
+            refreshCoupons();
             refreshSharingStats();
           }}
         />

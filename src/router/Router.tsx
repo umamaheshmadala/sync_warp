@@ -5,56 +5,65 @@ import { Routes, Route } from 'react-router-dom'
 import { lazy, Suspense } from 'react'
 import ProtectedRoute from './ProtectedRoute'
 
-// Import components
-import Landing from '../components/Landing'
-import Dashboard from '../components/Dashboard'
-import Login from '../components/Login'
-import SignUp from '../components/SignUp'
-import Onboarding from '../components/Onboarding'
-import ForgotPassword from '../components/ForgotPassword'
-import ResetPassword from '../components/ResetPassword'
+// All components are lazy-loaded for optimal bundle splitting and performance
 
-// Import business components
-import BusinessRegistration from '../components/business/BusinessRegistration'
-import BusinessDashboard from '../components/business/BusinessDashboard'
-import BusinessOnboardingPage from '../components/business/BusinessOnboardingPage'
-import BusinessProfile from '../components/business/BusinessProfile'
-import BusinessAnalyticsPage from '../components/business/BusinessAnalyticsPage'
-import BusinessQRCodePage from '../components/business/BusinessQRCodePage'
-import ProductManagerPage from '../components/business/ProductManagerPage'
-import CouponManagerPage from '../components/business/CouponManagerPage'
-import OfferManagerPage from '../components/business/OfferManagerPage'
-import CampaignManagerPage from '../components/business/CampaignManagerPage'
-import CampaignWizard from '../components/business/CampaignWizard'
-import CampaignAnalyticsPage from '../components/business/CampaignAnalyticsPage'
+// Lazy load ALL components for optimal performance and code splitting
 
-// Import product components (Story 4.7)
-import { ProductDetails, AllProducts } from '../components/products'
+// Core components
+const Landing = lazy(() => import('../components/Landing'))
+const Dashboard = lazy(() => import('../components/Dashboard'))
+const Login = lazy(() => import('../components/Login'))
+const SignUp = lazy(() => import('../components/SignUp'))
+const Onboarding = lazy(() => import('../components/Onboarding'))
+const ForgotPassword = lazy(() => import('../components/ForgotPassword'))
+const ResetPassword = lazy(() => import('../components/ResetPassword'))
 
-import { FriendsPage } from '../pages/Friends'
-import { FriendSearchPage } from '../pages/FriendSearchPage'
-import { PYMKPage } from '../pages/PYMKPage'
-import FriendsManagementPage from '../components/FriendsManagementPage'
-import { FriendRequestsList } from '../components/friends/FriendRequestsList'
-import TestProfileModal from '../pages/TestProfileModal'
-// Story 9.5.6: Privacy Dashboard
-import { FriendsPrivacySettings } from '../pages/settings/FriendsPrivacySettings'
-import NotificationSettings from '../pages/settings/NotificationSettings'
+// Business components
+const BusinessRegistration = lazy(() => import('../components/business/BusinessRegistration'))
+const BusinessDashboard = lazy(() => import('../components/business/BusinessDashboard'))
+const BusinessOnboardingPage = lazy(() => import('../components/business/BusinessOnboardingPage'))
+const BusinessProfile = lazy(() => import('../components/business/BusinessProfile'))
+const BusinessAnalyticsPage = lazy(() => import('../components/business/BusinessAnalyticsPage'))
+const BusinessQRCodePage = lazy(() => import('../components/business/BusinessQRCodePage'))
+const ProductManagerPage = lazy(() => import('../components/business/ProductManagerPage'))
+const CouponManagerPage = lazy(() => import('../components/business/CouponManagerPage'))
+const OfferManagerPage = lazy(() => import('../components/business/OfferManagerPage'))
+const CampaignManagerPage = lazy(() => import('../components/business/CampaignManagerPage'))
+const CampaignWizard = lazy(() => import('../components/business/CampaignWizard'))
+const CampaignAnalyticsPage = lazy(() => import('../components/business/CampaignAnalyticsPage'))
+const FollowerAnalyticsDashboard = lazy(() => import('../components/business/FollowerAnalyticsDashboard'))
+const FollowerList = lazy(() => import('../components/business/FollowerList'))
+const BusinessCheckinsPage = lazy(() => import('../components/checkins/BusinessCheckinsPage'))
 
-// Story 9.6.2: Activity Feed UI
-import TestActivityFeed from '../pages/TestActivityFeed'
-import { TestSearchFilters } from '../pages/TestSearchFilters'
-import { TestDealComments } from '../pages/TestDealComments'
-import ShareDealDemo from '../pages/ShareDealDemo'
-import SharingAnalyticsDemo from '../pages/SharingAnalyticsDemo'
-import { TestSearchPerformance } from '../pages/TestSearchPerformance'
+// Product components
+const ProductDetails = lazy(() => import('../components/products').then(m => ({ default: m.ProductDetails })))
+const AllProducts = lazy(() => import('../components/products').then(m => ({ default: m.AllProducts })))
 
-// Import messaging components (Epic 8.2)
-import { MessagingLayout } from '../components/messaging/MessagingLayout'
-import { SelectConversationPlaceholder } from '../components/messaging/SelectConversationPlaceholder'
-import { ChatScreen } from '../components/messaging/ChatScreen'
+// Friend and social components
+const FriendsPage = lazy(() => import('../pages/Friends').then(m => ({ default: m.FriendsPage })))
+const FriendSearchPage = lazy(() => import('../pages/FriendSearchPage').then(m => ({ default: m.FriendSearchPage })))
+const PYMKPage = lazy(() => import('../pages/PYMKPage').then(m => ({ default: m.PYMKPage })))
+const FriendsManagementPage = lazy(() => import('../components/FriendsManagementPage'))
+const FriendRequestsList = lazy(() => import('../components/friends/FriendRequestsList').then(m => ({ default: m.FriendRequestsList })))
+const FriendsPrivacySettings = lazy(() => import('../pages/settings/FriendsPrivacySettings').then(m => ({ default: m.FriendsPrivacySettings })))
+const NotificationSettings = lazy(() => import('../pages/settings/NotificationSettings'))
 
-// Lazy load components for better performance
+// Messaging components (Epic 8.2)
+const MessagingLayout = lazy(() => import('../components/messaging/MessagingLayout').then(m => ({ default: m.MessagingLayout })))
+const SelectConversationPlaceholder = lazy(() => import('../components/messaging/SelectConversationPlaceholder').then(m => ({ default: m.SelectConversationPlaceholder })))
+const ChatScreen = lazy(() => import('../components/messaging/ChatScreen').then(m => ({ default: m.ChatScreen })))
+
+// Test and demo components (development only)
+const TestProfileModal = lazy(() => import('../pages/TestProfileModal'))
+const TestActivityFeed = lazy(() => import('../pages/TestActivityFeed'))
+const TestSearchFilters = lazy(() => import('../pages/TestSearchFilters').then(m => ({ default: m.TestSearchFilters })))
+const TestDealComments = lazy(() => import('../pages/TestDealComments').then(m => ({ default: m.TestDealComments })))
+const ShareDealDemo = lazy(() => import('../pages/ShareDealDemo'))
+const SharingAnalyticsDemo = lazy(() => import('../pages/SharingAnalyticsDemo'))
+const TestSearchPerformance = lazy(() => import('../pages/TestSearchPerformance').then(m => ({ default: m.TestSearchPerformance })))
+const FollowerTargetingDemo = lazy(() => import('../pages/FollowerTargetingDemo'))
+
+// Other lazy-loaded components
 const NotFound = lazy(() => import('../components/NotFound'))
 const Profile = lazy(() => import('../components/Profile'))
 const Search = lazy(() => import('../components/Search'))
@@ -64,45 +73,50 @@ const Settings = lazy(() => import('../components/Settings'))
 const Wallet = lazy(() => import('../components/Wallet'))
 const Social = lazy(() => import('../components/Social'))
 const WishlistPage = lazy(() => import('../pages/WishlistPage'))
-// Story 4.4 components
 const AdvancedSearchPage = lazy(() => import('../components/search/AdvancedSearchPage'))
 const BusinessDiscoveryPage = lazy(() => import('../components/discovery/BusinessDiscoveryPage'))
 const CategoryBrowserPage = lazy(() => import('../components/categories/CategoryBrowserPage'))
 const TrendingCouponsPage = lazy(() => import('../components/coupons/TrendingCouponsPage'))
-const UnifiedFavoritesPage = lazy(() => import('../components/favorites/UnifiedFavoritesPage'));
-const FollowingPage = lazy(() => import('../components/following/FollowingPage'));
-const FollowerFeed = lazy(() => import('../components/following/FollowerFeed'));
-const FollowerAnalyticsDashboard = lazy(() => import('../components/business/FollowerAnalyticsDashboard'));
-const FollowerList = lazy(() => import('../components/business/FollowerList'));
-const FollowerTargetingDemo = lazy(() => import('../pages/FollowerTargetingDemo'));
-
-// Debug components are removed from production build
+const UnifiedFavoritesPage = lazy(() => import('../components/favorites/UnifiedFavoritesPage'))
+const FollowingPage = lazy(() => import('../components/following/FollowingPage'))
+const FollowerFeed = lazy(() => import('../components/following/FollowerFeed'))
+const MyReviewsPage = lazy(() => import('../pages/MyReviewsPage'))
+const NotificationsPage = lazy(() => import('../pages/NotificationsPage'))
+const StorageTest = lazy(() => import('../pages/test/StorageTest'))
+const ContactSyncTestPage = lazy(() => import('../pages/ContactSyncTestPage'))
 
 // Development mode flag
 const isDevelopment = import.meta.env.MODE === 'development'
-
-// Check-in components
-const BusinessCheckinsPage = lazy(() => import('../components/checkins/BusinessCheckinsPage'))
-
-// Story 5.2: Review System
-const MyReviewsPage = lazy(() => import('../pages/MyReviewsPage'))
-
-// Notifications redirect page
-const NotificationsPage = lazy(() => import('../pages/NotificationsPage'))
-
-// Story 8.1.3: Storage Test
-const StorageTest = lazy(() => import('../pages/test/StorageTest'))
-
-// Story 9.3.6: Contact Sync Test
-const ContactSyncTestPage = lazy(() => import('../pages/ContactSyncTestPage'))
 
 // Story 5.5: Test Sharing Limits (excluded from production)
 
 // Loading component for lazy-loaded routes
 const RouteLoader = ({ children }: { children: React.ReactNode }) => (
   <Suspense fallback={
-    <div className="flex justify-center items-center min-h-screen">
-      <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div>
+    <div className="min-h-screen bg-gray-50 p-4 animate-pulse">
+      {/* Header skeleton */}
+      <div className="max-w-4xl mx-auto">
+        <div className="h-8 bg-gray-200 rounded-lg w-1/3 mb-6"></div>
+
+        {/* Content skeleton */}
+        <div className="bg-white rounded-lg p-4 shadow-sm mb-4">
+          <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/2 mb-3"></div>
+          <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+        </div>
+
+        <div className="bg-white rounded-lg p-4 shadow-sm mb-4">
+          <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
+          <div className="h-4 bg-gray-200 rounded w-5/6 mb-3"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+        </div>
+
+        <div className="bg-white rounded-lg p-4 shadow-sm">
+          <div className="h-4 bg-gray-200 rounded w-2/3 mb-3"></div>
+          <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+        </div>
+      </div>
     </div>
   }>
     {children}
@@ -124,7 +138,11 @@ export const routes: RouteConfig[] = [
   // Home / Landing Page
   {
     path: '/',
-    element: <Landing />,
+    element: (
+      <RouteLoader>
+        <Landing />
+      </RouteLoader>
+    ),
     protected: false,
     title: 'SynC - Connect, Collaborate, Create',
     description: 'Discover local businesses and share amazing deals'
@@ -133,7 +151,11 @@ export const routes: RouteConfig[] = [
   // Dashboard (Protected)
   {
     path: '/dashboard',
-    element: <Dashboard />,
+    element: (
+      <RouteLoader>
+        <Dashboard />
+      </RouteLoader>
+    ),
     protected: true,
     title: 'Dashboard - SynC',
     description: 'Your personalized dashboard'
@@ -142,35 +164,55 @@ export const routes: RouteConfig[] = [
   // Authentication Routes
   {
     path: '/auth/login',
-    element: <Login />,
+    element: (
+      <RouteLoader>
+        <Login />
+      </RouteLoader>
+    ),
     protected: false,
     title: 'Login - SynC',
     description: 'Login to your SynC account'
   },
   {
     path: '/auth/signup',
-    element: <SignUp />,
+    element: (
+      <RouteLoader>
+        <SignUp />
+      </RouteLoader>
+    ),
     protected: false,
     title: 'Sign Up - SynC',
     description: 'Create your SynC account'
   },
   {
     path: '/auth/forgot-password',
-    element: <ForgotPassword />,
+    element: (
+      <RouteLoader>
+        <ForgotPassword />
+      </RouteLoader>
+    ),
     protected: false,
     title: 'Forgot Password - SynC',
     description: 'Reset your password'
   },
   {
     path: '/auth/reset-password',
-    element: <ResetPassword />,
+    element: (
+      <RouteLoader>
+        <ResetPassword />
+      </RouteLoader>
+    ),
     protected: false,
     title: 'Reset Password - SynC',
     description: 'Set a new password'
   },
   {
     path: '/onboarding',
-    element: <Onboarding />,
+    element: (
+      <RouteLoader>
+        <Onboarding />
+      </RouteLoader>
+    ),
     protected: true,
     title: 'Onboarding - SynC',
     description: 'Complete your profile setup'
@@ -179,7 +221,11 @@ export const routes: RouteConfig[] = [
   // Epic 8.2: Messaging Routes
   {
     path: '/messages',
-    element: <MessagingLayout />,
+    element: (
+      <RouteLoader>
+        <MessagingLayout />
+      </RouteLoader>
+    ),
     protected: true,
     title: 'Messages - SynC',
     description: 'Your conversations and direct messages',
@@ -187,12 +233,20 @@ export const routes: RouteConfig[] = [
       {
         path: '',
         index: true,
-        element: <SelectConversationPlaceholder />,
+        element: (
+          <RouteLoader>
+            <SelectConversationPlaceholder />
+          </RouteLoader>
+        ),
         title: 'Messages - SynC'
       },
       {
         path: ':conversationId',
-        element: <ChatScreen />,
+        element: (
+          <RouteLoader>
+            <ChatScreen />
+          </RouteLoader>
+        ),
         title: 'Chat - SynC'
       }
     ]
@@ -240,7 +294,11 @@ export const routes: RouteConfig[] = [
   // Friends Page (Protected)
   {
     path: '/friends',
-    element: <FriendsPage />,
+    element: (
+      <RouteLoader>
+        <FriendsPage />
+      </RouteLoader>
+    ),
     protected: true,
     title: 'Friends - SynC',
     description: 'Manage your friends and connections'
@@ -262,7 +320,11 @@ export const routes: RouteConfig[] = [
   // Business Dashboard (Protected)
   {
     path: '/business/dashboard',
-    element: <BusinessDashboard />,
+    element: (
+      <RouteLoader>
+        <BusinessDashboard />
+      </RouteLoader>
+    ),
     protected: true,
     title: 'Business Dashboard - SynC',
     description: 'Manage your business'
@@ -271,7 +333,11 @@ export const routes: RouteConfig[] = [
   // Business Registration (Protected)
   {
     path: '/business/register',
-    element: <BusinessRegistration />,
+    element: (
+      <RouteLoader>
+        <BusinessRegistration />
+      </RouteLoader>
+    ),
     protected: true,
     title: 'Register Business - SynC',
     description: 'Register your business on SynC'
@@ -280,20 +346,32 @@ export const routes: RouteConfig[] = [
   // Business Profile (Public)
   {
     path: '/business/:slug',
-    element: <BusinessProfile />,
+    element: (
+      <RouteLoader>
+        <BusinessProfile />
+      </RouteLoader>
+    ),
     protected: false,
     title: 'Business Profile - SynC',
     description: 'View business details and offers'
   },
   {
     path: '/business/:slug/coupons',
-    element: <BusinessProfile />,
+    element: (
+      <RouteLoader>
+        <BusinessProfile />
+      </RouteLoader>
+    ),
     protected: false,
     title: 'Business Coupons - SynC'
   },
   {
     path: '/business/:slug/products',
-    element: <BusinessProfile />,
+    element: (
+      <RouteLoader>
+        <BusinessProfile />
+      </RouteLoader>
+    ),
     protected: false,
     title: 'Business Products - SynC'
   },
@@ -301,67 +379,111 @@ export const routes: RouteConfig[] = [
   // Business Tools (Protected)
   {
     path: '/business/onboarding',
-    element: <BusinessOnboardingPage />,
+    element: (
+      <RouteLoader>
+        <BusinessOnboardingPage />
+      </RouteLoader>
+    ),
     protected: true,
     title: 'Business Onboarding - SynC'
   },
   {
     path: '/business/analytics',
-    element: <BusinessAnalyticsPage />,
+    element: (
+      <RouteLoader>
+        <BusinessAnalyticsPage />
+      </RouteLoader>
+    ),
     protected: true,
     title: 'Business Analytics - SynC'
   },
   {
     path: '/business/qr-code',
-    element: <BusinessQRCodePage />,
+    element: (
+      <RouteLoader>
+        <BusinessQRCodePage />
+      </RouteLoader>
+    ),
     protected: true,
     title: 'Business QR Code - SynC'
   },
   {
     path: '/business/:businessId/manage/products',
-    element: <ProductManagerPage />,
+    element: (
+      <RouteLoader>
+        <ProductManagerPage />
+      </RouteLoader>
+    ),
     protected: true,
     title: 'Product Manager - SynC'
   },
   {
     path: '/business/:businessId/manage/coupons',
-    element: <CouponManagerPage />,
+    element: (
+      <RouteLoader>
+        <CouponManagerPage />
+      </RouteLoader>
+    ),
     protected: true,
     title: 'Coupon Manager - SynC'
   },
   {
     path: '/business/:businessId/manage/offers',
-    element: <OfferManagerPage />,
+    element: (
+      <RouteLoader>
+        <OfferManagerPage />
+      </RouteLoader>
+    ),
     protected: true,
     title: 'Offer Manager - SynC'
   },
   {
     path: '/business/:businessId/manage/campaigns',
-    element: <CampaignManagerPage />,
+    element: (
+      <RouteLoader>
+        <CampaignManagerPage />
+      </RouteLoader>
+    ),
     protected: true,
     title: 'Campaign Manager - SynC'
   },
   {
     path: '/business/campaigns/new',
-    element: <CampaignWizard />,
+    element: (
+      <RouteLoader>
+        <CampaignWizard />
+      </RouteLoader>
+    ),
     protected: true,
     title: 'Create Campaign - SynC'
   },
   {
     path: '/business/campaigns/:id/analytics',
-    element: <CampaignAnalyticsPage />,
+    element: (
+      <RouteLoader>
+        <CampaignAnalyticsPage />
+      </RouteLoader>
+    ),
     protected: true,
     title: 'Campaign Analytics - SynC'
   },
   {
     path: '/business/followers',
-    element: <FollowerList />,
+    element: (
+      <RouteLoader>
+        <FollowerList />
+      </RouteLoader>
+    ),
     protected: true,
     title: 'Followers - SynC'
   },
   {
     path: '/business/followers/analytics',
-    element: <FollowerAnalyticsDashboard />,
+    element: (
+      <RouteLoader>
+        <FollowerAnalyticsDashboard />
+      </RouteLoader>
+    ),
     protected: true,
     title: 'Follower Analytics - SynC'
   },
@@ -379,13 +501,21 @@ export const routes: RouteConfig[] = [
   // Products (Public/Protected)
   {
     path: '/products',
-    element: <AllProducts />,
+    element: (
+      <RouteLoader>
+        <AllProducts />
+      </RouteLoader>
+    ),
     protected: false,
     title: 'Products - SynC'
   },
   {
     path: '/products/:id',
-    element: <ProductDetails />,
+    element: (
+      <RouteLoader>
+        <ProductDetails />
+      </RouteLoader>
+    ),
     protected: false,
     title: 'Product Details - SynC'
   },
@@ -393,25 +523,41 @@ export const routes: RouteConfig[] = [
   // Social & Friends (Protected)
   {
     path: '/friends/search',
-    element: <FriendSearchPage />,
+    element: (
+      <RouteLoader>
+        <FriendSearchPage />
+      </RouteLoader>
+    ),
     protected: true,
     title: 'Find Friends - SynC'
   },
   {
     path: '/friends/pymk',
-    element: <PYMKPage />,
+    element: (
+      <RouteLoader>
+        <PYMKPage />
+      </RouteLoader>
+    ),
     protected: true,
     title: 'People You May Know - SynC'
   },
   {
     path: '/friends/requests',
-    element: <FriendRequestsList />,
+    element: (
+      <RouteLoader>
+        <FriendRequestsList />
+      </RouteLoader>
+    ),
     protected: true,
     title: 'Friend Requests - SynC'
   },
   {
     path: '/friends/manage',
-    element: <FriendsManagementPage />,
+    element: (
+      <RouteLoader>
+        <FriendsManagementPage />
+      </RouteLoader>
+    ),
     protected: true,
     title: 'Manage Friends - SynC'
   },
@@ -459,13 +605,21 @@ export const routes: RouteConfig[] = [
   },
   {
     path: '/settings/privacy/friends',
-    element: <FriendsPrivacySettings />,
+    element: (
+      <RouteLoader>
+        <FriendsPrivacySettings />
+      </RouteLoader>
+    ),
     protected: true,
     title: 'Friend Privacy Settings - SynC'
   },
   {
     path: '/settings/notifications',
-    element: <NotificationSettings />,
+    element: (
+      <RouteLoader>
+        <NotificationSettings />
+      </RouteLoader>
+    ),
     protected: true,
     title: 'Notification Settings - SynC'
   },
@@ -546,43 +700,71 @@ export const routes: RouteConfig[] = [
   ...(isDevelopment ? [
     {
       path: '/test/profile-modal',
-      element: <TestProfileModal />,
+      element: (
+        <RouteLoader>
+          <TestProfileModal />
+        </RouteLoader>
+      ),
       protected: true,
       title: 'Test Profile Modal'
     },
     {
       path: '/test/activity-feed',
-      element: <TestActivityFeed />,
+      element: (
+        <RouteLoader>
+          <TestActivityFeed />
+        </RouteLoader>
+      ),
       protected: true,
       title: 'Test Activity Feed'
     },
     {
       path: '/test/search-filters',
-      element: <TestSearchFilters />,
+      element: (
+        <RouteLoader>
+          <TestSearchFilters />
+        </RouteLoader>
+      ),
       protected: true,
       title: 'Test Search Filters'
     },
     {
       path: '/test/deal-comments',
-      element: <TestDealComments />,
+      element: (
+        <RouteLoader>
+          <TestDealComments />
+        </RouteLoader>
+      ),
       protected: true,
       title: 'Test Deal Comments'
     },
     {
       path: '/test/share-deal',
-      element: <ShareDealDemo />,
+      element: (
+        <RouteLoader>
+          <ShareDealDemo />
+        </RouteLoader>
+      ),
       protected: true,
       title: 'Test Share Deal'
     },
     {
       path: '/test/sharing-analytics',
-      element: <SharingAnalyticsDemo />,
+      element: (
+        <RouteLoader>
+          <SharingAnalyticsDemo />
+        </RouteLoader>
+      ),
       protected: true,
       title: 'Test Sharing Analytics'
     },
     {
       path: '/test/search-performance',
-      element: <TestSearchPerformance />,
+      element: (
+        <RouteLoader>
+          <TestSearchPerformance />
+        </RouteLoader>
+      ),
       protected: true,
       title: 'Test Search Performance'
     },

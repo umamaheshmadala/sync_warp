@@ -7,6 +7,7 @@ import NavigationBadge from './NavigationBadge';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
 import { useNavigationState } from '../hooks/useNavigationState';
 import { useFollowerNotifications } from '../hooks/useFollowerNotifications';
+import { useRoutePreload } from '../hooks/useRoutePreload';
 
 interface BottomNavigationProps {
   currentRoute?: string;
@@ -29,6 +30,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentRoute }) => 
   const { triggerHaptic } = useHapticFeedback();
   const { addToHistory } = useNavigationState();
   const { unreadCount } = useFollowerNotifications();
+  const { preloadRoute } = useRoutePreload();
   const [lastActiveTab, setLastActiveTab] = useState<string>('');
   const [isAnimating, setIsAnimating] = useState(false);
 
@@ -128,6 +130,8 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentRoute }) => 
               <motion.button
                 key={item.id}
                 onClick={() => handleNavClick(item.route, item.id)}
+                onMouseEnter={() => preloadRoute(item.route)}
+                onTouchStart={() => preloadRoute(item.route)}
                 className="flex flex-col items-center justify-center p-0.5 rounded-lg relative min-w-0 flex-1 group"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}

@@ -60,7 +60,7 @@ export function FriendsList({ searchQuery = '' }: FriendsListProps) {
     };
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  if (isLoading) {
+  if (isLoading && friends.length === 0) {
     return <FriendsListSkeleton count={8} />;
   }
 

@@ -17,7 +17,7 @@ const FollowingPage: React.FC = () => {
   const navigate = useNavigate();
   const { getBusinessUrl } = useBusinessUrl();
   const { followedBusinesses, loading, error, totalFollowing } = useBusinessFollowing();
-  
+
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortBy>('recent');
   const [selectedBusiness, setSelectedBusiness] = useState<{ id: string; name: string } | null>(null);
@@ -34,7 +34,7 @@ const FollowingPage: React.FC = () => {
     // Apply search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(fb => 
+      filtered = filtered.filter(fb =>
         fb.business?.business_name?.toLowerCase().includes(query) ||
         fb.business?.business_type?.toLowerCase().includes(query) ||
         fb.business?.address?.toLowerCase().includes(query)
@@ -45,7 +45,7 @@ const FollowingPage: React.FC = () => {
     if (sortBy === 'recent') {
       filtered.sort((a, b) => new Date(b.followed_at).getTime() - new Date(a.followed_at).getTime());
     } else if (sortBy === 'alphabetical') {
-      filtered.sort((a, b) => 
+      filtered.sort((a, b) =>
         (a.business?.business_name || '').localeCompare(b.business?.business_name || '')
       );
     }
@@ -55,7 +55,7 @@ const FollowingPage: React.FC = () => {
   }, [followedBusinesses, searchQuery, sortBy]);
 
   // Loading state
-  if (loading) {
+  if (loading && followedBusinesses.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -138,8 +138,8 @@ const FollowingPage: React.FC = () => {
               {searchQuery ? 'No businesses found' : 'No businesses yet'}
             </h3>
             <p className="text-gray-600 mb-6">
-              {searchQuery 
-                ? 'Try adjusting your search' 
+              {searchQuery
+                ? 'Try adjusting your search'
                 : 'Start following businesses to see updates from them'}
             </p>
             {!searchQuery && (
@@ -198,7 +198,7 @@ const FollowingPage: React.FC = () => {
                       >
                         <Settings className="h-4 w-4 text-gray-600 hover:text-indigo-600" />
                       </button>
-                      
+
                       {/* Follow Button */}
                       <FollowButton
                         businessId={follow.business_id}

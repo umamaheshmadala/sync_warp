@@ -161,7 +161,7 @@ const FriendsManagementPage: React.FC = () => {
     { id: 'activity', label: 'Activity', icon: MessageCircle, count: null }
   ];
 
-  if (loading) {
+  if (loading && friends.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 pt-20 px-4">
         <div className="max-w-4xl mx-auto">

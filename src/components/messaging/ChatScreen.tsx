@@ -425,7 +425,7 @@ export function ChatScreen() {
         </div>
       )}
 
-      {isLoading && messages.length === 0 ? (
+      {messages.length === 0 ? (
         <div className="flex-1 flex items-center justify-center bg-white">
           <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
         </div>

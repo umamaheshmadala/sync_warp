@@ -3,7 +3,8 @@
 // Hook: useFavoriteProducts - Fetch all favorite products
 // =====================================================
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import { toast } from 'react-hot-toast';
@@ -35,23 +36,14 @@ export interface FavoriteProduct {
  */
 export function useFavoriteProducts() {
   const { user } = useAuthStore();
-  const [products, setProducts] = useState<FavoriteProduct[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
-  /**
-   * Fetch favorite products from database
-   */
-  const fetchFavorites = useCallback(async () => {
-    if (!user) {
-      setProducts([]);
-      setLoading(false);
-      setError(null);
-      return;
-    }
+  // Query key
+  const queryKey = ['favoriteProducts', user?.id];
 
-    setLoading(true);
-    setError(null);
+  // Fetch function
+  const fetchFavorites = async (): Promise<FavoriteProduct[]> => {
+    if (!user) return [];
 
     try {
       // First get favorite product IDs
@@ -62,14 +54,9 @@ export function useFavoriteProducts() {
         .eq('entity_type', 'product')
         .order('created_at', { ascending: false });
 
-      if (fetchError) {
-        throw fetchError;
-      }
+      if (fetchError) throw fetchError;
 
-      if (!favoriteData || favoriteData.length === 0) {
-        setProducts([]);
-        return;
-      }
+      if (!favoriteData || favoriteData.length === 0) return [];
 
       // Get product details
       const productIds = favoriteData.map(f => f.entity_id);
@@ -91,13 +78,7 @@ export function useFavoriteProducts() {
         `)
         .in('id', productIds);
 
-      if (productsError) {
-        throw productsError;
-      }
-
-      if (fetchError) {
-        throw fetchError;
-      }
+      if (productsError) throw productsError;
 
       // Create a map of product ID to favorited_at timestamp
       const favoritedAtMap = new Map(
@@ -121,19 +102,26 @@ export function useFavoriteProducts() {
         }))
         .sort((a, b) => new Date(b.favorited_at).getTime() - new Date(a.favorited_at).getTime());
 
-      setProducts(transformedProducts);
+      return transformedProducts;
     } catch (err) {
       console.error('Error fetching favorite products:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch favorite products');
-    } finally {
-      setLoading(false);
+      throw err;
     }
-  }, [user]);
+  };
 
-  // Fetch on mount and when user changes
-  useEffect(() => {
-    fetchFavorites();
-  }, [fetchFavorites]);
+  // React Query hook
+  const {
+    data: products = [],
+    isLoading,
+    error: queryError,
+    refetch
+  } = useQuery({
+    queryKey,
+    queryFn: fetchFavorites,
+    enabled: !!user,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 60 * 24, // 24 hours
+  });
 
   // Set up real-time subscription for favorite_products changes
   useEffect(() => {
@@ -142,7 +130,7 @@ export function useFavoriteProducts() {
     console.log('[useFavoriteProducts] Setting up realtime subscription for user:', user.id);
 
     const channel = supabase
-      .channel(`favorites_products_${user.id}`)
+      .channel(`favorites_products_swr_${user.id}`)
       .on(
         'postgres_changes',
         {
@@ -153,8 +141,8 @@ export function useFavoriteProducts() {
         },
         (payload) => {
           console.log('[useFavoriteProducts] Realtime change:', payload.eventType);
-          // Refetch favorites on any change
-          fetchFavorites();
+          // Invalidate query to refetch
+          queryClient.invalidateQueries({ queryKey });
         }
       )
       .subscribe((status) => {
@@ -167,7 +155,7 @@ export function useFavoriteProducts() {
       console.log('[useFavoriteProducts] Cleaning up realtime subscription');
       supabase.removeChannel(channel);
     };
-  }, [user, fetchFavorites]);
+  }, [user, queryClient]); // queryKey stable via closure
 
   /**
    * Remove a product from favorites
@@ -179,8 +167,12 @@ export function useFavoriteProducts() {
     }
 
     try {
-      // Optimistic update - remove from local state immediately
-      setProducts(prev => prev.filter(p => p.id !== productId));
+      // Optimistic update
+      const previousData = queryClient.getQueryData<FavoriteProduct[]>(queryKey);
+
+      queryClient.setQueryData(queryKey, (old: FavoriteProduct[] | undefined) => {
+        return (old || []).filter(p => p.id !== productId);
+      });
 
       const { error: deleteError } = await supabase
         .from('favorites')
@@ -190,8 +182,10 @@ export function useFavoriteProducts() {
         .eq('entity_id', productId);
 
       if (deleteError) {
-        // Revert optimistic update on error
-        await fetchFavorites();
+        // Revert optimistic update
+        if (previousData) {
+          queryClient.setQueryData(queryKey, previousData);
+        }
         throw deleteError;
       }
 
@@ -200,15 +194,17 @@ export function useFavoriteProducts() {
     } catch (err) {
       console.error('Error removing favorite:', err);
       toast.error('Failed to remove from favorites');
+      // Invalidate on error to ensure correct state
+      queryClient.invalidateQueries({ queryKey });
       return false;
     }
-  }, [user, fetchFavorites]);
+  }, [user, queryClient, queryKey]);
 
   return {
     products,
-    loading,
-    error,
-    refetch: fetchFavorites,
+    loading: isLoading,
+    error: queryError instanceof Error ? queryError.message : (queryError as string | null),
+    refetch: async () => { await refetch() },
     removeFavorite,
     count: products.length,
   };
