@@ -3,18 +3,7 @@ import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 
-// Custom Typography System
-// Inter - Body Copy
-import '@fontsource/inter/400.css';
-import '@fontsource/inter/500.css';
-import '@fontsource/inter/600.css';
-import '@fontsource/inter/700.css';
-
-// Outfit - Headings
-import '@fontsource/outfit/400.css';
-import '@fontsource/outfit/500.css';
-import '@fontsource/outfit/600.css';
-import '@fontsource/outfit/700.css';
+// Custom Typography System - using system fonts as per new philosophy
 
 // Mount React immediately - don't wait for anything
 const root = document.getElementById('root')

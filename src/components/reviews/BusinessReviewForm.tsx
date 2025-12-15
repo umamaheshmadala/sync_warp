@@ -64,10 +64,10 @@ export default function BusinessReviewForm({
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newText = e.target.value;
     const newWordCount = countWords(newText);
-    
+
     // Allow typing but warn if over limit
     setReviewText(newText);
-    
+
     if (newWordCount > REVIEW_TEXT_WORD_LIMIT) {
       setError(`Review text exceeds ${REVIEW_TEXT_WORD_LIMIT} word limit`);
     } else {
@@ -78,7 +78,7 @@ export default function BusinessReviewForm({
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!isValid || isOverLimit) {
       setError('Please select a recommendation and ensure text is within word limit');
       return;
@@ -96,10 +96,10 @@ export default function BusinessReviewForm({
           photo_url: photoUrl || undefined,
           tags: selectedTags.length > 0 ? selectedTags : undefined,
         });
-        
+
         // Show success message
         setShowSuccess(true);
-        
+
         // Close form after brief delay
         setTimeout(() => {
           onCancel();
@@ -114,10 +114,10 @@ export default function BusinessReviewForm({
           tags: selectedTags.length > 0 ? selectedTags : undefined,
           checkin_id: checkinId || undefined,  // TEMP: Allow null for desktop testing
         });
-        
+
         // Show success message
         setShowSuccess(true);
-        
+
         // Close form after brief delay
         setTimeout(() => {
           onCancel();
@@ -155,7 +155,7 @@ export default function BusinessReviewForm({
               >
                 <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
               </motion.div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
                 {editMode ? 'Review Updated!' : 'Review Submitted!'}
               </h3>
               <p className="text-gray-600">Thank you for your feedback</p>
@@ -167,7 +167,7 @@ export default function BusinessReviewForm({
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">
+          <h2 className="text-xl font-semibold text-gray-900">
             {editMode ? 'Edit Review' : 'Write a Review'}
           </h2>
           <p className="text-sm text-gray-600 mt-1">{businessName}</p>
@@ -203,14 +203,12 @@ export default function BusinessReviewForm({
               `}
             >
               <ThumbsUp
-                className={`w-12 h-12 mx-auto mb-3 ${
-                  recommendation === true ? 'text-green-500' : 'text-gray-400'
-                }`}
+                className={`w-12 h-12 mx-auto mb-3 ${recommendation === true ? 'text-green-500' : 'text-gray-400'
+                  }`}
               />
               <div className="text-center">
-                <div className={`font-bold text-lg ${
-                  recommendation === true ? 'text-green-700' : 'text-gray-700'
-                }`}>
+                <div className={`font-semibold text-base ${recommendation === true ? 'text-green-700' : 'text-gray-700'
+                  }`}>
                   Recommend
                 </div>
                 <div className="text-sm text-gray-500 mt-1">
@@ -243,14 +241,12 @@ export default function BusinessReviewForm({
               `}
             >
               <ThumbsDown
-                className={`w-12 h-12 mx-auto mb-3 ${
-                  recommendation === false ? 'text-red-500' : 'text-gray-400'
-                }`}
+                className={`w-12 h-12 mx-auto mb-3 ${recommendation === false ? 'text-red-500' : 'text-gray-400'
+                  }`}
               />
               <div className="text-center">
-                <div className={`font-bold text-lg ${
-                  recommendation === false ? 'text-red-700' : 'text-gray-700'
-                }`}>
+                <div className={`font-semibold text-base ${recommendation === false ? 'text-red-700' : 'text-gray-700'
+                  }`}>
                   Don't Recommend
                 </div>
                 <div className="text-sm text-gray-500 mt-1">

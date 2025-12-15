@@ -81,8 +81,6 @@
     "@capacitor/push-notifications": "^7.0.3",
     "@capacitor/screen-orientation": "^7.0.2",
     "@capacitor/share": "^7.0.2",
-    "@fontsource/inter": "^5.2.8",
-    "@fontsource/outfit": "^5.2.8",
     "@headlessui/react": "^1.7.17",
     "@hookform/resolvers": "^3.3.2",
     "@radix-ui/react-alert-dialog": "^1.1.15",

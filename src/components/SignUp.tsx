@@ -23,14 +23,14 @@ interface FormErrors {
 export default function SignUp() {
   const navigate = useNavigate()
   const { signUp, loading } = useAuthStore()
-  
+
   const [formData, setFormData] = useState<FormData>({
     email: '',
     password: '',
     confirmPassword: '',
     fullName: ''
   })
-  
+
   const [errors, setErrors] = useState<FormErrors>({})
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -44,7 +44,7 @@ export default function SignUp() {
 
   // Add timeout protection
   useLoadingTimeout(loading || isSubmitting, handleLoadingTimeout, 45000);
-  
+
   // Debug loading state in development
   if (process.env.NODE_ENV === 'development') {
     useLoadingDebug('SignUp', loading || isSubmitting);
@@ -59,7 +59,7 @@ export default function SignUp() {
       number: /\d/.test(password),
       special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
     }
-    
+
     const score = Object.values(checks).filter(Boolean).length
     return { checks, score }
   }
@@ -111,7 +111,7 @@ export default function SignUp() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
-    
+
     // Clear specific error when user starts typing
     if (errors[name as keyof FormErrors]) {
       setErrors(prev => ({ ...prev, [name]: undefined }))
@@ -120,7 +120,7 @@ export default function SignUp() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!validateForm()) {
       return
     }
@@ -132,15 +132,15 @@ export default function SignUp() {
       await signUp(formData.email, formData.password, {
         full_name: formData.fullName
       })
-      
+
       // Success - redirect to onboarding with a small delay to ensure loading state updates properly
       setTimeout(() => {
         navigate('/onboarding')
       }, 100)
-      
+
     } catch (error: any) {
       console.error('Sign up error:', error)
-      
+
       // Handle specific Supabase errors and configuration issues
       if (error.message?.includes('Supabase not configured')) {
         setErrors({ general: 'Authentication service is not configured. Please contact support.' })
@@ -171,13 +171,13 @@ export default function SignUp() {
         {/* Header */}
         <div className="text-center">
           <div className="flex justify-center mb-6">
-            <img 
-              src="/Logo/Sync Logo Transparent SVG.svg" 
-              alt="Sync" 
+            <img
+              src="/Logo/Sync Logo Transparent SVG.svg"
+              alt="Sync"
               className="h-16 w-16"
             />
           </div>
-          <h2 className="text-3xl font-bold text-gray-900">
+          <h2 className="text-2xl font-semibold text-gray-900">
             Create your account
           </h2>
           <p className="mt-2 text-sm text-gray-600">
@@ -210,9 +210,8 @@ export default function SignUp() {
                   required
                   value={formData.fullName}
                   onChange={handleInputChange}
-                  className={`appearance-none relative block w-full px-3 py-3 pl-10 border ${
-                    errors.fullName ? 'border-red-300' : 'border-gray-300'
-                  } placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm`}
+                  className={`appearance-none relative block w-full px-3 py-3 pl-10 border ${errors.fullName ? 'border-red-300' : 'border-gray-300'
+                    } placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm`}
                   placeholder="Enter your full name"
                 />
                 <User className="h-5 w-5 text-gray-400 absolute left-3 top-3" />
@@ -236,9 +235,8 @@ export default function SignUp() {
                   required
                   value={formData.email}
                   onChange={handleInputChange}
-                  className={`appearance-none relative block w-full px-3 py-3 pl-10 border ${
-                    errors.email ? 'border-red-300' : 'border-gray-300'
-                  } placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm`}
+                  className={`appearance-none relative block w-full px-3 py-3 pl-10 border ${errors.email ? 'border-red-300' : 'border-gray-300'
+                    } placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm`}
                   placeholder="Enter your email"
                 />
                 <Mail className="h-5 w-5 text-gray-400 absolute left-3 top-3" />
@@ -262,9 +260,8 @@ export default function SignUp() {
                   required
                   value={formData.password}
                   onChange={handleInputChange}
-                  className={`appearance-none relative block w-full px-3 py-3 pl-10 pr-10 border ${
-                    errors.password ? 'border-red-300' : 'border-gray-300'
-                  } placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm`}
+                  className={`appearance-none relative block w-full px-3 py-3 pl-10 pr-10 border ${errors.password ? 'border-red-300' : 'border-gray-300'
+                    } placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm`}
                   placeholder="Create a password"
                 />
                 <Lock className="h-5 w-5 text-gray-400 absolute left-3 top-3" />
@@ -276,7 +273,7 @@ export default function SignUp() {
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
-              
+
               {/* Password strength indicator */}
               {formData.password && (
                 <div className="mt-2 space-y-2">
@@ -284,15 +281,14 @@ export default function SignUp() {
                     {[1, 2, 3, 4, 5].map((i) => (
                       <div
                         key={i}
-                        className={`h-1 flex-1 rounded ${
-                          i <= passwordValidation.score
+                        className={`h-1 flex-1 rounded ${i <= passwordValidation.score
                             ? passwordValidation.score <= 2
                               ? 'bg-red-400'
                               : passwordValidation.score <= 3
-                              ? 'bg-yellow-400'
-                              : 'bg-green-400'
+                                ? 'bg-yellow-400'
+                                : 'bg-green-400'
                             : 'bg-gray-200'
-                        }`}
+                          }`}
                       />
                     ))}
                   </div>
@@ -312,7 +308,7 @@ export default function SignUp() {
                   </div>
                 </div>
               )}
-              
+
               {errors.password && (
                 <p className="mt-1 text-sm text-red-600">{errors.password}</p>
               )}
@@ -332,9 +328,8 @@ export default function SignUp() {
                   required
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
-                  className={`appearance-none relative block w-full px-3 py-3 pl-10 pr-10 border ${
-                    errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
-                  } placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm`}
+                  className={`appearance-none relative block w-full px-3 py-3 pl-10 pr-10 border ${errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
+                    } placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm`}
                   placeholder="Confirm your password"
                 />
                 <Lock className="h-5 w-5 text-gray-400 absolute left-3 top-3" />

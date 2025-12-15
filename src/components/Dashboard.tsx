@@ -184,8 +184,8 @@ const Dashboard: React.FC = () => {
                 {/* Desktop: Vertical layout */}
                 <div className="hidden md:block text-center">
                   <TrendingUp className="w-8 h-8 mb-3 mx-auto" />
-                  <p className="font-semibold text-base">Register</p>
-                  <p className="text-sm opacity-90">Business</p>
+                  <p className="font-semibold text-sm">Register</p>
+                  <p className="text-xs opacity-90">Business</p>
                 </div>
               </button>
 
@@ -202,8 +202,8 @@ const Dashboard: React.FC = () => {
                 {/* Desktop: Vertical layout */}
                 <div className="hidden md:block text-center">
                   <Users className="w-8 h-8 mb-3 mx-auto" />
-                  <p className="font-semibold text-base">Manage</p>
-                  <p className="text-sm opacity-70">Business</p>
+                  <p className="font-semibold text-sm">Manage</p>
+                  <p className="text-xs opacity-70">Business</p>
                 </div>
               </button>
             </div>
@@ -212,8 +212,8 @@ const Dashboard: React.FC = () => {
             <div className="bg-gradient-to-r from-orange-400 to-pink-500 rounded-xl md:rounded-2xl p-3 md:p-6 text-white shadow-md">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-sm md:text-xl truncate">Weekend Deal! 🔥</h3>
-                  <p className="text-xs md:text-base opacity-90 truncate">Up to 60% off at restaurants</p>
+                  <h3 className="font-semibold text-base md:text-lg truncate">Weekend Deal! 🔥</h3>
+                  <p className="text-xs opacity-90 truncate">Up to 60% off at restaurants</p>
                 </div>
                 <button
                   onClick={() => navigate('/search')}
@@ -229,8 +229,8 @@ const Dashboard: React.FC = () => {
           <section className="mb-4">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">Spotlight Businesses</h2>
-                <p className="text-base text-gray-600">Top picks in your area</p>
+                <h2 className="text-lg font-semibold text-gray-900">Spotlight Businesses</h2>
+                <p className="text-sm text-gray-600">Top picks in your area</p>
               </div>
               <button
                 onClick={() => navigate('/search')}
@@ -263,7 +263,7 @@ const Dashboard: React.FC = () => {
                       </div>
                     )}
                     <div className="text-center">
-                      <div className="text-4xl mb-2">{index === 0 ? '🏢' : '🏪'}</div>
+                      <div className="text-2xl mb-2">{index === 0 ? '🏢' : '🏪'}</div>
                       <p className="text-sm text-gray-600 font-medium">{business.category}</p>
                     </div>
                   </div>
@@ -280,7 +280,7 @@ const Dashboard: React.FC = () => {
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-gray-900 text-sm md:text-base mb-1 md:mb-2 truncate">{business.name}</h3>
+                        <h3 className="font-semibold text-gray-900 text-sm mb-1 truncate">{business.name}</h3>
                         <p className="text-xs md:text-sm text-gray-600 mb-2 md:mb-3 truncate">{business.location}</p>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center">
@@ -301,8 +301,8 @@ const Dashboard: React.FC = () => {
           <section className="mb-4">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">Hot Offers 🔥</h2>
-                <p className="text-base text-gray-600">Limited time deals you can't miss</p>
+                <h2 className="text-lg font-semibold text-gray-900">Hot Offers 🔥</h2>
+                <p className="text-sm text-gray-600">Limited time deals</p>
               </div>
               <button
                 onClick={() => navigate('/wallet')}
@@ -343,12 +343,12 @@ const Dashboard: React.FC = () => {
                   <div className="hidden md:flex items-center">
                     <div className="w-20 h-20 bg-gradient-to-br from-red-400 to-pink-500 flex items-center justify-center text-white m-4 rounded-xl flex-shrink-0">
                       <div className="text-center">
-                        <div className="text-lg font-bold">{offer.discount}</div>
+                        <div className="text-base font-semibold">{offer.discount}</div>
                         <div className="text-xs opacity-90">OFF</div>
                       </div>
                     </div>
                     <div className="flex-1 p-4 min-w-0">
-                      <h3 className="font-semibold text-gray-900 text-base mb-2 truncate">{offer.title}</h3>
+                      <h3 className="font-semibold text-gray-900 text-sm mb-1 truncate">{offer.title}</h3>
                       <p className="text-sm text-gray-600 mb-3 truncate">{offer.businessName}</p>
                       <span className="inline-block bg-red-100 text-red-600 px-3 py-1 rounded-full text-sm font-medium">
                         {offer.expiresIn} left
@@ -371,8 +371,8 @@ const Dashboard: React.FC = () => {
           <section className="mb-4">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">Trending Now 📈</h2>
-                <p className="text-base text-gray-600">What's popular this week</p>
+                <h2 className="text-lg font-semibold text-gray-900">Trending Now 📈</h2>
+                <p className="text-sm text-gray-600">What's popular this week</p>
               </div>
             </div>
 
@@ -411,7 +411,7 @@ const Dashboard: React.FC = () => {
                         <span className="text-lg">{index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}</span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-gray-900 text-base truncate">{product.name}</h3>
+                        <h3 className="font-semibold text-gray-900 text-sm truncate">{product.name}</h3>
                         <p className="text-sm text-gray-600 truncate">{product.business}</p>
                       </div>
                     </div>
@@ -419,7 +419,7 @@ const Dashboard: React.FC = () => {
                       <span className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-3 py-1 rounded-full text-sm font-bold">
                         #{index + 1}
                       </span>
-                      <p className="font-bold text-gray-900 text-base">{product.price.replace('Γé╣', '₹')}</p>
+                      <p className="font-semibold text-gray-900 text-sm">{product.price.replace('Γé╣', '₹')}</p>
                     </div>
                   </div>
                 </div>
