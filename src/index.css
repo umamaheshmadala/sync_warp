@@ -2,6 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom Typography System configured in main.tsx and tailwind.config.js */
+
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: 'Outfit', system-ui, sans-serif;
+  }
+}
+
 /* Custom utilities for text truncation */
 .line-clamp-2 {
   display: -webkit-box;
@@ -27,16 +44,19 @@
 }
 
 /* iOS Safari fixed positioning fixes */
-html, body {
+html,
+body {
   width: 100%;
   overflow-x: hidden;
   position: relative;
   -webkit-overflow-scrolling: touch;
-  font-size: 16px; /* Base size for mobile readability */
+  font-size: 16px;
+  /* Base size for mobile readability */
 }
 
 /* Prevent iOS Safari from moving fixed elements during scroll */
 @supports (-webkit-touch-callout: none) {
+
   /* iOS-specific styles */
   .fixed {
     position: fixed;
@@ -61,62 +81,71 @@ nav[class*="bottom"] {
   /* Add top padding if header is sticky */
   padding-top: 0;
   /* Ensure minimum height accounts for bottom navigation */
-  min-height: calc(100vh - 64px); /* 64px is header height */
+  min-height: calc(100vh - 64px);
+  /* 64px is header height */
 }
 
 /* Systematic page container utility */
 .page-safe-area {
   /* Generous bottom padding to prevent footer overlap */
-  padding-bottom: 7rem; /* 112px - enough for bottom nav + safe area */
-  min-height: calc(100vh - 64px); /* Account for header */
+  padding-bottom: 7rem;
+  /* 112px - enough for bottom nav + safe area */
+  min-height: calc(100vh - 64px);
+  /* Account for header */
 }
 
 /* Ensure all main content sections have proper bottom spacing */
-main > div,
-main > section,
+main>div,
+main>section,
 .page-container,
-[class*="dashboard"] > main,
-[class*="profile"] > main,
-[class*="wallet"] > main,
-[class*="search"] > main {
-  padding-bottom: 7rem !important; /* 112px for mobile bottom nav + breathing room */
+[class*="dashboard"]>main,
+[class*="profile"]>main,
+[class*="wallet"]>main,
+[class*="search"]>main {
+  padding-bottom: 7rem !important;
+  /* 112px for mobile bottom nav + breathing room */
 }
 
 /* Responsive adjustments for bottom spacing */
 @media (min-width: 640px) {
   .page-safe-area {
-    padding-bottom: 6rem; /* 96px for tablet */
+    padding-bottom: 6rem;
+    /* 96px for tablet */
   }
-  
-  main > div,
-  main > section,
+
+  main>div,
+  main>section,
   .page-container,
-  [class*="dashboard"] > main,
-  [class*="profile"] > main,
-  [class*="wallet"] > main,
-  [class*="search"] > main {
-    padding-bottom: 6rem !important; /* 96px for tablet */
+  [class*="dashboard"]>main,
+  [class*="profile"]>main,
+  [class*="wallet"]>main,
+  [class*="search"]>main {
+    padding-bottom: 6rem !important;
+    /* 96px for tablet */
   }
 }
 
 @media (min-width: 768px) {
   .page-safe-area {
-    padding-bottom: 5rem; /* 80px for desktop */
+    padding-bottom: 5rem;
+    /* 80px for desktop */
   }
-  
-  main > div,
-  main > section,
+
+  main>div,
+  main>section,
   .page-container,
-  [class*="dashboard"] > main,
-  [class*="profile"] > main,
-  [class*="wallet"] > main,
-  [class*="search"] > main {
-    padding-bottom: 5rem !important; /* 80px for desktop */
+  [class*="dashboard"]>main,
+  [class*="profile"]>main,
+  [class*="wallet"]>main,
+  [class*="search"]>main {
+    padding-bottom: 5rem !important;
+    /* 80px for desktop */
   }
 }
 
 /* Ensure scrolling works properly */
-body, #root {
+body,
+#root {
   min-height: 100vh;
   overflow-y: auto;
   overflow-x: hidden;

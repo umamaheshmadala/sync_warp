@@ -1,4 +1,5 @@
 import { useCallback } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useMessagingStore } from '../store/messagingStore'
 import { useAuthStore } from '../store/authStore'
 import { messagingService } from '../services/messagingService'
@@ -22,38 +23,9 @@ import { linkValidationService } from '../services/LinkValidationService'
  * - Returns message ID on success
  * 
  * @returns sendMessage function, retryMessage function, and isSending state
- * 
- * @example
- * ```tsx
- * function MessageInput({ conversationId }: { conversationId: string }) {
- *   const [text, setText] = useState('')
- *   const { sendMessage, isSending } = useSendMessage()
- *   
- *   const handleSend = async () => {
- *     try {
- *       await sendMessage({
- *         conversationId,
- *         content: text,
- *         type: 'text'
- *       })
- *       setText('') // Clear input on success
- *     } catch (error) {
- *       // Error is already toasted by hook
- *     }
- *   }
- *   
- *   return (
- *     <div>
- *       <input value={text} onChange={(e) => setText(e.target.value)} />
- *       <button onClick={handleSend} disabled={isSending}>
- *         {isSending ? 'Sending...' : 'Send'}
- *       </button>
- *     </div>
- *   )
- * }
- * ```
  */
 export function useSendMessage() {
+  const queryClient = useQueryClient()
   const {
     isSendingMessage,
     setSendingMessage,
@@ -71,21 +43,12 @@ export function useSendMessage() {
 
   /**
    * Send a message with optimistic UI updates and offline support
-   * 
-   * Flow:
-   * 1. Generate temp message with _optimistic flag
-   * 2. Add temp message to store immediately (optimistic UI)
-   * 3. Check if online:
-   *    - Online: Send to server, replace with real message on success
-   *    - Offline: Queue for later, mark as 'queued' status
-   * 4. On failure: mark temp message as failed
    */
   const sendMessage = useCallback(async (params: SendMessageParams) => {
     // Generate temporary ID for optimistic message
     const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 
     // [STORY 8.7.4] Validate links before sending
-    // Do not validate if content is empty (e.g. image-only message)
     if (params.content) {
       const validation = await linkValidationService.validateUrls(params.content)
       if (!validation.valid) {
@@ -115,7 +78,7 @@ export function useSendMessage() {
     const optimisticMessage: Message = {
       id: tempId, // Temporary ID
       conversation_id: params.conversationId,
-      sender_id: currentUserId || 'unknown', // Use actual user ID from auth store
+      sender_id: currentUserId || 'unknown',
       content: params.content,
       type: params.type || 'text',
       media_urls: params.mediaUrls || null,
@@ -124,7 +87,7 @@ export function useSendMessage() {
       shared_coupon_id: params.sharedCouponId || null,
       shared_deal_id: params.sharedDealId || null,
       reply_to_id: params.replyToId || null,
-      parent_message: parentMessage, // Include parent message data for replies
+      parent_message: parentMessage,
       is_edited: false,
       is_deleted: false,
       created_at: new Date().toISOString(),
@@ -137,6 +100,13 @@ export function useSendMessage() {
 
     try {
       // 1. Add optimistic message immediately (instant UI feedback)
+      // Update React Query cache directly for instant UI update
+      queryClient.setQueryData(['messages', params.conversationId], (old: any) => ({
+        messages: [...(old?.messages || []), optimisticMessage],
+        hasMore: old?.hasMore ?? true
+      }))
+
+      // Also update Zustand (backwards compatibility)
       addOptimisticMessage(params.conversationId, optimisticMessage)
 
       setSendingMessage(true)
@@ -145,7 +115,6 @@ export function useSendMessage() {
       if (!isOnline) {
         console.log('📴 Offline - queueing message for later sync')
 
-        // Queue the message for later sync
         const queueId = await offlineQueueService.queueMessage({
           conversationId: params.conversationId,
           senderId: currentUserId || 'unknown',
@@ -156,13 +125,23 @@ export function useSendMessage() {
           replyToId: params.replyToId || undefined
         })
 
-        // Mark message as queued (not failed)
-        replaceOptimisticMessage(params.conversationId, tempId, {
+        const queuedMessage = {
           ...optimisticMessage,
           _queued: true,
           _queueId: queueId,
-          status: 'queued'
-        })
+          status: 'queued' as const
+        }
+
+        // Update React Query cache
+        queryClient.setQueryData(['messages', params.conversationId], (old: any) => ({
+          messages: (old?.messages || []).map((msg: Message) =>
+            msg.id === tempId ? queuedMessage : msg
+          ),
+          hasMore: old?.hasMore ?? true
+        }))
+
+        // Update Zustand
+        replaceOptimisticMessage(params.conversationId, tempId, queuedMessage)
 
         console.log(`📤 Message queued: ${queueId}`)
         toast('Message saved. Will send when back online.', { icon: '📴' })
@@ -172,10 +151,8 @@ export function useSendMessage() {
       // 3. Online - send actual message to server
       const messageId = await messagingService.sendMessage(params)
 
-      // 4. Replace optimistic message with real message from server
-      // Note: The real message should be received via realtime subscription
-      // but we also replace it here immediately for better UX
-      replaceOptimisticMessage(params.conversationId, tempId, {
+      // 4. Replace optimistic message with real message
+      const completedMessage = {
         ...optimisticMessage,
         id: messageId,
         _optimistic: undefined,
@@ -183,44 +160,54 @@ export function useSendMessage() {
         _tempId: undefined,
         _queued: undefined,
         _queueId: undefined,
-        status: 'delivered' // In DB = delivered (recipient can fetch it)
-      })
+        status: 'delivered' as const
+      }
 
-      // 5. Trigger push notification to other participants (async, non-blocking)
-      // REVERTED: Using backend trigger via pg_net to handle this reliably without CORS issues
-      // triggerPushNotification({
-      //   conversationId: params.conversationId,
-      //   senderId: currentUserId || 'unknown',
-      //   content: params.content || '',
-      //   messageType: params.type || 'text'
-      // }).catch(err => console.error('[Push] Failed to trigger:', err))
+      // Update React Query cache - SWAP temp ID with real ID
+      queryClient.setQueryData(['messages', params.conversationId], (old: any) => ({
+        messages: (old?.messages || []).map((msg: Message) =>
+          msg.id === tempId ? completedMessage : msg
+        ),
+        hasMore: old?.hasMore ?? true
+      }))
+
+      // Update Zustand
+      replaceOptimisticMessage(params.conversationId, tempId, completedMessage)
 
       console.log('✅ Message sent:', messageId)
-      return tempId // Return tempId for progress tracking
+      return tempId
     } catch (error) {
       console.error('❌ Failed to send message:', error)
 
-      // Check if it's a blocking-related error (RLS policy violation)
       const errorMessage = error instanceof Error ? error.message : String(error)
       const isBlockError =
         errorMessage.includes('blocked') ||
-        errorMessage.includes('PGRST116') || // PostgreSQL RLS policy violation
+        errorMessage.includes('PGRST116') ||
         errorMessage.includes('new row violates row-level security policy')
 
       if (isBlockError) {
-        console.log('🚫 Message blocked by RLS policy (user is blocked)')
+        console.log('🚫 Message blocked by RLS policy')
+        // Update React Query cache
+        queryClient.setQueryData(['messages', params.conversationId], (old: any) => ({
+          messages: (old?.messages || []).map((msg: Message) =>
+            msg.id === tempId ? { ...msg, _failed: true, status: 'failed' } : msg
+          ),
+          hasMore: old?.hasMore ?? true
+        }))
+
         markMessageFailed(params.conversationId, tempId)
         toast.error('Unable to send message. This user may have blocked you.')
         throw error
       }
 
-      // Check if it's a network error - queue instead of fail
+      // Check for network error
       const isNetworkError = error instanceof TypeError &&
         (error.message.includes('fetch') || error.message.includes('network'))
 
       if (isNetworkError) {
-        console.log('📴 Network error - queueing message for later sync')
-
+        console.log('📴 Network error - queueing message')
+        // Queue logic same as above... simplified for brevity, assume offline handled by isOnline usually
+        // But if isOnline was true but fetch failed:
         try {
           const queueId = await offlineQueueService.queueMessage({
             conversationId: params.conversationId,
@@ -232,34 +219,46 @@ export function useSendMessage() {
             replyToId: params.replyToId || undefined
           })
 
-          replaceOptimisticMessage(params.conversationId, tempId, {
+          const queuedMessage = {
             ...optimisticMessage,
             _queued: true,
             _queueId: queueId,
-            status: 'queued'
-          })
+            status: 'queued' as const
+          }
 
+          queryClient.setQueryData(['messages', params.conversationId], (old: any) => ({
+            messages: (old?.messages || []).map((msg: Message) =>
+              msg.id === tempId ? queuedMessage : msg
+            ),
+            hasMore: old?.hasMore ?? true
+          }))
+
+          replaceOptimisticMessage(params.conversationId, tempId, queuedMessage)
           toast('Message saved. Will send when back online.', { icon: '📴' })
           return tempId
         } catch (queueError) {
-          console.error('❌ Failed to queue message:', queueError)
+          console.error('❌ Failed to queue:', queueError)
         }
       }
 
-      // Mark message as failed (show retry button)
-      markMessageFailed(params.conversationId, tempId)
+      // Mark message as failed
+      queryClient.setQueryData(['messages', params.conversationId], (old: any) => ({
+        messages: (old?.messages || []).map((msg: Message) =>
+          msg.id === tempId ? { ...msg, _failed: true, status: 'failed' } : msg
+        ),
+        hasMore: old?.hasMore ?? true
+      }))
 
+      markMessageFailed(params.conversationId, tempId)
       toast.error('Failed to send message. Tap to retry.')
       throw error
     } finally {
       setSendingMessage(false)
     }
-  }, [setSendingMessage, addOptimisticMessage, replaceOptimisticMessage, markMessageFailed, isOnline, currentUserId])
+  }, [setSendingMessage, addOptimisticMessage, replaceOptimisticMessage, markMessageFailed, isOnline, currentUserId, queryClient, messages])
 
   /**
    * Retry sending a failed message
-   * 
-   * @param failedMessage - The failed message to retry
    */
   const retryMessage = useCallback(async (failedMessage: Message) => {
     if (!failedMessage._tempId) {
@@ -272,14 +271,12 @@ export function useSendMessage() {
       await sendMessage({
         conversationId: failedMessage.conversation_id,
         content: failedMessage.content,
-        type: failedMessage.type
+        type: failedMessage.type as any, // Type assertion for stricter types
+        mediaUrls: failedMessage.media_urls || undefined,
+        replyToId: failedMessage.reply_to_id || undefined
       })
-
-      // Note: The failed message will be replaced by the new optimistic message
-      // created in sendMessage(), so no explicit cleanup needed
     } catch (error) {
       console.error('Retry failed:', error)
-      // sendMessage already handles error toasts
     }
   }, [sendMessage])
 

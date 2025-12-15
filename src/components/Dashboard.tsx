@@ -95,9 +95,9 @@ const dummyHotOffers: HotOffer[] = [
 ];
 
 const dummyTrendingProducts: TrendingProduct[] = [
-  { id: 'dummy-prod-1', name: '[Demo] Artisan Coffee Beans', business: 'Urban Coffee', price: 'Γé╣450', category: 'Food', isTrending: true },
-  { id: 'dummy-prod-2', name: '[Demo] Chocolate Croissant', business: 'French Bakery', price: 'Γé╣120', category: 'Food', isTrending: true },
-  { id: 'dummy-prod-3', name: '[Demo] Handmade Soap', business: 'Natural Care', price: 'Γé╣85', category: 'Beauty', isTrending: true }
+  { id: 'dummy-prod-1', name: '[Demo] Artisan Coffee Beans', business: 'Urban Coffee', price: '₹450', category: 'Food', isTrending: true },
+  { id: 'dummy-prod-2', name: '[Demo] Chocolate Croissant', business: 'French Bakery', price: '₹120', category: 'Food', isTrending: true },
+  { id: 'dummy-prod-3', name: '[Demo] Handmade Soap', business: 'Natural Care', price: '₹85', category: 'Beauty', isTrending: true }
 ];
 
 const Dashboard: React.FC = () => {
@@ -212,7 +212,7 @@ const Dashboard: React.FC = () => {
             <div className="bg-gradient-to-r from-orange-400 to-pink-500 rounded-xl md:rounded-2xl p-3 md:p-6 text-white shadow-md">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-sm md:text-xl truncate">Weekend Deal! ≡ƒöÑ</h3>
+                  <h3 className="font-bold text-sm md:text-xl truncate">Weekend Deal! 🔥</h3>
                   <p className="text-xs md:text-base opacity-90 truncate">Up to 60% off at restaurants</p>
                 </div>
                 <button
@@ -258,12 +258,12 @@ const Dashboard: React.FC = () => {
                     {business.isPromoted && (
                       <div className="absolute top-3 left-3 z-10">
                         <span className="bg-gradient-to-r from-yellow-400 to-orange-400 text-white px-3 py-1 rounded-full text-xs font-medium shadow-sm">
-                          Γ£¿ Featured
+                          ✨ Featured
                         </span>
                       </div>
                     )}
                     <div className="text-center">
-                      <div className="text-4xl mb-2">{index === 0 ? 'Γÿò' : '≡ƒì░'}</div>
+                      <div className="text-4xl mb-2">{index === 0 ? '🏢' : '🏪'}</div>
                       <p className="text-sm text-gray-600 font-medium">{business.category}</p>
                     </div>
                   </div>
@@ -276,7 +276,7 @@ const Dashboard: React.FC = () => {
                         {business.isPromoted && (
                           <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full border-2 border-white"></div>
                         )}
-                        {index === 0 ? 'Γÿò' : '≡ƒì░'}
+                        {index === 0 ? '🏢' : '🏪'}
                       </div>
 
                       <div className="flex-1 min-w-0">
@@ -301,7 +301,7 @@ const Dashboard: React.FC = () => {
           <section className="mb-4">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">Hot Offers ≡ƒöÑ</h2>
+                <h2 className="text-2xl font-bold text-gray-900">Hot Offers 🔥</h2>
                 <p className="text-base text-gray-600">Limited time deals you can't miss</p>
               </div>
               <button
@@ -371,7 +371,7 @@ const Dashboard: React.FC = () => {
           <section className="mb-4">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">Trending Now ≡ƒôê</h2>
+                <h2 className="text-2xl font-bold text-gray-900">Trending Now 📈</h2>
                 <p className="text-base text-gray-600">What's popular this week</p>
               </div>
             </div>
@@ -392,12 +392,12 @@ const Dashboard: React.FC = () => {
                   {/* Mobile: Vertical compact layout */}
                   <div className="md:hidden flex flex-col items-center text-center space-y-2">
                     <div className="w-12 h-12 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-lg flex items-center justify-center">
-                      <span className="text-xl">{index === 0 ? '≡ƒÄå' : index === 1 ? '≡ƒì░' : '≡ƒº╝'}</span>
+                      <span className="text-xl">{index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}</span>
                     </div>
                     <div className="w-full min-w-0">
                       <h3 className="font-semibold text-gray-900 text-xs truncate">{product.name}</h3>
                       <p className="text-xs text-gray-600 truncate">{product.business}</p>
-                      <p className="font-bold text-gray-900 text-sm mt-1">{product.price}</p>
+                      <p className="font-bold text-gray-900 text-sm mt-1">{product.price.replace('Γé╣', '₹')}</p>
                     </div>
                     <span className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-2 py-0.5 rounded-full text-xs font-bold">
                       #{index + 1}
@@ -408,7 +408,7 @@ const Dashboard: React.FC = () => {
                   <div className="hidden md:flex items-center justify-between">
                     <div className="flex items-center space-x-4">
                       <div className="w-12 h-12 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-xl flex items-center justify-center">
-                        <span className="text-lg">{index === 0 ? '≡ƒÄå' : index === 1 ? '≡ƒì░' : '≡ƒº╝'}</span>
+                        <span className="text-lg">{index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}</span>
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold text-gray-900 text-base truncate">{product.name}</h3>
@@ -419,7 +419,7 @@ const Dashboard: React.FC = () => {
                       <span className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-3 py-1 rounded-full text-sm font-bold">
                         #{index + 1}
                       </span>
-                      <p className="font-bold text-gray-900 text-base">{product.price}</p>
+                      <p className="font-bold text-gray-900 text-base">{product.price.replace('Γé╣', '₹')}</p>
                     </div>
                   </div>
                 </div>

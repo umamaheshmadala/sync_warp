@@ -57,11 +57,7 @@ const persister = createSyncStoragePersister({
 function AppContent() {
   const user = useAuthStore(state => state.user)
 
-  // DEBUG: Verify build version
-  React.useEffect(() => {
-    console.log('🚀 APP VERSION: BUILD_TIMESTAMP_CHECK_001')
-    toast.success('New Build Loaded: v001', { duration: 5000 })
-  }, [])
+
 
   // Automatically register push notifications when user logs in
   const pushState = usePushNotifications(user?.id ?? null)

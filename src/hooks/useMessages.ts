@@ -162,10 +162,23 @@ export function useMessages(conversationId: string | null) {
         }
 
         // Update React Query cache
-        queryClient.setQueryData(['messages', conversationId], (old: any) => ({
-          messages: [...(old?.messages || []), newMessage],
-          hasMore: old?.hasMore ?? true
-        }))
+        // Update React Query cache with deduplication
+        queryClient.setQueryData(['messages', conversationId], (old: any) => {
+          const currentMessages = old?.messages || []
+
+          // Check if message with this ID already exists
+          if (currentMessages.some((m: Message) => m.id === newMessage.id)) {
+            return old
+          }
+
+          // Check for optimistic version match (by temp ID match? No, usually handled by sender swapping ID)
+          // For now, simple ID deduplication matches typical optimistic flow where ID is swapped before realtime arrives
+
+          return {
+            messages: [...currentMessages, newMessage],
+            hasMore: old?.hasMore ?? true
+          }
+        })
 
         // Also update Zustand store for backwards compatibility
         addMessage(conversationId, newMessage)
