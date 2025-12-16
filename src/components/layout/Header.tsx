@@ -166,9 +166,9 @@ export default function Header() {
           >
             {/* Logo with text for desktop */}
             <img
-              src="/Logo/Sync Logo Text Transparent SVG.svg"
+              src="/Logo/Logo Text Transparent PNG 2.png"
               alt="Sync"
-              className="h-10"
+              className="h-[55px]"
             />
           </div>
         </div>
