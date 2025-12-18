@@ -192,9 +192,31 @@ export default function Search() {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-      {/* LinkedIn-Style Horizontal Filter Tabs */}
-      <div className="sticky top-16 z-30 bg-white border-b border-gray-200 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-3 mb-4">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-1 pb-4">
+      {/* Search Header - Title and Action Buttons */}
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Find Local Deals</h1>
+          <p className="text-xs text-gray-500">Discover businesses, products, and offers in your area</p>
+        </div>
+        <div className="hidden md:flex items-center space-x-2">
+          <button
+            onClick={() => navigate('/search/advanced')}
+            className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+          >
+            Advanced Search
+          </button>
+          <button
+            onClick={() => navigate('/discovery')}
+            className="px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+          >
+            Discover
+          </button>
+        </div>
+      </div>
+
+      {/* Filter Tabs - Non-sticky, integrated into page flow */}
+      <div className="bg-gray-50 rounded-lg border border-gray-200 px-3 py-2 mb-4">
         <div className="flex items-center space-x-2 overflow-x-auto scrollbar-hide">
           {filterTabs.map((tab) => {
             const IconComponent = tab.icon;
@@ -203,9 +225,9 @@ export default function Search() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-full whitespace-nowrap transition-all ${isActive
-                    ? 'bg-indigo-100 text-indigo-700 font-semibold'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                className={`flex items-center space-x-2 px-3 py-1.5 rounded-full whitespace-nowrap transition-all ${isActive
+                  ? 'bg-indigo-100 text-indigo-700 font-semibold'
+                  : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
                   }`}
               >
                 <IconComponent className="w-4 h-4" />
@@ -219,89 +241,6 @@ export default function Search() {
             );
           })}
         </div>
-      </div>
-
-      {/* Search Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Find Local Deals</h1>
-            <p className="text-sm sm:text-base text-gray-600">Discover amazing businesses, products, and offers in your area</p>
-          </div>
-          <div className="hidden md:flex flex-col space-y-2">
-            <button
-              onClick={() => navigate('/search/advanced')}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
-            >
-              Advanced Search
-            </button>
-            <button
-              onClick={() => navigate('/discovery')}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
-            >
-              Discover
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Search Form */}
-      <div className="mb-8">
-        <form onSubmit={handleSubmit} className="max-w-2xl relative">
-          <div className="relative">
-            <input
-              ref={searchInputRef}
-              type="text"
-              value={localQuery}
-              onChange={(e) => handleInputChange(e.target.value)}
-              onFocus={() => setIsSuggestionsVisible(true)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  const queryToSearch = localQuery.trim();
-                  console.log('🔍 [Search] Enter key pressed, performing search with:', queryToSearch || '[BROWSE MODE]');
-                  performSearch(queryToSearch); // Allow empty for browse mode
-                }
-              }}
-              placeholder="Search for businesses, deals, or products..."
-              className="w-full px-4 py-3 pl-12 pr-20 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              autoComplete="off"
-            />
-            <SearchIcon className="absolute left-4 top-3.5 h-5 w-5 text-gray-400" />
-            <button
-              type="submit"
-              disabled={search.isSearching}
-              className="absolute right-2 top-2 px-4 py-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 transition-colors"
-            >
-              {search.isSearching ? 'Searching...' : 'Search'}
-            </button>
-          </div>
-
-          {/* Search Suggestions */}
-          <SearchSuggestions
-            searchTerm={localQuery}
-            suggestions={search.suggestions}
-            isLoading={suggestionsLoading}
-            isVisible={isSuggestionsVisible}
-            onSuggestionSelect={handleSuggestionSelect}
-            onClose={() => setIsSuggestionsVisible(false)}
-            recentSearches={recentSearches}
-          />
-        </form>
-
-        {/* Browse All Button */}
-        {!search.hasSearched && (
-          <div className="mt-4 text-center">
-            <button
-              onClick={() => performSearch('')}
-              disabled={search.isSearching}
-              className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 transition-colors"
-            >
-              {search.isSearching ? 'Loading...' : 'Browse All Deals'}
-            </button>
-            <p className="text-sm text-gray-500 mt-1">Or search for specific deals above</p>
-          </div>
-        )}
       </div>
 
       {/* Filters and Controls */}
@@ -335,10 +274,10 @@ export default function Search() {
                 }}
                 disabled={search.location.isLoading || !search.location.isSupported}
                 className={`flex items-center space-x-2 px-4 py-2 rounded-lg border transition-colors ${search.location.enabled
-                    ? 'bg-blue-50 border-blue-200 text-blue-700'
-                    : search.location.error
-                      ? 'bg-red-50 border-red-200 text-red-700'
-                      : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                  ? 'bg-blue-50 border-blue-200 text-blue-700'
+                  : search.location.error
+                    ? 'bg-red-50 border-red-200 text-red-700'
+                    : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
                   } disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 {search.location.isLoading ? (
@@ -474,8 +413,8 @@ export default function Search() {
               <button
                 onClick={() => setActiveTab('all')}
                 className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'all'
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-50'
                   }`}
               >
                 All ({search.totalResults})
@@ -483,8 +422,8 @@ export default function Search() {
               <button
                 onClick={() => setActiveTab('coupons')}
                 className={`px-4 py-2 text-sm font-medium border-l border-gray-200 transition-colors ${activeTab === 'coupons'
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-50'
                   }`}
               >
                 Coupons ({search.totalCoupons})
@@ -492,8 +431,8 @@ export default function Search() {
               <button
                 onClick={() => setActiveTab('businesses')}
                 className={`px-4 py-2 text-sm font-medium border-l border-gray-200 transition-colors ${activeTab === 'businesses'
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-50'
                   }`}
               >
                 Businesses ({search.totalBusinesses})

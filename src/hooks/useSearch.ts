@@ -8,11 +8,11 @@ import { useAuthStore } from '../store/authStore';
 import { useUserCoupons } from './useCoupons';
 // Temporarily using simple search service for testing
 import simpleSearchService from '../services/simpleSearchService';
-import searchService, { 
-  SearchQuery, 
-  SearchResult, 
-  SearchFilters, 
-  SearchSort, 
+import searchService, {
+  SearchQuery,
+  SearchResult,
+  SearchFilters,
+  SearchSort,
   SearchPagination,
   SearchCoupon,
   SearchBusiness,
@@ -77,14 +77,14 @@ export const useSearch = (options: UseSearchOptions = {}) => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { collectCoupon } = useUserCoupons();
-  
+
   // Geolocation hook
   const geolocation = useGeolocation({
     enableHighAccuracy: true,
     timeout: 10000,
     maximumAge: 300000 // 5 minutes
   });
-  
+
   // Location search state
   const [locationSearch, setLocationSearch] = useState<LocationSearchState>({
     enabled: false,
@@ -122,11 +122,11 @@ export const useSearch = (options: UseSearchOptions = {}) => {
 
     return {
       query: urlQuery,
-      filters: { 
-        ...defaultFilters, 
+      filters: {
+        ...defaultFilters,
         // Only apply default filters if no URL query to allow browsing
-        validOnly: true, 
-        isPublic: true 
+        validOnly: true,
+        isPublic: true
       },
       sort: { field: urlSort, order: urlOrder },
       pagination: { page: urlPage, limit: pageSize },
@@ -168,12 +168,12 @@ export const useSearch = (options: UseSearchOptions = {}) => {
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
   const lastSearchRef = useRef<string>('');
   const abortControllerRef = useRef<AbortController>();
-  
+
   // Reload search state and results when user changes
   useEffect(() => {
     const searchStateKey = user?.id ? `searchState_${user.id}` : 'searchState_guest';
     const searchResultsKey = user?.id ? `searchResults_${user.id}` : 'searchResults_guest';
-    
+
     // Load user-specific search state
     try {
       const savedSearchState = localStorage.getItem(searchStateKey);
@@ -188,7 +188,7 @@ export const useSearch = (options: UseSearchOptions = {}) => {
           });
         }
       }
-      
+
       // Load user-specific search results
       const savedResults = localStorage.getItem(searchResultsKey);
       if (savedResults) {
@@ -212,7 +212,7 @@ export const useSearch = (options: UseSearchOptions = {}) => {
           state: searchState,
           timestamp: Date.now()
         }));
-        
+
         if (results.coupons.length > 0 || results.businesses.length > 0) {
           const searchResultsKey = user?.id ? `searchResults_${user.id}` : 'searchResults_guest';
           localStorage.setItem(searchResultsKey, JSON.stringify({
@@ -225,6 +225,30 @@ export const useSearch = (options: UseSearchOptions = {}) => {
       }
     }
   }, [searchState, results]);
+
+  // Auto-search on mount if URL has query param
+  // This is a ref to track if we've already done the initial search
+  const hasPerformedInitialSearchRef = useRef(false);
+
+  useEffect(() => {
+    const urlQuery = searchParams.get('q');
+    // Only trigger on mount (not on subsequent URL changes) if there's a query
+    if (urlQuery && urlQuery.trim() && !hasPerformedInitialSearchRef.current) {
+      hasPerformedInitialSearchRef.current = true;
+      console.log('🔍 [useSearch] Auto-searching on mount with URL query:', urlQuery);
+
+      // Use setTimeout to ensure state is fully initialized
+      setTimeout(() => {
+        const initialQuery: SearchQuery = {
+          q: urlQuery,
+          filters: { validOnly: true, isPublic: true },
+          sort: defaultSort,
+          pagination: { page: 1, limit: pageSize }
+        };
+        performSearch(initialQuery);
+      }, 0);
+    }
+  }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
    * Perform search with current state
@@ -258,7 +282,7 @@ export const useSearch = (options: UseSearchOptions = {}) => {
       // Don't count default filters as significant
       return value && key !== 'validOnly' && key !== 'isPublic';
     }).length > 0;
-    
+
     // Debug logging
     console.log('🔍 [useSearch] Search criteria check:', {
       hasSearchQuery,
@@ -266,18 +290,18 @@ export const useSearch = (options: UseSearchOptions = {}) => {
       query: queryToUse.q,
       filters: queryToUse.filters
     });
-    
+
     // For now, allow default filter searches to proceed (browse mode)
     // This will show all public, active coupons when no search term is provided
     if (!hasSearchQuery && !hasSignificantFilters) {
       console.log('🔍 [useSearch] Browse mode - showing all public active coupons');
     }
 
-    setSearchState(prev => ({ 
-      ...prev, 
-      isSearching: true, 
+    setSearchState(prev => ({
+      ...prev,
+      isSearching: true,
       error: null,
-      hasSearched: true 
+      hasSearched: true
     }));
 
     try {
@@ -288,7 +312,7 @@ export const useSearch = (options: UseSearchOptions = {}) => {
         pagination: queryToUse.pagination,
         userId: user?.id
       });
-      
+
       // Log the search parameters being sent
       console.log('📍 [useSearch] Calling simpleSearchService with:', {
         query: queryToUse.q,
@@ -298,7 +322,7 @@ export const useSearch = (options: UseSearchOptions = {}) => {
         locationRadius: locationSearch.radius,
         locationParam: queryToUse.location
       });
-      
+
       // Use simple search service with proper location data
       const simpleResult = await simpleSearchService.search({
         q: queryToUse.q,
@@ -309,10 +333,10 @@ export const useSearch = (options: UseSearchOptions = {}) => {
           radius: queryToUse.location.radius
         } : undefined
       });
-      
+
       console.log('🔍 [useSearch] Raw search result:', simpleResult);
-      
-  // Fetch user's collected coupons if user is logged in
+
+      // Fetch user's collected coupons if user is logged in
       let userCollectedCouponIds = new Set<string>();
       if (user?.id) {
         try {
@@ -321,7 +345,7 @@ export const useSearch = (options: UseSearchOptions = {}) => {
             .select('coupon_id, status')
             .eq('user_id', user.id)
             .eq('status', 'active');  // Only fetch active collections
-          
+
           if (userCollections) {
             userCollectedCouponIds = new Set(userCollections.map(c => c.coupon_id));
           }
@@ -329,7 +353,7 @@ export const useSearch = (options: UseSearchOptions = {}) => {
           console.error('Error fetching user collections:', error);
         }
       }
-      
+
       // Convert to expected format
       const result: SearchResult = {
         coupons: simpleResult.coupons.map((coupon: any) => ({
@@ -352,7 +376,7 @@ export const useSearch = (options: UseSearchOptions = {}) => {
         hasMore: false
       };
       // const result = await searchService.search(queryToUse, user?.id);
-      
+
       // Check if this search was cancelled
       if (abortControllerRef.current?.signal.aborted) {
         return null;
@@ -368,77 +392,77 @@ export const useSearch = (options: UseSearchOptions = {}) => {
       } else {
         setResults(result);
       }
-      
+
       // Enhance results with distance calculations and apply location filtering if enabled
       if (locationSearch.enabled && locationSearch.coords) {
         console.log('📍 [useSearch] Applying location filtering with coords:', locationSearch.coords);
         console.log('📍 [useSearch] Radius:', locationSearch.radius, 'km');
-        
+
         setResults(prev => {
           // First calculate distances for all items
           const couponsWithDistance = prev.coupons.map(coupon => {
             const distance = coupon.business?.latitude && coupon.business?.longitude
               ? calculateDistance(
-                  locationSearch.coords!,
-                  { latitude: coupon.business.latitude, longitude: coupon.business.longitude }
-                )
+                locationSearch.coords!,
+                { latitude: coupon.business.latitude, longitude: coupon.business.longitude }
+              )
               : undefined;
-            
+
             return { ...coupon, distance };
           });
-          
+
           const businessesWithDistance = prev.businesses.map(business => {
             const distance = business.latitude && business.longitude
               ? calculateDistance(
-                  locationSearch.coords!,
-                  { latitude: business.latitude, longitude: business.longitude }
-                )
+                locationSearch.coords!,
+                { latitude: business.latitude, longitude: business.longitude }
+              )
               : undefined;
-            
+
             return { ...business, distance };
           });
-          
+
           // Then filter by radius (convert km to meters)
           const radiusInMeters = locationSearch.radius * 1000;
-          
+
           const filteredCoupons = couponsWithDistance.filter(coupon => {
             if (coupon.distance === undefined) {
               console.log(`⚠️ [useSearch] Coupon "${coupon.title}" has no location - excluding`);
               return false;
             }
-            
+
             const withinRadius = coupon.distance <= radiusInMeters;
             const distanceKm = (coupon.distance / 1000).toFixed(1);
-            
+
             if (!withinRadius) {
               console.log(`📍 [useSearch] Coupon "${coupon.title}" is ${distanceKm}km away - outside ${locationSearch.radius}km radius`);
             } else {
               console.log(`📍 [useSearch] Coupon "${coupon.title}" is ${distanceKm}km away - within range`);
             }
-            
+
             return withinRadius;
           });
-          
+
           const filteredBusinesses = businessesWithDistance.filter(business => {
             if (business.distance === undefined) {
               console.log(`⚠️ [useSearch] Business "${business.business_name}" has no location - excluding`);
               return false;
             }
-            
+
             const withinRadius = business.distance <= radiusInMeters;
             const distanceKm = (business.distance / 1000).toFixed(1);
-            
+
             if (!withinRadius) {
               console.log(`📍 [useSearch] Business "${business.business_name}" is ${distanceKm}km away - outside ${locationSearch.radius}km radius`);
             } else {
               console.log(`📍 [useSearch] Business "${business.business_name}" is ${distanceKm}km away - within range`);
             }
-            
+
             return withinRadius;
           });
-          
+
           console.log(`📍 [useSearch] Location filtering results: ${prev.coupons.length} → ${filteredCoupons.length} coupons, ${prev.businesses.length} → ${filteredBusinesses.length} businesses`);
-          
+
           return {
             ...prev,
             coupons: filteredCoupons,
@@ -447,7 +471,7 @@ export const useSearch = (options: UseSearchOptions = {}) => {
             totalBusinesses: filteredBusinesses.length
           };
         });
-        
+
         // Sort by distance if distance sort is selected
         if (searchState.sort.field === 'distance') {
           setResults(prev => ({
@@ -492,17 +516,17 @@ export const useSearch = (options: UseSearchOptions = {}) => {
    */
   const refreshCollectionState = useCallback(async () => {
     if (!user?.id) return;
-    
+
     try {
       const { data: userCollections } = await supabase
         .from('user_coupon_collections')
         .select('coupon_id, status')
         .eq('user_id', user.id)
         .eq('status', 'active');
-      
+
       if (userCollections) {
         const collectedIds = new Set(userCollections.map(c => c.coupon_id));
-        
+
         // Update results with new collection state
         setResults(prev => ({
           ...prev,
@@ -536,9 +560,9 @@ export const useSearch = (options: UseSearchOptions = {}) => {
   const updateUrlParams = useCallback((query: SearchQuery) => {
     // Only update URL if we have a meaningful query
     if (!query.q.trim()) return;
-    
+
     const params = new URLSearchParams();
-    
+
     params.set('q', query.q);
     if (query.sort.field !== defaultSort.field) params.set('sort', query.sort.field);
     if (query.sort.order !== defaultSort.order) params.set('order', query.sort.order);
@@ -565,7 +589,7 @@ export const useSearch = (options: UseSearchOptions = {}) => {
    */
   const setQuery = useCallback((query: string) => {
     console.log('🔍 [useSearch] setQuery called with:', query);
-    
+
     setSearchState(prev => ({
       ...prev,
       query,
@@ -575,7 +599,7 @@ export const useSearch = (options: UseSearchOptions = {}) => {
     // Use immediate search with the NEW query value to avoid stale closures
     if (autoSearch && query.trim()) {
       console.log('🔍 [useSearch] Triggering immediate search with query:', query);
-      
+
       // Create query object with the NEW value, not from state
       const immediateQuery: SearchQuery = {
         q: query, // Use the fresh query value
@@ -583,7 +607,7 @@ export const useSearch = (options: UseSearchOptions = {}) => {
         sort: searchState.sort,
         pagination: { page: 1, limit: searchState.pagination.limit }
       };
-      
+
       performSearch(immediateQuery, false);
     }
   }, [autoSearch, performSearch, searchState.filters, searchState.sort, searchState.pagination.limit]);
@@ -706,13 +730,13 @@ export const useSearch = (options: UseSearchOptions = {}) => {
       // collectCoupon from useUserCoupons expects (couponId, source)
       // Using 'direct_search' as the source (matches DB constraint)
       const success = await collectCoupon(couponId, 'direct_search');
-      
+
       if (success) {
         // Refresh the collection state from database
         await refreshCollectionState();
         // Note: collectCoupon already shows success toast
       }
-      
+
       return success;
     } catch (error: any) {
       console.error('❌ [useSearch] Collection error:', error);
@@ -752,7 +776,7 @@ export const useSearch = (options: UseSearchOptions = {}) => {
   const goToCoupon = useCallback((couponId: string) => {
     navigate(`/coupon/${couponId}`);
   }, [navigate]);
-  
+
   /**
    * Enable location-based search
    */
@@ -768,7 +792,7 @@ export const useSearch = (options: UseSearchOptions = {}) => {
           radius,
           sortByDistance: false
         });
-        
+
         console.log('📍 [useSearch] Location search enabled, autoSearch:', autoSearch);
         // Trigger search with location after state is set
         if (autoSearch) {
@@ -778,7 +802,7 @@ export const useSearch = (options: UseSearchOptions = {}) => {
             performSearch();
           }, 10);
         }
-        
+
         return true;
       }
     } catch (error) {
@@ -787,7 +811,7 @@ export const useSearch = (options: UseSearchOptions = {}) => {
     }
     return false;
   }, [geolocation, autoSearch, performSearch]);
-  
+
   /**
    * Disable location-based search
    */
@@ -799,7 +823,7 @@ export const useSearch = (options: UseSearchOptions = {}) => {
       radius: 10,
       sortByDistance: false
     });
-    
+
     console.log('📍 [useSearch] Location search disabled, autoSearch:', autoSearch);
     // Trigger search without location after state is updated
     if (autoSearch) {
@@ -810,7 +834,7 @@ export const useSearch = (options: UseSearchOptions = {}) => {
       }, 10);
     }
   }, [autoSearch, performSearch]);
-  
+
   /**
    * Set search radius for location-based search
    */
@@ -819,12 +843,12 @@ export const useSearch = (options: UseSearchOptions = {}) => {
       ...prev,
       radius
     }));
-    
+
     if (locationSearch.enabled && autoSearch) {
       performSearch();
     }
   }, [locationSearch.enabled, autoSearch, performSearch]);
-  
+
   /**
    * Toggle distance-based sorting
    */
@@ -833,12 +857,12 @@ export const useSearch = (options: UseSearchOptions = {}) => {
       ...prev,
       sortByDistance: !prev.sortByDistance
     }));
-    
+
     if (locationSearch.enabled && autoSearch) {
       performSearch();
     }
   }, [locationSearch.enabled, autoSearch, performSearch]);
-  
+
   /**
    * Get formatted distance for a result
    */
@@ -858,7 +882,7 @@ export const useSearch = (options: UseSearchOptions = {}) => {
         query: urlQuery,
         pagination: { ...prev.pagination, page: 1 }
       }));
-      
+
       // Only trigger search if auto-search is enabled and we have a valid query
       if (autoSearch && urlQuery.trim()) {
         debouncedSearch();
@@ -940,7 +964,7 @@ export const useSearch = (options: UseSearchOptions = {}) => {
     collectCoupon: handleCollectCoupon,
     goToBusiness,
     goToCoupon,
-    
+
     // Location actions
     enableLocationSearch,
     disableLocationSearch,
@@ -950,7 +974,7 @@ export const useSearch = (options: UseSearchOptions = {}) => {
 
     // Computed
     activeFiltersCount,
-    
+
     // Location state
     location: {
       enabled: locationSearch.enabled,
@@ -962,7 +986,7 @@ export const useSearch = (options: UseSearchOptions = {}) => {
       isSupported: geolocation.supported,
       error: geolocation.error
     },
-    
+
     // Utils
     searchState: {
       isEmpty: !searchState.query.trim() && activeFiltersCount === 0,
