@@ -537,8 +537,11 @@ class MessagingService {
           is_blocked,  // ✅ Add is_blocked field
         };
       });
-    } catch (error) {
-      console.error('❌ Error fetching conversations:', error);
+    } catch (error: any) {
+      // Only log non-auth errors
+      if (!error?.message?.includes('Not authenticated')) {
+        console.error('❌ Error fetching conversations:', error);
+      }
       throw error;
     }
   }

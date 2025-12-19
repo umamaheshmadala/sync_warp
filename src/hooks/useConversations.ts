@@ -53,12 +53,19 @@ export function useConversations() {
   const isFetchingRef = useRef(false)
   const shouldRefetchRef = useRef(false)
 
-  const { user } = useAuthStore()
+  const { user, loading: authLoading, initialized: authInitialized } = useAuthStore()
 
   // Fetch conversations - using useRef to make it stable
   const fetchConversationsRef = useRef(async () => {
+    // Skip if auth is not ready
+    const authState = useAuthStore.getState()
+    if (authState.loading || !authState.initialized) {
+      console.log('⏭️ Skipping conversation fetch - auth not ready')
+      return
+    }
+
     // Skip if user is not authenticated
-    if (!useAuthStore.getState().user?.id) {
+    if (!authState.user?.id) {
       console.log('⏭️ Skipping conversation fetch - not authenticated')
       return
     }
@@ -81,9 +88,16 @@ export function useConversations() {
         setConversations(data)
       } while (shouldRefetchRef.current)
 
-    } catch (error) {
+    } catch (error: any) {
+      // Check if this is an auth error - silently ignore these
+      const isAuthError = error?.message?.includes('Not authenticated') || error?.message?.includes('auth')
+      if (isAuthError) {
+        // Silently ignore auth errors - user is not logged in
+        return
+      }
+
       console.error('Failed to fetch conversations:', error)
-      // Only show toast if user is authenticated (not for auth errors)
+      // Only show toast for real errors when user is authenticated
       if (useAuthStore.getState().user?.id) {
         toast.error('Failed to load conversations')
       }
@@ -200,13 +214,19 @@ export function useConversations() {
 
   // Initial fetch and manual refresh event listener
   useEffect(() => {
+    // Wait for auth to be initialized and not loading
+    if (authLoading || !authInitialized) {
+      console.log('⏭️ Skipping conversation fetch - auth loading or not initialized')
+      return
+    }
+
     // Skip if not authenticated
     if (!user?.id) {
       console.log('⏭️ Skipping initial conversation fetch - not authenticated')
       return
     }
 
-    // Initial fetch only when authenticated
+    // Initial fetch only when authenticated and auth is ready
     fetchConversations()
 
     // Listen for manual refresh events (e.g., after blocking/unblocking)
@@ -221,7 +241,7 @@ export function useConversations() {
     return () => {
       window.removeEventListener('conversation-updated', handleConversationUpdate)
     }
-  }, [user?.id, fetchConversations])
+  }, [user?.id, authLoading, authInitialized, fetchConversations])
 
   return {
     conversations,
