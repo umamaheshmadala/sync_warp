@@ -250,6 +250,13 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
   const filteredCoupons = useMemo(() => {
     let filtered = collectedCoupons.filter(collection => {
       const coupon = collection.coupon;
+
+      // Skip collections with undefined coupons
+      if (!coupon) {
+        console.warn('⚠️ [CouponWallet] Collection missing coupon data:', collection.id);
+        return false;
+      }
+
       const status = getCouponStatus(coupon, collection);
 
       // Search filter
@@ -326,15 +333,18 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
 
   // Get wallet statistics
   const walletStats = useMemo(() => {
-    const total = collectedCoupons.length;
-    const active = collectedCoupons.filter(c => getCouponStatus(c.coupon, c) === 'active').length;
-    const expiring = collectedCoupons.filter(c => getCouponStatus(c.coupon, c) === 'expiring').length;
-    const expired = collectedCoupons.filter(c => getCouponStatus(c.coupon, c) === 'expired').length;
-    const redeemed = collectedCoupons.filter(c => getCouponStatus(c.coupon, c) === 'redeemed').length;
-    const shareable = collectedCoupons.filter(c => isCouponShareable(c)).length;
-    const shared = collectedCoupons.filter(c => (c as any).acquisition_method === 'shared_received').length;
+    // Filter out collections with undefined coupons first
+    const validCoupons = collectedCoupons.filter(c => c.coupon != null);
 
-    const totalSavingsPotential = collectedCoupons
+    const total = validCoupons.length;
+    const active = validCoupons.filter(c => getCouponStatus(c.coupon, c) === 'active').length;
+    const expiring = validCoupons.filter(c => getCouponStatus(c.coupon, c) === 'expiring').length;
+    const expired = validCoupons.filter(c => getCouponStatus(c.coupon, c) === 'expired').length;
+    const redeemed = validCoupons.filter(c => getCouponStatus(c.coupon, c) === 'redeemed').length;
+    const shareable = validCoupons.filter(c => isCouponShareable(c)).length;
+    const shared = validCoupons.filter(c => (c as any).acquisition_method === 'shared_received').length;
+
+    const totalSavingsPotential = validCoupons
       .filter(c => getCouponStatus(c.coupon, c) === 'active')
       .reduce((sum, c) => {
         const coupon = c.coupon;

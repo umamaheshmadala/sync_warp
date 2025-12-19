@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { List, LogOut, User, Settings, UserPlus, Search, MessageCircle } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
@@ -54,6 +54,15 @@ export default function Header() {
       }
     }
   }, []);
+
+  // Clear search query when navigating away from search page
+  const location = useLocation();
+  useEffect(() => {
+    if (!location.pathname.startsWith('/search')) {
+      setSearchQuery('');
+      setShowSearchSuggestions(false);
+    }
+  }, [location.pathname]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -134,7 +143,7 @@ export default function Header() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-40 w-full border-b border-gray-200 bg-white shadow-sm">
-      <div className="max-w-7xl mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto flex h-14 items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Left side - Profile Avatar (Mobile) or Logo (Desktop) */}
         <div className="flex items-center space-x-3">
           {/* Mobile: Profile Avatar */}

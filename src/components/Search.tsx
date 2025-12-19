@@ -193,10 +193,10 @@ export default function Search() {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 pb-4">
+    <div className="w-full max-w-7xl mx-auto px-[2.5vw] sm:px-4 md:px-6 lg:px-8 pt-2 pb-4">
       {/* Filters and Controls - Single Row, scrollable on mobile */}
       <div className="mb-3 overflow-x-auto">
-        <div className="flex items-center gap-2 flex-nowrap min-w-max">
+        <div className="flex items-center justify-center gap-3 flex-wrap">
           {/* Nearby Toggle Button */}
           <div className="relative" ref={locationTooltipRef}>
             <button
@@ -273,18 +273,8 @@ export default function Search() {
           {search.hasSearched && (
             <div className="flex border border-gray-200 rounded-lg overflow-hidden">
               <button
-                onClick={() => setActiveTab('all')}
-                className={`px-2 py-1.5 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'all'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
-                  }`}
-              >
-                <span className="sm:hidden">{search.totalResults}</span>
-                <span className="hidden sm:inline">All ({search.totalResults})</span>
-              </button>
-              <button
-                onClick={() => setActiveTab('coupons')}
-                className={`px-2 py-1.5 text-sm font-medium border-l border-gray-200 transition-colors whitespace-nowrap ${activeTab === 'coupons'
+                onClick={() => setActiveTab(activeTab === 'coupons' ? 'all' : 'coupons')}
+                className={`px-2 py-1.5 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'coupons'
                   ? 'bg-indigo-600 text-white'
                   : 'bg-white text-gray-700 hover:bg-gray-50'
                   }`}
@@ -293,7 +283,7 @@ export default function Search() {
                 <span className="hidden sm:inline">Coupons ({search.totalCoupons})</span>
               </button>
               <button
-                onClick={() => setActiveTab('businesses')}
+                onClick={() => setActiveTab(activeTab === 'businesses' ? 'all' : 'businesses')}
                 className={`px-2 py-1.5 text-sm font-medium border-l border-gray-200 transition-colors whitespace-nowrap ${activeTab === 'businesses'
                   ? 'bg-indigo-600 text-white'
                   : 'bg-white text-gray-700 hover:bg-gray-50'
@@ -348,20 +338,20 @@ export default function Search() {
                 <div className="mb-8">
                   {activeTab === 'all' && (
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                      <h3 className="text-[12px] sm:text-lg font-semibold text-gray-900 flex items-center">
                         <span>Coupons & Deals</span>
                         <span className="ml-2 text-sm font-normal text-gray-500">({coupons.length})</span>
                       </h3>
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => setCouponsViewMode('grid')}
-                          className={`p-1 rounded transition-colors ${couponsViewMode === 'grid' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-400 hover:text-gray-600'}`}
+                          className={`p-1.5 w-7 h-7 rounded flex items-center justify-center transition-colors ${couponsViewMode === 'grid' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
                         >
                           <Grid className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => setCouponsViewMode('list')}
-                          className={`p-1 rounded transition-colors ${couponsViewMode === 'list' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-400 hover:text-gray-600'}`}
+                          className={`p-1.5 w-7 h-7 rounded flex items-center justify-center transition-colors ${couponsViewMode === 'list' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
                         >
                           <List className="h-4 w-4" />
                         </button>
@@ -370,8 +360,8 @@ export default function Search() {
                   )}
 
                   <div className={couponsViewMode === 'grid'
-                    ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6'
-                    : 'space-y-4'
+                    ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-6'
+                    : 'space-y-3 sm:space-y-4'
                   }>
                     {coupons.map((coupon) => (
                       <CouponCard
@@ -416,20 +406,20 @@ export default function Search() {
                 <div className="mb-8">
                   {activeTab === 'all' && coupons.length > 0 && (
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                      <h3 className="text-[12px] sm:text-lg font-semibold text-gray-900 flex items-center">
                         <span>Businesses</span>
                         <span className="ml-2 text-sm font-normal text-gray-500">({businesses.length})</span>
                       </h3>
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => setBusinessesViewMode('grid')}
-                          className={`p-1 rounded transition-colors ${businessesViewMode === 'grid' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-400 hover:text-gray-600'}`}
+                          className={`p-1.5 w-7 h-7 rounded flex items-center justify-center transition-colors ${businessesViewMode === 'grid' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
                         >
                           <Grid className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => setBusinessesViewMode('list')}
-                          className={`p-1 rounded transition-colors ${businessesViewMode === 'list' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-400 hover:text-gray-600'}`}
+                          className={`p-1.5 w-7 h-7 rounded flex items-center justify-center transition-colors ${businessesViewMode === 'list' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
                         >
                           <List className="h-4 w-4" />
                         </button>
@@ -438,8 +428,8 @@ export default function Search() {
                   )}
 
                   <div className={businessesViewMode === 'grid'
-                    ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6'
-                    : 'space-y-4'
+                    ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-6'
+                    : 'space-y-3 sm:space-y-4'
                   }>
                     {businesses.map((business) => (
                       <BusinessCard
