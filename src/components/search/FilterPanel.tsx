@@ -1,11 +1,11 @@
 // FilterPanel.tsx
-// Advanced search filter panel with multiple filter options
-// Includes discount ranges, business types, location, and date filters
+// Mobile-friendly search filter panel with simple filter options
+// Redesigned for responsive layout
 
-import React, { useState, useEffect } from 'react';
-import { X, Filter, ChevronDown, ChevronUp, MapPin, Calendar, Percent, Tag } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, Filter, ChevronDown, ChevronUp, Tag, Percent, Check } from 'lucide-react';
 import { SearchFilters } from '../../services/searchService';
-import { CouponType, DiscountType, CouponStatus, TargetAudience } from '../../types/coupon';
+import { CouponType } from '../../types/coupon';
 
 interface FilterPanelProps {
   filters: SearchFilters;
@@ -16,12 +16,28 @@ interface FilterPanelProps {
   activeFiltersCount: number;
 }
 
-interface FilterSection {
-  key: string;
-  title: string;
-  icon: React.ReactNode;
-  isExpanded: boolean;
-}
+// Filter button component (to be placed in the scrollable row)
+export const FilterButton: React.FC<{ isOpen: boolean, onToggle: () => void, activeFiltersCount: number }> = ({
+  isOpen, onToggle, activeFiltersCount
+}) => {
+  return (
+    <button
+      onClick={onToggle}
+      className={`flex items-center gap-2 px-2.5 py-1.5 border rounded-lg transition-colors text-sm ${isOpen
+        ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
+        : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+        }`}
+    >
+      <Filter className="w-4 h-4" />
+      <span className="hidden sm:inline">Filters</span>
+      {activeFiltersCount > 0 && (
+        <span className="bg-indigo-600 text-white text-xs rounded-full min-w-[1.25rem] h-5 flex items-center justify-center px-1">
+          {activeFiltersCount}
+        </span>
+      )}
+    </button>
+  );
+};
 
 export const FilterPanel: React.FC<FilterPanelProps> = ({
   filters,
@@ -31,78 +47,29 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
   onToggle,
   activeFiltersCount
 }) => {
-  // Track which filter sections are expanded
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    new Set(['couponType', 'discountValue'])
-  );
+  const panelRef = useRef<HTMLDivElement>(null);
 
-  // Filter section configuration
-  const filterSections: FilterSection[] = [
-    {
-      key: 'couponType',
-      title: 'Coupon Type',
-      icon: <Tag className="w-4 h-4" />,
-      isExpanded: expandedSections.has('couponType')
-    },
-    {
-      key: 'discountValue',
-      title: 'Discount Amount',
-      icon: <Percent className="w-4 h-4" />,
-      isExpanded: expandedSections.has('discountValue')
-    },
-    {
-      key: 'location',
-      title: 'Location & Distance',
-      icon: <MapPin className="w-4 h-4" />,
-      isExpanded: expandedSections.has('location')
-    },
-    {
-      key: 'validity',
-      title: 'Validity Period',
-      icon: <Calendar className="w-4 h-4" />,
-      isExpanded: expandedSections.has('validity')
+  // Close panel when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
+        if (isOpen) onToggle();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
     }
-  ];
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen, onToggle]);
 
-  // Toggle section expansion
-  const toggleSection = (sectionKey: string) => {
-    const newExpanded = new Set(expandedSections);
-    if (newExpanded.has(sectionKey)) {
-      newExpanded.delete(sectionKey);
-    } else {
-      newExpanded.add(sectionKey);
-    }
-    setExpandedSections(newExpanded);
-  };
-
-  // Update coupon types filter
-  const updateCouponTypes = (type: CouponType, checked: boolean) => {
-    const currentTypes = filters.couponTypes || [];
-    const newTypes = checked
-      ? [...currentTypes, type]
-      : currentTypes.filter(t => t !== type);
-    
-    onFiltersChange({ couponTypes: newTypes });
-  };
-
-  // Update discount types filter
-  const updateDiscountTypes = (type: DiscountType, checked: boolean) => {
-    const currentTypes = filters.discountTypes || [];
-    const newTypes = checked
-      ? [...currentTypes, type]
-      : currentTypes.filter(t => t !== type);
-    
-    onFiltersChange({ discountTypes: newTypes });
-  };
-
-  // Coupon type options
-  const couponTypeOptions: { value: CouponType; label: string; description: string }[] = [
-    { value: 'percentage', label: 'Percentage Off', description: 'Get a % discount' },
-    { value: 'fixed_amount', label: 'Fixed Amount Off', description: 'Get ₹ off' },
-    { value: 'buy_x_get_y', label: 'Buy X Get Y', description: 'BOGO deals' },
-    { value: 'free_item', label: 'Free Item', description: 'Get something free' },
-    { value: 'free_shipping', label: 'Free Delivery', description: 'Free shipping/delivery' },
-    { value: 'bundle_deal', label: 'Bundle Deal', description: 'Special combo pricing' }
+  // Coupon type options - simplified
+  const couponTypeOptions: { value: CouponType; label: string }[] = [
+    { value: 'percentage', label: 'Percentage Off' },
+    { value: 'fixed_amount', label: 'Fixed Amount Off' },
+    { value: 'buy_x_get_y', label: 'Buy X Get Y' },
+    { value: 'free_item', label: 'Free Item' },
+    { value: 'free_shipping', label: 'Free Delivery' },
   ];
 
   // Discount range options
@@ -110,314 +77,142 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
     { min: 0, max: 10, label: 'Up to 10%' },
     { min: 10, max: 25, label: '10% - 25%' },
     { min: 25, max: 50, label: '25% - 50%' },
-    { min: 50, max: 100, label: '50% or more' }
+    { min: 50, max: 100, label: '50%+' },
   ];
 
-  // Fixed amount ranges
-  const fixedAmountRanges = [
-    { min: 0, max: 100, label: 'Up to ₹100' },
-    { min: 100, max: 500, label: '₹100 - ₹500' },
-    { min: 500, max: 1000, label: '₹500 - ₹1000' },
-    { min: 1000, max: 10000, label: '₹1000+' }
-  ];
+  // Update coupon types filter
+  const toggleCouponType = (type: CouponType) => {
+    const currentTypes = filters.couponTypes || [];
+    const newTypes = currentTypes.includes(type)
+      ? currentTypes.filter(t => t !== type)
+      : [...currentTypes, type];
+    onFiltersChange({ couponTypes: newTypes.length > 0 ? newTypes : undefined });
+  };
 
-  if (!isOpen) {
-    return (
-      <button
-        onClick={onToggle}
-        className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-      >
-        <Filter className="w-4 h-4" />
-        <span>Filters</span>
-        {activeFiltersCount > 0 && (
-          <div className="bg-indigo-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-            {activeFiltersCount}
-          </div>
-        )}
-      </button>
-    );
-  }
+  // Set discount range
+  const setDiscountRange = (min: number, max: number) => {
+    const isCurrentlySelected = filters.minDiscountValue === min && filters.maxDiscountValue === max;
+    if (isCurrentlySelected) {
+      onFiltersChange({ minDiscountValue: undefined, maxDiscountValue: undefined });
+    } else {
+      onFiltersChange({ minDiscountValue: min, maxDiscountValue: max });
+    }
+  };
 
+  if (!isOpen) return null;
+
+  // Filter dropdown panel - compact dropdown
   return (
-    <div className="bg-white border border-gray-200 rounded-lg shadow-lg">
+    <div
+      ref={panelRef}
+      className="absolute left-0 top-full mt-2 w-[280px] bg-white border border-gray-200 rounded-lg shadow-xl z-50 max-h-[60vh] overflow-hidden"
+    >
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200">
-        <div className="flex items-center space-x-2">
-          <Filter className="w-5 h-5 text-gray-600" />
-          <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
+      <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100">
+        <div className="flex items-center gap-2">
+          <Filter className="w-4 h-4 text-gray-600" />
+          <span className="font-medium text-gray-900 text-sm">Filters</span>
           {activeFiltersCount > 0 && (
-            <div className="bg-indigo-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+            <span className="bg-indigo-100 text-indigo-700 text-xs rounded-full px-1.5 py-0.5">
               {activeFiltersCount}
-            </div>
+            </span>
           )}
         </div>
-        
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-2">
           {activeFiltersCount > 0 && (
             <button
               onClick={onClearFilters}
-              className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+              className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
             >
-              Clear All
+              Clear
             </button>
           )}
-          <button
-            onClick={onToggle}
-            className="p-1 hover:bg-gray-100 rounded"
-          >
-            <X className="w-5 h-5 text-gray-500" />
+          <button onClick={onToggle} className="p-1 hover:bg-gray-100 rounded">
+            <X className="w-4 h-4 text-gray-500" />
           </button>
         </div>
       </div>
 
-      {/* Filter Sections */}
-      <div className="max-h-96 overflow-y-auto">
-        {/* Coupon Type Section */}
-        <div className="border-b border-gray-100">
-          <button
-            onClick={() => toggleSection('couponType')}
-            className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50"
-          >
-            <div className="flex items-center space-x-2">
-              <Tag className="w-4 h-4 text-gray-600" />
-              <span className="font-medium text-gray-900">Coupon Type</span>
-            </div>
-            {expandedSections.has('couponType') ? (
-              <ChevronUp className="w-4 h-4 text-gray-500" />
-            ) : (
-              <ChevronDown className="w-4 h-4 text-gray-500" />
-            )}
-          </button>
-
-          {expandedSections.has('couponType') && (
-            <div className="px-4 pb-4">
-              <div className="space-y-3">
-                {couponTypeOptions.map((option) => (
-                  <label key={option.value} className="flex items-start space-x-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={filters.couponTypes?.includes(option.value) || false}
-                      onChange={(e) => updateCouponTypes(option.value, e.target.checked)}
-                      className="mt-1 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-gray-900">{option.label}</div>
-                      <div className="text-xs text-gray-500">{option.description}</div>
-                    </div>
-                  </label>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Discount Value Section */}
-        <div className="border-b border-gray-100">
-          <button
-            onClick={() => toggleSection('discountValue')}
-            className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50"
-          >
-            <div className="flex items-center space-x-2">
-              <Percent className="w-4 h-4 text-gray-600" />
-              <span className="font-medium text-gray-900">Discount Amount</span>
-            </div>
-            {expandedSections.has('discountValue') ? (
-              <ChevronUp className="w-4 h-4 text-gray-500" />
-            ) : (
-              <ChevronDown className="w-4 h-4 text-gray-500" />
-            )}
-          </button>
-
-          {expandedSections.has('discountValue') && (
-            <div className="px-4 pb-4">
-              <div className="space-y-4">
-                {/* Percentage Discounts */}
-                <div>
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">Percentage Discounts</h4>
-                  <div className="space-y-2">
-                    {discountRanges.map((range, index) => (
-                      <label key={index} className="flex items-center space-x-3 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="discountRange"
-                          checked={
-                            filters.minDiscountValue === range.min && 
-                            filters.maxDiscountValue === range.max
-                          }
-                          onChange={() => onFiltersChange({
-                            minDiscountValue: range.min,
-                            maxDiscountValue: range.max
-                          })}
-                          className="text-indigo-600 focus:ring-indigo-500"
-                        />
-                        <span className="text-sm text-gray-700">{range.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Fixed Amount Discounts */}
-                <div>
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">Fixed Amount Off</h4>
-                  <div className="space-y-2">
-                    {fixedAmountRanges.map((range, index) => (
-                      <label key={index} className="flex items-center space-x-3 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="discountRange"
-                          checked={
-                            filters.minDiscountValue === range.min && 
-                            filters.maxDiscountValue === range.max
-                          }
-                          onChange={() => onFiltersChange({
-                            minDiscountValue: range.min,
-                            maxDiscountValue: range.max
-                          })}
-                          className="text-indigo-600 focus:ring-indigo-500"
-                        />
-                        <span className="text-sm text-gray-700">{range.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Clear discount filter */}
-                {(filters.minDiscountValue !== undefined || filters.maxDiscountValue !== undefined) && (
-                  <button
-                    onClick={() => onFiltersChange({
-                      minDiscountValue: undefined,
-                      maxDiscountValue: undefined
-                    })}
-                    className="text-xs text-indigo-600 hover:text-indigo-700"
-                  >
-                    Clear discount filter
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Location Section */}
-        <div className="border-b border-gray-100">
-          <button
-            onClick={() => toggleSection('location')}
-            className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50"
-          >
-            <div className="flex items-center space-x-2">
-              <MapPin className="w-4 h-4 text-gray-600" />
-              <span className="font-medium text-gray-900">Location</span>
-            </div>
-            {expandedSections.has('location') ? (
-              <ChevronUp className="w-4 h-4 text-gray-500" />
-            ) : (
-              <ChevronDown className="w-4 h-4 text-gray-500" />
-            )}
-          </button>
-
-          {expandedSections.has('location') && (
-            <div className="px-4 pb-4">
-              <div className="space-y-4">
-                {/* Business Name */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Business Name
-                  </label>
-                  <input
-                    type="text"
-                    value={filters.businessName || ''}
-                    onChange={(e) => onFiltersChange({ businessName: e.target.value || undefined })}
-                    placeholder="Enter business name"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
-                  />
-                </div>
-
-                {/* Distance Filter */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Maximum Distance
-                  </label>
-                  <div className="space-y-2">
-                    {[1, 5, 10, 25, 50].map((distance) => (
-                      <label key={distance} className="flex items-center space-x-3 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="distance"
-                          checked={filters.distance === distance}
-                          onChange={() => onFiltersChange({ distance })}
-                          className="text-indigo-600 focus:ring-indigo-500"
-                        />
-                        <span className="text-sm text-gray-700">Within {distance}km</span>
-                      </label>
-                    ))}
-                    <label className="flex items-center space-x-3 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="distance"
-                        checked={!filters.distance}
-                        onChange={() => onFiltersChange({ distance: undefined })}
-                        className="text-indigo-600 focus:ring-indigo-500"
-                      />
-                      <span className="text-sm text-gray-700">Any distance</span>
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Validity Section */}
+      {/* Filter content */}
+      <div className="max-h-64 overflow-y-auto px-3 py-2 space-y-3">
+        {/* Coupon Type */}
         <div>
-          <button
-            onClick={() => toggleSection('validity')}
-            className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50"
-          >
-            <div className="flex items-center space-x-2">
-              <Calendar className="w-4 h-4 text-gray-600" />
-              <span className="font-medium text-gray-900">Validity</span>
-            </div>
-            {expandedSections.has('validity') ? (
-              <ChevronUp className="w-4 h-4 text-gray-500" />
-            ) : (
-              <ChevronDown className="w-4 h-4 text-gray-500" />
-            )}
-          </button>
-
-          {expandedSections.has('validity') && (
-            <div className="px-4 pb-4">
-              <div className="space-y-4">
-                {/* Valid Only Toggle */}
-                <label className="flex items-center space-x-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={filters.validOnly || false}
-                    onChange={(e) => onFiltersChange({ validOnly: e.target.checked })}
-                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                  />
-                  <div>
-                    <div className="text-sm font-medium text-gray-900">Show valid coupons only</div>
-                    <div className="text-xs text-gray-500">Exclude expired coupons</div>
-                  </div>
-                </label>
-
-                {/* Available Only Toggle */}
-                <label className="flex items-center space-x-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={filters.availableOnly || false}
-                    onChange={(e) => onFiltersChange({ availableOnly: e.target.checked })}
-                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                  />
-                  <div>
-                    <div className="text-sm font-medium text-gray-900">Show available coupons only</div>
-                    <div className="text-xs text-gray-500">Exclude exhausted coupons</div>
-                  </div>
-                </label>
-              </div>
-            </div>
-          )}
+          <h4 className="text-xs font-medium text-gray-700 mb-1.5">Coupon Type</h4>
+          <div className="flex flex-wrap gap-1.5">
+            {couponTypeOptions.map((option) => {
+              const isSelected = filters.couponTypes?.includes(option.value);
+              return (
+                <button
+                  key={option.value}
+                  onClick={() => toggleCouponType(option.value)}
+                  className={`px-2 py-1 text-xs rounded-full border transition-colors ${isSelected
+                    ? 'bg-indigo-100 border-indigo-300 text-indigo-700'
+                    : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
+                    }`}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
+
+        {/* Discount Amount */}
+        <div>
+          <h4 className="text-xs font-medium text-gray-700 mb-1.5">Discount Range</h4>
+          <div className="flex flex-wrap gap-1.5">
+            {discountRanges.map((range, index) => {
+              const isSelected = filters.minDiscountValue === range.min && filters.maxDiscountValue === range.max;
+              return (
+                <button
+                  key={index}
+                  onClick={() => setDiscountRange(range.min, range.max)}
+                  className={`px-2 py-1 text-xs rounded-full border transition-colors ${isSelected
+                    ? 'bg-indigo-100 border-indigo-300 text-indigo-700'
+                    : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
+                    }`}
+                >
+                  {range.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Quick Toggles */}
+        <div>
+          <h4 className="text-xs font-medium text-gray-700 mb-1.5">Quick Filters</h4>
+          <div className="flex flex-wrap gap-1.5">
+            <label className="flex items-center gap-1.5 cursor-pointer px-2 py-1 rounded-full border border-gray-200 hover:bg-gray-50">
+              <input
+                type="checkbox"
+                checked={filters.validOnly || false}
+                onChange={(e) => onFiltersChange({ validOnly: e.target.checked || undefined })}
+                className="w-3 h-3 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+              />
+              <span className="text-xs text-gray-600">Valid</span>
+            </label>
+            <label className="flex items-center gap-1.5 cursor-pointer px-2 py-1 rounded-full border border-gray-200 hover:bg-gray-50">
+              <input
+                type="checkbox"
+                checked={filters.availableOnly || false}
+                onChange={(e) => onFiltersChange({ availableOnly: e.target.checked || undefined })}
+                className="w-3 h-3 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+              />
+              <span className="text-xs text-gray-600">Available</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      {/* Apply button */}
+      <div className="px-3 py-2 border-t border-gray-100">
+        <button
+          onClick={onToggle}
+          className="w-full py-1.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
+        >
+          Apply Filters
+        </button>
       </div>
     </div>
   );

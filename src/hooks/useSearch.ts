@@ -22,6 +22,7 @@ import searchService, {
 import { toast } from 'react-hot-toast';
 import { useGeolocation, LocationCoords } from './useGeolocation';
 import { calculateDistance, formatDistance, getPreferredDistanceUnit, sortByDistance } from '../utils/locationUtils';
+import { supabase } from '../lib/supabase';
 
 // Hook configuration
 interface UseSearchOptions {
@@ -926,7 +927,10 @@ export const useSearch = (options: UseSearchOptions = {}) => {
   // Computed values
   const hasResults = results.coupons.length > 0 || results.businesses.length > 0;
   const totalResults = results.totalCoupons + results.totalBusinesses;
-  const activeFiltersCount = Object.values(searchState.filters).filter(Boolean).length;
+  // Only count user-facing filters, not default backend filters like validOnly/isPublic
+  const activeFiltersCount = Object.entries(searchState.filters)
+    .filter(([key, value]) => !['validOnly', 'isPublic'].includes(key) && Boolean(value))
+    .length;
 
   return {
     // State

@@ -121,10 +121,9 @@ export default function Header() {
     localStorage.setItem('recent_searches', JSON.stringify(recent));
     setRecentSearches(recent.map(s => s.query).slice(0, 5));
 
-    // Navigate to search results
+    // Navigate to search results (keep query visible in search box)
     navigate(`/search?q=${encodeURIComponent(query)}`);
     setShowSearchSuggestions(false);
-    setSearchQuery('');
     searchInputRef.current?.blur();
   };
 

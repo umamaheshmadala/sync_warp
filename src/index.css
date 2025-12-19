@@ -61,11 +61,22 @@
 html,
 body {
   width: 100%;
+  max-width: 100vw;
   overflow-x: hidden;
   position: relative;
   -webkit-overflow-scrolling: touch;
   font-size: 16px;
   /* Base size for mobile readability */
+}
+
+/* Ensure container classes don't exceed viewport */
+.max-w-7xl,
+.max-w-5xl,
+.max-w-4xl,
+.max-w-3xl,
+.max-w-2xl {
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 /* Prevent iOS Safari from moving fixed elements during scroll */

@@ -4,10 +4,10 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
-import { Search as SearchIcon, Filter, MapPin, Star, ArrowUpDown, Grid, List, Plus, Navigation, Loader2, AlertCircle, Store, Tag, Package, TrendingUp } from 'lucide-react'
+import { Search as SearchIcon, Filter, MapPin, Star, ChevronDown, Grid, List, Plus, Navigation, Loader2, AlertCircle, Store, Tag, Package, TrendingUp } from 'lucide-react'
 import { useSearch } from '../hooks/useSearch'
 import { useSearchTracking } from '../hooks/useSearchAnalytics'
-import { CouponCard, BusinessCard, FilterPanel, SearchSuggestions } from './search/index'
+import { CouponCard, BusinessCard, FilterPanel, FilterButton, SearchSuggestions } from './search/index'
 import { SearchSortField } from '../services/searchService'
 import { useAuthStore } from '../store/authStore'
 import CouponDetailsModal from './modals/CouponDetailsModal'
@@ -30,7 +30,8 @@ export default function Search() {
   // Local state for UI
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false)
   const [isSuggestionsVisible, setIsSuggestionsVisible] = useState(false)
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [couponsViewMode, setCouponsViewMode] = useState<'grid' | 'list'>('grid')
+  const [businessesViewMode, setBusinessesViewMode] = useState<'grid' | 'list'>('grid')
   const [activeTab, setActiveTab] = useState<'all' | 'coupons' | 'businesses'>('all')
   const [localQuery, setLocalQuery] = useState(search.query)
   const [suggestionsLoading, setSuggestionsLoading] = useState(false)
@@ -192,254 +193,137 @@ export default function Search() {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-1 pb-4">
-      {/* Search Header - Title and Action Buttons */}
-      <div className="flex items-center justify-between mb-3">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Find Local Deals</h1>
-          <p className="text-xs text-gray-500">Discover businesses, products, and offers in your area</p>
-        </div>
-        <div className="hidden md:flex items-center space-x-2">
-          <button
-            onClick={() => navigate('/search/advanced')}
-            className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
-          >
-            Advanced Search
-          </button>
-          <button
-            onClick={() => navigate('/discovery')}
-            className="px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
-          >
-            Discover
-          </button>
-        </div>
-      </div>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 pb-4">
+      {/* Filters and Controls - Single Row, scrollable on mobile */}
+      <div className="mb-3 overflow-x-auto">
+        <div className="flex items-center gap-2 flex-nowrap min-w-max">
+          {/* Nearby Toggle Button */}
+          <div className="relative" ref={locationTooltipRef}>
+            <button
+              onClick={() => {
+                if (search.location.error) {
+                  setIsLocationTooltipVisible(!isLocationTooltipVisible)
+                } else if (search.location.enabled) {
+                  search.disableLocationSearch();
+                  setIsLocationTooltipVisible(false)
+                } else {
+                  search.enableLocationSearch();
+                  setIsLocationTooltipVisible(false)
+                }
+              }}
+              disabled={search.location.isLoading || !search.location.isSupported}
+              className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border text-sm transition-colors ${search.location.enabled
+                ? 'bg-blue-50 border-blue-200 text-blue-700'
+                : search.location.error
+                  ? 'bg-red-50 border-red-200 text-red-700'
+                  : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                } disabled:opacity-50`}
+            >
+              {search.location.isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Navigation className={`h-4 w-4 ${search.location.enabled ? 'text-blue-600' : 'text-gray-500'}`} />
+              )}
+              <span className="hidden sm:inline font-medium">Nearby</span>
+            </button>
 
-      {/* Filter Tabs - Non-sticky, integrated into page flow */}
-      <div className="bg-gray-50 rounded-lg border border-gray-200 px-3 py-2 mb-4">
-        <div className="flex items-center space-x-2 overflow-x-auto scrollbar-hide">
-          {filterTabs.map((tab) => {
-            const IconComponent = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
+            {/* Enhanced Location Tooltip */}
+            {isLocationTooltipVisible && (search.location.error || (!search.location.hasPermission && !search.location.enabled)) && (
+              <div className="absolute top-full left-0 mt-2 p-3 bg-white border border-gray-200 rounded-lg shadow-lg text-sm z-20 w-72 max-w-[calc(100vw-2rem)]">
+                {search.location.error ? (
+                  <div>
+                    <div className="flex items-center space-x-2 mb-2">
+                      <AlertCircle className="h-4 w-4 text-red-500" />
+                      <span className="font-medium text-red-700">Location Access Issue</span>
+                    </div>
+                    <p className="text-red-600 text-xs mb-3">{search.location.error.message}</p>
+                    <div className="text-xs text-gray-600">
+                      <p className="mb-2"><strong>To enable location:</strong></p>
+                      <ul className="list-disc list-inside space-y-1">
+                        <li>Click the location icon in your browser's address bar</li>
+                        <li>Select "Allow" for location access</li>
+                        <li>Refresh the page and try again</li>
+                      </ul>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="flex items-center space-x-2 mb-2">
+                      <Navigation className="h-4 w-4 text-blue-500" />
+                      <span className="font-medium text-blue-700">Location Services</span>
+                    </div>
+                    <p className="text-gray-600 text-xs mb-2">
+                      Enable location to see nearby businesses and get personalized recommendations.
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Your location data stays private and is only used to improve search results.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Filter Button - Inside scrollable row */}
+          <FilterButton
+            isOpen={isFilterPanelOpen}
+            onToggle={() => setIsFilterPanelOpen(!isFilterPanelOpen)}
+            activeFiltersCount={search.activeFiltersCount}
+          />
+          {search.hasSearched && (
+            <div className="flex border border-gray-200 rounded-lg overflow-hidden">
               <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center space-x-2 px-3 py-1.5 rounded-full whitespace-nowrap transition-all ${isActive
-                  ? 'bg-indigo-100 text-indigo-700 font-semibold'
-                  : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+                onClick={() => setActiveTab('all')}
+                className={`px-2 py-1.5 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'all'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-50'
                   }`}
               >
-                <IconComponent className="w-4 h-4" />
-                <span className="text-sm">{tab.label}</span>
-                {tab.id === activeTab && (
-                  <span className="ml-1 px-2 py-0.5 bg-indigo-200 text-indigo-800 text-xs rounded-full">
-                    {search.totalResults}
-                  </span>
-                )}
+                <span className="sm:hidden">{search.totalResults}</span>
+                <span className="hidden sm:inline">All ({search.totalResults})</span>
               </button>
-            );
-          })}
+              <button
+                onClick={() => setActiveTab('coupons')}
+                className={`px-2 py-1.5 text-sm font-medium border-l border-gray-200 transition-colors whitespace-nowrap ${activeTab === 'coupons'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-50'
+                  }`}
+              >
+                <Tag className="h-4 w-4 sm:hidden inline" />
+                <span className="hidden sm:inline">Coupons ({search.totalCoupons})</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('businesses')}
+                className={`px-2 py-1.5 text-sm font-medium border-l border-gray-200 transition-colors whitespace-nowrap ${activeTab === 'businesses'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-50'
+                  }`}
+              >
+                <Store className="h-4 w-4 sm:hidden inline" />
+                <span className="hidden sm:inline">Businesses ({search.totalBusinesses})</span>
+              </button>
+            </div>
+          )}
+
+          <ChevronDown className="absolute right-2 top-2 h-4 w-4 text-gray-400 pointer-events-none" />
         </div>
       </div>
 
-      {/* Filters and Controls */}
-      <div className="mb-8 space-y-4">
-        {/* Filter Controls Row */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            {/* Near Me Toggle Button */}
-            <div className="relative" ref={locationTooltipRef}>
-              <button
-                onClick={() => {
-                  if (search.location.error) {
-                    setIsLocationTooltipVisible(!isLocationTooltipVisible)
-                  } else if (search.location.enabled) {
-                    search.disableLocationSearch();
-                    setIsLocationTooltipVisible(false)
-                  } else {
-                    search.enableLocationSearch();
-                    setIsLocationTooltipVisible(false)
-                  }
-                }}
-                onMouseEnter={() => {
-                  if (!search.location.enabled && !search.location.isLoading) {
-                    setIsLocationTooltipVisible(true)
-                  }
-                }}
-                onMouseLeave={() => {
-                  if (!search.location.error) {
-                    setIsLocationTooltipVisible(false)
-                  }
-                }}
-                disabled={search.location.isLoading || !search.location.isSupported}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-lg border transition-colors ${search.location.enabled
-                  ? 'bg-blue-50 border-blue-200 text-blue-700'
-                  : search.location.error
-                    ? 'bg-red-50 border-red-200 text-red-700'
-                    : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
-              >
-                {search.location.isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : search.location.error ? (
-                  <AlertCircle className="h-4 w-4 text-red-500" />
-                ) : (
-                  <Navigation className={`h-4 w-4 ${search.location.enabled ? 'text-blue-600' : 'text-gray-500'
-                    }`} />
-                )}
-                <span className="text-sm font-medium">
-                  {search.location.isLoading
-                    ? 'Locating...'
-                    : search.location.error
-                      ? 'Location Denied'
-                      : search.location.enabled
-                        ? 'Near Me'
-                        : 'Enable Location'
-                  }
-                </span>
-                {search.location.enabled && search.location.coords && (
-                  <span className="text-xs text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded">
-                    {search.location.radius}km
-                  </span>
-                )}
-              </button>
-
-              {/* Enhanced Location Tooltip */}
-              {isLocationTooltipVisible && (search.location.error || (!search.location.hasPermission && !search.location.enabled)) && (
-                <div className="absolute top-full left-0 mt-2 p-3 bg-white border border-gray-200 rounded-lg shadow-lg text-sm z-20 w-80">
-                  {search.location.error ? (
-                    <div>
-                      <div className="flex items-center space-x-2 mb-2">
-                        <AlertCircle className="h-4 w-4 text-red-500" />
-                        <span className="font-medium text-red-700">Location Access Issue</span>
-                      </div>
-                      <p className="text-red-600 text-xs mb-3">{search.location.error.message}</p>
-                      <div className="text-xs text-gray-600">
-                        <p className="mb-2"><strong>To enable location:</strong></p>
-                        <ul className="list-disc list-inside space-y-1">
-                          <li>Click the location icon in your browser's address bar</li>
-                          <li>Select "Allow" for location access</li>
-                          <li>Refresh the page and try again</li>
-                        </ul>
-                      </div>
-                    </div>
-                  ) : (
-                    <div>
-                      <div className="flex items-center space-x-2 mb-2">
-                        <Navigation className="h-4 w-4 text-blue-500" />
-                        <span className="font-medium text-blue-700">Location Services</span>
-                      </div>
-                      <p className="text-gray-600 text-xs mb-2">
-                        Enable location to see nearby businesses and get personalized recommendations.
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Your location data stays private and is only used to improve search results.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Filter Panel Toggle */}
-            <FilterPanel
-              filters={search.filters}
-              onFiltersChange={search.setFilters}
-              onClearFilters={search.clearFilters}
-              isOpen={isFilterPanelOpen}
-              onToggle={() => setIsFilterPanelOpen(!isFilterPanelOpen)}
-              activeFiltersCount={search.activeFiltersCount}
-            />
-
-            {/* Sort Dropdown */}
-            <div className="relative">
-              <select
-                value={search.sort.field}
-                onChange={(e) => handleSortChange(e.target.value as SearchSortField)}
-                className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              >
-                <option value="relevance">Most Relevant</option>
-                <option value="discount_value">Highest Discount</option>
-                <option value="created_at">Newest First</option>
-                <option value="valid_until">Expiring Soon</option>
-                <option value="usage_count">Most Popular</option>
-                <option value="business_name">Business Name</option>
-                {search.location.enabled && search.location.coords && (
-                  <option value="distance">Nearest First</option>
-                )}
-              </select>
-              <ArrowUpDown className="absolute right-2 top-2.5 h-4 w-4 text-gray-400 pointer-events-none" />
-            </div>
-          </div>
-
-          {/* View Toggle */}
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={() => setViewMode('grid')}
-              className={`p-2 rounded-lg transition-colors ${viewMode === 'grid' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-400 hover:text-gray-600'
-                }`}
-            >
-              <Grid className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => setViewMode('list')}
-              className={`p-2 rounded-lg transition-colors ${viewMode === 'list' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-400 hover:text-gray-600'
-                }`}
-            >
-              <List className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
+      {/* Filter Panel Dropdown - Outside scrollable row to avoid clipping */}
+      <div className="relative">
+        <FilterPanel
+          filters={search.filters}
+          onFiltersChange={search.setFilters}
+          onClearFilters={search.clearFilters}
+          isOpen={isFilterPanelOpen}
+          onToggle={() => setIsFilterPanelOpen(!isFilterPanelOpen)}
+          activeFiltersCount={search.activeFiltersCount}
+        />
       </div>
 
       {/* Results Section */}
       {search.hasSearched ? (
-        <div>
-          {/* Results Header with Tabs */}
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                {search.query ? `Search results for "${search.query}"` : 'Search Results'}
-              </h2>
-              <div className="text-sm text-gray-600">
-                {search.totalResults} results found
-                {search.searchTime > 0 && ` in ${search.searchTime}ms`}
-              </div>
-            </div>
-
-            {/* Result Type Tabs */}
-            <div className="flex border border-gray-200 rounded-lg overflow-hidden">
-              <button
-                onClick={() => setActiveTab('all')}
-                className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'all'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
-                  }`}
-              >
-                All ({search.totalResults})
-              </button>
-              <button
-                onClick={() => setActiveTab('coupons')}
-                className={`px-4 py-2 text-sm font-medium border-l border-gray-200 transition-colors ${activeTab === 'coupons'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
-                  }`}
-              >
-                Coupons ({search.totalCoupons})
-              </button>
-              <button
-                onClick={() => setActiveTab('businesses')}
-                className={`px-4 py-2 text-sm font-medium border-l border-gray-200 transition-colors ${activeTab === 'businesses'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
-                  }`}
-              >
-                Businesses ({search.totalBusinesses})
-              </button>
-            </div>
-          </div>
-
+        <div className="w-full">
           {/* Search Status */}
           {search.isSearching && !hasResults ? (
             <div className="flex justify-center py-12">
@@ -463,13 +347,29 @@ export default function Search() {
               {coupons.length > 0 && (
                 <div className="mb-8">
                   {activeTab === 'all' && (
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                      <span>Coupons & Deals</span>
-                      <span className="ml-2 text-sm font-normal text-gray-500">({coupons.length})</span>
-                    </h3>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                        <span>Coupons & Deals</span>
+                        <span className="ml-2 text-sm font-normal text-gray-500">({coupons.length})</span>
+                      </h3>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => setCouponsViewMode('grid')}
+                          className={`p-1 rounded transition-colors ${couponsViewMode === 'grid' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-400 hover:text-gray-600'}`}
+                        >
+                          <Grid className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => setCouponsViewMode('list')}
+                          className={`p-1 rounded transition-colors ${couponsViewMode === 'list' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-400 hover:text-gray-600'}`}
+                        >
+                          <List className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
                   )}
 
-                  <div className={viewMode === 'grid'
+                  <div className={couponsViewMode === 'grid'
                     ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6'
                     : 'space-y-4'
                   }>
@@ -477,7 +377,7 @@ export default function Search() {
                       <CouponCard
                         key={coupon.id}
                         coupon={coupon}
-                        variant={viewMode === 'grid' ? 'default' : 'compact'}
+                        variant={couponsViewMode === 'grid' ? 'default' : 'compact'}
                         onCollect={search.collectCoupon}
                         onBusinessClick={(businessId) => {
                           // Track click for analytics
@@ -503,7 +403,7 @@ export default function Search() {
                           handleCouponClick(coupon);
                         }}
                         showBusiness={true}
-                        showDistance={search.location.enabled && search.location.coords}
+                        showDistance={!!(search.location.enabled && search.location.coords)}
                         getFormattedDistance={search.getFormattedDistance}
                       />
                     ))}
@@ -515,13 +415,29 @@ export default function Search() {
               {businesses.length > 0 && (
                 <div className="mb-8">
                   {activeTab === 'all' && coupons.length > 0 && (
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                      <span>Businesses</span>
-                      <span className="ml-2 text-sm font-normal text-gray-500">({businesses.length})</span>
-                    </h3>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                        <span>Businesses</span>
+                        <span className="ml-2 text-sm font-normal text-gray-500">({businesses.length})</span>
+                      </h3>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => setBusinessesViewMode('grid')}
+                          className={`p-1 rounded transition-colors ${businessesViewMode === 'grid' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-400 hover:text-gray-600'}`}
+                        >
+                          <Grid className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => setBusinessesViewMode('list')}
+                          className={`p-1 rounded transition-colors ${businessesViewMode === 'list' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-400 hover:text-gray-600'}`}
+                        >
+                          <List className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
                   )}
 
-                  <div className={viewMode === 'grid'
+                  <div className={businessesViewMode === 'grid'
                     ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6'
                     : 'space-y-4'
                   }>
@@ -529,7 +445,7 @@ export default function Search() {
                       <BusinessCard
                         key={business.id}
                         business={business}
-                        variant={viewMode === 'grid' ? 'default' : 'compact'}
+                        variant={businessesViewMode === 'grid' ? 'default' : 'compact'}
                         onBusinessClick={(businessId) => {
                           // Track click for analytics
                           if (search.query) {
@@ -541,7 +457,7 @@ export default function Search() {
                           }
                           search.goToBusiness(businessId);
                         }}
-                        showDistance={search.location.enabled && search.location.coords}
+                        showDistance={!!(search.location.enabled && search.location.coords)}
                         showCouponCount={true}
                         getFormattedDistance={search.getFormattedDistance}
                       />
@@ -590,29 +506,31 @@ export default function Search() {
           <h3 className="text-lg font-medium text-gray-900 mb-2">Start your search</h3>
           <p className="text-gray-600">Enter keywords to find businesses, deals, and products</p>
         </div>
-      )}
+      )
+      }
 
       {/* Coupon Details Modal */}
-      {showCouponModal && selectedCoupon && (
-        <CouponDetailsModal
-          coupon={selectedCoupon}
-          isOpen={showCouponModal}
-          onClose={() => {
-            setShowCouponModal(false);
-            setSelectedCoupon(null);
-          }}
-          onCollect={async (couponId) => {
-            const success = await search.collectCoupon(couponId);
-            if (success) {
-              // Update the selected coupon to reflect collected state
-              setSelectedCoupon(prev => ({ ...prev, isCollected: true }));
-            }
-            return success;
-          }}
-          showCollectButton={true}
-          showShareButton={true}
-        />
-      )}
-    </div>
+      {
+        showCouponModal && selectedCoupon && (
+          <CouponDetailsModal
+            coupon={selectedCoupon}
+            isOpen={showCouponModal}
+            onClose={() => {
+              setShowCouponModal(false);
+              setSelectedCoupon(null);
+            }}
+            onCollect={async (couponId) => {
+              const success = await search.collectCoupon(couponId);
+              if (success) {
+                // Update the selected coupon to reflect collected state
+                setSelectedCoupon(prev => ({ ...prev, isCollected: true }));
+              }
+              return success;
+            }}
+            showCollectButton={true}
+          />
+        )
+      }
+    </div >
   );
 }

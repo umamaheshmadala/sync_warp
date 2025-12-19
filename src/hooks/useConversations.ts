@@ -51,11 +51,18 @@ export function useConversations() {
   const isAppActive = useRef(true)
   const pollInterval = useRef<NodeJS.Timeout>()
   const isFetchingRef = useRef(false)
-
   const shouldRefetchRef = useRef(false)
+
+  const { user } = useAuthStore()
 
   // Fetch conversations - using useRef to make it stable
   const fetchConversationsRef = useRef(async () => {
+    // Skip if user is not authenticated
+    if (!useAuthStore.getState().user?.id) {
+      console.log('⏭️ Skipping conversation fetch - not authenticated')
+      return
+    }
+
     // Prevent concurrent fetches but mark for retry
     if (isFetchingRef.current) {
       console.log('⏭️ Fetch in progress - marking for retry')
@@ -76,7 +83,10 @@ export function useConversations() {
 
     } catch (error) {
       console.error('Failed to fetch conversations:', error)
-      toast.error('Failed to load conversations')
+      // Only show toast if user is authenticated (not for auth errors)
+      if (useAuthStore.getState().user?.id) {
+        toast.error('Failed to load conversations')
+      }
     } finally {
       setLoadingConversations(false)
       isFetchingRef.current = false
@@ -87,8 +97,6 @@ export function useConversations() {
   const fetchConversations = useCallback(() => {
     return fetchConversationsRef.current()
   }, [])
-
-  const { user } = useAuthStore()
 
   // Subscribe to real-time conversation updates (conversations + new messages)
   useEffect(() => {
@@ -192,7 +200,13 @@ export function useConversations() {
 
   // Initial fetch and manual refresh event listener
   useEffect(() => {
-    // Initial fetch only ONCE
+    // Skip if not authenticated
+    if (!user?.id) {
+      console.log('⏭️ Skipping initial conversation fetch - not authenticated')
+      return
+    }
+
+    // Initial fetch only when authenticated
     fetchConversations()
 
     // Listen for manual refresh events (e.g., after blocking/unblocking)
@@ -207,8 +221,7 @@ export function useConversations() {
     return () => {
       window.removeEventListener('conversation-updated', handleConversationUpdate)
     }
-    // Empty deps array - only run once on mount
-  }, [])
+  }, [user?.id, fetchConversations])
 
   return {
     conversations,
