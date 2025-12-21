@@ -3,7 +3,7 @@
 // Includes advanced filtering, suggestions, and real-time search results
 
 import { useState, useEffect, useRef } from 'react'
-import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useSearchParams, useNavigate, useLocation } from 'react-router-dom'
 import { Search as SearchIcon, Filter, MapPin, Star, ChevronDown, Grid, List, Plus, Navigation, Loader2, AlertCircle, Store, Tag, Package, TrendingUp } from 'lucide-react'
 import { useSearch } from '../hooks/useSearch'
 import { useSearchTracking } from '../hooks/useSearchAnalytics'
@@ -15,6 +15,7 @@ import CouponDetailsModal from './modals/CouponDetailsModal'
 export default function Search() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  // ... (rest of component)
 
   // Search hook with all functionality
   const search = useSearch({
@@ -524,3 +525,5 @@ export default function Search() {
     </div >
   );
 }
+
+

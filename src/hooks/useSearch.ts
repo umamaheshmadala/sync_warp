@@ -3,7 +3,7 @@
 // Provides search operations, filters, and results management for React components
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useUserCoupons } from './useCoupons';
 // Temporarily using simple search service for testing
@@ -77,6 +77,7 @@ export const useSearch = (options: UseSearchOptions = {}) => {
   const { user } = useAuthStore();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation(); // Use location.search for reliable effect triggering
   const { collectCoupon } = useUserCoupons();
 
   // Geolocation hook
@@ -227,29 +228,11 @@ export const useSearch = (options: UseSearchOptions = {}) => {
     }
   }, [searchState, results]);
 
-  // Auto-search on mount if URL has query param
-  // This is a ref to track if we've already done the initial search
-  const hasPerformedInitialSearchRef = useRef(false);
+  // Auto-search on mount AND when URL query changes
+  // Extract URL query OUTSIDE the effect to use as dependency
+  const urlQueryParam = searchParams.get('q') || '';
 
-  useEffect(() => {
-    const urlQuery = searchParams.get('q');
-    // Only trigger on mount (not on subsequent URL changes) if there's a query
-    if (urlQuery && urlQuery.trim() && !hasPerformedInitialSearchRef.current) {
-      hasPerformedInitialSearchRef.current = true;
-      console.log('🔍 [useSearch] Auto-searching on mount with URL query:', urlQuery);
 
-      // Use setTimeout to ensure state is fully initialized
-      setTimeout(() => {
-        const initialQuery: SearchQuery = {
-          q: urlQuery,
-          filters: { validOnly: true, isPublic: true },
-          sort: defaultSort,
-          pagination: { page: 1, limit: pageSize }
-        };
-        performSearch(initialQuery);
-      }, 0);
-    }
-  }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
    * Perform search with current state
@@ -493,12 +476,13 @@ export const useSearch = (options: UseSearchOptions = {}) => {
         }
       }
 
+      // Update last search ref immediately to prevent loop
+      lastSearchRef.current = queryToUse.q;
+
       // Save to URL if enabled
       if (saveToUrl && !customQuery) {
         updateUrlParams(queryToUse);
       }
-
-      lastSearchRef.current = queryToUse.q;
       return result;
     } catch (error) {
       if (!abortControllerRef.current?.signal.aborted) {
@@ -873,23 +857,7 @@ export const useSearch = (options: UseSearchOptions = {}) => {
     return formatDistance(distanceInMeters, unit);
   }, []);
 
-  // Auto-search when URL params change (with debouncing to prevent excessive updates)
-  useEffect(() => {
-    const urlQuery = searchParams.get('q');
-    if (urlQuery && urlQuery !== searchState.query) {
-      // Update query state directly without triggering auto-search to prevent loops
-      setSearchState(prev => ({
-        ...prev,
-        query: urlQuery,
-        pagination: { ...prev.pagination, page: 1 }
-      }));
 
-      // Only trigger search if auto-search is enabled and we have a valid query
-      if (autoSearch && urlQuery.trim()) {
-        debouncedSearch();
-      }
-    }
-  }, [searchParams, searchState.query, autoSearch, debouncedSearch]);
 
   // Update location search when geolocation changes
   useEffect(() => {
@@ -923,6 +891,17 @@ export const useSearch = (options: UseSearchOptions = {}) => {
       }
     };
   }, []);
+
+  // Sync URL query changes to state (runs on mount due to key-based remounting)
+  useEffect(() => {
+    const urlQuery = searchParams.get('q') || '';
+    if (urlQuery && urlQuery !== lastSearchRef.current) {
+      console.log('🔍 [useSearch] Syncing URL query to state:', urlQuery);
+      // Update ref immediately to prevent loop when setQuery triggers render
+      lastSearchRef.current = urlQuery;
+      setQuery(urlQuery);
+    }
+  }, [searchParams, setQuery]);
 
   // Computed values
   const hasResults = results.coupons.length > 0 || results.businesses.length > 0;
