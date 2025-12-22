@@ -13,7 +13,7 @@ import {
   MessageCircle,
   PlusCircle
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 
 interface Business {
@@ -28,41 +28,40 @@ interface MobileProfileDrawerProps {
   onClose: () => void
 }
 
+// Fetch function for React Query
+async function fetchUserBusinesses(userId: string): Promise<Business[]> {
+  const { data, error } = await supabase
+    .from('businesses')
+    .select('id, business_name, business_type, logo_url')
+    .eq('user_id', userId)
+    .eq('status', 'active')
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+
+  // Map to expected interface
+  return (data || []).map(b => ({
+    id: b.id,
+    name: b.business_name,
+    category: b.business_type,
+    logo_url: b.logo_url
+  }))
+}
+
 export default function MobileProfileDrawer({ isOpen, onClose }: MobileProfileDrawerProps) {
   const navigate = useNavigate()
   const { getBusinessUrl } = useBusinessUrl()
   const { user, profile, signOut } = useAuthStore()
-  const [businesses, setBusinesses] = useState<Business[]>([])
-  const [loadingBusinesses, setLoadingBusinesses] = useState(true)
 
-  // Fetch user's businesses
-  useEffect(() => {
-    const fetchBusinesses = async () => {
-      if (!user?.id) return
-
-      setLoadingBusinesses(true)
-      try {
-        const { data, error } = await supabase
-          .from('businesses')
-          .select('id, name, category, logo_url')
-          .eq('owner_id', user.id)
-          .eq('status', 'active')
-          .order('created_at', { ascending: false })
-
-        if (error) throw error
-        setBusinesses(data || [])
-      } catch (error) {
-        console.error('Error fetching businesses:', error)
-        setBusinesses([])
-      } finally {
-        setLoadingBusinesses(false)
-      }
-    }
-
-    if (isOpen) {
-      fetchBusinesses()
-    }
-  }, [isOpen, user?.id])
+  // Use React Query with SWR pattern - cached data shown immediately
+  const { data: businesses = [], isLoading: loadingBusinesses } = useQuery({
+    queryKey: ['userBusinesses', user?.id],
+    queryFn: () => fetchUserBusinesses(user!.id),
+    enabled: !!user?.id && isOpen,
+    staleTime: 2 * 60 * 1000, // 2 minutes - data considered fresh
+    gcTime: 10 * 60 * 1000, // 10 minutes - cache retained
+    refetchOnWindowFocus: false,
+  })
 
   const handleNavigation = (path: string) => {
     navigate(path)

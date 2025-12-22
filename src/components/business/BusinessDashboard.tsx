@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useBusinessUrl } from '../../hooks/useBusinessUrl';
@@ -30,6 +30,7 @@ import { useAuthStore } from '../../store/authStore';
 import { toast } from 'react-hot-toast';
 import { OnboardingReminderBanner } from './OnboardingReminderBanner';
 import { FollowerMetricsWidget } from './FollowerMetricsWidget';
+import { useQuery } from '@tanstack/react-query';
 
 // TypeScript interfaces
 interface Business {
@@ -87,88 +88,56 @@ interface BusinessCardProps {
   business: Business;
 }
 
+// Fetch function for React Query
+async function fetchUserBusinesses(userId: string): Promise<Business[]> {
+  const { data, error } = await supabase
+    .from('businesses')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return data || [];
+}
+
 const BusinessDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { getBusinessUrl } = useBusinessUrl();
   const { user } = useAuthStore();
-  const [businesses, setBusinesses] = useState<Business[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<BusinessStats>({
-    totalBusinesses: 0,
-    activeBusinesses: 0,
-    pendingBusinesses: 0,
-    totalReviews: 0,
-    averageRating: 0,
-    totalCheckins: 0
+
+  // Use React Query with SWR pattern - cached data shown immediately
+  const { data: businesses = [], isLoading: loading } = useQuery({
+    queryKey: ['businessDashboard', user?.id],
+    queryFn: () => fetchUserBusinesses(user!.id),
+    enabled: !!user?.id,
+    staleTime: 2 * 60 * 1000, // 2 minutes - data considered fresh
+    gcTime: 10 * 60 * 1000, // 10 minutes - cache retained
+    refetchOnWindowFocus: false,
   });
 
-  // Fetch user's businesses
-  useEffect(() => {
-    let isMounted = true;
+  // Calculate stats from businesses (memoized)
+  const stats = useMemo<BusinessStats>(() => {
+    const totalBusinesses = businesses.length;
+    const activeBusinesses = businesses.filter(b => b.status === 'active').length;
+    const pendingBusinesses = businesses.filter(b => b.status === 'pending').length;
+    const totalReviews = businesses.reduce((sum, b) => sum + (b.total_reviews || 0), 0);
+    const totalCheckins = businesses.reduce((sum, b) => sum + (b.total_checkins || 0), 0);
 
-    const fetchBusinesses = async () => {
-      if (!user?.id) return;
+    // Calculate average rating across all businesses
+    const businessesWithRatings = businesses.filter(b => b.average_rating > 0);
+    const averageRating = businessesWithRatings.length > 0
+      ? businessesWithRatings.reduce((sum, b) => sum + b.average_rating, 0) / businessesWithRatings.length
+      : 0;
 
-      try {
-        setLoading(true);
-
-        // Fetch businesses owned by the user
-        const { data: businessData, error: businessError } = await supabase
-          .from('businesses')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (businessError) throw businessError;
-
-        // Only update state if component is still mounted
-        if (!isMounted) return;
-
-        setBusinesses(businessData || []);
-
-        // Calculate statistics
-        const totalBusinesses = businessData?.length || 0;
-        const activeBusinesses = businessData?.filter(b => b.status === 'active').length || 0;
-        const pendingBusinesses = businessData?.filter(b => b.status === 'pending').length || 0;
-        const totalReviews = businessData?.reduce((sum, b) => sum + (b.total_reviews || 0), 0) || 0;
-        const totalCheckins = businessData?.reduce((sum, b) => sum + (b.total_checkins || 0), 0) || 0;
-
-        // Calculate average rating across all businesses
-        const businessesWithRatings = businessData?.filter(b => b.average_rating > 0) || [];
-        const averageRating = businessesWithRatings.length > 0
-          ? businessesWithRatings.reduce((sum, b) => sum + b.average_rating, 0) / businessesWithRatings.length
-          : 0;
-
-        if (isMounted) {
-          setStats({
-            totalBusinesses,
-            activeBusinesses,
-            pendingBusinesses,
-            totalReviews,
-            averageRating,
-            totalCheckins
-          });
-        }
-
-      } catch (error) {
-        if (isMounted) {
-          console.error('Error fetching businesses:', error);
-          toast.error('Failed to load your businesses');
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
+    return {
+      totalBusinesses,
+      activeBusinesses,
+      pendingBusinesses,
+      totalReviews,
+      averageRating,
+      totalCheckins
     };
-
-    fetchBusinesses();
-
-    // Cleanup function to prevent state updates on unmounted component
-    return () => {
-      isMounted = false;
-    };
-  }, [user?.id]); // Only depend on user.id, not the entire user object
+  }, [businesses]);
 
   // Get status badge
   const getStatusBadge = (status) => {
