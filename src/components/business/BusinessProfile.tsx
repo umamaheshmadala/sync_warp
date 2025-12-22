@@ -1549,7 +1549,7 @@ const BusinessProfile: React.FC = () => {
           {/* Tabs */}
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="border-b border-gray-200">
-              <nav className="-mb-px flex space-x-8">
+              <nav className="-mb-px flex space-x-8 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                 {tabs.map((tab) => (
                   <button
                     key={tab.id}

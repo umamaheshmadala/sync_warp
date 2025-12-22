@@ -276,24 +276,20 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
             <div className="absolute bottom-12 left-0 bg-white rounded-xl shadow-lg border border-gray-200 py-2 min-w-[160px] z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
               <div className="space-y-1">
                 {/* Image Upload */}
-                <div onClick={() => setShowAttachMenu(false)}>
-                  <ImageUploadButton
-                    conversationId={conversationId}
-                    onUploadStart={() => setShowAttachMenu(false)}
-                    onUploadComplete={() => { }}
-                    variant="menu"
-                  />
-                </div>
+                <ImageUploadButton
+                  conversationId={conversationId}
+                  onUploadStart={() => setShowAttachMenu(false)}
+                  onUploadComplete={() => { }}
+                  variant="menu"
+                />
 
                 {/* Video Upload */}
-                <div onClick={() => setShowAttachMenu(false)}>
-                  <VideoUploadButton
-                    conversationId={conversationId}
-                    onUploadStart={() => setShowAttachMenu(false)}
-                    onUploadComplete={() => { }}
-                    variant="menu"
-                  />
-                </div>
+                <VideoUploadButton
+                  conversationId={conversationId}
+                  onUploadStart={() => setShowAttachMenu(false)}
+                  onUploadComplete={() => { }}
+                  variant="menu"
+                />
 
                 {/* Document/File (placeholder for future) */}
                 <button className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-gray-50 transition-colors">

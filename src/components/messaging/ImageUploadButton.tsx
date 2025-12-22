@@ -18,9 +18,9 @@ interface Props {
   variant?: 'icon' | 'menu'  // 'icon' = small icon button, 'menu' = full menu item
 }
 
-export function ImageUploadButton({ 
-  conversationId, 
-  onUploadStart, 
+export function ImageUploadButton({
+  conversationId,
+  onUploadStart,
   onUploadComplete,
   variant = 'icon'
 }: Props) {
@@ -39,21 +39,32 @@ export function ImageUploadButton({
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
+    console.log('📸 [ImageUpload] handleFileSelect called:', {
+      hasFile: !!file,
+      fileName: file?.name,
+      fileType: file?.type,
+      fileSize: file?.size
+    })
     if (!file) return
-    
+
     try {
       // Read file data immediately to create persistent blob for Android
       // On Android, the File object becomes invalid after picker closes
+      console.log('📸 [ImageUpload] Reading file arrayBuffer...')
       const arrayBuffer = await file.arrayBuffer()
+      console.log('📸 [ImageUpload] ArrayBuffer read, size:', arrayBuffer.byteLength)
+
       const blob = new Blob([arrayBuffer], { type: file.type })
       const persistentFile = new File([blob], file.name, { type: file.type })
       const blobUrl = URL.createObjectURL(persistentFile)
-      
+      console.log('📸 [ImageUpload] Created blobUrl:', blobUrl)
+
       setSelectedFile(persistentFile)
       setPreviewUrl(blobUrl)
       setShowPreview(true)
+      console.log('📸 [ImageUpload] State updated, showPreview set to true')
     } catch (error) {
-      console.error('Failed to read file:', error)
+      console.error('📸 [ImageUpload] Failed to read file:', error)
       toast.error('Failed to load image')
     }
   }
@@ -97,16 +108,16 @@ export function ImageUploadButton({
         conversationId,
         (uploadProgress) => {
           if (cancelledRef.current) return
-          
+
           // Check if message was cancelled externally (by MessageBubble UI)
           const currentMessages = useMessagingStore.getState().messages.get(conversationId) || []
           const currentMsg = currentMessages.find(m => m._tempId === tempId)
-          
+
           if (!currentMsg || currentMsg._failed) {
-             console.log('⏹️ External cancellation detected during progress update')
-             cancelledRef.current = true
-             cancelUpload()
-             return
+            console.log('⏹️ External cancellation detected during progress update')
+            cancelledRef.current = true
+            cancelUpload()
+            return
           }
 
           updateMessageProgress(conversationId, tempId, uploadProgress)
@@ -120,29 +131,29 @@ export function ImageUploadButton({
       if (cancelledRef.current || !finalMsg || finalMsg._failed) {
         console.log('⏹️ Upload cancelled or message failed, cleaning up...')
         console.log('📝 Message state:', finalMsg)
-        
+
         // Ensure message is failed if it exists (and wasn't already marked)
         if (finalMsg && !finalMsg._failed) {
-            console.log('📝 Marking message as failed')
-            useMessagingStore.getState().updateMessage(conversationId, tempId, {
-              _failed: true,
-              _optimistic: true, // Keep optimistic so it doesn't look for public URL
-              _uploadProgress: 0
-            })
+          console.log('📝 Marking message as failed')
+          useMessagingStore.getState().updateMessage(conversationId, tempId, {
+            _failed: true,
+            _optimistic: true, // Keep optimistic so it doesn't look for public URL
+            _uploadProgress: 0
+          })
         }
-        
+
         // Cleanup uploaded files from Supabase to respect privacy
         const { error: deleteError } = await supabase.storage.from('message-attachments').remove([url, thumbnailUrl])
         if (deleteError) {
-            console.error('❌ Error deleting orphaned files:', deleteError)
+          console.error('❌ Error deleting orphaned files:', deleteError)
         } else {
-            console.log('🗑️ Deleted orphaned files from storage')
+          console.log('🗑️ Deleted orphaned files from storage')
         }
-        
+
         // Do NOT revoke blob URL immediately if we want to show the failed image
         // But we must eventually. For now, let's keep it.
         // URL.revokeObjectURL(blobUrl) 
-        
+
         setCurrentTempId('')
         return
       }
@@ -161,7 +172,7 @@ export function ImageUploadButton({
       console.log('🔗 Public URLs:', { publicUrl, thumbPublicUrl })
 
       // Check if cancelled after upload OR if message is failed/missing
-      
+
       if (cancelledRef.current || !finalMsg || finalMsg._failed) {
         console.log('🛑 Upload cancelled or message failed, aborting send')
         // Clean up uploaded files since we're not sending the message
@@ -204,13 +215,13 @@ export function ImageUploadButton({
             _uploadProgress: 0
           })
         }
-        
+
         setCurrentTempId('')
         return
       }
 
       console.error('❌ Image upload error:', error)
-      
+
       // Mark message as failed
       if (tempId && !cancelledRef.current) {
         useMessagingStore.getState().updateMessage(conversationId, tempId, {
@@ -223,7 +234,7 @@ export function ImageUploadButton({
       if (blobUrl) {
         URL.revokeObjectURL(blobUrl)
       }
-      
+
       setCurrentTempId('')
     }
   }

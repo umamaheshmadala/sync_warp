@@ -40,72 +40,59 @@ export function OptimisticVideoMessage({
 
   return (
     <div className="space-y-2">
-      {/* Video Container */}
-      <div className="relative inline-block max-w-full">
+      {/* Video Container - with overflow hidden to contain progress indicator */}
+      <div className="relative inline-block max-w-full min-w-[120px] overflow-hidden rounded-lg">
         <img
           src={thumbnailUrl}
           alt="Video thumbnail"
           className={cn(
-            "max-w-full h-auto rounded-lg transition-all duration-300",
+            "max-w-full w-auto h-auto block transition-all duration-300",
             status === 'uploading' && "opacity-100", // Keep thumbnail visible
             status === 'failed' && "opacity-50 grayscale"
           )}
-          style={{ maxHeight: '300px' }}
+          style={{ maxHeight: '300px', minHeight: '80px', minWidth: '120px', objectFit: 'cover' }}
           loading="lazy"
         />
 
-        {/* Upload Overlay - Transparent with progress */}
+        {/* Upload Overlay - WhatsApp Style */}
         {status === 'uploading' && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-lg">
-            {/* Cancel Button - Top Right */}
-            {onCancel && (
-              <button
-                onClick={onCancel}
-                className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 hover:bg-white flex items-center justify-center shadow-lg transition-colors z-10"
-                aria-label="Cancel upload"
-              >
-                <X className="w-5 h-5 text-gray-700" />
-              </button>
-            )}
+          <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-lg">
+            {/* Circular Progress with Cancel Button */}
+            <button
+              onClick={onCancel}
+              className="relative w-14 h-14 flex items-center justify-center"
+              aria-label="Cancel upload"
+            >
+              {/* Background Circle */}
+              <svg className="absolute w-14 h-14 transform -rotate-90">
+                <circle
+                  cx="28"
+                  cy="28"
+                  r="24"
+                  stroke="rgba(255,255,255,0.3)"
+                  strokeWidth="3"
+                  fill="none"
+                />
+                {/* Progress Arc */}
+                <circle
+                  cx="28"
+                  cy="28"
+                  r="24"
+                  stroke="white"
+                  strokeWidth="3"
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeDasharray={`${2 * Math.PI * 24}`}
+                  strokeDashoffset={`${2 * Math.PI * 24 * (1 - uploadProgress / 100)}`}
+                  className="transition-all duration-150 ease-out"
+                />
+              </svg>
 
-            {/* Circular Progress */}
-            <div className="flex flex-col items-center gap-2">
-              <div className="relative w-16 h-16">
-                {/* Background Circle */}
-                <svg className="w-16 h-16 transform -rotate-90">
-                  <circle
-                    cx="32"
-                    cy="32"
-                    r="28"
-                    stroke="white"
-                    strokeOpacity="0.3"
-                    strokeWidth="4"
-                    fill="none"
-                  />
-                  {/* Progress Circle */}
-                  <circle
-                    cx="32"
-                    cy="32"
-                    r="28"
-                    stroke="white"
-                    strokeWidth="4"
-                    fill="none"
-                    strokeDasharray={`${2 * Math.PI * 28}`}
-                    strokeDashoffset={`${2 * Math.PI * 28 * (1 - uploadProgress / 100)}`}
-                    className="transition-all duration-300"
-                  />
-                </svg>
-                {/* Percentage Text */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-white text-sm font-semibold">
-                    {uploadProgress}%
-                  </span>
-                </div>
+              {/* Cancel X Icon in Center */}
+              <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center shadow-md z-10">
+                <X className="w-5 h-5 text-gray-700" />
               </div>
-              <span className="text-white text-xs font-medium">
-                Uploading video...
-              </span>
-            </div>
+            </button>
           </div>
         )}
 

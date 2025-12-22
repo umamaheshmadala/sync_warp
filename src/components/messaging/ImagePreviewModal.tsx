@@ -49,12 +49,15 @@ export function ImagePreviewModal({
 
   // Create blob URL from File when modal opens
   useEffect(() => {
+    console.log('🖼️ [ImagePreviewModal] useEffect triggered:', { isOpen, hasImageFile: !!imageFile, imageFileName: imageFile?.name })
     if (isOpen && imageFile) {
       const url = URL.createObjectURL(imageFile)
+      console.log('🖼️ [ImagePreviewModal] Created blob URL:', url)
       setPreviewUrl(url)
-      
+
       // Cleanup blob URL when modal closes
       return () => {
+        console.log('🖼️ [ImagePreviewModal] Revoking blob URL:', url)
         URL.revokeObjectURL(url)
       }
     }
@@ -112,11 +115,11 @@ export function ImagePreviewModal({
   if (!isOpen) return null
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 animate-in fade-in duration-300"
       onClick={handleCancel}
     >
-      <div 
+      <div
         className="relative w-full h-full max-w-4xl max-h-screen flex flex-col p-4"
         onClick={(e) => e.stopPropagation()}
       >

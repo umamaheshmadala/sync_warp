@@ -109,18 +109,19 @@ class AdvancedSearchService {
         .from('businesses')
         .select(`
           *,
-          business_reviews!inner(rating),
-          coupons!inner(id, status)
+          business_reviews(rating),
+          coupons(id, status)
         `);
 
       // Text search
       if (filters.query) {
-        query = query.or(`name.ilike.%${filters.query}%,description.ilike.%${filters.query}%,tags.cs.{${filters.query}}`);
+        // Search in name, type, and city (description removed to avoid null issues)
+        query = query.or(`business_name.ilike.%${filters.query}%,business_type.ilike.%${filters.query}%,city.ilike.%${filters.query}%`);
       }
 
       // Category filter
       if (filters.categories && filters.categories.length > 0) {
-        query = query.in('category', filters.categories);
+        query = query.in('business_type', filters.categories);
       }
 
       // Status filter (only active businesses)
@@ -167,7 +168,7 @@ class AdvancedSearchService {
       };
     }
   }
-  
+
   // Mock business results for fallback
   private getMockBusinessResults(filters: SearchFilters = {}): {
     businesses: BusinessSearchResult[];
@@ -315,37 +316,37 @@ class AdvancedSearchService {
 
     // Apply basic filtering
     let filteredBusinesses = [...mockBusinesses];
-    
+
     // Text search filter
     if (filters.query) {
       const query = filters.query.toLowerCase();
-      filteredBusinesses = filteredBusinesses.filter(business => 
+      filteredBusinesses = filteredBusinesses.filter(business =>
         business.name.toLowerCase().includes(query) ||
         business.description.toLowerCase().includes(query) ||
         business.category.toLowerCase().includes(query) ||
         business.tags.some(tag => tag.toLowerCase().includes(query))
       );
     }
-    
+
     // Category filter
     if (filters.categories && filters.categories.length > 0) {
-      filteredBusinesses = filteredBusinesses.filter(business => 
+      filteredBusinesses = filteredBusinesses.filter(business =>
         filters.categories!.includes(business.category)
       );
     }
-    
+
     // Has offers filter
     if (filters.hasOffers) {
-      filteredBusinesses = filteredBusinesses.filter(business => 
+      filteredBusinesses = filteredBusinesses.filter(business =>
         (business.active_offers_count || 0) > 0
       );
     }
-    
+
     // Pagination
     const limit = filters.limit || 20;
     const offset = filters.offset || 0;
     const paginatedResults = filteredBusinesses.slice(offset, offset + limit);
-    
+
     return {
       businesses: paginatedResults,
       total: filteredBusinesses.length,
@@ -375,9 +376,9 @@ class AdvancedSearchService {
     } catch (error) {
       console.error('Discover nearby businesses error:', error);
       // Fallback to simple search if PostGIS function doesn't exist
-      return this.searchBusinesses({ 
+      return this.searchBusinesses({
         location: { latitude, longitude, radius },
-        limit 
+        limit
       }).then(result => result.businesses);
     }
   }
@@ -391,7 +392,7 @@ class AdvancedSearchService {
   }>> {
     try {
       // Use real database function that returns accurate counts
-      const { data, error} = await supabase.rpc('get_business_categories_with_counts');
+      const { data, error } = await supabase.rpc('get_business_categories_with_counts');
 
       if (error) {
         console.error('Get business categories error:', error);
@@ -439,16 +440,16 @@ class AdvancedSearchService {
       // Business name suggestions
       const { data: businesses } = await supabase
         .from('businesses')
-        .select('name, category')
-        .ilike('name', `%${query}%`)
+        .select('business_name, business_type')
+        .ilike('business_name', `%${query}%`)
         .eq('status', 'active')
         .limit(3);
 
       businesses?.forEach(business => {
         suggestions.push({
           type: 'business',
-          text: business.name,
-          metadata: { category: business.category }
+          text: business.business_name,
+          metadata: { category: business.business_type }
         });
       });
 
@@ -478,18 +479,18 @@ class AdvancedSearchService {
       return [];
     }
   }
-  
+
   // Mock suggestions for fallback
   private getMockSuggestions(query: string, limit: number = 5): SearchSuggestion[] {
     const queryLower = query.toLowerCase();
-    
+
     const mockSuggestions: SearchSuggestion[] = [
       // Business suggestions
       { type: 'business', text: "Mario's Pizza Palace", metadata: { category: 'Restaurant' } },
       { type: 'business', text: "Brew & Bean Café", metadata: { category: 'Café' } },
       { type: 'business', text: "Serenity Spa & Wellness", metadata: { category: 'Wellness' } },
       { type: 'business', text: "TechMart Electronics", metadata: { category: 'Electronics' } },
-      
+
       // Category suggestions
       { type: 'category', text: 'Restaurant' },
       { type: 'category', text: 'Café' },
@@ -497,19 +498,19 @@ class AdvancedSearchService {
       { type: 'category', text: 'Electronics' },
       { type: 'category', text: 'Retail' },
       { type: 'category', text: 'Services' },
-      
+
       // Query suggestions
       { type: 'query', text: 'pizza delivery' },
       { type: 'query', text: 'coffee near me' },
       { type: 'query', text: 'spa massage' },
       { type: 'query', text: 'electronics store' },
     ];
-    
+
     // Filter suggestions based on query
-    const filtered = mockSuggestions.filter(suggestion => 
+    const filtered = mockSuggestions.filter(suggestion =>
       suggestion.text.toLowerCase().includes(queryLower)
     );
-    
+
     return filtered.slice(0, limit);
   }
 
@@ -592,7 +593,8 @@ class AdvancedSearchService {
         .select(`
           item_id,
           item_type,
-          businesses!inner(category, latitude, longitude)
+          item_type,
+          businesses!inner(business_type, latitude, longitude)
         `)
         .eq('user_id', this.userId)
         .eq('item_type', 'business');
@@ -607,8 +609,8 @@ class AdvancedSearchService {
       }
 
       // Analyze favorite patterns
-      const favoriteCategories = [...new Set(favorites.map(fav => fav.businesses?.category).filter(Boolean))];
-      
+      const favoriteCategories = [...new Set(favorites.map((fav: any) => fav.businesses?.business_type).filter(Boolean))];
+
       // Get recommendations based on favorite categories
       const recommendations = await this.searchBusinesses({
         categories: favoriteCategories,
@@ -631,6 +633,8 @@ class AdvancedSearchService {
     return businesses.map(business => {
       const result: BusinessSearchResult = {
         ...business,
+        name: business.business_name || business.name,
+        category: business.business_type || business.category,
         rating: this.calculateAverageRating(business.business_reviews),
         review_count: business.business_reviews?.length || 0,
         active_offers_count: business.coupons?.filter((c: any) => c.status === 'active').length || 0,
@@ -660,20 +664,20 @@ class AdvancedSearchService {
 
   private isBusinessOpen(operatingHours: any): boolean {
     if (!operatingHours) return false;
-    
+
     const now = new Date();
-    const day = now.toLocaleLowerCase() + 'day';
+    const day = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
     const currentTime = now.getHours() * 60 + now.getMinutes();
-    
+
     const todayHours = operatingHours[day];
     if (!todayHours || !todayHours.isOpen) return false;
-    
+
     const [openHour, openMin] = todayHours.open.split(':').map(Number);
     const [closeHour, closeMin] = todayHours.close.split(':').map(Number);
-    
+
     const openTime = openHour * 60 + openMin;
     const closeTime = closeHour * 60 + closeMin;
-    
+
     return currentTime >= openTime && currentTime <= closeTime;
   }
 
@@ -681,16 +685,16 @@ class AdvancedSearchService {
     const R = 6371; // Earth's radius in kilometers
     const dLat = this.deg2rad(lat2 - lat1);
     const dLon = this.deg2rad(lon2 - lon1);
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(this.deg2rad(lat1)) * Math.cos(this.deg2rad(lat2)) * 
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(this.deg2rad(lat1)) * Math.cos(this.deg2rad(lat2)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return Math.round(R * c * 10) / 10; // Round to 1 decimal place
   }
 
   private deg2rad(deg: number): number {
-    return deg * (Math.PI/180);
+    return deg * (Math.PI / 180);
   }
 }
 
