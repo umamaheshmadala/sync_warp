@@ -42,7 +42,7 @@ export const usePushNotifications = (userId: string | null) => {
           is_active: true,
           updated_at: new Date().toISOString()
         }, {
-          onConflict: 'user_id, token'
+          onConflict: 'user_id, platform'
         });
 
       if (error) {
@@ -65,7 +65,7 @@ export const usePushNotifications = (userId: string | null) => {
 
       // Set up listeners FIRST before registering
       await PushNotifications.removeAllListeners();
-      
+
       // Token registered successfully
       PushNotifications.addListener('registration', async (token: Token) => {
         console.log('[usePushNotifications] Token registered:', token.value);
@@ -101,14 +101,14 @@ export const usePushNotifications = (userId: string | null) => {
         console.log('[usePushNotifications] Notification tapped:', action);
         const data = action.notification.data;
         if (data.action_url) {
-            // Check if external URL
-            if (data.action_url.startsWith('http')) {
-                window.location.href = data.action_url;
-            } else {
-                // Internal route - use Router
-                console.log('[usePushNotifications] Navigating to:', data.action_url);
-                navigate(data.action_url);
-            }
+          // Check if external URL
+          if (data.action_url.startsWith('http')) {
+            window.location.href = data.action_url;
+          } else {
+            // Internal route - use Router
+            console.log('[usePushNotifications] Navigating to:', data.action_url);
+            navigate(data.action_url);
+          }
         }
       });
 
@@ -135,7 +135,7 @@ export const usePushNotifications = (userId: string | null) => {
         setState(prev => ({ ...prev, permissionGranted: true }));
         await PushNotifications.register();
       } else {
-         setState(prev => ({ ...prev, permissionGranted: false, error: 'Permission denied' }));
+        setState(prev => ({ ...prev, permissionGranted: false, error: 'Permission denied' }));
       }
     } catch (error) {
       console.error('[usePushNotifications] Init failed:', error);

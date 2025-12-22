@@ -1,4 +1,4 @@
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { List, LogOut, User, Settings, UserPlus, Search, MessageCircle } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
@@ -57,19 +57,22 @@ export default function Header() {
 
   // Clear search query when navigating away from search page
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+
   useEffect(() => {
     if (!location.pathname.startsWith('/search')) {
       setSearchQuery('');
       setShowSearchSuggestions(false);
     } else {
       // Sync input with URL query when on search page
-      const params = new URLSearchParams(location.search);
-      const query = params.get('q');
+      const query = searchParams.get('q');
+      console.log('🔍 [Header] Sync check - Path:', location.pathname, 'Query:', query, 'Current Input:', searchQuery);
       if (query) {
+        console.log('🔍 [Header] Updating input to:', query);
         setSearchQuery(query);
       }
     }
-  }, [location.pathname, location.search]);
+  }, [location.pathname, searchParams]);
 
   const handleSignOut = async () => {
     await signOut();
