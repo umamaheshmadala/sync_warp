@@ -15,6 +15,16 @@ if (root) {
   )
 }
 
+// Unregister any existing service workers to prevent stale asset caching issues
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then((registrations) => {
+    for (const registration of registrations) {
+      console.log('Unregistering Service Worker:', registration);
+      registration.unregister();
+    }
+  });
+}
+
 // Run initialization tasks AFTER React has mounted
 Promise.all([
   // Migrate to secure storage

@@ -18,14 +18,15 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 export function NotificationCenter() {
     const navigate = useNavigate();
     const [isOpen, setIsOpen] = useState(false);
-    
+    const [isMarkingAllRead, setIsMarkingAllRead] = useState(false);
+
     // Access the shared hook
-    const { 
-        notifications, 
-        unreadCount, 
-        isLoading, 
-        markAsRead, 
-        markAllAsRead 
+    const {
+        notifications,
+        unreadCount,
+        isLoading,
+        markAsRead,
+        markAllAsRead
     } = useInAppNotifications();
 
     // Take top 5 for the dropdown to keep it lightweight
@@ -41,24 +42,35 @@ export function NotificationCenter() {
         if (actionUrl) {
             navigate(actionUrl);
         } else {
-             if (notification.notification_type.includes('message')) {
-                 navigate(`/messages/${notification.data.conversation_id}`);
-             } else if (notification.notification_type === 'friend_request') {
-                 navigate('/friends/requests');
-             } else if (notification.notification_type === 'friend_accepted') {
-                 navigate('/friends');
-             } else if (notification.notification_type === 'deal_shared') {
-                 if (notification.data?.deal_id) navigate(`/deals/${notification.data.deal_id}`);
-             } else if (notification.notification_type === 'birthday_reminder') {
-                 if (notification.data?.friend_id) navigate(`/profile/${notification.data.friend_id}`);
-             }
+            if (notification.notification_type.includes('message')) {
+                navigate(`/messages/${notification.data.conversation_id}`);
+            } else if (notification.notification_type === 'friend_request') {
+                navigate('/friends/requests');
+            } else if (notification.notification_type === 'friend_accepted') {
+                navigate('/friends');
+            } else if (notification.notification_type === 'deal_shared') {
+                if (notification.data?.deal_id) navigate(`/deals/${notification.data.deal_id}`);
+            } else if (notification.notification_type === 'birthday_reminder') {
+                if (notification.data?.friend_id) navigate(`/profile/${notification.data.friend_id}`);
+            }
         }
         setIsOpen(false);
     };
 
-    const handleMarkAllAsRead = (e: React.MouseEvent) => {
+    const handleMarkAllAsRead = async (e: React.MouseEvent) => {
         e.stopPropagation();
-        markAllAsRead();
+        if (isMarkingAllRead) return;
+
+        setIsMarkingAllRead(true);
+        try {
+            await markAllAsRead();
+            // Optional/Optimistic: could set unreadCount to 0 locally if not reactive enough, 
+            // but the hook handles invalidation.
+        } catch (error) {
+            console.error('Failed to mark all as read:', error);
+        } finally {
+            setIsMarkingAllRead(false);
+        }
     };
 
     const handleViewAll = () => {
@@ -93,9 +105,14 @@ export function NotificationCenter() {
                             variant="ghost"
                             size="sm"
                             onClick={handleMarkAllAsRead}
+                            disabled={isMarkingAllRead}
                             className="h-auto px-2 py-1 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 h-6"
                         >
-                            <Check className="h-3 w-3 mr-1" />
+                            {isMarkingAllRead ? (
+                                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                            ) : (
+                                <Check className="h-3 w-3 mr-1" />
+                            )}
                             Mark all read
                         </Button>
                     )}

@@ -70,14 +70,7 @@ body {
 }
 
 /* Ensure container classes don't exceed viewport */
-.max-w-7xl,
-.max-w-5xl,
-.max-w-4xl,
-.max-w-3xl,
-.max-w-2xl {
-  max-width: 100%;
-  box-sizing: border-box;
-}
+
 
 /* Prevent iOS Safari from moving fixed elements during scroll */
 @supports (-webkit-touch-callout: none) {
@@ -113,8 +106,8 @@ nav[class*="bottom"] {
 /* Systematic page container utility */
 .page-safe-area {
   /* Generous bottom padding to prevent footer overlap */
-  padding-bottom: 7rem;
-  /* 112px - enough for bottom nav + safe area */
+  padding-bottom: 54px;
+  /* Match Header height (pt-[54px]) */
   min-height: calc(100vh - 64px);
   /* Account for header */
 }
@@ -127,15 +120,15 @@ main>section,
 [class*="profile"]>main,
 [class*="wallet"]>main,
 [class*="search"]>main {
-  padding-bottom: 7rem !important;
-  /* 112px for mobile bottom nav + breathing room */
+  padding-bottom: 54px;
+  /* Match Header height (pt-[54px]) */
 }
 
 /* Responsive adjustments for bottom spacing */
 @media (min-width: 640px) {
   .page-safe-area {
-    padding-bottom: 6rem;
-    /* 96px for tablet */
+    padding-bottom: 4rem;
+    /* 64px - Match md:pt-16 */
   }
 
   main>div,
@@ -145,15 +138,15 @@ main>section,
   [class*="profile"]>main,
   [class*="wallet"]>main,
   [class*="search"]>main {
-    padding-bottom: 6rem !important;
-    /* 96px for tablet */
+    padding-bottom: 4rem;
+    /* 64px - Match md:pt-16 */
   }
 }
 
 @media (min-width: 768px) {
   .page-safe-area {
-    padding-bottom: 5rem;
-    /* 80px for desktop */
+    padding-bottom: 4rem;
+    /* 64px - Match md:pt-16 */
   }
 
   main>div,
@@ -163,8 +156,8 @@ main>section,
   [class*="profile"]>main,
   [class*="wallet"]>main,
   [class*="search"]>main {
-    padding-bottom: 5rem !important;
-    /* 80px for desktop */
+    padding-bottom: 4rem;
+    /* 64px - Match md:pt-16 */
   }
 }
 

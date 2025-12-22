@@ -1,7 +1,8 @@
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
-import { List, LogOut, User, Settings, UserPlus, Search, MessageCircle } from 'lucide-react';
+import { List, LogOut, User, Settings, UserPlus, Search, MessageCircle, Store, PlusCircle } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
+import { supabase } from '../../lib/supabase';
 import { useSimpleProductSocial } from '../../hooks/useSimpleProductSocial';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -37,6 +38,27 @@ export default function Header() {
   const search = useSearch({ autoSearch: false });
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const [hasBusinesses, setHasBusinesses] = useState(false);
+
+  // Check if user has registered businesses
+  useEffect(() => {
+    async function checkBusinesses() {
+      if (!user) {
+        setHasBusinesses(false);
+        return;
+      }
+      try {
+        const { count } = await supabase
+          .from('businesses')
+          .select('id', { count: 'exact', head: true })
+          .eq('owner_id', user.id);
+        setHasBusinesses(!!count && count > 0);
+      } catch (err) {
+        console.error('Error checking businesses:', err);
+      }
+    }
+    checkBusinesses();
+  }, [user]);
 
   // Initialize conversations to get unread count
   useConversations();
@@ -153,7 +175,7 @@ export default function Header() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-40 w-full border-b border-gray-200 bg-white shadow-sm">
-      <div className="max-w-7xl mx-auto flex h-14 items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto flex h-[50px] items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Left side - Profile Avatar (Mobile) or Logo (Desktop) */}
         <div className="flex items-center space-x-3">
           {/* Mobile: Profile Avatar */}
@@ -161,11 +183,11 @@ export default function Header() {
             <Button
               variant="ghost"
               size="icon"
-              className="md:hidden w-10 h-10 rounded-full p-0 hover:ring-2 hover:ring-indigo-500 hover:ring-offset-2 transition-all"
+              className="md:hidden w-8 h-8 rounded-full p-0 hover:ring-2 hover:ring-indigo-500 hover:ring-offset-2 transition-all"
               onClick={() => setShowMobileProfileDrawer(true)}
               title="Open Profile Menu"
             >
-              <Avatar className="h-10 w-10 border-2 border-gray-200">
+              <Avatar className="h-8 w-8 border-2 border-gray-200">
                 <AvatarImage
                   src={profile?.avatar_url || ''}
                   alt={user?.email || 'User'}
@@ -186,7 +208,7 @@ export default function Header() {
             <img
               src="/Logo/Logo Text Transparent PNG 2.png"
               alt="Sync"
-              className="h-[55px]"
+              className="h-[40px]"
             />
           </div>
         </div>
@@ -203,8 +225,8 @@ export default function Header() {
                 onChange={handleSearchChange}
                 onFocus={handleSearchFocus}
                 onKeyDown={handleSearchKeyDown}
-                placeholder="Search businesses, products, offers..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-gray-50 focus:bg-white transition-all"
+                placeholder="Search"
+                className="w-full pl-10 pr-4 py-1.5 text-sm border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-gray-50 focus:bg-white transition-all"
               />
             </div>
 
@@ -227,6 +249,19 @@ export default function Header() {
           {/* <div className="hidden md:block">
             <SyncStatusIndicator compact />
           </div> */}
+
+          {/* My Businesses - Desktop Only (Conditional) */}
+          {hasBusinesses && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="hidden md:flex relative text-gray-700 hover:text-indigo-600 hover:bg-indigo-50"
+              onClick={() => navigate('/business/dashboard')}
+              title="My Businesses"
+            >
+              <Store className="h-5 w-5" />
+            </Button>
+          )}
 
           {/* Messages - Desktop Only */}
           <Button
@@ -269,11 +304,11 @@ export default function Header() {
           <Button
             variant="ghost"
             size="icon"
-            className="md:hidden text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 relative"
+            className="md:hidden text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 relative h-9 w-9"
             onClick={() => navigate('/messages')}
             title="Messages"
           >
-            <MessageCircle className="h-6 w-6" />
+            <MessageCircle className="h-5 w-5" />
             {totalUnreadCount > 0 && (
               <span className="absolute top-0 right-0 h-4 w-4 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-bold ring-2 ring-white">
                 {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
@@ -285,19 +320,19 @@ export default function Header() {
           <Button
             variant="ghost"
             size="icon"
-            className="md:hidden text-gray-700 hover:text-indigo-600 hover:bg-indigo-50"
+            className="md:hidden text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 h-9 w-9"
             onClick={() => setShowContactsSidebar(true)}
             title="Friends"
           >
-            <UserPlus className="h-6 w-6" />
+            <UserPlus className="h-5 w-5" />
           </Button>
 
           {/* Profile Dropdown - Desktop Only */}
           <div className="hidden md:block">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-10 w-10 rounded-full hover:ring-2 hover:ring-indigo-500 hover:ring-offset-2 transition-all">
-                  <Avatar className="h-10 w-10 border-2 border-gray-200">
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full hover:ring-2 hover:ring-indigo-500 hover:ring-offset-2 transition-all">
+                  <Avatar className="h-8 w-8 border-2 border-gray-200">
                     <AvatarImage
                       src={profile?.avatar_url || ''}
                       alt={user?.email || 'User'}
@@ -320,6 +355,11 @@ export default function Header() {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate('/business/register')}>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  <span>Register Business</span>
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate('/profile')}>
                   <User className="mr-2 h-4 w-4" />
                   <span>View Profile</span>

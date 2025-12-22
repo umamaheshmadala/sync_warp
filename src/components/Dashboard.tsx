@@ -156,7 +156,7 @@ const Dashboard: React.FC = () => {
 
       {/* Main Content */}
       <main>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 pb-2">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 md:py-4 pb-2">
           {/* Ad Carousel Section */}
           <section className="mb-4">
             <AdCarousel />
@@ -169,44 +169,7 @@ const Dashboard: React.FC = () => {
 
           {/* Dashboard Grid - Full Width */}
           <section className="mb-4">
-            {/* Stats and Actions Grid */}
-            <div className="grid grid-cols-2 gap-3 md:gap-6 mb-4 md:mb-6">
-              {/* Quick Actions */}
-              <button
-                onClick={() => navigate('/business/register')}
-                className="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white p-2 md:p-6 rounded-xl md:rounded-2xl shadow-sm md:shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-300"
-              >
-                {/* Mobile: Horizontal single line */}
-                <div className="flex md:hidden items-center justify-center gap-2">
-                  <TrendingUp className="w-5 h-5" />
-                  <p className="font-semibold text-sm">Register</p>
-                </div>
-                {/* Desktop: Vertical layout */}
-                <div className="hidden md:block text-center">
-                  <TrendingUp className="w-8 h-8 mb-3 mx-auto" />
-                  <p className="font-semibold text-sm">Register</p>
-                  <p className="text-xs opacity-90">Business</p>
-                </div>
-              </button>
 
-
-              <button
-                onClick={() => navigate('/business/dashboard')}
-                className="bg-white border-2 border-indigo-200 text-indigo-600 p-2 md:p-6 rounded-xl md:rounded-2xl shadow-sm md:shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-300"
-              >
-                {/* Mobile: Horizontal single line */}
-                <div className="flex md:hidden items-center justify-center gap-2">
-                  <Users className="w-5 h-5" />
-                  <p className="font-semibold text-sm">Manage</p>
-                </div>
-                {/* Desktop: Vertical layout */}
-                <div className="hidden md:block text-center">
-                  <Users className="w-8 h-8 mb-3 mx-auto" />
-                  <p className="font-semibold text-sm">Manage</p>
-                  <p className="text-xs opacity-70">Business</p>
-                </div>
-              </button>
-            </div>
 
             {/* Special Offer Banner */}
             <div className="bg-gradient-to-r from-orange-400 to-pink-500 rounded-xl md:rounded-2xl p-3 md:p-6 text-white shadow-md">
@@ -230,7 +193,6 @@ const Dashboard: React.FC = () => {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">Spotlight Businesses</h2>
-                <p className="text-sm text-gray-600">Top picks in your area</p>
               </div>
               <button
                 onClick={() => navigate('/search')}
@@ -302,7 +264,6 @@ const Dashboard: React.FC = () => {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">Hot Offers 🔥</h2>
-                <p className="text-sm text-gray-600">Limited time deals</p>
               </div>
               <button
                 onClick={() => navigate('/wallet')}
@@ -362,9 +323,9 @@ const Dashboard: React.FC = () => {
 
           {/* New Businesses Section */}
           <NewBusinesses
-            limit={12}
+            limit={3}
             daysThreshold={30}
-            showLoadMore={true}
+            showLoadMore={false}
           />
 
           {/* Trending Products */}
@@ -372,7 +333,6 @@ const Dashboard: React.FC = () => {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">Trending Now 📈</h2>
-                <p className="text-sm text-gray-600">What's popular this week</p>
               </div>
             </div>
 

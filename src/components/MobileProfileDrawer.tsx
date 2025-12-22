@@ -2,15 +2,16 @@
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { useBusinessUrl } from '../hooks/useBusinessUrl'
-import { 
-  X, 
-  User, 
-  Settings, 
-  LogOut, 
+import {
+  X,
+  User,
+  Settings,
+  LogOut,
   Store,
   ChevronRight,
   MapPin,
-  MessageCircle
+  MessageCircle,
+  PlusCircle
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
@@ -38,7 +39,7 @@ export default function MobileProfileDrawer({ isOpen, onClose }: MobileProfileDr
   useEffect(() => {
     const fetchBusinesses = async () => {
       if (!user?.id) return
-      
+
       setLoadingBusinesses(true)
       try {
         const { data, error } = await supabase
@@ -84,13 +85,13 @@ export default function MobileProfileDrawer({ isOpen, onClose }: MobileProfileDr
   return (
     <>
       {/* Backdrop */}
-      <div 
+      <div
         className="fixed inset-0 bg-black/50 z-[9999] md:hidden"
         onClick={onClose}
       />
 
       {/* Drawer */}
-      <div 
+      <div
         className={`
           fixed top-0 left-0 h-full w-80 bg-white shadow-2xl z-[10000] 
           transform transition-transform duration-300 ease-in-out
@@ -114,8 +115,8 @@ export default function MobileProfileDrawer({ isOpen, onClose }: MobileProfileDr
             <div className="mb-4">
               <div className="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
                 {profile?.avatar_url ? (
-                  <img 
-                    src={profile.avatar_url} 
+                  <img
+                    src={profile.avatar_url}
                     alt={profile.full_name || 'User'}
                     className="w-full h-full rounded-full object-cover"
                   />
@@ -158,53 +159,64 @@ export default function MobileProfileDrawer({ isOpen, onClose }: MobileProfileDr
 
           <div className="border-t border-gray-200" />
 
-          {/* Manage Businesses Section */}
-          {businesses.length > 0 && (
-            <>
-              <div className="px-6 py-3">
-                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                  Manage Businesses
-                </h3>
-                
-                <div className="space-y-2">
-                  {businesses.map((business) => (
-                  <button
-                    key={business.id}
-                    onClick={() => handleNavigation(getBusinessUrl(business.id, business.name))}
-                    className="w-full flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 transition-colors text-left"
-                  >
-                      {/* Business Logo */}
-                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center flex-shrink-0">
-                        {business.logo_url ? (
-                          <img 
-                            src={business.logo_url} 
-                            alt={business.name}
-                            className="w-full h-full rounded-lg object-cover"
-                          />
-                        ) : (
-                          <Store className="w-5 h-5 text-indigo-600" />
-                        )}
-                      </div>
-                      
-                      {/* Business Info */}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">
-                          {business.name}
-                        </p>
-                        <p className="text-xs text-gray-500 truncate">
-                          {business.category}
-                        </p>
-                      </div>
+          {/* Business Section */}
+          <div className="px-6 py-3">
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+              Businesses
+            </h3>
 
-                      <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                    </button>
-                  ))}
+            <div className="space-y-2">
+              {businesses.map((business) => (
+                <button
+                  key={business.id}
+                  onClick={() => handleNavigation(getBusinessUrl(business.id, business.name))}
+                  className="w-full flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 transition-colors text-left"
+                >
+                  {/* Business Logo */}
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center flex-shrink-0">
+                    {business.logo_url ? (
+                      <img
+                        src={business.logo_url}
+                        alt={business.name}
+                        className="w-full h-full rounded-lg object-cover"
+                      />
+                    ) : (
+                      <Store className="w-5 h-5 text-indigo-600" />
+                    )}
+                  </div>
+
+                  {/* Business Info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {business.name}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">
+                      {business.category}
+                    </p>
+                  </div>
+
+                  <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                </button>
+              ))}
+
+              {/* Register New Business Button */}
+              <button
+                onClick={() => handleNavigation('/business/register')}
+                className="w-full flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 transition-colors text-left group"
+              >
+                <div className="w-10 h-10 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center flex-shrink-0 group-hover:border-indigo-400 transition-colors">
+                  <PlusCircle className="w-5 h-5 text-gray-400 group-hover:text-indigo-600" />
                 </div>
-              </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-600 group-hover:text-indigo-600">
+                    Register New Business
+                  </p>
+                </div>
+              </button>
+            </div>
+          </div>
 
-              <div className="border-t border-gray-200" />
-            </>
-          )}
+          <div className="border-t border-gray-200" />
 
           {/* Menu Items */}
           <div className="py-2">

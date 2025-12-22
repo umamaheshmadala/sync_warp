@@ -120,7 +120,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentRoute }) => 
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
     >
       {/* Container with max width matching header */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-around py-1">
           {navItems.map((item) => {
             const IconComponent = item.icon;
@@ -137,12 +137,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentRoute }) => 
                 whileTap={{ scale: 0.95 }}
                 transition={{ type: "spring", stiffness: 400, damping: 25 }}
               >
-                {/* Enhanced Badge with animation */}
-                <NavigationBadge
-                  count={item.badge || 0}
-                  show={!!(item.badge && item.badge > 0)}
-                  color="bg-red-500"
-                />
+
 
                 {/* Animated Background */}
                 <AnimatePresence>

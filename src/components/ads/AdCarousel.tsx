@@ -1,7 +1,7 @@
 // src/components/ads/AdCarousel.tsx
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, TrendingUp } from 'lucide-react';
 import AdSlot from './AdSlot';
 import { useAdSlots } from '../../hooks/useAdSlots';
 
@@ -33,18 +33,30 @@ const AdCarousel: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="h-96 bg-gray-100 rounded-2xl animate-pulse" />
+      <div className="h-48 md:h-96 bg-gray-100 rounded-2xl animate-pulse" />
     );
   }
 
   if (slots.length === 0) {
-    return null; // Or show fallback content
+    return (
+      <div className="h-48 md:h-96 flex items-center justify-center bg-gradient-to-br from-indigo-50 to-blue-50 rounded-2xl border-2 border-dashed border-indigo-200">
+        <div className="text-center p-6">
+          <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <TrendingUp className="w-8 h-8 text-indigo-600" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-1">Promote Your Business Here</h3>
+          <p className="text-sm text-gray-600 max-w-sm mx-auto">
+            Reach thousands of local customers by featuring your business in this premium spot.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="relative">
       {/* Carousel Container */}
-      <div className="relative overflow-hidden rounded-2xl">
+      <div className="relative overflow-hidden rounded-2xl group">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentIndex}
@@ -66,25 +78,25 @@ const AdCarousel: React.FC = () => {
           <>
             <button
               onClick={goToPrevious}
-              className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white p-2 rounded-full shadow-lg transition-all"
+              className="absolute left-1 md:left-2 top-1/2 -translate-y-1/2 bg-white/20 md:bg-white/90 hover:bg-white/40 md:hover:bg-white p-1 md:p-2 rounded-full shadow-sm md:shadow-lg transition-all z-10 backdrop-blur-[2px] md:backdrop-blur-sm"
               aria-label="Previous ad"
             >
-              <ChevronLeft className="w-5 h-5 text-gray-700" />
+              <ChevronLeft className="w-5 h-5 md:w-6 md:h-6 text-gray-900" />
             </button>
             <button
               onClick={goToNext}
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white p-2 rounded-full shadow-lg transition-all"
+              className="absolute right-1 md:right-2 top-1/2 -translate-y-1/2 bg-white/20 md:bg-white/90 hover:bg-white/40 md:hover:bg-white p-1 md:p-2 rounded-full shadow-sm md:shadow-lg transition-all z-10 backdrop-blur-[2px] md:backdrop-blur-sm"
               aria-label="Next ad"
             >
-              <ChevronRight className="w-5 h-5 text-gray-700" />
+              <ChevronRight className="w-5 h-5 md:w-6 md:h-6 text-gray-900" />
             </button>
           </>
         )}
       </div>
 
-      {/* Indicators */}
+      {/* Indicators - Desktop Only, Overlay */}
       {slots.length > 1 && (
-        <div className="flex justify-center mt-4 space-x-2">
+        <div className="absolute bottom-4 left-0 right-0 z-20 hidden md:flex justify-center space-x-2">
           {slots.map((_, index) => (
             <button
               key={index}
@@ -92,11 +104,10 @@ const AdCarousel: React.FC = () => {
                 setAutoplay(false);
                 setCurrentIndex(index);
               }}
-              className={`h-2 rounded-full transition-all ${
-                index === currentIndex
-                  ? 'w-8 bg-indigo-600'
-                  : 'w-2 bg-gray-300 hover:bg-gray-400'
-              }`}
+              className={`h-2 rounded-full transition-all shadow-sm ${index === currentIndex
+                ? 'w-8 bg-white'
+                : 'w-2 bg-white/50 hover:bg-white/75'
+                }`}
               aria-label={`Go to slide ${index + 1}`}
             />
           ))}

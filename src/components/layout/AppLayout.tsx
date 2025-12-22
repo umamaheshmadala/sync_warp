@@ -60,10 +60,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="fixed inset-0 w-full h-full flex flex-col overflow-hidden bg-gray-50">
       <Header />
       <main
-        className={`flex-1 flex flex-col min-h-0 relative pt-16 ${isMessagesRoute ? 'overflow-hidden' : 'overflow-y-auto'
+        className={`flex-1 flex flex-col min-h-0 relative ${isMessagesRoute ? 'overflow-hidden' : 'overflow-y-auto'
           }`}
       >
-        {children}
+        <div className={`w-full max-w-4xl mx-auto flex-1 flex flex-col min-h-0 pt-[54px] md:pt-16 ${shouldShowBottomNav ? 'pb-[54px] md:pb-16' : 'pb-0'}`}>
+          {children}
+        </div>
       </main>
 
       {/* Fixed Bottom Navigation */}

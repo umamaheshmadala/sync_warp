@@ -5,6 +5,7 @@ import path from 'path'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  base: './', // Ensure relative paths for Capacitor
   define: {
     '__BUILD_TIMESTAMP__': JSON.stringify(new Date().toLocaleString('en-IN', {
       timeZone: 'Asia/Kolkata',
@@ -18,50 +19,50 @@ export default defineConfig({
   },
   plugins: [
     react(),
-    VitePWA({
-      registerType: 'autoUpdate',
-      injectRegister: 'auto',
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp}'],
-        maximumFileSizeToCacheInBytes: 3000000, // 3MB
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'supabase-api',
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 // 24 hours
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          }
-        ]
-      },
-      manifest: {
-        name: 'SynC - Connect, Collaborate, Create',
-        short_name: 'SynC',
-        description: 'Discover local businesses and share amazing deals',
-        theme_color: '#6366f1',
-        background_color: '#ffffff',
-        display: 'standalone',
-        icons: [
-          {
-            src: 'pwa-192x192.png',
-            sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png'
-          }
-        ]
-      }
-    })
+    // VitePWA({
+    //   registerType: 'autoUpdate',
+    //   injectRegister: 'auto',
+    //   workbox: {
+    //     globPatterns: ['**/*.{js,css,html,ico,png,svg,webp}'],
+    //     maximumFileSizeToCacheInBytes: 3000000, // 3MB
+    //     runtimeCaching: [
+    //       {
+    //         urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
+    //         handler: 'NetworkFirst',
+    //         options: {
+    //           cacheName: 'supabase-api',
+    //           expiration: {
+    //             maxEntries: 50,
+    //             maxAgeSeconds: 60 * 60 * 24 // 24 hours
+    //           },
+    //           cacheableResponse: {
+    //             statuses: [0, 200]
+    //           }
+    //         }
+    //       }
+    //     ]
+    //   },
+    //   manifest: {
+    //     name: 'SynC - Connect, Collaborate, Create',
+    //     short_name: 'SynC',
+    //     description: 'Discover local businesses and share amazing deals',
+    //     theme_color: '#6366f1',
+    //     background_color: '#ffffff',
+    //     display: 'standalone',
+    //     icons: [
+    //       {
+    //         src: 'pwa-192x192.png',
+    //         sizes: '192x192',
+    //         type: 'image/png'
+    //       },
+    //       {
+    //         src: 'pwa-512x512.png',
+    //         sizes: '512x512',
+    //         type: 'image/png'
+    //       }
+    //     ]
+    //   }
+    // })
   ],
   resolve: {
     alias: {
@@ -87,17 +88,6 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: false,
-    minify: 'terser', // Use terser for better control over minification
-    terserOptions: {
-      compress: {
-        drop_console: false,
-        drop_debugger: true,
-      },
-      mangle: {
-        keep_classnames: true,
-        keep_fnames: true, // Keep function names to prevent mangling
-      },
-    },
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
       onwarn(warning, warn) {
