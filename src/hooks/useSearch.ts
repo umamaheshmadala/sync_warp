@@ -914,6 +914,30 @@ export const useSearch = (options: UseSearchOptions = {}) => {
     }
   }, [location.search, searchParams, setQuery, searchState.query]);
 
+  // Trigger initial search on mount when URL has query but no results yet
+  // This fixes the race condition where state is initialized with query but search never executes
+  const initialSearchTriggeredRef = useRef(false);
+  useEffect(() => {
+    const urlQuery = searchParams.get('q') || '';
+    const hasNoResults = results.coupons.length === 0 && results.businesses.length === 0;
+
+    // Only trigger once on mount, when there's a URL query, results are empty, and not searching
+    if (!initialSearchTriggeredRef.current && urlQuery && hasNoResults && !searchState.isSearching) {
+      console.log('🔍 [useSearch] Triggering initial search for URL query:', urlQuery);
+      initialSearchTriggeredRef.current = true;
+
+      // Create query object and perform search
+      const initialQuery: SearchQuery = {
+        q: urlQuery,
+        filters: searchState.filters,
+        sort: searchState.sort,
+        pagination: { page: 1, limit: searchState.pagination.limit }
+      };
+
+      performSearch(initialQuery, false);
+    }
+  }, [searchParams, results.coupons.length, results.businesses.length, searchState.isSearching, searchState.filters, searchState.sort, searchState.pagination.limit, performSearch]);
+
   // Computed values
   const hasResults = results.coupons.length > 0 || results.businesses.length > 0;
   const totalResults = results.totalCoupons + results.totalBusinesses;
