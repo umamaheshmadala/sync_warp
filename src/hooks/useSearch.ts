@@ -97,9 +97,11 @@ export const useSearch = (options: UseSearchOptions = {}) => {
 
   // Search state
   const [searchState, setSearchState] = useState<SearchState>(() => {
-    // Try to restore from localStorage first
+    // Try to restore from localStorage first (only if no URL query)
     const searchStateKey = user?.id ? `searchState_${user.id}` : 'searchState_guest';
-    const savedSearchState = localStorage.getItem(searchStateKey);
+    // If URL has query, ignore saved state to enforce fresh search
+    const hasUrlQuery = !!searchParams.get('q');
+    const savedSearchState = hasUrlQuery ? null : localStorage.getItem(searchStateKey);
     if (savedSearchState) {
       try {
         const parsed = JSON.parse(savedSearchState);
@@ -140,9 +142,11 @@ export const useSearch = (options: UseSearchOptions = {}) => {
 
   // Search results with persistence
   const [results, setResults] = useState<SearchResults>(() => {
-    // Try to restore search results from localStorage
+    // Try to restore search results from localStorage (only if no URL query)
     const searchResultsKey = user?.id ? `searchResults_${user.id}` : 'searchResults_guest';
-    const savedResults = localStorage.getItem(searchResultsKey);
+    // If URL has query, ignore saved results to enforce fresh search
+    const hasUrlQuery = !!searchParams.get('q');
+    const savedResults = hasUrlQuery ? null : localStorage.getItem(searchResultsKey);
     if (savedResults) {
       try {
         const parsed = JSON.parse(savedResults);
@@ -895,13 +899,20 @@ export const useSearch = (options: UseSearchOptions = {}) => {
   // Sync URL query changes to state (runs on mount due to key-based remounting)
   useEffect(() => {
     const urlQuery = searchParams.get('q') || '';
-    if (urlQuery && urlQuery !== lastSearchRef.current) {
+
+    // Check if query actually changed from what we have in ref
+    if (urlQuery !== lastSearchRef.current) {
       console.log('🔍 [useSearch] Syncing URL query to state:', urlQuery);
       // Update ref immediately to prevent loop when setQuery triggers render
       lastSearchRef.current = urlQuery;
-      setQuery(urlQuery);
+
+      // Only trigger setQuery if the URL query is effectively different from current state
+      // This prevents redundant updates if state is already matching
+      if (searchState.query !== urlQuery) {
+        setQuery(urlQuery);
+      }
     }
-  }, [searchParams, setQuery]);
+  }, [location.search, searchParams, setQuery, searchState.query]);
 
   // Computed values
   const hasResults = results.coupons.length > 0 || results.businesses.length > 0;

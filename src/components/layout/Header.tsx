@@ -61,8 +61,15 @@ export default function Header() {
     if (!location.pathname.startsWith('/search')) {
       setSearchQuery('');
       setShowSearchSuggestions(false);
+    } else {
+      // Sync input with URL query when on search page
+      const params = new URLSearchParams(location.search);
+      const query = params.get('q');
+      if (query) {
+        setSearchQuery(query);
+      }
     }
-  }, [location.pathname]);
+  }, [location.pathname, location.search]);
 
   const handleSignOut = async () => {
     await signOut();
