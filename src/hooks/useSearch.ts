@@ -22,6 +22,7 @@ import searchService, {
 import { toast } from 'react-hot-toast';
 import { useGeolocation, LocationCoords } from './useGeolocation';
 import { calculateDistance, formatDistance, getPreferredDistanceUnit, sortByDistance } from '../utils/locationUtils';
+import { getBusinessUrl } from '../utils/slugUtils';
 import { supabase } from '../lib/supabase';
 
 // Hook configuration
@@ -753,10 +754,7 @@ export const useSearch = (options: UseSearchOptions = {}) => {
    * Navigate to business profile
    */
   const goToBusiness = useCallback((businessId: string, businessName?: string) => {
-    import('./useBusinessUrl').then(({ useBusinessUrl }) => {
-      const { getBusinessUrl } = useBusinessUrl();
-      navigate(getBusinessUrl(businessId, businessName));
-    });
+    navigate(getBusinessUrl(businessId, businessName));
   }, [navigate]);
 
   /**
