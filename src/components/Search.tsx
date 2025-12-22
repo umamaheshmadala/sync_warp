@@ -379,7 +379,7 @@ export default function Search() {
                               resultType: 'business'
                             });
                           }
-                          search.goToBusiness(businessId);
+                          search.goToBusiness(businessId, coupon.business?.business_name);
                         }}
                         onCouponClick={(couponId) => {
                           // Track click for analytics
@@ -446,7 +446,7 @@ export default function Search() {
                               resultType: 'business'
                             });
                           }
-                          search.goToBusiness(businessId);
+                          search.goToBusiness(businessId, business.business_name);
                         }}
                         showDistance={!!(search.location.enabled && search.location.coords)}
                         showCouponCount={true}
