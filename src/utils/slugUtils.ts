@@ -6,7 +6,8 @@
  * Convert text to URL-friendly slug
  * Example: "Urban Coffee Roasters" -> "urban-coffee-roasters"
  */
-export function createSlug(text: string): string {
+export function createSlug(text: string | null | undefined): string {
+  if (!text) return '';
   return text
     .toLowerCase()
     .trim()
@@ -20,10 +21,11 @@ export function createSlug(text: string): string {
  * Create business slug with short ID for uniqueness
  * Example: "Urban Coffee" + "ac269130-cfb0..." -> "urban-coffee-ac269130"
  */
-export function createBusinessSlug(businessName: string, businessId: string): string {
+export function createBusinessSlug(businessName: string | null | undefined, businessId: string): string {
   const slug = createSlug(businessName);
   const shortId = businessId.slice(0, 8); // First 8 chars of UUID
-  return `${slug}-${shortId}`;
+  // If no name, just use the short ID
+  return slug ? `${slug}-${shortId}` : shortId;
 }
 
 /**
@@ -34,18 +36,18 @@ export function extractIdFromSlug(slug: string): string | null {
   // Slug format: "business-name-shortid"
   const parts = slug.split('-');
   if (parts.length === 0) return null;
-  
+
   // Last part should be the 8-char ID
   const lastPart = parts[parts.length - 1];
   if (lastPart.length === 8 && /^[a-f0-9]{8}$/i.test(lastPart)) {
     return lastPart;
   }
-  
+
   // Fallback: treat entire slug as potential UUID
   if (/^[a-f0-9-]{36}$/i.test(slug)) {
     return slug; // Full UUID
   }
-  
+
   return null;
 }
 
@@ -67,7 +69,7 @@ export function parseBusinessIdentifier(identifier: string): string {
   if (/^[a-f0-9-]{36}$/i.test(identifier)) {
     return identifier;
   }
-  
+
   // If it's a slug, extract the short ID
   const shortId = extractIdFromSlug(identifier);
   return shortId || identifier;
@@ -77,7 +79,7 @@ export function parseBusinessIdentifier(identifier: string): string {
  * Get full business URL
  * Example: "Urban Coffee", "ac269130..." -> "/business/urban-coffee-ac269130"
  */
-export function getBusinessUrl(businessId: string, businessName: string): string {
+export function getBusinessUrl(businessId: string, businessName?: string | null): string {
   const slug = createBusinessSlug(businessName, businessId);
   return `/business/${slug}`;
 }
