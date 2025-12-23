@@ -5,11 +5,11 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useBusinessUrl } from '../../hooks/useBusinessUrl';
-import { 
-  Heart, 
-  Search as SearchIcon, 
-  Grid, 
-  List, 
+import {
+  Heart,
+  Search as SearchIcon,
+  Grid,
+  List,
   Trash2,
   Star,
   Package,
@@ -32,12 +32,12 @@ type SortBy = 'date' | 'name' | 'rating' | 'expiry';
 const FavoritesPage: React.FC = () => {
   const navigate = useNavigate();
   const favorites = useFavorites();
-  
+
   // Refresh favorites data when page is visited
   React.useEffect(() => {
     favorites.refresh();
   }, [favorites.refresh]);
-  
+
   // Local state
   const [activeTab, setActiveTab] = useState<ActiveTab>('businesses');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
@@ -71,7 +71,7 @@ const FavoritesPage: React.FC = () => {
     // Apply search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(business => 
+      filtered = filtered.filter(business =>
         business.business_name.toLowerCase().includes(query) ||
         business.business_type?.toLowerCase().includes(query) ||
         business.address?.toLowerCase().includes(query)
@@ -100,7 +100,7 @@ const FavoritesPage: React.FC = () => {
     // Apply search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(coupon => 
+      filtered = filtered.filter(coupon =>
         coupon.title.toLowerCase().includes(query) ||
         coupon.business_name.toLowerCase().includes(query) ||
         coupon.description?.toLowerCase().includes(query)
@@ -148,42 +148,11 @@ const FavoritesPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-                <Heart className="h-8 w-8 text-red-500 mr-3" />
-                My Favorites
-              </h1>
-              <p className="mt-2 text-gray-600">
-                Your saved businesses, coupons, and wishlist items
-              </p>
-            </div>
-
-            {/* Quick Stats */}
-            <div className="hidden md:flex space-x-6">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-indigo-600">{favorites.counts.businesses}</div>
-                <div className="text-sm text-gray-600">Businesses</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">{favorites.counts.coupons}</div>
-                <div className="text-sm text-gray-600">Coupons</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">{favorites.counts.wishlist}</div>
-                <div className="text-sm text-gray-600">Wishlist</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Tabs */}
-        <div className="mb-8">
+        <div className="mb-4">
           <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8">
+            <nav className="-mb-px flex space-x-6">
               {[
                 { id: 'businesses', label: 'Businesses', count: favorites.counts.businesses },
                 { id: 'coupons', label: 'Coupons', count: favorites.counts.coupons },
@@ -193,7 +162,7 @@ const FavoritesPage: React.FC = () => {
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as ActiveTab)}
                   className={cn(
-                    "flex items-center py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap",
+                    "flex items-center py-3 px-1 border-b-2 font-medium text-sm whitespace-nowrap",
                     activeTab === tab.id
                       ? "border-indigo-500 text-indigo-600"
                       : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
@@ -201,7 +170,7 @@ const FavoritesPage: React.FC = () => {
                 >
                   {tab.label}
                   <span className={cn(
-                    "ml-2 px-2.5 py-0.5 rounded-full text-xs",
+                    "ml-2 px-2 py-0.5 rounded-full text-xs",
                     activeTab === tab.id
                       ? "bg-indigo-100 text-indigo-600"
                       : "bg-gray-100 text-gray-600"
@@ -214,66 +183,63 @@ const FavoritesPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Controls */}
-        <div className="mb-8 flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
+        {/* Controls - Always inline */}
+        <div className="mb-4 flex flex-row gap-2 items-center">
           {/* Search */}
-          <div className="relative flex-1 max-w-md">
-            <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <div className="relative flex-1">
+            <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={`Search ${activeTab}...`}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             />
           </div>
 
-          {/* Controls */}
-          <div className="flex items-center space-x-3">
-            {/* Sort */}
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as SortBy)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          {/* Sort */}
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as SortBy)}
+            className="px-2 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-[100px]"
+          >
+            <option value="date">Recent</option>
+            <option value="name">Name</option>
+            {activeTab === 'businesses' && <option value="rating">Rating</option>}
+            {activeTab === 'coupons' && <option value="expiry">Expiring</option>}
+          </select>
+
+          {/* View Mode */}
+          <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={cn(
+                "p-2 transition-colors",
+                viewMode === 'grid' ? "bg-indigo-100 text-indigo-600" : "text-gray-600 hover:bg-gray-100"
+              )}
             >
-              <option value="date">Most Recent</option>
-              <option value="name">Name</option>
-              {activeTab === 'businesses' && <option value="rating">Rating</option>}
-              {activeTab === 'coupons' && <option value="expiry">Expiring Soon</option>}
-            </select>
-
-            {/* View Mode */}
-            <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
-              <button
-                onClick={() => setViewMode('grid')}
-                className={cn(
-                  "p-2 transition-colors",
-                  viewMode === 'grid' ? "bg-indigo-100 text-indigo-600" : "text-gray-600 hover:bg-gray-100"
-                )}
-              >
-                <Grid className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={cn(
-                  "p-2 transition-colors border-l border-gray-300",
-                  viewMode === 'list' ? "bg-indigo-100 text-indigo-600" : "text-gray-600 hover:bg-gray-100"
-                )}
-              >
-                <List className="h-4 w-4" />
-              </button>
-            </div>
-
-            {/* Clear All */}
-            {currentCount > 0 && (
-              <button
-                onClick={handleClearAll}
-                className="px-3 py-2 text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            )}
+              <Grid className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={cn(
+                "p-2 transition-colors border-l border-gray-300",
+                viewMode === 'list' ? "bg-indigo-100 text-indigo-600" : "text-gray-600 hover:bg-gray-100"
+              )}
+            >
+              <List className="h-4 w-4" />
+            </button>
           </div>
+
+          {/* Clear All */}
+          {currentCount > 0 && (
+            <button
+              onClick={handleClearAll}
+              className="p-2 text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
         </div>
 
         {/* Content */}
@@ -299,11 +265,11 @@ const FavoritesPage: React.FC = () => {
         ) : (
           <div className={cn(
             "grid gap-6",
-            viewMode === 'grid' 
+            viewMode === 'grid'
               ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
               : "grid-cols-1"
           )}>
-            {activeTab === 'businesses' && 
+            {activeTab === 'businesses' &&
               (filteredBusinesses as FavoriteBusiness[]).map((business) => {
                 const { getBusinessUrl } = useBusinessUrl();
                 return (
@@ -316,7 +282,7 @@ const FavoritesPage: React.FC = () => {
                 );
               })}
 
-            {activeTab === 'coupons' && 
+            {activeTab === 'coupons' &&
               (filteredCoupons as FavoriteCoupon[]).map((coupon) => {
                 const { getBusinessUrl } = useBusinessUrl();
                 return (
@@ -467,7 +433,7 @@ const CouponCard: React.FC<{
   const now = Date.now();
   const expiryTime = new Date(coupon.valid_until).getTime();
   const isExpired = expiryTime < now;
-  
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -508,18 +474,18 @@ const WishlistCard: React.FC<{
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
             {item.item_type} - {item.item_id}
           </h3>
-          
+
           {item.notes && (
             <p className="text-sm text-gray-600 mb-4">{item.notes}</p>
           )}
-          
+
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
                 Priority {item.priority}
               </span>
             </div>
-            
+
             <button
               onClick={onRemove}
               className="text-red-600 hover:text-red-700 text-sm"

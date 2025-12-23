@@ -8,6 +8,7 @@ import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch'
 import {
   Dialog,
   DialogContent,
+  DialogTitle,
 } from '../ui/dialog'
 import toast from 'react-hot-toast'
 
@@ -37,16 +38,16 @@ interface ImageLightboxProps {
  * />
  * ```
  */
-export function ImageLightbox({ 
-  images, 
-  initialIndex = 0, 
-  isOpen, 
-  onClose 
+export function ImageLightbox({
+  images,
+  initialIndex = 0,
+  isOpen,
+  onClose
 }: ImageLightboxProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex)
   const [showMobileActions, setShowMobileActions] = useState(false)
   const longPressTimer = useRef<NodeJS.Timeout | null>(null)
-  
+
   // Swipe detection
   const touchStartX = useRef<number>(0)
   const touchStartY = useRef<number>(0)
@@ -78,24 +79,24 @@ export function ImageLightbox({
       if (isMobile) {
         // Mobile: Save to device storage
         await Haptics.impact({ style: ImpactStyle.Light })
-        
+
         const response = await fetch(currentImage)
         const blob = await response.blob()
         const reader = new FileReader()
-        
+
         reader.onloadend = async () => {
           const base64 = reader.result as string
           const base64Data = base64.split(',')[1]
-          
+
           await Filesystem.writeFile({
             path: `sync-image-${Date.now()}.jpg`,
             data: base64Data,
             directory: Directory.Documents
           })
-          
+
           toast.success('Image saved to device')
         }
-        
+
         reader.readAsDataURL(blob)
       } else {
         // Web: Traditional download
@@ -116,7 +117,7 @@ export function ImageLightbox({
       toast.error('Failed to save image')
     }
   }
-  
+
   /**
    * Share image via native share sheet (mobile) or Web Share API
    * Now using centralized shareService for tracking
@@ -126,7 +127,7 @@ export function ImageLightbox({
       if (isMobile) {
         await Haptics.impact({ style: ImpactStyle.Light })
       }
-      
+
       // Use shareService for cross-platform sharing with tracking
       const { shareService } = await import('../../services/shareService')
       await shareService.shareImage(currentImage, 'lightbox-share')
@@ -135,22 +136,22 @@ export function ImageLightbox({
       console.log('Share cancelled or failed:', error)
     }
   }
-  
+
   /**
    * Handle touch start - track position for swipe detection
    */
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX
     touchStartY.current = e.touches[0].clientY
-    
+
     if (!isMobile) return
-    
+
     longPressTimer.current = setTimeout(async () => {
       await Haptics.impact({ style: ImpactStyle.Medium })
       setShowMobileActions(true)
     }, 500) // 500ms long-press
   }
-  
+
   /**
    * Handle touch end - detect swipe for navigation
    */
@@ -182,7 +183,7 @@ export function ImageLightbox({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isOpen) return
-      
+
       if (e.key === 'ArrowLeft') {
         e.preventDefault() // Prevent default focus behavior
         setCurrentIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1))
@@ -205,9 +206,19 @@ export function ImageLightbox({
     }
   }, [isOpen, initialIndex])
 
+  // Debug: Log current image to investigate broken image issues
+  useEffect(() => {
+    if (isOpen && currentImage) {
+      console.log('🖼️ Lightbox displaying image:', currentImage)
+    } else if (isOpen && !currentImage) {
+      console.warn('⚠️ Lightbox open but no image found at index:', currentIndex, 'Images:', images)
+    }
+  }, [isOpen, currentImage, currentIndex, images])
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-full w-screen h-screen max-h-screen p-0 bg-black border-none overflow-hidden [&>button]:hidden">
+        <DialogTitle className="sr-only">Image Preview</DialogTitle>
         <div className="relative w-full h-full bg-black overflow-hidden">
           {/* Close Button */}
           <button
@@ -279,7 +290,7 @@ export function ImageLightbox({
           )}
 
           {/* Image with Pinch-to-Zoom (Mobile) */}
-          <div 
+          <div
             className="flex items-center justify-center w-full h-full p-8 overflow-hidden"
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
@@ -314,7 +325,7 @@ export function ImageLightbox({
               />
             )}
           </div>
-          
+
           {/* Mobile Action Sheet */}
           {showMobileActions && isMobile && (
             <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl p-4 animate-slide-up z-20">
@@ -328,7 +339,7 @@ export function ImageLightbox({
                 <Save className="w-5 h-5" />
                 <span className="font-medium">Save Image</span>
               </button>
-              
+
               <button
                 onClick={() => {
                   handleShareImage()
@@ -339,7 +350,7 @@ export function ImageLightbox({
                 <Share2 className="w-5 h-5" />
                 <span className="font-medium">Share</span>
               </button>
-              
+
               <button
                 onClick={() => setShowMobileActions(false)}
                 className="w-full flex items-center justify-center p-4 text-red-600 font-medium"

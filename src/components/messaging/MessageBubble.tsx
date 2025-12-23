@@ -689,7 +689,7 @@ export function MessageBubble({
                           let currentImageIndex = 0
 
                           conversationMessages.forEach((msg) => {
-                            if (msg.type === 'image' && msg.media_urls && msg.media_urls.length > 0 && !msg._optimistic) {
+                            if (msg.type === 'image' && Array.isArray(msg.media_urls) && msg.media_urls.length > 0 && !msg._optimistic) {
                               // Track the index of the current image
                               if (msg.id === message.id) {
                                 currentImageIndex = allImages.length
@@ -698,6 +698,15 @@ export function MessageBubble({
                             }
                           })
 
+                          // Fallback: If for some reason we didn't find any (e.g. current message missing from store),
+                          // at least show the current image.
+                          if (allImages.length === 0 && message.media_urls?.[0]) {
+                            console.warn('⚠️ Lightbox: Could not find images in store, falling back to current message image')
+                            allImages.push(message.media_urls[0])
+                            currentImageIndex = 0
+                          }
+
+                          console.log('🖼️ Opening lightbox with images:', allImages.length, 'Current index:', currentImageIndex)
                           setLightboxImages(allImages)
                           setLightboxInitialIndex(currentImageIndex)
                           setLightboxOpen(true)

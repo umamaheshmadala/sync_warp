@@ -447,174 +447,64 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
 
   return (
     <div className={`bg-gray-50 min-h-screen ${className}`}>
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-center mb-4">
-            <h1 className="text-xs font-bold text-gray-900 flex items-center gap-2">
-              <Wallet className="w-6 h-6 text-blue-600" />
-              My Coupon Wallet
-            </h1>
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={handleRefresh}
-                disabled={refreshing}
-                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
-              >
-                <RefreshCcw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
-              </button>
-              <button
-                onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
-                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <SortAsc className="w-5 h-5" />
-              </button>
-            </div>
+      {/* Search and Filters Unified Bar */}
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10 px-4 py-3">
+        <div className="max-w-6xl mx-auto flex flex-row items-center gap-2">
+          {/* Search */}
+          <div className="relative flex-1 min-w-0">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search coupons..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
           </div>
 
-          {/* Search and Filters */}
-          <div className="space-y-3">
-            <div className="flex items-center space-x-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search your coupons..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`px-4 py-3 border rounded-lg transition-colors flex items-center gap-2 ${showFilters
-                  ? 'border-blue-500 bg-blue-50 text-blue-700'
-                  : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                  }`}
+          <div className="flex items-center gap-2">
+            {/* Unified Filter Dropdown */}
+            <div className="relative">
+              <select
+                value={
+                  filters.status !== 'all' ? filters.status :
+                    filters.acquisition !== 'all' ? filters.acquisition :
+                      'all'
+                }
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (['active', 'expiring', 'expired', 'redeemed'].includes(val)) {
+                    setFilters(prev => ({ ...prev, status: val as any, acquisition: 'all' }));
+                  } else if (['shareable', 'collected', 'shared_received'].includes(val)) {
+                    setFilters(prev => ({ ...prev, status: 'all', acquisition: val as any }));
+                  } else {
+                    setFilters(prev => ({ ...prev, status: 'all', acquisition: 'all' }));
+                  }
+                }}
+                className="appearance-none pl-3 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white min-w-[140px]"
               >
-                <Filter className="w-4 h-4" />
-                Filters
-                {showFilters ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-              </button>
+                <option value="all">All ({walletStats.total})</option>
+                <option value="active">Active ({walletStats.active})</option>
+                <option value="expiring">Expiring ({walletStats.expiring})</option>
+                <option value="expired">Expired ({walletStats.expired})</option>
+                <option value="redeemed">Redeemed ({walletStats.redeemed})</option>
+                <option value="shareable">🎁 Can Share ({walletStats.shareable})</option>
+                <option value="collected">📥 Collected ({collectedCoupons.filter(c => (c as any).acquisition_method === 'collected').length})</option>
+                <option value="shared_received">🤝 Received ({walletStats.shared})</option>
+              </select>
+              <Filter className="absolute right-2.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
             </div>
 
-            {/* Quick Filters */}
-            <div className="flex items-center space-x-2 overflow-x-auto pb-2">
-              {/* Status Filters */}
-              {['all', 'active', 'expiring', 'expired', 'redeemed'].map((status) => (
-                <button
-                  key={status}
-                  onClick={() => setFilters(prev => ({ ...prev, status: status as any }))}
-                  className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${filters.status === status
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-white text-gray-600 hover:bg-gray-100'
-                    }`}
-                >
-                  {status.charAt(0).toUpperCase() + status.slice(1)}
-                  {status !== 'all' && (
-                    <span className="ml-1 text-xs">
-                      ({status === 'active' ? walletStats.active :
-                        status === 'expiring' ? walletStats.expiring :
-                          status === 'expired' ? walletStats.expired :
-                            status === 'redeemed' ? walletStats.redeemed : 0})
-                    </span>
-                  )}
-                </button>
-              ))}
 
-              {/* Acquisition Filters */}
-              <div className="w-px h-8 bg-gray-300" />
-              {['shareable', 'collected', 'shared_received'].map((acquisition) => (
-                <button
-                  key={acquisition}
-                  onClick={() => setFilters(prev => ({ ...prev, acquisition: acquisition as any }))}
-                  className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${filters.acquisition === acquisition
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-white text-gray-600 hover:bg-gray-100'
-                    }`}
-                >
-                  {acquisition === 'shareable' ? '🎁 Can Share' :
-                    acquisition === 'collected' ? '📥 Collected' : '🤝 Received'}
-                  <span className="ml-1 text-xs">
-                    ({acquisition === 'shareable' ? walletStats.shareable :
-                      acquisition === 'shared_received' ? walletStats.shared :
-                        collectedCoupons.filter(c => (c as any).acquisition_method === 'collected').length})
-                  </span>
-                </button>
-              ))}
-            </div>
 
-            {/* Advanced Filters */}
-            <AnimatePresence>
-              {showFilters && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="bg-white border border-gray-200 rounded-lg p-4 space-y-4"
-                >
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                      <select
-                        value={filters.category}
-                        onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value as any }))}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                      >
-                        <option value="all">All Categories</option>
-                        <option value="food">Food</option>
-                        <option value="shopping">Shopping</option>
-                        <option value="entertainment">Entertainment</option>
-                        <option value="travel">Travel</option>
-                        <option value="health">Health</option>
-                        <option value="education">Education</option>
-                        <option value="services">Services</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
-                      <select
-                        value={filters.sortBy}
-                        onChange={(e) => setFilters(prev => ({ ...prev, sortBy: e.target.value as any }))}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                      >
-                        <option value="added">Recently Added</option>
-                        <option value="expiry">Expiring Soon</option>
-                        <option value="value">Highest Value</option>
-                        <option value="business">Business Name</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Business Name</label>
-                      <input
-                        type="text"
-                        placeholder="Filter by business..."
-                        value={filters.businessName}
-                        onChange={(e) => setFilters(prev => ({ ...prev, businessName: e.target.value }))}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end">
-                    <button
-                      onClick={() => setFilters({
-                        category: 'all',
-                        status: 'all',
-                        acquisition: 'all',
-                        sortBy: 'added',
-                        businessName: ''
-                      })}
-                      className="text-sm text-blue-600 hover:text-blue-800"
-                    >
-                      Reset Filters
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {/* Refresh Button */}
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg border border-gray-300 transition-colors disabled:opacity-50"
+            >
+              <RefreshCcw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            </button>
           </div>
         </div>
       </div>
