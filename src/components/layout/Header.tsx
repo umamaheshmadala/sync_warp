@@ -175,9 +175,9 @@ export default function Header() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-40 w-full border-b border-gray-200 bg-white shadow-sm">
-      <div className="max-w-4xl mx-auto flex h-[50px] items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto flex h-[50px] items-center justify-between px-2 md:px-6 lg:px-8">
         {/* Left side - Profile Avatar (Mobile) or Logo (Desktop) */}
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-1 md:space-x-3">
           {/* Mobile: Profile Avatar */}
           {user && (
             <Button
@@ -214,7 +214,7 @@ export default function Header() {
         </div>
 
         {/* Search Bar - Center */}
-        <div className="flex-1 max-w-2xl mx-4 relative">
+        <div className="flex-1 max-w-2xl mx-2 md:mx-4 relative">
           <form onSubmit={handleSearchSubmit} className="relative">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -244,7 +244,7 @@ export default function Header() {
         </div>
 
         {/* Right side - Notifications, Friends (Mobile) | Wishlist, Notifications, Profile (Desktop) */}
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1 md:space-x-2">
           {/* Sync Status - Desktop Only - REMOVED */}
           {/* <div className="hidden md:block">
             <SyncStatusIndicator compact />

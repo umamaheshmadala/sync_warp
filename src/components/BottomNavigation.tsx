@@ -80,11 +80,11 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentRoute }) => 
   ];
 
   const isActive = (route: string) => {
-    // Special case: /following/feed is independent and doesn't highlight /following
-    if (route === '/following' && currentPath === '/following/feed') {
-      return false;
-    }
-    return currentPath === route || currentPath.startsWith(route + '/');
+    // Strict matching to prevent bleed overlap
+    // Ensure we match exact path or path + /
+    if (currentPath === route) return true;
+    if (currentPath.startsWith(`${route}/`)) return true;
+    return false;
   };
 
   // Track navigation changes for animations
@@ -121,7 +121,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentRoute }) => 
     >
       {/* Container with max width matching header */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-around py-1">
+        <div className="flex items-center justify-around py-1 gap-1">
           {navItems.map((item) => {
             const IconComponent = item.icon;
             const active = isActive(item.route);
@@ -130,20 +130,16 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentRoute }) => 
               <motion.button
                 key={item.id}
                 onClick={() => handleNavClick(item.route, item.id)}
-                onMouseEnter={() => preloadRoute(item.route)}
-                onTouchStart={() => preloadRoute(item.route)}
-                className="flex flex-col items-center justify-center p-0.5 rounded-lg relative min-w-0 flex-1 group"
-                whileHover={{ scale: 1.05 }}
+                className="flex flex-col items-center justify-center p-0.5 rounded-lg relative min-w-0 flex-1 group overflow-hidden"
                 whileTap={{ scale: 0.95 }}
                 transition={{ type: "spring", stiffness: 400, damping: 25 }}
               >
 
 
-                {/* Animated Background */}
+                {/* Animated Background - Simple Fade, No Slide */}
                 <AnimatePresence>
                   {active && (
                     <motion.div
-                      layoutId="activeTab"
                       className="absolute inset-0 bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-lg"
                       initial={{ scale: 0.8, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
@@ -169,7 +165,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentRoute }) => 
                 >
                   <IconComponent
                     className={`h-5 w-5 transition-all duration-200 ${active ? (item.activeColor || 'text-indigo-600') : (item.color || 'text-gray-500')
-                      } group-hover:scale-110`}
+                      }`}
                     strokeWidth={active ? 2.5 : 2}
                   />
                 </motion.div>

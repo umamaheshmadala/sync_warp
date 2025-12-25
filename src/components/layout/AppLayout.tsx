@@ -60,11 +60,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="fixed inset-0 w-full h-full flex flex-col overflow-hidden bg-gray-50">
       <Header />
       <main
-        className={`flex-1 flex flex-col min-h-0 relative ${isMessagesRoute ? 'overflow-hidden' : 'overflow-y-auto'
-          }`}
+        className={`flex-1 flex flex-col min-h-0 relative ${isMessagesRoute ? 'overflow-hidden' : 'overflow-y-auto'}`}
       >
-        <div className={`w-full max-w-4xl mx-auto flex-1 flex flex-col min-h-0 pt-[54px] md:pt-16 ${shouldShowBottomNav ? 'pb-[54px] md:pb-16' : 'pb-0'}`}>
+        <div className="w-full max-w-4xl mx-auto min-h-full pt-[54px] md:pt-16">
           {children}
+          {/* Spacer for Bottom Navigation - Physical element ensures scroll clearance */}
+          <div className={`w-full transition-all duration-200 ${shouldShowBottomNav ? 'h-32 md:h-16' : 'h-0'}`} />
         </div>
       </main>
 

@@ -166,6 +166,7 @@ export function useAdSlots() {
     gcTime: 30 * 60 * 1000, // 30 minutes - cache retained
     refetchOnWindowFocus: false, // Don't refetch on tab focus
     refetchOnMount: true, // Refetch on mount if stale
+    placeholderData: (previousData) => previousData, // Keep showing old data while fetching
   });
 
   const trackImpression = async (adId: string) => {
