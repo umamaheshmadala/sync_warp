@@ -4,10 +4,10 @@
  */
 
 import React, { useState } from 'react';
-import { Users, X, Loader2, UserPlus } from 'lucide-react';
-import { PYMKSuggestion } from '@/services/friendService';
-import { useFriendActions } from '@/hooks/friends/useFriendActions';
-import { useDismissPYMK } from '@/hooks/usePYMK';
+import { Users, X, Loader2, UserPlus, XCircle } from 'lucide-react';
+import { PYMKSuggestion } from '../../types/friends';
+import { useFriendActions } from '../../hooks/friends/useFriendActions';
+import { useDismissPYMK } from '../../hooks/usePYMK';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
@@ -17,19 +17,34 @@ interface PYMKCardProps {
 
 export function PYMKCard({ recommendation }: PYMKCardProps) {
   const navigate = useNavigate();
-  const { sendRequest } = useFriendActions();
+  const { sendRequest, cancelRequest } = useFriendActions();
   const dismissSuggestion = useDismissPYMK();
-  const [requestSent, setRequestSent] = useState(false);
+  const [sentRequestId, setSentRequestId] = useState<string | null>(null);
 
   const handleAddFriend = (e: React.MouseEvent) => {
     e.stopPropagation();
     sendRequest.mutate(recommendation.id, {
-      onSuccess: () => {
-        setRequestSent(true);
-        toast.success(`Friend request sent to ${recommendation.full_name}`);
+      onSuccess: (data) => {
+        // data.data is the FriendRequest object from ServiceResponse
+        if (data.data?.id) {
+          setSentRequestId(data.data.id);
+          toast.success(`Friend request sent to ${recommendation.full_name}`);
+        }
       },
       onError: (error: any) => {
         toast.error(error?.message || 'Failed to send friend request');
+      }
+    });
+  };
+
+  const handleCancelRequest = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!sentRequestId) return;
+
+    cancelRequest.mutate(sentRequestId, {
+      onSuccess: () => {
+        setSentRequestId(null);
+        toast.success('Friend request cancelled');
       }
     });
   };
@@ -52,7 +67,7 @@ export function PYMKCard({ recommendation }: PYMKCardProps) {
       <button
         onClick={handleDismiss}
         disabled={dismissSuggestion.isPending}
-        className="absolute top-2 right-2 p-1 hover:bg-gray-100 rounded-full transition-colors z-10"
+        className="absolute top-0 right-0 p-1.5 hover:bg-gray-100 rounded-full transition-colors z-10"
         title="Dismiss suggestion"
       >
         {dismissSuggestion.isPending ? (
@@ -63,7 +78,7 @@ export function PYMKCard({ recommendation }: PYMKCardProps) {
       </button>
 
       {/* Avatar */}
-      <div className="flex flex-col items-center mb-2 w-full">
+      <div className="flex flex-col items-center mb-2 w-full mt-3">
         <img
           src={recommendation.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(recommendation.full_name)}&background=random`}
           alt={recommendation.full_name}
@@ -101,25 +116,37 @@ export function PYMKCard({ recommendation }: PYMKCardProps) {
 
       {/* Add Friend button */}
       <div className="mt-auto w-full">
-        <button
-          onClick={handleAddFriend}
-          disabled={sendRequest.isPending || requestSent}
-          className={`w-full px-4 py-2 text-sm font-medium rounded-lg transition-colors flex items-center justify-center ${requestSent
-            ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
-            : 'bg-blue-600 text-white hover:bg-blue-700'
-            }`}
-        >
-          {sendRequest.isPending ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : requestSent ? (
-            'Request Sent'
-          ) : (
-            <>
-              <UserPlus className="w-4 h-4 mr-2" />
-              Add
-            </>
-          )}
-        </button>
+        {sentRequestId ? (
+          <button
+            onClick={handleCancelRequest}
+            disabled={cancelRequest.isPending}
+            className="w-full px-4 py-2 text-sm font-medium rounded-lg transition-colors flex items-center justify-center bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-red-600"
+          >
+            {cancelRequest.isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <>
+                <XCircle className="w-4 h-4 mr-2" />
+                Cancel
+              </>
+            )}
+          </button>
+        ) : (
+          <button
+            onClick={handleAddFriend}
+            disabled={sendRequest.isPending}
+            className="w-full px-4 py-2 text-sm font-medium rounded-lg transition-colors flex items-center justify-center bg-blue-600 text-white hover:bg-blue-700"
+          >
+            {sendRequest.isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <>
+                <UserPlus className="w-4 h-4 mr-2" />
+                Add
+              </>
+            )}
+          </button>
+        )}
       </div>
     </div>
   );
