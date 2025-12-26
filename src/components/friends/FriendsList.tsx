@@ -12,6 +12,7 @@ interface FriendsListProps {
 }
 
 import { useRealtimeFriends } from '../../hooks/friends/useRealtimeFriends';
+import { GlobalUserSearch } from './GlobalUserSearch';
 
 export function FriendsList({ searchQuery = '' }: FriendsListProps) {
   useRealtimeFriends(); // Enable realtime updates
@@ -90,10 +91,16 @@ export function FriendsList({ searchQuery = '' }: FriendsListProps) {
     return <NoFriendsEmptyState />;
   }
 
-  // Show empty state for search with no results
+  // Show empty state for search with no results ONLY if not using unified search (but here we are)
+  // Actually, we want to show "No friends found" if filtered list is empty, BUT we proceed to render GlobalUserSearch below.
+  // So we shouldn't return early here.
+  // We can show a small message "No friends found" inside the main render if needed, or rely on the "Showing 0 of X friends" header.
+
+  /* 
   if (searchQuery && filteredFriends.length === 0) {
     return <SearchNoResultsEmptyState query={searchQuery} />;
   }
+  */
 
   return (
     <div className="bg-white rounded-lg shadow" data-testid="friends-list-container">
@@ -136,6 +143,16 @@ export function FriendsList({ searchQuery = '' }: FriendsListProps) {
           isOpen={!!selectedFriendId}
           onClose={() => setSelectedFriendId(null)}
         />
+      )}
+
+      {/* Global Search Results (Unified Search) */}
+      {searchQuery && (
+        <div className="mt-6 border-t pt-6">
+          <GlobalUserSearch
+            query={searchQuery}
+            hideEmptyMessage={filteredFriends.length > 0}
+          />
+        </div>
       )}
     </div>
   );

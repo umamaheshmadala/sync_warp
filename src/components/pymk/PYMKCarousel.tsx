@@ -20,7 +20,7 @@ export function PYMKCarousel() {
   }
 
   if (!recommendations || recommendations.length === 0) {
-    return <NoPYMKEmptyState />;
+    return null;
   }
 
   return (

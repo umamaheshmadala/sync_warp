@@ -784,7 +784,7 @@ export function MessageBubble({
                     <p
                       ref={textRef}
                       className={cn(
-                        "whitespace-pre-wrap transition-all duration-200",
+                        "whitespace-pre-wrap break-words break-all transition-all duration-200",
                         !isExpanded && needsReadMore ? "line-clamp-7 max-h-[140px] overflow-hidden" : ""
                       )}
                     >

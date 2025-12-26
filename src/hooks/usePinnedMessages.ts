@@ -8,7 +8,7 @@ export function usePinnedMessages(conversationId: string) {
 
   const fetchPins = useCallback(async () => {
     if (!conversationId) return;
-    
+
     try {
       const pins = await pinnedMessageService.getPinnedMessages(conversationId);
       setPinnedMessages(pins);

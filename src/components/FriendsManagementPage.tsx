@@ -21,17 +21,19 @@ import { useReceivedFriendRequests } from '../hooks/friends/useFriendRequests';
 import { useFriendActions } from '../hooks/friends/useFriendActions';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
 import { toast } from 'react-hot-toast';
-import AddFriend from './AddFriend';
 import ShareDeal from './ShareDealSimple';
 import type { Friend } from '../services/newFriendService';
 import { NoRequestsEmptyState } from './friends/EmptyStates';
 import { FriendsListSkeleton } from './ui/skeletons/FriendsListSkeleton';
+import { GlobalUserSearch } from './friends/GlobalUserSearch'; // New Component
 
-type TabType = 'friends' | 'requests' | 'add' | 'activity';
+type TabType = 'friends' | 'requests' | 'activity'; // Removed 'add'
 
 const FriendsManagementPage: React.FC = () => {
   const { user } = useAuthStore();
-  const { data: friends = [], isLoading: loading } = useFriends();
+  const { data: friendsResponse, isLoading: loading } = useFriends();
+  const friends = friendsResponse?.data || [];
+
   const { data: receivedRequests = [] } = useReceivedFriendRequests();
   const { acceptRequest, rejectRequest, unfriend } = useFriendActions();
   const { triggerHaptic } = useHapticFeedback();
@@ -157,7 +159,7 @@ const FriendsManagementPage: React.FC = () => {
   const tabs = [
     { id: 'friends', label: 'Friends', icon: Users, count: totalFriends },
     { id: 'requests', label: 'Requests', icon: Clock, count: receivedRequests.length },
-    { id: 'add', label: 'Add Friends', icon: UserPlus, count: null },
+    // { id: 'add', label: 'Add Friends', icon: UserPlus, count: null }, // Removed "Find" tab
     { id: 'activity', label: 'Activity', icon: MessageCircle, count: null }
   ];
 
@@ -196,7 +198,7 @@ const FriendsManagementPage: React.FC = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search friends..."
+                placeholder="Search friends or find new people..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
@@ -260,83 +262,142 @@ const FriendsManagementPage: React.FC = () => {
           >
             {/* Friends Tab */}
             {activeTab === 'friends' && (
-              <div className="space-y-4">
-                {filteredFriends.length > 0 ? (
-                  filteredFriends.map((friend: any) => (
-                    <div
-                      key={friend.friend?.id || Math.random()}
-                      className="bg-white rounded-lg border p-4 hover:shadow-sm transition-shadow"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className="relative">
-                            <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
-                              <User className="w-6 h-6 text-gray-400" />
+              <div className="space-y-6">
+
+                {/* 1. Request Section (Top of Friends List) - Only if processing or not empty */}
+                {/* Note: User asked to "bring received friend request section above friends list" */}
+                {/* We only show if there are requests */}
+                {receivedRequests.length > 0 && (
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Friend Requests</h3>
+                    {receivedRequests.map((request: any) => (
+                      <div
+                        key={request.id}
+                        className="bg-white rounded-lg border p-4 shadow-sm"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                              <User className="w-5 h-5 text-gray-400" />
                             </div>
-                            {friend.friend?.is_online && (
-                              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 border-2 border-white rounded-full"></div>
-                            )}
-                          </div>
-                          <div>
-                            <h3 className="font-medium text-gray-900">
-                              {friend.friend?.full_name}
-                            </h3>
-                            <div className="flex items-center text-sm text-gray-500">
-                              {friend.friend?.city && (
-                                <>
-                                  <MapPin className="w-3 h-3 mr-1" />
-                                  <span className="mr-3">{friend.friend.city}</span>
-                                </>
-                              )}
-                              <span>
-                                {friend.friend?.is_online
-                                  ? 'Online'
-                                  : `Last seen ${formatLastActive(friend.friend?.last_active)}`
-                                }
-                              </span>
+                            <div>
+                              <h3 className="font-medium text-gray-900 text-sm">
+                                {request.sender?.full_name || 'Unknown User'}
+                              </h3>
+                              <p className="text-xs text-gray-500">
+                                Wants to be your friend
+                              </p>
                             </div>
                           </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <button
-                            onClick={() => setShowShareDeal(friend.friend?.id)}
-                            className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full"
-                            title="Share Deal"
-                          >
-                            <Share2 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => console.log('Message:', friend.friend?.full_name)}
-                            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full"
-                            title="Send Message"
-                          >
-                            <MessageCircle className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleRemoveFriend(friend)}
-                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full"
-                            title="Remove Friend"
-                          >
-                            <MoreHorizontal className="w-4 h-4" />
-                          </button>
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => handleAcceptRequest(request.id)}
+                              disabled={processingRequest.has(request.id)}
+                              className="inline-flex items-center px-3 py-1.5 bg-green-600 text-white rounded-md text-sm hover:bg-green-700 disabled:opacity-50"
+                            >
+                              Accept
+                            </button>
+                            <button
+                              onClick={() => handleRejectRequest(request.id)}
+                              disabled={processingRequest.has(request.id)}
+                              className="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-700 rounded-md text-sm hover:bg-gray-200 disabled:opacity-50"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))
-                ) : (
+                    ))}
+                    <div className="border-b border-gray-200 my-4" />
+                  </div>
+                )}
+
+                {/* 2. Filtered Friends List */}
+                {/* If searching, and we have matching friends, show them. */}
+                {/* If not searching, just show list. */}
+                {filteredFriends.length > 0 && (
+                  <div className="space-y-4">
+                    {filteredFriends.map((friend: any) => (
+                      <div
+                        key={friend.friend?.id || Math.random()}
+                        className="bg-white rounded-lg border p-4 hover:shadow-sm transition-shadow"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <div className="relative">
+                              <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+                                <User className="w-6 h-6 text-gray-400" />
+                              </div>
+                              {friend.friend?.is_online && (
+                                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 border-2 border-white rounded-full"></div>
+                              )}
+                            </div>
+                            <div>
+                              <h3 className="font-medium text-gray-900">
+                                {friend.friend?.full_name}
+                              </h3>
+                              <div className="flex items-center text-sm text-gray-500">
+                                {friend.friend?.city && (
+                                  <>
+                                    <MapPin className="w-3 h-3 mr-1" />
+                                    <span className="mr-3">{friend.friend.city}</span>
+                                  </>
+                                )}
+                                <span>
+                                  {friend.friend?.is_online
+                                    ? 'Online'
+                                    : `Last seen ${formatLastActive(friend.friend?.last_active)}`
+                                  }
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => setShowShareDeal(friend.friend?.id)}
+                              className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full"
+                              title="Share Deal"
+                            >
+                              <Share2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => console.log('Message:', friend.friend?.full_name)}
+                              className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full"
+                              title="Send Message"
+                            >
+                              <MessageCircle className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleRemoveFriend(friend)}
+                              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full"
+                              title="Remove Friend"
+                            >
+                              <MoreHorizontal className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* 3. Global Search Results */}
+                {/* Only show if searching */}
+                {searchQuery && (
+                  <GlobalUserSearch
+                    query={searchQuery}
+                    hideEmptyMessage={filteredFriends.length > 0}
+                  />
+                )}
+
+                {/* 4. Empty State - No Friends and Not Searching */}
+                {!searchQuery && friends.length === 0 && (
                   <div className="text-center py-12">
                     <Users className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No friends found</h3>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No friends yet</h3>
                     <p className="text-gray-500 mb-4">
-                      {searchQuery ? 'Try adjusting your search' : 'Start building your network'}
+                      Search above to find people you know!
                     </p>
-                    <button
-                      onClick={() => setActiveTab('add')}
-                      className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-                    >
-                      <UserPlus className="w-4 h-4 mr-2" />
-                      Add Friends
-                    </button>
                   </div>
                 )}
               </div>
@@ -397,13 +458,6 @@ const FriendsManagementPage: React.FC = () => {
               </div>
             )}
 
-            {/* Add Friends Tab */}
-            {activeTab === 'add' && (
-              <div className="bg-white rounded-lg border p-6">
-                <AddFriend />
-              </div>
-            )}
-
             {/* Activity Tab */}
             {activeTab === 'activity' && (
               <div className="text-center py-12">
@@ -419,7 +473,8 @@ const FriendsManagementPage: React.FC = () => {
       {/* Share Deal Modal */}
       {showShareDeal && (
         <ShareDeal
-          recipientId={showShareDeal}
+          friendId={showShareDeal}
+          isOpen={true}
           onClose={() => setShowShareDeal(null)}
         />
       )}

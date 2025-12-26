@@ -41,21 +41,13 @@ export function useSendMessage() {
   // Get network status for offline detection
   const { isOnline } = useNetworkStatus()
 
-  /**
+  /*
    * Send a message with optimistic UI updates and offline support
    */
   const sendMessage = useCallback(async (params: SendMessageParams) => {
-    // Generate temporary ID for optimistic message
-    const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-
-    // [STORY 8.7.4] Validate links before sending
-    if (params.content) {
-      const validation = await linkValidationService.validateUrls(params.content)
-      if (!validation.valid) {
-        toast.error(validation.reason || 'Message contains unsafe links')
-        throw new Error(validation.reason || 'Link validation failed')
-      }
-    }
+    // Generate temporary ID for optimistic message OR reuse existing if retrying
+    const tempId = params.tempId || `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    const isRetry = !!params.tempId
 
     // Look up parent message if this is a reply
     let parentMessage = null
@@ -76,7 +68,7 @@ export function useSendMessage() {
 
     // Create optimistic message
     const optimisticMessage: Message = {
-      id: tempId, // Temporary ID
+      id: tempId, // Temporary ID (reused if retrying)
       conversation_id: params.conversationId,
       sender_id: currentUserId || 'unknown',
       content: params.content,
@@ -94,22 +86,56 @@ export function useSendMessage() {
       updated_at: new Date().toISOString(),
       _optimistic: true,
       _tempId: tempId,
-      _failed: false,
+      _failed: false, // Reset failure status on retry
       status: 'sending'
     }
 
-    try {
-      // 1. Add optimistic message immediately (instant UI feedback)
-      // Update React Query cache directly for instant UI update
-      queryClient.setQueryData(['messages', params.conversationId], (old: any) => ({
-        messages: [...(old?.messages || []), optimisticMessage],
+    // 1. Add/Update optimistic message immediately (instant UI feedback)
+    console.log('🚀 [useSendMessage] Starting optimistic update...', { tempId, isRetry })
+
+    // Update React Query cache directly
+    queryClient.setQueryData(['messages', params.conversationId], (old: any) => {
+      console.log('💾 [useSendMessage] Updating cache. Old data exists:', !!old)
+      const currentMessages = old?.messages || []
+      const exists = currentMessages.some((m: Message) => m.id === tempId)
+
+      // If retrying (exists), replace it. If new, append.
+      const updatedMessages = exists
+        ? currentMessages.map((m: Message) => m.id === tempId ? optimisticMessage : m)
+        : [...currentMessages, optimisticMessage]
+
+      console.log('💾 [useSendMessage] Cache updated. Count:', updatedMessages.length)
+      return {
+        messages: updatedMessages,
         hasMore: old?.hasMore ?? true
-      }))
+      }
+    })
 
-      // Also update Zustand (backwards compatibility)
+    // Also update Zustand (backwards compatibility)
+    if (isRetry) {
+      replaceOptimisticMessage(params.conversationId, tempId, optimisticMessage)
+    } else {
       addOptimisticMessage(params.conversationId, optimisticMessage)
+    }
 
-      setSendingMessage(true)
+    setSendingMessage(true)
+
+    try {
+      // [STORY 8.7.4] Validate links before sending
+      if (params.content) {
+        const validation = await linkValidationService.validateUrls(params.content)
+        if (!validation.valid) {
+          // Revert optimistic update!
+          useMessagingStore.getState().removeMessage(params.conversationId, tempId)
+          queryClient.setQueryData(['messages', params.conversationId], (old: any) => ({
+            messages: (old?.messages || []).filter((m: Message) => m.id !== tempId),
+            hasMore: old?.hasMore ?? true
+          }))
+
+          toast.error(validation.reason || 'Message contains unsafe links')
+          throw new Error(validation.reason || 'Link validation failed')
+        }
+      }
 
       // 2. Check if online - if offline, queue message for later
       if (!isOnline) {
@@ -119,7 +145,7 @@ export function useSendMessage() {
           conversationId: params.conversationId,
           senderId: currentUserId || 'unknown',
           content: params.content,
-          type: params.type || 'text',
+          type: (params.type || 'text') as any,
           mediaUrls: params.mediaUrls || undefined,
           thumbnailUrl: params.thumbnailUrl || undefined,
           replyToId: params.replyToId || undefined
@@ -157,7 +183,7 @@ export function useSendMessage() {
         id: messageId,
         _optimistic: undefined,
         _failed: undefined,
-        _tempId: undefined,
+        _tempId: undefined, // Clear temp ID
         _queued: undefined,
         _queueId: undefined,
         status: 'delivered' as const
@@ -213,7 +239,7 @@ export function useSendMessage() {
             conversationId: params.conversationId,
             senderId: currentUserId || 'unknown',
             content: params.content,
-            type: params.type || 'text',
+            type: (params.type || 'text') as any,
             mediaUrls: params.mediaUrls || undefined,
             thumbnailUrl: params.thumbnailUrl || undefined,
             replyToId: params.replyToId || undefined
@@ -267,13 +293,14 @@ export function useSendMessage() {
     }
 
     try {
-      // Re-send the message with same content
+      // Re-send the message with same content AND same ID
       await sendMessage({
         conversationId: failedMessage.conversation_id,
         content: failedMessage.content,
         type: failedMessage.type as any, // Type assertion for stricter types
         mediaUrls: failedMessage.media_urls || undefined,
-        replyToId: failedMessage.reply_to_id || undefined
+        replyToId: failedMessage.reply_to_id || undefined,
+        tempId: failedMessage._tempId // Pass existing ID to update in-place
       })
     } catch (error) {
       console.error('Retry failed:', error)

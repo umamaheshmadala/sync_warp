@@ -138,6 +138,7 @@ export interface SendMessageParams {
   sharedCouponId?: string;
   sharedDealId?: string;
   replyToId?: string;
+  tempId?: string; // For retrying failed messages
 }
 
 /**

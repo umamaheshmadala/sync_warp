@@ -4,6 +4,8 @@
 import { Routes, Route } from 'react-router-dom'
 import { lazy, Suspense } from 'react'
 import ProtectedRoute from './ProtectedRoute'
+import ChatScreen from '../components/messaging/ChatScreen'
+import { SelectConversationPlaceholder } from '../components/messaging/SelectConversationPlaceholder'
 
 // All components are lazy-loaded for optimal bundle splitting and performance
 
@@ -50,8 +52,8 @@ const NotificationSettings = lazy(() => import('../pages/settings/NotificationSe
 
 // Messaging components (Epic 8.2)
 const MessagingLayout = lazy(() => import('../components/messaging/MessagingLayout').then(m => ({ default: m.MessagingLayout })))
-const SelectConversationPlaceholder = lazy(() => import('../components/messaging/SelectConversationPlaceholder').then(m => ({ default: m.SelectConversationPlaceholder })))
-const ChatScreen = lazy(() => import('../components/messaging/ChatScreen').then(m => ({ default: m.ChatScreen })))
+// const SelectConversationPlaceholder = lazy(() => import('../components/messaging/SelectConversationPlaceholder').then(m => ({ default: m.SelectConversationPlaceholder })))
+// const ChatScreen = lazy(() => import('../components/messaging/ChatScreen').then(m => ({ default: m.ChatScreen })))
 
 // Test and demo components (development only)
 const TestProfileModal = lazy(() => import('../pages/TestProfileModal'))

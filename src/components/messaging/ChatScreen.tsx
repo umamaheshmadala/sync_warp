@@ -51,7 +51,7 @@ import { friendsService } from '../../services/friendsService'
  * <Route path="/messages/:conversationId" element={<ChatScreen />} />
  * ```
  */
-export function ChatScreen() {
+export default function ChatScreen() {
   const { conversationId } = useParams()
   const navigate = useNavigate()
   const { updateConversation } = useMessagingStore() // For clearing unread count
@@ -489,7 +489,24 @@ export function ChatScreen() {
         />
       )}
 
-      {isTyping && <TypingIndicator userIds={typingUserIds} />}
+      {isTyping && (
+        <TypingIndicator
+          userIds={typingUserIds}
+          names={typingUserIds.map(userId => {
+            // For each typing user ID, find the name
+            // 1. Check if it's the other participant in a DM
+            const conversation = conversations.find(c => c.conversation_id === conversationId)
+            if (conversation) {
+              // If this is a DM, we can use the other_participant_name from details
+              if (conversation.other_participant_id === userId) {
+                return conversation.other_participant_name || 'Someone'
+              }
+            }
+            // Fallback if we can't find the name (e.g. group chat without member details loaded)
+            return 'Someone'
+          })}
+        />
+      )}
 
       {/* Message Composer or Not Friends Banner */}
       {isFriend === false ? (
