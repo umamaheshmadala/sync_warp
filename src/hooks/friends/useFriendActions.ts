@@ -118,7 +118,7 @@ export function useFriendActions() {
         if (!old?.data) return old;
         return {
           ...old,
-          data: old.data.filter((f: any) => f.friend.id !== friendId),
+          data: old.data.filter((f: any) => f.id !== friendId),
         };
       });
 
@@ -126,7 +126,7 @@ export function useFriendActions() {
     },
     onError: (err, friendId, context) => {
       queryClient.setQueryData(['friends', user?.id], context?.previousFriends);
-      toast.error('Failed to unfriend user');
+      toast.error(err.message || 'Failed to unfriend user');
     },
     onSuccess: () => {
       toast.success('Friend removed');

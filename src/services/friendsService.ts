@@ -312,6 +312,7 @@ export const friendsService = {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error('Not authenticated');
 
+            // Use RPC to clean up friendship (handles bidirectional delete + triggers)
             const { error } = await supabase.rpc('unfriend_user', {
                 p_friend_id: friendId,
             });
