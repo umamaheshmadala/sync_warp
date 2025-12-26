@@ -3,7 +3,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, Search as SearchIcon, Package, AlertCircle, RefreshCw, X, ShoppingBag, ArrowUpDown } from 'lucide-react';
+import { Heart, Search as SearchIcon, Package, AlertCircle, RefreshCw, X, ShoppingBag, ChevronDown } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useFavoriteProducts } from '../../hooks/useFavoriteProducts';
 import { FavoriteProductButton } from '../products/FavoriteProductButton';
@@ -74,32 +74,31 @@ const UnifiedFavoritesPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
         {/* Search and Sort */}
-        <div className="mb-8">
-          <div className="max-w-md flex items-center gap-2">
-            <div className="relative flex-1 min-w-0">
-              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
-              />
-            </div>
+        {/* Search and Sort */}
+        <div className="flex flex-row items-center gap-2 mb-6">
+          <div className="relative flex-1 min-w-0">
+            <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search..."
+              className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+            />
+          </div>
 
-            <div className="relative shrink-0">
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
-                className="appearance-none pl-3 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-              >
-                <option value="name">Name</option>
-                <option value="price_asc">Price: Low to High</option>
-                <option value="price_desc">Price: High to Low</option>
-              </select>
-              <div className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none text-gray-400">
-                <ArrowUpDown className="h-4 w-4" />
-              </div>
+          <div className="relative shrink-0">
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="appearance-none bg-none pl-3 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+            >
+              <option value="name">Name</option>
+              <option value="price_asc">Price: Low to High</option>
+              <option value="price_desc">Price: High to Low</option>
+            </select>
+            <div className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none text-gray-400">
+              <ChevronDown className="h-4 w-4" />
             </div>
           </div>
         </div>
@@ -164,7 +163,6 @@ const UnifiedFavoritesPage: React.FC = () => {
                       variant="icon"
                       size="icon"
                       className="bg-white/90 backdrop-blur shadow-md"
-                      onClick={(e) => e?.stopPropagation()}
                     />
                   </div>
 

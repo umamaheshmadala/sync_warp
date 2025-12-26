@@ -46,7 +46,7 @@ export function PYMKCard({ recommendation }: PYMKCardProps) {
   return (
     <div
       onClick={handleCardClick}
-      className="relative bg-white rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer p-4 flex flex-col items-center h-full"
+      className="relative bg-white rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer p-3 flex flex-col items-center h-full"
     >
       {/* Dismiss button */}
       <button
@@ -63,27 +63,21 @@ export function PYMKCard({ recommendation }: PYMKCardProps) {
       </button>
 
       {/* Avatar */}
-      <div className="flex flex-col items-center mb-3 w-full">
+      <div className="flex flex-col items-center mb-2 w-full">
         <img
           src={recommendation.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(recommendation.full_name)}&background=random`}
           alt={recommendation.full_name}
-          className="w-20 h-20 rounded-full object-cover mb-3 border border-gray-100"
+          className="w-16 h-16 rounded-full object-cover mb-2 border border-gray-100"
         />
-        <h3 className="font-semibold text-gray-900 text-center truncate w-full px-2" title={recommendation.full_name}>
+        <h3 className="font-semibold text-gray-900 text-sm text-center truncate w-full px-1" title={recommendation.full_name}>
           {recommendation.full_name}
         </h3>
       </div>
 
-      {/* Mutual Friends Info */}
-      <div className="mb-4 flex flex-col items-center w-full">
-        <div className="flex items-center justify-center text-xs text-gray-600 mb-2">
-          <Users className="w-3 h-3 mr-1 flex-shrink-0" />
-          <span>{recommendation.mutual_friends_count} mutual friends</span>
-        </div>
-
-        {/* Mutual friends avatars preview */}
-        {recommendation.mutual_friends && recommendation.mutual_friends.length > 0 && (
-          <div className="flex -space-x-2 justify-center h-6">
+      {/* Mutual Friends Avatars Only */}
+      <div className="mb-3 h-6 w-full flex justify-center">
+        {recommendation.mutual_friends && recommendation.mutual_friends.length > 0 ? (
+          <div className="flex -space-x-2">
             {recommendation.mutual_friends.slice(0, 3).map(mf => (
               <img
                 key={mf.id}
@@ -99,6 +93,9 @@ export function PYMKCard({ recommendation }: PYMKCardProps) {
               </div>
             )}
           </div>
+        ) : (
+          /* Spacer to keep card height consistent even if no mutual friends */
+          <div className="h-6" />
         )}
       </div>
 
@@ -119,7 +116,7 @@ export function PYMKCard({ recommendation }: PYMKCardProps) {
           ) : (
             <>
               <UserPlus className="w-4 h-4 mr-2" />
-              Add Friend
+              Add
             </>
           )}
         </button>

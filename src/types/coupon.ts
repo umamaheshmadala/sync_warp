@@ -4,44 +4,45 @@
 export interface Coupon {
   id: string;
   business_id: string;
-  
+
   // Basic Coupon Information
   title: string;
   description: string;
   image_url?: string;
   business_name?: string;
-  
+
   // Coupon Type and Value
   type: CouponType;
+  category: CouponCategory; // Added to support wallet filters
   discount_type: DiscountType;
   discount_value: number; // Amount or percentage
   min_purchase_amount?: number;
   max_discount_amount?: number; // For percentage discounts
-  
+
   // Terms and Conditions
   terms_conditions: string;
-  
+
   // Usage Limits
   total_limit?: number; // Total number of coupons available
   per_user_limit?: number; // How many times one user can use it
-  
+
   // Time Validity
   valid_from: string;
   valid_until: string;
-  
+
   // Targeting and Distribution
   target_audience: TargetAudience;
   is_public: boolean; // Can be found by all users vs targeted
-  
+
   // Coupon Code and QR
   coupon_code: string; // Unique alphanumeric code
   qr_code_url?: string; // Generated QR code image URL
-  
+
   // Status and Tracking
   status: CouponStatus;
   usage_count: number; // How many times it's been used
   collection_count: number; // How many users have collected it
-  
+
   // Metadata
   created_at: string;
   updated_at: string;
@@ -70,23 +71,23 @@ export interface CouponRedemption {
   coupon_id: string;
   user_id: string;
   business_id: string;
-  
+
   // Redemption Details
   redemption_code: string; // The specific code used
   redemption_amount: number; // Actual discount applied
   original_amount: number; // Original purchase amount
-  
+
   // Location and Verification
   redeemed_at_location?: {
     latitude: number;
     longitude: number;
   };
-  
+
   // Status and Tracking
   status: RedemptionStatus;
   redeemed_at: string;
   redeemed_by?: string; // Staff member who processed it
-  
+
   // Optional receipt or transaction reference
   transaction_reference?: string;
   notes?: string;
@@ -96,56 +97,56 @@ export interface UserCouponCollection {
   id: string;
   user_id: string;
   coupon_id: string;
-  
+
   // Collection Details
   collected_at: string;
   collected_from: CollectionSource;
-  
+
   // Usage Tracking
   times_used: number;
   last_used_at?: string;
-  
+
   // Status
   status: CollectionStatus;
-  
+
   // Metadata
   expires_at: string; // Copy of coupon expiry for quick access
 }
 
 export interface CouponAnalytics {
   coupon_id: string;
-  
+
   // Collection Stats
   total_collections: number;
   unique_collectors: number;
   collection_rate: number; // collections / views
-  
+
   // Redemption Stats
   total_redemptions: number;
   unique_redeemers: number;
   redemption_rate: number; // redemptions / collections
-  
+
   // Financial Impact
   total_discount_given: number;
   average_discount_per_redemption: number;
   estimated_revenue_generated: number;
-  
+
   // Time-based Analytics
   daily_stats: DailyAnalytics[];
-  
+
   // Demographics (if available)
   top_user_segments: UserSegment[];
   top_collection_sources: CollectionSourceStats[];
-  
+
   // Performance Metrics
   conversion_funnel: ConversionFunnel;
-  
+
   updated_at: string;
 }
 
 // Supporting Types and Enums
 
-export type CouponType = 
+export type CouponType =
   | 'percentage' // 20% off
   | 'fixed_amount' // ₹100 off
   | 'buy_x_get_y' // Buy 2 Get 1 Free
@@ -153,13 +154,22 @@ export type CouponType =
   | 'free_shipping' // Free delivery
   | 'bundle_deal'; // Special combo pricing
 
-export type DiscountType = 
+export type CouponCategory =
+  | 'food'
+  | 'shopping'
+  | 'entertainment'
+  | 'travel'
+  | 'health'
+  | 'education'
+  | 'services';
+
+export type DiscountType =
   | 'percentage' // 20%
   | 'fixed_amount' // ₹100
   | 'free_item' // No charge for specific item
   | 'buy_x_get_y'; // BXGY logic
 
-export type CouponStatus = 
+export type CouponStatus =
   | 'draft' // Being created
   | 'active' // Live and available
   | 'paused' // Temporarily disabled
@@ -167,7 +177,7 @@ export type CouponStatus =
   | 'exhausted' // All uses consumed
   | 'cancelled'; // Manually stopped
 
-export type TargetAudience = 
+export type TargetAudience =
   | 'all_users'
   | 'new_users' // First-time visitors
   | 'returning_users' // Previous customers
@@ -176,19 +186,19 @@ export type TargetAudience =
   | 'location_based' // Users in specific area
   | 'friends_of_users'; // Social sharing based
 
-export type RedemptionStatus = 
+export type RedemptionStatus =
   | 'pending' // Code entered, awaiting confirmation
   | 'completed' // Successfully redeemed
   | 'cancelled' // Cancelled by merchant
   | 'failed'; // Technical failure
 
-export type CollectionStatus = 
+export type CollectionStatus =
   | 'active' // Available to use
   | 'used' // Fully consumed
   | 'expired' // Past expiry date
   | 'removed'; // User removed it
 
-export type CollectionSource = 
+export type CollectionSource =
   | 'direct_search' // Found by searching
   | 'business_profile' // From business page
   | 'social_share' // Shared by friend
@@ -243,7 +253,7 @@ export interface CouponFilters {
   sort_order?: 'asc' | 'desc';
 }
 
-export type CouponSortBy = 
+export type CouponSortBy =
   | 'created_at'
   | 'valid_until'
   | 'usage_count'

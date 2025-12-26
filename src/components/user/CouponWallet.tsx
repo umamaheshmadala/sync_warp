@@ -4,8 +4,7 @@ import {
   Wallet,
   Search,
   Filter,
-  TrendingUp,
-  RefreshCcw,
+
   SortAsc,
   ChevronDown,
   ChevronUp
@@ -68,7 +67,7 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
 
   const [redemptions, setRedemptions] = useState<CouponRedemption[]>([]);
   const [redemptionsLoading, setRedemptionsLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+
   const [loadingActions, setLoadingActions] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
@@ -120,28 +119,6 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
     }
   }, [userId]);
 
-  // Refresh on tab visibility change
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        refreshCoupons();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [refreshCoupons]);
-
-  // Handle refresh
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await Promise.all([
-      refreshCoupons(),
-      couponService.getUserRedemptions(userId).then(setRedemptions)
-    ]);
-    setRefreshing(false);
-    toast.success('Wallet refreshed!');
-  };
 
   // derived loading state (only block if no coupons AND loading)
   const loading = couponsLoading && collectedCoupons.length === 0;
@@ -221,16 +198,16 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
     const isRedeemed = redemptions.some(r => r.coupon_id === coupon.id);
     if (isRedeemed) return 'redeemed';
 
-    if (coupon.expires_at) {
+    if (coupon.valid_until) {
       const now = new Date();
-      const expiryDate = new Date(coupon.expires_at);
+      const expiryDate = new Date(coupon.valid_until);
       const daysUntilExpiry = Math.ceil((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
       if (daysUntilExpiry < 0) return 'expired';
       if (daysUntilExpiry <= 3) return 'expiring';
     }
 
-    if (coupon.usage_limit && coupon.used_count >= coupon.usage_limit) return 'expired';
+    if (coupon.total_limit && coupon.usage_count >= coupon.total_limit) return 'expired';
     if (coupon.status !== 'active') return 'expired';
 
     return 'active';
@@ -312,13 +289,13 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
       // If both expired or both active, then apply user's sort preference
       switch (filters.sortBy) {
         case 'expiry':
-          if (!a.coupon.expires_at && !b.coupon.expires_at) return 0;
-          if (!a.coupon.expires_at) return 1;
-          if (!b.coupon.expires_at) return -1;
-          return new Date(a.coupon.expires_at).getTime() - new Date(b.coupon.expires_at).getTime();
+          if (!a.coupon.valid_until && !b.coupon.valid_until) return 0;
+          if (!a.coupon.valid_until) return 1;
+          if (!b.coupon.valid_until) return -1;
+          return new Date(a.coupon.valid_until).getTime() - new Date(b.coupon.valid_until).getTime();
         case 'value':
-          const aValue = a.coupon.type === 'percentage' ? a.coupon.value : a.coupon.value;
-          const bValue = b.coupon.type === 'percentage' ? b.coupon.value : b.coupon.value;
+          const aValue = a.coupon.type === 'percentage' ? a.coupon.discount_value : a.coupon.discount_value;
+          const bValue = b.coupon.type === 'percentage' ? b.coupon.discount_value : b.coupon.discount_value;
           return bValue - aValue;
         case 'business':
           return a.coupon.business_name.localeCompare(b.coupon.business_name);
@@ -349,9 +326,9 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
       .reduce((sum, c) => {
         const coupon = c.coupon;
         if (coupon.type === 'percentage' && coupon.minimum_purchase) {
-          return sum + (coupon.value / 100) * coupon.minimum_purchase;
+          return sum + (coupon.discount_value / 100) * coupon.minimum_purchase;
         }
-        return sum + coupon.value;
+        return sum + coupon.discount_value;
       }, 0);
 
     return { total, active, expiring, expired, redeemed, shareable, shared, totalSavingsPotential };
@@ -360,9 +337,9 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
   // Format discount display
   const formatDiscount = (coupon: Coupon): string => {
     if (coupon.type === 'percentage') {
-      return `${coupon.value}% OFF`;
+      return `${coupon.discount_value}% OFF`;
     }
-    return `₹${coupon.value} OFF`;
+    return `₹${coupon.discount_value} OFF`;
   };
 
   // Get status color
@@ -410,7 +387,7 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
       title: coupon.title,
       discount_type: coupon.discount_type,
       discount_value: coupon.discount_value,
-      business: coupon.business,
+      business: coupon.business_name,
       full_coupon: coupon
     });
 
@@ -428,11 +405,11 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
             description: coupon.description,
             discount_type: coupon.discount_type,
             discount_value: coupon.discount_value,
-            expires_at: coupon.valid_until || coupon.expires_at,
-            business_name: coupon.business?.business_name,
-            business: coupon.business ? {
-              id: coupon.business.id,
-              business_name: coupon.business.business_name
+            expires_at: coupon.valid_until || coupon.valid_until,
+            business_name: coupon.business_name,
+            business: (coupon.business_id && coupon.business_name) ? {
+              id: coupon.business_id,
+              business_name: coupon.business_name
             } : undefined
           }}
           onClick={() => onView(coupon)}
@@ -448,8 +425,9 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
   return (
     <div className={`bg-gray-50 min-h-screen ${className}`}>
       {/* Search and Filters Unified Bar */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10 px-4 py-3">
-        <div className="max-w-6xl mx-auto flex flex-row items-center gap-2">
+      <div className="max-w-6xl mx-auto px-4 py-6">
+        {/* Search and Filters */}
+        <div className="flex flex-row items-center gap-2 mb-6">
           {/* Search */}
           <div className="relative flex-1 min-w-0">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -481,7 +459,7 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
                     setFilters(prev => ({ ...prev, status: 'all', acquisition: 'all' }));
                   }
                 }}
-                className="appearance-none pl-3 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white min-w-[140px]"
+                className="appearance-none bg-none pl-3 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white min-w-[140px]"
               >
                 <option value="all">All ({walletStats.total})</option>
                 <option value="active">Active ({walletStats.active})</option>
@@ -494,23 +472,8 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
               </select>
               <Filter className="absolute right-2.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
             </div>
-
-
-
-            {/* Refresh Button */}
-            <button
-              onClick={handleRefresh}
-              disabled={refreshing}
-              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg border border-gray-300 transition-colors disabled:opacity-50"
-            >
-              <RefreshCcw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-            </button>
           </div>
         </div>
-      </div>
-
-      {/* Wallet Content */}
-      <div className="max-w-6xl mx-auto px-4 py-6">
         {/* Results Header */}
         <div className="flex items-center justify-between mb-6">
           <div>

@@ -66,13 +66,7 @@ export function FriendSearchBar({
           </button>
         )}
       </div>
-      <div className="mt-2 text-xs text-gray-500 flex items-center justify-center gap-2">
-        <span>Press</span>
-        <kbd className="px-2 py-1 bg-gray-100 border border-gray-300 rounded text-xs font-mono">⌘K</kbd>
-        <span>or</span>
-        <kbd className="px-2 py-1 bg-gray-100 border border-gray-300 rounded text-xs font-mono">Ctrl+K</kbd>
-        <span>to focus</span>
-      </div>
+
     </div>
   );
 }

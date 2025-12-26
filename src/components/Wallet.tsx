@@ -1,7 +1,6 @@
 import React from 'react';
 import { useAuthStore } from '../store/authStore';
 import CouponWallet from './user/CouponWallet';
-import PageDebugPanel from './PageDebugPanel';
 
 const Wallet: React.FC = () => {
   const user = useAuthStore(state => state.user);
@@ -18,18 +17,9 @@ const Wallet: React.FC = () => {
   }
 
   return (
-    <>
-      <div className="pb-20">
-        <CouponWallet userId={userId} />
-      </div>
-      <PageDebugPanel
-        pageName="Wallet"
-        stats={{
-          'User ID': userId.slice(0, 8) + '...',
-          'Page': 'Wallet/Coupons'
-        }}
-      />
-    </>
+    <div className="pb-20">
+      <CouponWallet userId={userId} />
+    </div>
   );
 };
 

@@ -1,16 +1,11 @@
-/**
- * FriendsList Component
- * Story 9.3.1: Friends List Component
- * 
- * Main friends list container with infinite scroll
- */
-
 import React, { useEffect, useRef, useMemo } from 'react';
 import { FriendCard } from './FriendCard';
 import { FriendProfileModal } from './FriendProfileModal';
 import { FriendsListSkeleton } from '../ui/skeletons/FriendsListSkeleton';
 import { NoFriendsEmptyState, SearchNoResultsEmptyState } from './EmptyStates';
 import { useFriendsList } from '../../hooks/friends/useFriendsList';
+import { useQuery } from '@tanstack/react-query';
+import { getFriendLeaderboard, getBadgeForCount, type Badge } from '../../services/friendLeaderboardService';
 
 interface FriendsListProps {
   searchQuery?: string;
@@ -21,6 +16,25 @@ import { useRealtimeFriends } from '../../hooks/friends/useRealtimeFriends';
 export function FriendsList({ searchQuery = '' }: FriendsListProps) {
   useRealtimeFriends(); // Enable realtime updates
   const { friends, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage, error } = useFriendsList();
+
+  // Fetch leaderboard data to integrate badges
+  const { data: leaderboard = [] } = useQuery({
+    queryKey: ['friend-leaderboard', 'all'],
+    queryFn: () => getFriendLeaderboard('all'),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
+  // Create quick lookup for badges
+  const badgeMap = useMemo(() => {
+    const map: Record<string, Badge> = {};
+    leaderboard.forEach((entry) => {
+      const badge = getBadgeForCount(entry.deal_count);
+      if (badge) {
+        map[entry.user_id] = badge;
+      }
+    });
+    return map;
+  }, [leaderboard]);
 
   const [selectedFriendId, setSelectedFriendId] = React.useState<string | null>(null);
 
@@ -98,6 +112,7 @@ export function FriendsList({ searchQuery = '' }: FriendsListProps) {
           <FriendCard
             key={friend.id}
             friend={friend}
+            badge={badgeMap[friend.id]} // Pass the badge
             onClick={() => setSelectedFriendId(friend.id)}
           />
         ))}

@@ -26,6 +26,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuthStore } from '../../store/authStore'
 import { useMessagingStore } from '../../store/messagingStore'
 import './ChatScreen.css'
+import { friendsService } from '../../services/friendsService'
 
 /**
  * ChatScreen Component
@@ -106,6 +107,8 @@ export function ChatScreen() {
     fetchLastRead()
   }, [conversationId, currentUserId])
 
+
+
   // Search state (Story 8.5.4)
   const [showSearch, setShowSearch] = useState(false)
   const {
@@ -117,6 +120,34 @@ export function ChatScreen() {
     clearSearch,
     setSelectedIndex
   } = useMessageSearch(conversationId || undefined)
+
+  // Friendship Check (Story 9.x - Chat Restriction)
+  const { conversations } = useMessagingStore()
+  const [isFriend, setIsFriend] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    if (!conversationId || !currentUserId) return
+
+    const checkFriendship = async () => {
+      const conversation = conversations.find(c => c.conversation_id === conversationId)
+      if (!conversation) return
+
+      const otherId = conversation.participant1_id === currentUserId
+        ? conversation.participant2_id
+        : conversation.participant1_id
+
+      if (otherId) {
+        const areFriends = await friendsService.areFriends(currentUserId, otherId)
+        setIsFriend(areFriends)
+      }
+    }
+
+    checkFriendship()
+
+    // Listen for friend updates (re-check if friendship status changes)
+    window.addEventListener('friends-updated', checkFriendship)
+    return () => window.removeEventListener('friends-updated', checkFriendship)
+  }, [conversationId, currentUserId, conversations])
 
   // Scroll to bottom helper
   const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
@@ -460,15 +491,23 @@ export function ChatScreen() {
 
       {isTyping && <TypingIndicator userIds={typingUserIds} />}
 
-      {/* Message Composer */}
-      <MessageComposer
-        conversationId={conversationId}
-        onTyping={handleTyping}
-        replyToMessage={replyToMessage}
-        onCancelReply={handleCancelReply}
-        editingMessage={editingMessage}
-        onCancelEdit={handleCancelEdit}
-      />
+      {/* Message Composer or Not Friends Banner */}
+      {isFriend === false ? (
+        <div className="bg-gray-50 border-t p-4 text-center">
+          <p className="text-gray-500 text-sm">
+            This user is no longer in your friends list.
+          </p>
+        </div>
+      ) : (
+        <MessageComposer
+          conversationId={conversationId}
+          onTyping={handleTyping}
+          replyToMessage={replyToMessage}
+          onCancelReply={handleCancelReply}
+          editingMessage={editingMessage}
+          onCancelEdit={handleCancelEdit}
+        />
+      )}
 
 
       {/* Forward Dialog */}

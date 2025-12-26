@@ -133,30 +133,8 @@ export async function syncContacts(
     // Extract and hash phone numbers (use Set to avoid duplicates)
     const phoneHashSet = new Set<string>();
     let processed = 0;
-    let debugLogCount = 0; // Limit logs to first 5 contacts
 
-    console.log('=== CONTACT SYNC DEBUG: PROCESSING CONTACTS ===');
 
-    // TEST HASH VERIFICATION
-    try {
-      const testPhone = '7000000001';
-      const testHash = await hashPhoneNumber(testPhone);
-      console.log(`[DEBUG] TEST HASH for ${testPhone}: ${testHash}`);
-      console.log(`[DEBUG] EXPECTED HASH: f2aee6a0738c354a7ce6fa9a9694c6c11ccd0a0c7e170b41cf8e330734dbb414`);
-      if (testHash === 'f2aee6a0738c354a7ce6fa9a9694c6c11ccd0a0c7e170b41cf8e330734dbb414') {
-        console.log('[DEBUG] ✅ HASHING ALGORITHM IS CORRECT');
-      } else {
-        console.error('[DEBUG] ❌ HASHING ALGORITHM MISMATCH');
-      }
-    } catch (err) {
-      console.error('[DEBUG] TEST HASH FAILED:', err);
-    }
-
-    console.log(`[DEBUG] Total contacts received from plugin: ${contacts?.length}`);
-
-    if (!contacts || contacts.length === 0) {
-      console.warn('[DEBUG] WARNING: No contacts received from plugin!');
-    }
 
     for (const contact of contacts) {
       if (contact.phones && contact.phones.length > 0) {
@@ -166,11 +144,7 @@ export async function syncContacts(
               const normalized = normalizePhoneNumber(phone.number);
               const hash = await hashPhoneNumber(phone.number);
 
-              // DEBUG LOGGING: Log first 5 contacts in ONE LINE to avoid filtering
-              if (debugLogCount < 5) {
-                console.log(`[DEBUG] Contact ${debugLogCount + 1}: Name="${contact.name?.display || 'Unknown'}" Raw="${phone.number}" Norm="${normalized}" Hash="${hash}"`);
-                debugLogCount++;
-              }
+
 
               phoneHashSet.add(hash); // Set automatically deduplicates
             } catch (error) {
@@ -183,37 +157,28 @@ export async function syncContacts(
       processed++;
       onProgress?.({ total: contacts.length, synced: processed, matches: 0 });
     }
-    console.log('=== END CONTACT PROCESSING ===');
+
 
     // Convert Set to Array for database upload
     const phoneHashes = Array.from(phoneHashSet);
 
-    console.log('=== CONTACT SYNC DEBUG START ===');
-    try {
-      console.log('User ID: ' + (user?.id || 'missing'));
-      console.log('Contacts count: ' + (contacts?.length || 0));
-      console.log('Hashes count: ' + (phoneHashes?.length || 0));
-      console.log('First hash: ' + (phoneHashes?.[0] || 'none'));
-    } catch (e) {
-      console.error('Error logging debug info: ' + e);
-    }
-    console.log('================================');
+
 
     // Upload hashed phone numbers to database
-    console.log('Calling upsert_contact_hashes RPC...');
+
     const { data: upsertData, error: uploadError } = await supabase.rpc('upsert_contact_hashes', {
       p_user_id: user.id,
       p_phone_hashes: phoneHashes,
     });
 
-    console.log('Upsert finished. Error: ' + (uploadError ? JSON.stringify(uploadError) : 'none'));
+
 
     if (uploadError) {
       console.error('Failed to upload contact hashes:', uploadError.message, uploadError.details, uploadError.hint);
       throw new Error(`Failed to sync contacts: ${uploadError.message}`);
     }
 
-    console.log('✅ Contact hashes uploaded successfully');
+
 
     // Match contacts with existing SynC users
     const { data: matches, error: matchError } = await supabase.rpc('match_contacts', {

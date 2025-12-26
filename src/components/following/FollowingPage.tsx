@@ -3,7 +3,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search as SearchIcon, Settings, X, Users } from 'lucide-react';
+import { Search as SearchIcon, Settings, X, Users, ChevronDown } from 'lucide-react';
 import { useBusinessFollowing } from '../../hooks/useBusinessFollowing';
 import { FollowButton } from './FollowButton';
 import NotificationPreferencesModal from './NotificationPreferencesModal';
@@ -87,7 +87,7 @@ const FollowingPage: React.FC = () => {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Search and Filters - Always inline */}
-        <div className="mb-4 flex flex-row gap-2">
+        <div className="flex flex-row items-center gap-2 mb-6">
           {/* Search */}
           <div className="flex-1 relative">
             <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -96,7 +96,7 @@ const FollowingPage: React.FC = () => {
               placeholder="Search businesses..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-8 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="w-full pl-9 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             />
             {searchQuery && (
               <button
@@ -109,15 +109,18 @@ const FollowingPage: React.FC = () => {
           </div>
 
           {/* Sort */}
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as SortBy)}
-            className="px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent min-w-[130px]"
-          >
-            <option value="recent">Recently Followed</option>
-            <option value="alphabetical">Alphabetical</option>
-            <option value="most_active">Most Active</option>
-          </select>
+          <div className="relative">
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortBy)}
+              className="appearance-none bg-none w-full pl-3 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent min-w-[130px]"
+            >
+              <option value="recent">Recently Followed</option>
+              <option value="alphabetical">Alphabetical</option>
+              <option value="most_active">Most Active</option>
+            </select>
+            <ChevronDown className="absolute right-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+          </div>
         </div>
 
         {/* Business List */}

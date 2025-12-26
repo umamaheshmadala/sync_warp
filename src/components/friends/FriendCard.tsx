@@ -5,13 +5,16 @@ import { OnlineStatusBadge, OnlineStatusDot } from '../status/OnlineStatusBadge'
 import { useFriendActions } from '../../hooks/friends/useFriendActions';
 import type { Friend } from '../../types/friends';
 
+import type { Badge } from '../../services/friendLeaderboardService';
+
 interface FriendCardProps {
   friend: Friend;
+  badge?: Badge | null;
   style?: React.CSSProperties;
   onClick?: () => void;
 }
 
-export function FriendCard({ friend, style, onClick }: FriendCardProps) {
+export function FriendCard({ friend, badge, style, onClick }: FriendCardProps) {
   const { unfriend } = useFriendActions();
   const [showConfirm, setShowConfirm] = useState(false);
   const navigate = useNavigate();
@@ -43,7 +46,7 @@ export function FriendCard({ friend, style, onClick }: FriendCardProps) {
     <>
       <div
         style={style}
-        className="flex items-center gap-3 p-4 hover:bg-gray-50 transition border-b border-gray-100 cursor-pointer border-4 border-green-500"
+        className="flex items-center gap-3 p-4 hover:bg-gray-50 transition border-b border-gray-100 cursor-pointer"
         data-testid="friend-card"
         onClick={onClick}
       >
@@ -66,7 +69,15 @@ export function FriendCard({ friend, style, onClick }: FriendCardProps) {
 
         {/* Friend info */}
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-gray-900 truncate">{friend.full_name}</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold text-gray-900 truncate">{friend.full_name}</h3>
+            {badge && (
+              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 ${badge.color}`}>
+                <span className="mr-1">{badge.emoji}</span>
+                {badge.title}
+              </span>
+            )}
+          </div>
           {/* Pass explicit null if hidden, or let the component handle undefined */}
           <OnlineStatusBadge
             userId={friend.id}

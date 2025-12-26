@@ -605,7 +605,7 @@ export const useUserCoupons = () => {
   const fetchUserCouponsData = async () => {
     if (!user) return [];
 
-    console.log('🔍 [fetchUserCoupons] Fetching coupons for user:', user.id);
+
 
     const { data, error: fetchError } = await supabase
       .from('user_coupon_collections')
@@ -622,7 +622,7 @@ export const useUserCoupons = () => {
 
     if (fetchError) throw fetchError;
 
-    console.log('✅ [fetchUserCoupons] Fetched', data?.length || 0, 'active coupons');
+
     return data || [];
   };
 
@@ -647,15 +647,12 @@ export const useUserCoupons = () => {
       return false;
     }
 
-    // Debug: Log user information
-    console.log('🔐 [collectCoupon] User from store:', user);
-    console.log('🔐 [collectCoupon] User ID:', user.id);
+
 
     try {
       // Check current session
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      console.log('🔐 [collectCoupon] Current session:', session);
-      console.log('🔐 [collectCoupon] Session error:', sessionError);
+
 
       if (!session) {
         console.error('❌ [collectCoupon] No active session!');
@@ -692,7 +689,7 @@ export const useUserCoupons = () => {
       }
 
       // Check if user has ANY collection of this coupon (including removed ones for reactivation)
-      console.log('🔍 [collectCoupon] Checking for existing collection - User ID:', user.id, 'Coupon ID:', couponId);
+
       const { data: existingCollection, error: checkError } = await supabase
         .from('user_coupon_collections')
         .select('id, status, has_been_shared')
@@ -706,7 +703,7 @@ export const useUserCoupons = () => {
         return false;
       }
 
-      console.log('🔍 [collectCoupon] Existing collection check:', existingCollection);
+
 
       if (existingCollection) {
         // Check if coupon was shared (prevent re-collection)
@@ -723,7 +720,7 @@ export const useUserCoupons = () => {
 
         // If it was removed, we can reactivate it
         if (existingCollection.status === 'removed') {
-          console.log('🔄 [collectCoupon] Reactivating removed coupon');
+
           // Update the existing record instead of inserting new one
           const { error: updateError } = await supabase
             .from('user_coupon_collections')
@@ -839,7 +836,7 @@ export const useUserCoupons = () => {
     });
 
     try {
-      console.log('🗑️ [removeCouponCollection] Removing coupon collection:', collectionId);
+
 
       const { error: deleteError } = await supabase
         .from('user_coupon_collections')
@@ -893,7 +890,7 @@ export const usePublicCoupons = () => {
       setLoading(true);
       setError(null);
 
-      console.log('🔍 [fetchPublicCoupons] Fetching all public coupons');
+
 
       // Fetch all active, public coupons with business information
       const { data, error: fetchError } = await supabase
@@ -909,13 +906,9 @@ export const usePublicCoupons = () => {
 
       if (fetchError) throw fetchError;
 
-      console.log('✅ [fetchPublicCoupons] Fetched', data?.length || 0, 'public coupons');
 
-      // Debug: Log raw coupon data structure
-      if (data && data.length > 0) {
-        console.log('📋 [fetchPublicCoupons] Sample raw coupon:', data[0]);
-        console.log('📋 [fetchPublicCoupons] Sample business data:', data[0].businesses);
-      }
+
+
 
       // Map the data to include business_name at the top level for easy access
       const mappedCoupons = (data || []).map(coupon => {
@@ -924,12 +917,7 @@ export const usePublicCoupons = () => {
           business_name: coupon.businesses?.business_name || 'Unknown Business',
           business: coupon.businesses
         };
-        console.log('🔄 [fetchPublicCoupons] Mapped coupon:', {
-          id: mapped.id,
-          title: mapped.title,
-          business_name: mapped.business_name,
-          business: mapped.business
-        });
+
         return mapped;
       });
 
