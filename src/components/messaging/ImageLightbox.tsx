@@ -5,6 +5,7 @@ import { Haptics, ImpactStyle } from '@capacitor/haptics'
 import { Filesystem, Directory } from '@capacitor/filesystem'
 import { Share } from '@capacitor/share'
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   Dialog,
   DialogContent,
@@ -27,16 +28,7 @@ interface ImageLightboxProps {
  * Features:
  * - Web: Fullscreen modal, download, keyboard navigation
  * - Mobile: Pinch-to-zoom, double-tap, long-press action sheet, native share
- * 
- * @example
- * ```tsx
- * <ImageLightbox
- *   images={[url1, url2, url3]}
- *   initialIndex={0}
- *   isOpen={lightboxOpen}
- *   onClose={() => setLightboxOpen(false)}
- * />
- * ```
+ * - Animations: Smooth slide transitions between images
  */
 export function ImageLightbox({
   images,
@@ -45,6 +37,7 @@ export function ImageLightbox({
   onClose
 }: ImageLightboxProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex)
+  const [direction, setDirection] = useState(0) // -1 for left (prev), 1 for right (next)
   const [showMobileActions, setShowMobileActions] = useState(false)
   const longPressTimer = useRef<NodeJS.Timeout | null>(null)
 
@@ -57,17 +50,36 @@ export function ImageLightbox({
   const hasMultiple = images.length > 1
   const isMobile = Capacitor.isNativePlatform()
 
-  // Navigation
+  // Animation variants
+  const variants = {
+    enter: (direction: number) => ({
+      x: direction > 0 ? 1000 : -1000,
+      opacity: 0,
+    }),
+    center: {
+      zIndex: 1,
+      x: 0,
+      opacity: 1,
+    },
+    exit: (direction: number) => ({
+      zIndex: 0,
+      x: direction < 0 ? 1000 : -1000,
+      opacity: 0,
+    }),
+  }
+
   // Navigation
   const goToPrevious = useCallback((e?: React.MouseEvent) => {
     e?.preventDefault()
     e?.stopPropagation()
+    setDirection(-1)
     setCurrentIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1))
   }, [images])
 
   const goToNext = useCallback((e?: React.MouseEvent) => {
     e?.preventDefault()
     e?.stopPropagation()
+    setDirection(1)
     setCurrentIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1))
   }, [images])
 
@@ -120,7 +132,6 @@ export function ImageLightbox({
 
   /**
    * Share image via native share sheet (mobile) or Web Share API
-   * Now using centralized shareService for tracking
    */
   const handleShareImage = async () => {
     try {
@@ -186,34 +197,26 @@ export function ImageLightbox({
 
       if (e.key === 'ArrowLeft') {
         e.preventDefault() // Prevent default focus behavior
-        setCurrentIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1))
+        goToPrevious()
       }
       if (e.key === 'ArrowRight') {
         e.preventDefault() // Prevent default focus behavior
-        setCurrentIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1))
+        goToNext()
       }
       if (e.key === 'Escape') onClose()
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, images.length, onClose])
+  }, [isOpen, goToPrevious, goToNext, onClose])
 
   // Reset index when opening
   useEffect(() => {
     if (isOpen) {
       setCurrentIndex(initialIndex)
+      setDirection(0) // Reset direction
     }
   }, [isOpen, initialIndex])
-
-  // Debug: Log current image to investigate broken image issues
-  useEffect(() => {
-    if (isOpen && currentImage) {
-      console.log('🖼️ Lightbox displaying image:', currentImage)
-    } else if (isOpen && !currentImage) {
-      console.warn('⚠️ Lightbox open but no image found at index:', currentIndex, 'Images:', images)
-    }
-  }, [isOpen, currentImage, currentIndex, images])
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -224,7 +227,7 @@ export function ImageLightbox({
           <button
             type="button"
             onClick={onClose}
-            className="absolute top-4 right-4 z-10 p-2 bg-black/50 hover:bg-black/70 rounded-lg transition-colors"
+            className="absolute top-4 right-4 z-20 p-2 bg-black/50 hover:bg-black/70 rounded-lg transition-colors"
             aria-label="Close"
           >
             <X className="w-6 h-6 text-white" />
@@ -234,7 +237,7 @@ export function ImageLightbox({
           <button
             type="button"
             onClick={handleSaveImage}
-            className="absolute top-4 right-16 z-10 p-2 bg-black/50 hover:bg-black/70 rounded-lg transition-colors"
+            className="absolute top-4 right-16 z-20 p-2 bg-black/50 hover:bg-black/70 rounded-lg transition-colors"
             aria-label={isMobile ? "Save image" : "Download"}
           >
             {isMobile ? (
@@ -249,7 +252,7 @@ export function ImageLightbox({
             <button
               type="button"
               onClick={handleShareImage}
-              className="absolute top-4 right-28 z-10 p-2 bg-black/50 hover:bg-black/70 rounded-lg transition-colors"
+              className="absolute top-4 right-28 z-20 p-2 bg-black/50 hover:bg-black/70 rounded-lg transition-colors"
               aria-label="Share"
             >
               <Share2 className="w-6 h-6 text-white" />
@@ -258,7 +261,7 @@ export function ImageLightbox({
 
           {/* Image Counter */}
           {hasMultiple && (
-            <div className="absolute top-4 left-4 z-10 px-3 py-1 bg-black/50 rounded-lg">
+            <div className="absolute top-4 left-4 z-20 px-3 py-1 bg-black/50 rounded-lg">
               <span className="text-white text-sm font-medium">
                 {currentIndex + 1} / {images.length}
               </span>
@@ -270,7 +273,7 @@ export function ImageLightbox({
             <button
               type="button"
               onClick={goToPrevious}
-              className="absolute left-4 top-1/2 -translate-y-1/2 z-10 p-3 bg-black/50 hover:bg-black/70 rounded-lg transition-colors"
+              className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-3 bg-black/50 hover:bg-black/70 rounded-lg transition-colors"
               aria-label="Previous image"
             >
               <ChevronLeft className="w-6 h-6 text-white" />
@@ -282,53 +285,69 @@ export function ImageLightbox({
             <button
               type="button"
               onClick={goToNext}
-              className="absolute right-4 top-1/2 -translate-y-1/2 z-10 p-3 bg-black/50 hover:bg-black/70 rounded-lg transition-colors"
+              className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-3 bg-black/50 hover:bg-black/70 rounded-lg transition-colors"
               aria-label="Next image"
             >
               <ChevronRight className="w-6 h-6 text-white" />
             </button>
           )}
 
-          {/* Image with Pinch-to-Zoom (Mobile) */}
+          {/* Image with Transitions and Pinch-to-Zoom */}
           <div
-            className="flex items-center justify-center w-full h-full p-8 overflow-hidden"
+            className="flex items-center justify-center w-full h-full overflow-hidden"
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
           >
-            {isMobile ? (
-              <TransformWrapper
-                initialScale={1}
-                minScale={0.5}
-                maxScale={4}
-                doubleClick={{ disabled: false, step: 0.5 }}  // Double-tap to zoom
-                wheel={{ disabled: true }}  // Disable mouse wheel on mobile
-                pinch={{ disabled: false }}  // Enable pinch-to-zoom
-                panning={{ disabled: true }}  // DISABLE panning to allow swipe navigation
-                limitToBounds={true}
-                centerOnInit={true}
+            <AnimatePresence initial={false} custom={direction}>
+              <motion.div
+                key={currentIndex}
+                custom={direction}
+                variants={variants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{
+                  x: { type: "spring", stiffness: 300, damping: 30 },
+                  opacity: { duration: 0.2 }
+                }}
+                className="absolute inset-0 flex items-center justify-center p-0 md:p-8 w-full h-full"
               >
-                <TransformComponent>
+                {isMobile ? (
+                  <TransformWrapper
+                    initialScale={1}
+                    minScale={0.5}
+                    maxScale={4}
+                    doubleClick={{ disabled: false, step: 0.5 }}  // Double-tap to zoom
+                    wheel={{ disabled: true }}  // Disable mouse wheel on mobile
+                    pinch={{ disabled: false }}  // Enable pinch-to-zoom
+                    panning={{ disabled: true }}  // DISABLE panning by default to allow swipe
+                    limitToBounds={true}
+                    centerOnInit={true}
+                  >
+                    <TransformComponent>
+                      <img
+                        src={currentImage}
+                        alt={`Image ${currentIndex + 1}`}
+                        className="max-w-full max-h-full object-contain"
+                        style={{ maxHeight: 'calc(100vh - 4rem)' }}
+                      />
+                    </TransformComponent>
+                  </TransformWrapper>
+                ) : (
                   <img
                     src={currentImage}
                     alt={`Image ${currentIndex + 1}`}
                     className="max-w-full max-h-full object-contain"
                     style={{ maxHeight: 'calc(100vh - 4rem)' }}
                   />
-                </TransformComponent>
-              </TransformWrapper>
-            ) : (
-              <img
-                src={currentImage}
-                alt={`Image ${currentIndex + 1}`}
-                className="max-w-full max-h-full object-contain"
-                style={{ maxHeight: 'calc(100vh - 4rem)' }}
-              />
-            )}
+                )}
+              </motion.div>
+            </AnimatePresence>
           </div>
 
           {/* Mobile Action Sheet */}
           {showMobileActions && isMobile && (
-            <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl p-4 animate-slide-up z-20">
+            <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl p-4 animate-slide-up z-30">
               <button
                 onClick={() => {
                   handleSaveImage()
