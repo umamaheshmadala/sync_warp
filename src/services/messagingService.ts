@@ -509,6 +509,8 @@ class MessagingService {
       const { data, error } = await supabase
         .from('conversation_list')
         .select('*')
+        // Filter out empty conversations (no messages ever sent or all history cleared)
+        .not('last_message_id', 'is', null)
         .order('last_message_at', { ascending: false, nullsFirst: false })
         .order('created_at', { ascending: false });
 
