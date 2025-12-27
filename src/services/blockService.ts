@@ -100,6 +100,7 @@ export async function unblockUser(userId: string): Promise<UnblockUserResult> {
     throw new Error('No response from unblock operation');
   }
 
+  console.log(`✅ Unblocked user ${userId}`);
   return data as UnblockUserResult;
 }
 

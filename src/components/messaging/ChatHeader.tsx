@@ -26,6 +26,7 @@ import { showDeleteConversationSheet } from './DeleteConversationSheet'
 import { toast } from 'react-hot-toast'
 import { Dialog } from '@capacitor/dialog'
 import * as blockService from '../../services/blockService'
+import { BlockUserDialog } from './BlockUserDialog'
 
 interface ChatHeaderProps {
   conversationId: string
@@ -43,6 +44,7 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
   const [showProfileModal, setShowProfileModal] = React.useState(false)
   const [isBlocked, setIsBlocked] = React.useState(false)
   const [isCheckingBlockStatus, setIsCheckingBlockStatus] = React.useState(true)
+  const [showBlockDialog, setShowBlockDialog] = React.useState(false)
 
   // Find the conversation
   const conversation = conversations.find(c => c.conversation_id === conversationId)
@@ -230,9 +232,7 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
     try {
       console.log('🟡 About to show confirmation dialog...')
 
-      let confirmed = false
-
-      // Use native dialog on mobile, browser confirm on web
+      // Use native dialog on mobile, React dialog on web
       if (Capacitor.isNativePlatform()) {
         console.log('📱 Using native dialog')
         const { value } = await Dialog.confirm({
@@ -243,48 +243,51 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
           okButtonTitle: isBlocked ? 'Unblock' : 'Block',
           cancelButtonTitle: 'Cancel',
         })
-        confirmed = value
-      } else {
-        console.log('💻 Using browser confirm dialog')
-        // CRITICAL: Use setTimeout to ensure menu closes first
-        await new Promise(resolve => setTimeout(resolve, 100))
-
-        const message = isBlocked
-          ? 'Are you sure you want to unblock this user? They will be able to message you again.'
-          : 'Are you sure you want to block this user? You will no longer receive messages from them. They will not be notified.'
-
-        console.log('💬 Showing confirm dialog with message:', message.substring(0, 50) + '...')
-        confirmed = window.confirm(message)
-        console.log('💬 Confirm returned:', confirmed)
-      }
-
-      console.log('🤔 Confirmation dialog result:', confirmed)
-
-      if (confirmed) {
-        if (isBlocked) {
-          console.log('🔓 Unblocking user:', otherParticipantId)
-          await blockService.unblockUser(otherParticipantId)
-          console.log('✅ User unblocked successfully')
-          toast.success('User unblocked')
-          setIsBlocked(false)
-          // Trigger conversation list refresh
-          window.dispatchEvent(new Event('conversation-updated'))
-        } else {
-          console.log('🚫 Blocking user:', otherParticipantId)
-          await blockService.blockUser(otherParticipantId)
-          console.log('✅ User blocked successfully')
-          toast.success('User blocked')
-          setIsBlocked(true)
-          // Trigger conversation list refresh
-          window.dispatchEvent(new Event('conversation-updated'))
-          // Navigate back to messages list after blocking
-          navigate('/messages')
+        if (value) {
+          await executeBlockAction()
         }
+      } else {
+        console.log('💻 Using React dialog')
+        // Show React dialog instead of window.confirm
+        setShowBlockDialog(true)
       }
     } catch (error: any) {
       console.error('❌ handleBlockToggle failed:', error)
-      console.error('❌ Error message:', error.message || 'Unknown')
-      console.error('❌ Full error:', JSON.stringify(error, null, 2))
+      toast.error(error.message || 'Operation failed')
+    }
+  }
+
+  // Execute the actual block/unblock action
+  const executeBlockAction = async () => {
+    if (!otherParticipantId) return
+
+    try {
+
+      if (isBlocked) {
+        console.log('🔓 Unblocking user:', otherParticipantId)
+        await blockService.unblockUser(otherParticipantId)
+        console.log('✅ User unblocked successfully')
+        toast.success('User unblocked')
+        setIsBlocked(false)
+        // Trigger conversation list refresh
+        window.dispatchEvent(new Event('conversation-updated'))
+        // Invalidate queries to refresh conversation list
+        queryClient.invalidateQueries({ queryKey: ['conversations'] })
+      } else {
+        console.log('🚫 Blocking user:', otherParticipantId)
+        await blockService.blockUser(otherParticipantId)
+        console.log('✅ User blocked successfully')
+        toast.success('User blocked')
+        setIsBlocked(true)
+        // Trigger conversation list refresh
+        window.dispatchEvent(new Event('conversation-updated'))
+        // Invalidate queries to refresh conversation list
+        queryClient.invalidateQueries({ queryKey: ['conversations'] })
+        // Navigate back to messages list after blocking
+        navigate('/messages')
+      }
+    } catch (error: any) {
+      console.error('❌ executeBlockAction failed:', error)
       toast.error(error.message || 'Operation failed')
     }
   }
@@ -505,6 +508,18 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
             onClose={() => setShowProfileModal(false)}
           />
         )}
+
+        {/* Block User Dialog */}
+        <BlockUserDialog
+          isOpen={showBlockDialog}
+          isBlocked={isBlocked}
+          userName={other_participant_name || 'this user'}
+          onClose={() => setShowBlockDialog(false)}
+          onConfirm={async () => {
+            setShowBlockDialog(false)
+            await executeBlockAction()
+          }}
+        />
       </div>
     </div>
   )

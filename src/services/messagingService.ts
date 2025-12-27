@@ -582,16 +582,79 @@ class MessagingService {
       if (!user) throw new Error('Not authenticated');
 
       // Fetch single conversation from view
-      const { data, error } = await supabase
+      const { data: viewData, error: viewError } = await supabase
         .from('conversation_list')
         .select('*')
         .eq('conversation_id', conversationId)
         .maybeSingle();
 
-      if (error) throw error;
-      if (!data) {
-        console.log(`ℹ️ [fetchSingleConversation] Conversation ${conversationId} not found`);
-        return null;
+      if (viewError) throw viewError;
+
+      let conversationData = viewData;
+
+      // Fallback: If view returns null (e.g., new/empty conversation not yet in view),
+      // fetch directly from tables
+      if (!conversationData) {
+        console.log(`ℹ️ [fetchSingleConversation] Not in view, fetching from tables: ${conversationId}`);
+
+        // Use a different alias (cp_data) to avoid overwriting the native 'participants' UUID[] column
+        const { data: rawConv, error: rawError } = await supabase
+          .from('conversations')
+          .select('*, cp_data:conversation_participants(user_id, is_archived, is_pinned)')
+          .eq('id', conversationId)
+          .single();
+
+        if (rawError || !rawConv) {
+          console.log(`ℹ️ [fetchSingleConversation] Conversation truly not found: ${conversationId}`, rawError);
+          return null;
+        }
+
+        // The native 'participants' column is a UUID[] array
+        const participantsArr: string[] = Array.isArray(rawConv.participants)
+          ? rawConv.participants
+          : [];
+
+        console.log(`📋 [fetchSingleConversation] Participants from table:`, participantsArr);
+
+        const otherUserId = participantsArr.find((id: string) => id !== user.id) || participantsArr[0];
+
+        if (!otherUserId) {
+          console.error(`❌ [fetchSingleConversation] Could not determine other participant`);
+          return null;
+        }
+
+        // Fetch other profile
+        const { data: otherProfile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', otherUserId)
+          .single();
+
+        // Construct object
+        conversationData = {
+          conversation_id: rawConv.id,
+          type: rawConv.type,
+          participants: participantsArr,
+          created_at: rawConv.created_at,
+          last_message_at: rawConv.created_at, // timestamps
+          unread_count: 0,
+          // Participant specific
+          is_archived: false,
+          is_pinned: false,
+          is_muted: false,
+          // Other details
+          other_participant_id: otherUserId,
+          other_participant_name: otherProfile?.full_name,
+          other_participant_avatar: otherProfile?.avatar_url,
+          other_participant_online: otherProfile?.is_online,
+          // Nulls for messages
+          last_message_id: null,
+          last_message_content: null,
+          last_message_type: null,
+          last_message_sender_id: null,
+          last_message_timestamp: null,
+          last_message_status: null
+        };
       }
 
       // Get blocked user IDs for this conversation
@@ -611,18 +674,19 @@ class MessagingService {
       });
 
       // Enrich with blocking status
-      const participant1_id = data.participants?.[0];
-      const participant2_id = data.participants?.[1];
+      const participant1_id = conversationData.participants?.[0];
+      const participant2_id = conversationData.participants?.[1];
       const otherParticipantId = user.id === participant1_id ? participant2_id : participant1_id;
       const is_blocked = blockedUserIds.has(otherParticipantId);
 
       console.log(`✨ [fetchSingleConversation] Fetched conversation: ${conversationId}`, {
         is_blocked,
-        lastMessage: data.last_message_content?.substring(0, 30)
+        lastMessage: conversationData.last_message_content?.substring(0, 30),
+        fromFallback: !viewData
       });
 
       return {
-        ...data,
+        ...conversationData,
         participant1_id,
         participant2_id,
         is_blocked,
