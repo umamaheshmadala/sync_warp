@@ -75,6 +75,9 @@ class ConversationManagementService {
 
     optimisticUpdates.confirmUpdate(updateId)
     console.log('✅ Conversation archived and muted successfully')
+
+    // Trigger conversation list refetch to update UI (switch tabs)
+    window.dispatchEvent(new Event('conversation-updated'))
   }
 
   /**
@@ -121,6 +124,9 @@ class ConversationManagementService {
 
     optimisticUpdates.confirmUpdate(updateId)
     console.log('✅ Conversation unarchived and unmuted successfully')
+
+    // Trigger conversation list refetch to update UI (switch tabs)
+    window.dispatchEvent(new Event('conversation-updated'))
   }
 
   /**
@@ -160,6 +166,9 @@ class ConversationManagementService {
 
     optimisticUpdates.confirmUpdate(updateId)
     console.log('✅ Conversation pinned successfully')
+
+    // Trigger conversation list refetch to update UI
+    window.dispatchEvent(new Event('conversation-updated'))
   }
 
   /**
@@ -191,6 +200,9 @@ class ConversationManagementService {
 
     optimisticUpdates.confirmUpdate(updateId)
     console.log('✅ Conversation unpinned')
+
+    // Trigger conversation list refetch to update UI
+    window.dispatchEvent(new Event('conversation-updated'))
   }
 
   /**
