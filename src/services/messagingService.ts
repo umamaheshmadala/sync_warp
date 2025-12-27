@@ -16,6 +16,8 @@ import type {
   UnsubscribeFunction
 } from '../types/messaging';
 
+import { useMessagingStore } from '../store/messagingStore';
+
 // Re-export types for backward compatibility
 export type {
   Message,
@@ -143,6 +145,14 @@ class MessagingService {
   // Conversation Management
   // ============================================================================
 
+  // ... (imports remain)
+
+  // ...
+
+  // ============================================================================
+  // Conversation Management
+  // ============================================================================
+
   /**
    * Create or get existing 1:1 conversation
    * 
@@ -167,8 +177,18 @@ class MessagingService {
 
         if (error) throw error;
 
-        console.log('✅ Conversation ID:', data);
-        return data as string;
+        const conversationId = data as string;
+        console.log('✅ Conversation ID:', conversationId);
+
+        // Fetch full conversation details and update store immediately
+        // This fixes the issue where the header shows skeleton after creating/reviving a chat
+        const conversation = await this.fetchSingleConversation(conversationId);
+        if (conversation) {
+          console.log('📥 updating store with new/revived conversation');
+          useMessagingStore.getState().upsertConversation(conversation);
+        }
+
+        return conversationId;
       } catch (error: any) {
         if (error.name === 'AbortError') {
           throw new Error('Request timed out. Please check your connection.');

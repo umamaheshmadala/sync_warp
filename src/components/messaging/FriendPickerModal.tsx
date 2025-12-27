@@ -3,6 +3,7 @@ import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import { X, Search, MessageCircle, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { useFriends } from '../../hooks/friends/useFriends';
 import { useMessagingStore } from '../../store/messagingStore';
 import { useHapticFeedback } from '../../hooks/useHapticFeedback';
@@ -18,10 +19,11 @@ export const FriendPickerModal: React.FC<FriendPickerModalProps> = ({
   onClose
 }) => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { data: friendsResponse, isLoading: loading } = useFriends();
   const { conversations } = useMessagingStore();
   const { triggerHaptic } = useHapticFeedback();
-  
+
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,7 +57,7 @@ export const FriendPickerModal: React.FC<FriendPickerModalProps> = ({
       // Online friends first
       if (a.is_online && !b.is_online) return -1;
       if (!a.is_online && b.is_online) return 1;
-      
+
       // Then alphabetically
       return a.full_name.localeCompare(b.full_name);
     });
@@ -80,7 +82,10 @@ export const FriendPickerModal: React.FC<FriendPickerModalProps> = ({
         // Create new conversation
         console.log('✨ Creating new conversation with:', friendName);
         const conversationId = await messagingService.createOrGetConversation(friendId);
-        
+
+        // CRITICAL FIX: Invalidate potential stale cache from previous deleted chats
+        queryClient.removeQueries({ queryKey: ['messages', conversationId] });
+
         // Navigate to new conversation
         navigate(`/messages/${conversationId}`);
         triggerHaptic('success');
@@ -196,7 +201,7 @@ export const FriendPickerModal: React.FC<FriendPickerModalProps> = ({
                     <div className="space-y-1">
                       {filteredFriends.map((friend) => {
                         const existingConv = getExistingConversation(friend.id);
-                        
+
                         return (
                           <button
                             key={friend.id}
@@ -221,9 +226,8 @@ export const FriendPickerModal: React.FC<FriendPickerModalProps> = ({
                               )}
                               {/* Online indicator */}
                               <div
-                                className={`absolute -bottom-0 -right-0 h-3 w-3 rounded-full border-2 border-white ${
-                                  friend.is_online ? 'bg-green-400' : 'bg-gray-400'
-                                }`}
+                                className={`absolute -bottom-0 -right-0 h-3 w-3 rounded-full border-2 border-white ${friend.is_online ? 'bg-green-400' : 'bg-gray-400'
+                                  }`}
                               />
                             </div>
 

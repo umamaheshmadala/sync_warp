@@ -5,6 +5,7 @@ import { Fragment } from 'react'
 import { X, Search, UserPlus, MessageCircle, Users, User, Share2, Trash2, Filter, Check, Clock, MapPin, Heart } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '../store/authStore'
 import { useNewFriends as useFriends } from '../hooks/useNewFriends'
 import { useMessagingStore } from '../store/messagingStore'
@@ -23,6 +24,7 @@ type TabType = 'friends' | 'requests'
 
 const ContactsSidebar: React.FC<ContactsSidebarProps> = ({ isOpen, onClose }) => {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { user } = useAuthStore()
   const {
     friends,
@@ -36,7 +38,7 @@ const ContactsSidebar: React.FC<ContactsSidebarProps> = ({ isOpen, onClose }) =>
   } = useFriends()
   const { conversations } = useMessagingStore()
   const { triggerHaptic } = useHapticFeedback()
-  
+
   const [activeTab, setActiveTab] = useState<TabType>('friends')
   const [searchQuery, setSearchQuery] = useState('')
   const [showAddFriend, setShowAddFriend] = useState(false)
@@ -47,12 +49,12 @@ const ContactsSidebar: React.FC<ContactsSidebarProps> = ({ isOpen, onClose }) =>
   // Get filtered friends based on search and filter
   const getFilteredFriends = () => {
     let filteredFriends = friends
-    
+
     // Apply online filter
     if (filterOnline) {
       filteredFriends = filteredFriends.filter(f => f.friend_profile.is_online)
     }
-    
+
     // Apply search filter
     if (searchQuery) {
       filteredFriends = filteredFriends.filter(f =>
@@ -60,10 +62,10 @@ const ContactsSidebar: React.FC<ContactsSidebarProps> = ({ isOpen, onClose }) =>
         (f.friend_profile.city && f.friend_profile.city.toLowerCase().includes(searchQuery.toLowerCase()))
       )
     }
-    
+
     return filteredFriends
   }
-  
+
   const filteredFriends = getFilteredFriends()
 
   const handleShareTap = (friend: Friend) => {
@@ -74,13 +76,13 @@ const ContactsSidebar: React.FC<ContactsSidebarProps> = ({ isOpen, onClose }) =>
   const handleMessageTap = async (friend: Friend) => {
     try {
       triggerHaptic('light')
-      
+
       // Check if conversation already exists
       const existingConversation = conversations.find(conv =>
         conv.participant1_id === friend.friend_profile.user_id ||
         conv.participant2_id === friend.friend_profile.user_id
       )
-      
+
       if (existingConversation) {
         // Navigate to existing conversation
         console.log('📬 Navigating to existing conversation:', existingConversation.conversation_id)
@@ -90,17 +92,21 @@ const ContactsSidebar: React.FC<ContactsSidebarProps> = ({ isOpen, onClose }) =>
         // Create new conversation and navigate
         console.log('✨ Creating new conversation with:', friend.friend_profile.full_name)
         const conversationId = await messagingService.createOrGetConversation(friend.friend_profile.user_id)
+
+        // CRITICAL FIX: Invalidate potential stale cache
+        queryClient.removeQueries({ queryKey: ['messages', conversationId] })
+
         navigate(`/messages/${conversationId}`)
         triggerHaptic('success')
       }
-      
+
       onClose() // Close sidebar
     } catch (error) {
       console.error('❌ Error starting conversation:', error)
       triggerHaptic('error')
     }
   }
-  
+
   const handleRemoveFriend = async (friend: Friend) => {
     if (confirm(`Remove ${friend.friend_profile.full_name} from friends?`)) {
       try {
@@ -147,12 +153,12 @@ const ContactsSidebar: React.FC<ContactsSidebarProps> = ({ isOpen, onClose }) =>
       })
     }
   }
-  
+
   const formatLastActive = (lastActive: string): string => {
     const date = new Date(lastActive)
     const now = new Date()
     const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60))
-    
+
     if (diffInMinutes < 1) return 'now'
     if (diffInMinutes < 60) return `${diffInMinutes}m ago`
     if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`
@@ -163,7 +169,7 @@ const ContactsSidebar: React.FC<ContactsSidebarProps> = ({ isOpen, onClose }) =>
     const date = new Date(dateString)
     const now = new Date()
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
-    
+
     if (diffInSeconds < 60) return 'just now'
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`
@@ -234,21 +240,19 @@ const ContactsSidebar: React.FC<ContactsSidebarProps> = ({ isOpen, onClose }) =>
                         <nav className="-mb-px flex">
                           <button
                             onClick={() => setActiveTab('friends')}
-                            className={`flex-1 py-4 px-1 text-center border-b-2 font-medium text-sm transition-colors ${
-                              activeTab === 'friends'
-                                ? 'border-indigo-500 text-indigo-600'
-                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                            }`}
+                            className={`flex-1 py-4 px-1 text-center border-b-2 font-medium text-sm transition-colors ${activeTab === 'friends'
+                              ? 'border-indigo-500 text-indigo-600'
+                              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                              }`}
                           >
                             Friends ({totalFriends})
                           </button>
                           <button
                             onClick={() => setActiveTab('requests')}
-                            className={`flex-1 py-4 px-1 text-center border-b-2 font-medium text-sm transition-colors relative ${
-                              activeTab === 'requests'
-                                ? 'border-indigo-500 text-indigo-600'
-                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                            }`}
+                            className={`flex-1 py-4 px-1 text-center border-b-2 font-medium text-sm transition-colors relative ${activeTab === 'requests'
+                              ? 'border-indigo-500 text-indigo-600'
+                              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                              }`}
                           >
                             Requests ({friendRequests.length})
                             {friendRequests.length > 0 && (
@@ -276,18 +280,17 @@ const ContactsSidebar: React.FC<ContactsSidebarProps> = ({ isOpen, onClose }) =>
                             </div>
                             <button
                               onClick={() => setFilterOnline(!filterOnline)}
-                              className={`p-2 rounded-lg border transition-colors ${
-                                filterOnline 
-                                  ? 'bg-green-100 border-green-300 text-green-700'
-                                  : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
-                              }`}
+                              className={`p-2 rounded-lg border transition-colors ${filterOnline
+                                ? 'bg-green-100 border-green-300 text-green-700'
+                                : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                                }`}
                               title="Filter online friends"
                             >
                               <Filter className="h-4 w-4" />
                             </button>
                           </div>
-                          
-                          <button 
+
+                          <button
                             onClick={() => setShowAddFriend(true)}
                             className="w-full flex items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                           >
@@ -320,14 +323,14 @@ const ContactsSidebar: React.FC<ContactsSidebarProps> = ({ isOpen, onClose }) =>
                                 {searchQuery ? 'No friends found' : 'No friends yet'}
                               </h3>
                               <p className="mt-1 text-sm text-gray-500">
-                                {searchQuery 
-                                  ? 'Try searching with a different name' 
+                                {searchQuery
+                                  ? 'Try searching with a different name'
                                   : 'Start connecting with people to share deals and experiences'
                                 }
                               </p>
                               {!searchQuery && (
                                 <div className="mt-4">
-                                  <button 
+                                  <button
                                     onClick={() => setShowAddFriend(true)}
                                     className="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
                                   >
@@ -342,7 +345,7 @@ const ContactsSidebar: React.FC<ContactsSidebarProps> = ({ isOpen, onClose }) =>
                               <AnimatePresence mode="popLayout">
                                 {filteredFriends.map((friendship) => {
                                   const friend = friendship.friend_profile
-                                  
+
                                   return (
                                     <motion.div
                                       key={friendship.id}
@@ -368,9 +371,8 @@ const ContactsSidebar: React.FC<ContactsSidebarProps> = ({ isOpen, onClose }) =>
                                           </div>
                                         )}
                                         <motion.div
-                                          className={`absolute -bottom-0 -right-0 h-3 w-3 rounded-full border-2 border-white ${
-                                            friend.is_online ? 'bg-green-400' : 'bg-gray-400'
-                                          }`}
+                                          className={`absolute -bottom-0 -right-0 h-3 w-3 rounded-full border-2 border-white ${friend.is_online ? 'bg-green-400' : 'bg-gray-400'
+                                            }`}
                                           animate={{
                                             scale: friend.is_online ? [1, 1.2, 1] : 1
                                           }}
@@ -446,7 +448,7 @@ const ContactsSidebar: React.FC<ContactsSidebarProps> = ({ isOpen, onClose }) =>
                             <div className="space-y-4">
                               {friendRequests.map((request) => {
                                 const isProcessing = processingRequest.has(request.id)
-                                
+
                                 return (
                                   <motion.div
                                     key={request.id}
@@ -473,7 +475,7 @@ const ContactsSidebar: React.FC<ContactsSidebarProps> = ({ isOpen, onClose }) =>
                                             </div>
                                           )}
                                         </div>
-                                        
+
                                         <div className="flex-1">
                                           <h4 className="font-medium text-gray-900">{request.requester_name}</h4>
                                           <div className="flex items-center space-x-4 mt-1">
@@ -498,7 +500,7 @@ const ContactsSidebar: React.FC<ContactsSidebarProps> = ({ isOpen, onClose }) =>
                                         <X className="h-4 w-4" />
                                         <span>Decline</span>
                                       </motion.button>
-                                      
+
                                       <motion.button
                                         onClick={() => handleAcceptRequest(request.id)}
                                         disabled={isProcessing}
@@ -544,13 +546,13 @@ const ContactsSidebar: React.FC<ContactsSidebarProps> = ({ isOpen, onClose }) =>
           </div>
         </Dialog>
       </Transition.Root>
-        
+
       {/* Modals */}
-      <AddFriend 
-        isOpen={showAddFriend} 
-        onClose={() => setShowAddFriend(false)} 
+      <AddFriend
+        isOpen={showAddFriend}
+        onClose={() => setShowAddFriend(false)}
       />
-      
+
       {showShareDeal && (
         <ShareDeal
           friendId={showShareDeal}

@@ -1,5 +1,6 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { Capacitor } from '@capacitor/core'
 import { supabase } from '../../lib/supabase'
 
@@ -33,6 +34,7 @@ interface ChatHeaderProps {
 
 export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { conversations, togglePinOptimistic, toggleArchiveOptimistic } = useMessagingStore()
   const { friends } = useNewFriends()
   const [showDeleteDialog, setShowDeleteDialog] = React.useState(false)
@@ -295,12 +297,17 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
     setShowClearDialog(false)
   }
 
+  // ...
+
   const handleDeleted = () => {
     // Remove deleted conversation from store for instant UI update
     const updatedConversations = conversations.filter(
       (c) => c.conversation_id !== conversationId
     )
     useMessagingStore.getState().setConversations(updatedConversations)
+
+    // CRITICAL FIX: Remove messages from React Query cache to prevent stale messages appearing if re-created
+    queryClient.removeQueries({ queryKey: ['messages', conversationId] })
 
     // Navigate back to list
     navigate('/messages')

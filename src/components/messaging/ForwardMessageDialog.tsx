@@ -8,6 +8,7 @@ import { toast } from 'react-hot-toast'
 import { cn } from '../../lib/utils'
 import type { Friend } from '../../types/friends'
 import { supabase } from '../../lib/supabase'
+import { useQueryClient } from '@tanstack/react-query'
 
 interface Props {
   message: {
@@ -20,6 +21,7 @@ interface Props {
 }
 
 export function ForwardMessageDialog({ message, onClose, onForwarded }: Props) {
+  const queryClient = useQueryClient()
   const [friends, setFriends] = useState<Friend[]>([])
   const [selectedFriendIds, setSelectedFriendIds] = useState<string[]>([])
   const [searchQuery, setSearchQuery] = useState('')
@@ -36,7 +38,7 @@ export function ForwardMessageDialog({ message, onClose, onForwarded }: Props) {
       setIsLoading(true)
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      
+
       setCurrentUserId(user.id)
 
       const response = await friendsService.getFriends(user.id)
@@ -88,14 +90,17 @@ export function ForwardMessageDialog({ message, onClose, onForwarded }: Props) {
     try {
       // 1. Get conversation IDs for all selected friends
       const conversationIds = await Promise.all(
-        selectedFriendIds.map(friendId => 
-          messagingService.createOrGetConversation(friendId)
-        )
+        selectedFriendIds.map(async (friendId) => {
+          const cid = await messagingService.createOrGetConversation(friendId)
+          // CRITICAL FIX: Invalidate cache
+          queryClient.removeQueries({ queryKey: ['messages', cid] })
+          return cid
+        })
       )
 
       // 2. Forward message to these conversations
       await messagingService.forwardMessage(message.id, conversationIds)
-      
+
       toast.success(`Forwarded to ${selectedFriendIds.length} friend${selectedFriendIds.length > 1 ? 's' : ''}`)
       onForwarded()
       onClose()
@@ -170,8 +175,8 @@ export function ForwardMessageDialog({ message, onClose, onForwarded }: Props) {
                   {/* Avatar */}
                   <div className="w-10 h-10 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden">
                     {friend.avatar_url ? (
-                      <img 
-                        src={friend.avatar_url} 
+                      <img
+                        src={friend.avatar_url}
                         alt={friend.full_name}
                         className="w-full h-full object-cover"
                       />
