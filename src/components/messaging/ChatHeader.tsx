@@ -45,9 +45,42 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
   const [isBlocked, setIsBlocked] = React.useState(false)
   const [isCheckingBlockStatus, setIsCheckingBlockStatus] = React.useState(true)
   const [showBlockDialog, setShowBlockDialog] = React.useState(false)
+  const [isLoadingConversation, setIsLoadingConversation] = React.useState(false)
 
-  // Find the conversation
-  const conversation = conversations.find(c => c.conversation_id === conversationId)
+  // Find the conversation from store
+  const conversationFromStore = conversations.find(c => c.conversation_id === conversationId)
+
+  // Fallback: Fetch conversation if not in store (race condition with navigation)
+  React.useEffect(() => {
+    // If conversation is already in store, no need to fetch
+    if (conversationFromStore) return
+
+    // Prevent duplicate fetches
+    if (isLoadingConversation) return
+
+    const fetchConversation = async () => {
+      setIsLoadingConversation(true)
+      console.log('🔄 [ChatHeader] Conversation not in store, fetching:', conversationId)
+
+      try {
+        const { messagingService } = await import('../../services/messagingService')
+        const conv = await messagingService.fetchSingleConversation(conversationId)
+        if (conv) {
+          console.log('✅ [ChatHeader] Fetched and upserting conversation')
+          useMessagingStore.getState().upsertConversation(conv)
+        }
+      } catch (error) {
+        console.error('❌ [ChatHeader] Failed to fetch conversation:', error)
+      } finally {
+        setIsLoadingConversation(false)
+      }
+    }
+
+    fetchConversation()
+  }, [conversationId, conversationFromStore, isLoadingConversation])
+
+  // Use conversation from store (will update when fetched)
+  const conversation = conversationFromStore
 
   // Get friend's online status - MUST be called before any early returns
   const friendProfile = React.useMemo(() => {

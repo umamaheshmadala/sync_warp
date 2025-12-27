@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
-import { MessageCircle, UserMinus } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { MessageCircle, UserMinus, Ban } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { OnlineStatusBadge, OnlineStatusDot } from '../status/OnlineStatusBadge';
 import { useFriendActions } from '../../hooks/friends/useFriendActions';
 import type { Friend } from '../../types/friends';
+import { messagingService } from '../../services/messagingService'; // Import messaging service
+import * as blockService from '../../services/blockService';
 
 import type { Badge } from '../../services/friendLeaderboardService';
 
@@ -14,19 +16,60 @@ interface FriendCardProps {
   onClick?: () => void;
 }
 
+import { useQueryClient } from '@tanstack/react-query';
+
 export function FriendCard({ friend, badge, style, onClick }: FriendCardProps) {
   const { unfriend } = useFriendActions();
   const [showConfirm, setShowConfirm] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  // Check if this friend is blocked
+  useEffect(() => {
+    const checkBlockStatus = async () => {
+      try {
+        const blocked = await blockService.isUserBlocked(friend.id);
+        setIsBlocked(blocked);
+      } catch (error) {
+        console.error('Failed to check block status:', error);
+      }
+    };
+
+    checkBlockStatus();
+
+    // Listen for block status changes
+    const handleUpdate = () => {
+      checkBlockStatus();
+    };
+    window.addEventListener('conversation-updated', handleUpdate);
+
+    return () => {
+      window.removeEventListener('conversation-updated', handleUpdate);
+    };
+  }, [friend.id]);
 
   const handleUnfriend = (e: React.MouseEvent) => {
     e.stopPropagation();
     setShowConfirm(true);
   };
 
-  const handleSendMessage = (e: React.MouseEvent) => {
+  const handleSendMessage = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigate(`/messages?userId=${friend.id}`);
+    try {
+      // Create or get conversation before navigating
+      const conversationId = await messagingService.createOrGetConversation(friend.id);
+
+      // Invalidate queries to ensure sidebar updates
+      await queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      await queryClient.removeQueries({ queryKey: ['messages', conversationId] });
+
+      navigate(`/messages/${conversationId}`);
+    } catch (error) {
+      console.error('Failed to start conversation:', error);
+      // Fallback navigation or error handling could go here
+      navigate('/messages');
+    }
   };
 
   const confirmUnfriend = () => {
@@ -88,14 +131,24 @@ export function FriendCard({ friend, badge, style, onClick }: FriendCardProps) {
 
         {/* Quick actions */}
         <div className="flex gap-2 flex-shrink-0">
-          <button
-            onClick={handleSendMessage}
-            className="p-2 hover:bg-blue-50 rounded-lg transition text-blue-600"
-            aria-label="Send message"
-            title="Send message"
-          >
-            <MessageCircle className="w-5 h-5" />
-          </button>
+          {isBlocked ? (
+            <div
+              className="p-2 rounded-lg text-red-500 cursor-not-allowed"
+              aria-label="User is blocked"
+              title="User is blocked"
+            >
+              <Ban className="w-5 h-5" />
+            </div>
+          ) : (
+            <button
+              onClick={handleSendMessage}
+              className="p-2 hover:bg-blue-50 rounded-lg transition text-blue-600"
+              aria-label="Send message"
+              title="Send message"
+            >
+              <MessageCircle className="w-5 h-5" />
+            </button>
+          )}
           <button
             onClick={handleUnfriend}
             className="p-2 hover:bg-red-50 rounded-lg transition text-red-600"
