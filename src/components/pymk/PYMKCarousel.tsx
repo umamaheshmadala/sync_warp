@@ -4,7 +4,11 @@ import { PYMKCard } from './PYMKCard';
 import { PYMKCardSkeleton } from '../ui/skeletons/PYMKCardSkeleton';
 import { NoPYMKEmptyState } from '../friends/EmptyStates';
 
-export function PYMKCarousel() {
+interface PYMKCarouselProps {
+  onProfileClick?: (userId: string) => void;
+}
+
+export function PYMKCarousel({ onProfileClick }: PYMKCarouselProps) {
   const { data: recommendations, isLoading } = usePYMK(10);
 
   if (isLoading) {
@@ -32,7 +36,10 @@ export function PYMKCarousel() {
       <div className="flex overflow-x-auto pb-4 space-x-4 px-4 -mx-4 scrollbar-hide snap-x snap-mandatory">
         {recommendations.map((recommendation) => (
           <div key={recommendation.id} className="w-[160px] shrink-0 snap-center">
-            <PYMKCard recommendation={recommendation} />
+            <PYMKCard
+              recommendation={recommendation}
+              onProfileClick={onProfileClick}
+            />
           </div>
         ))}
       </div>

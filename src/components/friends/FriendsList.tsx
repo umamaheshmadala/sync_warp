@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useMemo } from 'react';
 import { FriendCard } from './FriendCard';
-import { FriendProfileModal } from './FriendProfileModal';
 import { FriendsListSkeleton } from '../ui/skeletons/FriendsListSkeleton';
 import { NoFriendsEmptyState, SearchNoResultsEmptyState } from './EmptyStates';
 import { useFriendsList } from '../../hooks/friends/useFriendsList';
@@ -14,7 +13,12 @@ interface FriendsListProps {
 import { useRealtimeFriends } from '../../hooks/friends/useRealtimeFriends';
 import { GlobalUserSearch } from './GlobalUserSearch';
 
-export function FriendsList({ searchQuery = '' }: FriendsListProps) {
+interface FriendsListProps {
+  searchQuery?: string;
+  onProfileClick?: (userId: string) => void;
+}
+
+export function FriendsList({ searchQuery = '', onProfileClick }: FriendsListProps) {
   useRealtimeFriends(); // Enable realtime updates
   const { friends, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage, error } = useFriendsList();
 
@@ -36,8 +40,6 @@ export function FriendsList({ searchQuery = '' }: FriendsListProps) {
     });
     return map;
   }, [leaderboard]);
-
-  const [selectedFriendId, setSelectedFriendId] = React.useState<string | null>(null);
 
   // Filter friends based on search query
   const filteredFriends = useMemo(() => {
@@ -120,7 +122,7 @@ export function FriendsList({ searchQuery = '' }: FriendsListProps) {
             key={friend.id}
             friend={friend}
             badge={badgeMap[friend.id]} // Pass the badge
-            onClick={() => setSelectedFriendId(friend.id)}
+            onClick={() => onProfileClick?.(friend.id)}
           />
         ))}
       </div>
@@ -134,15 +136,6 @@ export function FriendsList({ searchQuery = '' }: FriendsListProps) {
           <div className="inline-block w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
           <span className="ml-2">Loading more...</span>
         </div>
-      )}
-
-      {/* Friend Profile Modal */}
-      {selectedFriendId && (
-        <FriendProfileModal
-          friendId={selectedFriendId}
-          isOpen={!!selectedFriendId}
-          onClose={() => setSelectedFriendId(null)}
-        />
       )}
 
       {/* Global Search Results (Unified Search) */}

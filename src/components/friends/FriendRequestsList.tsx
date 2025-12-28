@@ -11,7 +11,11 @@ import { FriendRequestCard } from './FriendRequestCard';
 import { useFriendRequests } from '../../hooks/friends/useFriendRequests';
 import { cn } from '../../lib/utils';
 
-export function FriendRequestsList() {
+interface FriendRequestsListProps {
+  onProfileClick?: (userId: string) => void;
+}
+
+export function FriendRequestsList({ onProfileClick }: FriendRequestsListProps) {
   const [activeTab, setActiveTab] = useState<'received' | 'sent'>('received');
   const {
     requests,
@@ -102,11 +106,12 @@ export function FriendRequestsList() {
         </div>
       ) : (
         <div className="space-y-3">
-          {requests.map((request) => (
+          {requests.map((request: any) => (
             <FriendRequestCard
               key={request.id}
               request={request}
               type={activeTab}
+              onProfileClick={onProfileClick}
             />
           ))}
 

@@ -31,9 +31,10 @@ interface FriendRequestCardProps {
     mutual_friends_count?: number;
   };
   type: 'received' | 'sent';
+  onProfileClick?: (userId: string) => void;
 }
 
-export function FriendRequestCard({ request, type }: FriendRequestCardProps) {
+export function FriendRequestCard({ request, type, onProfileClick }: FriendRequestCardProps) {
   const { acceptRequest, rejectRequest, cancelRequest, isLoading } = useRequestActions();
   const [showRejectDialog, setShowRejectDialog] = useState(false);
 
@@ -58,7 +59,10 @@ export function FriendRequestCard({ request, type }: FriendRequestCardProps) {
 
   return (
     <>
-      <div className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow">
+      <div
+        className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow cursor-pointer"
+        onClick={() => onProfileClick?.(otherUser.id)}
+      >
         <div className="flex items-start gap-4">
           {/* Avatar */}
           {otherUser.avatar_url ? (

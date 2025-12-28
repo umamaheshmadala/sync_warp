@@ -16,9 +16,10 @@ interface FriendRequestGridCardProps {
         };
         mutual_friends_count?: number;
     };
+    onProfileClick?: (userId: string) => void;
 }
 
-export function FriendRequestGridCard({ request }: FriendRequestGridCardProps) {
+export function FriendRequestGridCard({ request, onProfileClick }: FriendRequestGridCardProps) {
     const { acceptRequest, rejectRequest, isLoading } = useRequestActions();
     const [showRejectDialog, setShowRejectDialog] = useState(false);
 
@@ -40,7 +41,10 @@ export function FriendRequestGridCard({ request }: FriendRequestGridCardProps) {
 
     return (
         <>
-            <div className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow cursor-default p-3 flex flex-col items-center h-full w-[160px] flex-shrink-0">
+            <div
+                className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer p-3 flex flex-col items-center h-full w-[160px] flex-shrink-0"
+                onClick={() => onProfileClick?.(request.sender.id)}
+            >
 
                 {/* Avatar */}
                 <div className="flex flex-col items-center mb-2 w-full mt-2">

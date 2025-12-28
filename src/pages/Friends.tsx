@@ -22,6 +22,7 @@ import { useReceivedFriendRequests } from '../hooks/friends/useFriendRequests';
 import { useFriendActions } from '../hooks/friends/useFriendActions';
 
 import { PYMKCarousel } from '../components/pymk/PYMKCarousel';
+import { FriendProfileModal } from '../components/friends/FriendProfileModal';
 
 export function FriendsPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -29,6 +30,9 @@ export function FriendsPage() {
   const [pullDistance, setPullDistance] = useState(0);
   const queryClient = useQueryClient();
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Profile Modal State
+  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
 
   // Data hooks
   // Cast to any to bypass inference issue, or define interface. 
@@ -39,6 +43,11 @@ export function FriendsPage() {
 
   // Subscribe to realtime online status
   useRealtimeOnlineStatus();
+
+  // Handler for opening profile
+  const handleProfileClick = (userId: string) => {
+    setSelectedProfileId(userId);
+  };
 
   // Pull-to-refresh gesture
   const bind = useDrag(
@@ -122,7 +131,10 @@ export function FriendsPage() {
                 <div className="flex overflow-x-auto pb-4 space-x-4 px-1 -mx-1 scrollbar-hide snap-x snap-mandatory">
                   {receivedRequests.map((req) => (
                     <div key={req.id} className="snap-center">
-                      <FriendRequestGridCard request={req} />
+                      <FriendRequestGridCard
+                        request={req}
+                        onProfileClick={handleProfileClick}
+                      />
                     </div>
                   ))}
                 </div>
@@ -131,15 +143,20 @@ export function FriendsPage() {
 
             {/* People You May Know - Auto hides if empty via component logic */}
             {/* Only show if not searching to avoid clutter */}
-            {!searchQuery && <PYMKCarousel />}
+            {!searchQuery && (
+              <PYMKCarousel onProfileClick={handleProfileClick} />
+            )}
 
             {/* Friends List (with global search integrated) */}
-            <FriendsList searchQuery={searchQuery} />
+            <FriendsList
+              searchQuery={searchQuery}
+              onProfileClick={handleProfileClick}
+            />
           </TabsContent>
 
           <TabsContent value="requests" className="space-y-6">
             {/* Friend Requests List */}
-            <FriendRequestsList />
+            <FriendRequestsList onProfileClick={handleProfileClick} />
           </TabsContent>
 
           <TabsContent value="blocked" className="space-y-6">
@@ -152,6 +169,15 @@ export function FriendsPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Shared Friend Profile Modal */}
+      {selectedProfileId && (
+        <FriendProfileModal
+          friendId={selectedProfileId}
+          isOpen={!!selectedProfileId}
+          onClose={() => setSelectedProfileId(null)}
+        />
+      )}
     </div>
   );
 }

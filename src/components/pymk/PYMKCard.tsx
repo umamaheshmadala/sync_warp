@@ -13,9 +13,10 @@ import toast from 'react-hot-toast';
 
 interface PYMKCardProps {
   recommendation: PYMKSuggestion;
+  onProfileClick?: (userId: string) => void;
 }
 
-export function PYMKCard({ recommendation }: PYMKCardProps) {
+export function PYMKCard({ recommendation, onProfileClick }: PYMKCardProps) {
   const navigate = useNavigate();
   const { sendRequest, cancelRequest } = useFriendActions();
   const dismissSuggestion = useDismissPYMK();
@@ -55,7 +56,11 @@ export function PYMKCard({ recommendation }: PYMKCardProps) {
   };
 
   const handleCardClick = () => {
-    navigate(`/profile/${recommendation.id}`);
+    if (onProfileClick) {
+      onProfileClick(recommendation.id);
+    } else {
+      navigate(`/profile/${recommendation.id}`);
+    }
   };
 
   return (
