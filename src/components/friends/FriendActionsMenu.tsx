@@ -34,7 +34,7 @@ export function FriendActionsMenu({
             <Button
                 variant="outline"
                 onClick={onToggleFriend}
-                className={isFriend ? "bg-gray-100" : ""}
+                className={`border-gray-300 text-gray-900 hover:bg-gray-100 ${isFriend ? "bg-gray-100" : "bg-white"}`}
             >
                 {isFriend ? (
                     <>
@@ -49,13 +49,19 @@ export function FriendActionsMenu({
                 )}
             </Button>
 
-            <Button variant="outline" size="icon" onClick={onShare} title="Share Profile">
+            <Button
+                variant="outline"
+                size="icon"
+                onClick={onShare}
+                title="Share Profile"
+                className="border-gray-300 text-gray-700 hover:bg-gray-100 bg-white"
+            >
                 <Share2 className="w-4 h-4" />
             </Button>
 
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
+                    <Button variant="ghost" size="icon" className="text-gray-700 hover:bg-gray-100">
                         <MoreHorizontal className="w-5 h-5" />
                     </Button>
                 </DropdownMenuTrigger>
