@@ -9,20 +9,20 @@ import {
 
 interface FriendActionsMenuProps {
     onMessage: () => void;
-    onUnfriend: () => void;
-    onBlock: () => void;
-    onToggleFollow: () => void;
+    onToggleFriend: () => void;
+    onToggleBlock: () => void;
     onShare: () => void;
-    isFollowing: boolean;
+    isFriend: boolean;
+    isBlocked: boolean;
 }
 
 export function FriendActionsMenu({
     onMessage,
-    onUnfriend,
-    onBlock,
-    onToggleFollow,
+    onToggleFriend,
+    onToggleBlock,
     onShare,
-    isFollowing,
+    isFriend,
+    isBlocked,
 }: FriendActionsMenuProps) {
     return (
         <div className="flex items-center justify-center gap-3 mt-6">
@@ -33,18 +33,18 @@ export function FriendActionsMenu({
 
             <Button
                 variant="outline"
-                onClick={onToggleFollow}
-                className={isFollowing ? "bg-gray-100" : ""}
+                onClick={onToggleFriend}
+                className={isFriend ? "bg-gray-100" : ""}
             >
-                {isFollowing ? (
+                {isFriend ? (
                     <>
-                        <UserCheck className="w-4 h-4 mr-2" />
-                        Following
+                        <UserMinus className="w-4 h-4 mr-2" />
+                        Unfriend
                     </>
                 ) : (
                     <>
                         <UserPlus className="w-4 h-4 mr-2" />
-                        Follow
+                        Add Friend
                     </>
                 )}
             </Button>
@@ -60,13 +60,18 @@ export function FriendActionsMenu({
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={onUnfriend} className="text-red-600 focus:text-red-600">
-                        <UserMinus className="w-4 h-4 mr-2" />
-                        Unfriend
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={onBlock} className="text-red-600 focus:text-red-600">
-                        <Ban className="w-4 h-4 mr-2" />
-                        Block User
+                    <DropdownMenuItem onClick={onToggleBlock} className="text-red-600 focus:text-red-600">
+                        {isBlocked ? (
+                            <>
+                                <UserCheck className="w-4 h-4 mr-2" />
+                                Unblock User
+                            </>
+                        ) : (
+                            <>
+                                <Ban className="w-4 h-4 mr-2" />
+                                Block User
+                            </>
+                        )}
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>

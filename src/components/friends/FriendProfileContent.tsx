@@ -11,10 +11,11 @@ interface FriendProfileContentProps {
     friendId: string;
     onClose: () => void;
     sendMessage: (id: string) => void;
-    toggleFollow: (params: { friendId: string; isFollowing: boolean }) => void;
-    setShowUnfriendDialog: (show: boolean) => void;
-    setShowBlockDialog: (show: boolean) => void;
+    onToggleFriend: () => void;
+    onToggleBlock: () => void;
     handleShare: () => void;
+    isFriend: boolean;
+    isBlocked: boolean;
 }
 
 export function FriendProfileContent({
@@ -23,10 +24,11 @@ export function FriendProfileContent({
     friendId,
     onClose,
     sendMessage,
-    toggleFollow,
-    setShowUnfriendDialog,
-    setShowBlockDialog,
+    onToggleFriend,
+    onToggleBlock,
     handleShare,
+    isFriend,
+    isBlocked,
 }: FriendProfileContentProps) {
     if (isLoading || !data) {
         return <ProfileModalSkeleton />;
@@ -51,20 +53,16 @@ export function FriendProfileContent({
             )}
 
             <FriendActionsMenu
-                isFollowing={profile?.is_following || false}
+                isFriend={isFriend}
+                isBlocked={isBlocked}
                 onMessage={() => sendMessage(friendId)}
-                onUnfriend={() => setShowUnfriendDialog(true)}
-                onBlock={() => setShowBlockDialog(true)}
-                onToggleFollow={() =>
-                    toggleFollow({
-                        friendId,
-                        isFollowing: profile?.is_following || false,
-                    })
-                }
+                onToggleFriend={onToggleFriend}
+                onToggleBlock={onToggleBlock}
                 onShare={handleShare}
             />
 
-            {profile?.is_activity_public && <RecentActivityFeed />}
+            {profile?.is_activity_public && <RecentActivityFeed userId={friendId} />}
         </div>
     );
 }
+
