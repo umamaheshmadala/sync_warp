@@ -174,7 +174,10 @@ export default function Header() {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-40 w-full border-b border-gray-200 bg-white shadow-sm">
+    <header
+      className="fixed top-0 left-0 right-0 z-40 w-full border-b border-gray-200 bg-white shadow-sm"
+      style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+    >
       <div className="max-w-4xl mx-auto flex h-[50px] items-center justify-between px-2 md:px-6 lg:px-8">
         {/* Left side - Profile Avatar (Mobile) or Logo (Desktop) */}
         <div className="flex items-center space-x-1 md:space-x-3">

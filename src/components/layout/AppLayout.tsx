@@ -62,7 +62,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <main
         className={`flex-1 flex flex-col min-h-0 relative ${isMessagesRoute ? 'overflow-hidden' : 'overflow-y-auto'}`}
       >
-        <div className="w-full max-w-4xl mx-auto min-h-full pt-[54px] md:pt-16">
+        {/* Content needs to account for header height + safe area */}
+        <div
+          className="w-full max-w-4xl mx-auto min-h-full md:pt-16"
+          style={{ paddingTop: 'calc(54px + env(safe-area-inset-top, 0px))' }}
+        >
           {children}
           {/* Spacer for Bottom Navigation - Physical element ensures scroll clearance */}
           <div className={`w-full transition-all duration-200 ${shouldShowBottomNav ? 'h-32 md:h-16' : 'h-0'}`} />

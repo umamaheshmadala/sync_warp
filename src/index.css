@@ -2,6 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Safe Area Support for Android notches/cutouts and iOS */
+:root {
+  --safe-area-inset-top: env(safe-area-inset-top, 0px);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-inset-left: env(safe-area-inset-left, 0px);
+  --safe-area-inset-right: env(safe-area-inset-right, 0px);
+}
+
+/* Ensure viewport includes safe areas */
+html {
+  padding: 0;
+  margin: 0;
+}
+
 /* Custom Typography System configured in main.tsx and tailwind.config.js */
 
 @layer base {
@@ -57,7 +71,7 @@
   hyphens: auto;
 }
 
-/* iOS Safari fixed positioning fixes */
+/* iOS Safari and Android fixed positioning fixes */
 html,
 body {
   width: 100%;
@@ -67,6 +81,9 @@ body {
   -webkit-overflow-scrolling: touch;
   font-size: 16px;
   /* Base size for mobile readability */
+  /* Ensure content respects safe areas */
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
 }
 
 /* Ensure container classes don't exceed viewport */
