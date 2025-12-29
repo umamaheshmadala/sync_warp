@@ -1,8 +1,9 @@
 // src/router/Router.tsx
 // Centralized routing configuration for the SynC app
 
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { lazy, Suspense } from 'react'
+import { useAuthStore } from '../store/authStore'
 import ProtectedRoute from './ProtectedRoute'
 import ChatScreen from '../components/messaging/ChatScreen'
 import { SelectConversationPlaceholder } from '../components/messaging/SelectConversationPlaceholder'
@@ -12,7 +13,6 @@ import { SelectConversationPlaceholder } from '../components/messaging/SelectCon
 // Lazy load ALL components for optimal performance and code splitting
 
 // Core components
-const Landing = lazy(() => import('../components/Landing'))
 const Dashboard = lazy(() => import('../components/Dashboard'))
 const Login = lazy(() => import('../components/Login'))
 const SignUp = lazy(() => import('../components/SignUp'))
@@ -136,18 +136,29 @@ export interface RouteConfig {
   index?: boolean
 }
 
+// Root Redirect Component
+const RootRedirect = () => {
+  const { user, initialized } = useAuthStore()
+
+  if (!initialized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      </div>
+    )
+  }
+
+  return user ? <Navigate to="/dashboard" replace /> : <Navigate to="/auth/login" replace />
+}
+
 export const routes: RouteConfig[] = [
-  // Home / Landing Page
+  // Home / Root Redirect
   {
     path: '/',
-    element: (
-      <RouteLoader>
-        <Landing />
-      </RouteLoader>
-    ),
+    element: <RootRedirect />,
     protected: false,
-    title: 'SynC - Connect, Collaborate, Create',
-    description: 'Discover local businesses and share amazing deals'
+    title: 'SynC',
+    description: 'Redirecting...'
   },
 
   // Dashboard (Protected)
