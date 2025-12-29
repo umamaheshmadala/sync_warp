@@ -68,19 +68,13 @@ const Login: React.FC = () => {
             <img
               src="/Logo/Logo Text Transparent PNG.png"
               alt="Sync"
-              className="h-24 w-auto"
+              className="h-48 w-auto"
             />
           </div>
-          <h2 className="mt-2 text-3xl font-bold tracking-tight text-gray-900">
-            Welcome back
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Please sign in to your account
-          </p>
         </div>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
+      <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
         <div className="bg-white py-10 px-6 shadow-2xl rounded-2xl sm:px-12 border border-gray-100">
           <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
             {/* Error Alert */}
