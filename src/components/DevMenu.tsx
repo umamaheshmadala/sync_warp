@@ -57,7 +57,7 @@ const DevMenu = () => {
   const gitBranch = import.meta.env.VITE_GIT_BRANCH || 'mobile_app_setup_antigravity'
 
   return (
-    <div className="fixed bottom-20 right-4 z-50">
+    <div className="fixed bottom-16 right-4 z-50">
       {/* Floating Action Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
@@ -94,8 +94,8 @@ const DevMenu = () => {
           />
 
           {/* Menu */}
-          <div className="absolute bottom-16 right-0 bg-white rounded-lg shadow-xl p-4 min-w-[250px] z-50">
-            <div className="mb-3 pb-3 border-b border-gray-200">
+          <div className="absolute bottom-16 right-0 bg-white rounded-lg shadow-xl p-3 min-w-[250px] z-50">
+            <div className="mb-2 pb-2 border-b border-gray-200">
               <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wide">
                 Dev Menu
               </h3>
@@ -109,7 +109,7 @@ const DevMenu = () => {
               </p>
             </div>
 
-            <div className="space-y-1">
+            <div className="space-y-0.5">
               {testPages.map((page) => (
                 <button
                   key={page.path}
@@ -117,7 +117,7 @@ const DevMenu = () => {
                     navigate(page.path)
                     setIsOpen(false)
                   }}
-                  className="w-full text-left px-3 py-1.5 rounded hover:bg-purple-50 text-sm text-gray-700 hover:text-purple-700 transition-colors"
+                  className="w-full text-left px-3 py-1 rounded hover:bg-purple-50 text-sm text-gray-700 hover:text-purple-700 transition-colors"
                 >
                   {page.name}
                 </button>
