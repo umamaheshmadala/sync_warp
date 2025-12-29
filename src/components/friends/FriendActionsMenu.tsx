@@ -34,7 +34,7 @@ export function FriendActionsMenu({
             <Button
                 variant="outline"
                 onClick={onToggleFriend}
-                className={`border-gray-300 text-gray-900 hover:bg-gray-100 ${isFriend ? "bg-gray-100" : "bg-white"}`}
+                className={`flex-1 border-gray-300 text-gray-900 hover:bg-gray-100 ${isFriend ? "bg-gray-100" : "bg-white"}`}
             >
                 {isFriend ? (
                     <>
