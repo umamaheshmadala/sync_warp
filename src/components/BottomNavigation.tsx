@@ -130,7 +130,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentRoute }) => 
               <motion.button
                 key={item.id}
                 onClick={() => handleNavClick(item.route, item.id)}
-                className="flex flex-col items-center justify-center p-0.5 rounded-lg relative min-w-0 flex-1 group overflow-hidden [@media(hover:hover)_and_(pointer:fine)]:hover:bg-gray-50 transition-colors focus:outline-none"
+                className="flex flex-col items-center justify-center p-0.5 rounded-lg relative min-w-0 flex-1 group overflow-hidden active:bg-gray-50 transition-colors focus:outline-none focus:bg-transparent"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
                 whileTap={{ scale: 0.95 }}
                 transition={{ type: "spring", stiffness: 400, damping: 25 }}
