@@ -57,7 +57,7 @@ const DevMenu = () => {
   const gitBranch = import.meta.env.VITE_GIT_BRANCH || 'mobile_app_setup_antigravity'
 
   return (
-    <div className="fixed bottom-24 right-4 z-50">
+    <div className="fixed bottom-20 right-4 z-50">
       {/* Floating Action Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
