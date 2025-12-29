@@ -12,6 +12,7 @@ interface OnlineStatusBadgeProps {
     lastActive?: string | null; // Added fallback from DB
     showText?: boolean;
     showDot?: boolean;
+    hideOnlineText?: boolean;
     className?: string;
 }
 
@@ -20,6 +21,7 @@ export function OnlineStatusBadge({
     lastActive: dbLastActive,
     showText = true,
     showDot = true,
+    hideOnlineText = false,
     className
 }: OnlineStatusBadgeProps) {
     const { isUserOnline, getLastSeen } = useOnlineStatus();
@@ -40,7 +42,7 @@ export function OnlineStatusBadge({
                             <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
                         </span>
                     )}
-                    {showText && (
+                    {showText && !hideOnlineText && (
                         <span className="text-sm text-green-600 font-medium truncate block leading-tight">Active now</span>
                     )}
                 </>
