@@ -217,7 +217,7 @@ export default function SignUp() {
                       }`}
                     placeholder="Enter your full name"
                   />
-                  <User className="w-5 h-5 text-gray-400 absolute left-3.5 top-3.5" />
+                  <User className="w-5 h-5 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 </div>
                 {errors.fullName && (
                   <p className="mt-2 text-sm text-red-600">{errors.fullName}</p>
@@ -242,7 +242,7 @@ export default function SignUp() {
                       }`}
                     placeholder="Enter your email"
                   />
-                  <Mail className="w-5 h-5 text-gray-400 absolute left-3.5 top-3.5" />
+                  <Mail className="w-5 h-5 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 </div>
                 {errors.email && (
                   <p className="mt-2 text-sm text-red-600">{errors.email}</p>
@@ -267,10 +267,10 @@ export default function SignUp() {
                       }`}
                     placeholder="Create a password"
                   />
-                  <Lock className="w-5 h-5 text-gray-400 absolute left-3.5 top-3.5" />
+                  <Lock className="w-5 h-5 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <button
                     type="button"
-                    className="absolute right-3.5 top-3.5 hover:text-gray-600 transition-colors"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 hover:text-gray-600 transition-colors"
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? <EyeOff className="w-5 h-5 text-gray-400" /> : <Eye className="w-5 h-5 text-gray-400" />}
