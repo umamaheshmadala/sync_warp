@@ -99,10 +99,10 @@ export function FriendCard({ friend, badge, style, onClick }: FriendCardProps) {
             <img
               src={friend.avatar_url}
               alt={friend.full_name}
-              className="w-12 h-12 rounded-full object-cover"
+              className="w-14 h-14 rounded-full object-cover"
             />
           ) : (
-            <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold">
+            <div className="w-14 h-14 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold">
               {initials}
             </div>
           )}
@@ -113,7 +113,7 @@ export function FriendCard({ friend, badge, style, onClick }: FriendCardProps) {
         {/* Friend info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <h3 className="text-base font-semibold text-gray-900 truncate group-hover:text-indigo-600 transition-colors leading-snug">{friend.full_name}</h3>
+            <h3 className="text-sm font-semibold text-gray-900 truncate group-hover:text-indigo-600 transition-colors leading-snug">{friend.full_name}</h3>
             {badge && (
               <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 ${badge.color}`}>
                 <span className="mr-1">{badge.emoji}</span>
