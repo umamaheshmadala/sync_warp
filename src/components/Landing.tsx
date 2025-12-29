@@ -48,21 +48,21 @@ const Landing: React.FC = () => {
       <header className="px-4 py-6 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           <div className="flex items-center">
-            <img 
-              src="/Logo/Sync Logo Text Transparent SVG.svg" 
-              alt="Sync" 
+            <img
+              src="/Logo/Sync Logo Text Transparent SVG.svg"
+              alt="Sync"
               className="h-8"
             />
           </div>
           <div className="flex space-x-4">
-            <Link 
-              to="/auth/login" 
+            <Link
+              to="/auth/login"
               className="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium"
             >
               Login
             </Link>
-            <Link 
-              to="/auth/signup" 
+            <Link
+              to="/auth/signup"
               className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700"
             >
               Sign Up
@@ -79,21 +79,21 @@ const Landing: React.FC = () => {
             <span className="text-indigo-600 block">Share Amazing Deals</span>
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            Connect with hyperlocal businesses through social, coupon-driven experiences. 
+            Connect with hyperlocal businesses through social, coupon-driven experiences.
             Turn real visits into measurable growth.
           </p>
-          
+
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <Link 
-              to="/browse" 
+            <Link
+              to="/browse"
               className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700"
             >
               <Search className="w-5 h-5 mr-2" />
               Browse Businesses
             </Link>
-            <Link 
-              to="/auth/signup" 
+            <Link
+              to="/auth/signup"
               className="inline-flex items-center px-6 py-3 border-2 border-indigo-600 text-base font-medium rounded-lg text-indigo-600 hover:bg-indigo-50"
             >
               <Users className="w-5 h-5 mr-2" />
@@ -133,7 +133,7 @@ const Landing: React.FC = () => {
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Popular Businesses</h2>
             <p className="text-gray-600">Discover what's trending in your area</p>
           </div>
-          
+
           {/* Business Cards Grid - Placeholder for now */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -150,10 +150,10 @@ const Landing: React.FC = () => {
               </div>
             ))}
           </div>
-          
+
           <div className="text-center mt-8">
-            <Link 
-              to="/browse" 
+            <Link
+              to="/browse"
               className="text-indigo-600 hover:text-indigo-700 font-medium"
             >
               View all businesses →
