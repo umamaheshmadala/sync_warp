@@ -262,7 +262,7 @@ export default function Header() {
               onClick={() => navigate('/business/dashboard')}
               title="My Businesses"
             >
-              <Store className="h-6 w-6" />
+              <Store className="h-7 w-7" />
             </Button>
           )}
 
@@ -274,7 +274,7 @@ export default function Header() {
             onClick={() => navigate('/messages')}
             title="Messages"
           >
-            <MessageCircle className="h-6 w-6" />
+            <MessageCircle className="h-7 w-7" />
             {totalUnreadCount > 0 && (
               <span className="absolute top-0 right-0 h-4 w-4 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-bold ring-2 ring-white">
                 {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
@@ -290,7 +290,7 @@ export default function Header() {
             onClick={() => navigate('/wishlist')}
             title="Wishlist"
           >
-            <List className="h-6 w-6" />
+            <List className="h-7 w-7" />
             {wishlistCount > 0 && (
               <Badge
                 className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-red-500 hover:bg-red-600"
@@ -311,7 +311,7 @@ export default function Header() {
             onClick={() => navigate('/messages')}
             title="Messages"
           >
-            <MessageCircle className="h-7 w-7" />
+            <MessageCircle className="h-9 w-9" />
             {totalUnreadCount > 0 && (
               <span className="absolute top-1 right-1 h-5 w-5 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-bold ring-2 ring-white">
                 {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
@@ -327,7 +327,7 @@ export default function Header() {
             onClick={() => setShowContactsSidebar(true)}
             title="Friends"
           >
-            <UserPlus className="h-7 w-7" />
+            <UserPlus className="h-9 w-9" />
           </Button>
 
           {/* Profile Dropdown - Desktop Only */}

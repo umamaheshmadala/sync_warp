@@ -87,7 +87,7 @@ export function NotificationCenter() {
                     className="relative text-gray-700 hover:text-indigo-600 hover:bg-indigo-50"
                     aria-label="Notifications"
                 >
-                    <Bell className="h-5 w-5" />
+                    <Bell className="h-7 w-7" />
                     {unreadCount > 0 && (
                         <span className="absolute top-0 right-0 h-4 w-4 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-bold ring-2 ring-white">
                             {unreadCount > 9 ? '9+' : unreadCount}
