@@ -66,7 +66,7 @@ const Login: React.FC = () => {
         <div className="text-center">
           <div className="mx-auto flex justify-center mb-2">
             <img
-              src="/Logo/Logo Text Transparent PNG.png"
+              src="/Logo/Logo Text Transparent PNG 2.png"
               alt="Sync"
               className="h-48 w-auto"
             />
