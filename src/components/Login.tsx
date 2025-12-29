@@ -68,14 +68,14 @@ const Login: React.FC = () => {
             <img
               src="/Logo/Logo Text Transparent PNG 2.png"
               alt="Sync"
-              className="h-24 w-auto"
+              className="h-16 sm:h-24 w-auto"
             />
           </div>
         </div>
       </div>
 
-      <div className="mt-2 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
-        <div className="bg-white py-10 px-6 shadow-2xl rounded-2xl sm:px-12 border border-gray-100">
+      <div className="mt-2 mx-auto w-[85%] sm:w-full sm:max-w-md sm:px-0">
+        <div className="bg-white py-8 px-6 shadow-2xl rounded-2xl sm:py-10 sm:px-12 border border-gray-100">
           <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
             {/* Error Alert */}
             {authError && (
@@ -220,7 +220,7 @@ const Login: React.FC = () => {
       </div>
 
       {/* Spacer to balance the logo and center the card */}
-      <div className="h-24 sm:mx-auto sm:w-full sm:max-w-md" aria-hidden="true" />
+      <div className="h-16 sm:h-24 sm:mx-auto sm:w-full sm:max-w-md" aria-hidden="true" />
     </div>
   );
 };
