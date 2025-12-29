@@ -25,7 +25,7 @@ export function FriendActionsMenu({
     isBlocked,
 }: FriendActionsMenuProps) {
     return (
-        <div className="flex items-center justify-center gap-3 mt-6">
+        <div className="flex items-center justify-center gap-2 mt-6">
             <Button onClick={onMessage} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white">
                 <MessageCircle className="w-4 h-4 mr-2" />
                 Message
