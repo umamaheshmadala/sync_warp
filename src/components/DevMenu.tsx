@@ -94,8 +94,8 @@ const DevMenu = () => {
           />
 
           {/* Menu */}
-          <div className="absolute bottom-16 right-0 bg-white rounded-lg shadow-xl p-3 min-w-[250px] z-50">
-            <div className="mb-2 pb-2 border-b border-gray-200">
+          <div className="absolute bottom-16 right-0 bg-white rounded-lg shadow-xl p-2 min-w-[250px] z-50">
+            <div className="mb-1 pb-1 border-b border-gray-200">
               <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wide">
                 Dev Menu
               </h3>
@@ -117,7 +117,7 @@ const DevMenu = () => {
                     navigate(page.path)
                     setIsOpen(false)
                   }}
-                  className="w-full text-left px-3 py-1 rounded hover:bg-purple-50 text-sm text-gray-700 hover:text-purple-700 transition-colors"
+                  className="w-full text-left px-2 py-0.5 rounded hover:bg-purple-50 text-sm text-gray-700 hover:text-purple-700 transition-colors"
                 >
                   {page.name}
                 </button>
