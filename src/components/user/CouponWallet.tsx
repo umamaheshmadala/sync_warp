@@ -9,6 +9,13 @@ import {
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../components/ui/select";
 import { UnifiedCouponCard } from '../common/UnifiedCouponCard';
 import {
   UserCouponCollection,
@@ -443,14 +450,13 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
           <div className="flex items-center gap-2">
             {/* Unified Filter Dropdown */}
             <div className="relative">
-              <select
+              <Select
                 value={
                   filters.status !== 'all' ? filters.status :
                     filters.acquisition !== 'all' ? filters.acquisition :
                       'all'
                 }
-                onChange={(e) => {
-                  const val = e.target.value;
+                onValueChange={(val) => {
                   if (['active', 'expiring', 'expired', 'redeemed'].includes(val)) {
                     setFilters(prev => ({ ...prev, status: val as any, acquisition: 'all' }));
                   } else if (['shareable', 'collected', 'shared_received'].includes(val)) {
@@ -459,18 +465,21 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
                     setFilters(prev => ({ ...prev, status: 'all', acquisition: 'all' }));
                   }
                 }}
-                className="appearance-none bg-none pl-3 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white min-w-[140px]"
               >
-                <option value="all">All ({walletStats.total})</option>
-                <option value="active">Active ({walletStats.active})</option>
-                <option value="expiring">Expiring ({walletStats.expiring})</option>
-                <option value="expired">Expired ({walletStats.expired})</option>
-                <option value="redeemed">Redeemed ({walletStats.redeemed})</option>
-                <option value="shareable">🎁 Can Share ({walletStats.shareable})</option>
-                <option value="collected">📥 Collected ({collectedCoupons.filter(c => (c as any).acquisition_method === 'collected').length})</option>
-                <option value="shared_received">🤝 Received ({walletStats.shared})</option>
-              </select>
-              <Filter className="absolute right-2.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                <SelectTrigger className="w-[180px] bg-white">
+                  <SelectValue placeholder="All Filter" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All ({walletStats.total})</SelectItem>
+                  <SelectItem value="active">Active ({walletStats.active})</SelectItem>
+                  <SelectItem value="expiring">Expiring ({walletStats.expiring})</SelectItem>
+                  <SelectItem value="expired">Expired ({walletStats.expired})</SelectItem>
+                  <SelectItem value="redeemed">Redeemed ({walletStats.redeemed})</SelectItem>
+                  <SelectItem value="shareable">🎁 Can Share ({walletStats.shareable})</SelectItem>
+                  <SelectItem value="collected">📥 Collected ({collectedCoupons.filter(c => (c as any).acquisition_method === 'collected').length})</SelectItem>
+                  <SelectItem value="shared_received">🤝 Received ({walletStats.shared})</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>

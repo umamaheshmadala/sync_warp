@@ -22,6 +22,13 @@ import { FollowButton } from '../following/FollowButton';
 import { cn } from '../../lib/utils';
 import { UnifiedCouponCard } from '../common/UnifiedCouponCard';
 import { StandardBusinessCard, type StandardBusinessCardData } from '../common';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../components/ui/select";
 
 // SaveButton component for backward compatibility
 const SaveButton = FollowButton;
@@ -167,31 +174,37 @@ const FavoritesPage: React.FC = () => {
           <div className="flex flex-row w-full sm:w-auto gap-2 overflow-x-auto sm:overflow-visible pb-1 sm:pb-0">
             {/* View Type Selector (Replaces Tabs) */}
             <div className="relative flex-shrink-0">
-              <select
+              <Select
                 value={activeTab}
-                onChange={(e) => setActiveTab(e.target.value as ActiveTab)}
-                className="appearance-none bg-white w-full sm:w-auto pl-3 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                onValueChange={(value) => setActiveTab(value as ActiveTab)}
               >
-                <option value="businesses">Businesses ({favorites.counts.businesses})</option>
-                <option value="coupons">Coupons ({favorites.counts.coupons})</option>
-                <option value="wishlist">Wishlist ({favorites.counts.wishlist})</option>
-              </select>
-              <ChevronDown className="absolute right-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                <SelectTrigger className="w-full sm:w-[150px] bg-white">
+                  <SelectValue placeholder="Select view" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="businesses">Businesses ({favorites.counts.businesses})</SelectItem>
+                  <SelectItem value="coupons">Coupons ({favorites.counts.coupons})</SelectItem>
+                  <SelectItem value="wishlist">Wishlist ({favorites.counts.wishlist})</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Sort Selector */}
             <div className="relative flex-shrink-0">
-              <select
+              <Select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as SortBy)}
-                className="appearance-none bg-white w-full sm:w-auto pl-3 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer min-w-[100px]"
+                onValueChange={(value) => setSortBy(value as SortBy)}
               >
-                <option value="date">Recent</option>
-                <option value="name">Name</option>
-                {activeTab === 'businesses' && <option value="rating">Rating</option>}
-                {activeTab === 'coupons' && <option value="expiry">Expiring</option>}
-              </select>
-              <ChevronDown className="absolute right-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                <SelectTrigger className="w-full sm:w-[120px] bg-white">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="date">Recent</SelectItem>
+                  <SelectItem value="name">Name</SelectItem>
+                  {activeTab === 'businesses' && <SelectItem value="rating">Rating</SelectItem>}
+                  {activeTab === 'coupons' && <SelectItem value="expiry">Expiring</SelectItem>}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* View Mode Toggle */}

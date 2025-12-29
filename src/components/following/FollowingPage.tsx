@@ -8,6 +8,13 @@ import { useBusinessFollowing } from '../../hooks/useBusinessFollowing';
 import { FollowButton } from './FollowButton';
 import NotificationPreferencesModal from './NotificationPreferencesModal';
 import { StandardBusinessCard, type StandardBusinessCardData } from '../common';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../components/ui/select";
 import { cn } from '../../lib/utils';
 import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 
@@ -110,16 +117,19 @@ const FollowingPage: React.FC = () => {
 
           {/* Sort */}
           <div className="relative">
-            <select
+            <Select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as SortBy)}
-              className="appearance-none bg-none w-full pl-3 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent min-w-[130px]"
+              onValueChange={(value) => setSortBy(value as SortBy)}
             >
-              <option value="recent">Recently Followed</option>
-              <option value="alphabetical">Alphabetical</option>
-              <option value="most_active">Most Active</option>
-            </select>
-            <ChevronDown className="absolute right-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+              <SelectTrigger className="w-full sm:w-[180px] bg-white">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="recent">Recently Followed</SelectItem>
+                <SelectItem value="alphabetical">Alphabetical</SelectItem>
+                <SelectItem value="most_active">Most Active</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
