@@ -64,7 +64,7 @@ const Login: React.FC = () => {
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         {/* Header */}
         <div className="text-center">
-          <div className="mx-auto flex justify-center mb-6">
+          <div className="mx-auto flex justify-center mb-2">
             <img
               src="/Logo/Logo Text Transparent PNG.png"
               alt="Sync"
@@ -74,7 +74,7 @@ const Login: React.FC = () => {
         </div>
       </div>
 
-      <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
+      <div className="mt-2 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
         <div className="bg-white py-10 px-6 shadow-2xl rounded-2xl sm:px-12 border border-gray-100">
           <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
             {/* Error Alert */}
