@@ -218,6 +218,9 @@ const Login: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Spacer to balance the logo and center the card */}
+      <div className="h-24 sm:mx-auto sm:w-full sm:max-w-md" aria-hidden="true" />
     </div>
   );
 };
