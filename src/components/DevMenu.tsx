@@ -26,7 +26,7 @@ const DevMenu = () => {
   // Wait, I promised a button.
   // Let's skip the button in DevMenu for now to avoid complexity of getting UserID, 
   // unless I use `supabase.auth.getUser()`.
-  
+
   // Let's stick to the code fix in usePushNotifications.ts first. The logic fix (onConflict) is strong.
 
 
@@ -38,16 +38,13 @@ const DevMenu = () => {
   const testPages = [
     { name: '👥 Social', path: '/social' },
     { name: '📱 Contact Sync Test', path: '/test/contact-sync' },
-    { name: '⚡ Search Perf', path: '/test/search-performance' },
     { name: '🎁 Share Deal (9.7.5)', path: '/test/share-deal' },
     { name: '📊 Sharing Analytics (9.7.6)', path: '/test/sharing-analytics' },
-    { name: '👤 Profile Modal', path: '/test/profile-modal' },
-    { name: '📰 Activity Feed', path: '/test/activity-feed' },
   ]
 
   // Build/Sync timestamp for identification (IST) - shows when files were synced with Capacitor
   const SYNC_TIMESTAMP = typeof __BUILD_TIMESTAMP__ !== 'undefined' ? __BUILD_TIMESTAMP__ : 'Dev Mode'
-  
+
   // Build timestamp for identification (IST)
   const buildTime = new Date().toLocaleString('en-IN', {
     timeZone: 'Asia/Kolkata',
@@ -60,7 +57,7 @@ const DevMenu = () => {
   const gitBranch = import.meta.env.VITE_GIT_BRANCH || 'mobile_app_setup_antigravity'
 
   return (
-    <div className="fixed bottom-4 right-4 z-50">
+    <div className="fixed bottom-24 right-4 z-50">
       {/* Floating Action Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
