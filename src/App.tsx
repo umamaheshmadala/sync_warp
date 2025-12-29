@@ -5,6 +5,7 @@ import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persist
 import { Toaster, toast } from 'react-hot-toast'
 import React, { useEffect, useState } from 'react'
 import { Capacitor } from '@capacitor/core'
+import { TextZoom } from '@capacitor/text-zoom'
 import AppLayout from './components/layout/AppLayout'
 import AppRouter from './router/Router'
 import { ErrorBoundary } from './components/error'
@@ -88,6 +89,19 @@ function AppContent() {
     initRealtime();
 
     if (!Capacitor.isNativePlatform()) return
+
+    // Cap Text Zoom to 1.2x to prevent UI clutter
+    TextZoom.getPreferred().then((value) => {
+      console.log('📱 System Text Zoom:', value.value);
+      const CAPPED_ZOOM = 1.2;
+      if (value.value > CAPPED_ZOOM) {
+        console.log(`🔍 Capping Text Zoom from ${value.value} to ${CAPPED_ZOOM}`);
+        TextZoom.set({ value: CAPPED_ZOOM });
+      } else {
+        // Ensure we respect user preference if it's within bounds (or reset if they lowered it)
+        TextZoom.set({ value: value.value });
+      }
+    }).catch(err => console.error('Failed to set text zoom', err));
 
     if (pushState.isRegistered && pushState.syncedToBackend) {
       console.log('✅ Push notifications fully enabled')
