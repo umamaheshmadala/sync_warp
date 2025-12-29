@@ -37,7 +37,7 @@ export function FriendProfileContent({
     const { profile, mutualFriends, mutualFriendsCount } = data;
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4">
             {/* Hidden title for accessibility */}
             <DialogTitle className="sr-only">
                 {profile?.full_name}'s Profile

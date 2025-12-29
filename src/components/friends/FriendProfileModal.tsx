@@ -140,7 +140,7 @@ export function FriendProfileModal({ friendId, isOpen, onClose }: FriendProfileM
         <>
             {isDesktop ? (
                 <Dialog open={isOpen} onOpenChange={onClose}>
-                    <DialogContent className="max-w-sm p-6 rounded-2xl bg-white dark:bg-gray-900" aria-describedby="friend-profile-description">
+                    <DialogContent className="max-w-sm p-4 rounded-2xl bg-white dark:bg-gray-900" aria-describedby="friend-profile-description">
                         <span id="friend-profile-description" className="sr-only">Friend profile information and actions</span>
                         <FriendProfileContent {...contentProps} />
                     </DialogContent>
