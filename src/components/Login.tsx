@@ -66,24 +66,21 @@ const Login: React.FC = () => {
         <div className="text-center">
           <div className="mx-auto flex justify-center mb-6">
             <img
-              src="/Logo/Logo Text Transparent SVG.svg"
+              src="/Logo/Logo Text Transparent PNG.png"
               alt="Sync"
-              className="h-20 w-auto"
+              className="h-24 w-auto"
             />
           </div>
-          <h2 className="mt-6 text-3xl font-bold tracking-tight text-gray-900">
+          <h2 className="mt-2 text-3xl font-bold tracking-tight text-gray-900">
             Welcome back
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Don't have an account?{' '}
-            <Link to="/auth/signup" className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors">
-              Sign up
-            </Link>
+            Please sign in to your account
           </p>
         </div>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
         <div className="bg-white py-10 px-6 shadow-2xl rounded-2xl sm:px-12 border border-gray-100">
           <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
             {/* Error Alert */}
@@ -213,6 +210,16 @@ const Login: React.FC = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                 </svg>
               </button>
+            </div>
+
+            {/* Sign Up Link - Moved to bottom */}
+            <div className="mt-8 text-center border-t border-gray-100 pt-6">
+              <p className="text-sm text-gray-600">
+                Don't have an account?{' '}
+                <Link to="/auth/signup" className="font-semibold text-indigo-600 hover:text-indigo-500 transition-colors">
+                  Sign up
+                </Link>
+              </p>
             </div>
           </div>
         </div>
