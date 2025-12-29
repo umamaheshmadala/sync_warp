@@ -68,7 +68,7 @@ const Login: React.FC = () => {
             <img
               src="/Logo/Logo Text Transparent PNG 2.png"
               alt="Sync"
-              className="h-48 w-auto"
+              className="h-24 w-auto"
             />
           </div>
         </div>
