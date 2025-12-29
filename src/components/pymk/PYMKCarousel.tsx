@@ -15,7 +15,7 @@ export function PYMKCarousel({ onProfileClick }: PYMKCarouselProps) {
     return (
       <div className="flex overflow-x-auto pb-4 space-x-4 px-4 -mx-4 scrollbar-hide">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="w-[160px] shrink-0">
+          <div key={i} className="w-[124px] shrink-0">
             <PYMKCardSkeleton />
           </div>
         ))}
@@ -35,7 +35,7 @@ export function PYMKCarousel({ onProfileClick }: PYMKCarouselProps) {
 
       <div className="flex overflow-x-auto pb-4 space-x-4 px-4 -mx-4 scrollbar-hide snap-x snap-mandatory">
         {recommendations.map((recommendation) => (
-          <div key={recommendation.id} className="w-[160px] shrink-0 snap-center">
+          <div key={recommendation.id} className="w-[124px] shrink-0 snap-center">
             <PYMKCard
               recommendation={recommendation}
               onProfileClick={onProfileClick}

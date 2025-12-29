@@ -425,7 +425,7 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
   return (
     <div className={`bg-gray-50 min-h-screen ${className}`}>
       {/* Search and Filters Unified Bar */}
-      <div className="max-w-6xl mx-auto px-4 py-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Search and Filters */}
         <div className="flex flex-row items-center gap-2 mb-6">
           {/* Search */}
@@ -436,7 +436,7 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
               placeholder="Search coupons..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             />
           </div>
 
@@ -459,7 +459,7 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
                     setFilters(prev => ({ ...prev, status: 'all', acquisition: 'all' }));
                   }
                 }}
-                className="appearance-none bg-none pl-3 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white min-w-[140px]"
+                className="appearance-none bg-none pl-3 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white min-w-[140px]"
               >
                 <option value="all">All ({walletStats.total})</option>
                 <option value="active">Active ({walletStats.active})</option>

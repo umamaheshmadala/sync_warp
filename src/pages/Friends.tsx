@@ -7,14 +7,14 @@
  */
 
 import React, { useState, useRef } from 'react';
-import { Users, RefreshCw, User, Check, X, ArrowRight } from 'lucide-react';
+import { Users, RefreshCw, User, Check, X, ArrowRight, ChevronDown } from 'lucide-react';
 import { FriendsList } from '../components/friends/FriendsList';
 import { FriendSearchBar } from '../components/friends/FriendSearchBar';
 import { FriendActivityFeed } from '../components/friends/FriendActivityFeed';
 import { FriendRequestsList } from '../components/friends/FriendRequestsList';
 import { FriendRequestGridCard } from '../components/friends/FriendRequestGridCard';
 import { BlockedUsersList } from '../components/BlockedUsersList';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+// Tabs removed
 import { useDrag } from '@use-gesture/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRealtimeOnlineStatus } from '../hooks/friends/useRealtimeOnlineStatus';
@@ -25,6 +25,7 @@ import { PYMKCarousel } from '../components/pymk/PYMKCarousel';
 import { FriendProfileModal } from '../components/friends/FriendProfileModal';
 
 export function FriendsPage() {
+  const [currentView, setCurrentView] = useState('friends');
   const [searchQuery, setSearchQuery] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
@@ -97,77 +98,96 @@ export function FriendsPage() {
         </div>
       )}
 
-      <div className="max-w-4xl mx-auto p-4 md:p-6">
-        <Tabs defaultValue="friends" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 gap-1">
-            <TabsTrigger value="friends">Friends</TabsTrigger>
-            <TabsTrigger value="requests">Requests</TabsTrigger>
-            <TabsTrigger value="blocked">Blocked</TabsTrigger>
-            <TabsTrigger value="activity">Activity</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="friends" className="space-y-6">
-            {/* Search Bar */}
+      <div className="max-w-4xl mx-auto px-4 md:px-6 py-4">
+        {/* Header Control Row: Search + View Filter */}
+        <div className="flex flex-row items-center gap-2 mb-6">
+          {/* Search Bar - Global */}
+          <div className="flex-1">
             <FriendSearchBar
               onSearch={setSearchQuery}
-              placeholder="Search friends or find new people..."
+              placeholder="Search friends..."
             />
+          </div>
 
-            {/* Received Friend Requests (Top of List) */}
-            {receivedRequests.length > 0 && !searchQuery && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between px-1">
-                  <h3 className="font-semibold text-gray-900 flex items-center">
-                    Friend Requests <span className="ml-2 bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full">{receivedRequests.length}</span>
-                  </h3>
-                  <button
-                    onClick={() => document.querySelector<HTMLElement>('[data-value="requests"]')?.click()}
-                    className="text-xs text-blue-600 font-medium hover:underline"
-                  >
-                    See All
-                  </button>
+          {/* View Selection Dropdown */}
+          <div className="relative">
+            <select
+              value={currentView}
+              onChange={(e) => setCurrentView(e.target.value)}
+              className="appearance-none bg-white w-full pl-3 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent min-w-[120px] shadow-sm cursor-pointer"
+            >
+              <option value="friends">Friends</option>
+              <option value="requests">Requests</option>
+              <option value="blocked">Blocked</option>
+              <option value="activity">Activity</option>
+            </select>
+            <ChevronDown className="absolute right-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+          </div>
+        </div>
+
+        {/* View Content */}
+        <div className="space-y-6">
+
+          {currentView === 'friends' && (
+            <div className="space-y-5">
+              {/* Received Friend Requests (Preview in Main View) */}
+              {receivedRequests.length > 0 && !searchQuery && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between px-1">
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                      Friend Requests <span className="ml-2 bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full">{receivedRequests.length}</span>
+                    </h3>
+                    <button
+                      onClick={() => setCurrentView('requests')}
+                      className="text-xs text-blue-600 font-medium hover:underline"
+                    >
+                      See All
+                    </button>
+                  </div>
+
+                  <div className="flex overflow-x-auto pb-4 space-x-4 px-1 -mx-1 scrollbar-hide snap-x snap-mandatory">
+                    {receivedRequests.map((req: any) => (
+                      <div key={req.id} className="snap-center">
+                        <FriendRequestGridCard
+                          request={req}
+                          onProfileClick={handleProfileClick}
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </div>
+              )}
 
-                <div className="flex overflow-x-auto pb-4 space-x-4 px-1 -mx-1 scrollbar-hide snap-x snap-mandatory">
-                  {receivedRequests.map((req) => (
-                    <div key={req.id} className="snap-center">
-                      <FriendRequestGridCard
-                        request={req}
-                        onProfileClick={handleProfileClick}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+              {/* People You May Know */}
+              {!searchQuery && (
+                <PYMKCarousel onProfileClick={handleProfileClick} />
+              )}
 
-            {/* People You May Know - Auto hides if empty via component logic */}
-            {/* Only show if not searching to avoid clutter */}
-            {!searchQuery && (
-              <PYMKCarousel onProfileClick={handleProfileClick} />
-            )}
+              {/* Friends List */}
+              <FriendsList
+                searchQuery={searchQuery}
+                onProfileClick={handleProfileClick}
+              />
+            </div>
+          )}
 
-            {/* Friends List (with global search integrated) */}
-            <FriendsList
-              searchQuery={searchQuery}
-              onProfileClick={handleProfileClick}
-            />
-          </TabsContent>
+          {currentView === 'requests' && (
+            <div className="space-y-6">
+              <FriendRequestsList onProfileClick={handleProfileClick} />
+            </div>
+          )}
 
-          <TabsContent value="requests" className="space-y-6">
-            {/* Friend Requests List */}
-            <FriendRequestsList onProfileClick={handleProfileClick} />
-          </TabsContent>
+          {currentView === 'blocked' && (
+            <div className="space-y-6">
+              <BlockedUsersList />
+            </div>
+          )}
 
-          <TabsContent value="blocked" className="space-y-6">
-            {/* Blocked Users List */}
-            <BlockedUsersList />
-          </TabsContent>
-
-          <TabsContent value="activity">
+          {currentView === 'activity' && (
             <FriendActivityFeed />
-          </TabsContent>
-        </Tabs>
+          )}
+
+        </div>
       </div>
 
       {/* Shared Friend Profile Modal */}

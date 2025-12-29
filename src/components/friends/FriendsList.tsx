@@ -128,7 +128,7 @@ export function FriendsList({ searchQuery = '', onProfileClick }: FriendsListPro
       </div>
 
       {/* Infinite scroll trigger */}
-      {!searchQuery && <div ref={observerTarget} className="h-4" />}
+      {!searchQuery && <div ref={observerTarget} className="h-px w-full" />}
 
       {/* Loading more indicator */}
       {!searchQuery && isFetchingNextPage && (

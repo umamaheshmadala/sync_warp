@@ -89,7 +89,7 @@ export function FriendCard({ friend, badge, style, onClick }: FriendCardProps) {
     <>
       <div
         style={style}
-        className="flex items-center gap-3 p-4 hover:bg-gray-50 transition border-b border-gray-100 cursor-pointer"
+        className="flex items-center gap-3 p-3 hover:bg-gray-50 transition cursor-pointer group"
         data-testid="friend-card"
         onClick={onClick}
       >
@@ -113,7 +113,7 @@ export function FriendCard({ friend, badge, style, onClick }: FriendCardProps) {
         {/* Friend info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-gray-900 truncate">{friend.full_name}</h3>
+            <h3 className="text-base font-semibold text-gray-900 truncate group-hover:text-indigo-600 transition-colors leading-snug">{friend.full_name}</h3>
             {badge && (
               <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 ${badge.color}`}>
                 <span className="mr-1">{badge.emoji}</span>
@@ -125,7 +125,8 @@ export function FriendCard({ friend, badge, style, onClick }: FriendCardProps) {
           <OnlineStatusBadge
             userId={friend.id}
             lastActive={friend.last_active}
-            className={friend.is_online === undefined ? 'hidden' : ''}
+            showDot={false}
+            className={friend.is_online === undefined ? 'invisible' : ''}
           />
         </div>
 
@@ -133,7 +134,7 @@ export function FriendCard({ friend, badge, style, onClick }: FriendCardProps) {
         <div className="flex gap-2 flex-shrink-0">
           {isBlocked ? (
             <div
-              className="p-2 rounded-lg text-red-500 cursor-not-allowed"
+              className="h-8 w-8 flex items-center justify-center rounded-lg text-red-500 cursor-not-allowed"
               aria-label="User is blocked"
               title="User is blocked"
             >
@@ -142,7 +143,7 @@ export function FriendCard({ friend, badge, style, onClick }: FriendCardProps) {
           ) : (
             <button
               onClick={handleSendMessage}
-              className="p-2 hover:bg-blue-50 rounded-lg transition text-blue-600"
+              className="h-8 w-8 flex items-center justify-center hover:bg-blue-50 rounded-lg transition text-blue-600"
               aria-label="Send message"
               title="Send message"
             >
@@ -151,7 +152,7 @@ export function FriendCard({ friend, badge, style, onClick }: FriendCardProps) {
           )}
           <button
             onClick={handleUnfriend}
-            className="p-2 hover:bg-red-50 rounded-lg transition text-red-600"
+            className="h-8 w-8 flex items-center justify-center hover:bg-red-50 rounded-lg transition text-red-600"
             aria-label="Unfriend"
             title="Unfriend"
           >

@@ -66,7 +66,7 @@ export function PYMKCard({ recommendation, onProfileClick }: PYMKCardProps) {
   return (
     <div
       onClick={handleCardClick}
-      className="relative bg-white rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer p-3 flex flex-col items-center h-full"
+      className="relative bg-white rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer p-2 flex flex-col items-center h-full"
     >
       {/* Dismiss button */}
       <button
@@ -83,11 +83,11 @@ export function PYMKCard({ recommendation, onProfileClick }: PYMKCardProps) {
       </button>
 
       {/* Avatar */}
-      <div className="flex flex-col items-center mb-2 w-full mt-3">
+      <div className="flex flex-col items-center mb-2 w-full mt-2">
         <img
           src={recommendation.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(recommendation.full_name)}&background=random`}
           alt={recommendation.full_name}
-          className="w-16 h-16 rounded-full object-cover mb-2 border border-gray-100"
+          className="w-14 h-14 rounded-full object-cover mb-2 border border-gray-100"
         />
         <h3 className="font-semibold text-gray-900 text-sm text-center truncate w-full px-1" title={recommendation.full_name}>
           {recommendation.full_name}
@@ -120,18 +120,18 @@ export function PYMKCard({ recommendation, onProfileClick }: PYMKCardProps) {
       </div>
 
       {/* Add Friend button */}
-      <div className="mt-auto w-full">
+      <div className="mt-auto w-full flex justify-center">
         {sentRequestId ? (
           <button
             onClick={handleCancelRequest}
             disabled={cancelRequest.isPending}
-            className="w-full px-4 py-2 text-sm font-medium rounded-lg transition-colors flex items-center justify-center bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-red-600"
+            className="w-[100px] h-6 text-xs font-medium rounded-lg transition-colors flex items-center justify-center bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-red-600"
           >
             {cancelRequest.isPending ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className="w-3 h-3 animate-spin" />
             ) : (
               <>
-                <XCircle className="w-4 h-4 mr-2" />
+                <XCircle className="w-3 h-3 mr-1" />
                 Cancel
               </>
             )}
@@ -140,13 +140,13 @@ export function PYMKCard({ recommendation, onProfileClick }: PYMKCardProps) {
           <button
             onClick={handleAddFriend}
             disabled={sendRequest.isPending}
-            className="w-full px-4 py-2 text-sm font-medium rounded-lg transition-colors flex items-center justify-center bg-blue-600 text-white hover:bg-blue-700"
+            className="w-[100px] h-6 text-xs font-medium rounded-lg transition-colors flex items-center justify-center bg-blue-600 text-white hover:bg-blue-700"
           >
             {sendRequest.isPending ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className="w-3 h-3 animate-spin" />
             ) : (
               <>
-                <UserPlus className="w-4 h-4 mr-2" />
+                <UserPlus className="w-3 h-3 mr-1" />
                 Add
               </>
             )}
