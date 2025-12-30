@@ -432,7 +432,7 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
   return (
     <div className={`bg-gray-50 min-h-screen ${className}`}>
       {/* Search and Filters Unified Bar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 relative z-10">
         {/* Search and Filters */}
         <div className="flex flex-row items-center gap-2 mb-6">
           {/* Search */}

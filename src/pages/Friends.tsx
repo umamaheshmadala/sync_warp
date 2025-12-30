@@ -23,6 +23,13 @@ import { useFriendActions } from '../hooks/friends/useFriendActions';
 
 import { PYMKCarousel } from '../components/pymk/PYMKCarousel';
 import { FriendProfileModal } from '../components/friends/FriendProfileModal';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
 
 export function FriendsPage() {
   const [currentView, setCurrentView] = useState('friends');
@@ -111,17 +118,20 @@ export function FriendsPage() {
 
           {/* View Selection Dropdown */}
           <div className="relative">
-            <select
+            <Select
               value={currentView}
-              onChange={(e) => setCurrentView(e.target.value)}
-              className="appearance-none bg-white w-full pl-3 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent min-w-[120px] shadow-sm cursor-pointer"
+              onValueChange={setCurrentView}
             >
-              <option value="friends">Friends</option>
-              <option value="requests">Requests</option>
-              <option value="blocked">Blocked</option>
-              <option value="activity">Activity</option>
-            </select>
-            <ChevronDown className="absolute right-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+              <SelectTrigger className="w-[140px] bg-white">
+                <SelectValue placeholder="Select View" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="friends">Friends</SelectItem>
+                <SelectItem value="requests">Requests</SelectItem>
+                <SelectItem value="blocked">Blocked</SelectItem>
+                <SelectItem value="activity">Activity</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 

@@ -118,7 +118,7 @@ export function FriendCard({ friend, badge, style, onClick }: FriendCardProps) {
             userId={friend.id}
             lastActive={friend.last_active}
             showDot={false}
-            hideOnlineText={true}
+            hideOnlineText={false}
             className={friend.is_online === undefined ? 'invisible' : ''}
           />
         </div>
