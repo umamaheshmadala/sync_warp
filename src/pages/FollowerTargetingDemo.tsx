@@ -14,6 +14,7 @@ import {
   Settings,
   CheckCircle,
 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 
 interface Campaign {
   id: string;
@@ -206,13 +207,12 @@ export default function FollowerTargetingDemo() {
                 <p className="text-gray-600 text-sm mt-1">{campaign.description}</p>
               </div>
               <span
-                className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  campaign.status === 'active'
+                className={`px-3 py-1 rounded-full text-sm font-medium ${campaign.status === 'active'
                     ? 'bg-green-100 text-green-800'
                     : campaign.status === 'draft'
-                    ? 'bg-gray-100 text-gray-800'
-                    : 'bg-blue-100 text-blue-800'
-                }`}
+                      ? 'bg-gray-100 text-gray-800'
+                      : 'bg-blue-100 text-blue-800'
+                  }`}
               >
                 {campaign.status}
               </span>
@@ -327,10 +327,11 @@ export default function FollowerTargetingDemo() {
           ].map((setting, idx) => (
             <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
               <span className="text-gray-700">{setting.label}</span>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" className="sr-only peer" checked={setting.enabled} readOnly />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-              </label>
+              <Switch
+                checked={setting.enabled}
+                onCheckedChange={() => { }} // Demo only
+                className="pointer-events-none" // Optional: or make it interactive
+              />
             </div>
           ))}
         </div>
@@ -382,11 +383,10 @@ export default function FollowerTargetingDemo() {
               <button
                 key={tab.id}
                 onClick={() => setSelectedTab(tab.id as any)}
-                className={`flex items-center px-6 py-4 font-medium transition whitespace-nowrap ${
-                  selectedTab === tab.id
+                className={`flex items-center px-6 py-4 font-medium transition whitespace-nowrap ${selectedTab === tab.id
                     ? 'text-blue-600 border-b-2 border-blue-600'
                     : 'text-gray-600 hover:text-gray-900'
-                }`}
+                  }`}
               >
                 <tab.icon className="w-5 h-5 mr-2" />
                 {tab.label}

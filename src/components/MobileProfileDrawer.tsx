@@ -1,4 +1,5 @@
 // src/components/MobileProfileDrawer.tsx
+import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { useBusinessUrl } from '../hooks/useBusinessUrl'
@@ -213,38 +214,6 @@ export default function MobileProfileDrawer({ isOpen, onClose }: MobileProfileDr
                 </div>
               </button>
             </div>
-          </div>
-
-          <div className="border-t border-gray-200" />
-
-          {/* Menu Items */}
-          <div className="py-2">
-            {/* Messages */}
-            <button
-              onClick={() => handleNavigation('/messages')}
-              className="w-full flex items-center px-6 py-3 text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              <MessageCircle className="w-5 h-5 mr-3 text-gray-500" />
-              <span className="text-sm font-medium">Messages</span>
-            </button>
-
-            {/* View Profile */}
-            <button
-              onClick={() => handleNavigation('/profile')}
-              className="w-full flex items-center px-6 py-3 text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              <User className="w-5 h-5 mr-3 text-gray-500" />
-              <span className="text-sm font-medium">Profile</span>
-            </button>
-
-            {/* Settings */}
-            <button
-              onClick={() => handleNavigation('/settings')}
-              className="w-full flex items-center px-6 py-3 text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              <Settings className="w-5 h-5 mr-3 text-gray-500" />
-              <span className="text-sm font-medium">Settings</span>
-            </button>
           </div>
 
           <div className="border-t border-gray-200" />

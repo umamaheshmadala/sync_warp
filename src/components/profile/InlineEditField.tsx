@@ -3,10 +3,10 @@ import { Edit3, Check, X, Loader2, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface InlineEditFieldProps {
-  label: string;
+  label?: string;
   value: string | null;
   icon?: React.ReactNode;
-  type?: 'text' | 'email' | 'tel' | 'url' | 'date';
+  type?: 'text' | 'email' | 'tel' | 'url' | 'date' | 'select';
   placeholder?: string;
   editable?: boolean;
   onSave: (value: string) => Promise<void>;
@@ -14,6 +14,8 @@ interface InlineEditFieldProps {
   multiline?: boolean;
   maxLength?: number;
   helperText?: string;
+  className?: string;
+  options?: { label: string; value: string }[];
 }
 
 export function InlineEditField({
@@ -27,10 +29,21 @@ export function InlineEditField({
   validate,
   multiline = false,
   maxLength,
-  helperText
+  helperText,
+  className = '',
+  options = [],
 }: InlineEditFieldProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value || '');
+
+  // Get display value for select type
+  const getDisplayValue = () => {
+    if (type === 'select' && options.length > 0) {
+      const selectedOption = options.find(opt => opt.value === value);
+      return selectedOption ? selectedOption.label : value;
+    }
+    return value;
+  };
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -56,11 +69,11 @@ export function InlineEditField({
     try {
       await onSave(editValue.trim());
       setIsEditing(false);
-      toast.success(`${label} updated successfully!`, { icon: '✅' });
+      toast.success(`${label || 'Field'} updated successfully!`, { icon: '✅' });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to update';
       setError(errorMessage);
-      toast.error(`Failed to update ${label}`, { icon: '❌' });
+      toast.error(`Failed to update ${label || 'field'}`, { icon: '❌' });
     } finally {
       setLoading(false);
     }
@@ -82,21 +95,23 @@ export function InlineEditField({
   };
 
   return (
-    <div className="space-y-2">
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-        {label}
-      </label>
+    <div className="space-y-0.5">
+      {label && (
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          {label}
+        </label>
+      )}
 
       {!isEditing ? (
-        <div className="flex items-center justify-between group hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg px-3 py-2 transition-colors">
-          <div className="flex items-center flex-1 min-w-0">
+        <div className="flex items-center justify-between group hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg px-0 py-0 md:px-1 md:py-0.5 transition-colors">
+          <div className="flex items-center justify-center md:justify-start flex-1 min-w-0">
             {icon && (
-              <span className="flex-shrink-0 mr-3 text-gray-400">
+              <span className="flex-shrink-0 mr-1.5 md:mr-2 text-gray-400">
                 {icon}
               </span>
             )}
-            <span className="text-gray-900 dark:text-white truncate">
-              {value || (
+            <span className={`text-gray-900 dark:text-white ${className} ${multiline ? 'line-clamp-2 whitespace-normal break-all' : 'truncate'}`}>
+              {getDisplayValue() || (
                 <span className="text-gray-400 italic">
                   {placeholder || 'Not provided'}
                 </span>
@@ -106,8 +121,8 @@ export function InlineEditField({
           {editable && (
             <button
               onClick={handleEdit}
-              className="flex-shrink-0 ml-4 p-1.5 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 opacity-0 group-hover:opacity-100 transition-all hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded"
-              title={`Edit ${label}`}
+              className="flex-shrink-0 ml-2 md:ml-3 p-1.5 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded"
+              title={label ? `Edit ${label}` : 'Edit'}
             >
               <Edit3 className="h-4 w-4" />
             </button>
@@ -121,12 +136,27 @@ export function InlineEditField({
                 value={editValue}
                 onChange={(e) => setEditValue(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="w-full px-3 py-2 pr-20 border border-blue-500 dark:border-blue-400 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white resize-none"
+                className="w-full px-3 py-2 pb-10 border border-blue-500 dark:border-blue-400 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white resize-none"
                 placeholder={placeholder}
                 rows={4}
                 maxLength={maxLength}
                 autoFocus
               />
+            ) : type === 'select' ? (
+              <select
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+                className="w-full px-3 py-2 pr-20 border border-blue-500 dark:border-blue-400 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white appearance-none bg-white"
+                autoFocus
+              >
+                <option value="" disabled>Select option</option>
+                {options.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
             ) : (
               <input
                 type={type}
@@ -141,7 +171,10 @@ export function InlineEditField({
             )}
 
             {/* Inline action buttons */}
-            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
+            <div className={`absolute flex gap-1 ${multiline
+              ? 'right-2 bottom-2'
+              : 'right-2 top-1/2 -translate-y-1/2'
+              }`}>
               <button
                 onClick={handleCancel}
                 disabled={loading}
@@ -168,8 +201,8 @@ export function InlineEditField({
           {maxLength && multiline && (
             <div className="flex justify-end">
               <span className={`text-xs ${editValue.length > maxLength * 0.9
-                  ? 'text-orange-600 dark:text-orange-400'
-                  : 'text-gray-500'
+                ? 'text-orange-600 dark:text-orange-400'
+                : 'text-gray-500'
                 }`}>
                 {editValue.length}/{maxLength}
               </span>

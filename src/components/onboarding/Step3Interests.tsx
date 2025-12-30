@@ -1,6 +1,7 @@
 // src/components/onboarding/Step3Interests.tsx
 import { useState } from 'react'
 import { ArrowLeft, Check, Star, ShoppingBag, Coffee, Utensils, Car, Home, Heart, Music } from 'lucide-react'
+import { Switch } from '../ui/switch'
 import { OnboardingData } from './OnboardingFlow'
 
 interface Step3InterestsProps {
@@ -71,12 +72,12 @@ const interestCategories = [
   }
 ]
 
-export default function Step3Interests({ 
-  data, 
-  onUpdate, 
-  onComplete, 
-  onBack, 
-  isCompleting 
+export default function Step3Interests({
+  data,
+  onUpdate,
+  onComplete,
+  onBack,
+  isCompleting
 }: Step3InterestsProps) {
   const [selectedInterests, setSelectedInterests] = useState<string[]>(data.interests || [])
   const [notificationPrefs, setNotificationPrefs] = useState(data.notificationPreferences)
@@ -85,7 +86,7 @@ export default function Step3Interests({
     const newInterests = selectedInterests.includes(interestId)
       ? selectedInterests.filter(id => id !== interestId)
       : [...selectedInterests, interestId]
-    
+
     setSelectedInterests(newInterests)
     onUpdate({ interests: newInterests })
   }
@@ -98,7 +99,7 @@ export default function Step3Interests({
 
   const handleComplete = () => {
     // Ensure we have at least the notification preferences updated
-    onUpdate({ 
+    onUpdate({
       interests: selectedInterests,
       notificationPreferences: notificationPrefs
     })
@@ -120,20 +121,20 @@ export default function Step3Interests({
       <div className="space-y-8">
         {/* Interest Categories */}
         <div>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {interestCategories.map((category) => {
               const isSelected = selectedInterests.includes(category.id)
               const IconComponent = category.icon
-              
+
               return (
                 <button
                   key={category.id}
                   onClick={() => toggleInterest(category.id)}
                   className={`
                     relative p-4 border-2 rounded-lg text-left transition-all duration-200 ease-in-out
-                    ${isSelected 
-                      ? 'border-indigo-500 bg-indigo-50 shadow-md' 
+                    ${isSelected
+                      ? 'border-indigo-500 bg-indigo-50 shadow-md'
                       : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
                     }
                   `}
@@ -145,7 +146,7 @@ export default function Step3Interests({
                     `}>
                       <IconComponent className="h-5 w-5" />
                     </div>
-                    
+
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
                         <h4 className={`
@@ -174,11 +175,11 @@ export default function Step3Interests({
               )
             })}
           </div>
-          
+
           {selectedInterests.length > 0 && (
             <div className="mt-4 p-3 bg-green-50 rounded-lg">
               <p className="text-sm text-green-800">
-                Great! You've selected <strong>{selectedInterests.length}</strong> categories. 
+                Great! You've selected <strong>{selectedInterests.length}</strong> categories.
                 We'll personalize your deal recommendations based on these interests.
               </p>
             </div>
@@ -190,54 +191,39 @@ export default function Step3Interests({
           <h3 className="text-lg font-medium text-gray-900 mb-4">
             Notification Preferences
           </h3>
-          
+
           <div className="space-y-4 bg-gray-50 p-4 rounded-lg">
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="text-sm font-medium text-gray-900">Email Notifications</h4>
                 <p className="text-xs text-gray-600">Weekly deal roundup and special offers</p>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={notificationPrefs.email}
-                  onChange={(e) => updateNotificationPref('email', e.target.checked)}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-              </label>
+              <Switch
+                checked={notificationPrefs.email}
+                onCheckedChange={(checked) => updateNotificationPref('email', checked)}
+              />
             </div>
-            
+
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="text-sm font-medium text-gray-900">Push Notifications</h4>
                 <p className="text-xs text-gray-600">Real-time alerts for new deals near you</p>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={notificationPrefs.push}
-                  onChange={(e) => updateNotificationPref('push', e.target.checked)}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-              </label>
+              <Switch
+                checked={notificationPrefs.push}
+                onCheckedChange={(checked) => updateNotificationPref('push', checked)}
+              />
             </div>
-            
+
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="text-sm font-medium text-gray-900">Deal Alerts</h4>
                 <p className="text-xs text-gray-600">Notifications for deals in your selected categories</p>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={notificationPrefs.deals}
-                  onChange={(e) => updateNotificationPref('deals', e.target.checked)}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-              </label>
+              <Switch
+                checked={notificationPrefs.deals}
+                onCheckedChange={(checked) => updateNotificationPref('deals', checked)}
+              />
             </div>
           </div>
         </div>

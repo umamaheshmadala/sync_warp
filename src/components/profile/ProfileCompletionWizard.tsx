@@ -35,8 +35,8 @@ export const ProfileCompletionWizard: React.FC<ProfileCompletionWizardProps> = (
       title: 'Social',
       icon: Share2,
       completed: !!(
-        profile?.social_links && 
-        typeof profile.social_links === 'object' && 
+        profile?.social_links &&
+        typeof profile.social_links === 'object' &&
         Object.values(profile.social_links).some(link => link)
       ),
     },
@@ -75,66 +75,60 @@ export const ProfileCompletionWizard: React.FC<ProfileCompletionWizardProps> = (
   if (!visible) return null;
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 p-4">
-      {/* Header with Progress */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex-1">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-              {completionPercentage === 100 ? '✨ Profile Complete!' : 'Complete Your Profile'}
-            </h3>
-            <button
-              onClick={handleDismiss}
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors p-1"
-            >
-              <X className="w-4 h-4" />
-            </button>
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 px-4 py-3">
+      {/* Compact Header with Progress */}
+      <div className="flex items-center gap-4 mb-3">
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-white whitespace-nowrap">
+          {completionPercentage === 100 ? '✨ Completed!' : 'Complete Profile'}
+        </h3>
+
+        {/* Progress Bar */}
+        <div className="flex-1 flex items-center gap-3">
+          <div className="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden">
+            <div
+              className="bg-gradient-to-r from-blue-500 to-purple-600 h-full transition-all duration-500 ease-out"
+              style={{ width: `${completionPercentage}%` }}
+            />
           </div>
-          
-          {/* Progress Bar */}
-          <div className="flex items-center space-x-3">
-            <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
-              <div
-                className="bg-gradient-to-r from-blue-500 to-purple-600 h-full transition-all duration-500 ease-out"
-                style={{ width: `${completionPercentage}%` }}
-              />
-            </div>
-            <span className="text-xs font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">
-              {completionPercentage}%
-            </span>
-          </div>
+          <span className="text-xs font-medium text-gray-500 dark:text-gray-400 w-8 text-right">
+            {completionPercentage}%
+          </span>
         </div>
+
+        <button
+          onClick={handleDismiss}
+          className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors -mr-1"
+        >
+          <X className="w-4 h-4" />
+        </button>
       </div>
 
-      {/* Compact Steps Icons */}
-      <div className="flex items-center justify-between gap-2">
+      {/* Compact Steps Row */}
+      <div className="flex items-center justify-between">
         {steps.map((step) => {
           const Icon = step.icon;
           return (
             <div
               key={step.id}
-              className="flex flex-col items-center flex-1 group cursor-pointer"
-              onClick={() => !step.completed && onStepClick?.()}
+              className="flex items-center gap-2"
             >
               <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-                  step.completed
-                    ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/20 group-hover:text-blue-600 dark:group-hover:text-blue-400'
-                }`}
+                className={`w-6 h-6 rounded-full flex items-center justify-center transition-all ${step.completed
+                  ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500'
+                  }`}
               >
                 {step.completed ? (
-                  <CheckCircle className="w-5 h-5" />
+                  <CheckCircle className="w-3.5 h-3.5" />
                 ) : (
-                  <Icon className="w-5 h-5" />
+                  <Icon className="w-3.5 h-3.5" />
                 )}
               </div>
               <span
-                className={`text-xs mt-1.5 text-center font-medium ${
-                  step.completed
-                    ? 'text-green-600 dark:text-green-400'
-                    : 'text-gray-600 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400'
-                }`}
+                className={`text-xs font-medium hidden sm:inline-block ${step.completed
+                  ? 'text-green-600 dark:text-green-400'
+                  : 'text-gray-500 dark:text-gray-400'
+                  }`}
               >
                 {step.title}
               </span>
