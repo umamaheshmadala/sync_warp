@@ -179,7 +179,7 @@ export const ProfileEditForm: React.FC = () => {
                     key={category.id}
                     type="button"
                     onClick={() => handleInterestToggle(category.id)}
-                    className={`px-2 py-0.5 text-[10px] md:px-4 md:py-2 md:text-sm rounded-full font-medium transition-all flex items-center gap-1 md:gap-1.5 ${isSelected
+                    className={`h-[35px] px-3 text-xs flex items-center justify-center leading-none md:h-auto md:px-4 md:py-2 md:text-sm md:leading-normal rounded-full font-medium transition-all gap-1 md:gap-1.5 ${isSelected
                       ? 'bg-blue-600 text-white shadow-md transform scale-105'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}

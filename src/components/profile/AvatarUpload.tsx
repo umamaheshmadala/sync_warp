@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { Camera, Upload, X, Check, Loader2, ZoomIn, ZoomOut } from 'lucide-react';
+import { Camera, Upload, X, Check, Loader2, ZoomIn, ZoomOut, Eye, Edit3 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { supabase } from '../../lib/supabase';
 import toast from 'react-hot-toast';
@@ -27,6 +27,9 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [showCropModal, setShowCropModal] = useState(false);
+
+  // View/Lightbox state
+  const [showViewModal, setShowViewModal] = useState(false);
 
   const onCropComplete = useCallback((croppedArea: Area, croppedAreaPixels: Area) => {
     setCroppedAreaPixels(croppedAreaPixels);
@@ -166,15 +169,15 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
   return (
     <>
       <div className="flex flex-col items-center">
-        {/* Clickable Avatar Area */}
+        {/* Avatar Area - Click to view */}
         <div
-          onClick={() => !uploading && fileInputRef.current?.click()}
+          onClick={() => setShowViewModal(true)}
           className={`
             relative group cursor-pointer
             ${uploading ? 'opacity-50 pointer-events-none' : ''}
           `}
         >
-          <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-800 ring-4 ring-white dark:ring-gray-900 shadow-lg transition-transform transform group-hover:scale-105">
+          <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-800 ring-4 ring-cyan-400 shadow-lg transition-transform transform group-hover:scale-105 relative">
             {avatarUrl ? (
               <img
                 src={avatarUrl}
@@ -187,9 +190,31 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
               </div>
             )}
 
-            {/* Hover Overlay */}
-            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all flex items-center justify-center">
-              <Camera className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity transform scale-75 group-hover:scale-100" />
+            {/* Hover Overlay with Two Icons */}
+            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all flex items-center justify-center gap-4 opacity-0 group-hover:opacity-100">
+              {/* Edit Icon */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  !uploading && fileInputRef.current?.click();
+                }}
+                className="p-2 bg-white/20 hover:bg-white/40 rounded-full text-white transition-colors transform hover:scale-110"
+                title="Edit Photo"
+              >
+                <Edit3 className="w-5 h-5" />
+              </button>
+
+              {/* View Icon */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowViewModal(true);
+                }}
+                className="p-2 bg-white/20 hover:bg-white/40 rounded-full text-white transition-colors transform hover:scale-110"
+                title="View Photo"
+              >
+                <Eye className="w-5 h-5" />
+              </button>
             </div>
           </div>
 
@@ -216,6 +241,29 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
           </p>
         )}
       </div>
+
+      {/* View/Lightbox Modal */}
+      {showViewModal && avatarUrl && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+          onClick={() => setShowViewModal(false)}
+        >
+          <div className="relative max-w-4xl w-full h-full flex items-center justify-center">
+            <button
+              onClick={() => setShowViewModal(false)}
+              className="absolute top-4 right-4 p-2 text-white/70 hover:text-white bg-black/20 hover:bg-black/40 rounded-full transition-colors z-10"
+            >
+              <X className="w-8 h-8" />
+            </button>
+            <img
+              src={avatarUrl}
+              alt="Profile"
+              className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+              onClick={(e) => e.stopPropagation()} // Prevent closing when clicking image
+            />
+          </div>
+        </div>
+      )}
 
       {/* Crop Modal */}
       {showCropModal && imageSrc && (

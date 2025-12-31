@@ -40,23 +40,11 @@ export function ReadReceiptPrivacy() {
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <div className={cn(
-                        "p-2 rounded-lg",
-                        isEnabled ? "bg-indigo-50" : "bg-gray-100"
-                    )}>
-                        {isEnabled ? (
-                            <CheckCheck className="h-5 w-5 text-indigo-600" />
-                        ) : (
-                            <EyeOff className="h-5 w-5 text-gray-500" />
-                        )}
-                    </div>
-                    <div>
-                        <h4 className="font-medium text-gray-900">Read Receipts</h4>
-                        <p className="text-sm text-gray-500">
-                            Show when you've read messages
-                        </p>
-                    </div>
+                <div>
+                    <p className="text-sm font-medium text-gray-900">Read Receipts</p>
+                    <p className="text-xs text-gray-500">
+                        Others can see when you've read their messages
+                    </p>
                 </div>
 
                 <Switch
@@ -67,24 +55,7 @@ export function ReadReceiptPrivacy() {
             </div>
 
             {/* Reciprocal warning */}
-            <div className={cn(
-                "p-3 rounded-lg text-sm",
-                isEnabled ? "bg-indigo-50 text-indigo-900" : "bg-amber-50 text-amber-800"
-            )}>
-                {isEnabled ? (
-                    <p className="flex items-center gap-2">
-                        <CheckCheck className="h-4 w-4 text-indigo-600" />
-                        Others can see when you've read their messages
-                    </p>
-                ) : (
-                    <p className="flex items-center gap-2">
-                        <EyeOff className="h-4 w-4 text-amber-600" />
-                        <span>
-                            <strong>Reciprocal:</strong> You also won't see when others have read your messages
-                        </span>
-                    </p>
-                )}
-            </div>
+
         </div>
     );
 }

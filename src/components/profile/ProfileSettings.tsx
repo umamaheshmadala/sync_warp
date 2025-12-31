@@ -65,27 +65,23 @@ export const ProfileSettings: React.FC = () => {
       <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-200 flex items-center">
           <Settings className="h-5 w-5 mr-2" />
-          Navigation Preferences
+          Navigation
         </h3>
         <div className="space-y-4">
-          <div className="flex items-center justify-between py-2">
-            <div className="flex items-center">
-              <Smartphone className="h-4 w-4 text-gray-400 mr-2" />
-              <div>
-                <span className="text-sm font-medium text-gray-700">Swipe Gestures</span>
-                <p className="text-xs text-gray-500">Navigate between pages</p>
-              </div>
+          <div className="flex items-center justify-between py-1">
+            <div>
+              <span className="text-sm font-medium text-gray-900">Swipe Gestures</span>
+              <p className="text-xs text-gray-500">Navigate between pages</p>
             </div>
             <Switch
               checked={navPreferences.swipeGesturesEnabled}
               onCheckedChange={(checked) => updatePreference('swipeGesturesEnabled', checked)}
             />
-
           </div>
 
-          <div className="flex items-center justify-between py-2">
+          <div className="flex items-center justify-between py-1">
             <div>
-              <span className="text-sm font-medium text-gray-700">Haptic Feedback</span>
+              <span className="text-sm font-medium text-gray-900">Haptic Feedback</span>
               <p className="text-xs text-gray-500">Feel vibrations</p>
             </div>
             <Switch
@@ -94,9 +90,9 @@ export const ProfileSettings: React.FC = () => {
             />
           </div>
 
-          <div className="flex items-center justify-between py-2">
+          <div className="flex items-center justify-between py-1">
             <div>
-              <span className="text-sm font-medium text-gray-700">Page Animations</span>
+              <span className="text-sm font-medium text-gray-900">Page Animations</span>
               <p className="text-xs text-gray-500">Smooth transitions</p>
             </div>
             <Switch
@@ -115,16 +111,16 @@ export const ProfileSettings: React.FC = () => {
               <Eye className="w-5 h-5 mr-2" />
               Privacy
             </h2>
-            <div className="space-y-6">
+            <div className="space-y-4">
               {/* Read Receipts Privacy */}
-              <div className="border-b border-gray-100 pb-4">
+              <div>
                 <ReadReceiptPrivacy />
               </div>
 
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-gray-900">Profile Visibility</p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm font-medium text-gray-900">Profile Visibility</p>
+                  <p className="text-xs text-gray-500">
                     Control who can see your profile
                   </p>
                 </div>
@@ -141,8 +137,8 @@ export const ProfileSettings: React.FC = () => {
 
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-gray-900">Show Online Status</p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm font-medium text-gray-900">Show Online Status</p>
+                  <p className="text-xs text-gray-500">
                     Let others see when you're online
                   </p>
                 </div>
@@ -154,8 +150,8 @@ export const ProfileSettings: React.FC = () => {
 
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-gray-900">Activity Tracking</p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm font-medium text-gray-900">Activity Tracking</p>
+                  <p className="text-xs text-gray-500">
                     Allow us to track your activity for analytics
                   </p>
                 </div>
@@ -185,42 +181,39 @@ export const ProfileSettings: React.FC = () => {
               ) : (
                 <>
                   {/* Global Channels */}
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-gray-900">Email Notifications</p>
-                      <p className="text-sm text-gray-500">Receive updates via email</p>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">Email Notifications</p>
+                        <p className="text-xs text-gray-500">Receive specific updates via email</p>
+                      </div>
+                      <Switch
+                        checked={notifPrefs.email_enabled}
+                        onCheckedChange={() => handleNotifToggle('email_enabled')}
+                        disabled={isUpdatingNotif}
+                      />
                     </div>
-                    <Switch
-                      checked={notifPrefs.email_enabled}
-                      onCheckedChange={() => handleNotifToggle('email_enabled')}
-                      disabled={isUpdatingNotif}
-                    />
-                  </div>
 
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-gray-900">Push Notifications</p>
-                      <p className="text-sm text-gray-500">Receive push notifications in browser</p>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">Push Notifications</p>
+                        <p className="text-xs text-gray-500">Receive notifications on this device</p>
+                      </div>
+                      <Switch
+                        checked={notifPrefs.push_enabled}
+                        onCheckedChange={() => handleNotifToggle('push_enabled')}
+                        disabled={isUpdatingNotif}
+                      />
                     </div>
-                    <Switch
-                      checked={notifPrefs.push_enabled}
-                      onCheckedChange={() => handleNotifToggle('push_enabled')}
-                      disabled={isUpdatingNotif}
-                    />
                   </div>
-
-                  <Separator />
 
                   {/* Quiet Hours */}
                   {systemSettings && (
-                    <div className="space-y-4">
+                    <div className="space-y-3 pt-2">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Moon className="h-4 w-4 text-gray-500" />
-                          <div>
-                            <p className="font-medium text-gray-900">Quiet Hours</p>
-                            <p className="text-xs text-gray-500">Pause notifications ({systemSettings.timezone})</p>
-                          </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">Quiet Hours</p>
+                          <p className="text-xs text-gray-500">Pause notifications during specific times ({systemSettings.timezone})</p>
                         </div>
                         <Switch
                           checked={systemSettings.quiet_hours_enabled}
@@ -230,27 +223,27 @@ export const ProfileSettings: React.FC = () => {
                       </div>
 
                       {systemSettings.quiet_hours_enabled && (
-                        <div className="grid grid-cols-2 gap-4 pl-6">
-                          <div className="space-y-2">
-                            <label className="text-xs font-medium text-gray-500 flex items-center gap-1">
-                              <Clock className="h-3 w-3" /> Start
+                        <div className="grid grid-cols-2 gap-4 pl-0">
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-medium text-gray-500 flex items-center gap-1.5">
+                              Start Time
                             </label>
                             <input
                               type="time"
                               value={systemSettings.quiet_hours_start}
                               onChange={(e) => updateSystemSettings({ quiet_hours_start: e.target.value })}
-                              className="w-full text-sm border rounded-md p-1.5 bg-gray-50"
+                              className="w-full text-xs border border-gray-300 rounded-md px-2 py-1.5 bg-gray-50 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                             />
                           </div>
-                          <div className="space-y-2">
-                            <label className="text-xs font-medium text-gray-500 flex items-center gap-1">
-                              <Clock className="h-3 w-3" /> End
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-medium text-gray-500 flex items-center gap-1.5">
+                              End Time
                             </label>
                             <input
                               type="time"
                               value={systemSettings.quiet_hours_end}
                               onChange={(e) => updateSystemSettings({ quiet_hours_end: e.target.value })}
-                              className="w-full text-sm border rounded-md p-1.5 bg-gray-50"
+                              className="w-full text-xs border border-gray-300 rounded-md px-2 py-1.5 bg-gray-50 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                             />
                           </div>
                         </div>
@@ -258,24 +251,26 @@ export const ProfileSettings: React.FC = () => {
                     </div>
                   )}
 
-                  <Separator />
-
                   {/* Specific Types (Friends) */}
-                  <div className="space-y-4">
-                    <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                      <UserPlus className="h-4 w-4" /> Friends
+                  <div className="space-y-3 pt-2">
+                    <h3 className="text-sm font-medium text-gray-900">
+                      Friend Activity
                     </h3>
-                    <div className="pl-6 space-y-4">
-                      <div className="flex items-center justify-between">
-                        <label className="text-sm text-gray-700">Friend Requests</label>
+                    <div className="pl-0 space-y-3">
+                      <div className="flex items-center justify-between group py-0.5">
+                        <label className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">
+                          Friend Requests
+                        </label>
                         <Switch
                           checked={notifPrefs.friend_requests}
                           onCheckedChange={() => handleNotifToggle('friend_requests')}
                           disabled={!notifPrefs.push_enabled}
                         />
                       </div>
-                      <div className="flex items-center justify-between">
-                        <label className="text-sm text-gray-700">Friend Accepted</label>
+                      <div className="flex items-center justify-between group py-0.5">
+                        <label className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">
+                          Friend Accepted
+                        </label>
                         <Switch
                           checked={notifPrefs.friend_accepted}
                           onCheckedChange={() => handleNotifToggle('friend_accepted')}
@@ -286,21 +281,25 @@ export const ProfileSettings: React.FC = () => {
                   </div>
 
                   {/* Specific Types (Deals & Reminders) */}
-                  <div className="space-y-4">
-                    <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                      <Gift className="h-4 w-4" /> Reminders & Deals
+                  <div className="space-y-3 pt-2">
+                    <h3 className="text-sm font-medium text-gray-900">
+                      Reminders & Promotion
                     </h3>
-                    <div className="pl-6 space-y-4">
-                      <div className="flex items-center justify-between">
-                        <label className="text-sm text-gray-700">Birthday Reminders</label>
+                    <div className="pl-0 space-y-3">
+                      <div className="flex items-center justify-between group py-0.5">
+                        <label className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">
+                          Birthday Reminders
+                        </label>
                         <Switch
                           checked={notifPrefs.birthday_reminders}
                           onCheckedChange={() => handleNotifToggle('birthday_reminders')}
                           disabled={!notifPrefs.push_enabled}
                         />
                       </div>
-                      <div className="flex items-center justify-between">
-                        <label className="text-sm text-gray-700">Deal Sharing</label>
+                      <div className="flex items-center justify-between group py-0.5">
+                        <label className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">
+                          Deal Sharing
+                        </label>
                         <Switch
                           checked={notifPrefs.deal_shared}
                           onCheckedChange={() => handleNotifToggle('deal_shared')}
@@ -329,7 +328,7 @@ export const ProfileSettings: React.FC = () => {
               <h4 className="text-base font-semibold text-red-700 flex flex-wrap items-baseline gap-2">
                 Delete Account
                 <span className="text-xs font-normal text-red-500/80">
-                  (Member since: {user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'Recently'})
+                  (Member since: {user?.created_at ? new Date(user.created_at).toLocaleDateString('en-GB') : 'Recently'})
                 </span>
               </h4>
               <p className="text-xs text-red-600 mt-0.5">

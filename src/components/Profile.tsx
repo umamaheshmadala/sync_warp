@@ -77,13 +77,14 @@ export default function Profile() {
             </div>
 
             {/* User Info */}
-            <div className="flex-1 text-center md:text-left min-w-0">
-              <div className="mb-0">
+            <div className="flex-1 text-center md:text-left min-w-0 space-y-1">
+              {/* Name */}
+              <div>
                 <InlineEditField
                   value={profile?.full_name || user?.user_metadata?.full_name || 'User'}
                   placeholder="Your Name"
                   maxLength={30}
-                  className="text-xl font-bold text-gray-900"
+                  className="text-lg font-bold text-gray-900 leading-tight"
                   editable={isEditingProfile}
                   globalEditMode={isEditingProfile}
                   externalValue={editFullName}
@@ -93,45 +94,42 @@ export default function Profile() {
                   }}
                 />
               </div>
-              <div className="mb-0">
+
+              {/* Email - No Icon */}
+              <div>
                 <InlineEditField
                   value={user?.email || ''}
                   placeholder="Your Email"
                   type="email"
-                  icon={<Mail className="h-4 w-4" />}
-                  className="text-sm text-gray-600"
+                  className="text-sm text-gray-500 font-medium"
                   editable={false}
                   globalEditMode={isEditingProfile}
                   externalValue={editEmail}
                   onValueChange={setEditEmail}
-                  hideIconOnMobile={true}
                   onSave={async (value) => {
                     await updateProfile({ email: value });
                   }}
                 />
               </div>
 
-              {/* City Selection */}
-              <div className="mb-0">
+              {/* City - No Icon */}
+              <div>
                 {citiesLoading ? (
-                  <div className="flex items-center text-sm text-gray-500">
-                    <MapPin className="h-4 w-4 mr-2" />
-                    Loading cities...
+                  <div className="flex items-center justify-center md:justify-start text-sm text-gray-400">
+                    <span className="loader mr-2" /> Loading...
                   </div>
                 ) : (
                   <InlineEditField
                     value={profile?.city || ''}
                     type="select"
-                    placeholder="Select your city"
-                    icon={<MapPin className="h-4 w-4" />}
-                    className="text-sm text-gray-600"
+                    placeholder="Select City"
+                    className="text-sm text-gray-500 font-medium"
                     editable={isEditingProfile}
                     globalEditMode={isEditingProfile}
                     externalValue={editCity}
                     onValueChange={setEditCity}
-                    hideIconOnMobile={true}
                     options={Array.from(new Map(cities.map(city => [city.name, city])).values()).map(city => ({
-                      label: `${city.name}, ${city.state} `,
+                      label: `${city.name}, ${city.state}`,
                       value: city.name
                     }))}
                     onSave={async (value) => {
@@ -140,19 +138,19 @@ export default function Profile() {
                   />
                 )}
               </div>
-              <div className="mt-0.5">
+
+              {/* Bio - No Icon */}
+              <div>
                 <InlineEditField
                   value={profile?.bio || ''}
                   multiline
                   maxLength={150}
-                  placeholder="Describe yourself..."
-                  icon={<FileText className="h-4 w-4" />}
-                  className="text-sm text-gray-600"
+                  placeholder="Add a bio..."
+                  className="text-sm text-gray-600 mt-1"
                   editable={isEditingProfile}
                   globalEditMode={isEditingProfile}
                   externalValue={editBio}
                   onValueChange={setEditBio}
-                  hideIconOnMobile={true}
                   onSave={async (value) => {
                     await updateProfile({ bio: value });
                   }}
