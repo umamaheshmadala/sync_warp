@@ -596,6 +596,26 @@ export const useCoupons = (businessId?: string) => {
   };
 };
 
+// Standalone fetcher for prefetching
+export const fetchUserCouponsForPrefetch = async (userId: string) => {
+  if (!userId) return [];
+
+  const { data } = await supabase
+    .from('user_coupon_collections')
+    .select(`
+        *,
+        business_coupons!inner(
+          id, title, description, discount_value, discount_type,
+          businesses!inner(business_name)
+        )
+      `)
+    .eq('user_id', userId)
+    .eq('status', 'active')
+    .order('collected_at', { ascending: false });
+
+  return data || [];
+};
+
 // Hook for fetching user's collected coupons
 export const useUserCoupons = () => {
   const { user } = useAuthStore();
@@ -625,6 +645,8 @@ export const useUserCoupons = () => {
 
     return data || [];
   };
+
+
 
   const {
     data: userCoupons = [],

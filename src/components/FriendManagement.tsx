@@ -1,7 +1,7 @@
 // src/components/FriendManagement.tsx
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Users, UserPlus, Activity, MessageSquare } from 'lucide-react';
+import { Users, UserPlus, Activity, MessageSquare, RefreshCw } from 'lucide-react';
 import { useFriends } from '../hooks/friends/useFriends';
 import { useReceivedFriendRequests } from '../hooks/friends/useFriendRequests';
 import ContactsSidebar from './ContactsSidebarWithTabs';
@@ -14,7 +14,7 @@ interface FriendManagementProps {
 }
 
 const FriendManagement: React.FC<FriendManagementProps> = ({ className = '' }) => {
-  const { data: friendsResponse, isLoading: loading } = useFriends();
+  const { data: friendsResponse, isLoading: loading, isRefetching } = useFriends();
   const { data: receivedRequests = [] } = useReceivedFriendRequests();
 
   // Extract friends array from ServiceResponse
@@ -29,6 +29,15 @@ const FriendManagement: React.FC<FriendManagementProps> = ({ className = '' }) =
   return (
     <div className={`space-y-6 ${className}`}>
       {/* Quick Stats */}
+      <div className="flex items-center justify-between mb-2">
+        {/* Hidden title or just spacer if needed, or we just append the indicator to the container */}
+      </div>
+      {isRefetching && (
+        <div className="flex items-center gap-2 text-xs text-indigo-600 mb-2 bg-indigo-50 w-fit px-2 py-1 rounded-full">
+          <RefreshCw className="h-3 w-3 animate-spin" />
+          <span>Updating friends...</span>
+        </div>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <motion.div
           className="bg-white p-4 rounded-lg shadow-sm border border-gray-200"

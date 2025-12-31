@@ -52,6 +52,7 @@ interface FavoritesState {
   coupons: FavoriteCoupon[];
   wishlist: WishlistItem[];
   isLoading: boolean;
+  isRefetching?: boolean;
   error: string | null;
   counts: {
     businesses: number;
@@ -267,6 +268,8 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
 
     if (showLoading) {
       setState(prev => ({ ...prev, isLoading: true, error: null }));
+    } else {
+      setState(prev => ({ ...prev, isRefetching: true, error: null }));
     }
 
     try {
@@ -276,10 +279,10 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
         loadFavoriteCoupons(),
         loadWishlist()
       ]).then(results => [
-        results[0].status === 'fulfilled' ? results[0].value : [],
-        results[1].status === 'fulfilled' ? results[1].value : [],
-        results[2].status === 'fulfilled' ? results[2].value : []
-      ]);
+        results[0].status === 'fulfilled' ? results[0].value : [] as FavoriteBusiness[],
+        results[1].status === 'fulfilled' ? results[1].value : [] as FavoriteCoupon[],
+        results[2].status === 'fulfilled' ? results[2].value : [] as WishlistItem[]
+      ]) as [FavoriteBusiness[], FavoriteCoupon[], WishlistItem[]];
 
       // Update cache
       favoritesCache.current = {
@@ -295,6 +298,7 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
         coupons,
         wishlist,
         isLoading: false,
+        isRefetching: false,
         error: null,
         counts: {
           businesses: businesses.length,
@@ -307,6 +311,7 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
       setState(prev => ({
         ...prev,
         isLoading: false,
+        isRefetching: false,
         error: errorMessage
       }));
     }
@@ -461,7 +466,7 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
 
         // Coupons not handled in business_followers table
         // Story 4.11 only handles business following
-        toast.info('Coupon favorites not yet migrated to following system');
+        toast('Coupon favorites not yet migrated to following system', { icon: 'ℹ️' });
         return false;
       }
 
@@ -540,7 +545,7 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
       if (error) {
         // Handle duplicate entry
         if (error.code === '23505') {
-          toast.info('Item is already in your wishlist');
+          toast('Item is already in your wishlist', { icon: 'ℹ️' });
           return false;
         }
         throw error;

@@ -18,6 +18,7 @@ import DevMenu from './components/DevMenu'
 import { useUpdateOnlineStatus } from './hooks/useUpdateOnlineStatus'
 import { usePresence } from './hooks/usePresence'
 import { useRealtimeFriends } from './hooks/friends/useRealtimeFriends'
+import { AppDataPrefetcher } from './components/AppDataPrefetcher'
 import { realtimeService } from './services/realtimeService'
 import { spamConfigService } from './services/SpamConfigService'
 
@@ -116,6 +117,7 @@ function AppContent() {
     <>
       <OfflineBanner />
       <AppLayout>
+        <AppDataPrefetcher />
         <AppRouter />
       </AppLayout>
       <DevMenu />

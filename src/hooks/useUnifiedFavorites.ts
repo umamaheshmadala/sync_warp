@@ -52,7 +52,7 @@ const loadFromStorage = (userId?: string): UnifiedFavorite[] => {
           synced: fav.synced ?? false,
           timestamp: fav.timestamp || Date.now()
         };
-        
+
         // Migration: Handle old favorites without proper itemData
         if (!migrated.itemData && migrated.type === 'business') {
           migrated.itemData = {
@@ -73,7 +73,7 @@ const loadFromStorage = (userId?: string): UnifiedFavorite[] => {
             price: 'N/A'
           };
         }
-        
+
         return migrated;
       });
     }
@@ -98,29 +98,29 @@ let currentUserId: string | undefined = undefined;
 // Notify all components of favorites changes
 const notifyListeners = () => {
   globalListeners.forEach(listener => listener([...globalFavorites]));
-  
+
   // Also dispatch a custom event for components not using this hook
   window.dispatchEvent(new CustomEvent(FAVORITES_UPDATED_EVENT, {
     detail: { favorites: globalFavorites }
   }));
 };
 
-// Sync favorites from database (defined here to avoid hoisting issues)
-const syncFromDatabase = async (currentUserId?: string) => {
+// Sync favorites from database (exported for prefetching)
+export const syncFavoritesFromDatabase = async (currentUserId?: string) => {
   if (!currentUserId || currentUserId === 'guest') {
     return;
   }
 
   try {
     console.log('[UnifiedFavorites] Syncing from database for user:', currentUserId);
-    
+
     // Get ALL business followers from business_followers table
     // Story 4.11 focuses on business following only
     const { data: favorites, error } = await supabase
       .from('business_followers')
       .select('*')
       .eq('user_id', currentUserId)
-      .order('followed_at', { ascending: false});
+      .order('followed_at', { ascending: false });
 
     if (error) {
       console.error('[UnifiedFavorites] Database error:', error);
@@ -138,7 +138,7 @@ const syncFromDatabase = async (currentUserId?: string) => {
         .filter(id => id != null && id !== '');
 
       // Fetch business data for all followed businesses
-      const businessesData = businessIds.length > 0 
+      const businessesData = businessIds.length > 0
         ? await supabase.from('businesses').select('id, business_name, business_type, description, address, average_rating').in('id', businessIds)
         : { data: [] };
 
@@ -170,16 +170,16 @@ const syncFromDatabase = async (currentUserId?: string) => {
     // DATABASE IS NOW THE SOURCE OF TRUTH
     // Only use database data, ignore localStorage to avoid cache issues
     const mergedFavorites: UnifiedFavorite[] = [...dbFavorites];
-    
+
     // Sort by timestamp (newest first)
     mergedFavorites.sort((a, b) => b.timestamp - a.timestamp);
-    
+
     // Update global state
     globalFavorites = mergedFavorites;
-    
+
     // Update localStorage to match database (for offline fallback only)
     saveToStorage(globalFavorites, currentUserId);
-    
+
     notifyListeners();
 
     console.log(`[UnifiedFavorites] Synced ${dbFavorites.length} favorites from database, ${mergedFavorites.length} total`);
@@ -187,23 +187,25 @@ const syncFromDatabase = async (currentUserId?: string) => {
     console.warn('[UnifiedFavorites] Failed to sync favorites from database:', error);
   }
 };
+// Alias for internal use to avoid refactoring everything inside this file right now if name implies strict usage
+const syncFromDatabase = syncFavoritesFromDatabase;
 
 export const useUnifiedFavorites = () => {
   const { user } = useAuthStore();
   const userId = user?.id;
-  
+
   // Load user-specific favorites when user changes
   useEffect(() => {
     if (currentUserId !== userId) {
       const oldUserId = currentUserId;
       currentUserId = userId;
-      
+
       // For authenticated users, ALWAYS fetch from database first
       if (userId && userId !== 'guest') {
         console.log('[UnifiedFavorites] User changed, fetching favorites from database...');
         // Show loading state
         setState(prev => ({ ...prev, isLoading: true }));
-        
+
         // Fetch from database (this is now the SOURCE OF TRUTH)
         syncFromDatabase(userId).then(() => {
           setState(prev => ({ ...prev, isLoading: false }));
@@ -261,14 +263,14 @@ export const useUnifiedFavorites = () => {
 
   // Note: Removed visibility change listener to prevent excessive refreshes
   // Realtime subscriptions handle all updates automatically
-  
+
   const [state, setState] = useState<FavoritesState>(() => {
     // Initialize with empty state - will be populated from database
     // DO NOT load from localStorage to avoid stale cache
     const initialFavorites = userId && userId !== 'guest' ? [] : loadFromStorage(userId);
     globalFavorites = initialFavorites;
     currentUserId = userId;
-    
+
     const counts = initialFavorites.reduce(
       (acc, fav) => {
         if (fav.type === 'business') acc.businesses++;
@@ -334,9 +336,9 @@ export const useUnifiedFavorites = () => {
         globalFavorites = globalFavorites.filter(fav => !(fav.id === itemId && fav.type === type));
         saveToStorage(globalFavorites, currentUserId);
         notifyListeners();
-        
+
         toast.success('Removed from favorites');
-        
+
         // Sync removal to database if user is authenticated (async)
         if (currentUserId && currentUserId !== 'guest') {
           setTimeout(async () => {
@@ -348,7 +350,7 @@ export const useUnifiedFavorites = () => {
                   .delete()
                   .eq('user_id', currentUserId)
                   .eq('business_id', itemId);
-                
+
                 if (error) {
                   console.warn('Database sync error (removal):', error);
                 } else {
@@ -363,7 +365,7 @@ export const useUnifiedFavorites = () => {
             }
           }, 100); // Small delay to ensure UI responds immediately
         }
-        
+
         return false;
       } else {
         // Add to favorites - update localStorage immediately  
@@ -374,13 +376,13 @@ export const useUnifiedFavorites = () => {
           synced: false,
           itemData
         };
-        
+
         globalFavorites = [newFavorite, ...globalFavorites];
         saveToStorage(globalFavorites, currentUserId);
         notifyListeners();
-        
+
         toast.success('Added to favorites');
-        
+
         // Sync addition to database if user is authenticated (async)
         if (currentUserId && currentUserId !== 'guest') {
           setTimeout(async () => {
@@ -395,12 +397,12 @@ export const useUnifiedFavorites = () => {
                   })
                   .select()
                   .single();
-                
+
                 if (error) {
                   console.warn('Database sync error (addition):', error);
                 } else {
                   console.log(`Successfully followed ${type} in database:`, data);
-                  
+
                   // Update the favorite as synced
                   const favoriteIndex = globalFavorites.findIndex(fav => fav.id === itemId && fav.type === type);
                   if (favoriteIndex !== -1) {
@@ -418,7 +420,7 @@ export const useUnifiedFavorites = () => {
             }
           }, 100); // Small delay to ensure UI responds immediately
         }
-        
+
         return true;
       }
     } catch (error) {
@@ -437,14 +439,14 @@ export const useUnifiedFavorites = () => {
   // Clear all favorites
   const clearAllFavorites = useCallback(async () => {
     const currentUserId = userId;
-    
+
     // Clear localStorage immediately
     globalFavorites = [];
     saveToStorage(globalFavorites, currentUserId);
     notifyListeners();
-    
+
     toast.success('All favorites cleared');
-    
+
     // Clear database if authenticated (async)
     if (currentUserId && currentUserId !== 'guest') {
       setTimeout(async () => {
@@ -511,7 +513,7 @@ export const useUnifiedFavorites = () => {
     globalFavorites = testFavorites;
     saveToStorage(globalFavorites);
     notifyListeners();
-    
+
     console.log('[UnifiedFavorites] Test data seeded:', testFavorites);
     toast.success('Test favorites added');
   }, []);
@@ -532,24 +534,24 @@ export const useUnifiedFavorites = () => {
 
   // Clear old favorites without itemData (migration helper)
   const clearOldFavorites = useCallback(() => {
-    const oldFavorites = globalFavorites.filter(fav => 
-      !fav.itemData || 
-      (fav.type === 'business' && !fav.itemData.business_name) || 
+    const oldFavorites = globalFavorites.filter(fav =>
+      !fav.itemData ||
+      (fav.type === 'business' && !fav.itemData.business_name) ||
       (fav.type === 'coupon' && !fav.itemData.title)
     );
-    
+
     if (oldFavorites.length > 0) {
-      globalFavorites = globalFavorites.filter(fav => 
-        fav.itemData && 
-        ((fav.type === 'business' && fav.itemData.business_name) || 
-         (fav.type === 'coupon' && fav.itemData.title))
+      globalFavorites = globalFavorites.filter(fav =>
+        fav.itemData &&
+        ((fav.type === 'business' && fav.itemData.business_name) ||
+          (fav.type === 'coupon' && fav.itemData.title))
       );
       saveToStorage(globalFavorites, userId);
       notifyListeners();
       toast.success(`Cleared ${oldFavorites.length} old favorites without data`);
       console.log('[UnifiedFavorites] Cleared old favorites:', oldFavorites);
     } else {
-      toast.info('No old favorites to clear');
+      toast('No old favorites to clear', { icon: 'ℹ️' });
     }
   }, [userId]);
 
@@ -559,7 +561,7 @@ export const useUnifiedFavorites = () => {
       // Clear localStorage
       localStorage.removeItem(getStorageKey(userId));
       console.log('[UnifiedFavorites] Cleared localStorage cache');
-      
+
       // Reload from database
       if (userId && userId !== 'guest') {
         setState(prev => ({ ...prev, isLoading: true }));
@@ -592,7 +594,7 @@ export const useUnifiedFavorites = () => {
     clearAllFavorites,
     refresh,
     syncFromDatabase: () => syncFromDatabase(userId),
-    
+
     // Debug helpers
     seedTestData,
     clearOldFavorites,

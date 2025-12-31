@@ -26,7 +26,7 @@ export function useRoutePreload() {
             '/social': () => import('../components/Social'),
             '/friends': () => import('../pages/Friends').then(m => m.FriendsPage),
             '/messages': () => import('../components/messaging/MessagingLayout').then(m => m.MessagingLayout),
-            '/settings': () => import('../components/Settings'),
+
             '/business/dashboard': () => import('../components/business/BusinessDashboard'),
             // Add more routes as needed
         }

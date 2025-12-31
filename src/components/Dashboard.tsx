@@ -1,7 +1,7 @@
 ﻿// src/pages/Dashboard/Dashboard.tsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useDashboardData } from '../hooks/useDashboardData';
 import { useBusinessUrl } from '../hooks/useBusinessUrl';
 import {
   Bell,
@@ -106,25 +106,8 @@ const Dashboard: React.FC = () => {
   const [selectedCity] = useState(profile?.city || 'Select City');
   const [showNotifications, setShowNotifications] = useState(false);
   // Use React Query for automatic caching and background updates
-  const { data: dashboardData, isLoading } = useQuery({
-    queryKey: ['dashboard', user?.id],
-    queryFn: async () => {
-      if (!user) return null;
-
-      const [statsData, businessesData, offersData, productsData] = await Promise.all([
-        dashboardService.getDashboardStats(user.id),
-        dashboardService.getSpotlightBusinesses(3),
-        dashboardService.getHotOffers(2),
-        dashboardService.getTrendingProducts(3),
-      ]);
-
-      return { statsData, businessesData, offersData, productsData };
-    },
-    enabled: !!user, // Only run query if user is logged in
-    staleTime: 1000 * 60 * 5, // Consider data fresh for 5 minutes
-    gcTime: 1000 * 60 * 60 * 24, // Keep in cache for 24 hours
-    placeholderData: (previousData) => previousData, // Keep showing old data while fetching
-  });
+  // Use extracted hook for dashboard data
+  const { data: dashboardData, isLoading } = useDashboardData();
 
   // Use cached data or fallback to dummy data
   const spotlightBusinesses = dashboardData?.businessesData?.length > 0

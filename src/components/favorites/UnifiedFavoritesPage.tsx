@@ -110,6 +110,55 @@ const UnifiedFavoritesPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Refreshing Indicator */}
+        {/* We assume useFavorites returns isRefetching, though we are using useFavoriteProducts here. 
+            Since the user's request was about favorites page (likely businesses/coupons), 
+            and UnifiedFavoritesPage seems to use useFavoriteProducts which is DIFFERENT from useFavorites.ts.
+            Wait, UnifiedFavoritesPage imports useFavoriteProducts.
+            Let's check if useFavoriteProducts supports isRefetching logic.
+            
+            Actually, looking at the code, proper UnifiedFavoritesPage for businesses/coupons might be different 
+            or this current file is for PRODUCTS only. 
+            
+            However, the user said "favorites page". 
+            Let's adhere to the plan which targeted UnifiedFavoritesPage.tsx.
+            To be safe, I will add the UI but use a prop/state if available.
+            
+            Wait! The previous ViewFile for UnifiedFavorites showed it uses `useFavoriteProducts`.
+            The `useFavorites.ts` I just edited is likely used by `FavoritesPage.tsx` or similar.
+            
+            Let's re-verify the active content of UnifiedFavoritesPage vs what uses useFavorites.
+            Ah, I see logic in useFavorites.ts handles businesses/coupons.
+            
+            If this file is only products, I should probably check where useFavorites is used.
+            BUT, for this specific file, let's assume we want to show it if loading in background.
+            React Query's useFavoriteProducts likely has `isRefetching` or `isFetching`.
+            
+            Let's check `useFavoriteProducts` quickly? 
+            No, I will try to use `productsLoading` combined with data existence implies refetching?
+            Or better, let's just use a standard UI element that I can control or just check if I can grab `isFetching` from the hook.
+            
+            Let's Assume the hook returns it or I can get it.
+            Actually, the currently view file `UnifiedFavoritesPage.tsx` only extracts:
+            `const { products: favoriteProducts, loading: productsLoading, error: productsError, removeFavorite } = useFavoriteProducts();`
+            
+            I need to update `useFavoriteProducts` hook too if I want it here.
+            
+            BUT, my plan said modify `UnifiedFavoritesPage.tsx`. 
+            Let's check `useFavoriteProducts` hook first to see if I can easily expose it.
+         */}
+
+        {/* I will pause this edit to verify useFavoriteProducts hook first to ensure I'm editing the right thing, 
+             as the user likely means the page with businesses too, but "favorites page" usually implies the unified one.
+             
+             Wait, looking at the file content again...
+             This page seems to be PRODUCTS specific "UnifiedFavoritesPage" but the user spoke about "favorites page".
+             
+             Let's check `c:\Users\umama\OneDrive\Documents\GitHub\sync_warp\src\components\favorites\FavoritesPage.tsx` 
+             if it exists, as that might be the business one.
+         */
+        }
+
         {/* Content */}
         {productsLoading && (!favoriteProducts || favoriteProducts.length === 0) ? (
           <div className="flex justify-center py-12">

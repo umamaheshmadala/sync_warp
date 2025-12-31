@@ -14,7 +14,8 @@ import {
   Star,
   Package,
   AlertCircle,
-  ChevronDown
+  ChevronDown,
+  RefreshCw
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import useFavorites, { FavoriteBusiness, FavoriteCoupon } from '../../hooks/useFavorites';
@@ -238,6 +239,13 @@ const FavoritesPage: React.FC = () => {
               >
                 <Trash2 className="h-4 w-4" />
               </button>
+            )}
+
+            {/* Refreshing Indicator */}
+            {favorites.isRefetching && (
+              <div className="flex items-center justify-center p-2 text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-lg animate-pulse" title="Updating...">
+                <RefreshCw className="h-4 w-4 animate-spin" />
+              </div>
             )}
           </div>
         </div>

@@ -64,6 +64,7 @@ export interface CouponFormData {
   valid_until: string;
   target_audience: TargetAudience;
   is_public: boolean;
+  status?: CouponStatus;
 }
 
 export interface CouponRedemption {
