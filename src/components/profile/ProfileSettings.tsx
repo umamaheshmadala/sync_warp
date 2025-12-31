@@ -1,19 +1,47 @@
-import React, { useState } from 'react';
-import { Settings, Bell, Eye, Shield, Trash2, Smartphone, MapPin } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Settings, Bell, Eye, Shield, Trash2, Smartphone, Mail, Moon, Clock, UserPlus, Check, Share2, Gift } from 'lucide-react';
 import { Switch } from '../ui/switch';
 import { useAuthStore } from '../../store/authStore';
 import { useNavigationPreferences } from '../../hooks/useNavigationState';
 import { ProfileEditForm } from './ProfileEditForm';
 import UserReviewsList from '../reviews/UserReviewsList';
+import { ReadReceiptPrivacy } from '../friends/privacy/ReadReceiptPrivacy';
+import { useNotificationPreferences } from '@/hooks/useNotificationPreferences';
+import { useSystemNotificationSettings } from '@/hooks/useSystemNotificationSettings';
+import { Separator } from '@/components/ui/separator';
 
 export const ProfileSettings: React.FC = () => {
   const { profile, user, updateProfile } = useAuthStore();
-  const { preferences, updatePreference } = useNavigationPreferences();
-  const [emailNotifications, setEmailNotifications] = useState(true);
-  const [pushNotifications, setPushNotifications] = useState(true);
+  const { preferences: navPreferences, updatePreference } = useNavigationPreferences();
+
+  // Notification Hooks
+  const { preferences: notifPrefs, isLoading: isLoadingNotif, updatePreferences: updateNotifPrefs, isUpdating: isUpdatingNotif } = useNotificationPreferences();
+  const { settings: systemSettings, isLoading: isLoadingSystem, updateSettings: updateSystemSettings, isUpdating: isUpdatingSystem } = useSystemNotificationSettings();
+
   const [profileVisibility, setProfileVisibility] = useState<'public' | 'private'>('public');
   const [onlineStatus, setOnlineStatus] = useState(true);
   const [activityTracking, setActivityTracking] = useState(true);
+
+  // Auto-detect and save timezone (from NotificationSettings logic)
+  useEffect(() => {
+    if (systemSettings?.timezone) {
+      const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (systemSettings.timezone !== userTimezone) {
+        console.log('[ProfileSettings] Updating timezone:', userTimezone);
+        updateSystemSettings({ timezone: userTimezone });
+      }
+    }
+  }, [systemSettings?.timezone]);
+
+  const handleNotifToggle = (key: keyof typeof notifPrefs) => {
+    updateNotifPrefs({ [key]: !notifPrefs[key] });
+  };
+
+  const handleSystemToggle = (key: keyof typeof systemSettings) => {
+    if (!systemSettings) return;
+    // @ts-ignore
+    updateSystemSettings({ [key]: !systemSettings[key] });
+  };
 
   const handleDeleteAccount = () => {
     if (window.confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
@@ -49,7 +77,7 @@ export const ProfileSettings: React.FC = () => {
               </div>
             </div>
             <Switch
-              checked={preferences.swipeGesturesEnabled}
+              checked={navPreferences.swipeGesturesEnabled}
               onCheckedChange={(checked) => updatePreference('swipeGesturesEnabled', checked)}
             />
 
@@ -61,7 +89,7 @@ export const ProfileSettings: React.FC = () => {
               <p className="text-xs text-gray-500">Feel vibrations</p>
             </div>
             <Switch
-              checked={preferences.enableHapticFeedback}
+              checked={navPreferences.enableHapticFeedback}
               onCheckedChange={(checked) => updatePreference('enableHapticFeedback', checked)}
             />
           </div>
@@ -72,7 +100,7 @@ export const ProfileSettings: React.FC = () => {
               <p className="text-xs text-gray-500">Smooth transitions</p>
             </div>
             <Switch
-              checked={preferences.enableAnimations}
+              checked={navPreferences.enableAnimations}
               onCheckedChange={(checked) => updatePreference('enableAnimations', checked)}
             />
           </div>
@@ -88,6 +116,11 @@ export const ProfileSettings: React.FC = () => {
               Privacy
             </h2>
             <div className="space-y-6">
+              {/* Read Receipts Privacy */}
+              <div className="border-b border-gray-100 pb-4">
+                <ReadReceiptPrivacy />
+              </div>
+
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium text-gray-900">Profile Visibility</p>
@@ -145,63 +178,139 @@ export const ProfileSettings: React.FC = () => {
               Notifications
             </h2>
             <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-gray-900">Email Notifications</p>
-                  <p className="text-sm text-gray-500">
-                    Receive updates via email
-                  </p>
+              {isLoadingNotif ? (
+                <div className="flex justify-center py-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600" />
                 </div>
-                <Switch
-                  checked={emailNotifications}
-                  onCheckedChange={setEmailNotifications}
-                />
-              </div>
+              ) : (
+                <>
+                  {/* Global Channels */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-gray-900">Email Notifications</p>
+                      <p className="text-sm text-gray-500">Receive updates via email</p>
+                    </div>
+                    <Switch
+                      checked={notifPrefs.email_enabled}
+                      onCheckedChange={() => handleNotifToggle('email_enabled')}
+                      disabled={isUpdatingNotif}
+                    />
+                  </div>
 
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-gray-900">Push Notifications</p>
-                  <p className="text-sm text-gray-500">
-                    Receive push notifications in browser
-                  </p>
-                </div>
-                <Switch
-                  checked={pushNotifications}
-                  onCheckedChange={setPushNotifications}
-                />
-              </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-gray-900">Push Notifications</p>
+                      <p className="text-sm text-gray-500">Receive push notifications in browser</p>
+                    </div>
+                    <Switch
+                      checked={notifPrefs.push_enabled}
+                      onCheckedChange={() => handleNotifToggle('push_enabled')}
+                      disabled={isUpdatingNotif}
+                    />
+                  </div>
 
-              <div className="bg-gray-50 rounded-lg p-4">
-                <p className="font-medium text-gray-900 mb-3">
-                  Email me about:
-                </p>
-                <div className="space-y-3">
-                  <label className="flex items-center cursor-pointer">
-                    <div className="relative flex items-center">
-                      <input type="checkbox" defaultChecked className="peer h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                  <Separator />
+
+                  {/* Quiet Hours */}
+                  {systemSettings && (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Moon className="h-4 w-4 text-gray-500" />
+                          <div>
+                            <p className="font-medium text-gray-900">Quiet Hours</p>
+                            <p className="text-xs text-gray-500">Pause notifications ({systemSettings.timezone})</p>
+                          </div>
+                        </div>
+                        <Switch
+                          checked={systemSettings.quiet_hours_enabled}
+                          onCheckedChange={() => handleSystemToggle('quiet_hours_enabled')}
+                          disabled={isUpdatingSystem}
+                        />
+                      </div>
+
+                      {systemSettings.quiet_hours_enabled && (
+                        <div className="grid grid-cols-2 gap-4 pl-6">
+                          <div className="space-y-2">
+                            <label className="text-xs font-medium text-gray-500 flex items-center gap-1">
+                              <Clock className="h-3 w-3" /> Start
+                            </label>
+                            <input
+                              type="time"
+                              value={systemSettings.quiet_hours_start}
+                              onChange={(e) => updateSystemSettings({ quiet_hours_start: e.target.value })}
+                              className="w-full text-sm border rounded-md p-1.5 bg-gray-50"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-xs font-medium text-gray-500 flex items-center gap-1">
+                              <Clock className="h-3 w-3" /> End
+                            </label>
+                            <input
+                              type="time"
+                              value={systemSettings.quiet_hours_end}
+                              onChange={(e) => updateSystemSettings({ quiet_hours_end: e.target.value })}
+                              className="w-full text-sm border rounded-md p-1.5 bg-gray-50"
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <span className="ml-2 text-sm text-gray-700">New messages</span>
-                  </label>
-                  <label className="flex items-center cursor-pointer">
-                    <div className="relative flex items-center">
-                      <input type="checkbox" defaultChecked className="peer h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                  )}
+
+                  <Separator />
+
+                  {/* Specific Types (Friends) */}
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                      <UserPlus className="h-4 w-4" /> Friends
+                    </h3>
+                    <div className="pl-6 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm text-gray-700">Friend Requests</label>
+                        <Switch
+                          checked={notifPrefs.friend_requests}
+                          onCheckedChange={() => handleNotifToggle('friend_requests')}
+                          disabled={!notifPrefs.push_enabled}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm text-gray-700">Friend Accepted</label>
+                        <Switch
+                          checked={notifPrefs.friend_accepted}
+                          onCheckedChange={() => handleNotifToggle('friend_accepted')}
+                          disabled={!notifPrefs.push_enabled}
+                        />
+                      </div>
                     </div>
-                    <span className="ml-2 text-sm text-gray-700">Offer responses</span>
-                  </label>
-                  <label className="flex items-center cursor-pointer">
-                    <div className="relative flex items-center">
-                      <input type="checkbox" className="peer h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                  </div>
+
+                  {/* Specific Types (Deals & Reminders) */}
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                      <Gift className="h-4 w-4" /> Reminders & Deals
+                    </h3>
+                    <div className="pl-6 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm text-gray-700">Birthday Reminders</label>
+                        <Switch
+                          checked={notifPrefs.birthday_reminders}
+                          onCheckedChange={() => handleNotifToggle('birthday_reminders')}
+                          disabled={!notifPrefs.push_enabled}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm text-gray-700">Deal Sharing</label>
+                        <Switch
+                          checked={notifPrefs.deal_shared}
+                          onCheckedChange={() => handleNotifToggle('deal_shared')}
+                          disabled={!notifPrefs.push_enabled}
+                        />
+                      </div>
                     </div>
-                    <span className="ml-2 text-sm text-gray-700">Weekly digest</span>
-                  </label>
-                  <label className="flex items-center cursor-pointer">
-                    <div className="relative flex items-center">
-                      <input type="checkbox" className="peer h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-                    </div>
-                    <span className="ml-2 text-sm text-gray-700">Marketing updates</span>
-                  </label>
-                </div>
-              </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

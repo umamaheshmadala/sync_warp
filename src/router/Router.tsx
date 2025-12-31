@@ -71,7 +71,7 @@ const Profile = lazy(() => import('../components/Profile'))
 const Search = lazy(() => import('../components/Search'))
 const SearchAnalyticsDashboard = lazy(() => import('../components/SearchAnalyticsDashboard'))
 const LocationManager = lazy(() => import('../components/LocationManager'))
-const Settings = lazy(() => import('../components/Settings'))
+
 const Wallet = lazy(() => import('../components/Wallet'))
 const Social = lazy(() => import('../components/Social'))
 const WishlistPage = lazy(() => import('../pages/WishlistPage'))
@@ -605,17 +605,7 @@ export const routes: RouteConfig[] = [
     title: 'My Reviews - SynC'
   },
 
-  // Settings (Protected)
-  {
-    path: '/settings',
-    element: (
-      <RouteLoader>
-        <Settings />
-      </RouteLoader>
-    ),
-    protected: true,
-    title: 'Settings - SynC'
-  },
+
   {
     path: '/settings/privacy/friends',
     element: (

@@ -6,7 +6,6 @@ import { supabase } from '../../lib/supabase';
 import { useSimpleProductSocial } from '../../hooks/useSimpleProductSocial';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
-import ContactsSidebar from '../ContactsSidebarWithTabs';
 import { NotificationCenter } from '../notifications/NotificationCenter';
 import MobileProfileDrawer from '../MobileProfileDrawer';
 import { SearchSuggestions } from '../search/SearchSuggestions';
@@ -30,7 +29,6 @@ export default function Header() {
   const profile = useAuthStore((state) => state.profile);
   const signOut = useAuthStore((state) => state.signOut);
   const { wishlistCount } = useSimpleProductSocial();
-  const [showContactsSidebar, setShowContactsSidebar] = useState(false);
   const [showMobileProfileDrawer, setShowMobileProfileDrawer] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
@@ -319,16 +317,7 @@ export default function Header() {
             )}
           </Button>
 
-          {/* Friends Sidebar Toggle - Mobile shows on right, Desktop hidden */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 h-12 w-12"
-            onClick={() => setShowContactsSidebar(true)}
-            title="Friends"
-          >
-            <UserPlus className="h-9 w-9" />
-          </Button>
+
 
           {/* Profile Dropdown - Desktop Only */}
           <div className="hidden md:block">
@@ -367,16 +356,9 @@ export default function Header() {
                   <User className="mr-2 h-4 w-4" />
                   <span>View Profile</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/favorites')}>
-                  <List className="mr-2 h-4 w-4" />
-                  <span>Favorites</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/settings')}>
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
-                </DropdownMenuItem>
+
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut}>
+                <DropdownMenuItem onClick={handleSignOut} className="text-red-600 hover:text-red-700 hover:bg-red-50 cursor-pointer">
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Log out</span>
                 </DropdownMenuItem>
@@ -386,11 +368,7 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Friends Sidebar */}
-      <ContactsSidebar
-        isOpen={showContactsSidebar}
-        onClose={() => setShowContactsSidebar(false)}
-      />
+      {/* Friends Sidebar - REMOVED */}
 
       {/* Mobile Profile Drawer */}
       <MobileProfileDrawer

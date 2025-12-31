@@ -15,7 +15,6 @@ import {
   MessageCircle
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
-import ContactsSidebar from './ContactsSidebarWithTabs';
 // BottomNavigation is now handled by AppLayout
 import NotificationHub from './NotificationHub';
 import AdCarousel from './ads/AdCarousel';
@@ -105,7 +104,6 @@ const Dashboard: React.FC = () => {
   const { getBusinessUrl } = useBusinessUrl();
   const { user, profile } = useAuthStore();
   const [selectedCity] = useState(profile?.city || 'Select City');
-  const [showContactsSidebar, setShowContactsSidebar] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   // Use React Query for automatic caching and background updates
   const { data: dashboardData, isLoading } = useQuery({
@@ -389,11 +387,7 @@ const Dashboard: React.FC = () => {
         </div>
       </main>
 
-      {/* Contacts Sidebar */}
-      <ContactsSidebar
-        isOpen={showContactsSidebar}
-        onClose={() => setShowContactsSidebar(false)}
-      />
+      {/* Contacts Sidebar - REMOVED */}
 
       {/* Notification Hub */}
       <NotificationHub

@@ -25,22 +25,34 @@ export function useReceivedFriendRequests() {
         throw error;
       }
 
+      // Fetch active friendships to filter out duplicates (robustness against DB inconsistency)
+      const { data: friendships } = await supabase
+        .from('friendships')
+        .select('friend_id')
+        .eq('user_id', user!.id)
+        .eq('status', 'active');
+
+      const existingFriendIds = new Set(friendships?.map(f => f.friend_id) || []);
+
+      // Filter out requests from people who are already friends
+      const validRequests = data?.filter(req => !existingFriendIds.has(req.sender_id)) || [];
+
       // Fetch sender profiles separately to avoid RLS issues
-      if (data && data.length > 0) {
-        const senderIds = data.map(req => req.sender_id);
+      if (validRequests.length > 0) {
+        const senderIds = validRequests.map(req => req.sender_id);
         const { data: profiles } = await supabase
           .from('profiles')
           .select('id, full_name, email, avatar_url')
           .in('id', senderIds);
 
         // Merge profiles into requests
-        return data.map(req => ({
+        return validRequests.map(req => ({
           ...req,
           sender: profiles?.find(p => p.id === req.sender_id) || null
         }));
       }
 
-      return data;
+      return [];
     },
     enabled: !!user,
     staleTime: 0, // Always fetch fresh data to prevent showing accepted requests

@@ -7,6 +7,7 @@ import { CheckCheck, EyeOff } from 'lucide-react';
 import { usePrivacySettings } from '@/hooks/usePrivacySettings';
 import { cn } from '@/lib/utils';
 import { toast } from 'react-hot-toast';
+import { Switch } from '@/components/ui/switch';
 
 /**
  * Read Receipt Privacy Toggle
@@ -19,17 +20,17 @@ import { toast } from 'react-hot-toast';
  */
 export function ReadReceiptPrivacy() {
     const { settings, updateSettings, isUpdating } = usePrivacySettings();
-    
+
     // Default to true if setting doesn't exist
     const isEnabled = settings?.read_receipts_enabled !== false;
 
-    const handleToggle = async () => {
+    const handleToggle = async (checked: boolean) => {
         try {
-            await updateSettings({ read_receipts_enabled: !isEnabled });
+            await updateSettings({ read_receipts_enabled: checked });
             toast.success(
-                isEnabled 
-                    ? 'Read receipts disabled. You also won\'t see when others read your messages.'
-                    : 'Read receipts enabled'
+                checked
+                    ? 'Read receipts enabled'
+                    : 'Read receipts disabled. You also won\'t see when others read your messages.'
             );
         } catch (error) {
             toast.error('Failed to update setting');
@@ -42,10 +43,10 @@ export function ReadReceiptPrivacy() {
                 <div className="flex items-center gap-3">
                     <div className={cn(
                         "p-2 rounded-lg",
-                        isEnabled ? "bg-cyan-100" : "bg-gray-100"
+                        isEnabled ? "bg-indigo-50" : "bg-gray-100"
                     )}>
                         {isEnabled ? (
-                            <CheckCheck className="h-5 w-5 text-cyan-600" />
+                            <CheckCheck className="h-5 w-5 text-indigo-600" />
                         ) : (
                             <EyeOff className="h-5 w-5 text-gray-500" />
                         )}
@@ -57,37 +58,22 @@ export function ReadReceiptPrivacy() {
                         </p>
                     </div>
                 </div>
-                
-                <button
-                    onClick={handleToggle}
+
+                <Switch
+                    checked={isEnabled}
+                    onCheckedChange={handleToggle}
                     disabled={isUpdating}
-                    className={cn(
-                        "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
-                        "focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2",
-                        isEnabled ? "bg-cyan-500" : "bg-gray-200",
-                        isUpdating && "opacity-50 cursor-not-allowed"
-                    )}
-                    role="switch"
-                    aria-checked={isEnabled}
-                    aria-label="Toggle read receipts"
-                >
-                    <span
-                        className={cn(
-                            "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
-                            isEnabled ? "translate-x-6" : "translate-x-1"
-                        )}
-                    />
-                </button>
+                />
             </div>
 
             {/* Reciprocal warning */}
             <div className={cn(
                 "p-3 rounded-lg text-sm",
-                isEnabled ? "bg-cyan-50 text-cyan-800" : "bg-amber-50 text-amber-800"
+                isEnabled ? "bg-indigo-50 text-indigo-900" : "bg-amber-50 text-amber-800"
             )}>
                 {isEnabled ? (
                     <p className="flex items-center gap-2">
-                        <CheckCheck className="h-4 w-4 text-cyan-600" />
+                        <CheckCheck className="h-4 w-4 text-indigo-600" />
                         Others can see when you've read their messages
                     </p>
                 ) : (

@@ -8,7 +8,6 @@ import { routes } from '../router/Router'
 import PageTransition from './PageTransition'
 import BottomNavigation from './BottomNavigation'
 import GestureHandler from './GestureHandler'
-import ContactsSidebar from './ContactsSidebarWithTabs'
 import NotificationHub from './NotificationHub'
 import CityPicker from './location/CityPicker'
 import MobileProfileDrawer from './MobileProfileDrawer'
@@ -25,9 +24,8 @@ export default function Layout({ children }: LayoutProps) {
   const navigate = useNavigate()
   const { user, initialized, profile, signOut } = useAuthStore()
   const { preferences } = useNavigationPreferences()
-  
+
   // State for sidebar and notifications
-  const [showContactsSidebar, setShowContactsSidebar] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
   const [showCityPicker, setShowCityPicker] = useState(false)
   const [showMobileProfileDrawer, setShowMobileProfileDrawer] = useState(false)
@@ -36,7 +34,7 @@ export default function Layout({ children }: LayoutProps) {
   // Update page title and meta description based on current route
   useEffect(() => {
     const currentRoute = routes.find(route => route.path === location.pathname)
-    
+
     if (currentRoute?.title) {
       document.title = currentRoute.title
     } else {
@@ -71,7 +69,7 @@ export default function Layout({ children }: LayoutProps) {
   const isLandingPage = location.pathname === '/'
   const isOnboardingPage = location.pathname === '/onboarding'
   const isProtectedPage = currentRoute?.protected
-  
+
   // Tab routes for navigation
   const tabRoutes = ['/dashboard', '/search', '/wallet', '/social', '/profile']
 
@@ -120,7 +118,7 @@ export default function Layout({ children }: LayoutProps) {
                     </span>
                   </button>
                 )}
-                
+
                 {/* Logo and App Name */}
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
@@ -147,11 +145,11 @@ export default function Layout({ children }: LayoutProps) {
                     <ChevronDown className="w-4 h-4 ml-1" />
                   </button>
                 )}
-                
-                {/* Contacts Sidebar Toggle */}
+
+                {/* Contacts Sidebar Toggle - Navigates to Friends Page - Desktop Only */}
                 <button
-                  onClick={() => setShowContactsSidebar(true)}
-                  className="p-2.5 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all duration-300"
+                  onClick={() => navigate('/friends')}
+                  className="hidden md:block p-2.5 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all duration-300"
                   title="Friends & Contacts"
                 >
                   <Users className="w-5 h-5" />
@@ -173,7 +171,7 @@ export default function Layout({ children }: LayoutProps) {
                         {(profile?.full_name?.[0] || user.user_metadata?.full_name?.[0] || user.email?.[0])?.toUpperCase()}
                       </span>
                     </button>
-                    
+
                     {/* Logout Button - Desktop only */}
                     <button
                       onClick={() => signOut()}
@@ -227,20 +225,16 @@ export default function Layout({ children }: LayoutProps) {
           </PageTransition>
         </div>
       </main>
-      
+
       {/* Enhanced Bottom Navigation for protected pages */}
       {isProtectedPage && (
         <BottomNavigation currentRoute={location.pathname} />
       )}
-      
-      {/* Contacts Sidebar */}
-      <ContactsSidebar 
-        isOpen={showContactsSidebar}
-        onClose={() => setShowContactsSidebar(false)}
-      />
+
+      {/* Contacts Sidebar - REMOVED */}
 
       {/* Notification Hub */}
-      <NotificationHub 
+      <NotificationHub
         isOpen={showNotifications}
         onClose={() => setShowNotifications(false)}
       />
@@ -263,7 +257,7 @@ export default function Layout({ children }: LayoutProps) {
 
     </div>
   )
-  
+
   // Wrap with gesture handler for protected pages with gesture support enabled
   if (isProtectedPage && preferences.swipeGesturesEnabled) {
     return (
@@ -278,6 +272,6 @@ export default function Layout({ children }: LayoutProps) {
       </GestureHandler>
     )
   }
-  
+
   return layoutContent
 }
