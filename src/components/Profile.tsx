@@ -15,15 +15,60 @@ export default function Profile() {
   const { cities, loading: citiesLoading } = useCities()
   const [activeTab, setActiveTab] = useState<'settings' | 'activity'>('settings')
 
+  // Global edit mode
+  const [isEditingProfile, setIsEditingProfile] = useState(false)
+  const [editFullName, setEditFullName] = useState('')
+  const [editEmail, setEditEmail] = useState('')
+  const [editCity, setEditCity] = useState('')
+  const [editBio, setEditBio] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
+
+  const handleStartEdit = () => {
+    setEditFullName(profile?.full_name || user?.user_metadata?.full_name || '')
+    setEditEmail(user?.email || '')
+    setEditCity(profile?.city || '')
+    setEditBio(profile?.bio || '')
+    setIsEditingProfile(true)
+  }
+
+  const handleSaveProfile = async () => {
+    setIsSaving(true)
+    try {
+      await updateProfile({
+        full_name: editFullName.trim(),
+        city: editCity,
+        bio: editBio.trim(),
+      })
+      setIsEditingProfile(false)
+    } catch (error) {
+      console.error('Failed to save profile:', error)
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleCancelEdit = () => {
+    setIsEditingProfile(false)
+  }
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 py-4">
       {/* Profile Completion Wizard */}
-      <div className="mb-8">
-        <ProfileCompletionWizard onStepClick={() => setActiveTab('settings')} />
-      </div>
+      <ProfileCompletionWizard onStepClick={() => setActiveTab('settings')} />
 
       {/* Profile Header */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 mb-4">
+      <div className="bg-white text-gray-900 rounded-lg shadow-md border border-gray-200 mb-2 relative">
+        {/* Single Edit Button in top right corner */}
+        {!isEditingProfile && (
+          <button
+            onClick={handleStartEdit}
+            className="absolute top-3 right-3 z-10 p-2 text-gray-400 hover:text-blue-600 transition-all hover:bg-blue-50 rounded-lg"
+            title="Edit Profile"
+          >
+            <Edit3 className="h-5 w-5" />
+          </button>
+        )}
+
         <div className="px-3 py-2.5">
           <div className="flex flex-col md:flex-row items-center md:items-center space-y-2 md:space-y-0 md:space-x-4">
             {/* Avatar Upload Component */}
@@ -38,7 +83,11 @@ export default function Profile() {
                   value={profile?.full_name || user?.user_metadata?.full_name || 'User'}
                   placeholder="Your Name"
                   maxLength={30}
-                  className="text-xl font-bold"
+                  className="text-xl font-bold text-gray-900"
+                  editable={isEditingProfile}
+                  globalEditMode={isEditingProfile}
+                  externalValue={editFullName}
+                  onValueChange={setEditFullName}
                   onSave={async (value) => {
                     await updateProfile({ full_name: value });
                   }}
@@ -50,7 +99,12 @@ export default function Profile() {
                   placeholder="Your Email"
                   type="email"
                   icon={<Mail className="h-4 w-4" />}
-                  className="text-sm text-gray-500 dark:text-gray-400"
+                  className="text-sm text-gray-600"
+                  editable={false}
+                  globalEditMode={isEditingProfile}
+                  externalValue={editEmail}
+                  onValueChange={setEditEmail}
+                  hideIconOnMobile={true}
                   onSave={async (value) => {
                     await updateProfile({ email: value });
                   }}
@@ -70,8 +124,13 @@ export default function Profile() {
                     type="select"
                     placeholder="Select your city"
                     icon={<MapPin className="h-4 w-4" />}
-                    className="text-sm text-gray-600 dark:text-gray-300"
-                    options={cities.map(city => ({
+                    className="text-sm text-gray-600"
+                    editable={isEditingProfile}
+                    globalEditMode={isEditingProfile}
+                    externalValue={editCity}
+                    onValueChange={setEditCity}
+                    hideIconOnMobile={true}
+                    options={Array.from(new Map(cities.map(city => [city.name, city])).values()).map(city => ({
                       label: `${city.name}, ${city.state} `,
                       value: city.name
                     }))}
@@ -88,7 +147,12 @@ export default function Profile() {
                   maxLength={150}
                   placeholder="Describe yourself..."
                   icon={<FileText className="h-4 w-4" />}
-                  className="text-sm text-gray-600 dark:text-gray-300"
+                  className="text-sm text-gray-600"
+                  editable={isEditingProfile}
+                  globalEditMode={isEditingProfile}
+                  externalValue={editBio}
+                  onValueChange={setEditBio}
+                  hideIconOnMobile={true}
                   onSave={async (value) => {
                     await updateProfile({ bio: value });
                   }}
@@ -98,16 +162,41 @@ export default function Profile() {
                   }}
                 />
               </div>
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 mt-1.5 text-sm text-gray-500 dark:text-gray-400">
 
-
-              </div>
+              {/* Save/Cancel buttons when in edit mode */}
+              {isEditingProfile && (
+                <div className="flex gap-2 justify-center md:justify-start mt-3">
+                  <button
+                    onClick={handleCancelEdit}
+                    disabled={isSaving}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveProfile}
+                    disabled={isSaving}
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {isSaving ? (
+                      <>
+                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Saving...
+                      </>
+                    ) : 'Save Changes'}
+                  </button>
+                </div>
+              )
+              }
             </div>
           </div>
         </div>
 
         {/* Tab Navigation */}
-        <div className="border-t border-gray-200 dark:border-gray-700">
+        <div className="border-t border-gray-100">
           <div className="flex">
             {[
               { id: 'settings', label: 'Settings' },
@@ -116,10 +205,10 @@ export default function Profile() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex - 1 px - 6 py - 4 text - sm font - medium transition - colors ${activeTab === tab.id
+                className={`flex-1 px-6 py-4 text-sm font-medium transition-colors ${activeTab === tab.id
                   ? 'border-b-2 border-blue-600 text-blue-600 dark:text-blue-400'
                   : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                  } `}
+                  }`}
               >
                 {tab.label}
               </button>
@@ -127,11 +216,6 @@ export default function Profile() {
           </div>
         </div>
       </div>
-
-
-
-
-
       {/* Settings Tab */}
       {activeTab === 'settings' && (
         <div className="max-w-4xl mx-auto">

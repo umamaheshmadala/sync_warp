@@ -17,8 +17,8 @@ interface ProtectedRouteProps {
   debugMode?: boolean
 }
 
-export default function ProtectedRoute({ 
-  children, 
+export default function ProtectedRoute({
+  children,
   requireAuth = true,
   redirectTo = '/auth/login',
   fallbackComponent,
@@ -29,7 +29,7 @@ export default function ProtectedRoute({
   const location = useLocation()
   const [retryCount, setRetryCount] = useState(0)
   const [sessionChecked, setSessionChecked] = useState(false)
-  
+
   // Debug mode logging (only in development)
   const isDevelopment = import.meta.env.MODE === 'development'
   const shouldDebug = debugMode || isDevelopment
@@ -55,14 +55,14 @@ export default function ProtectedRoute({
         if (shouldDebug) {
           console.log('[ProtectedRoute] Checking user session, attempt:', retryCount + 1)
         }
-        
+
         try {
           await checkUser()
           setSessionChecked(true)
         } catch (error) {
           console.error('[ProtectedRoute] Session check failed:', error)
           setRetryCount(prev => prev + 1)
-          
+
           // Retry after delay for network issues
           if (retryCount < 2) {
             setTimeout(() => checkUserSession(), 1000 * (retryCount + 1))
@@ -82,7 +82,7 @@ export default function ProtectedRoute({
     if (fallbackComponent) {
       return <>{fallbackComponent}</>
     }
-    
+
     // Return minimal loading - splash screen handles initial load
     return null;
   }
@@ -92,17 +92,17 @@ export default function ProtectedRoute({
     if (shouldDebug) {
       console.log('[ProtectedRoute] Redirecting to login - user not authenticated')
     }
-    
+
     // Store the attempted URL to redirect back after login
     return (
-      <Navigate 
-        to={redirectTo} 
-        state={{ 
-          from: location.pathname, 
+      <Navigate
+        to={redirectTo}
+        state={{
+          from: location.pathname,
           message: 'Please log in to access this page',
           timestamp: Date.now()
         }}
-        replace 
+        replace
       />
     )
   }
@@ -114,37 +114,37 @@ export default function ProtectedRoute({
       if (shouldDebug) {
         console.log('[ProtectedRoute] Redirecting authenticated user away from auth page')
       }
-      
+
       // Check if user completed onboarding
       const hasCompletedOnboarding = profile && profile.city && profile.interests?.length > 0
       const redirectPath = hasCompletedOnboarding ? '/dashboard' : '/onboarding'
-      
+
       return <Navigate to={redirectPath} replace />
     }
   }
 
   // Enhanced onboarding logic
   if (user && profile) {
-    const hasCompletedOnboarding = profile.city && profile.interests?.length > 0
+    const hasCompletedOnboarding = profile.city // && profile.interests?.length > 0 - Relaxed to prevent loop
     const isOnOnboardingPage = location.pathname === '/onboarding'
-    
+
     // If user hasn't completed onboarding and is not on onboarding page
     if (!hasCompletedOnboarding && !isOnOnboardingPage && requireOnboarding) {
       if (shouldDebug) {
         console.log('[ProtectedRoute] Redirecting to onboarding - profile incomplete')
       }
       return (
-        <Navigate 
-          to="/onboarding" 
-          state={{ 
+        <Navigate
+          to="/onboarding"
+          state={{
             from: location.pathname,
             message: 'Please complete your profile setup'
           }}
-          replace 
+          replace
         />
       )
     }
-    
+
     // If user has completed onboarding but is still on onboarding page
     if (hasCompletedOnboarding && isOnOnboardingPage) {
       if (shouldDebug) {
@@ -158,7 +158,7 @@ export default function ProtectedRoute({
   if (shouldDebug && !sessionChecked) {
     console.log('[ProtectedRoute] Rendering protected content for:', location.pathname)
   }
-  
+
   // Render the protected component
   return <>{children}</>
 }
@@ -181,11 +181,11 @@ export function withProtection<T extends object>(
     debugMode = false,
     fallbackComponent
   } = options
-  
+
   return function ProtectedComponent(props: T) {
     return (
-      <ProtectedRoute 
-        requireAuth={requireAuth} 
+      <ProtectedRoute
+        requireAuth={requireAuth}
         redirectTo={redirectTo}
         requireOnboarding={requireOnboarding}
         debugMode={debugMode}
@@ -202,11 +202,11 @@ export function useRequireAuth(debugMode = false) {
   const { user, profile, initialized, loading } = useAuthStore()
   const location = useLocation()
   const [authChecked, setAuthChecked] = useState(false)
-  
+
   useEffect(() => {
     if (initialized && !authChecked) {
       setAuthChecked(true)
-      
+
       if (debugMode || import.meta.env.MODE === 'development') {
         console.log('[useRequireAuth] Authentication check:', {
           path: location.pathname,
@@ -215,7 +215,7 @@ export function useRequireAuth(debugMode = false) {
           loading
         })
       }
-      
+
       if (!user) {
         // Could dispatch a custom event or show a toast notification
         console.log('Authentication required for:', location.pathname)
@@ -223,10 +223,10 @@ export function useRequireAuth(debugMode = false) {
     }
   }, [user, profile, initialized, loading, location.pathname, authChecked, debugMode])
 
-  return { 
-    user, 
+  return {
+    user,
     profile,
-    authenticated: !!user, 
+    authenticated: !!user,
     initialized,
     loading,
     hasCompletedOnboarding: !!(profile?.city && profile?.interests?.length > 0)
@@ -238,7 +238,7 @@ export function AuthDebugPanel() {
   const { user, profile, initialized, loading } = useAuthStore()
   const location = useLocation()
   const [testResult, setTestResult] = useState<string>('Not tested')
-  
+
   // Test push notification function
   const testPushNotifications = async () => {
     setTestResult('Testing...')
@@ -246,28 +246,28 @@ export function AuthDebugPanel() {
       // Check platform
       const isNative = Capacitor.isNativePlatform()
       setTestResult(prev => prev + '\nPlatform: ' + Capacitor.getPlatform() + ', Native: ' + isNative)
-      
+
       if (!isNative) {
         setTestResult('Platform check bypassed for development')
         // Don't return - continue with test on native device
       }
-      
+
       // Request permission
       const permissionStatus = await PushNotifications.requestPermissions()
       setTestResult(prev => prev + '\nPermission status: ' + JSON.stringify(permissionStatus))
-      
+
       if (permissionStatus.receive === 'granted') {
         // Register for push notifications
         await PushNotifications.register()
-        setTestResult(prev + prev + '\n✅ Permission granted and registered!')
-        
+        setTestResult(prev => prev + '\n✅ Permission granted and registered!')
+
         // Add listener for token
         PushNotifications.addListener('registration', (token) => {
           setTestResult(prev => prev + '\n✅ Token received: ' + token.value.substring(0, 20) + '...')
         })
-        
+
         PushNotifications.addListener('registrationError', (error) => {
-          setTestResult(prev + prev + '\n❌ Registration error: ' + error.error)
+          setTestResult(prev => prev + '\n❌ Registration error: ' + error.error)
         })
       } else {
         setTestResult('❌ Permission denied')
@@ -276,9 +276,9 @@ export function AuthDebugPanel() {
       setTestResult('❌ Error: ' + error.message)
     }
   }
-  
+
   // Debug panel shown in all modes for testing
-  
+
   return (
     <div className="fixed bottom-4 right-4 bg-black bg-opacity-80 text-white p-3 rounded text-xs z-50 max-w-sm">
       <div className="font-bold mb-2">Auth Debug Panel</div>
@@ -299,10 +299,10 @@ export function AuthDebugPanel() {
           <div>Onboarding: {(profile.city && profile.interests?.length > 0) ? '✅ Complete' : '❌ Incomplete'}</div>
         </div>
       )}
-      
+
       {/* Push notification test button */}
       <div className="mt-3 pt-3 border-t border-white border-opacity-30">
-        <button 
+        <button
           onClick={testPushNotifications}
           className="bg-indigo-600 text-white px-3 py-1 rounded text-xs hover:bg-indigo-700 transition-colors w-full"
         >

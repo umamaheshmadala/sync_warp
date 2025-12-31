@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, CheckCircle, User, FileText, MapPin, Share2, Globe } from 'lucide-react';
+import { X, CheckCircle, User, FileText, MapPin, Heart } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 
 interface ProfileCompletionWizardProps {
@@ -22,29 +22,19 @@ export const ProfileCompletionWizard: React.FC<ProfileCompletionWizardProps> = (
       id: 'bio',
       title: 'Bio',
       icon: FileText,
-      completed: !!(profile?.bio && profile.bio.length > 20),
+      completed: !!(profile?.bio && profile.bio.length > 0),
     },
     {
       id: 'location',
-      title: 'Location',
+      title: 'City',
       icon: MapPin,
-      completed: !!profile?.location,
+      completed: !!profile?.location || !!profile?.city,
     },
     {
-      id: 'social',
-      title: 'Social',
-      icon: Share2,
-      completed: !!(
-        profile?.social_links &&
-        typeof profile.social_links === 'object' &&
-        Object.values(profile.social_links).some(link => link)
-      ),
-    },
-    {
-      id: 'website',
-      title: 'Website',
-      icon: Globe,
-      completed: !!profile?.website,
+      id: 'interests',
+      title: 'Interests',
+      icon: Heart,
+      completed: !!(profile?.interests && profile.interests.length > 0),
     }
   ];
 
@@ -53,19 +43,30 @@ export const ProfileCompletionWizard: React.FC<ProfileCompletionWizardProps> = (
     const percentage = Math.round((completedSteps / steps.length) * 100);
     setCompletionPercentage(percentage);
 
-    // Auto-hide wizard when 100% complete
+    // If 100% complete on mount/update, hide immediately unless we want to show a success state transiently
+    // For now, adhering to "do not show it anymore"
     if (percentage === 100) {
-      setTimeout(() => setVisible(false), 3000);
+      // Only show success animation if we just transitioned to 100 (optional, but for now complying strictly to user user request to 'not show')
+      // We'll use a timeout only if we were previously visible and incomplete to show the success state? 
+      // Simpler: Just hide if 100%.
+      // But wait, the user sees it "still too tall" implying they see it. 
+      // If I simply setVisible(false) here, it might flash. 
+      // Let's rely on the conditional return.
+    } else {
+      setVisible(true);
     }
   }, [profile]);
 
-  // Don't show wizard if manually dismissed or 100% complete
-  useEffect(() => {
-    const dismissed = localStorage.getItem('wizardDismissed');
-    if (dismissed === 'true' && completionPercentage < 100) {
-      setVisible(false);
-    }
-  }, [completionPercentage]);
+  // Derived visibility: If 100% complete, don't render. 
+  // We can keep the 'visible' state for manual dismissal.
+  // If percentage is 100, we override visible to false? 
+  // No, let's just use the percentage directly in the render condition or effect.
+
+  if (!visible && completionPercentage < 100) return null; // Respect manual dismiss if not 100? User said "until info missing".
+  // User said: "do not show it anymore until some of the information is found missing again."
+  // This implies if < 100, it SHOULD show.
+
+  if (completionPercentage === 100) return null;
 
   const handleDismiss = () => {
     setVisible(false);
@@ -75,36 +76,8 @@ export const ProfileCompletionWizard: React.FC<ProfileCompletionWizardProps> = (
   if (!visible) return null;
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 px-4 py-3">
-      {/* Compact Header with Progress */}
-      <div className="flex items-center gap-4 mb-3">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white whitespace-nowrap">
-          {completionPercentage === 100 ? '✨ Completed!' : 'Complete Profile'}
-        </h3>
-
-        {/* Progress Bar */}
-        <div className="flex-1 flex items-center gap-3">
-          <div className="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden">
-            <div
-              className="bg-gradient-to-r from-blue-500 to-purple-600 h-full transition-all duration-500 ease-out"
-              style={{ width: `${completionPercentage}%` }}
-            />
-          </div>
-          <span className="text-xs font-medium text-gray-500 dark:text-gray-400 w-8 text-right">
-            {completionPercentage}%
-          </span>
-        </div>
-
-        <button
-          onClick={handleDismiss}
-          className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors -mr-1"
-        >
-          <X className="w-4 h-4" />
-        </button>
-      </div>
-
-      {/* Compact Steps Row */}
-      <div className="flex items-center justify-between">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 px-4 py-3 flex items-center justify-between overflow-x-auto scrollbar-hide mb-8">
+      <div className="flex flex-nowrap items-center gap-4 md:gap-8 min-w-max">
         {steps.map((step) => {
           const Icon = step.icon;
           return (
@@ -114,8 +87,8 @@ export const ProfileCompletionWizard: React.FC<ProfileCompletionWizardProps> = (
             >
               <div
                 className={`w-6 h-6 rounded-full flex items-center justify-center transition-all ${step.completed
-                  ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500'
+                  ? 'bg-green-100 text-green-600'
+                  : 'bg-gray-100 text-gray-400'
                   }`}
               >
                 {step.completed ? (
@@ -125,9 +98,9 @@ export const ProfileCompletionWizard: React.FC<ProfileCompletionWizardProps> = (
                 )}
               </div>
               <span
-                className={`text-xs font-medium hidden sm:inline-block ${step.completed
-                  ? 'text-green-600 dark:text-green-400'
-                  : 'text-gray-500 dark:text-gray-400'
+                className={`text-xs font-medium ${step.completed
+                  ? 'text-green-600'
+                  : 'text-gray-500' // Ensure visible text
                   }`}
               >
                 {step.title}
@@ -136,6 +109,13 @@ export const ProfileCompletionWizard: React.FC<ProfileCompletionWizardProps> = (
           );
         })}
       </div>
+
+      <button
+        onClick={handleDismiss}
+        className="text-gray-400 hover:text-gray-600 transition-colors ml-4"
+      >
+        <X className="w-4 h-4" />
+      </button>
     </div>
   );
 };

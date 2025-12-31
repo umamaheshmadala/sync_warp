@@ -16,6 +16,11 @@ interface InlineEditFieldProps {
   helperText?: string;
   className?: string;
   options?: { label: string; value: string }[];
+  // Global edit mode props
+  globalEditMode?: boolean;
+  externalValue?: string;
+  onValueChange?: (value: string) => void;
+  hideIconOnMobile?: boolean;
 }
 
 export function InlineEditField({
@@ -32,6 +37,10 @@ export function InlineEditField({
   helperText,
   className = '',
   options = [],
+  globalEditMode = false,
+  externalValue,
+  onValueChange,
+  hideIconOnMobile = false,
 }: InlineEditFieldProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value || '');
@@ -46,6 +55,18 @@ export function InlineEditField({
   };
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Use global edit mode if provided
+  const effectiveIsEditing = globalEditMode || isEditing;
+  const effectiveEditValue = globalEditMode && externalValue !== undefined ? externalValue : editValue;
+
+  const handleValueChange = (newValue: string) => {
+    if (globalEditMode && onValueChange) {
+      onValueChange(newValue);
+    } else {
+      setEditValue(newValue);
+    }
+  };
 
   const handleEdit = () => {
     setEditValue(value || '');
@@ -97,20 +118,20 @@ export function InlineEditField({
   return (
     <div className="space-y-0.5">
       {label && (
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+        <label className="block text-sm font-medium text-gray-700">
           {label}
         </label>
       )}
 
-      {!isEditing ? (
-        <div className="flex items-center justify-between group hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg px-0 py-0 md:px-1 md:py-0.5 transition-colors">
-          <div className="flex items-center justify-center md:justify-start flex-1 min-w-0">
+      {!effectiveIsEditing ? (
+        <div className="relative group hover:bg-gray-50 rounded-lg px-0 py-0 md:px-1 md:py-0.5 transition-colors">
+          <div className={`flex items-center justify-center md:justify-start min-w-0 ${editable && !globalEditMode ? 'pr-9' : ''}`}>
             {icon && (
-              <span className="flex-shrink-0 mr-1.5 md:mr-2 text-gray-400">
+              <span className={`flex-shrink-0 mr-1.5 md:mr-2 text-gray-400 ${hideIconOnMobile ? 'hidden md:block' : ''}`}>
                 {icon}
               </span>
             )}
-            <span className={`text-gray-900 dark:text-white ${className} ${multiline ? 'line-clamp-2 whitespace-normal break-all' : 'truncate'}`}>
+            <span className={`${className} ${multiline ? 'line-clamp-2 whitespace-normal break-all' : 'truncate'}`}>
               {getDisplayValue() || (
                 <span className="text-gray-400 italic">
                   {placeholder || 'Not provided'}
@@ -118,10 +139,10 @@ export function InlineEditField({
               )}
             </span>
           </div>
-          {editable && (
+          {editable && !globalEditMode && (
             <button
               onClick={handleEdit}
-              className="flex-shrink-0 ml-2 md:ml-3 p-1.5 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded"
+              className="absolute right-0 top-1/2 -translate-y-1/2 p-1.5 text-gray-400 hover:text-blue-600 transition-all hover:bg-blue-50 rounded"
               title={label ? `Edit ${label}` : 'Edit'}
             >
               <Edit3 className="h-4 w-4" />
@@ -133,10 +154,10 @@ export function InlineEditField({
           <div className="relative">
             {multiline ? (
               <textarea
-                value={editValue}
-                onChange={(e) => setEditValue(e.target.value)}
+                value={effectiveEditValue}
+                onChange={(e) => handleValueChange(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="w-full px-3 py-2 pb-10 border border-blue-500 dark:border-blue-400 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white resize-none"
+                className="w-full px-3 py-2 pb-10 border border-blue-500 rounded-lg focus:ring-2 focus:ring-blue-500 resize-none"
                 placeholder={placeholder}
                 rows={4}
                 maxLength={maxLength}
@@ -144,10 +165,10 @@ export function InlineEditField({
               />
             ) : type === 'select' ? (
               <select
-                value={editValue}
-                onChange={(e) => setEditValue(e.target.value)}
+                value={effectiveEditValue}
+                onChange={(e) => handleValueChange(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="w-full px-3 py-2 pr-20 border border-blue-500 dark:border-blue-400 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white appearance-none bg-white"
+                className="w-full px-3 py-2 pr-20 border border-blue-500 rounded-lg focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
                 autoFocus
               >
                 <option value="" disabled>Select option</option>
@@ -160,64 +181,66 @@ export function InlineEditField({
             ) : (
               <input
                 type={type}
-                value={editValue}
-                onChange={(e) => setEditValue(e.target.value)}
+                value={effectiveEditValue}
+                onChange={(e) => handleValueChange(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="w-full px-3 py-2 pr-20 border border-blue-500 dark:border-blue-400 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                className="w-full px-3 py-2 pr-20 border border-blue-500 rounded-lg focus:ring-2 focus:ring-blue-500"
                 placeholder={placeholder}
                 maxLength={maxLength}
                 autoFocus
               />
             )}
 
-            {/* Inline action buttons */}
-            <div className={`absolute flex gap-1 ${multiline
-              ? 'right-2 bottom-2'
-              : 'right-2 top-1/2 -translate-y-1/2'
-              }`}>
-              <button
-                onClick={handleCancel}
-                disabled={loading}
-                className="p-1.5 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors disabled:opacity-50"
-                title="Cancel (Esc)"
-              >
-                <X className="h-4 w-4" />
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={loading || !editValue.trim()}
-                className="p-1.5 text-gray-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors disabled:opacity-50"
-                title="Save (Enter)"
-              >
-                {loading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Check className="h-4 w-4" />
-                )}
-              </button>
-            </div>
+            {/* Inline action buttons - hide in global edit mode */}
+            {!globalEditMode && (
+              <div className={`absolute flex gap-1 ${multiline
+                ? 'right-2 bottom-2'
+                : 'right-2 top-1/2 -translate-y-1/2'
+                }`}>
+                <button
+                  onClick={handleCancel}
+                  disabled={loading}
+                  className="p-1.5 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors disabled:opacity-50"
+                  title="Cancel (Esc)"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={loading || !editValue.trim()}
+                  className="p-1.5 text-gray-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors disabled:opacity-50"
+                  title="Save (Enter)"
+                >
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Check className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+            )}
           </div>
 
           {maxLength && multiline && (
             <div className="flex justify-end">
-              <span className={`text-xs ${editValue.length > maxLength * 0.9
+              <span className={`text-xs ${effectiveEditValue.length > maxLength * 0.9
                 ? 'text-orange-600 dark:text-orange-400'
                 : 'text-gray-500'
                 }`}>
-                {editValue.length}/{maxLength}
+                {effectiveEditValue.length}/{maxLength}
               </span>
             </div>
           )}
 
           {error && (
-            <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
+            <div className="flex items-center gap-2 text-sm text-red-600">
               <AlertCircle className="h-4 w-4" />
               <span>{error}</span>
             </div>
           )}
 
           {helperText && !error && (
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-gray-500">
               {helperText}
             </p>
           )}
