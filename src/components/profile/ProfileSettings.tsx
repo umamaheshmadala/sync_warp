@@ -6,20 +6,24 @@ import { useNavigationPreferences } from '../../hooks/useNavigationState';
 import { ProfileEditForm } from './ProfileEditForm';
 import UserReviewsList from '../reviews/UserReviewsList';
 import { ReadReceiptPrivacy } from '../friends/privacy/ReadReceiptPrivacy';
+import { usePrivacySettings } from '@/hooks/usePrivacySettings';
 import { useNotificationPreferences } from '@/hooks/useNotificationPreferences';
 import { useSystemNotificationSettings } from '@/hooks/useSystemNotificationSettings';
 import { Separator } from '@/components/ui/separator';
+
+import { DeleteAccountModal } from './DeleteAccountModal';
 
 export const ProfileSettings: React.FC = () => {
   const { profile, user, updateProfile } = useAuthStore();
   const { preferences: navPreferences, updatePreference } = useNavigationPreferences();
 
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
   // Notification Hooks
   const { preferences: notifPrefs, isLoading: isLoadingNotif, updatePreferences: updateNotifPrefs, isUpdating: isUpdatingNotif } = useNotificationPreferences();
   const { settings: systemSettings, isLoading: isLoadingSystem, updateSettings: updateSystemSettings, isUpdating: isUpdatingSystem } = useSystemNotificationSettings();
+  const { settings: privacySettings, updateSettings: updatePrivacySettings, isUpdating: isUpdatingPrivacy } = usePrivacySettings();
 
-  const [profileVisibility, setProfileVisibility] = useState<'public' | 'private'>('public');
-  const [onlineStatus, setOnlineStatus] = useState(true);
   const [activityTracking, setActivityTracking] = useState(true);
 
   // Auto-detect and save timezone (from NotificationSettings logic)
@@ -43,11 +47,10 @@ export const ProfileSettings: React.FC = () => {
     updateSystemSettings({ [key]: !systemSettings[key] });
   };
 
-  const handleDeleteAccount = () => {
-    if (window.confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
-      // Implement account deletion logic
-      console.log('Account deletion requested');
-    }
+  const confirmDeleteAccount = () => {
+    // Implement account deletion logic
+    console.log('Account deletion confirmed');
+    setShowDeleteModal(false);
   };
 
   return (
@@ -126,11 +129,12 @@ export const ProfileSettings: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-sm font-medium text-gray-900">
-                    {profileVisibility === 'public' ? 'Public' : 'Private'}
+                    {privacySettings?.profile_visibility === 'public' ? 'Public' : 'Private'}
                   </span>
                   <Switch
-                    checked={profileVisibility === 'public'}
-                    onCheckedChange={(checked) => setProfileVisibility(checked ? 'public' : 'private')}
+                    checked={privacySettings?.profile_visibility === 'public'}
+                    onCheckedChange={(checked) => updatePrivacySettings({ profile_visibility: checked ? 'public' : 'friends' })}
+                    disabled={isUpdatingPrivacy}
                   />
                 </div>
               </div>
@@ -143,8 +147,9 @@ export const ProfileSettings: React.FC = () => {
                   </p>
                 </div>
                 <Switch
-                  checked={onlineStatus}
-                  onCheckedChange={setOnlineStatus}
+                  checked={privacySettings?.online_status_visibility === 'everyone'}
+                  onCheckedChange={(checked) => updatePrivacySettings({ online_status_visibility: checked ? 'everyone' : 'no_one' })}
+                  disabled={isUpdatingPrivacy}
                 />
               </div>
 
@@ -337,7 +342,7 @@ export const ProfileSettings: React.FC = () => {
             </div>
 
             <button
-              onClick={handleDeleteAccount}
+              onClick={() => setShowDeleteModal(true)}
               className="flex-shrink-0 flex items-center space-x-2 px-3 py-1.5 bg-red-100/50 hover:bg-red-200/50 text-red-700 border border-red-200 rounded-lg transition-colors text-sm"
             >
               <Trash2 className="w-4 h-4" />
@@ -346,6 +351,13 @@ export const ProfileSettings: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteAccountModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={confirmDeleteAccount}
+      />
     </div>
   );
 };

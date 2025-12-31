@@ -16,6 +16,7 @@ export const Switch = React.forwardRef<HTMLButtonElement, SwitchProps>(
         role="switch"
         aria-checked={checked}
         disabled={disabled}
+        onClick={() => onCheckedChange?.(!checked)}
         className={`
           peer inline-flex shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent 
           transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 
