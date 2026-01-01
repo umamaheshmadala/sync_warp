@@ -13,6 +13,7 @@ export interface FriendProfile {
   last_active: string | null;
   is_following: boolean;
   is_activity_public: boolean;
+  read_receipts_enabled?: boolean;
 }
 
 export interface MutualFriend {
@@ -25,7 +26,7 @@ export function useFriendProfile(friendId: string) {
   const user = useAuthStore((state) => state.user);
 
   return useQuery({
-    queryKey: ['friend-profile', friendId],
+    queryKey: ['friend-profile', friendId, 'v4'], // Bump version to force re-fetch (cache invalidation)
     queryFn: async () => {
       if (!user) throw new Error('User not authenticated');
 
@@ -67,11 +68,34 @@ export function useFriendProfile(friendId: string) {
         console.warn('following table not found, defaulting to false');
       }
 
+      // 4. Fetch Privacy Settings (for Read Receipts)
+      let readReceiptsEnabled = true; // Default to true if fetch fails or restricted
+      try {
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('privacy_settings')
+          .eq('id', friendId)
+          .maybeSingle();
+
+        if (!profileError && profileData?.privacy_settings) {
+          // Check if the setting exists in the JSONB object
+          // The type of privacy_settings is generic object in DB types usually, so we cast or check safely
+          const settings = profileData.privacy_settings as any;
+
+          if (settings.read_receipts_enabled !== undefined) {
+            readReceiptsEnabled = settings.read_receipts_enabled;
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to fetch friend privacy settings:', error);
+      }
+
       return {
         profile: {
           ...profileData,
           is_following: isFollowing,
-          is_activity_public: true, // TODO: Get from privacy_settings (Epic 9.5)
+          is_activity_public: true,
+          read_receipts_enabled: readReceiptsEnabled
         } as FriendProfile,
         mutualFriends: mutualFriends.slice(0, 5), // Top 5
         mutualFriendsCount: mutualFriends.length,

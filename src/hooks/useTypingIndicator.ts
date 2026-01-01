@@ -46,12 +46,12 @@ const TYPING_TIMEOUT = 3000 // 3 seconds
 export function useTypingIndicator(conversationId: string | null) {
   const currentUserId = useAuthStore((state) => state.user?.id)
   const { typingUsers, addTypingUser, removeTypingUser } = useMessagingStore()
-  
+
   const typingTimeout = useRef<NodeJS.Timeout>()
   const isTyping = useRef(false)
 
   // Get typing users for this conversation (excluding current user)
-  const otherTypingUsers = conversationId 
+  const otherTypingUsers = conversationId
     ? Array.from(typingUsers.get(conversationId) || []).filter(id => id !== currentUserId)
     : []
 
@@ -71,18 +71,31 @@ export function useTypingIndicator(conversationId: string | null) {
     }
   }, [conversationId])
 
+  const lastBroadcast = useRef<number>(0)
+
   // Handle typing event (call on every keystroke)
   const handleTyping = useCallback(() => {
+    const now = Date.now()
+
+    // 1. If not typing, start typing immediately
     if (!isTyping.current) {
       setTyping(true)
-    } else {
-      // Reset timeout
-      clearTimeout(typingTimeout.current)
-      typingTimeout.current = setTimeout(() => {
-        setTyping(false)
-      }, TYPING_TIMEOUT)
+      lastBroadcast.current = now
     }
-  }, [setTyping])
+    // 2. If already typing, check if we need to send a heartbeat (keep-alive)
+    // The receiver auto-hides after 4s (TYPING_TIMEOUT + 1000), so we refresh every 2.5s
+    else if (now - lastBroadcast.current > 2500) {
+      realtimeService.broadcastTyping(conversationId!, true)
+      lastBroadcast.current = now
+    }
+
+    // Always reset the stop timeout on every keystroke
+    clearTimeout(typingTimeout.current)
+    typingTimeout.current = setTimeout(() => {
+      setTyping(false)
+    }, TYPING_TIMEOUT)
+
+  }, [setTyping, conversationId])
 
   // Subscribe to typing indicators
   useEffect(() => {
@@ -95,7 +108,7 @@ export function useTypingIndicator(conversationId: string | null) {
 
         if (typing) {
           addTypingUser(conversationId, userId)
-          
+
           // Auto-remove after timeout (in case broadcast fails)
           setTimeout(() => {
             removeTypingUser(conversationId, userId)

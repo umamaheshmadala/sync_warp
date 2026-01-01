@@ -27,6 +27,7 @@ import { useAuthStore } from '../../store/authStore'
 import { useMessagingStore } from '../../store/messagingStore'
 import './ChatScreen.css'
 import { friendsService } from '../../services/friendsService'
+import { useFriendProfile } from '../../hooks/friends/useFriendProfile'
 
 /**
  * ChatScreen Component
@@ -121,33 +122,41 @@ export default function ChatScreen() {
     setSelectedIndex
   } = useMessageSearch(conversationId || undefined)
 
-  // Friendship Check (Story 9.x - Chat Restriction)
+  // Determine Other User ID
   const { conversations } = useMessagingStore()
+  const conversation = conversations.find(c => c.conversation_id === conversationId)
+  const otherUserId = conversation
+    ? (conversation.participant1_id === currentUserId ? conversation.participant2_id : conversation.participant1_id)
+    : null
+
+  console.log('👥 ChatScreen resolving user:', {
+    conversationFound: !!conversation,
+    storeSize: conversations.length,
+    currentUserId,
+    otherUserId
+  })
+
+  // Fetch Friend Profile (for Privacy Settings)
+  const { data: friendProfileData, isError: isProfileError, error: profileError } = useFriendProfile(otherUserId || '')
+  const friendReadReceiptsEnabled = friendProfileData?.profile?.read_receipts_enabled ?? true
+
+
+  // Friendship Check
   const [isFriend, setIsFriend] = useState<boolean | null>(null)
 
   useEffect(() => {
-    if (!conversationId || !currentUserId) return
+    if (!conversationId || !currentUserId || !otherUserId) return
 
     const checkFriendship = async () => {
-      const conversation = conversations.find(c => c.conversation_id === conversationId)
-      if (!conversation) return
-
-      const otherId = conversation.participant1_id === currentUserId
-        ? conversation.participant2_id
-        : conversation.participant1_id
-
-      if (otherId) {
-        const areFriends = await friendsService.areFriends(currentUserId, otherId)
-        setIsFriend(areFriends)
-      }
+      const areFriends = await friendsService.areFriends(currentUserId, otherUserId)
+      setIsFriend(areFriends)
     }
 
     checkFriendship()
-
-    // Listen for friend updates (re-check if friendship status changes)
+    // Listen for friend updates
     window.addEventListener('friends-updated', checkFriendship)
     return () => window.removeEventListener('friends-updated', checkFriendship)
-  }, [conversationId, currentUserId, conversations])
+  }, [conversationId, currentUserId, otherUserId])
 
   // Scroll to bottom helper
   const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
@@ -248,7 +257,8 @@ export default function ChatScreen() {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       window.removeEventListener('focus', handleFocus)
     }
-  }, [conversationId, currentUserId, lastReadAt])
+    // Added messages.length to trigger when new messages arrive while viewing
+  }, [conversationId, currentUserId, lastReadAt, messages.length])
 
   // Mobile keyboard handling
   useEffect(() => {
@@ -486,6 +496,7 @@ export default function ChatScreen() {
           onUnpin={unpinMessage}
           isMessagePinned={isMessagePinned}
           lastReadAt={lastReadAt}
+          friendReadReceiptsEnabled={friendReadReceiptsEnabled}
         />
       )}
 

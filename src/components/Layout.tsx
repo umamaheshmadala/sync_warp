@@ -85,6 +85,7 @@ export default function Layout({ children }: LayoutProps) {
   // For protected pages - full layout with navigation
   const layoutContent = (
     <div className="min-h-screen bg-gray-50">
+      {/* GLOBAL DEBUG BANNER */}
       {/* Skip to main content (accessibility) */}
       <a
         href="#main-content"
@@ -259,12 +260,14 @@ export default function Layout({ children }: LayoutProps) {
   )
 
   // Wrap with gesture handler for protected pages with gesture support enabled
+  // DEBUG LOGGING
+  console.log('[Layout] Checking Gestures:', { isProtectedPage, enabled: preferences.swipeGesturesEnabled });
+
   if (isProtectedPage && preferences.swipeGesturesEnabled) {
     return (
       <GestureHandler
-        enableTabSwitching={true}
-        tabRoutes={tabRoutes}
-        currentRoute={location.pathname}
+        enableTabSwitching={false}
+        onSwipeRight={() => navigate(-1)}
         enableHaptics={preferences.enableHapticFeedback}
         className="min-h-screen"
       >

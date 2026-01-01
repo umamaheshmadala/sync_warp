@@ -20,6 +20,7 @@ interface MessageListProps {
   onUnpin?: (messageId: string) => void
   isMessagePinned?: (messageId: string) => boolean
   lastReadAt?: string | null | undefined // For persistent unread divider
+  friendReadReceiptsEnabled?: boolean
 }
 
 /**
@@ -56,7 +57,8 @@ export function MessageList({
   onPin,
   onUnpin,
   isMessagePinned,
-  lastReadAt
+  lastReadAt,
+  friendReadReceiptsEnabled = true
 }: MessageListProps) {
   const currentUserId = useAuthStore(state => state.user?.id)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -243,6 +245,7 @@ export function MessageList({
                   onPin={onPin}
                   onUnpin={onUnpin}
                   isMessagePinned={isMessagePinned}
+                  friendReadReceiptsEnabled={friendReadReceiptsEnabled}
                 />
               </div>
             </React.Fragment>

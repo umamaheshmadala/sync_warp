@@ -712,12 +712,20 @@ class RealtimeService {
    * @param channelName - Name of the channel to unsubscribe
    */
   private async unsubscribe(channelName: string): Promise<void> {
-    const channel = this.channels.get(channelName);
-    if (channel) {
+    const channelToRemove = this.channels.get(channelName);
+    if (channelToRemove) {
       try {
-        await supabase.removeChannel(channel);
-        this.channels.delete(channelName);
-        console.log('🔌 Unsubscribed from:', channelName);
+        await supabase.removeChannel(channelToRemove);
+
+        // Critical Fix: Only delete from map if the CURRENT channel is the one we just removed.
+        // This prevents race conditions where a NEW subscription (created during the await) gets deleted by an OLD unsubscribe.
+        const currentChannel = this.channels.get(channelName);
+        if (currentChannel === channelToRemove) {
+          this.channels.delete(channelName);
+          console.log('🔌 Unsubscribed from:', channelName);
+        } else {
+          console.log('🔌 Unsub finished, but channel was replaced - skipping map delete:', channelName);
+        }
       } catch (error) {
         console.error(`❌ Failed to unsubscribe from ${channelName}:`, error);
       }

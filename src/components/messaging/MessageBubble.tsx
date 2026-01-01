@@ -54,6 +54,7 @@ interface MessageBubbleProps {
   onPin?: (messageId: string) => void
   onUnpin?: (messageId: string) => void
   isMessagePinned?: (messageId: string) => boolean
+  friendReadReceiptsEnabled?: boolean
 }
 
 /**
@@ -97,7 +98,9 @@ export function MessageBubble({
   currentUserId,
   onPin,
   onUnpin,
-  isMessagePinned
+  isMessagePinned,
+  friendReadReceiptsEnabled = true, // Default to true (visible)
+  ...props
 }: MessageBubbleProps) {
   const [showContextMenu, setShowContextMenu] = useState(false)
   const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 })
@@ -107,8 +110,19 @@ export function MessageBubble({
   const [lightboxInitialIndex, setLightboxInitialIndex] = useState(0)
   // const [showReactionBar, setShowReactionBar] = useState(false) // Removed per user feedback
   const [showPicker, setShowPicker] = useState(false)
-  // const longPressTimer = useRef<NodeJS.Timeout | null>(null) // Replaced by useLongPress
-  // const isLongPress = useRef(false) // Replaced by useLongPress
+
+  // Custom Hook for long press
+  const {
+    onMouseDown: onLPMouseDown,
+    onMouseUp: onLPMouseUp,
+    onMouseLeave: onLPMouseLeave,
+    onTouchStart: onLPTouchStart,
+    onTouchEnd: onLPTouchEnd,
+    onTouchMove: onLPTouchMove
+  } = useLongPress({
+    onLongPress: () => setShowContextMenu(true)
+  });
+
   // Long message expansion state (Story 8.6.7)
   const [isExpanded, setIsExpanded] = useState(false)
   const [needsReadMore, setNeedsReadMore] = useState(false)
@@ -133,7 +147,14 @@ export function MessageBubble({
   // Privacy settings for reciprocal read receipts
   // If user disabled read receipts, they also can't see when others read their messages
   const { settings: privacySettings } = usePrivacySettings()
-  const showReadAsDelivered = privacySettings?.read_receipts_enabled === false
+  // My privacy setting prevents ME from seeing read status (reciprocal)
+  const myReadReceiptsDisabled = privacySettings?.read_receipts_enabled === false
+
+  // Friend's privacy setting prevents ME from seeing read status (direct)
+  const friendReadReceiptsDisabled = friendReadReceiptsEnabled === false
+
+  // Combined logic: Force 'delivered' status if either is disabled
+  const showReadAsDelivered = myReadReceiptsDisabled || friendReadReceiptsDisabled
 
   // Reactions hook
   const {
@@ -179,30 +200,7 @@ export function MessageBubble({
 
   // -- Gesture Hooks --
 
-  // 1. Long Press (Context Menu)
-  const {
-    onMouseDown: onLPMouseDown,
-    onMouseUp: onLPMouseUp,
-    onMouseLeave: onLPMouseLeave,
-    onTouchStart: onLPTouchStart,
-    onTouchEnd: onLPTouchEnd,
-    onTouchMove: onLPTouchMove
-  } = useLongPress({
-    onLongPress: () => {
-      // Trigger user's context menu logic
-      // We need to calculate position similar to existing logic
-      // But since this runs async, we might not have the event.
-      // Actually, useLongPress is designed to fire the callback. 
-      // We already have a handleContextMenu but it expects an event.
 
-      // We can synthesize a position or just center it/use last touch?
-      // For now, let's just create a simpler open handler that uses stored position or centers
-      // BUT WAIT, the original logic used the start event clientX/Y.
-      // My useLongPress hook needs to pass coordinates or I need to track them.
-      // Let's modify handleContextMenu to be flexible or store last touch.
-      setShowContextMenu(true);
-    }
-  });
 
   // 2. Swipe to Reply
   const {

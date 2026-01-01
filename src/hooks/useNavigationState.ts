@@ -184,7 +184,6 @@ export const useNavigationPreferences = () => {
       if (saved) {
         return {
           enableHapticFeedback: true,
-          enableAnimations: true,
           swipeGesturesEnabled: false,
           showNavigationBadges: true,
           navigationBarPosition: 'bottom' as 'top' | 'bottom',
@@ -196,7 +195,6 @@ export const useNavigationPreferences = () => {
     }
     return {
       enableHapticFeedback: true,
-      enableAnimations: true,
       swipeGesturesEnabled: false, // Disabled by default to prevent text selection issues
       showNavigationBadges: true,
       navigationBarPosition: 'bottom' as 'top' | 'bottom'

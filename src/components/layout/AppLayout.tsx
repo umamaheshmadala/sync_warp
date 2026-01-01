@@ -4,6 +4,9 @@ import { Keyboard, KeyboardResize } from '@capacitor/keyboard';
 import { Capacitor } from '@capacitor/core';
 import Header from './Header';
 import BottomNavigation from '../BottomNavigation';
+import { useNavigate } from 'react-router-dom';
+import { useNavigationPreferences } from '../../hooks/useNavigationState';
+import GestureHandler from '../GestureHandler';
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -56,25 +59,40 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   // Hide bottom navigation when keyboard is visible on messages route
   const shouldShowBottomNav = !isKeyboardVisible || !isMessagesRoute;
 
-  return (
-    <div className="fixed inset-0 w-full h-full flex flex-col overflow-hidden bg-gray-50">
-      <Header />
-      <main
-        className={`flex-1 flex flex-col min-h-0 relative ${isMessagesRoute ? 'overflow-hidden' : 'overflow-y-auto'}`}
-      >
-        {/* Content needs to account for header height + safe area */}
-        <div
-          className="w-full max-w-4xl mx-auto min-h-full md:pt-16"
-          style={{ paddingTop: 'calc(54px + env(safe-area-inset-top, 0px))' }}
-        >
-          {children}
-          {/* Spacer for Bottom Navigation - Physical element ensures scroll clearance */}
-          <div className={`w-full transition-all duration-200 ${shouldShowBottomNav ? 'h-32 md:h-16' : 'h-0'}`} />
-        </div>
-      </main>
+  const navigate = useNavigate();
+  const { preferences } = useNavigationPreferences();
 
-      {/* Fixed Bottom Navigation */}
-      {shouldShowBottomNav && <BottomNavigation currentRoute={location.pathname} />}
-    </div>
+  return (
+    <GestureHandler
+      onSwipeRight={() => {
+        if (preferences.swipeGesturesEnabled) {
+          console.log('[AppLayout] Swipe Right Detected -> Go Back');
+          navigate(-1);
+        }
+      }}
+      disabled={!preferences.swipeGesturesEnabled}
+      enableHaptics={preferences.enableHapticFeedback}
+      className="w-full h-full"
+    >
+      <div className="fixed inset-0 w-full h-full flex flex-col overflow-hidden bg-gray-50">
+        <Header />
+        <main
+          className={`flex-1 flex flex-col min-h-0 relative ${isMessagesRoute ? 'overflow-hidden' : 'overflow-y-auto'}`}
+        >
+          {/* Content needs to account for header height + safe area */}
+          <div
+            className="w-full max-w-4xl mx-auto min-h-full md:pt-16"
+            style={{ paddingTop: 'calc(54px + env(safe-area-inset-top, 0px))' }}
+          >
+            {children}
+            {/* Spacer for Bottom Navigation - Physical element ensures scroll clearance */}
+            <div className={`w-full transition-all duration-200 ${shouldShowBottomNav ? 'h-32 md:h-16' : 'h-0'}`} />
+          </div>
+        </main>
+
+        {/* Fixed Bottom Navigation */}
+        {shouldShowBottomNav && <BottomNavigation currentRoute={location.pathname} />}
+      </div>
+    </GestureHandler>
   );
 }

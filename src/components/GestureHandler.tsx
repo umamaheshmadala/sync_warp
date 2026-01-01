@@ -34,7 +34,7 @@ const GestureHandler: React.FC<GestureHandlerProps> = ({
   enableTabSwitching = false,
   tabRoutes = [],
   currentRoute,
-  swipeThreshold = 150, // Increased threshold to prevent accidental triggers
+  swipeThreshold = 50, // Reduced from 150 for easier activation
   enableHaptics = true,
   disabled = false,
   className = ''
@@ -50,7 +50,7 @@ const GestureHandler: React.FC<GestureHandlerProps> = ({
   // Motion values for smooth animations
   const x = useMotionValue(0);
   const y = useMotionValue(0);
-  
+
   // Transform motion values to useful properties
   const rotateY = useTransform(x, [-300, 0, 300], [-15, 0, 15]);
   const opacity = useTransform(x, [-300, 0, 300], [0.5, 1, 0.5]);
@@ -58,37 +58,25 @@ const GestureHandler: React.FC<GestureHandlerProps> = ({
   /**
    * Check if the event target is a text-selectable element
    */
-  const isTextSelectable = useCallback((target: Element | null): boolean => {
+  /*
+   * Check if the event target is an interactive input element
+   * We want to allow swiping over static text, but specific inputs should capture the event.
+   */
+  const isInputOrInteractive = useCallback((target: Element | null): boolean => {
     if (!target) return false;
-    
-    const selectableElements = ['INPUT', 'TEXTAREA', 'SELECT', 'P', 'SPAN', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'A'];
+
     const tagName = target.tagName;
-    
-    // Check if the element itself is text-selectable
-    if (selectableElements.includes(tagName)) return true;
-    
-    // Check if any parent element is text-selectable or has user-select CSS
-    let element = target as Element;
-    while (element && element !== document.body) {
-      const computedStyle = window.getComputedStyle(element);
-      
-      // Check for text selection CSS properties
-      if (computedStyle.userSelect !== 'none' && 
-          (computedStyle.cursor === 'text' || 
-           element.hasAttribute('contenteditable') ||
-           selectableElements.includes(element.tagName))) {
-        return true;
-      }
-      
-      // Check for data attributes that indicate text content
-      if (element.hasAttribute('data-selectable') || 
-          element.classList.contains('selectable-text')) {
-        return true;
-      }
-      
-      element = element.parentElement as Element;
-    }
-    
+
+    // Always block on inputs/textareas to allow typing/cursor moving
+    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tagName)) return true;
+
+    // Check for contenteditable (e.g. rich text editors)
+    if (target.getAttribute('contenteditable') === 'true') return true;
+
+    // Check if within a map (prevent map panning from triggering navigation)
+    if (target.closest('.leaflet-container, .mapboxgl-map, .map-container')) return true;
+
+    // Allow swiping on everything else (including static text P, SPAN, etc.)
     return false;
   }, []);
 
@@ -97,13 +85,13 @@ const GestureHandler: React.FC<GestureHandlerProps> = ({
    */
   const handlePanStart = useCallback((event: any) => {
     if (disabled) return;
-    
+
     // Check if the pan started on a text-selectable element
     const target = event.target;
-    if (isTextSelectable(target)) {
+    if (isInputOrInteractive(target)) {
       return; // Don't interfere with text selection
     }
-    
+
     setSwipeState(prev => ({
       ...prev,
       isSwipeActive: true
@@ -112,7 +100,7 @@ const GestureHandler: React.FC<GestureHandlerProps> = ({
     if (enableHaptics) {
       triggerHaptic('light');
     }
-  }, [disabled, enableHaptics, triggerHaptic, isTextSelectable]);
+  }, [disabled, enableHaptics, triggerHaptic, isInputOrInteractive]);
 
   /**
    * Handle pan movement
@@ -123,14 +111,14 @@ const GestureHandler: React.FC<GestureHandlerProps> = ({
     const { offset } = info;
     const absOffsetX = Math.abs(offset.x);
     const absOffsetY = Math.abs(offset.y);
-    
+
     // Determine primary swipe direction
     let direction: 'left' | 'right' | 'up' | 'down' | null = null;
-    
+
     // Require more deliberate movement and clear directionality
-    const minimumMovement = 50; // Increased from 30
-    const directionalityRatio = 2; // Movement in primary direction must be 2x secondary
-    
+    const minimumMovement = 10; // Reduced from 50 for quick detection
+    const directionalityRatio = 1.5; // Reduced from 2 for easier diagonal forgiveness
+
     if (absOffsetX > absOffsetY && absOffsetX > minimumMovement && absOffsetX / absOffsetY > directionalityRatio) {
       // Horizontal swipe - must be clearly horizontal
       direction = offset.x > 0 ? 'right' : 'left';
@@ -139,7 +127,7 @@ const GestureHandler: React.FC<GestureHandlerProps> = ({
       direction = offset.y > 0 ? 'down' : 'up';
     }
 
-    const progress = direction 
+    const progress = direction
       ? Math.min(Math.abs(direction === 'left' || direction === 'right' ? offset.x : offset.y) / swipeThreshold, 1)
       : 0;
 
@@ -172,8 +160,8 @@ const GestureHandler: React.FC<GestureHandlerProps> = ({
     let actionTriggered = false;
 
     // Check if swipe meets threshold (distance or velocity) - more restrictive
-    const meetsThreshold = (offsetVal: number, velocityVal: number) => 
-      Math.abs(offsetVal) > swipeThreshold || Math.abs(velocityVal) > 800; // Increased velocity threshold
+    const meetsThreshold = (offsetVal: number, velocityVal: number) =>
+      Math.abs(offsetVal) > swipeThreshold || Math.abs(velocityVal) > 400; // Reduced velocity threshold
 
     if (absOffsetX > absOffsetY) {
       // Horizontal swipe
@@ -223,14 +211,14 @@ const GestureHandler: React.FC<GestureHandlerProps> = ({
       swipeProgress: 0
     });
   }, [
-    disabled, 
-    swipeThreshold, 
-    x, 
-    y, 
-    enableTabSwitching, 
-    onSwipeRight, 
-    onSwipeLeft, 
-    onSwipeUp, 
+    disabled,
+    swipeThreshold,
+    x,
+    y,
+    enableTabSwitching,
+    onSwipeRight,
+    onSwipeLeft,
+    onSwipeUp,
     onSwipeDown,
     enableHaptics,
     triggerHaptic
@@ -272,14 +260,15 @@ const GestureHandler: React.FC<GestureHandlerProps> = ({
         y,
         rotateY,
         opacity,
-        touchAction: 'pan-x pan-y' // Allow scrolling but capture swipes
+        touchAction: 'pan-y' // CHANGED: Block horizontal scroll to capture swipes
       }}
       onPanStart={handlePanStart}
       onPan={handlePan}
       onPanEnd={handlePanEnd}
     >
       {children}
-      
+
+
       {/* Swipe indicator */}
       {swipeState.isSwipeActive && swipeState.swipeDirection && (
         <motion.div

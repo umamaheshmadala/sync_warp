@@ -92,17 +92,6 @@ export const ProfileSettings: React.FC = () => {
               onCheckedChange={(checked) => updatePreference('enableHapticFeedback', checked)}
             />
           </div>
-
-          <div className="flex items-center justify-between py-1">
-            <div>
-              <span className="text-sm font-medium text-gray-900">Page Animations</span>
-              <p className="text-xs text-gray-500">Smooth transitions</p>
-            </div>
-            <Switch
-              checked={navPreferences.enableAnimations}
-              onCheckedChange={(checked) => updatePreference('enableAnimations', checked)}
-            />
-          </div>
         </div>
       </div>
 

@@ -173,6 +173,7 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value
+    // console.log('📝 MessageComposer input changed', { length: newValue.length })
 
     // Block coupon URLs (Story 8.3.4 Part 2)
     if (newValue.includes('sync://coupon/')) {

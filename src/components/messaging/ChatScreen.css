@@ -18,7 +18,7 @@
 .message-list-scroll {
   -webkit-overflow-scrolling: touch; /* iOS smooth scrolling */
   overflow-y: auto;
-  overscroll-behavior: contain;
+  /* overscroll-behavior: contain; - REMOVED to allow swipe gestures to propagate */
   scroll-behavior: smooth;
 }
 
