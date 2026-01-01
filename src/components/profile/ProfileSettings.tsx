@@ -24,7 +24,7 @@ export const ProfileSettings: React.FC = () => {
   const { settings: systemSettings, isLoading: isLoadingSystem, updateSettings: updateSystemSettings, isUpdating: isUpdatingSystem } = useSystemNotificationSettings();
   const { settings: privacySettings, updateSettings: updatePrivacySettings, isUpdating: isUpdatingPrivacy } = usePrivacySettings();
 
-  const [activityTracking, setActivityTracking] = useState(true);
+
 
   // Auto-detect and save timezone (from NotificationSettings logic)
   useEffect(() => {
@@ -111,18 +111,15 @@ export const ProfileSettings: React.FC = () => {
 
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-900">Profile Visibility</p>
+                  <p className="text-sm font-medium text-gray-900">Private Profile</p>
                   <p className="text-xs text-gray-500">
-                    Control who can see your profile
+                    Hide your profile from global search results
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm font-medium text-gray-900">
-                    {privacySettings?.profile_visibility === 'public' ? 'Public' : 'Private'}
-                  </span>
                   <Switch
-                    checked={privacySettings?.profile_visibility === 'public'}
-                    onCheckedChange={(checked) => updatePrivacySettings({ profile_visibility: checked ? 'public' : 'friends' })}
+                    checked={privacySettings?.profile_visibility === 'friends'}
+                    onCheckedChange={(checked) => updatePrivacySettings({ profile_visibility: checked ? 'friends' : 'public' })}
                     disabled={isUpdatingPrivacy}
                   />
                 </div>
@@ -142,18 +139,7 @@ export const ProfileSettings: React.FC = () => {
                 />
               </div>
 
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Activity Tracking</p>
-                  <p className="text-xs text-gray-500">
-                    Allow us to track your activity for analytics
-                  </p>
-                </div>
-                <Switch
-                  checked={activityTracking}
-                  onCheckedChange={setActivityTracking}
-                />
-              </div>
+
             </div>
           </div>
         </div>

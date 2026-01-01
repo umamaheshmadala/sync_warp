@@ -107,9 +107,9 @@ export function PYMKCard({ recommendation, onProfileClick }: PYMKCardProps) {
                 alt={mf.full_name}
               />
             ))}
-            {recommendation.mutual_friends.length > 3 && (
+            {recommendation.mutual_friends_count > 3 && (
               <div className="w-6 h-6 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-[10px] text-gray-500 font-medium">
-                +{recommendation.mutual_friends.length - 3}
+                +{recommendation.mutual_friends_count - 3}
               </div>
             )}
           </div>

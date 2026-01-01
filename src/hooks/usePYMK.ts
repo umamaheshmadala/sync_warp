@@ -16,7 +16,7 @@ export function usePYMK(limit: number = 10) {
   const { user } = useAuthStore();
 
   return useQuery({
-    queryKey: ['pymk', user?.id],
+    queryKey: ['pymk', user?.id, 'v5'], // Bump version for count fix
     queryFn: async () => {
       const response = await friendsService.getPymkSuggestions(user!.id, limit);
       if (!response.success) throw new Error(response.error);

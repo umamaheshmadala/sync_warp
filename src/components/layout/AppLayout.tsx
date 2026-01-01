@@ -16,6 +16,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   // Initialize Realtime Notifications
   useRealtimeNotifications();
 
+  const navigate = useNavigate();
+  const { preferences } = useNavigationPreferences();
+
   // Don't show header/nav on auth pages only (root path is now dashboard)
   const isAuthPage = location.pathname.startsWith('/auth');
 
@@ -58,9 +61,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   // Hide bottom navigation when keyboard is visible on messages route
   const shouldShowBottomNav = !isKeyboardVisible || !isMessagesRoute;
-
-  const navigate = useNavigate();
-  const { preferences } = useNavigationPreferences();
 
   return (
     <GestureHandler
