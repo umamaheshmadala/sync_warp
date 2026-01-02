@@ -100,7 +100,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           >
             {children}
             {/* Spacer for Bottom Navigation - Physical element ensures scroll clearance */}
-            <div className={`w-full transition-all duration-200 ${shouldShowBottomNav ? 'h-32 md:h-16' : 'h-0'}`} />
+            <div
+              className="w-full transition-all duration-200"
+              style={{
+                height: shouldShowBottomNav
+                  ? 'calc(56px + env(safe-area-inset-bottom, 0px) + 3px)'
+                  : '0px'
+              }}
+            />
           </div>
         </main>
 

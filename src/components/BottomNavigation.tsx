@@ -121,7 +121,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentRoute }) => 
     >
       {/* Container with max width matching header */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-around py-1 gap-1">
+        <div className="flex items-center justify-around h-14 gap-1">
           {navItems.map((item) => {
             const IconComponent = item.icon;
             const active = isActive(item.route);
