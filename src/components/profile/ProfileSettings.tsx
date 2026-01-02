@@ -310,11 +310,11 @@ export const ProfileSettings: React.FC = () => {
               <h4 className="text-base font-semibold text-red-700 flex flex-wrap items-baseline gap-2">
                 Delete Account
                 <span className="text-xs font-normal text-red-500/80">
-                  (Member since: {user?.created_at ? new Date(user.created_at).toLocaleDateString('en-GB') : 'Recently'})
+                  • Joined {user?.created_at ? new Date(user.created_at).toLocaleDateString('en-GB') : 'Recently'}
                 </span>
               </h4>
-              <p className="text-xs text-red-600 mt-0.5">
-                Once you delete your account, there is no going back. Please be certain.
+              <p className="text-xs text-red-600 mt-0.5 max-w-[250px] sm:max-w-none">
+                This action is permanent and cannot be undone.
               </p>
             </div>
 
