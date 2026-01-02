@@ -314,7 +314,7 @@ export const ProfileSettings: React.FC = () => {
                 </span>
               </h4>
               <p className="text-xs text-red-600 mt-0.5 max-w-[250px] sm:max-w-none">
-                This action is permanent and cannot be undone.
+                This action cannot be undone.
               </p>
             </div>
 
