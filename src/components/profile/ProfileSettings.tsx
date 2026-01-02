@@ -239,6 +239,7 @@ export const ProfileSettings: React.FC = () => {
                     <h3 className="text-sm font-medium text-gray-900">
                       Friend Activity
                     </h3>
+                    <p className="text-[10px] text-amber-600 font-medium mt-0.5">The backend is implemented, but it hasn't been user-tested yet.</p>
                     <div className="pl-0 space-y-3">
                       <div className="flex items-center justify-between group py-0.5">
                         <label className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">
@@ -268,6 +269,7 @@ export const ProfileSettings: React.FC = () => {
                     <h3 className="text-sm font-medium text-gray-900">
                       Reminders & Promotion
                     </h3>
+                    <p className="text-[10px] text-amber-600 font-medium mt-0.5">The backend is implemented, but it hasn't been user-tested yet.</p>
                     <div className="pl-0 space-y-3">
                       <div className="flex items-center justify-between group py-0.5">
                         <label className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">
