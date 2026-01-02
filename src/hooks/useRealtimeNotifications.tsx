@@ -6,13 +6,21 @@ import { useAuthStore } from '@/store/authStore';
 import { realtimeService } from '@/services/realtimeService';
 import { notificationSettingsService } from '@/services/notificationSettingsService';
 import { useNotificationPreferences, NotificationPreferences } from './useNotificationPreferences';
+import { useSystemNotificationSettings } from '@/hooks/useSystemNotificationSettings';
+import { NotificationSettings } from '@/services/notificationSettingsService';
 
 export function useRealtimeNotifications() {
     const queryClient = useQueryClient();
     const { user } = useAuthStore();
 
+    // Debug Log: Check if hook is mounting
+    if (user?.id) {
+        // console.log('[useRealtimeNotifications] Hook rendered for user:', user.id);
+    }
+
     // Ensure preferences are fetched/cached
     useNotificationPreferences();
+    useSystemNotificationSettings();
 
 
     // Ensure we have muted conversations loaded for suppression logic
@@ -31,10 +39,11 @@ export function useRealtimeNotifications() {
 
     useEffect(() => {
         if (!user?.id) {
+            console.log('[useRealtimeNotifications] ⏳ User not authenticated yet, skipping subscription');
             return;
         }
 
-        console.log('[useRealtimeNotifications] Subscribing to notifications for user:', user.id);
+        console.log('[useRealtimeNotifications] 🚀 Starting subscription setup for user:', user.id);
 
         // Track recently processed notification IDs to prevent duplicates
         const processedIds = new Set<string>();
@@ -115,8 +124,33 @@ export function useRealtimeNotifications() {
             }
 
             if (shouldShowToast) {
+                // Check Quiet Hours
+                const systemSettings = queryClient.getQueryData<NotificationSettings>(['system-notification-settings', user.id]);
+
+                if (systemSettings) {
+                    const isQuietHours = notificationSettingsService.isInQuietHours(systemSettings);
+                    console.log('[useRealtimeNotifications] 🔍 Quiet Hours Check:', {
+                        enabled: systemSettings.quiet_hours_enabled,
+                        start: systemSettings.quiet_hours_start,
+                        end: systemSettings.quiet_hours_end,
+                        timezone: systemSettings.timezone,
+                        isQuietMatches: isQuietHours
+                    });
+
+                    if (isQuietHours) {
+                        console.log(`[useRealtimeNotifications] 🌙 Suppressing toast: Quiet Hours active (${systemSettings.quiet_hours_start} - ${systemSettings.quiet_hours_end})`);
+                        shouldShowToast = false;
+                    }
+                } else {
+                    console.warn('[useRealtimeNotifications] ⚠️ System settings not found in cache during check');
+                }
+            }
+
+            if (shouldShowToast) {
                 // Check Global Push Preference
                 const prefs = queryClient.getQueryData<NotificationPreferences>(['notification-preferences', user.id]);
+                console.log('[useRealtimeNotifications] 🔍 Push Prefs Check:', { enabled: prefs?.push_enabled });
+
                 if (prefs && !prefs.push_enabled) {
                     console.log(`[useRealtimeNotifications] 🚫 Suppressing toast: Push disabled in settings`);
                     shouldShowToast = false;
@@ -151,10 +185,19 @@ export function useRealtimeNotifications() {
         // NOTE: Due to a Supabase limitation, this subscription may not fire if another subscription
         // to the same table exists. We work around this by also listening to a custom event
         // dispatched by useInAppNotifications.
-        const unsubscribe = realtimeService.subscribeToInAppNotifications(
-            user.id,
-            (payload) => handleNotificationPayload(payload, 'notification_log')
-        );
+        // Use RealtimeService to handle subscription with robust mobile support
+        let unsubscribe = () => { };
+
+        try {
+            console.log('[useRealtimeNotifications] 📞 Calling realtimeService.subscribeToInAppNotifications...');
+            unsubscribe = realtimeService.subscribeToInAppNotifications(
+                user.id,
+                (payload) => handleNotificationPayload(payload, 'notification_log')
+            );
+            console.log('[useRealtimeNotifications] ✅ Subscription initiated successfully');
+        } catch (err) {
+            console.error('[useRealtimeNotifications] ❌ Failed to initiate subscription:', err);
+        }
 
         // WORKAROUND: Listen to custom event from useInAppNotifications
         // This ensures we receive notification events even if the direct Realtime subscription doesn't fire

@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { useNavigationPreferences } from '../../hooks/useNavigationState';
 import GestureHandler from '../GestureHandler';
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
+import { notificationSettingsService } from '@/services/notificationSettingsService';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
@@ -53,6 +54,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       showListener?.remove();
       hideListener?.remove();
     };
+  }, []);
+
+  // Update timezone on mount
+  useEffect(() => {
+    const updateTimezone = async () => {
+      try {
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        await notificationSettingsService.updateTimezone(timezone);
+      } catch (err) {
+        console.error('Failed to update timezone:', err);
+      }
+    };
+    updateTimezone();
   }, []);
 
   if (isAuthPage) {

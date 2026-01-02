@@ -86,10 +86,45 @@ class NotificationSettingsService {
   }
 
   /**
+   * Update user's timezone for server-side quiet hours calculation
+   */
+  async updateTimezone(timezone: string): Promise<void> {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user?.id) return;
+
+    // First check if update is needed to avoid redundant writes
+    const { data } = await supabase
+      .from('notification_settings')
+      .select('timezone')
+      .eq('user_id', session.user.id)
+      .single();
+
+    if (data && data.timezone === timezone) {
+      return; // Already up to date
+    }
+
+    console.log(`[NotificationSettings] Updating timezone to: ${timezone}`);
+    const { error } = await supabase
+      .from('notification_settings')
+      .upsert({
+        user_id: session.user.id,
+        timezone: timezone,
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id'
+      });
+
+    if (error) {
+      console.error('[NotificationSettings] Error updating timezone:', error);
+      // Don't throw, just log
+    }
+  }
+
+  /**
    * Mute a conversation
    */
   async muteConversation(
-    conversationId: string, 
+    conversationId: string,
     duration: 'hour' | 'day' | 'week' | 'forever' = 'forever'
   ): Promise<void> {
     const { error } = await supabase.rpc('mute_conversation', {
