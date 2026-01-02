@@ -4,7 +4,7 @@ import { Switch } from '../ui/switch';
 import { useAuthStore } from '../../store/authStore';
 import { useNavigationPreferences } from '../../hooks/useNavigationState';
 import { ProfileEditForm } from './ProfileEditForm';
-import UserReviewsList from '../reviews/UserReviewsList';
+
 import { ReadReceiptPrivacy } from '../friends/privacy/ReadReceiptPrivacy';
 import { usePrivacySettings } from '@/hooks/usePrivacySettings';
 import { useNotificationPreferences } from '@/hooks/useNotificationPreferences';
@@ -300,10 +300,7 @@ export const ProfileSettings: React.FC = () => {
         </div>
       </section >
 
-      {/* 5. User Reviews Section */}
-      < section >
-        <UserReviewsList />
-      </section >
+
 
       {/* 6. Danger Zone */}
       < section >

@@ -6,8 +6,7 @@ import { useAuthStore } from '../store/authStore'
 import { useNavigationPreferences } from '../hooks/useNavigationState'
 import { User, MapPin, Phone, Mail, Edit3, Camera, Settings, Smartphone, MessageSquare, FileText } from 'lucide-react'
 import UserReviewsList from './reviews/UserReviewsList'
-import { AvatarUpload, ProfileEditForm, ProfileSettings, ProfileCompletionWizard, InlineEditField } from './profile/index'
-import { RecentActivityFeed } from './friends/RecentActivityFeed'
+import { AvatarUpload, ProfileEditForm, ProfileSettings, ProfileCompletionWizard, InlineEditField, MyActivityTab } from './profile/index'
 import { useCities } from '../hooks/useCities'
 
 export default function Profile() {
@@ -222,12 +221,9 @@ export default function Profile() {
         </div>
       )}
 
-      {/* Activity Tab */}
-      {activeTab === 'activity' && (
-        <div className="max-w-4xl mx-auto">
-          <RecentActivityFeed userId={user?.id || ''} />
-        </div>
-      )}
+      <div className="max-w-4xl mx-auto">
+        <MyActivityTab />
+      </div>
     </div>
   )
 }

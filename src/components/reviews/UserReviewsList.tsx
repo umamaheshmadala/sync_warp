@@ -147,18 +147,15 @@ export default function UserReviewsList() {
               ))
             ) : (
               // Empty State
+              // Compact Empty State
               <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="py-6 text-center"
               >
-                <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  No Reviews Yet
-                </h3>
-                <p className="text-gray-600 text-sm max-w-sm mx-auto">
-                  You haven't written any reviews yet. Visit a business and share your experience!
+                <p className="text-sm font-medium text-gray-900">No Reviews Yet</p>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Your reviews will appear here.
                 </p>
               </motion.div>
             )}
