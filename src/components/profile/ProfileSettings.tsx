@@ -162,18 +162,21 @@ export const ProfileSettings: React.FC = () => {
                 <>
                   {/* Global Channels */}
                   <div className="space-y-3">
+                    {/* Email Notifications (Disabled) */}
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium text-gray-900">Email Notifications</p>
                         <p className="text-xs text-gray-500">Receive specific updates via email</p>
+                        <p className="text-[10px] text-amber-600 font-medium mt-0.5">Note: Email service is not currently integrated.</p>
                       </div>
                       <Switch
-                        checked={notifPrefs.email_enabled}
-                        onCheckedChange={() => handleNotifToggle('email_enabled')}
-                        disabled={isUpdatingNotif}
+                        checked={false}
+                        onCheckedChange={() => { }}
+                        disabled={true}
                       />
                     </div>
 
+                    {/* Push Notifications */}
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium text-gray-900">Push Notifications</p>
@@ -293,15 +296,15 @@ export const ProfileSettings: React.FC = () => {
             </div>
           </div>
         </div>
-      </section>
+      </section >
 
       {/* 5. User Reviews Section */}
-      <section>
+      < section >
         <UserReviewsList />
-      </section>
+      </section >
 
       {/* 6. Danger Zone */}
-      <section>
+      < section >
         <div className="bg-red-50 rounded-lg shadow-sm border border-red-200 overflow-hidden">
           <div className="p-4 flex items-center justify-between gap-4">
             <div>
@@ -325,14 +328,14 @@ export const ProfileSettings: React.FC = () => {
             </button>
           </div>
         </div>
-      </section>
+      </section >
 
       {/* Delete Confirmation Modal */}
-      <DeleteAccountModal
+      < DeleteAccountModal
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
         onConfirm={confirmDeleteAccount}
       />
-    </div>
+    </div >
   );
 };

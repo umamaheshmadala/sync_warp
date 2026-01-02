@@ -142,6 +142,10 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
     }
   }, [otherParticipantId])
 
+  // Get Realtime Online Status (Move above conditional return)
+  const { isUserOnline } = useOnlineStatus()
+  const isOnline = otherParticipantId ? isUserOnline(otherParticipantId) : false
+
   // Early return with skeletons if no conversation
   if (!conversation) {
     return (
@@ -360,9 +364,7 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
 
   console.log('ChatHeader render cycle:', { id: conversationId, found: !!conversation })
 
-  // Get Realtime Online Status - 10s refresh for privacy via the hook
-  const { isUserOnline } = useOnlineStatus()
-  const isOnline = otherParticipantId ? isUserOnline(otherParticipantId) : false
+  console.log('ChatHeader render cycle:', { id: conversationId, found: !!conversation })
 
   return (
     <div className="w-full z-40 bg-white border-b border-gray-200" data-testid="chat-header">

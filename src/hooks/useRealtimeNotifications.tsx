@@ -5,10 +5,14 @@ import toast from 'react-hot-toast';
 import { useAuthStore } from '@/store/authStore';
 import { realtimeService } from '@/services/realtimeService';
 import { notificationSettingsService } from '@/services/notificationSettingsService';
+import { useNotificationPreferences, NotificationPreferences } from './useNotificationPreferences';
 
 export function useRealtimeNotifications() {
     const queryClient = useQueryClient();
     const { user } = useAuthStore();
+
+    // Ensure preferences are fetched/cached
+    useNotificationPreferences();
 
 
     // Ensure we have muted conversations loaded for suppression logic
@@ -107,6 +111,15 @@ export function useRealtimeNotifications() {
                     }
                 } catch (err) {
                     console.error('[useRealtimeNotifications] Error checking suppression logic', err);
+                }
+            }
+
+            if (shouldShowToast) {
+                // Check Global Push Preference
+                const prefs = queryClient.getQueryData<NotificationPreferences>(['notification-preferences', user.id]);
+                if (prefs && !prefs.push_enabled) {
+                    console.log(`[useRealtimeNotifications] 🚫 Suppressing toast: Push disabled in settings`);
+                    shouldShowToast = false;
                 }
             }
 
