@@ -177,7 +177,7 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
             ${uploading ? 'opacity-50 pointer-events-none' : ''}
           `}
         >
-          <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-800 ring-4 ring-cyan-400 shadow-lg transition-transform transform group-hover:scale-105 relative">
+          <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-800 ring-4 ring-cyan-400 shadow-2xl transition-transform transform group-hover:scale-105 relative">
             {avatarUrl ? (
               <img
                 src={avatarUrl}

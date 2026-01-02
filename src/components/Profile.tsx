@@ -57,7 +57,7 @@ export default function Profile() {
       <ProfileCompletionWizard onStepClick={() => setActiveTab('settings')} />
 
       {/* Profile Header */}
-      <div className="bg-white text-gray-900 rounded-lg shadow-md border border-gray-200 mb-2 relative">
+      <div className="bg-white text-gray-900 rounded-lg shadow-md border border-gray-200 mb-2 relative mt-20 overflow-visible">
         {/* Single Edit Button in top right corner */}
         {!isEditingProfile && (
           <button
@@ -72,7 +72,7 @@ export default function Profile() {
         <div className="px-3 py-2.5">
           <div className="flex flex-col md:flex-row items-center md:items-center space-y-2 md:space-y-0 md:space-x-4">
             {/* Avatar Upload Component */}
-            <div className="flex-shrink-0">
+            <div className="flex-shrink-0 -mt-20 z-10">
               <AvatarUpload currentAvatar={profile?.avatar_url} />
             </div>
 
