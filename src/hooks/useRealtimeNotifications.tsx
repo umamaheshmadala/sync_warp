@@ -80,6 +80,16 @@ export function useRealtimeNotifications() {
                 try {
                     const conversationId = data.conversation_id || notification.conversation_id;
 
+                    // CRITICAL FIX: Invalidate specific conversation messages query
+                    // This ensures that if the user navigates to the chat, useMessages will refetch
+                    // instead of serving stale data (since useMessages defaults to 5min staleTime)
+                    if (conversationId) {
+                        console.log(`[useRealtimeNotifications] 🔄 Invalidating messages cache for ${conversationId}`);
+                        queryClient.invalidateQueries({ queryKey: ['messages', conversationId] });
+                        // Also invalidate conversation list to ensure snippet/unread count is sync (though useConversations also listens)
+                        queryClient.invalidateQueries({ queryKey: ['conversations', user.id] });
+                    }
+
                     // A. Check if user is currently reading this conversation
                     const currentPath = window.location.pathname;
                     if (conversationId && currentPath.includes(`/messages/${conversationId}`)) {
@@ -102,43 +112,25 @@ export function useRealtimeNotifications() {
 
             if (shouldShowToast) {
                 console.log(`[useRealtimeNotifications] ✅ Showing toast for: '${type}'`);
-                // Custom 2-line banner toast
-                toast.custom((t) => (
-                    <div
-                        onClick={() => {
-                            toast.dismiss(t.id);
-                            // navigate? (future enhancement)
-                        }}
-                        style={{
-                            opacity: t.visible ? 1 : 0,
-                            transform: t.visible ? 'translateY(0)' : 'translateY(-20px)',
-                            transition: 'all 0.3s ease',
-                            background: '#333',
-                            color: '#fff',
-                            padding: '12px 16px',
-                            borderRadius: '8px',
-                            boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            maxWidth: 'calc(100vw - 32px)', // Responsive width
-                            width: '350px',
-                            gap: '12px',
-                            cursor: 'pointer',
-                            zIndex: 99999, // Ensure it's on top
-                            marginTop: '40px' // Safe area for status bar
-                        }}
-                    >
-                        <div style={{ fontSize: '24px' }}>🔔</div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                            <div style={{ fontWeight: '600', fontSize: '14px' }}>{notification.title || 'New Notification'}</div>
-                            <div style={{ fontSize: '13px', opacity: 0.9, lineHeight: '1.4' }}>{messageConfig}</div>
-                        </div>
-                    </div>
-                ), {
-                    duration: 4000,
-                    id: notification.id,
-                    position: 'top-center',
-                });
+
+                // Use standard toast which triggers the global CustomToast component
+                // We default to 'success' style (Green) for positive interactions or 'blank' for neutral
+                // The user seems to prefer the "Green" style.
+                // Or we can use toast(msg) which defaults to gray.
+                // Let's use toast() (gray) for general notifications but ensure CustomToast makes it look good.
+
+                toast(
+                    <div className="flex flex-col gap-1">
+                        <span className="font-semibold text-sm">{notification.title || 'New Notification'}</span>
+                        <span className="text-xs opacity-90 leading-tight">{messageConfig}</span>
+                    </div>,
+                    {
+                        id: notification.id,
+                        duration: 4000,
+                        // Add an icon if needed, though CustomToast handles default icons
+                        icon: '🔔'
+                    }
+                );
             }
         };
 

@@ -12,6 +12,7 @@ import { ErrorBoundary } from './components/error'
 import { usePushNotifications } from './hooks/usePushNotifications'
 import { useNotificationHandler } from './hooks/useNotificationHandler'
 import { NotificationToast } from './components/NotificationToast'
+import { CustomToast } from './components/ui/CustomToast'
 import { useAuthStore } from './store/authStore'
 import { OfflineBanner } from './components/ui/OfflineBanner'
 import DevMenu from './components/DevMenu'
@@ -125,18 +126,16 @@ function AppContent() {
         position="top-right"
         toastOptions={{
           duration: 4000,
+          // Remove default styles as CustomToast handles them
           style: {
-            background: '#363636',
-            color: '#fff',
-          },
-          success: {
-            duration: 3000,
-          },
-          error: {
-            duration: 5000,
+            background: 'transparent',
+            boxShadow: 'none',
+            padding: 0,
           },
         }}
-      />
+      >
+        {(t) => <CustomToast t={t} />}
+      </Toaster>
       {/* Show in-app notification toast for foreground notifications */}
       {foregroundNotification && (
         <NotificationToast

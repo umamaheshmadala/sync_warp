@@ -2,7 +2,8 @@ import React, { useState } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 import { Badge } from '../ui/badge'
 import { Pin, BellOff } from 'lucide-react'
-import { useNewFriends } from '../../hooks/useNewFriends'
+import { useAuthStore } from '../../store/authStore'
+import { useOnlineStatus, useCanSeeOnlineStatus } from '../../hooks/useOnlineStatus'
 import type { ConversationWithDetails } from '../../types/messaging'
 import { cn } from '../../lib/utils'
 import { formatConversationDate } from '../../utils/dateUtils'
@@ -16,9 +17,9 @@ interface ConversationCardProps {
   onUpdate?: () => void
 }
 
-export function ConversationCard({ 
-  conversation, 
-  onClick, 
+export function ConversationCard({
+  conversation,
+  onClick,
   isActive = false,
   onLongPress,
   showActions = false,
@@ -35,16 +36,17 @@ export function ConversationCard({
     is_pinned
   } = conversation
 
-  const { friends } = useNewFriends()
+  // Determine other participant ID
+  const currentUserId = useAuthStore((state) => state.user?.id)
+  const otherParticipantId = participant1_id === currentUserId ? participant2_id : participant1_id
+
   const [isHovered, setIsHovered] = useState(false)
 
-  // Get friend's online status
-  const friendProfile = React.useMemo(() => {
-    return friends.find(f =>
-      f.friend_profile.user_id === participant1_id ||
-      f.friend_profile.user_id === participant2_id
-    )?.friend_profile
-  }, [friends, participant1_id, participant2_id])
+  // Real-time online status check (replaces stale friendProfile)
+  const { isUserOnline } = useOnlineStatus()
+  const { canSee: canSeeOnlineStatus } = useCanSeeOnlineStatus(otherParticipantId)
+
+  const isOnline = isUserOnline(otherParticipantId) && canSeeOnlineStatus
 
   // Generate initials
   const initials = other_participant_name
@@ -74,16 +76,16 @@ export function ConversationCard({
       {/* Avatar */}
       <div className="relative flex-shrink-0 mt-1">
         <Avatar className="h-12 w-12">
-          <AvatarImage 
-            src={other_participant_avatar || undefined} 
-            alt={other_participant_name || 'User'} 
+          <AvatarImage
+            src={other_participant_avatar || undefined}
+            alt={other_participant_name || 'User'}
           />
           <AvatarFallback className="bg-gray-200 text-gray-600 font-medium text-sm">
             {initials}
           </AvatarFallback>
         </Avatar>
         {/* Online indicator */}
-        {friendProfile?.is_online && (
+        {isOnline && (
           <div
             className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-green-500"
             title="Online"
@@ -121,7 +123,7 @@ export function ConversationCard({
             </span>
           )}
         </div>
-        
+
         <div className="flex items-center justify-between">
           <p className={cn(
             "text-sm truncate pr-2",
@@ -130,12 +132,12 @@ export function ConversationCard({
             {last_message_content || 'No messages yet'}
           </p>
           {unread_count > 0 && (
-            <Badge 
-              variant="default" 
+            <Badge
+              variant="default"
               className={cn(
                 "flex-shrink-0 h-5 min-w-[20px] px-1.5 flex items-center justify-center transition-colors",
-                conversation.is_muted 
-                  ? "bg-gray-200 text-gray-600 hover:bg-gray-300" 
+                conversation.is_muted
+                  ? "bg-gray-200 text-gray-600 hover:bg-gray-300"
                   : "bg-green-700 hover:bg-green-800"
               )}
             >
