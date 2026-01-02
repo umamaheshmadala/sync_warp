@@ -73,8 +73,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   }
 
-  // Hide bottom navigation when keyboard is visible on messages route
-  const shouldShowBottomNav = !isKeyboardVisible || !isMessagesRoute;
+  // Hide bottom navigation when keyboard is visible anywhere to make space
+  const shouldShowBottomNav = !isKeyboardVisible;
 
   return (
     <GestureHandler
