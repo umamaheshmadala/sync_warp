@@ -6,7 +6,8 @@ import { useAuthStore } from '../store/authStore'
 import { useNavigationPreferences } from '../hooks/useNavigationState'
 import { User, MapPin, Phone, Mail, Edit3, Camera, Settings, Smartphone, MessageSquare, FileText } from 'lucide-react'
 import UserReviewsList from './reviews/UserReviewsList'
-import { AvatarUpload, ProfileEditForm, ProfileSettings, ProfileCompletionWizard, ActivityFeed, InlineEditField } from './profile/index'
+import { AvatarUpload, ProfileEditForm, ProfileSettings, ProfileCompletionWizard, InlineEditField } from './profile/index'
+import { RecentActivityFeed } from './friends/RecentActivityFeed'
 import { useCities } from '../hooks/useCities'
 
 export default function Profile() {
@@ -198,7 +199,7 @@ export default function Profile() {
           <div className="flex">
             {[
               { id: 'settings', label: 'Settings' },
-              { id: 'activity', label: 'Activity' }
+              { id: 'activity', label: 'My Activity' }
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -224,7 +225,7 @@ export default function Profile() {
       {/* Activity Tab */}
       {activeTab === 'activity' && (
         <div className="max-w-4xl mx-auto">
-          <ActivityFeed />
+          <RecentActivityFeed userId={user?.id || ''} />
         </div>
       )}
     </div>

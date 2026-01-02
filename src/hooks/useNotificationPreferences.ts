@@ -116,7 +116,7 @@ export function useNotificationPreferences() {
             // window.alert('Preferences saved successfully!'); 
             console.log('[useNotificationPreferences] Success');
             toast.success('✓ Preferences saved', {
-                duration: 2000,
+                duration: 3000,
                 style: {
                     background: '#10b981',
                     color: '#fff',
