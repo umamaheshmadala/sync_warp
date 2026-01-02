@@ -9,6 +9,9 @@
  */
 
 import { usePresenceStore } from '../store/presenceStore';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '../lib/supabase';
+import { useAuthStore } from '../store/authStore';
 
 export function useOnlineStatus() {
     const onlineUsers = usePresenceStore(state => state.onlineUsers);
@@ -42,3 +45,40 @@ export function useOnlineStatus() {
         onlineCount: onlineUsers.size
     };
 }
+
+/**
+ * Hook to check if current user can see another user's online status
+ * Uses the can_see_online_status RPC which respects privacy settings
+ */
+export function useCanSeeOnlineStatus(targetUserId: string) {
+    const { user } = useAuthStore();
+
+    const { data: canSee, isLoading } = useQuery({
+        queryKey: ['canSeeOnlineStatus', user?.id, targetUserId],
+        queryFn: async () => {
+            if (!user?.id || !targetUserId) return false;
+
+            // User can always see their own status
+            if (user.id === targetUserId) return true;
+
+            const { data, error } = await supabase.rpc('can_see_online_status', {
+                viewer_id: user.id,
+                target_id: targetUserId
+            });
+
+            if (error) {
+                console.error('[useCanSeeOnlineStatus] RPC error:', error);
+                return false;
+            }
+
+            return data as boolean;
+        },
+        enabled: !!user?.id && !!targetUserId,
+        staleTime: 10 * 1000, // Cache for 10 seconds
+        gcTime: 60 * 1000, // Keep in cache for 1 minute
+        refetchInterval: 10 * 1000, // Auto-refresh every 10 seconds
+    });
+
+    return { canSee: canSee ?? false, isLoading };
+}
+

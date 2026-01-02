@@ -5,7 +5,7 @@
  */
 
 import { formatLastSeen } from '../../utils/formatLastSeen';
-import { useOnlineStatus } from '../../hooks/useOnlineStatus';
+import { useOnlineStatus, useCanSeeOnlineStatus } from '../../hooks/useOnlineStatus';
 
 interface OnlineStatusBadgeProps {
     userId: string;
@@ -25,12 +25,23 @@ export function OnlineStatusBadge({
     className
 }: OnlineStatusBadgeProps) {
     const { isUserOnline, getLastSeen } = useOnlineStatus();
+    const { canSee, isLoading } = useCanSeeOnlineStatus(userId);
 
     // Real-time status lookup
     const online = isUserOnline(userId);
     // Use Realtime last seen if available, otherwise fallback to DB
     const realtimeLastSeen = getLastSeen(userId);
     const displayLastSeen = realtimeLastSeen || dbLastActive;
+
+    // If privacy check is loading, show nothing to avoid flicker
+    if (isLoading) {
+        return null;
+    }
+
+    // If user's privacy settings don't allow viewing their status, hide it
+    if (!canSee) {
+        return null;
+    }
 
     return (
         <div className={`flex items-center gap-2 ${className || ''}`}>
@@ -71,11 +82,14 @@ interface OnlineStatusDotProps {
 
 export function OnlineStatusDot({ userId }: OnlineStatusDotProps) {
     const { isUserOnline } = useOnlineStatus();
+    const { canSee, isLoading } = useCanSeeOnlineStatus(userId);
     const online = isUserOnline(userId);
 
-    if (!online) return null;
+    // Don't show if privacy check is loading or user can't see
+    if (isLoading || !canSee || !online) return null;
 
     return (
         <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-green-500 ring-2 ring-white" />
     );
 }
+

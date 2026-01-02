@@ -27,6 +27,7 @@ import { toast } from 'react-hot-toast'
 import { Dialog } from '@capacitor/dialog'
 import * as blockService from '../../services/blockService'
 import { BlockUserDialog } from './BlockUserDialog'
+import { useCanSeeOnlineStatus } from '../../hooks/useOnlineStatus'
 
 interface ChatHeaderProps {
   conversationId: string
@@ -91,8 +92,11 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
     )?.friend_profile
   }, [friends, conversation])
 
-  // Get other participant ID for profile modal
+  // Get other participant ID for profile modal - declared early for privacy hook
   const [otherParticipantId, setOtherParticipantId] = React.useState<string | null>(null)
+
+  // Check if we can see the other participant's online status
+  const { canSee: canSeeOnlineStatus } = useCanSeeOnlineStatus(otherParticipantId || '')
 
   React.useEffect(() => {
     if (!conversation) return
@@ -382,7 +386,7 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
                   {other_participant_name?.substring(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              {friendProfile?.is_online && (
+              {friendProfile?.is_online && canSeeOnlineStatus && (
                 <div className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-green-500" />
               )}
             </div>
@@ -392,7 +396,7 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
                 {other_participant_name || 'Unknown User'}
               </h2>
               <span className="text-xs text-blue-600 mt-0.5 hover:underline">
-                {friendProfile?.is_online ? 'Active now' : 'View profile'}
+                {friendProfile?.is_online && canSeeOnlineStatus ? 'Active now' : 'View profile'}
               </span>
             </div>
           </div>
