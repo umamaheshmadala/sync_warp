@@ -221,9 +221,12 @@ export default function Profile() {
         </div>
       )}
 
-      <div className="max-w-4xl mx-auto">
-        <MyActivityTab />
-      </div>
+      {/* Activity Tab */}
+      {activeTab === 'activity' && (
+        <div className="max-w-4xl mx-auto">
+          <MyActivityTab />
+        </div>
+      )}
     </div>
   )
 }
