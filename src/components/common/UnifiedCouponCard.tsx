@@ -6,6 +6,7 @@ import React from 'react';
 import { Clock, MapPin, Star, Heart } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { CouponCollectButton } from '../coupon/CouponCollectButton';
+import { ShareButton } from '../Sharing/ShareButton';
 
 export interface UnifiedCouponData {
   id: string;
@@ -153,8 +154,18 @@ export const UnifiedCouponCard: React.FC<UnifiedCouponCardProps> = ({
       }`}
       onClick={onClick}
     >
-      {/* Collect button - top right corner */}
-      <div className="absolute top-3 right-3 z-10">
+      {/* Action buttons - top right corner */}
+      <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
+        <div onClick={(e) => e.stopPropagation()}>
+          <ShareButton
+            shareableType="coupon"
+            shareableId={coupon.id}
+            shareableTitle={coupon.title}
+            shareableDescription={coupon.description}
+            variant="icon"
+            className="h-8 w-8 rounded-full bg-white/90 shadow-md backdrop-blur hover:bg-blue-50"
+          />
+        </div>
         <CouponCollectButton
           couponId={coupon.id}
           couponTitle={coupon.title}

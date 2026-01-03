@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { Product, CURRENCIES } from '../../types/product';
 import { useNavigate } from 'react-router-dom';
+import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 
 interface ProductViewProps {
   product: Product;
@@ -29,6 +30,7 @@ const ProductView: React.FC<ProductViewProps> = ({
   onEdit
 }) => {
   const navigate = useNavigate();
+  const { getBusinessUrl } = useBusinessUrl();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   // Get currency symbol
@@ -66,7 +68,7 @@ const ProductView: React.FC<ProductViewProps> = ({
       onEdit();
     } else {
       // Navigate to products page for editing
-      navigate(`/business/${product.business_id}/products`);
+      navigate(`${getBusinessUrl(product.business_id)}/products`);
     }
   };
 

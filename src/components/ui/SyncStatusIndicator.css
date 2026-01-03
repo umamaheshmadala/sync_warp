@@ -1,0 +1,182 @@
+.sync-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.sync-status:hover {
+  opacity: 0.9;
+  transform: scale(1.02);
+}
+
+.sync-status:focus {
+  outline: 2px solid #6366F1;
+  outline-offset: 2px;
+}
+
+.sync-status--compact {
+  padding: 4px;
+  cursor: default;
+}
+
+.sync-status--compact:hover {
+  transform: none;
+}
+
+/* Status colors */
+.sync-status--idle {
+  background-color: #F3F4F6;
+  color: #6B7280;
+}
+
+.sync-status--syncing {
+  background-color: #DBEAFE;
+  color: #1E40AF;
+}
+
+.sync-status--synced {
+  background-color: #D1FAE5;
+  color: #065F46;
+}
+
+.sync-status--error {
+  background-color: #FEE2E2;
+  color: #991B1B;
+}
+
+.sync-status--offline {
+  background-color: #FEF3C7;
+  color: #92400E;
+}
+
+/* Icon styling */
+.sync-status-icon {
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sync-status-icon--syncing {
+  animation: rotate 1s linear infinite;
+}
+
+.sync-status-icon--idle {
+  font-size: 8px;
+  opacity: 0.5;
+}
+
+/* Main content */
+.sync-status__main {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sync-status__label {
+  white-space: nowrap;
+}
+
+.sync-status__detail {
+  font-size: 11px;
+  opacity: 0.7;
+  margin-top: 2px;
+  padding-top: 4px;
+  border-top: 1px solid currentColor;
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* Animations */
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 0.7;
+    transform: translateY(0);
+  }
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .sync-status--idle {
+    background-color: #374151;
+    color: #9CA3AF;
+  }
+
+  .sync-status--syncing {
+    background-color: #1E3A8A;
+    color: #BFDBFE;
+  }
+
+  .sync-status--synced {
+    background-color: #064E3B;
+    color: #A7F3D0;
+  }
+
+  .sync-status--error {
+    background-color: #7F1D1D;
+    color: #FECACA;
+  }
+
+  .sync-status--offline {
+    background-color: #78350F;
+    color: #FDE68A;
+  }
+}
+
+/* Mobile adjustments */
+@media (max-width: 640px) {
+  .sync-status {
+    font-size: 12px;
+    padding: 5px 10px;
+    gap: 4px;
+  }
+
+  .sync-status-icon {
+    font-size: 12px;
+  }
+
+  .sync-status__detail {
+    font-size: 10px;
+  }
+}
+
+/* Accessibility: Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .sync-status-icon--syncing {
+    animation: none;
+  }
+
+  .sync-status:hover {
+    transform: none;
+  }
+
+  .sync-status__detail {
+    animation: none;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .sync-status {
+    border: 2px solid currentColor;
+  }
+}

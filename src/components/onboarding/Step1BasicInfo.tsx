@@ -1,6 +1,6 @@
 // src/components/onboarding/Step1BasicInfo.tsx
 import { useState } from 'react'
-import { Phone, ArrowRight, ChevronRight } from 'lucide-react'
+import { Phone, ArrowRight, ChevronRight, Calendar } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
 import { OnboardingData } from './OnboardingFlow'
 
@@ -15,12 +15,14 @@ export default function Step1BasicInfo({ data, onUpdate, onNext, onSkip }: Step1
   const { user } = useAuthStore()
   const [phone, setPhone] = useState(data.phone || '')
   const [phoneError, setPhoneError] = useState('')
+  const [birthday, setBirthday] = useState(data.date_of_birth || '')
+  const [birthdayError, setBirthdayError] = useState('')
 
   // Format phone number as user types
   const formatPhoneNumber = (value: string) => {
     // Remove all non-digits
     const digits = value.replace(/\D/g, '')
-    
+
     // Format as (XXX) XXX-XXXX
     if (digits.length >= 10) {
       return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`
@@ -36,7 +38,7 @@ export default function Step1BasicInfo({ data, onUpdate, onNext, onSkip }: Step1
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
     const formatted = formatPhoneNumber(value)
-    
+
     // Only update if we haven't exceeded 10 digits
     const digits = formatted.replace(/\D/g, '')
     if (digits.length <= 10) {
@@ -44,6 +46,13 @@ export default function Step1BasicInfo({ data, onUpdate, onNext, onSkip }: Step1
       setPhoneError('')
       onUpdate({ phone: digits }) // Store unformatted digits
     }
+  }
+
+  const handleBirthdayChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setBirthday(value)
+    setBirthdayError('')
+    onUpdate({ date_of_birth: value })
   }
 
   const validatePhone = () => {
@@ -56,15 +65,41 @@ export default function Step1BasicInfo({ data, onUpdate, onNext, onSkip }: Step1
     return true
   }
 
+  const validateBirthday = () => {
+    if (birthday) {
+      const birthDate = new Date(birthday)
+      const today = new Date()
+      const age = today.getFullYear() - birthDate.getFullYear()
+
+      if (birthDate > today) {
+        setBirthdayError('Birthday cannot be in the future')
+        return false
+      }
+      if (age < 13) {
+        setBirthdayError('You must be at least 13 years old')
+        return false
+      }
+      if (age > 120) {
+        setBirthdayError('Please enter a valid birthday')
+        return false
+      }
+    }
+    setBirthdayError('')
+    return true
+  }
+
   const handleNext = () => {
     if (phone && !validatePhone()) {
+      return
+    }
+    if (birthday && !validateBirthday()) {
       return
     }
     onNext()
   }
 
   const handleSkipStep = () => {
-    onUpdate({ phone: '' })
+    onUpdate({ phone: '', date_of_birth: '' })
     onNext()
   }
 
@@ -80,16 +115,36 @@ export default function Step1BasicInfo({ data, onUpdate, onNext, onSkip }: Step1
         </p>
       </div>
 
-      {/* Welcome Message */}
-      <div className="mb-8 p-4 bg-blue-50 rounded-lg">
-        <p className="text-blue-800">
-          <strong>Welcome, {user?.user_metadata?.full_name || user?.email}!</strong>
-          <br />
-          We're excited to help you discover amazing deals in your area.
-        </p>
-      </div>
-
       <div className="space-y-6">
+        {/* Birthday */}
+        <div>
+          <label htmlFor="birthday" className="block text-sm font-medium text-gray-700 mb-1">
+            Birthday <span className="text-gray-400 font-normal">(Optional)</span>
+          </label>
+          <div className="relative">
+            <input
+              type="date"
+              id="birthday"
+              value={birthday}
+              onChange={handleBirthdayChange}
+              onBlur={validateBirthday}
+              max={new Date().toISOString().split('T')[0]}
+              className={`
+                block w-full px-4 py-3 pl-12 border rounded-lg shadow-sm
+                focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500
+                ${birthdayError ? 'border-red-300' : 'border-gray-300'}
+              `}
+            />
+            <Calendar className="h-5 w-5 text-gray-400 absolute left-4 top-3.5" />
+          </div>
+          {birthdayError && (
+            <p className="mt-1 text-sm text-red-600">{birthdayError}</p>
+          )}
+          <p className="mt-1 text-xs text-gray-500">
+            We'll use this to send birthday reminders to your friends
+          </p>
+        </div>
+
         {/* Phone Number */}
         <div>
           <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
@@ -118,16 +173,6 @@ export default function Step1BasicInfo({ data, onUpdate, onNext, onSkip }: Step1
             We'll use this to send you important updates and deal alerts
           </p>
         </div>
-
-        {/* Benefits Preview */}
-        <div className="bg-gray-50 rounded-lg p-4">
-          <h4 className="font-medium text-gray-900 mb-2">What's next:</h4>
-          <ul className="text-sm text-gray-600 space-y-1">
-            <li>• Set your location preferences</li>
-            <li>• Choose your interests</li>
-            <li>• Start discovering personalized deals</li>
-          </ul>
-        </div>
       </div>
 
       {/* Action Buttons */}
@@ -139,23 +184,13 @@ export default function Step1BasicInfo({ data, onUpdate, onNext, onSkip }: Step1
           Continue
           <ArrowRight className="ml-2 h-4 w-4" />
         </button>
-        
+
         <button
           onClick={handleSkipStep}
           className="flex-1 flex items-center justify-center px-6 py-3 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out"
         >
           <ChevronRight className="mr-2 h-4 w-4" />
           Skip for now
-        </button>
-      </div>
-
-      {/* Skip All Option */}
-      <div className="mt-4 text-center">
-        <button
-          onClick={onSkip}
-          className="text-sm text-gray-500 hover:text-gray-700 underline"
-        >
-          Skip entire onboarding
         </button>
       </div>
     </div>

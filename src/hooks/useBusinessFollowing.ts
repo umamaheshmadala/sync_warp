@@ -2,7 +2,8 @@
 // Hook for following businesses with notifications and realtime updates
 // Replaces useUnifiedFavorites for business-specific functionality
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import { toast } from 'react-hot-toast';
@@ -54,108 +55,108 @@ interface UseBusinessFollowingReturn {
 
 export function useBusinessFollowing(): UseBusinessFollowingReturn {
   const { user } = useAuthStore();
-  const [followedBusinesses, setFollowedBusinesses] = useState<FollowedBusiness[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
-  // Load followed businesses from database
-  const loadFollowedBusinesses = useCallback(async () => {
-    if (!user) {
-      setFollowedBusinesses([]);
-      setLoading(false);
-      return;
+  // Query key
+  const queryKey = ['followedBusinesses', user?.id];
+
+  // Fetch function
+  const fetchFollowedBusinesses = async (): Promise<FollowedBusiness[]> => {
+    if (!user) return [];
+
+    console.log('[BusinessFollowing] Loading followed businesses for user:', user.id);
+
+    const { data, error: fetchError } = await supabase
+      .from('business_followers')
+      .select(`
+        id,
+        business_id,
+        user_id,
+        followed_at,
+        notification_preferences,
+        notification_channel,
+        is_active
+      `)
+      .eq('user_id', user.id)
+      .eq('entity_type', 'business')
+      .eq('is_active', true)
+      .order('followed_at', { ascending: false });
+
+    if (fetchError) {
+      console.error('[BusinessFollowing] Error loading:', fetchError);
+      throw fetchError;
     }
 
-    try {
-      setLoading(true);
-      setError(null);
+    if (!data || data.length === 0) return [];
 
-      console.log('[BusinessFollowing] Loading followed businesses for user:', user.id);
+    // Get business details and follower counts for each
+    const businessesWithDetails = await Promise.all(
+      data.map(async (follow) => {
+        try {
+          // Fetch business details
+          const { data: businessData, error: businessError } = await supabase
+            .from('businesses')
+            .select('*')
+            .eq('id', follow.business_id)
+            .single();
 
-      const { data, error: fetchError } = await supabase
-        .from('business_followers')
-        .select(`
-          id,
-          business_id,
-          user_id,
-          followed_at,
-          notification_preferences,
-          notification_channel,
-          is_active
-        `)
-        .eq('user_id', user.id)
-        .eq('entity_type', 'business')
-        .eq('is_active', true)
-        .order('followed_at', { ascending: false });
-
-      if (fetchError) {
-        console.error('[BusinessFollowing] Error loading:', fetchError);
-        throw fetchError;
-      }
-
-      console.log('[BusinessFollowing] Loaded', data?.length || 0, 'followed businesses');
-
-      // Get business details and follower counts for each
-      const businessesWithDetails = await Promise.all(
-        (data || []).map(async (follow) => {
-          try {
-            // Fetch business details - using * to get all available columns
-            const { data: businessData, error: businessError } = await supabase
-              .from('businesses')
-              .select('*')
-              .eq('id', follow.business_id)
-              .single();
-            
-            if (businessError) {
-              console.error(`[BusinessFollowing] Error fetching business ${follow.business_id}:`, businessError);
-              return {
-                ...follow,
-                business: undefined
-              };
-            }
-            
-            // Get follower count
-            const { count } = await supabase
-              .from('business_followers')
-              .select('*', { count: 'exact', head: true })
-              .eq('business_id', follow.business_id)
-              .eq('entity_type', 'business')
-              .eq('is_active', true);
-            
-            return {
-              ...follow,
-              business: businessData ? {
-                id: businessData.id,
-                business_name: businessData.business_name,
-                business_type: businessData.business_type,
-                logo_url: businessData.logo_url,
-                cover_image_url: businessData.cover_image_url,
-                address: businessData.address,
-                rating: businessData.rating,
-                review_count: businessData.review_count,
-                description: businessData.description,
-                follower_count: count || 0
-              } : undefined
-            };
-          } catch (err) {
-            console.error(`[BusinessFollowing] Error processing business ${follow.business_id}:`, err);
+          if (businessError) {
+            console.error(`[BusinessFollowing] Error fetching business ${follow.business_id}:`, businessError);
             return {
               ...follow,
               business: undefined
             };
           }
-        })
-      );
 
-      setFollowedBusinesses(businessesWithDetails as FollowedBusiness[]);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load followed businesses';
-      setError(errorMessage);
-      console.error('[BusinessFollowing] Error:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
+          // Get follower count
+          const { count } = await supabase
+            .from('business_followers')
+            .select('*', { count: 'exact', head: true })
+            .eq('business_id', follow.business_id)
+            .eq('entity_type', 'business')
+            .eq('is_active', true);
+
+          return {
+            ...follow,
+            business: businessData ? {
+              id: businessData.id,
+              business_name: businessData.business_name,
+              business_type: businessData.business_type,
+              logo_url: businessData.logo_url,
+              cover_image_url: businessData.cover_image_url,
+              address: businessData.address,
+              rating: businessData.rating,
+              review_count: businessData.review_count,
+              description: businessData.description,
+              follower_count: count || 0
+            } : undefined
+          };
+        } catch (err) {
+          console.error(`[BusinessFollowing] Error processing business ${follow.business_id}:`, err);
+          return {
+            ...follow,
+            business: undefined
+          };
+        }
+      })
+    );
+
+    return businessesWithDetails as FollowedBusiness[];
+  };
+
+  // React Query hook
+  const {
+    data: followedBusinesses = [],
+    isLoading,
+    error: queryError,
+    refetch
+  } = useQuery({
+    queryKey,
+    queryFn: fetchFollowedBusinesses,
+    enabled: !!user,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 60 * 24, // 24 hours
+  });
 
   // Check if user follows a business
   const isFollowing = useCallback(
@@ -194,32 +195,38 @@ export function useBusinessFollowing(): UseBusinessFollowingReturn {
             id: businessId,
             business_name: businessName,
           } : undefined,
-        };
-        setFollowedBusinesses(prev => [tempFollow, ...prev]);
+        } as FollowedBusiness; // Cast to avoid partial type issues if business details are missing
+
+        queryClient.setQueryData(queryKey, (old: FollowedBusiness[] | undefined) => {
+          return [tempFollow, ...(old || [])];
+        });
 
         const { error: insertError } = await supabase
           .from('business_followers')
           .insert({
             user_id: user.id,
             business_id: businessId,
-            entity_type: 'business',  // Required by legacy constraint
-            entity_id: businessId,     // Required by legacy constraint
+            entity_type: 'business',
+            entity_id: businessId,
             is_active: true,
           });
 
         if (insertError) {
           // Revert optimistic update
-          setFollowedBusinesses(prev => prev.filter(f => f.id !== tempFollow.id));
+          queryClient.setQueryData(queryKey, (old: FollowedBusiness[] | undefined) => {
+            return (old || []).filter(f => f.business_id !== businessId);
+          });
           throw insertError;
         }
 
         toast.success('Following!', {
-          description: businessName 
-            ? `You're now following ${businessName}` 
+          description: businessName
+            ? `You're now following ${businessName}`
             : 'You\'re now following this business',
         });
 
-        await loadFollowedBusinesses();
+        // Refetch to ensure we have the correct DB ID and consistent state
+        queryClient.invalidateQueries({ queryKey });
         return true;
       } catch (err) {
         console.error('[BusinessFollowing] Error following:', err);
@@ -229,7 +236,7 @@ export function useBusinessFollowing(): UseBusinessFollowingReturn {
         return false;
       }
     },
-    [user, loadFollowedBusinesses]
+    [user, queryClient, queryKey]
   );
 
   // Unfollow a business
@@ -239,7 +246,11 @@ export function useBusinessFollowing(): UseBusinessFollowingReturn {
 
       try {
         // Optimistic update
-        setFollowedBusinesses(prev => prev.filter(f => f.business_id !== businessId));
+        const previousData = queryClient.getQueryData<FollowedBusiness[]>(queryKey);
+
+        queryClient.setQueryData(queryKey, (old: FollowedBusiness[] | undefined) => {
+          return (old || []).filter(f => f.business_id !== businessId);
+        });
 
         const { error: deleteError } = await supabase
           .from('business_followers')
@@ -249,13 +260,15 @@ export function useBusinessFollowing(): UseBusinessFollowingReturn {
 
         if (deleteError) {
           // Revert optimistic update
-          await loadFollowedBusinesses();
+          if (previousData) {
+            queryClient.setQueryData(queryKey, previousData);
+          }
           throw deleteError;
         }
 
         toast.success('Unfollowed', {
-          description: businessName 
-            ? `You unfollowed ${businessName}` 
+          description: businessName
+            ? `You unfollowed ${businessName}`
             : 'You unfollowed this business',
         });
 
@@ -268,7 +281,7 @@ export function useBusinessFollowing(): UseBusinessFollowingReturn {
         return false;
       }
     },
-    [user, loadFollowedBusinesses]
+    [user, queryClient, queryKey]
   );
 
   // Update notification preferences
@@ -281,27 +294,23 @@ export function useBusinessFollowing(): UseBusinessFollowingReturn {
       if (!user) return false;
 
       try {
-        const updates: any = {};
-        
+        // Optimistic update logic is complex here, so we'll just wait for the update
+        // or we can implement shallow optimistic update if needed.
+        // For now, let's just do the mutation.
+
+        const currentData = queryClient.getQueryData<FollowedBusiness[]>(queryKey);
+
+        // Calculate new preferences
+        let updates: any = {};
         if (preferences) {
-          // Merge with existing preferences
-          const current = followedBusinesses.find(f => f.business_id === businessId);
+          const current = currentData?.find(f => f.business_id === businessId);
           if (current) {
             updates.notification_preferences = {
               ...current.notification_preferences,
               ...preferences,
             };
-          } else {
-            updates.notification_preferences = {
-              new_products: true,
-              new_offers: true,
-              new_coupons: true,
-              announcements: true,
-              ...preferences,
-            };
           }
         }
-        
         if (channel) {
           updates.notification_channel = channel;
         }
@@ -314,21 +323,16 @@ export function useBusinessFollowing(): UseBusinessFollowingReturn {
 
         if (updateError) throw updateError;
 
-        toast.success('Preferences updated', {
-          description: 'Your notification settings have been saved.',
-        });
-
-        await loadFollowedBusinesses();
+        toast.success('Preferences updated');
+        queryClient.invalidateQueries({ queryKey });
         return true;
       } catch (err) {
         console.error('[BusinessFollowing] Error updating preferences:', err);
-        toast.error('Failed to update preferences', {
-          description: 'Please try again.',
-        });
+        toast.error('Failed to update preferences');
         return false;
       }
     },
-    [user, followedBusinesses, loadFollowedBusinesses]
+    [user, queryClient, queryKey]
   );
 
   // Set up realtime subscription
@@ -338,7 +342,7 @@ export function useBusinessFollowing(): UseBusinessFollowingReturn {
     console.log('[BusinessFollowing] Setting up realtime subscription for user:', user.id);
 
     const channel = supabase
-      .channel(`business_followers_${user.id}`)
+      .channel(`business_followers_swr_${user.id}`)
       .on(
         'postgres_changes',
         {
@@ -349,7 +353,7 @@ export function useBusinessFollowing(): UseBusinessFollowingReturn {
         },
         (payload) => {
           console.log('[BusinessFollowing] Realtime update detected:', payload);
-          loadFollowedBusinesses();
+          queryClient.invalidateQueries({ queryKey });
         }
       )
       .subscribe();
@@ -358,22 +362,17 @@ export function useBusinessFollowing(): UseBusinessFollowingReturn {
       console.log('[BusinessFollowing] Cleaning up realtime subscription');
       supabase.removeChannel(channel);
     };
-  }, [user, loadFollowedBusinesses]);
-
-  // Initial load
-  useEffect(() => {
-    loadFollowedBusinesses();
-  }, [loadFollowedBusinesses]);
+  }, [user, queryClient]); // queryKey is stable enough or included via closure but safer to not include arrays in deps if unnecessary
 
   return {
     followedBusinesses,
-    loading,
-    error,
+    loading: isLoading,
+    error: queryError instanceof Error ? queryError.message : (queryError as string | null),
     isFollowing,
     followBusiness,
     unfollowBusiness,
     updateNotificationPreferences,
-    refresh: loadFollowedBusinesses,
+    refresh: async () => { await refetch() },
     totalFollowing: followedBusinesses.length,
   };
 }

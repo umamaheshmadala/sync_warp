@@ -1,5 +1,7 @@
 // src/lib/supabase.ts
 import { createClient } from '@supabase/supabase-js'
+import { Capacitor } from '@capacitor/core'
+import { supabaseStorage } from './supabaseStorage'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -10,18 +12,64 @@ if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('placeholder') || s
   console.warn('📋 Follow SUPABASE_SETUP_GUIDE.md to set up your database')
 }
 
+// Mobile-optimized configuration with secure storage and PKCE
+const supabaseConfig = {
+  auth: {
+    // Use secure storage on all platforms
+    // iOS: Keychain, Android: EncryptedSharedPreferences, Web: localStorage
+    storage: supabaseStorage,
+
+    // Auto-refresh tokens before expiry
+    autoRefreshToken: true,
+
+    // Persist session across app restarts
+    persistSession: true,
+
+    // Don't try to detect session from URL on mobile
+    // (Mobile apps don't use URL-based auth flows)
+    detectSessionInUrl: !Capacitor.isNativePlatform(),
+
+    // Enable PKCE flow (Proof Key for Code Exchange)
+    // More secure for mobile apps - protects against auth code interception
+    flowType: 'pkce' as 'pkce',
+
+    // Storage key for auth data
+    storageKey: 'supabase.auth.token'
+  },
+
+  // Add platform information to requests
+  global: {
+    headers: {
+      'x-client-platform': Capacitor.getPlatform(),
+      'x-client-info': `capacitor-${Capacitor.getPlatform()}`,
+      'x-auth-flow': 'pkce' // Indicate PKCE flow is enabled
+    },
+    // Increase timeout for mobile networks (60 seconds)
+    fetch: Capacitor.isNativePlatform() ? (
+      (url: RequestInfo | URL, options?: RequestInit) => {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
+
+        return fetch(url, {
+          ...options,
+          signal: controller.signal
+        }).finally(() => clearTimeout(timeoutId));
+      }
+    ) : undefined
+  }
+}
+
 // Create client with fallback values to prevent errors
 export const supabase = createClient(
-  supabaseUrl || 'https://placeholder.supabase.co', 
+  supabaseUrl || 'https://placeholder.supabase.co',
   supabaseAnonKey || 'placeholder-key',
-  {
-    auth: {
-      autoRefreshToken: true,
-      persistSession: true,
-      detectSessionInUrl: true
-    }
-  }
+  supabaseConfig
 )
+
+
+// Export platform detection helpers
+export const isNativePlatform = Capacitor.isNativePlatform()
+export const platform = Capacitor.getPlatform()
 
 // Listen for auth errors and auto-logout on token issues
 supabase.auth.onAuthStateChange((event, session) => {
@@ -33,7 +81,7 @@ supabase.auth.onAuthStateChange((event, session) => {
     sessionStorage.clear()
     window.location.href = '/auth/login'
   }
-  
+
   // Handle signed out event
   if (event === 'SIGNED_OUT') {
     console.log('User signed out')
@@ -44,13 +92,7 @@ supabase.auth.onAuthStateChange((event, session) => {
 })
 
 // Database types
-export interface SocialLinks {
-  twitter?: string
-  linkedin?: string
-  instagram?: string
-  facebook?: string
-  github?: string
-}
+
 
 export interface Profile {
   id: string
@@ -62,8 +104,6 @@ export interface Profile {
   location?: string // Full address/location
   interests: string[]
   phone?: string
-  website?: string
-  social_links?: SocialLinks
   date_of_birth?: string
   role?: 'customer' | 'business_owner' | 'admin'
   is_driver?: boolean

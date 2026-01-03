@@ -3,21 +3,22 @@
 // Following the pattern established in useProducts.ts and useBusiness.ts
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import { couponService } from '../services/couponService';
 import { toast } from 'react-hot-toast';
-import { 
-  Coupon, 
-  CouponFormData, 
-  CouponFilters, 
+import {
+  Coupon,
+  CouponFormData,
+  CouponFilters,
   CouponAnalytics,
   CouponRedemption,
   UserCouponCollection,
   RedemptionRequest,
   RedemptionResponse,
   COUPON_LIMITS,
-  COUPON_CODE_PREFIX 
+  COUPON_CODE_PREFIX
 } from '../types/coupon';
 
 export const useCoupons = (businessId?: string) => {
@@ -149,11 +150,11 @@ export const useCoupons = (businessId?: string) => {
     if (!user) {
       throw new Error('You must be logged in to create coupons');
     }
-    
+
     if (!user.id) {
       throw new Error('User ID is missing - please log in again');
     }
-    
+
     if (!isValidUUID(user.id)) {
       throw new Error('Invalid user session - please log out and log in again');
     }
@@ -161,7 +162,7 @@ export const useCoupons = (businessId?: string) => {
     try {
       setLoading(true);
       setError(null);
-      
+
       console.log('Validating coupon creation:', {
         businessId: businessIdToUse,
         userId: user.id,
@@ -170,7 +171,7 @@ export const useCoupons = (businessId?: string) => {
 
       // Verify business ownership
       console.log('Verifying business ownership for:', businessIdToUse);
-      
+
       const { data: business, error: businessError } = await supabase
         .from('businesses')
         .select('user_id, business_name')
@@ -184,17 +185,17 @@ export const useCoupons = (businessId?: string) => {
         }
         throw new Error(`Business verification failed: ${businessError.message}`);
       }
-      
+
       if (!business) {
         throw new Error('Business not found in database');
       }
-      
+
       console.log('Business found:', { id: businessIdToUse, name: business.business_name, owner: business.user_id });
-      
+
       if (business.user_id !== user.id) {
         throw new Error('Permission denied: You can only create coupons for your own businesses');
       }
-      
+
       console.log('Business ownership verified successfully');
 
       // Check coupon limit
@@ -202,7 +203,7 @@ export const useCoupons = (businessId?: string) => {
         .from('business_coupons')
         .select('*', { count: 'exact', head: true })
         .eq('business_id', businessIdToUse);
-      
+
       if (count && count >= COUPON_LIMITS.MAX_COUPONS_PER_BUSINESS) {
         throw new Error(`Max ${COUPON_LIMITS.MAX_COUPONS_PER_BUSINESS} coupons per business`);
       }
@@ -230,7 +231,7 @@ export const useCoupons = (businessId?: string) => {
         coupon_code,
         created_by: user.id
       };
-      
+
       console.log('Creating coupon with data:', insertData);
 
       const { data, error: createError } = await supabase
@@ -246,7 +247,7 @@ export const useCoupons = (businessId?: string) => {
 
       // Refresh coupons list
       fetchCoupons(businessIdToUse);
-      
+
       return data;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Create failed';
@@ -372,13 +373,13 @@ export const useCoupons = (businessId?: string) => {
       if (!currentCoupon) return false;
 
       const newStatus = currentCoupon.status === 'active' ? 'paused' : 'active';
-      
+
       const result = await updateCoupon(couponId, { status: newStatus });
-      
+
       if (result) {
         toast.success(`Coupon ${newStatus === 'active' ? 'activated' : 'paused'}!`);
       }
-      
+
       return !!result;
     } catch (err) {
       console.error('Error toggling coupon status:', err);
@@ -436,7 +437,7 @@ export const useCoupons = (businessId?: string) => {
 
   // Validate coupon for redemption
   const validateCouponRedemption = async (
-    couponCode: string, 
+    couponCode: string,
     originalAmount: number
   ): Promise<RedemptionResponse> => {
     try {
@@ -500,7 +501,7 @@ export const useCoupons = (businessId?: string) => {
 
       // First validate the coupon
       const validation = await validateCouponRedemption(
-        request.coupon_code, 
+        request.coupon_code,
         request.original_amount || 0
       );
 
@@ -542,19 +543,19 @@ export const useCoupons = (businessId?: string) => {
   // Load coupons on hook initialization
   useEffect(() => {
     let isCancelled = false;
-    
+
     const loadCoupons = async () => {
-      if (businessId && !isCancelled && 
-          (!initialLoadComplete.current || lastBusinessId.current !== businessId)) {
-        
+      if (businessId && !isCancelled &&
+        (!initialLoadComplete.current || lastBusinessId.current !== businessId)) {
+
         lastBusinessId.current = businessId;
         await fetchCoupons(businessId);
         initialLoadComplete.current = true;
       }
     };
-    
+
     loadCoupons();
-    
+
     return () => {
       isCancelled = true;
     };
@@ -595,47 +596,72 @@ export const useCoupons = (businessId?: string) => {
   };
 };
 
+// Standalone fetcher for prefetching
+export const fetchUserCouponsForPrefetch = async (userId: string) => {
+  if (!userId) return [];
+
+  const { data } = await supabase
+    .from('user_coupon_collections')
+    .select(`
+        *,
+        business_coupons!inner(
+          id, title, description, discount_value, discount_type,
+          businesses!inner(business_name)
+        )
+      `)
+    .eq('user_id', userId)
+    .eq('status', 'active')
+    .order('collected_at', { ascending: false });
+
+  return data || [];
+};
+
 // Hook for fetching user's collected coupons
 export const useUserCoupons = () => {
   const { user } = useAuthStore();
-  const [userCoupons, setUserCoupons] = useState<UserCouponCollection[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const queryKey = ['userCoupons', user?.id];
 
-  const fetchUserCoupons = async () => {
-    if (!user) return;
+  const fetchUserCouponsData = async () => {
+    if (!user) return [];
 
-    try {
-      setLoading(true);
-      setError(null);
 
-      console.log('🔍 [fetchUserCoupons] Fetching coupons for user:', user.id);
-      
-      const { data, error: fetchError } = await supabase
-        .from('user_coupon_collections')
-        .select(`
-          *,
-          business_coupons!inner(
-            id, title, description, discount_value, discount_type,
-            businesses!inner(business_name)
-          )
-        `)
-        .eq('user_id', user.id)
-        .eq('status', 'active')
-        .order('collected_at', { ascending: false });
 
-      if (fetchError) throw fetchError;
+    const { data, error: fetchError } = await supabase
+      .from('user_coupon_collections')
+      .select(`
+        *,
+        business_coupons!inner(
+          id, title, description, discount_value, discount_type,
+          businesses!inner(business_name)
+        )
+      `)
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .order('collected_at', { ascending: false });
 
-      console.log('✅ [fetchUserCoupons] Fetched', data?.length || 0, 'active coupons');
-      setUserCoupons(data || []);
-    } catch (err) {
-      console.error('❌ [fetchUserCoupons] Error:', err);
-      setError(err.message);
-      toast.error('Failed to load your coupons');
-    } finally {
-      setLoading(false);
-    }
+    if (fetchError) throw fetchError;
+
+
+    return data || [];
   };
+
+
+
+  const {
+    data: userCoupons = [],
+    isLoading,
+    error: queryError,
+    refetch
+  } = useQuery({
+    queryKey,
+    queryFn: fetchUserCouponsData,
+    enabled: !!user,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 60 * 24, // 24 hours
+  });
+
+  const fetchUserCoupons = async () => { await refetch() };
 
   const collectCoupon = async (couponId: string, source: string = 'direct_search') => {
     if (!user) {
@@ -643,22 +669,19 @@ export const useUserCoupons = () => {
       return false;
     }
 
-    // Debug: Log user information
-    console.log('🔐 [collectCoupon] User from store:', user);
-    console.log('🔐 [collectCoupon] User ID:', user.id);
+
 
     try {
       // Check current session
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      console.log('🔐 [collectCoupon] Current session:', session);
-      console.log('🔐 [collectCoupon] Session error:', sessionError);
-      
+
+
       if (!session) {
         console.error('❌ [collectCoupon] No active session!');
         toast.error('Your session has expired. Please log in again.');
         return false;
       }
-      
+
       if (session.user.id !== user.id) {
         console.error('❌ [collectCoupon] User ID mismatch!', {
           storeUserId: user.id,
@@ -667,7 +690,7 @@ export const useUserCoupons = () => {
         toast.error('Authentication mismatch. Please log in again.');
         return false;
       }
-      
+
       // Get coupon details first (needed for reactivation logic)
       const { data: couponData, error: couponError } = await supabase
         .from('business_coupons')
@@ -686,9 +709,9 @@ export const useUserCoupons = () => {
         toast.error('This coupon is not currently active');
         return false;
       }
-      
+
       // Check if user has ANY collection of this coupon (including removed ones for reactivation)
-      console.log('🔍 [collectCoupon] Checking for existing collection - User ID:', user.id, 'Coupon ID:', couponId);
+
       const { data: existingCollection, error: checkError } = await supabase
         .from('user_coupon_collections')
         .select('id, status, has_been_shared')
@@ -702,7 +725,7 @@ export const useUserCoupons = () => {
         return false;
       }
 
-      console.log('🔍 [collectCoupon] Existing collection check:', existingCollection);
+
 
       if (existingCollection) {
         // Check if coupon was shared (prevent re-collection)
@@ -710,20 +733,20 @@ export const useUserCoupons = () => {
           toast.error('This coupon was shared and cannot be collected again');
           return false;
         }
-        
+
         // If it's still active, user already has it
         if (existingCollection.status === 'active') {
           toast.error('You have already collected this coupon');
           return false;
         }
-        
+
         // If it was removed, we can reactivate it
         if (existingCollection.status === 'removed') {
-          console.log('🔄 [collectCoupon] Reactivating removed coupon');
+
           // Update the existing record instead of inserting new one
           const { error: updateError } = await supabase
             .from('user_coupon_collections')
-            .update({ 
+            .update({
               status: 'active',
               collected_at: new Date().toISOString(),
               collected_from: source,
@@ -739,10 +762,10 @@ export const useUserCoupons = () => {
           }
 
           toast.success('Coupon collected successfully!');
-          fetchUserCoupons(); // Refresh the list
+          queryClient.invalidateQueries({ queryKey });
           return true;
         }
-        
+
         // If it was used/expired but not shared, they can't collect again
         toast.error('You have already used this coupon');
         return false;
@@ -776,7 +799,7 @@ export const useUserCoupons = () => {
       }
 
       toast.success('Coupon collected successfully!');
-      fetchUserCoupons(); // Refresh the list
+      queryClient.invalidateQueries({ queryKey });
       return true;
     } catch (err: any) {
       console.error('Error collecting coupon:', err);
@@ -789,7 +812,7 @@ export const useUserCoupons = () => {
   const getUserCollectedCoupons = async (targetUserId?: string) => {
     const userIdToUse = targetUserId || user?.id;
     if (!userIdToUse) return [];
-    
+
     return await couponService.getUserCollectedCoupons(userIdToUse);
   };
 
@@ -828,56 +851,48 @@ export const useUserCoupons = () => {
 
   // Remove coupon from collection (soft delete)
   const removeCouponCollection = async (collectionId: string) => {
+    // Optimistic Update
+    const previousData = queryClient.getQueryData<UserCouponCollection[]>(queryKey);
+    queryClient.setQueryData(queryKey, (old: UserCouponCollection[] | undefined) => {
+      return (old || []).filter(c => c.id !== collectionId);
+    });
+
     try {
-      // Soft delete by updating status instead of hard delete
-      console.log('🗑️ [removeCouponCollection] Starting removal - Collection ID:', collectionId);
-      
-      const { data, error } = await supabase
+
+
+      const { error: deleteError } = await supabase
         .from('user_coupon_collections')
-        .update({ 
+        .update({
           status: 'removed',
           deleted_at: new Date().toISOString()
         })
-        .eq('id', collectionId)
-        .select(); // Return the updated row to confirm update
+        .eq('id', collectionId);
 
-      if (error) {
-        console.error('❌ [removeCouponCollection] Database error:', error);
-        throw error;
+      if (deleteError) {
+        // Revert optimistic update
+        if (previousData) {
+          queryClient.setQueryData(queryKey, previousData);
+        }
+        throw deleteError;
       }
-
-      console.log('✅ [removeCouponCollection] Database updated successfully:', data);
-
-      // Clear cache if using couponService
-      if (user?.id) {
-        couponService.cache.invalidate(`user_coupons_${user.id}`);
-        console.log('🛠️ [removeCouponCollection] Cache invalidated for user:', user.id);
-      }
-
-      // Refresh the coupon list to reflect the deletion
-      console.log('🔄 [removeCouponCollection] Refreshing coupon list...');
-      await fetchUserCoupons();
-      console.log('✅ [removeCouponCollection] Coupon list refreshed');
 
       toast.success('Coupon removed from wallet');
+      // Invalidate to make sure everything is in sync
+      queryClient.invalidateQueries({ queryKey });
       return true;
     } catch (err: any) {
-      console.error('❌ [removeCouponCollection] Error:', err);
-      toast.error(err.message || 'Failed to remove coupon');
+      console.error('Error removing coupon:', err);
+      toast.error('Failed to remove coupon');
       return false;
     }
   };
 
-  useEffect(() => {
-    if (user) {
-      fetchUserCoupons();
-    }
-  }, [user]);
+  // Initial fetch called by React Query
 
   return {
     userCoupons,
-    loading,
-    error,
+    loading: isLoading,
+    error: queryError instanceof Error ? queryError.message : (queryError as string | null),
     fetchUserCoupons,
     collectCoupon,
     getUserCollectedCoupons,
@@ -897,8 +912,8 @@ export const usePublicCoupons = () => {
       setLoading(true);
       setError(null);
 
-      console.log('🔍 [fetchPublicCoupons] Fetching all public coupons');
-      
+
+
       // Fetch all active, public coupons with business information
       const { data, error: fetchError } = await supabase
         .from('business_coupons')
@@ -913,14 +928,10 @@ export const usePublicCoupons = () => {
 
       if (fetchError) throw fetchError;
 
-      console.log('✅ [fetchPublicCoupons] Fetched', data?.length || 0, 'public coupons');
-      
-      // Debug: Log raw coupon data structure
-      if (data && data.length > 0) {
-        console.log('📋 [fetchPublicCoupons] Sample raw coupon:', data[0]);
-        console.log('📋 [fetchPublicCoupons] Sample business data:', data[0].businesses);
-      }
-      
+
+
+
+
       // Map the data to include business_name at the top level for easy access
       const mappedCoupons = (data || []).map(coupon => {
         const mapped = {
@@ -928,15 +939,10 @@ export const usePublicCoupons = () => {
           business_name: coupon.businesses?.business_name || 'Unknown Business',
           business: coupon.businesses
         };
-        console.log('🔄 [fetchPublicCoupons] Mapped coupon:', {
-          id: mapped.id,
-          title: mapped.title,
-          business_name: mapped.business_name,
-          business: mapped.business
-        });
+
         return mapped;
       });
-      
+
       setCoupons(mappedCoupons as Coupon[]);
       return mappedCoupons as Coupon[];
     } catch (err) {

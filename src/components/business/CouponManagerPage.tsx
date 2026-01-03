@@ -4,6 +4,7 @@ import { ArrowLeft, Home, ChevronRight, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
 import CouponManager from './CouponManager';
+import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 
 interface Business {
   id: string;
@@ -17,6 +18,7 @@ interface Business {
 const CouponManagerPage: React.FC = () => {
   const { businessId } = useParams<{ businessId: string }>();
   const navigate = useNavigate();
+  const { getBusinessUrl } = useBusinessUrl();
   const { user } = useAuthStore();
   const [business, setBusiness] = useState<Business | null>(null);
   const [loading, setLoading] = useState(true);
@@ -25,7 +27,7 @@ const CouponManagerPage: React.FC = () => {
   // Optimized effect to run only when businessId or user.id changes
   useEffect(() => {
     let isCancelled = false;
-    
+
     const fetchBusiness = async () => {
       if (!businessId || !user?.id) {
         setError('Business ID or user not found');
@@ -37,36 +39,64 @@ const CouponManagerPage: React.FC = () => {
         setLoading(true);
         setError(null);
 
+        // Query business by slug
         const { data, error: fetchError } = await supabase
           .from('businesses')
           .select('id, user_id, business_name, business_type, status, verified')
-          .eq('id', businessId)
+          .eq('slug', businessId)
           .single();
 
         if (isCancelled) return;
 
+        let businessData: Business | null = null;
+
         if (fetchError) {
-          console.error('Error fetching business:', fetchError);
-          if (fetchError.code === 'PGRST116') {
+          console.warn('Slug query failed:', fetchError);
+
+          // Only try fallback if businessId looks like a UUID
+          const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+          if (!uuidRegex.test(businessId)) {
             setError('Business not found');
-          } else {
-            setError('Failed to load business information');
+            setLoading(false);
+            return;
           }
-          return;
+
+          // If slug query fails, try as UUID (for backward compatibility)
+          const { data: uuidData, error: uuidError } = await supabase
+            .from('businesses')
+            .select('id, user_id, business_name, business_type, status, verified')
+            .eq('id', businessId)
+            .single();
+
+          if (isCancelled) return;
+
+          if (uuidError) {
+            console.error('Error fetching business:', uuidError);
+            if (uuidError.code === 'PGRST116') {
+              setError('Business not found');
+            } else {
+              setError('Failed to load business information');
+            }
+            return;
+          }
+
+          businessData = uuidData;
+        } else {
+          businessData = data;
         }
 
-        if (!data) {
+        if (!businessData) {
           setError('Business not found');
           return;
         }
 
         // Check if user owns this business
-        if (data.user_id !== user.id) {
+        if (businessData.user_id !== user.id) {
           setError('You do not have permission to manage coupons for this business');
           return;
         }
 
-        setBusiness(data);
+        setBusiness(businessData);
       } catch (err) {
         if (!isCancelled) {
           console.error('Unexpected error:', err);
@@ -78,17 +108,17 @@ const CouponManagerPage: React.FC = () => {
         }
       }
     };
-    
+
     fetchBusiness();
-    
+
     return () => {
       isCancelled = true;
     };
   }, [businessId, user?.id]); // Only depend on businessId and user.id to prevent unnecessary re-renders
 
   const handleGoBack = useCallback(() => {
-    navigate(`/business/${businessId}`);
-  }, [navigate, businessId]);
+    navigate(getBusinessUrl(businessId!, business?.business_name));
+  }, [navigate, businessId, business?.business_name, getBusinessUrl]);
 
   const handleGoHome = useCallback(() => {
     navigate('/dashboard');
@@ -151,27 +181,27 @@ const CouponManagerPage: React.FC = () => {
               >
                 <Home className="w-4 h-4" />
               </button>
-              
+
               <ChevronRight className="w-4 h-4" />
-              
+
               <button
                 onClick={handleGoToBusinessDashboard}
                 className="hover:text-gray-700 transition-colors"
               >
                 Businesses
               </button>
-              
+
               <ChevronRight className="w-4 h-4" />
-              
+
               <button
                 onClick={handleGoBack}
                 className="hover:text-gray-700 transition-colors max-w-48 truncate"
               >
                 {business.business_name}
               </button>
-              
+
               <ChevronRight className="w-4 h-4" />
-              
+
               <span className="text-gray-900 font-medium">Coupons</span>
             </nav>
 

@@ -26,6 +26,7 @@ import { SearchFilters, BusinessSearchResult } from '../../services/advancedSear
 import { searchService } from '../../services/searchService';
 import BusinessCard from '../search/BusinessCard';
 import { SimpleSaveButton } from '../favorites/SimpleSaveButton';
+import { getBusinessUrl } from '../../utils/slugUtils';
 
 interface AdvancedSearchPageProps {
   className?: string;
@@ -66,7 +67,7 @@ const AdvancedSearchPage: React.FC<AdvancedSearchPageProps> = ({ className = '' 
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [trendingTerms, setTrendingTerms] = useState<any[]>([]);
   const [showTrending, setShowTrending] = useState(true);
-  
+
   // Filter states
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState({ min: '', max: '' });
@@ -75,7 +76,7 @@ const AdvancedSearchPage: React.FC<AdvancedSearchPageProps> = ({ className = '' 
   const [onlyOpen, setOnlyOpen] = useState(false);
   const [withOffers, setWithOffers] = useState(false);
   const [sortBy, setSortBy] = useState<SearchFilters['sortBy']>('relevance');
-  
+
   // Load trending search terms on mount
   useEffect(() => {
     const loadTrendingTerms = async () => {
@@ -145,20 +146,20 @@ const AdvancedSearchPage: React.FC<AdvancedSearchPageProps> = ({ className = '' 
     const queryParam = searchParams.get('q') || searchParams.get('query');
     const radiusParam = searchParams.get('radius');
     const sectionParam = searchParams.get('section');
-    
+
     // Set filters from URL params
     if (categoryParam) {
       setSelectedCategories([decodeURIComponent(categoryParam)]);
     }
-    
+
     if (queryParam) {
       setSearchQuery(decodeURIComponent(queryParam));
     }
-    
+
     if (radiusParam) {
       setRadiusFilter(radiusParam);
     }
-    
+
     // Auto-search if parameters are present
     if (categoryParam || queryParam) {
       setTimeout(() => {
@@ -339,11 +340,10 @@ const AdvancedSearchPage: React.FC<AdvancedSearchPageProps> = ({ className = '' 
           {/* Filters Button */}
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center space-x-2 px-6 py-3 border rounded-lg font-medium ${
-              showFilters || activeFiltersCount > 0
-                ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                : 'border-gray-300 hover:bg-gray-50'
-            }`}
+            className={`flex items-center space-x-2 px-6 py-3 border rounded-lg font-medium ${showFilters || activeFiltersCount > 0
+              ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+              : 'border-gray-300 hover:bg-gray-50'
+              }`}
           >
             <Filter className="w-4 h-4" />
             <span>Filters</span>
@@ -367,17 +367,15 @@ const AdvancedSearchPage: React.FC<AdvancedSearchPageProps> = ({ className = '' 
           <div className="flex border border-gray-200 rounded-lg overflow-hidden">
             <button
               onClick={() => setViewMode('grid')}
-              className={`p-2 ${
-                viewMode === 'grid' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-400 hover:text-gray-600'
-              }`}
+              className={`p-2 ${viewMode === 'grid' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-400 hover:text-gray-600'
+                }`}
             >
               <Grid className="w-4 h-4" />
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`p-2 border-l border-gray-200 ${
-                viewMode === 'list' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-400 hover:text-gray-600'
-              }`}
+              className={`p-2 border-l border-gray-200 ${viewMode === 'list' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-400 hover:text-gray-600'
+                }`}
             >
               <List className="w-4 h-4" />
             </button>
@@ -550,18 +548,23 @@ const AdvancedSearchPage: React.FC<AdvancedSearchPageProps> = ({ className = '' 
       {businesses.length > 0 ? (
         <div>
           {/* Results Grid/List */}
-          <div className={viewMode === 'grid' 
+          <div className={viewMode === 'grid'
             ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8'
             : 'space-y-6 mb-8'
           }>
             {businesses.map(business => (
               <div key={business.id} className="relative">
                 <BusinessCard
-                  business={business}
-                  onClick={() => navigate(`/business/${business.id}`)}
-                  viewMode={viewMode}
+                  business={{
+                    ...business,
+                    business_name: business.name,
+                    business_type: business.category,
+                    activeCouponsCount: business.active_offers_count || 0,
+                    relevanceScore: 1,
+                  } as any}
+                  onBusinessClick={() => navigate(getBusinessUrl(business.id, business.name))}
                   showDistance={!!currentLocation}
-                  showFavoriteButton={true}
+                  showCouponCount={true}
                 />
                 {/* Favorite Button Overlay */}
                 <div className="absolute top-3 right-3">
@@ -569,8 +572,8 @@ const AdvancedSearchPage: React.FC<AdvancedSearchPageProps> = ({ className = '' 
                     itemId={business.id}
                     itemType="business"
                     itemData={{
-                      business_name: business.name || business.business_name,
-                      business_type: business.category || business.business_type,
+                      business_name: business.name,
+                      business_type: business.category,
                       address: business.address,
                       rating: business.rating,
                       description: business.description

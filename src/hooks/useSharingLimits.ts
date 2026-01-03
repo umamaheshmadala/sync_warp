@@ -26,7 +26,14 @@ interface UseSharingLimitsReturn {
   // Actions
   refreshStats: () => Promise<void>;
   checkCanShare: (recipientId: string) => Promise<CanShareResult>;
-  shareWithValidation: (recipientId: string, couponId: string) => Promise<{ success: boolean; message: string }>;
+  shareWithValidation: (recipientId: string, couponId: string, senderCollectionId: string) => Promise<{ 
+    success: boolean; 
+    message: string; 
+    message_id?: string; 
+    conversation_id?: string; 
+    error?: string;
+    canShareResult?: CanShareResult;
+  }>;
   
   // Computed values
   canShareMore: boolean;
@@ -123,7 +130,14 @@ export function useSharingLimits(options: UseSharingLimitsOptions = {}): UseShar
     recipientId: string,
     couponId: string,
     senderCollectionId: string
-  ): Promise<{ success: boolean; message: string }> => {
+  ): Promise<{ 
+    success: boolean; 
+    message: string; 
+    message_id?: string; 
+    conversation_id?: string; 
+    error?: string;
+    canShareResult?: CanShareResult;
+  }> => {
     console.log('🎁 Sharing with validation:', { recipientId, couponId, senderCollectionId });
 
     try {

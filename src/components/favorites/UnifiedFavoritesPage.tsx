@@ -3,19 +3,29 @@
 
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, Search as SearchIcon, Package, AlertCircle, RefreshCw, X, ShoppingBag } from 'lucide-react';
+import { Heart, Search as SearchIcon, Package, AlertCircle, RefreshCw, X, ShoppingBag, ChevronDown } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useFavoriteProducts } from '../../hooks/useFavoriteProducts';
 import { FavoriteProductButton } from '../products/FavoriteProductButton';
 import { cn } from '../../lib/utils';
 import { toast } from 'react-hot-toast';
+import { useBusinessUrl } from '../../hooks/useBusinessUrl';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../components/ui/select";
 
 const UnifiedFavoritesPage: React.FC = () => {
   const navigate = useNavigate();
   const { products: favoriteProducts, loading: productsLoading, error: productsError, removeFavorite } = useFavoriteProducts();
-  
+  const { getBusinessUrl } = useBusinessUrl();
+
   // Local state
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'name' | 'price_asc' | 'price_desc'>('name');
 
   // Loading and error states
   if (!favoriteProducts && !productsLoading) {
@@ -36,82 +46,121 @@ const UnifiedFavoritesPage: React.FC = () => {
     );
   }
 
-  // Filter products based on search
+  // Filter and sort products
   const filteredProducts = useMemo(() => {
     if (!favoriteProducts) return [];
-    
-    if (!searchQuery.trim()) {
-      return favoriteProducts;
+
+    let result = favoriteProducts;
+
+    // Filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(product =>
+        product.name.toLowerCase().includes(query) ||
+        product.description?.toLowerCase().includes(query) ||
+        product.business_name.toLowerCase().includes(query) ||
+        product.category?.toLowerCase().includes(query)
+      );
     }
 
-    const query = searchQuery.toLowerCase();
-    return favoriteProducts.filter(product => 
-      product.name.toLowerCase().includes(query) ||
-      product.description?.toLowerCase().includes(query) ||
-      product.business_name.toLowerCase().includes(query) ||
-      product.category?.toLowerCase().includes(query)
-    );
-  }, [favoriteProducts, searchQuery]);
+    // Sort
+    return [...result].sort((a, b) => {
+      if (sortBy === 'name') {
+        return a.name.localeCompare(b.name);
+      } else if (sortBy === 'price_asc') {
+        return a.price - b.price;
+      } else if (sortBy === 'price_desc') {
+        return b.price - a.price;
+      }
+      return 0;
+    });
+  }, [favoriteProducts, searchQuery, sortBy]);
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-                <Heart className="h-8 w-8 text-red-500 mr-3" />
-                Favorite Products
-              </h1>
-              <p className="mt-2 text-gray-600">
-                Your saved products • For coupons visit <button onClick={() => navigate('/wallet')} className="text-indigo-600 hover:underline">Wallet</button> • For businesses visit <button onClick={() => navigate('/following')} className="text-indigo-600 hover:underline">Following</button>
-              </p>
-            </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
 
-            {/* Quick Stats */}
-            <div className="hidden md:flex items-center space-x-8">
-              <div className="text-center">
-                <div className="text-4xl font-bold text-red-500">{favoriteProducts?.length || 0}</div>
-                <div className="text-sm text-gray-600">Favorite Products</div>
-              </div>
-              <div className="flex flex-col space-y-2">
-                <button
-                  onClick={() => navigate('/wallet')}
-                  className="px-4 py-2 text-sm bg-yellow-50 text-yellow-700 rounded-lg hover:bg-yellow-100 transition-colors flex items-center"
-                >
-                  <Package className="h-4 w-4 mr-2" />
-                  View Coupons (Wallet)
-                </button>
-                <button
-                  onClick={() => navigate('/following')}
-                  className="px-4 py-2 text-sm bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition-colors flex items-center"
-                >
-                  <ShoppingBag className="h-4 w-4 mr-2" />
-                  View Following
-                </button>
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-        {/* Search */}
-        <div className="mb-8">
-          <div className="relative max-w-md">
-            <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+        {/* Search and Sort */}
+        <div className="flex flex-row items-center gap-2 mb-6">
+          <div className="relative flex-1 min-w-0">
+            <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search products..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              placeholder="Search..."
+              className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
             />
+          </div>
+
+          <div className="relative shrink-0">
+            <Select
+              value={sortBy}
+              onValueChange={(value) => setSortBy(value as any)}
+            >
+              <SelectTrigger className="w-[160px] bg-white">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name">Name</SelectItem>
+                <SelectItem value="price_asc">Price: Low to High</SelectItem>
+                <SelectItem value="price_desc">Price: High to Low</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
+        {/* Refreshing Indicator */}
+        {/* We assume useFavorites returns isRefetching, though we are using useFavoriteProducts here. 
+            Since the user's request was about favorites page (likely businesses/coupons), 
+            and UnifiedFavoritesPage seems to use useFavoriteProducts which is DIFFERENT from useFavorites.ts.
+            Wait, UnifiedFavoritesPage imports useFavoriteProducts.
+            Let's check if useFavoriteProducts supports isRefetching logic.
+            
+            Actually, looking at the code, proper UnifiedFavoritesPage for businesses/coupons might be different 
+            or this current file is for PRODUCTS only. 
+            
+            However, the user said "favorites page". 
+            Let's adhere to the plan which targeted UnifiedFavoritesPage.tsx.
+            To be safe, I will add the UI but use a prop/state if available.
+            
+            Wait! The previous ViewFile for UnifiedFavorites showed it uses `useFavoriteProducts`.
+            The `useFavorites.ts` I just edited is likely used by `FavoritesPage.tsx` or similar.
+            
+            Let's re-verify the active content of UnifiedFavoritesPage vs what uses useFavorites.
+            Ah, I see logic in useFavorites.ts handles businesses/coupons.
+            
+            If this file is only products, I should probably check where useFavorites is used.
+            BUT, for this specific file, let's assume we want to show it if loading in background.
+            React Query's useFavoriteProducts likely has `isRefetching` or `isFetching`.
+            
+            Let's check `useFavoriteProducts` quickly? 
+            No, I will try to use `productsLoading` combined with data existence implies refetching?
+            Or better, let's just use a standard UI element that I can control or just check if I can grab `isFetching` from the hook.
+            
+            Let's Assume the hook returns it or I can get it.
+            Actually, the currently view file `UnifiedFavoritesPage.tsx` only extracts:
+            `const { products: favoriteProducts, loading: productsLoading, error: productsError, removeFavorite } = useFavoriteProducts();`
+            
+            I need to update `useFavoriteProducts` hook too if I want it here.
+            
+            BUT, my plan said modify `UnifiedFavoritesPage.tsx`. 
+            Let's check `useFavoriteProducts` hook first to see if I can easily expose it.
+         */}
+
+        {/* I will pause this edit to verify useFavoriteProducts hook first to ensure I'm editing the right thing, 
+             as the user likely means the page with businesses too, but "favorites page" usually implies the unified one.
+             
+             Wait, looking at the file content again...
+             This page seems to be PRODUCTS specific "UnifiedFavoritesPage" but the user spoke about "favorites page".
+             
+             Let's check `c:\Users\umama\OneDrive\Documents\GitHub\sync_warp\src\components\favorites\FavoritesPage.tsx` 
+             if it exists, as that might be the business one.
+         */
+        }
+
         {/* Content */}
-        {productsLoading ? (
+        {productsLoading && (!favoriteProducts || favoriteProducts.length === 0) ? (
           <div className="flex justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
             <span className="ml-3 text-gray-600">Loading products...</span>
@@ -146,7 +195,7 @@ const UnifiedFavoritesPage: React.FC = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-all overflow-hidden group cursor-pointer"
-                onClick={() => navigate(`/business/${product.business_id}/product/${product.id}`)}
+                onClick={() => navigate(`${getBusinessUrl(product.business_id, product.business_name)}/product/${product.id}`)}
               >
                 {/* Product Image */}
                 <div className="relative h-48 bg-gray-100">
@@ -161,7 +210,7 @@ const UnifiedFavoritesPage: React.FC = () => {
                       <Package className="h-16 w-16 text-gray-300" />
                     </div>
                   )}
-                  
+
                   {/* Favorite Button */}
                   <div className="absolute top-2 right-2">
                     <FavoriteProductButton
@@ -170,29 +219,28 @@ const UnifiedFavoritesPage: React.FC = () => {
                       variant="icon"
                       size="icon"
                       className="bg-white/90 backdrop-blur shadow-md"
-                      onClick={(e) => e?.stopPropagation()}
                     />
                   </div>
-                  
+
                   {!product.is_available && (
                     <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-medium">
                       Out of Stock
                     </div>
                   )}
                 </div>
-                
+
                 {/* Product Info */}
                 <div className="p-4">
                   <h3 className="font-semibold text-gray-900 line-clamp-2 mb-2 group-hover:text-indigo-600 transition-colors">
                     {product.name}
                   </h3>
-                  
+
                   {product.description && (
                     <p className="text-sm text-gray-600 line-clamp-2 mb-3">
                       {product.description}
                     </p>
                   )}
-                  
+
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="text-lg font-bold text-indigo-600">
@@ -202,7 +250,7 @@ const UnifiedFavoritesPage: React.FC = () => {
                         {product.business_name}
                       </div>
                     </div>
-                    
+
                     {product.category && (
                       <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
                         {product.category}

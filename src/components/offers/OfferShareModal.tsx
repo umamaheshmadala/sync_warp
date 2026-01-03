@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useOfferShare } from '../../hooks/useOfferShare';
 import type { Offer } from '../../types/offers';
+import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 
 interface OfferShareModalProps {
   offer: Offer;
@@ -29,6 +30,7 @@ export function OfferShareModal({
   onClose,
 }: OfferShareModalProps) {
   const [copied, setCopied] = useState(false);
+  const { getBusinessUrl } = useBusinessUrl();
   
   const {
     isSharing,
@@ -44,8 +46,9 @@ export function OfferShareModal({
     userId,
   });
 
-  // Generate share URL with offer code parameter
-  const shareUrl = `${window.location.origin}/business/${offer.business_id}?offer=${offer.offer_code}`;
+  // Generate share URL with offer code parameter - use slug
+  const businessSlug = getBusinessUrl(offer.business_id);
+  const shareUrl = `${window.location.origin}${businessSlug}?offer=${offer.offer_code}`;
 
   // Generate share message
   const shareMessage = `Check out this offer: ${offer.title}\n${offer.description || ''}\nCode: ${offer.offer_code}\n${shareUrl}`;

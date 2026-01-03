@@ -1,0 +1,30 @@
+{
+  "entryPoints": [
+    "src/services/friendsService.ts",
+    "src/hooks/friends/useFriends.ts",
+    "src/hooks/friends/useFriendRequests.ts",
+    "src/hooks/friends/useFriendSearch.ts",
+    "src/hooks/friends/useFriendActions.ts",
+    "src/store/friendsStore.ts"
+  ],
+  "out": "docs/api",
+  "exclude": [
+    "**/__tests__/**",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/node_modules/**"
+  ],
+  "plugin": ["typedoc-plugin-markdown"],
+  "entryPointStrategy": "expand",
+  "readme": "none",
+  "includeVersion": true,
+  "sort": ["source-order"],
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeExternals": true,
+  "hideGenerator": true,
+  "skipErrorChecking": true,
+  "compilerOptions": {
+    "skipLibCheck": true
+  }
+}

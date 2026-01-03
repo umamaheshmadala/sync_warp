@@ -1,8 +1,10 @@
 // =====================================================
 // Story 5.5: Enhanced Sharing Limits - Service Layer
+// Story 8.3.4 Part 2: Messaging Integration
 // =====================================================
 
 import { supabase } from '../lib/supabase';
+import { messagingService } from './messagingService';
 import type {
   SharingLimits,
   CanShareResult,
@@ -103,21 +105,23 @@ export async function getSharingStatsToday(
 }
 
 /**
-| * Log a coupon share activity with wallet transfer
-| * Now requires collection_id to ensure one-share-per-instance
+| * Log a coupon share activity with wallet transfer and messaging
+| * Now requires collection_id and conversation_id for messaging integration
 | */
 export async function logCouponShare(
   senderId: string,
   recipientId: string,
   couponId: string,
   senderCollectionId: string,
+  conversationId: string,
   isDriver: boolean = false
 ): Promise<any> {
-  console.log('📝 Logging coupon share with wallet transfer:', {
+  console.log('📝 Logging coupon share with wallet transfer and messaging:', {
     senderId,
     recipientId,
     couponId,
     senderCollectionId,
+    conversationId,
     isDriver,
   });
 
@@ -128,6 +132,7 @@ export async function logCouponShare(
         p_recipient_id: recipientId,
         p_coupon_id: couponId,
         p_sender_collection_id: senderCollectionId,
+        p_conversation_id: conversationId,
         p_is_driver: isDriver,
       });
 
@@ -136,8 +141,8 @@ export async function logCouponShare(
       throw new Error(`Failed to log coupon share: ${error.message}`);
     }
 
-    console.log('✅ Coupon share logged successfully with wallet transfer:', data);
-    return data; // Returns success object with IDs
+    console.log('✅ Coupon share logged successfully with wallet transfer and message:', data);
+    return data; // Returns success object with IDs including message_id
   } catch (error) {
     console.error('❌ Log coupon share error:', error);
     throw error;
@@ -323,15 +328,16 @@ export async function getCouponLifecycle(
 }
 
 /**
-| * Complete share workflow with validation and logging
-| * Now requires collection_id from shareable coupons list
+| * Complete share workflow with validation, logging, and messaging
+| * Now creates conversation and message automatically
 | */
 export async function shareWithLimitValidation(
   recipientId: string,
   couponId: string,
   senderCollectionId: string
-): Promise<{ success: boolean; message: string; canShareResult?: CanShareResult }> {
-  console.log('🎁 Starting share workflow with validation');
+): Promise<{ success: boolean; message: string; message_id?: string; conversation_id?: string; error?: string; canShareResult?: CanShareResult }> {
+  console.log('🎁 Starting share workflow with validation and messaging');
+  let conversationId: string | undefined;
 
   try {
     // Get current user
@@ -372,16 +378,65 @@ export async function shareWithLimitValidation(
       };
     }
 
-    // Log the share with wallet transfer
-    await logCouponShare(senderId, recipientId, couponId, senderCollectionId, isDriver);
+    // Get or create conversation FIRST
+    console.log('💬 Getting or creating conversation...');
+    conversationId = await messagingService.createOrGetConversation(recipientId);
+    console.log('✅ Conversation ID:', conversationId);
+
+    // Log the share with wallet transfer and message creation
+    const result = await logCouponShare(
+      senderId,
+      recipientId,
+      couponId,
+      senderCollectionId,
+      conversationId,
+      isDriver
+    );
 
     return {
       success: true,
       message: 'Coupon shared successfully',
+      message_id: result.message_id,
+      conversation_id: conversationId,
       canShareResult,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Share workflow error:', error);
+    
+    // CRITICAL: Even on failure, create a message to show the attempt
+    if (conversationId) {
+      try {
+        console.log('⚠️ Creating failure message...');
+        const failureMessageId = await messagingService.sendMessage({
+          conversationId,
+          content: 'Coupon sharing failed, try again from your wallet.',
+          type: 'text',
+          linkPreviews: [{
+            type: 'coupon_share_failed',
+            url: `sync://coupon/${couponId}`,
+            title: 'Coupon Share Failed',
+            description: 'Failed to share coupon. Please try again.',
+            metadata: {
+              coupon_id: couponId,
+              error: error.message,
+              timestamp: new Date().toISOString()
+            }
+          }]
+        });
+        
+        return {
+          success: false,
+          message: error.message,
+          message_id: failureMessageId,
+          conversation_id: conversationId,
+          error: error.message
+        };
+      } catch (msgError) {
+        console.error('❌ Failed to create failure message:', msgError);
+        // If even message creation fails, just throw original error
+        throw error;
+      }
+    }
     throw error;
   }
 }

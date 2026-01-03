@@ -1,76 +1,129 @@
 // src/router/Router.tsx
 // Centralized routing configuration for the SynC app
 
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { lazy, Suspense } from 'react'
+import { useAuthStore } from '../store/authStore'
 import ProtectedRoute from './ProtectedRoute'
+import ChatScreen from '../components/messaging/ChatScreen'
+import { SelectConversationPlaceholder } from '../components/messaging/SelectConversationPlaceholder'
 
-// Import components
-import Landing from '../components/Landing'
-import Dashboard from '../components/Dashboard'
-import Login from '../components/Login'
-import SignUp from '../components/SignUp'
-import Onboarding from '../components/Onboarding'
-import ForgotPassword from '../components/ForgotPassword'
-import ResetPassword from '../components/ResetPassword'
+// All components are lazy-loaded for optimal bundle splitting and performance
 
-// Import business components
-import BusinessRegistration from '../components/business/BusinessRegistration'
-import BusinessDashboard from '../components/business/BusinessDashboard'
-import BusinessOnboardingPage from '../components/business/BusinessOnboardingPage'
-import BusinessProfile from '../components/business/BusinessProfile'
-import BusinessAnalyticsPage from '../components/business/BusinessAnalyticsPage'
-import BusinessQRCodePage from '../components/business/BusinessQRCodePage'
-import ProductManagerPage from '../components/business/ProductManagerPage'
-import CouponManagerPage from '../components/business/CouponManagerPage'
-import OfferManagerPage from '../components/business/OfferManagerPage'
-import CampaignManagerPage from '../components/business/CampaignManagerPage'
-import CampaignWizard from '../components/business/CampaignWizard'
-import CampaignAnalyticsPage from '../components/business/CampaignAnalyticsPage'
+// Lazy load ALL components for optimal performance and code splitting
 
-// Import product components (Story 4.7)
-import { ProductDetails, AllProducts } from '../components/products'
+// Core components
+const Dashboard = lazy(() => import('../components/Dashboard'))
+const Login = lazy(() => import('../components/Login'))
+const SignUp = lazy(() => import('../components/SignUp'))
+const Onboarding = lazy(() => import('../components/Onboarding'))
+const ForgotPassword = lazy(() => import('../components/ForgotPassword'))
+const ResetPassword = lazy(() => import('../components/ResetPassword'))
 
-// Import social components
-import FriendsManagementPage from '../components/FriendsManagementPage'
+// Business components
+const BusinessRegistration = lazy(() => import('../components/business/BusinessRegistration'))
+const BusinessDashboard = lazy(() => import('../components/business/BusinessDashboard'))
+const BusinessOnboardingPage = lazy(() => import('../components/business/BusinessOnboardingPage'))
+const BusinessProfile = lazy(() => import('../components/business/BusinessProfile'))
+const BusinessAnalyticsPage = lazy(() => import('../components/business/BusinessAnalyticsPage'))
+const BusinessQRCodePage = lazy(() => import('../components/business/BusinessQRCodePage'))
+const ProductManagerPage = lazy(() => import('../components/business/ProductManagerPage'))
+const CouponManagerPage = lazy(() => import('../components/business/CouponManagerPage'))
+const OfferManagerPage = lazy(() => import('../components/business/OfferManagerPage'))
+const CampaignManagerPage = lazy(() => import('../components/business/CampaignManagerPage'))
+const CampaignWizard = lazy(() => import('../components/business/CampaignWizard'))
+const CampaignAnalyticsPage = lazy(() => import('../components/business/CampaignAnalyticsPage'))
+const FollowerAnalyticsDashboard = lazy(() => import('../components/business/FollowerAnalyticsDashboard'))
+const FollowerList = lazy(() => import('../components/business/FollowerList'))
+const BusinessCheckinsPage = lazy(() => import('../components/checkins/BusinessCheckinsPage'))
 
-// Lazy load components for better performance
+// Product components
+const ProductDetails = lazy(() => import('../components/products').then(m => ({ default: m.ProductDetails })))
+const AllProducts = lazy(() => import('../components/products').then(m => ({ default: m.AllProducts })))
+
+// Friend and social components
+const FriendsPage = lazy(() => import('../pages/Friends').then(m => ({ default: m.FriendsPage })))
+const FriendSearchPage = lazy(() => import('../pages/FriendSearchPage').then(m => ({ default: m.FriendSearchPage })))
+const PYMKPage = lazy(() => import('../pages/PYMKPage').then(m => ({ default: m.PYMKPage })))
+const FriendsManagementPage = lazy(() => import('../components/FriendsManagementPage'))
+const FriendRequestsList = lazy(() => import('../components/friends/FriendRequestsList').then(m => ({ default: m.FriendRequestsList })))
+const FriendsPrivacySettings = lazy(() => import('../pages/settings/FriendsPrivacySettings').then(m => ({ default: m.FriendsPrivacySettings })))
+const NotificationSettings = lazy(() => import('../pages/settings/NotificationSettings'))
+
+// Messaging components (Epic 8.2)
+const MessagingLayout = lazy(() => import('../components/messaging/MessagingLayout').then(m => ({ default: m.MessagingLayout })))
+// const SelectConversationPlaceholder = lazy(() => import('../components/messaging/SelectConversationPlaceholder').then(m => ({ default: m.SelectConversationPlaceholder })))
+// const ChatScreen = lazy(() => import('../components/messaging/ChatScreen').then(m => ({ default: m.ChatScreen })))
+
+// Test and demo components (development only)
+const TestProfileModal = lazy(() => import('../pages/TestProfileModal'))
+const TestActivityFeed = lazy(() => import('../pages/TestActivityFeed'))
+const TestSearchFilters = lazy(() => import('../pages/TestSearchFilters').then(m => ({ default: m.TestSearchFilters })))
+const TestDealComments = lazy(() => import('../pages/TestDealComments').then(m => ({ default: m.TestDealComments })))
+const ShareDealDemo = lazy(() => import('../pages/ShareDealDemo'))
+const SharingAnalyticsDemo = lazy(() => import('../pages/SharingAnalyticsDemo'))
+const TestSearchPerformance = lazy(() => import('../pages/TestSearchPerformance').then(m => ({ default: m.TestSearchPerformance })))
+const FollowerTargetingDemo = lazy(() => import('../pages/FollowerTargetingDemo'))
+
+// Other lazy-loaded components
 const NotFound = lazy(() => import('../components/NotFound'))
 const Profile = lazy(() => import('../components/Profile'))
 const Search = lazy(() => import('../components/Search'))
 const SearchAnalyticsDashboard = lazy(() => import('../components/SearchAnalyticsDashboard'))
 const LocationManager = lazy(() => import('../components/LocationManager'))
-const Settings = lazy(() => import('../components/Settings'))
+
 const Wallet = lazy(() => import('../components/Wallet'))
 const Social = lazy(() => import('../components/Social'))
 const WishlistPage = lazy(() => import('../pages/WishlistPage'))
-// Story 4.4 components
 const AdvancedSearchPage = lazy(() => import('../components/search/AdvancedSearchPage'))
 const BusinessDiscoveryPage = lazy(() => import('../components/discovery/BusinessDiscoveryPage'))
 const CategoryBrowserPage = lazy(() => import('../components/categories/CategoryBrowserPage'))
 const TrendingCouponsPage = lazy(() => import('../components/coupons/TrendingCouponsPage'))
-const UnifiedFavoritesPage = lazy(() => import('../components/favorites/UnifiedFavoritesPage'));
-const FollowingPage = lazy(() => import('../components/following/FollowingPage'));
-const FollowerFeed = lazy(() => import('../components/following/FollowerFeed'));
-const FollowerAnalyticsDashboard = lazy(() => import('../components/business/FollowerAnalyticsDashboard'));
-const FollowerList = lazy(() => import('../components/business/FollowerList'));
-const FollowerTargetingDemo = lazy(() => import('../pages/FollowerTargetingDemo'));
-
-// Debug components are removed from production build
+const UnifiedFavoritesPage = lazy(() => import('../components/favorites/UnifiedFavoritesPage'))
+const FollowingPage = lazy(() => import('../components/following/FollowingPage'))
+const FollowerFeed = lazy(() => import('../components/following/FollowerFeed'))
+const MyReviewsPage = lazy(() => import('../pages/MyReviewsPage'))
+const NotificationsPage = lazy(() => import('../pages/NotificationsPage'))
+const StorageTest = lazy(() => import('../pages/test/StorageTest'))
+const ContactSyncTestPage = lazy(() => import('../pages/ContactSyncTestPage'))
 
 // Development mode flag
 const isDevelopment = import.meta.env.MODE === 'development'
 
-// Check-in components
-const BusinessCheckinsPage = lazy(() => import('../components/checkins/BusinessCheckinsPage'))
-
-// Story 5.2: Review System
-const MyReviewsPage = lazy(() => import('../pages/MyReviewsPage'))
-
-// Notifications redirect page
-const NotificationsPage = lazy(() => import('../pages/NotificationsPage'))
-
 // Story 5.5: Test Sharing Limits (excluded from production)
+
+// Loading component for lazy-loaded routes
+const RouteLoader = ({ children }: { children: React.ReactNode }) => (
+  <Suspense fallback={
+    <div className="min-h-screen bg-gray-50 p-4 animate-pulse">
+      {/* Header skeleton */}
+      <div className="max-w-4xl mx-auto">
+        <div className="h-8 bg-gray-200 rounded-lg w-1/3 mb-6"></div>
+
+        {/* Content skeleton */}
+        <div className="bg-white rounded-lg p-4 shadow-sm mb-4">
+          <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/2 mb-3"></div>
+          <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+        </div>
+
+        <div className="bg-white rounded-lg p-4 shadow-sm mb-4">
+          <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
+          <div className="h-4 bg-gray-200 rounded w-5/6 mb-3"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+        </div>
+
+        <div className="bg-white rounded-lg p-4 shadow-sm">
+          <div className="h-4 bg-gray-200 rounded w-2/3 mb-3"></div>
+          <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+        </div>
+      </div>
+    </div>
+  }>
+    {children}
+  </Suspense>
+)
 
 // Route definitions
 export interface RouteConfig {
@@ -79,407 +132,753 @@ export interface RouteConfig {
   protected?: boolean
   title?: string
   description?: string
+  children?: RouteConfig[]
+  index?: boolean
+}
+
+// Root Redirect Component
+const RootRedirect = () => {
+  const { user, initialized } = useAuthStore()
+
+  if (!initialized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      </div>
+    )
+  }
+
+  return user ? <Navigate to="/dashboard" replace /> : <Navigate to="/auth/login" replace />
 }
 
 export const routes: RouteConfig[] = [
-  // Public routes
+  // Home / Root Redirect
   {
     path: '/',
-    element: <Landing />,
-    title: 'SynC - Find Local Deals & Connect',
-    description: 'Discover amazing deals and connect with local businesses'
+    element: <RootRedirect />,
+    protected: false,
+    title: 'SynC',
+    description: 'Redirecting...'
   },
+
+  // Dashboard (Protected)
+  {
+    path: '/dashboard',
+    element: (
+      <RouteLoader>
+        <Dashboard />
+      </RouteLoader>
+    ),
+    protected: true,
+    title: 'Dashboard - SynC',
+    description: 'Your personalized dashboard'
+  },
+
+  // Authentication Routes
   {
     path: '/auth/login',
-    element: <Login />,
+    element: (
+      <RouteLoader>
+        <Login />
+      </RouteLoader>
+    ),
+    protected: false,
     title: 'Login - SynC',
-    description: 'Sign in to your account'
+    description: 'Login to your SynC account'
   },
   {
     path: '/auth/signup',
-    element: <SignUp />,
+    element: (
+      <RouteLoader>
+        <SignUp />
+      </RouteLoader>
+    ),
+    protected: false,
     title: 'Sign Up - SynC',
-    description: 'Create your account'
+    description: 'Create your SynC account'
   },
   {
     path: '/auth/forgot-password',
-    element: <ForgotPassword />,
-    title: 'Reset Password - SynC',
+    element: (
+      <RouteLoader>
+        <ForgotPassword />
+      </RouteLoader>
+    ),
+    protected: false,
+    title: 'Forgot Password - SynC',
     description: 'Reset your password'
   },
   {
     path: '/auth/reset-password',
-    element: <ResetPassword />,
-    title: 'Set New Password - SynC',
-    description: 'Set your new password'
-  },
-
-  // Protected routes (require authentication)
-  {
-    path: '/dashboard',
-    element: <Dashboard />,
-    protected: true,
-    title: 'Dashboard - SynC',
-    description: 'Your personal dashboard with deals and recommendations'
+    element: (
+      <RouteLoader>
+        <ResetPassword />
+      </RouteLoader>
+    ),
+    protected: false,
+    title: 'Reset Password - SynC',
+    description: 'Set a new password'
   },
   {
     path: '/onboarding',
-    element: <Onboarding />,
+    element: (
+      <RouteLoader>
+        <Onboarding />
+      </RouteLoader>
+    ),
     protected: true,
-    title: 'Welcome - SynC',
+    title: 'Onboarding - SynC',
     description: 'Complete your profile setup'
   },
+
+  // Epic 8.2: Messaging Routes
   {
-    path: '/notifications',
-    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><NotificationsPage /></Suspense>,
+    path: '/messages',
+    element: (
+      <RouteLoader>
+        <MessagingLayout />
+      </RouteLoader>
+    ),
     protected: true,
-    title: 'Notifications - SynC',
-    description: 'Notification system has moved to the header bell icon'
+    title: 'Messages - SynC',
+    description: 'Your conversations and direct messages',
+    children: [
+      {
+        path: '',
+        index: true,
+        element: (
+          <RouteLoader>
+            <SelectConversationPlaceholder />
+          </RouteLoader>
+        ),
+        title: 'Messages - SynC'
+      },
+      {
+        path: ':conversationId',
+        element: (
+          <RouteLoader>
+            <ChatScreen />
+          </RouteLoader>
+        ),
+        title: 'Chat - SynC'
+      }
+    ]
   },
-  {
-    path: '/search',
-    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><Search /></Suspense>,
-    protected: true,
-    title: 'Search - SynC',
-    description: 'Find businesses, products, and deals'
-  },
-  {
-    path: '/search/advanced',
-    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><AdvancedSearchPage /></Suspense>,
-    protected: true,
-    title: 'Advanced Search - SynC',
-    description: 'Advanced search with filters and location-based discovery'
-  },
-  {
-    path: '/discovery',
-    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><BusinessDiscoveryPage /></Suspense>,
-    protected: true,
-    title: 'Discover Businesses - SynC',
-    description: 'Explore local businesses, trending deals, and personalized recommendations'
-  },
-  {
-    path: '/businesses',
-    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><BusinessDiscoveryPage /></Suspense>,
-    protected: true,
-    title: 'Browse Businesses - SynC',
-    description: 'Browse and discover local businesses near you'
-  },
-  {
-    path: '/categories',
-    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><CategoryBrowserPage /></Suspense>,
-    protected: true,
-    title: 'Browse Categories - SynC',
-    description: 'Explore businesses organized by category'
-  },
-  {
-    path: '/coupons/trending',
-    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><TrendingCouponsPage /></Suspense>,
-    protected: true,
-    title: 'Trending Coupons - SynC',
-    description: 'Discover the hottest deals and most popular offers'
-  },
-  {
-    path: '/analytics/search',
-    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><SearchAnalyticsDashboard /></Suspense>,
-    protected: true,
-    title: 'Search Analytics - SynC',
-    description: 'Search insights and analytics dashboard'
-  },
-  {
-    path: '/locations',
-    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><LocationManager /></Suspense>,
-    protected: true,
-    title: 'Location Manager - SynC',
-    description: 'Manage your saved locations and location history'
-  },
-  {
-    path: '/profile',
-    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><Profile /></Suspense>,
-    protected: true,
-    title: 'Profile - SynC',
-    description: 'Manage your profile and preferences'
-  },
-  {
-    path: '/settings',
-    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><Settings /></Suspense>,
-    protected: true,
-    title: 'Settings - SynC',
-    description: 'Manage your account settings'
-  },
+
+  // Wallet Page (Protected)
   {
     path: '/wallet',
-    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><Wallet /></Suspense>,
+    element: (
+      <RouteLoader>
+        <Wallet />
+      </RouteLoader>
+    ),
     protected: true,
-    title: 'Wallet - SynC',
-    description: 'Manage your coupons and deals'
+    title: 'My Wallet - SynC',
+    description: 'View and manage your saved coupons'
   },
-  {
-    path: '/social',
-    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><Social /></Suspense>,
-    protected: true,
-    title: 'Social - SynC',
-    description: 'Connect with friends and share deals'
-  },
-  {
-    path: '/favorites',
-    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><UnifiedFavoritesPage /></Suspense>,
-    protected: true,
-    title: 'Favorites - SynC',
-    description: 'Your saved businesses, coupons, and deals with unified state management'
-  },
+
+  // Following Page (Protected)
   {
     path: '/following',
-    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><FollowingPage /></Suspense>,
+    element: (
+      <RouteLoader>
+        <FollowingPage />
+      </RouteLoader>
+    ),
     protected: true,
     title: 'Following - SynC',
-    description: 'Businesses you follow with instant updates and notifications'
+    description: 'Businesses you follow'
   },
+
+  // Favorites Page (Protected)
   {
-    path: '/following/feed',
-    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><FollowerFeed /></Suspense>,
+    path: '/favorites',
+    element: (
+      <RouteLoader>
+        <UnifiedFavoritesPage />
+      </RouteLoader>
+    ),
     protected: true,
-    title: 'Updates Feed - SynC',
-    description: 'See latest updates from businesses you follow'
+    title: 'Favorites - SynC',
+    description: 'Your favorite businesses and deals'
   },
-  {
-    path: '/wishlist',
-    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><WishlistPage /></Suspense>,
-    protected: true,
-    title: 'My Wishlist - SynC',
-    description: 'View your wishlist products'
-  },
+
+  // Friends Page (Protected)
   {
     path: '/friends',
-    element: <FriendsManagementPage />,
+    element: (
+      <RouteLoader>
+        <FriendsPage />
+      </RouteLoader>
+    ),
     protected: true,
     title: 'Friends - SynC',
     description: 'Manage your friends and connections'
   },
+
+  // Notifications Page (Protected)
   {
-    path: '/checkins',
-    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><BusinessCheckinsPage /></Suspense>,
+    path: '/notifications',
+    element: (
+      <RouteLoader>
+        <NotificationsPage />
+      </RouteLoader>
+    ),
     protected: true,
-    title: 'Business Check-ins - SynC',
-    description: 'Discover nearby businesses and check in to earn rewards'
+    title: 'Notifications - SynC',
+    description: 'Your notifications and alerts'
   },
-  // Story 5.2: My Reviews
+
+  // Business Dashboard (Protected)
   {
-    path: '/my-reviews',
-    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><MyReviewsPage /></Suspense>,
+    path: '/business/dashboard',
+    element: (
+      <RouteLoader>
+        <BusinessDashboard />
+      </RouteLoader>
+    ),
     protected: true,
-    title: 'My Reviews - SynC',
-    description: 'Manage your reviews and see your review history'
+    title: 'Business Dashboard - SynC',
+    description: 'Manage your business'
   },
-  // Follower Targeting Demo
-  {
-    path: '/demo/follower-targeting',
-    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><FollowerTargetingDemo /></Suspense>,
-    protected: true,
-    title: 'Follower Targeting Demo - SynC',
-    description: 'Interactive demo of follower targeting and campaign features'
-  },
-  // Business Routes
+
+  // Business Registration (Protected)
   {
     path: '/business/register',
-    element: <BusinessRegistration />,
+    element: (
+      <RouteLoader>
+        <BusinessRegistration />
+      </RouteLoader>
+    ),
     protected: true,
     title: 'Register Business - SynC',
     description: 'Register your business on SynC'
   },
+
+  // Business Profile (Public)
   {
-    path: '/business/dashboard',
-    element: <BusinessDashboard />,
-    protected: true,
-    title: 'Business Dashboard - SynC',
-    description: 'Manage your businesses on SynC'
+    path: '/business/:slug',
+    element: (
+      <RouteLoader>
+        <BusinessProfile />
+      </RouteLoader>
+    ),
+    protected: false,
+    title: 'Business Profile - SynC',
+    description: 'View business details and offers'
   },
+  {
+    path: '/business/:slug/coupons',
+    element: (
+      <RouteLoader>
+        <BusinessProfile />
+      </RouteLoader>
+    ),
+    protected: false,
+    title: 'Business Coupons - SynC'
+  },
+  {
+    path: '/business/:slug/products',
+    element: (
+      <RouteLoader>
+        <BusinessProfile />
+      </RouteLoader>
+    ),
+    protected: false,
+    title: 'Business Products - SynC'
+  },
+
+  // Business Tools (Protected)
   {
     path: '/business/onboarding',
-    element: <BusinessOnboardingPage />,
+    element: (
+      <RouteLoader>
+        <BusinessOnboardingPage />
+      </RouteLoader>
+    ),
     protected: true,
-    title: 'Business Onboarding - SynC',
-    description: 'Complete your business profile setup'
+    title: 'Business Onboarding - SynC'
   },
   {
-    path: '/business/:businessId',
-    element: <BusinessProfile />,
+    path: '/business/analytics',
+    element: (
+      <RouteLoader>
+        <BusinessAnalyticsPage />
+      </RouteLoader>
+    ),
     protected: true,
-    title: 'Business Profile - SynC',
-    description: 'View and manage your business profile'
+    title: 'Business Analytics - SynC'
   },
   {
-    path: '/business/:businessId/edit',
-    element: <BusinessProfile />,
+    path: '/business/qr-code',
+    element: (
+      <RouteLoader>
+        <BusinessQRCodePage />
+      </RouteLoader>
+    ),
     protected: true,
-    title: 'Edit Business - SynC',
-    description: 'Edit your business profile'
+    title: 'Business QR Code - SynC'
   },
   {
-    path: '/business/:businessId/analytics',
-    element: <BusinessAnalyticsPage />,
+    path: '/business/:businessId/manage/products',
+    element: (
+      <RouteLoader>
+        <ProductManagerPage />
+      </RouteLoader>
+    ),
     protected: true,
-    title: 'Business Analytics - SynC',
-    description: 'View detailed business analytics and check-in statistics'
+    title: 'Product Manager - SynC'
   },
   {
-    path: '/business/:businessId/qr-code',
-    element: <BusinessQRCodePage />,
+    path: '/business/:businessId/manage/coupons',
+    element: (
+      <RouteLoader>
+        <CouponManagerPage />
+      </RouteLoader>
+    ),
     protected: true,
-    title: 'QR Code Generator - SynC',
-    description: 'Generate QR codes for customer check-ins'
+    title: 'Coupon Manager - SynC'
   },
   {
-    path: '/business/:businessId/products',
-    element: <ProductManagerPage />,
+    path: '/business/:businessId/manage/offers',
+    element: (
+      <RouteLoader>
+        <OfferManagerPage />
+      </RouteLoader>
+    ),
     protected: true,
-    title: 'Product Catalog - SynC',
-    description: 'Manage your business product catalog'
+    title: 'Offer Manager - SynC'
   },
   {
-    path: '/business/:businessId/coupons',
-    element: <CouponManagerPage />,
+    path: '/business/:businessId/manage/campaigns',
+    element: (
+      <RouteLoader>
+        <CampaignManagerPage />
+      </RouteLoader>
+    ),
     protected: true,
-    title: 'Coupon Manager - SynC',
-    description: 'Create and manage business coupons'
+    title: 'Campaign Manager - SynC'
   },
   {
-    path: '/business/:businessId/offers',
-    element: <OfferManagerPage />,
+    path: '/business/campaigns/new',
+    element: (
+      <RouteLoader>
+        <CampaignWizard />
+      </RouteLoader>
+    ),
     protected: true,
-    title: 'Offer Manager - SynC',
-    description: 'Create and manage promotional offers'
+    title: 'Create Campaign - SynC'
   },
   {
-    path: '/business/:businessId/campaigns',
-    element: <CampaignManagerPage />,
+    path: '/business/campaigns/:id/analytics',
+    element: (
+      <RouteLoader>
+        <CampaignAnalyticsPage />
+      </RouteLoader>
+    ),
     protected: true,
-    title: 'Campaign Manager - SynC',
-    description: 'Manage marketing campaigns for your business'
+    title: 'Campaign Analytics - SynC'
   },
   {
-    path: '/business/:businessId/campaigns/create',
-    element: <CampaignWizard />,
+    path: '/business/followers',
+    element: (
+      <RouteLoader>
+        <FollowerList />
+      </RouteLoader>
+    ),
     protected: true,
-    title: 'Create Campaign - SynC',
-    description: 'Create a new marketing campaign'
+    title: 'Followers - SynC'
   },
   {
-    path: '/business/:businessId/campaigns/:campaignId/analytics',
-    element: <CampaignAnalyticsPage />,
+    path: '/business/followers/analytics',
+    element: (
+      <RouteLoader>
+        <FollowerAnalyticsDashboard />
+      </RouteLoader>
+    ),
     protected: true,
-    title: 'Campaign Analytics - SynC',
-    description: 'View detailed campaign performance metrics'
+    title: 'Follower Analytics - SynC'
   },
   {
-    path: '/business/:businessId/followers/analytics',
-    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><FollowerAnalyticsDashboard /></Suspense>,
+    path: '/business/checkins',
+    element: (
+      <RouteLoader>
+        <BusinessCheckinsPage />
+      </RouteLoader>
+    ),
     protected: true,
-    title: 'Follower Analytics - SynC',
-    description: 'View follower demographics and engagement analytics'
+    title: 'Check-ins - SynC'
+  },
+
+  // Products (Public/Protected)
+  {
+    path: '/products',
+    element: (
+      <RouteLoader>
+        <AllProducts />
+      </RouteLoader>
+    ),
+    protected: false,
+    title: 'Products - SynC'
   },
   {
-    path: '/business/:businessId/followers/list',
-    element: <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div></div>}><FollowerList /></Suspense>,
-    protected: true,
-    title: 'Followers - SynC',
-    description: 'View and manage your followers'
+    path: '/products/:id',
+    element: (
+      <RouteLoader>
+        <ProductDetails />
+      </RouteLoader>
+    ),
+    protected: false,
+    title: 'Product Details - SynC'
   },
-  // Story 4.7: Product Detail Routes (customer-facing)
+
+  // Social & Friends (Protected)
   {
-    path: '/business/:businessId/product/:productId',
-    element: <ProductDetails />,
+    path: '/friends/search',
+    element: (
+      <RouteLoader>
+        <FriendSearchPage />
+      </RouteLoader>
+    ),
     protected: true,
-    title: 'Product Details - SynC',
-    description: 'View product information and details'
+    title: 'Find Friends - SynC'
   },
   {
-    path: '/business/:businessId/products/catalog',
-    element: <AllProducts />,
+    path: '/friends/pymk',
+    element: (
+      <RouteLoader>
+        <PYMKPage />
+      </RouteLoader>
+    ),
     protected: true,
-    title: 'All Products - SynC',
-    description: 'Browse all products from this business'
-  }
+    title: 'People You May Know - SynC'
+  },
+  {
+    path: '/friends/requests',
+    element: (
+      <RouteLoader>
+        <FriendRequestsList />
+      </RouteLoader>
+    ),
+    protected: true,
+    title: 'Friend Requests - SynC'
+  },
+  {
+    path: '/friends/manage',
+    element: (
+      <RouteLoader>
+        <FriendsManagementPage />
+      </RouteLoader>
+    ),
+    protected: true,
+    title: 'Manage Friends - SynC'
+  },
+  {
+    path: '/social',
+    element: (
+      <RouteLoader>
+        <Social />
+      </RouteLoader>
+    ),
+    protected: true,
+    title: 'Social - SynC'
+  },
+  {
+    path: '/wishlist',
+    element: (
+      <RouteLoader>
+        <WishlistPage />
+      </RouteLoader>
+    ),
+    protected: true,
+    title: 'Wishlist - SynC'
+  },
+  {
+    path: '/reviews',
+    element: (
+      <RouteLoader>
+        <MyReviewsPage />
+      </RouteLoader>
+    ),
+    protected: true,
+    title: 'My Reviews - SynC'
+  },
+
+
+  {
+    path: '/settings/privacy/friends',
+    element: (
+      <RouteLoader>
+        <FriendsPrivacySettings />
+      </RouteLoader>
+    ),
+    protected: true,
+    title: 'Friend Privacy Settings - SynC'
+  },
+  {
+    path: '/settings/notifications',
+    element: (
+      <RouteLoader>
+        <NotificationSettings />
+      </RouteLoader>
+    ),
+    protected: true,
+    title: 'Notification Settings - SynC'
+  },
+  {
+    path: '/profile',
+    element: (
+      <RouteLoader>
+        <Profile />
+      </RouteLoader>
+    ),
+    protected: true,
+    title: 'My Profile - SynC'
+  },
+
+  // Discovery & Search (Public/Protected)
+  {
+    path: '/search',
+    element: (
+      <RouteLoader>
+        <Search />
+      </RouteLoader>
+    ),
+    protected: false,
+    title: 'Search - SynC'
+  },
+  {
+    path: '/search/advanced',
+    element: (
+      <RouteLoader>
+        <AdvancedSearchPage />
+      </RouteLoader>
+    ),
+    protected: false,
+    title: 'Advanced Search - SynC'
+  },
+  {
+    path: '/discovery',
+    element: (
+      <RouteLoader>
+        <BusinessDiscoveryPage />
+      </RouteLoader>
+    ),
+    protected: false,
+    title: 'Discover - SynC'
+  },
+  {
+    path: '/categories',
+    element: (
+      <RouteLoader>
+        <CategoryBrowserPage />
+      </RouteLoader>
+    ),
+    protected: false,
+    title: 'Categories - SynC'
+  },
+  {
+    path: '/trending',
+    element: (
+      <RouteLoader>
+        <TrendingCouponsPage />
+      </RouteLoader>
+    ),
+    protected: false,
+    title: 'Trending - SynC'
+  },
+  {
+    path: '/locations',
+    element: (
+      <RouteLoader>
+        <LocationManager />
+      </RouteLoader>
+    ),
+    protected: true,
+    title: 'Locations - SynC'
+  },
+
+  // Test Pages (Development Only)
+  ...(isDevelopment ? [
+    {
+      path: '/test/profile-modal',
+      element: (
+        <RouteLoader>
+          <TestProfileModal />
+        </RouteLoader>
+      ),
+      protected: true,
+      title: 'Test Profile Modal'
+    },
+    {
+      path: '/test/activity-feed',
+      element: (
+        <RouteLoader>
+          <TestActivityFeed />
+        </RouteLoader>
+      ),
+      protected: true,
+      title: 'Test Activity Feed'
+    },
+    {
+      path: '/test/search-filters',
+      element: (
+        <RouteLoader>
+          <TestSearchFilters />
+        </RouteLoader>
+      ),
+      protected: true,
+      title: 'Test Search Filters'
+    },
+    {
+      path: '/test/deal-comments',
+      element: (
+        <RouteLoader>
+          <TestDealComments />
+        </RouteLoader>
+      ),
+      protected: true,
+      title: 'Test Deal Comments'
+    },
+    {
+      path: '/test/share-deal',
+      element: (
+        <RouteLoader>
+          <ShareDealDemo />
+        </RouteLoader>
+      ),
+      protected: true,
+      title: 'Test Share Deal'
+    },
+    {
+      path: '/test/sharing-analytics',
+      element: (
+        <RouteLoader>
+          <SharingAnalyticsDemo />
+        </RouteLoader>
+      ),
+      protected: true,
+      title: 'Test Sharing Analytics'
+    },
+    {
+      path: '/test/search-performance',
+      element: (
+        <RouteLoader>
+          <TestSearchPerformance />
+        </RouteLoader>
+      ),
+      protected: true,
+      title: 'Test Search Performance'
+    },
+    {
+      path: '/test/search-analytics',
+      element: (
+        <RouteLoader>
+          <SearchAnalyticsDashboard />
+        </RouteLoader>
+      ),
+      protected: true,
+      title: 'Test Search Analytics'
+    },
+    {
+      path: '/test/follower-targeting',
+      element: (
+        <RouteLoader>
+          <FollowerTargetingDemo />
+        </RouteLoader>
+      ),
+      protected: true,
+      title: 'Test Follower Targeting'
+    },
+    {
+      path: '/test/storage',
+      element: (
+        <RouteLoader>
+          <StorageTest />
+        </RouteLoader>
+      ),
+      protected: true,
+      title: 'Test Storage'
+    },
+    {
+      path: '/test/contact-sync',
+      element: (
+        <RouteLoader>
+          <ContactSyncTestPage />
+        </RouteLoader>
+      ),
+      protected: true,
+      title: 'Test Contact Sync'
+    }
+  ] : []),
+
+  // ... (other routes)
 ]
-
-// Debug routes removed for production build
-
-// Loading component for lazy-loaded routes
-const RouteLoader = ({ children }: { children: React.ReactNode }) => (
-  <Suspense fallback={
-    <div className="flex justify-center items-center min-h-screen">
-      <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div>
-    </div>
-  }>
-    {children}
-  </Suspense>
-)
 
 // Main router component
 export default function AppRouter() {
-  // Debug routes removed for production build
   const allRoutes = routes
+
+  const renderRoute = (route: RouteConfig) => {
+    // Logic to wrap protected/public routes
+    let element = route.element
+
+    if (route.protected) {
+      const requireOnboarding = !['/', '/onboarding', '/auth/login', '/auth/signup'].includes(route.path)
+      element = (
+        <ProtectedRoute
+          requireAuth={true}
+          requireOnboarding={requireOnboarding}
+          debugMode={isDevelopment}
+        >
+          {route.element}
+        </ProtectedRoute>
+      )
+    } else if (route.path.startsWith('/auth/') || route.path === '/') {
+      element = (
+        <ProtectedRoute
+          requireAuth={false}
+          debugMode={isDevelopment}
+        >
+          {route.element}
+        </ProtectedRoute>
+      )
+    }
+
+    if (route.index) {
+      return (
+        <Route
+          key={route.path || 'index'}
+          index
+          element={element}
+        />
+      )
+    }
+
+    return (
+      <Route
+        key={route.path || 'index'}
+        path={route.path}
+        element={element}
+      >
+        {route.children?.map(renderRoute)}
+      </Route>
+    )
+  }
 
   return (
     <Routes>
-      {allRoutes.map((route) => {
-        // Wrap protected routes with ProtectedRoute component
-        if (route.protected) {
-          // Determine if this route requires completed onboarding
-          const requireOnboarding = !['/', '/onboarding', '/auth/login', '/auth/signup'].includes(route.path)
-          
-          return (
-            <Route
-              key={route.path}
-              path={route.path}
-              element={
-                <ProtectedRoute 
-                  requireAuth={true}
-                  requireOnboarding={requireOnboarding}
-                  debugMode={isDevelopment}
-                >
-                  {route.element}
-                </ProtectedRoute>
-              }
-            />
-          )
-        }
-        
-        // For public routes, wrap auth pages to redirect if already logged in
-        if (route.path.startsWith('/auth/')) {
-          return (
-            <Route
-              key={route.path}
-              path={route.path}
-              element={
-                <ProtectedRoute 
-                  requireAuth={false}
-                  debugMode={isDevelopment}
-                >
-                  {route.element}
-                </ProtectedRoute>
-              }
-            />
-          )
-        }
-        
-        // Regular public routes
-        return (
-          <Route
-            key={route.path}
-            path={route.path}
-            element={route.element}
-          />
-        )
-      })}
-      
+      {allRoutes.map(renderRoute)}
+
       {/* Catch-all route for 404 */}
-      <Route 
-        path="*" 
+      <Route
+        path="*"
         element={
           <RouteLoader>
             <NotFound />
           </RouteLoader>
-        } 
+        }
       />
     </Routes>
   )

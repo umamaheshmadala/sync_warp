@@ -7,6 +7,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../ui/card';
+import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -46,6 +47,7 @@ export default function CampaignWizard() {
   const { businessId } = useParams<{ businessId: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { getBusinessUrl } = useBusinessUrl();
   const [currentStep, setCurrentStep] = useState<Step>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
@@ -266,7 +268,7 @@ export default function CampaignWizard() {
       }
 
       // Success! Navigate back to campaign manager
-      navigate(`/business/${businessId}/campaigns`);
+      navigate(`${getBusinessUrl(businessId!)}/campaigns`);
     } catch (err: any) {
       console.error('Error creating campaign:', err);
       setError(err.message || 'Failed to create campaign');
@@ -299,7 +301,7 @@ export default function CampaignWizard() {
         {/* Header */}
         <div className="mb-6">
           <Link
-            to={`/business/${businessId}/campaigns`}
+            to={`${getBusinessUrl(businessId!)}/campaigns`}
             className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-4"
           >
             <ArrowLeft className="w-4 h-4" />

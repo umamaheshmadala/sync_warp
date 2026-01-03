@@ -28,18 +28,18 @@ export default defineConfig({
     /* Base URL to use in actions like `await page.goto('/')`. */
     baseURL: 'http://localhost:5174',
 
-    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-    trace: 'on-first-retry',
-    
+    /* Collect trace on failure. See https://playwright.dev/docs/trace-viewer */
+    trace: 'retain-on-failure',
+
     /* Take screenshot on failure */
     screenshot: 'only-on-failure',
-    
+
     /* Record video on failure */
     video: 'retain-on-failure',
-    
+
     /* Maximum time each action can take */
     actionTimeout: 15000,
-    
+
     /* Geolocation for testing location-based features (NYC) */
     geolocation: { longitude: -74.006, latitude: 40.7128 },
     permissions: ['geolocation'],
@@ -49,7 +49,7 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { 
+      use: {
         ...devices['Desktop Chrome'],
         storageState: 'tests/e2e/.auth/user.json',
       },

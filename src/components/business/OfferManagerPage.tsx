@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Plus, X } from 'lucide-react';
+import { useBusinessUrl } from '@/hooks/useBusinessUrl';
 import { OffersList, CreateOfferForm, OfferAnalyticsDashboard } from '../offers';
 import { ExtendExpiryModal } from '../offers/ExtendExpiryModal';
 import { useOffers } from '@/hooks/useOffers';
@@ -11,11 +12,13 @@ import type { Offer } from '@/types/offers';
 import toast from 'react-hot-toast';
 
 export default function OfferManagerPage() {
-  const { businessId } = useParams<{ businessId: string}>();
+  const { businessId } = useParams<{ businessId: string }>();
   const navigate = useNavigate();
+  const { getBusinessUrl } = useBusinessUrl();
   const [searchParams] = useSearchParams();
   const { user } = useAuthStore();
   const [business, setBusiness] = useState<any>(null);
+  const [actualBusinessId, setActualBusinessId] = useState<string | null>(null);
   const [isOwner, setIsOwner] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -27,7 +30,7 @@ export default function OfferManagerPage() {
   const [highlightedOfferCode, setHighlightedOfferCode] = useState<string | null>(null);
 
   const { extendExpiry, duplicateOffer } = useOffers({
-    businessId: businessId || '',
+    businessId: actualBusinessId || '',
     autoFetch: false,
   });
 
@@ -40,18 +43,45 @@ export default function OfferManagerPage() {
       }
 
       try {
+        // Query business by slug
         const { data, error } = await supabase
           .from('businesses')
-          .select('user_id, business_name')
-          .eq('id', businessId)
+          .select('id, user_id, business_name')
+          .eq('slug', businessId)
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.warn('Slug query failed:', error);
 
-        setBusiness(data);
-        setIsOwner(data.user_id === user.id);
-      } catch (error) {
-        console.error('Error checking ownership:', error);
+          // Only try fallback if businessId looks like a UUID
+          const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+          if (!uuidRegex.test(businessId)) {
+            toast.error('Failed to load business information');
+            return;
+          }
+
+          // If slug query fails, try as UUID (for backward compatibility)
+          const { data: uuidData, error: uuidError } = await supabase
+            .from('businesses')
+            .select('id, user_id, business_name')
+            .eq('id', businessId)
+            .single();
+
+          if (uuidError) {
+            toast.error('Failed to load business information');
+            return;
+          }
+
+          setActualBusinessId(uuidData.id);
+          setBusiness(uuidData);
+          setIsOwner(uuidData.user_id === user.id);
+        } else {
+          setActualBusinessId(data.id);
+          setBusiness(data);
+          setIsOwner(data.user_id === user.id);
+        }
+      } catch (err) {
+        console.error('Error loading business:', err);
         toast.error('Failed to load business information');
       } finally {
         setLoading(false);
@@ -66,7 +96,7 @@ export default function OfferManagerPage() {
     const offerCode = searchParams.get('offer') || searchParams.get('highlight');
     if (offerCode) {
       setHighlightedOfferCode(offerCode);
-      
+
       // Fetch and open the offer in modal view
       const fetchAndOpenOffer = async () => {
         try {
@@ -88,7 +118,7 @@ export default function OfferManagerPage() {
       };
 
       fetchAndOpenOffer();
-      
+
       // Clear highlight after 5 seconds (visual feedback)
       setTimeout(() => setHighlightedOfferCode(null), 5000);
     }
@@ -124,7 +154,7 @@ export default function OfferManagerPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => navigate(`/business/${businessId}`)}
+                onClick={() => navigate(getBusinessUrl(businessId!, business?.business_name))}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 <ArrowLeft className="h-5 w-5 text-gray-600" />
@@ -162,7 +192,7 @@ export default function OfferManagerPage() {
           /* Owner View: Full management with OffersList */
           <OffersList
             key={refreshTrigger}
-            businessId={businessId}
+            businessId={actualBusinessId || ''}
             onCreateOffer={() => {
               setEditingOfferId(null);
               setShowCreateForm(true);
@@ -188,12 +218,12 @@ export default function OfferManagerPage() {
           <OffersList
             key={refreshTrigger}
             businessId={businessId}
-            onCreateOffer={() => {}} 
-            onEditOffer={() => {}}
+            onCreateOffer={() => { }}
+            onEditOffer={() => { }}
             onViewDetails={(offer) => setViewDetailsOffer(offer)}
-            onViewAnalytics={() => {}}
-            onExtendExpiry={() => {}}
-            onDuplicate={() => {}}
+            onViewAnalytics={() => { }}
+            onExtendExpiry={() => { }}
+            onDuplicate={() => { }}
             showActions={false}
           />
         )}
@@ -205,7 +235,7 @@ export default function OfferManagerPage() {
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <CreateOfferForm
-                businessId={businessId}
+                businessId={actualBusinessId || ''}
                 userId={user.id}
                 offerId={editingOfferId || undefined}
                 onComplete={() => {

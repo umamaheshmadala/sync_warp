@@ -23,7 +23,7 @@ export function EnhancedOnboardingWizard({
   businessId,
   onComplete
 }: EnhancedOnboardingWizardProps) {
-  
+
   const navigate = useNavigate();
   const [showExitConfirm, setShowExitConfirm] = useState(false);
 
@@ -91,7 +91,7 @@ export function EnhancedOnboardingWizard({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
             Onboarding Complete!
           </h2>
           <p className="text-gray-600 mb-6">
@@ -122,7 +122,7 @@ export function EnhancedOnboardingWizard({
                 Step {currentStep} of {totalSteps}: {currentStepInfo?.title}
               </p>
             </div>
-            
+
             <button
               onClick={handleExit}
               className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -145,7 +145,7 @@ export function EnhancedOnboardingWizard({
                 </span>
               </div>
               <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div 
+                <div
                   className="h-full bg-blue-600 transition-all duration-300 ease-out"
                   style={{ width: `${completionPercentage}%` }}
                 />
@@ -165,19 +165,17 @@ export function EnhancedOnboardingWizard({
                     key={step.number}
                     onClick={() => isClickable && goToStep(stepNumber)}
                     disabled={!isClickable}
-                    className={`flex-1 group relative ${
-                      index < allSteps.length - 1 ? 'mr-2' : ''
-                    }`}
+                    className={`flex-1 group relative ${index < allSteps.length - 1 ? 'mr-2' : ''
+                      }`}
                   >
                     <div className="flex flex-col items-center">
                       <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-all ${
-                          isCompleted
+                        className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-all ${isCompleted
                             ? 'bg-green-600 text-white'
                             : isCurrent
-                            ? 'bg-blue-600 text-white ring-4 ring-blue-100'
-                            : 'bg-gray-200 text-gray-500'
-                        } ${isClickable ? 'cursor-pointer hover:scale-110' : 'cursor-not-allowed'}`}
+                              ? 'bg-blue-600 text-white ring-4 ring-blue-100'
+                              : 'bg-gray-200 text-gray-500'
+                          } ${isClickable ? 'cursor-pointer hover:scale-110' : 'cursor-not-allowed'}`}
                       >
                         {isCompleted ? (
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -188,9 +186,8 @@ export function EnhancedOnboardingWizard({
                         )}
                       </div>
                       <span
-                        className={`text-xs mt-1 font-medium ${
-                          isCurrent ? 'text-blue-600' : 'text-gray-500'
-                        } hidden sm:block`}
+                        className={`text-xs mt-1 font-medium ${isCurrent ? 'text-blue-600' : 'text-gray-500'
+                          } hidden sm:block`}
                       >
                         {step.name.replace('_', ' ')}
                       </span>
@@ -242,7 +239,7 @@ export function EnhancedOnboardingWizard({
         {/* Step Content Container */}
         <div className="bg-white rounded-lg shadow-sm p-6 sm:p-8 mb-6">
           <div className="mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">
               {currentStepInfo?.title}
             </h2>
             <p className="text-gray-600">
@@ -273,7 +270,7 @@ export function EnhancedOnboardingWizard({
                     This will only take about 15-20 minutes.
                   </p>
                 </div>
-                
+
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
                   <h4 className="font-semibold text-blue-900 mb-3">What you'll complete:</h4>
                   <ul className="space-y-2 text-sm text-blue-800">
@@ -297,7 +294,7 @@ export function EnhancedOnboardingWizard({
                     </li>
                   </ul>
                 </div>
-                
+
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 flex items-start">
                   <svg className="w-5 h-5 text-gray-400 mr-3 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -308,19 +305,19 @@ export function EnhancedOnboardingWizard({
                 </div>
               </div>
             )}
-            
+
             {currentStep === 2 && (
               <CustomerProfileStep businessId={businessId} />
             )}
-            
+
             {currentStep === 3 && (
               <BusinessMetricsStep businessId={businessId} />
             )}
-            
+
             {currentStep === 4 && (
               <MarketingGoalsStep businessId={businessId} />
             )}
-            
+
             {currentStep === 5 && (
               <ReviewStep businessId={businessId} />
             )}

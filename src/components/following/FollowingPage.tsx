@@ -3,19 +3,28 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UserCheck, Search as SearchIcon, Settings, X, Users } from 'lucide-react';
+import { Search as SearchIcon, Settings, X, Users, ChevronDown } from 'lucide-react';
 import { useBusinessFollowing } from '../../hooks/useBusinessFollowing';
 import { FollowButton } from './FollowButton';
 import NotificationPreferencesModal from './NotificationPreferencesModal';
 import { StandardBusinessCard, type StandardBusinessCardData } from '../common';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../components/ui/select";
 import { cn } from '../../lib/utils';
+import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 
 type SortBy = 'recent' | 'alphabetical' | 'most_active';
 
 const FollowingPage: React.FC = () => {
   const navigate = useNavigate();
+  const { getBusinessUrl } = useBusinessUrl();
   const { followedBusinesses, loading, error, totalFollowing } = useBusinessFollowing();
-  
+
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortBy>('recent');
   const [selectedBusiness, setSelectedBusiness] = useState<{ id: string; name: string } | null>(null);
@@ -32,7 +41,7 @@ const FollowingPage: React.FC = () => {
     // Apply search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(fb => 
+      filtered = filtered.filter(fb =>
         fb.business?.business_name?.toLowerCase().includes(query) ||
         fb.business?.business_type?.toLowerCase().includes(query) ||
         fb.business?.address?.toLowerCase().includes(query)
@@ -43,7 +52,7 @@ const FollowingPage: React.FC = () => {
     if (sortBy === 'recent') {
       filtered.sort((a, b) => new Date(b.followed_at).getTime() - new Date(a.followed_at).getTime());
     } else if (sortBy === 'alphabetical') {
-      filtered.sort((a, b) => 
+      filtered.sort((a, b) =>
         (a.business?.business_name || '').localeCompare(b.business?.business_name || '')
       );
     }
@@ -53,7 +62,7 @@ const FollowingPage: React.FC = () => {
   }, [followedBusinesses, searchQuery, sortBy]);
 
   // Loading state
-  if (loading) {
+  if (loading && followedBusinesses.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -83,62 +92,45 @@ const FollowingPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-                <UserCheck className="h-8 w-8 text-indigo-600 mr-3" />
-                Following
-              </h1>
-              <p className="mt-2 text-gray-600">
-                {totalFollowing} {totalFollowing === 1 ? 'business' : 'businesses'}
-              </p>
-            </div>
-
-            {/* Quick Stats */}
-            <div className="hidden md:flex items-center space-x-6">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-indigo-600">{totalFollowing}</div>
-                <div className="text-sm text-gray-600">Following</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Search and Filters */}
-        <div className="mb-6 flex flex-col sm:flex-row gap-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        {/* Search and Filters - Always inline */}
+        <div className="flex flex-row items-center gap-2 mb-6">
           {/* Search */}
           <div className="flex-1 relative">
-            <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
               placeholder="Search businesses..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="w-full pl-9 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4" />
               </button>
             )}
           </div>
 
           {/* Sort */}
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as SortBy)}
-            className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-          >
-            <option value="recent">Recently Followed</option>
-            <option value="alphabetical">Alphabetical</option>
-            <option value="most_active">Most Active</option>
-          </select>
+          <div className="relative">
+            <Select
+              value={sortBy}
+              onValueChange={(value) => setSortBy(value as SortBy)}
+            >
+              <SelectTrigger className="w-full sm:w-[180px] bg-white">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="recent">Recently Followed</SelectItem>
+                <SelectItem value="alphabetical">Alphabetical</SelectItem>
+                <SelectItem value="most_active">Most Active</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Business List */}
@@ -149,8 +141,8 @@ const FollowingPage: React.FC = () => {
               {searchQuery ? 'No businesses found' : 'No businesses yet'}
             </h3>
             <p className="text-gray-600 mb-6">
-              {searchQuery 
-                ? 'Try adjusting your search' 
+              {searchQuery
+                ? 'Try adjusting your search'
                 : 'Start following businesses to see updates from them'}
             </p>
             {!searchQuery && (
@@ -191,7 +183,7 @@ const FollowingPage: React.FC = () => {
                 <StandardBusinessCard
                   key={follow.id}
                   business={businessData}
-                  onCardClick={(id) => navigate(`/business/${id}`)}
+                  onCardClick={(id) => navigate(getBusinessUrl(id, follow.business?.business_name || 'business'))}
                   showChevron={false}
                   actionButton={
                     <div className="flex items-center space-x-2">
@@ -209,7 +201,7 @@ const FollowingPage: React.FC = () => {
                       >
                         <Settings className="h-4 w-4 text-gray-600 hover:text-indigo-600" />
                       </button>
-                      
+
                       {/* Follow Button */}
                       <FollowButton
                         businessId={follow.business_id}

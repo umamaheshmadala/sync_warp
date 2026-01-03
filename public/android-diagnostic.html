@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Android Diagnostic</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .log {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-left: 3px solid #007bff;
+            background: white;
+        }
+        .log-entry.error {
+            border-left-color: #dc3545;
+            background: #fff5f5;
+        }
+        .log-entry.success {
+            border-left-color: #28a745;
+            background: #f0fff4;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:active {
+            background: #0056b3;
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Android Diagnostic Tool</h1>
+    <p>This page will help us debug the notification preferences issue.</p>
+    
+    <div id="status"></div>
+    
+    <button onclick="testMutation()">Test Save Preferences</button>
+    <button onclick="clearLogs()">Clear Logs</button>
+    
+    <h3>Console Logs:</h3>
+    <div id="logs" class="log"></div>
+
+    <script>
+        const logsDiv = document.getElementById('logs');
+        const statusDiv = document.getElementById('status');
+        
+        // Intercept console.log
+        const originalLog = console.log;
+        const originalError = console.error;
+        
+        function addLog(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logsDiv.appendChild(entry);
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+            
+            // Also call original console methods
+            if (type === 'error') {
+                originalError(message);
+            } else {
+                originalLog(message);
+            }
+        }
+        
+        console.log = (...args) => {
+            addLog(args.join(' '), 'info');
+        };
+        
+        console.error = (...args) => {
+            addLog(args.join(' '), 'error');
+        };
+        
+        function clearLogs() {
+            logsDiv.innerHTML = '';
+            statusDiv.innerHTML = '';
+        }
+        
+        async function testMutation() {
+            try {
+                addLog('🔄 Starting diagnostic test...', 'info');
+                
+                // Check if we're in the app
+                addLog(`Platform: ${navigator.userAgent}`, 'info');
+                addLog(`Window location: ${window.location.href}`, 'info');
+                
+                // Try to import the Supabase client
+                addLog('Attempting to load Supabase client...', 'info');
+                
+                // Since we can't use ES6 imports in a standalone HTML file,
+                // we'll check if the global objects exist
+                if (typeof window.supabase === 'undefined') {
+                    addLog('❌ Supabase client not found in global scope', 'error');
+                    addLog('This diagnostic page needs to be loaded within the app context', 'error');
+                    statusDiv.innerHTML = '<div class="status error">❌ Error: Not running in app context</div>';
+                    return;
+                }
+                
+                addLog('✅ Supabase client found', 'success');
+                
+                // Test a simple query
+                addLog('Testing Supabase connection...', 'info');
+                const { data: profile, error: profileError } = await window.supabase
+                    .from('profiles')
+                    .select('notification_preferences')
+                    .limit(1)
+                    .single();
+                
+                if (profileError) {
+                    addLog(`❌ Supabase query error: ${profileError.message}`, 'error');
+                    statusDiv.innerHTML = `<div class="status error">❌ Database Error: ${profileError.message}</div>`;
+                    return;
+                }
+                
+                addLog('✅ Supabase connection working', 'success');
+                addLog(`Current preferences: ${JSON.stringify(profile.notification_preferences)}`, 'info');
+                
+                // Test mutation
+                addLog('Testing preference update...', 'info');
+                const testPrefs = {
+                    ...profile.notification_preferences,
+                    push_enabled: !profile.notification_preferences?.push_enabled
+                };
+                
+                const { error: updateError, count } = await window.supabase
+                    .from('profiles')
+                    .update({ notification_preferences: testPrefs })
+                    .eq('id', profile.id)
+                    .select('*', { count: 'exact' });
+                
+                if (updateError) {
+                    addLog(`❌ Update error: ${updateError.message}`, 'error');
+                    statusDiv.innerHTML = `<div class="status error">❌ Update Failed: ${updateError.message}</div>`;
+                    return;
+                }
+                
+                addLog(`✅ Update successful! Rows affected: ${count}`, 'success');
+                addLog(`New preferences: ${JSON.stringify(testPrefs)}`, 'success');
+                statusDiv.innerHTML = '<div class="status success">✅ All tests passed! Mutation is working.</div>';
+                
+            } catch (error) {
+                addLog(`❌ Unexpected error: ${error.message}`, 'error');
+                addLog(`Stack: ${error.stack}`, 'error');
+                statusDiv.innerHTML = `<div class="status error">❌ Error: ${error.message}</div>`;
+            }
+        }
+        
+        // Log initial load
+        addLog('📱 Diagnostic page loaded', 'info');
+        addLog('Click "Test Save Preferences" to run diagnostics', 'info');
+    </script>
+</body>
+</html>

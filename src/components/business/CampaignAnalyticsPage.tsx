@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/card';
+import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 import { Badge } from '../ui/badge';
 import { Skeleton } from '../ui/skeleton';
 import {
@@ -26,6 +27,7 @@ import type { Campaign } from '../../types/campaigns';
 export default function CampaignAnalyticsPage() {
   const { businessId, campaignId } = useParams<{ businessId: string; campaignId: string }>();
   const navigate = useNavigate();
+  const { getBusinessUrl } = useBusinessUrl();
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -121,7 +123,7 @@ export default function CampaignAnalyticsPage() {
         {/* Header */}
         <div className="mb-6">
           <Link
-            to={`/business/${businessId}/campaigns`}
+            to={`${getBusinessUrl(businessId!)}/campaigns`}
             className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-4"
           >
             <ArrowLeft className="w-4 h-4" />

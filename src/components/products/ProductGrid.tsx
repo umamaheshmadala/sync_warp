@@ -4,6 +4,7 @@ import { useProductDisplay } from '../../hooks/useProductDisplay';
 import { ProductCard } from './ProductCard';
 import { Button } from '../ui/button';
 import { Skeleton } from '../ui/skeleton';
+import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 
 interface ProductGridProps {
   businessId: string;
@@ -19,13 +20,16 @@ export function ProductGrid({
   onProductClick
 }: ProductGridProps) {
   const navigate = useNavigate();
+  const { getBusinessUrl } = useBusinessUrl();
   const { products, loading, error, hasMore } = useProductDisplay({
     businessId,
     limit
   });
 
   const handleViewAll = () => {
-    navigate(`/business/${businessId}/products/catalog`);
+    // Extract business name from first product if available
+    const businessName = products.length > 0 ? products[0].business?.name : undefined;
+    navigate(`${getBusinessUrl(businessId, businessName)}/products/catalog`);
   };
 
   const handleProductClick = (productId: string) => {

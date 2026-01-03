@@ -101,22 +101,23 @@ export default function Step2Location({ data, onUpdate, onNext, onBack }: Step2L
     setCityError('')
 
     navigator.geolocation.getCurrentPosition(
-      async (_position) => {
+      async (position) => {
         try {
-          // In a real app, you would use a geocoding service here
-          // For now, we'll simulate getting a city name
-          // const { latitude, longitude } = position.coords
+          const { latitude, longitude } = position.coords
           
-          // Simulate API call delay
-          await new Promise(resolve => setTimeout(resolve, 1000))
+          // Try to find nearest city from database
+          const nearestCity = await CityService.findNearestCity(latitude, longitude)
           
-          // This would be replaced with actual reverse geocoding
-          const mockCity = 'Current Location' // You could use a geocoding service
-          
-          setCity(mockCity)
-          onUpdate({ city: mockCity })
-          setCityError('')
+          if (nearestCity) {
+            const cityDisplayName = `${nearestCity.name}, ${nearestCity.state}`
+            setCity(cityDisplayName)
+            onUpdate({ city: cityDisplayName })
+            setCityError('')
+          } else {
+            setCityError('Unable to determine your city. Please select manually.')
+          }
         } catch (error) {
+          console.error('Geocoding error:', error)
           setCityError('Unable to get your location. Please enter manually.')
         } finally {
           setIsGettingLocation(false)
@@ -251,40 +252,6 @@ export default function Step2Location({ data, onUpdate, onNext, onBack }: Step2L
           </button>
         </div>
 
-        {/* Location Benefits */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-start">
-            <MapPin className="w-5 h-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
-            <div>
-              <h4 className="font-medium text-blue-900 mb-1">Why we need your location</h4>
-              <ul className="text-sm text-blue-800 space-y-1">
-                <li>• Find local businesses and deals near you</li>
-                <li>• Get personalized recommendations for your city</li>
-                <li>• Connect with people in your area</li>
-                <li>• Discover trending offers in your locality</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-        <div className="bg-blue-50 rounded-lg p-4">
-          <h4 className="font-medium text-blue-900 mb-2">
-            Why we need your location:
-          </h4>
-          <ul className="text-sm text-blue-800 space-y-1">
-            <li>• Find deals and businesses near you</li>
-            <li>• Show distance to each location</li>
-            <li>• Send location-specific notifications</li>
-            <li>• Personalize your deal recommendations</li>
-          </ul>
-        </div>
-
-        {/* Privacy Note */}
-        <div className="bg-gray-50 rounded-lg p-4">
-          <p className="text-xs text-gray-600">
-            <strong>Privacy:</strong> Your location is only used to show you relevant deals. 
-            We never share your exact location with businesses or other users.
-          </p>
-        </div>
       </div>
 
       {/* Action Buttons */}

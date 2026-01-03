@@ -56,21 +56,19 @@ const FriendSelector: React.FC<FriendSelectorProps> = ({
       setLoading(true);
       setError(null);
 
-      // Query profiles table for all users except current user
-      const { data, error: queryError } = await supabase
-        .from('profiles')
-        .select('id, email, full_name, avatar_url, created_at')
-        .neq('id', currentUserId)
-        .order('created_at', { ascending: false })
-        .limit(50);
+      const { data: friendships, error } = await supabase
+        .from('friendships')
+        .select(`
+          friend:profiles!friendships_friend_id_fkey(*)
+        `)
+        .eq('user_id', currentUserId)
+        .eq('status', 'active');
 
-      if (queryError) {
-        console.error('Error fetching users:', queryError);
-        setError('Failed to load users');
-        return;
-      }
+      if (error) throw error;
 
-      setUsers(data || []);
+      const friends = (friendships || []).map((f: any) => f.friend).filter(Boolean);
+      
+      setUsers(friends);
     } catch (err) {
       console.error('Error in loadUsers:', err);
       setError('An unexpected error occurred');
@@ -92,8 +90,8 @@ const FriendSelector: React.FC<FriendSelectorProps> = ({
 
   // Get sharing stats for a specific friend
   const getFriendSharingStats = (friendId: string) => {
-    if (!sharingStats?.per_friend_stats) return null;
-    return sharingStats.per_friend_stats.find(f => f.recipient_id === friendId);
+    if (!sharingStats?.friends_shared_with) return null;
+    return sharingStats.friends_shared_with.find(f => f.recipient_id === friendId);
   };
 
   // Check if can share to this friend
@@ -119,7 +117,7 @@ const FriendSelector: React.FC<FriendSelectorProps> = ({
     
     if (!canShareResult.can_share) { // Fix: use can_share (snake_case) not canShare
       const friendStats = getFriendSharingStats(user.id);
-      const limit = sharingStats?.limits?.per_friend_limit || 3;
+      const limit = sharingStats?.per_friend_limit || 3;
       const shared = friendStats?.count || 0;
       
       console.warn('⚠️ [FriendSelector] Cannot share - Reason:', canShareResult.reason);
@@ -153,7 +151,7 @@ const FriendSelector: React.FC<FriendSelectorProps> = ({
   return (
     <div className={`bg-white rounded-lg ${className}`}>
       {/* Header */}
-      <div className="p-4 border-b border-gray-200">
+      <div className="p-3 border-b border-gray-200">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
             <Users className="w-5 h-5 text-blue-600" />
@@ -184,7 +182,7 @@ const FriendSelector: React.FC<FriendSelectorProps> = ({
         {sharingStats && (
           <div className="mt-3 p-2 bg-blue-50 rounded-lg">
             <div className="flex items-center justify-between text-xs text-blue-700">
-              <span>You've shared {sharingStats.total_shares_today} coupons today</span>
+              <span>You've shared {sharingStats.total_shared_today} coupons today</span>
               <span className="font-medium">
                 {sharingStats.remaining_today || 0} remaining
               </span>
@@ -214,8 +212,13 @@ const FriendSelector: React.FC<FriendSelectorProps> = ({
           <div className="flex flex-col items-center justify-center py-12 px-4">
             <User className="w-12 h-12 text-gray-300 mb-3" />
             <p className="text-sm text-gray-600 text-center">
-              {searchTerm ? 'No users found matching your search' : 'No users available'}
+              {searchTerm ? 'No friends found matching your search' : 'No friends yet'}
             </p>
+            {!searchTerm && (
+              <p className="text-xs text-gray-500 text-center mt-2">
+                Add friends to share coupons with them
+              </p>
+            )}
           </div>
         ) : (
           <AnimatePresence>
@@ -223,7 +226,7 @@ const FriendSelector: React.FC<FriendSelectorProps> = ({
               const friendStats = getFriendSharingStats(user.id);
               const isSelected = selectedUser?.id === user.id;
               const sharedCount = friendStats?.count || 0;
-              const limit = sharingStats?.limits?.per_friend_limit || 3;
+              const limit = sharingStats?.per_friend_limit || 3;
               const atLimit = sharedCount >= limit;
 
               return (
@@ -232,7 +235,7 @@ const FriendSelector: React.FC<FriendSelectorProps> = ({
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className={`p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${
+                  className={`p-2 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${
                     isSelected ? 'bg-blue-50 border-blue-200' : ''
                   } ${atLimit ? 'opacity-50 cursor-not-allowed' : ''}`}
                   onClick={() => !atLimit && handleSelectUser(user)}
@@ -245,10 +248,10 @@ const FriendSelector: React.FC<FriendSelectorProps> = ({
                           <img
                             src={user.avatar_url}
                             alt={getDisplayName(user)}
-                            className="w-10 h-10 rounded-full object-cover"
+                            className="w-8 h-8 rounded-full object-cover"
                           />
                         ) : (
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-medium text-sm">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-medium text-xs">
                             {getUserInitials(user)}
                           </div>
                         )}
@@ -311,7 +314,7 @@ const FriendSelector: React.FC<FriendSelectorProps> = ({
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="p-4 border-t border-gray-200 bg-gray-50"
+          className="p-3 border-t border-gray-200 bg-gray-50"
         >
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center space-x-2">
@@ -335,13 +338,13 @@ const FriendSelector: React.FC<FriendSelectorProps> = ({
           <div className="flex space-x-3">
             <button
               onClick={onCancel}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-100 transition-colors"
+              className="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-100 transition-colors text-sm"
             >
               Cancel
             </button>
             <button
               onClick={handleConfirm}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+              className="flex-1 px-3 py-1.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 text-sm"
             >
               <Check className="w-4 h-4" />
               Confirm

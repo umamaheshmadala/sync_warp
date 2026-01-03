@@ -1,0 +1,117 @@
+
+import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { supabase } from '../lib/supabase';
+import { notificationService, InAppNotification } from '../services/notificationService';
+import { useAuthStore } from '../store/authStore';
+
+// Standalone hook for just the Badge count
+export const useUnreadNotificationCount = () => {
+    const { user } = useAuthStore();
+    const { data: unreadCount = 0 } = useQuery({
+        queryKey: ['notifications', 'unread', user?.id], // valid query key
+        queryFn: notificationService.getUnreadCount,
+        refetchInterval: 60000, 
+        enabled: !!user,
+    });
+    return unreadCount;
+};
+
+export const useInAppNotifications = () => {
+    const queryClient = useQueryClient();
+    const { user } = useAuthStore();
+    const unreadCount = useUnreadNotificationCount();
+
+    // Infinite Query for Notifications List
+    const {
+        data,
+        error,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+        isLoading
+    } = useInfiniteQuery({
+        queryKey: ['notifications', user?.id], // Unique per user
+        queryFn: ({ pageParam = 0 }) => notificationService.getNotifications(pageParam as number, 20),
+        initialPageParam: 0,
+        getNextPageParam: (lastPage, allPages) => {
+            // Robust checks
+            if (!lastPage || !allPages || !Array.isArray(allPages)) return undefined;
+            
+            const loadedCount = allPages.length * 20;
+            const totalCount = lastPage.count || 0;
+            
+            if (loadedCount < totalCount) {
+                return allPages.length; // Next page index
+            }
+            return undefined;
+        },
+        enabled: !!user,
+        refetchOnWindowFocus: true, 
+    });
+
+
+    // Realtime Subscription for Notification List
+    // This hook owns its own subscription to ensure the notification list updates in real-time
+    // Channel name is unique to avoid conflicts with useRealtimeNotifications (which handles toasts)
+    //
+    // IMPORTANT: We also dispatch a custom event here because Supabase Realtime appears to have a
+    // limitation where multiple subscriptions to the same table don't all fire reliably.
+    // By dispatching a custom event, we can share this single working subscription with useRealtimeNotifications.
+    useEffect(() => {
+        if (!user) return;
+        
+        const channel = supabase
+            .channel(`notification-list-realtime-${user.id}`) // Unique channel per user
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'notification_log',
+                },
+                (payload) => {
+                    console.log('[useInAppNotifications] New notification detected. Refreshing list and badge.');
+                    queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
+                    queryClient.invalidateQueries({ queryKey: ['notifications', 'unread', user.id] });
+                    
+                    // Forward event to useRealtimeNotifications for toast handling
+                    // This works around a Supabase limitation where multiple table subscriptions don't both fire
+                    window.dispatchEvent(new CustomEvent('notification-log-insert', { 
+                        detail: payload 
+                    }));
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [queryClient, user]);
+
+    return {
+        // Flatten pages into a single array
+        notifications: data?.pages.flatMap(page => page.data) || [],
+        totalCount: data?.pages[0]?.count || 0,
+        isLoading,
+        error,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+        unreadCount,
+        markAsRead: async (id: string) => {
+            await notificationService.markAsRead(id);
+            if (user) {
+                queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
+                queryClient.invalidateQueries({ queryKey: ['notifications', 'unread', user.id] });
+            }
+        },
+        markAllAsRead: async () => {
+            await notificationService.markAllAsRead();
+             if (user) {
+                queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
+                queryClient.invalidateQueries({ queryKey: ['notifications', 'unread', user.id] });
+            }
+        }
+    };
+};

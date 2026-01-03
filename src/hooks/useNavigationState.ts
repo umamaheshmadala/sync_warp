@@ -88,7 +88,7 @@ export const useNavigationState = (): NavigationState => {
       }
 
       const newHistory = [...prev, newEntry];
-      
+
       // Trim history if it gets too long
       if (newHistory.length > MAX_HISTORY_SIZE) {
         newHistory.splice(0, newHistory.length - MAX_HISTORY_SIZE);
@@ -176,28 +176,30 @@ export const useNavigationState = (): NavigationState => {
  * Hook for managing navigation preferences
  */
 export const useNavigationPreferences = () => {
-  const [preferences, setPreferences] = useState({
-    enableHapticFeedback: true,
-    enableAnimations: true,
-    swipeGesturesEnabled: false, // Disabled by default to prevent text selection issues
-    showNavigationBadges: true,
-    navigationBarPosition: 'bottom' as 'top' | 'bottom'
-  });
-
   const PREFERENCES_KEY = 'sync_navigation_preferences';
 
-  // Load preferences from localStorage
-  useEffect(() => {
+  const [preferences, setPreferences] = useState(() => {
     try {
       const saved = localStorage.getItem(PREFERENCES_KEY);
       if (saved) {
-        const parsedPreferences = JSON.parse(saved);
-        setPreferences(prev => ({ ...prev, ...parsedPreferences }));
+        return {
+          enableHapticFeedback: true,
+          swipeGesturesEnabled: false,
+          showNavigationBadges: true,
+          navigationBarPosition: 'bottom' as 'top' | 'bottom',
+          ...JSON.parse(saved)
+        };
       }
     } catch (error) {
       console.debug('Failed to load navigation preferences:', error);
     }
-  }, []);
+    return {
+      enableHapticFeedback: true,
+      swipeGesturesEnabled: false, // Disabled by default to prevent text selection issues
+      showNavigationBadges: true,
+      navigationBarPosition: 'bottom' as 'top' | 'bottom'
+    };
+  });
 
   // Save preferences to localStorage
   useEffect(() => {

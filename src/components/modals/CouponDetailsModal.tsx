@@ -229,7 +229,7 @@ export const CouponDetailsModal: React.FC<CouponDetailsModalProps> = ({
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               transition={{ type: 'spring', duration: 0.3 }}
-              className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto relative"
+              className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto relative"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Close Button */}
@@ -241,7 +241,7 @@ export const CouponDetailsModal: React.FC<CouponDetailsModalProps> = ({
               </button>
 
               {/* Header with Image */}
-              <div className="relative h-48 bg-gradient-to-r from-indigo-500 to-purple-600">
+              <div className="relative h-32 bg-gradient-to-r from-indigo-500 to-purple-600">
                 {coupon.image_url && (
                   <img
                     src={coupon.image_url}
@@ -272,7 +272,7 @@ export const CouponDetailsModal: React.FC<CouponDetailsModalProps> = ({
                 {/* Discount Badge */}
                 <div className="absolute -bottom-6 left-6">
                   <div className="bg-gradient-to-r from-red-500 to-pink-500 text-white px-6 py-3 rounded-xl shadow-lg">
-                    <div className="text-3xl font-bold">{discountDisplay}</div>
+                    <div className="text-2xl font-bold">{discountDisplay}</div>
                   </div>
                 </div>
 
@@ -285,10 +285,10 @@ export const CouponDetailsModal: React.FC<CouponDetailsModalProps> = ({
               </div>
 
               {/* Content */}
-              <div className="p-6 pt-12 space-y-6">
+              <div className="p-4 pt-10 space-y-4">
                 {/* Title and Description */}
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">{coupon.title}</h2>
+                  <h2 className="text-xl font-bold text-gray-900 mb-1">{coupon.title}</h2>
                   <p className="text-gray-600 leading-relaxed">{coupon.description}</p>
                 </div>
 
@@ -347,26 +347,15 @@ export const CouponDetailsModal: React.FC<CouponDetailsModalProps> = ({
                 )}
 
                 {/* Validity Period */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <div className="flex items-center text-gray-600 text-sm mb-1">
-                      <Calendar className="w-4 h-4 mr-1" />
-                      <span>Valid From</span>
-                    </div>
-                    <p className="text-gray-900 font-medium">
-                      {format(new Date(coupon.valid_from || coupon.created_at), 'MMM dd, yyyy')}
-                    </p>
+                {/* Validity Period - Compact Row */}
+                <div className="flex items-center justify-between bg-gray-50 rounded-lg p-3 text-sm">
+                  <div className="flex items-center text-gray-600">
+                    <Calendar className="w-4 h-4 mr-2" />
+                    <span>Valid: {format(new Date(coupon.valid_from || coupon.created_at), 'MMM dd')} - {format(new Date(coupon.valid_until || coupon.expires_at), 'MMM dd, yyyy')}</span>
                   </div>
-                  
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <div className="flex items-center text-gray-600 text-sm mb-1">
-                      <Clock className="w-4 h-4 mr-1" />
-                      <span>Valid Until</span>
-                    </div>
-                    <p className={`font-medium ${timeStatus.isExpired ? 'text-red-600' : 'text-gray-900'}`}>
-                      {format(new Date(coupon.valid_until || coupon.expires_at), 'MMM dd, yyyy')}
-                    </p>
-                  </div>
+                  <span className={`font-medium ${timeStatus.isExpired ? 'text-red-600' : 'text-green-600'}`}>
+                    {timeStatus.text}
+                  </span>
                 </div>
 
                 {/* Terms & Conditions */}
@@ -420,7 +409,7 @@ export const CouponDetailsModal: React.FC<CouponDetailsModalProps> = ({
                       <button
                         onClick={handleCollect}
                         disabled={isCollecting}
-                        className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl font-medium hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 flex items-center justify-center"
+                        className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-2 rounded-xl font-medium hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 flex items-center justify-center text-sm"
                       >
                         {isCollecting ? (
                           <>
@@ -441,7 +430,7 @@ export const CouponDetailsModal: React.FC<CouponDetailsModalProps> = ({
                       <button
                         onClick={handleRedeem}
                         disabled={isRedeeming}
-                        className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-xl font-medium hover:from-green-600 hover:to-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 flex items-center justify-center"
+                        className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-xl font-medium hover:from-green-600 hover:to-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 flex items-center justify-center text-sm"
                       >
                         {isRedeeming ? (
                           <>
@@ -459,7 +448,7 @@ export const CouponDetailsModal: React.FC<CouponDetailsModalProps> = ({
 
                     {/* Already Collected Status */}
                     {coupon.isCollected && !showRedeemButton && (
-                      <div className="flex-1 bg-green-50 border border-green-200 text-green-700 px-6 py-3 rounded-xl font-medium flex items-center justify-center">
+                      <div className="flex-1 bg-green-50 border border-green-200 text-green-700 px-4 py-2 rounded-xl font-medium flex items-center justify-center text-sm">
                         <CheckCircle className="w-5 h-5 mr-2" />
                         Already Collected
                       </div>
@@ -467,7 +456,7 @@ export const CouponDetailsModal: React.FC<CouponDetailsModalProps> = ({
 
                     {/* Already Redeemed Status */}
                     {isRedeemed && (
-                      <div className="flex-1 bg-blue-50 border border-blue-200 text-blue-700 px-6 py-3 rounded-xl font-medium flex items-center justify-center">
+                      <div className="flex-1 bg-blue-50 border border-blue-200 text-blue-700 px-4 py-2 rounded-xl font-medium flex items-center justify-center text-sm">
                         <CheckCircle className="w-5 h-5 mr-2" />
                         Redeemed
                       </div>
@@ -475,7 +464,7 @@ export const CouponDetailsModal: React.FC<CouponDetailsModalProps> = ({
 
                     {/* Expired Status */}
                     {timeStatus.isExpired && (
-                      <div className="flex-1 bg-red-50 border border-red-200 text-red-700 px-6 py-3 rounded-xl font-medium flex items-center justify-center">
+                      <div className="flex-1 bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-xl font-medium flex items-center justify-center text-sm">
                         <AlertCircle className="w-5 h-5 mr-2" />
                         Expired
                       </div>
@@ -487,7 +476,7 @@ export const CouponDetailsModal: React.FC<CouponDetailsModalProps> = ({
                     {showShareButton && (
                       <button
                         onClick={() => onShare?.(coupon.id)}
-                        className="flex-1 px-6 py-3 bg-white border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center"
+                        className="flex-1 px-4 py-2 bg-white border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center text-sm"
                       >
                         <Share2 className="w-5 h-5 mr-2" />
                         Share
@@ -513,7 +502,7 @@ export const CouponDetailsModal: React.FC<CouponDetailsModalProps> = ({
                       <button
                         onClick={handleRemove}
                         disabled={isRemoving}
-                        className="px-6 py-3 bg-white border border-red-300 rounded-xl text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+                        className="px-4 py-2 bg-white border border-red-300 rounded-xl text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center text-sm"
                       >
                         {isRemoving ? (
                           <>

@@ -12,6 +12,7 @@ export interface OnboardingData {
   phone: string
   city: string
   interests: string[]
+  date_of_birth?: string
   notificationPreferences: {
     email: boolean
     push: boolean
@@ -93,6 +94,7 @@ export default function OnboardingFlow() {
         phone: onboardingData.phone || undefined,
         city: onboardingData.city.trim(),
         interests: onboardingData.interests || [],
+        date_of_birth: onboardingData.date_of_birth || undefined,
         // Store notification preferences in user metadata if needed
         updated_at: new Date().toISOString()
       })

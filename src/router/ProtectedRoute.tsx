@@ -4,6 +4,9 @@
 import { useEffect, ReactNode, useState } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
+import { usePushNotifications } from '../hooks/usePushNotifications'
+import { Capacitor } from '@capacitor/core'
+import { PushNotifications } from '@capacitor/push-notifications'
 
 interface ProtectedRouteProps {
   children: ReactNode
@@ -14,8 +17,8 @@ interface ProtectedRouteProps {
   debugMode?: boolean
 }
 
-export default function ProtectedRoute({ 
-  children, 
+export default function ProtectedRoute({
+  children,
   requireAuth = true,
   redirectTo = '/auth/login',
   fallbackComponent,
@@ -26,7 +29,7 @@ export default function ProtectedRoute({
   const location = useLocation()
   const [retryCount, setRetryCount] = useState(0)
   const [sessionChecked, setSessionChecked] = useState(false)
-  
+
   // Debug mode logging (only in development)
   const isDevelopment = import.meta.env.MODE === 'development'
   const shouldDebug = debugMode || isDevelopment
@@ -52,14 +55,14 @@ export default function ProtectedRoute({
         if (shouldDebug) {
           console.log('[ProtectedRoute] Checking user session, attempt:', retryCount + 1)
         }
-        
+
         try {
           await checkUser()
           setSessionChecked(true)
         } catch (error) {
           console.error('[ProtectedRoute] Session check failed:', error)
           setRetryCount(prev => prev + 1)
-          
+
           // Retry after delay for network issues
           if (retryCount < 2) {
             setTimeout(() => checkUserSession(), 1000 * (retryCount + 1))
@@ -73,33 +76,15 @@ export default function ProtectedRoute({
     checkUserSession()
   }, [initialized, loading, retryCount, sessionChecked, checkUser, shouldDebug])
 
-  // Show loading while checking authentication
+  // Show loading while checking authentication - use minimal loading
   if (!initialized || loading || !sessionChecked) {
     // Use custom fallback component if provided
     if (fallbackComponent) {
       return <>{fallbackComponent}</>
     }
-    
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-blue-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-indigo-600 mx-auto mb-4"></div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            {retryCount > 0 ? `Retrying authentication... (${retryCount}/3)` : 'Checking authentication...'}
-          </h2>
-          <p className="text-gray-600">
-            {retryCount > 0 ? 'Having trouble connecting. Please wait...' : 'Please wait while we verify your access'}
-          </p>
-          {shouldDebug && (
-            <div className="mt-4 text-xs text-gray-500 bg-gray-100 p-2 rounded">
-              <p>Debug: initialized={String(initialized)}, loading={String(loading)}, sessionChecked={String(sessionChecked)}</p>
-              <p>Path: {location.pathname}</p>
-              <p>Retry: {retryCount}/3</p>
-            </div>
-          )}
-        </div>
-      </div>
-    )
+
+    // Return minimal loading - splash screen handles initial load
+    return null;
   }
 
   // If authentication is required but user is not logged in
@@ -107,17 +92,17 @@ export default function ProtectedRoute({
     if (shouldDebug) {
       console.log('[ProtectedRoute] Redirecting to login - user not authenticated')
     }
-    
+
     // Store the attempted URL to redirect back after login
     return (
-      <Navigate 
-        to={redirectTo} 
-        state={{ 
-          from: location.pathname, 
+      <Navigate
+        to={redirectTo}
+        state={{
+          from: location.pathname,
           message: 'Please log in to access this page',
           timestamp: Date.now()
         }}
-        replace 
+        replace
       />
     )
   }
@@ -129,37 +114,37 @@ export default function ProtectedRoute({
       if (shouldDebug) {
         console.log('[ProtectedRoute] Redirecting authenticated user away from auth page')
       }
-      
+
       // Check if user completed onboarding
       const hasCompletedOnboarding = profile && profile.city && profile.interests?.length > 0
       const redirectPath = hasCompletedOnboarding ? '/dashboard' : '/onboarding'
-      
+
       return <Navigate to={redirectPath} replace />
     }
   }
 
   // Enhanced onboarding logic
   if (user && profile) {
-    const hasCompletedOnboarding = profile.city && profile.interests?.length > 0
+    const hasCompletedOnboarding = profile.city // && profile.interests?.length > 0 - Relaxed to prevent loop
     const isOnOnboardingPage = location.pathname === '/onboarding'
-    
+
     // If user hasn't completed onboarding and is not on onboarding page
     if (!hasCompletedOnboarding && !isOnOnboardingPage && requireOnboarding) {
       if (shouldDebug) {
         console.log('[ProtectedRoute] Redirecting to onboarding - profile incomplete')
       }
       return (
-        <Navigate 
-          to="/onboarding" 
-          state={{ 
+        <Navigate
+          to="/onboarding"
+          state={{
             from: location.pathname,
             message: 'Please complete your profile setup'
           }}
-          replace 
+          replace
         />
       )
     }
-    
+
     // If user has completed onboarding but is still on onboarding page
     if (hasCompletedOnboarding && isOnOnboardingPage) {
       if (shouldDebug) {
@@ -173,7 +158,7 @@ export default function ProtectedRoute({
   if (shouldDebug && !sessionChecked) {
     console.log('[ProtectedRoute] Rendering protected content for:', location.pathname)
   }
-  
+
   // Render the protected component
   return <>{children}</>
 }
@@ -196,11 +181,11 @@ export function withProtection<T extends object>(
     debugMode = false,
     fallbackComponent
   } = options
-  
+
   return function ProtectedComponent(props: T) {
     return (
-      <ProtectedRoute 
-        requireAuth={requireAuth} 
+      <ProtectedRoute
+        requireAuth={requireAuth}
         redirectTo={redirectTo}
         requireOnboarding={requireOnboarding}
         debugMode={debugMode}
@@ -217,11 +202,11 @@ export function useRequireAuth(debugMode = false) {
   const { user, profile, initialized, loading } = useAuthStore()
   const location = useLocation()
   const [authChecked, setAuthChecked] = useState(false)
-  
+
   useEffect(() => {
     if (initialized && !authChecked) {
       setAuthChecked(true)
-      
+
       if (debugMode || import.meta.env.MODE === 'development') {
         console.log('[useRequireAuth] Authentication check:', {
           path: location.pathname,
@@ -230,7 +215,7 @@ export function useRequireAuth(debugMode = false) {
           loading
         })
       }
-      
+
       if (!user) {
         // Could dispatch a custom event or show a toast notification
         console.log('Authentication required for:', location.pathname)
@@ -238,10 +223,10 @@ export function useRequireAuth(debugMode = false) {
     }
   }, [user, profile, initialized, loading, location.pathname, authChecked, debugMode])
 
-  return { 
-    user, 
+  return {
+    user,
     profile,
-    authenticated: !!user, 
+    authenticated: !!user,
     initialized,
     loading,
     hasCompletedOnboarding: !!(profile?.city && profile?.interests?.length > 0)
@@ -252,16 +237,58 @@ export function useRequireAuth(debugMode = false) {
 export function AuthDebugPanel() {
   const { user, profile, initialized, loading } = useAuthStore()
   const location = useLocation()
-  
-  if (import.meta.env.MODE !== 'development') {
-    return null
+  const [testResult, setTestResult] = useState<string>('Not tested')
+
+  // Test push notification function
+  const testPushNotifications = async () => {
+    setTestResult('Testing...')
+    try {
+      // Check platform
+      const isNative = Capacitor.isNativePlatform()
+      setTestResult(prev => prev + '\nPlatform: ' + Capacitor.getPlatform() + ', Native: ' + isNative)
+
+      if (!isNative) {
+        setTestResult('Platform check bypassed for development')
+        // Don't return - continue with test on native device
+      }
+
+      // Request permission
+      const permissionStatus = await PushNotifications.requestPermissions()
+      setTestResult(prev => prev + '\nPermission status: ' + JSON.stringify(permissionStatus))
+
+      if (permissionStatus.receive === 'granted') {
+        // Register for push notifications
+        await PushNotifications.register()
+        setTestResult(prev => prev + '\n✅ Permission granted and registered!')
+
+        // Add listener for token
+        PushNotifications.addListener('registration', (token) => {
+          setTestResult(prev => prev + '\n✅ Token received: ' + token.value.substring(0, 20) + '...')
+        })
+
+        PushNotifications.addListener('registrationError', (error) => {
+          setTestResult(prev => prev + '\n❌ Registration error: ' + error.error)
+        })
+      } else {
+        setTestResult('❌ Permission denied')
+      }
+    } catch (error: any) {
+      setTestResult('❌ Error: ' + error.message)
+    }
   }
-  
+
+  // Debug panel shown in all modes for testing
+
   return (
     <div className="fixed bottom-4 right-4 bg-black bg-opacity-80 text-white p-3 rounded text-xs z-50 max-w-sm">
       <div className="font-bold mb-2">Auth Debug Panel</div>
       <div>Path: {location.pathname}</div>
       <div>User: {user ? '✅ Logged in' : '❌ Not logged in'}</div>
+      {user && (
+        <div className="text-yellow-300 font-semibold">
+          👤 {profile?.full_name || user.user_metadata?.full_name || user.email}
+        </div>
+      )}
       <div>Profile: {profile ? '✅ Loaded' : '❌ Missing'}</div>
       <div>Initialized: {initialized ? '✅ Yes' : '❌ No'}</div>
       <div>Loading: {loading ? '⏳ Yes' : '✅ No'}</div>
@@ -272,6 +299,19 @@ export function AuthDebugPanel() {
           <div>Onboarding: {(profile.city && profile.interests?.length > 0) ? '✅ Complete' : '❌ Incomplete'}</div>
         </div>
       )}
+
+      {/* Push notification test button */}
+      <div className="mt-3 pt-3 border-t border-white border-opacity-30">
+        <button
+          onClick={testPushNotifications}
+          className="bg-indigo-600 text-white px-3 py-1 rounded text-xs hover:bg-indigo-700 transition-colors w-full"
+        >
+          📱 Test Push Notifications
+        </button>
+        <div className="mt-2 text-green-300 font-mono text-xs break-all whitespace-pre-wrap">
+          {testResult}
+        </div>
+      </div>
     </div>
   )
 }

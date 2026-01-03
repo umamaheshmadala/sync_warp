@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Star, 
-  Package, 
-  Eye, 
-  DollarSign, 
+import {
+  Star,
+  Package,
+  Eye,
+  DollarSign,
   ImageIcon,
   ExternalLink,
   Plus
@@ -15,6 +15,7 @@ import ProductView from './ProductView';
 import ProductForm from './ProductForm';
 import { useNavigate } from 'react-router-dom';
 import { ProductCard as CustomerProductCard } from '../products/ProductCard';
+import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 
 interface FeaturedProductsProps {
   businessId: string;
@@ -28,6 +29,7 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
   isOwner
 }) => {
   const navigate = useNavigate();
+  const { getBusinessUrl } = useBusinessUrl();
   const { products, loading, fetchProducts, refreshProducts } = useProducts(businessId);
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -51,7 +53,7 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
   // Format price display
   const formatPrice = (price?: number, currency = 'INR') => {
     if (!price || price === 0) return 'Price not set';
-    
+
     const symbol = getCurrencySymbol(currency);
     return `${symbol}${price.toLocaleString()}`;
   };
@@ -65,7 +67,7 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
   };
 
   const handleManageProducts = () => {
-    navigate(`/business/${businessId}/products`);
+    navigate(`/business/${businessId}/manage/products`);
   };
 
   const handleEditProduct = (product: Product) => {
@@ -109,7 +111,7 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
             <Star className="w-5 h-5 text-yellow-500 mr-2" />
             Featured Products
           </h3>
-          
+
           <div className="flex items-center space-x-3">
             {products.length > 4 && (
               <button
@@ -120,7 +122,7 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
                 <ExternalLink className="w-4 h-4 ml-1" />
               </button>
             )}
-            
+
             {isOwner && (
               <div className="flex items-center space-x-3">
                 <button
@@ -130,16 +132,8 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
                   <Package className="w-4 h-4 mr-2" />
                   Manage Products
                 </button>
-                
-                <button
-                  onClick={() => navigate(`/business/${businessId}/coupons`)}
-                  className="inline-flex items-center px-3 py-2 border border-purple-300 rounded-md text-sm font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 transition-colors"
-                >
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
-                  </svg>
-                  Manage Coupons
-                </button>
+
+
               </div>
             )}
           </div>
@@ -160,7 +154,7 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
                       product={product}
                       size="medium"
                       showActions={true}
-                      onClick={() => navigate(`/business/${businessId}/product/${product.id}`)}
+                      onClick={() => navigate(`${getBusinessUrl(businessId, businessName)}/product/${product.id}`)}
                     />
                   </motion.div>
                 ) : (
@@ -186,7 +180,7 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
                             <ImageIcon className="w-8 h-8 text-gray-400" />
                           </div>
                         )}
-                        
+
                         {/* Featured badge */}
                         <div className="absolute top-2 left-2">
                           <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
@@ -194,7 +188,7 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
                             Featured
                           </div>
                         </div>
-                        
+
                         {/* Available badge */}
                         <div className="absolute top-2 right-2">
                           <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -209,13 +203,13 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
                         <h4 className="font-medium text-gray-900 mb-1 line-clamp-1 group-hover:text-indigo-600 transition-colors">
                           {product.name}
                         </h4>
-                        
+
                         {product.category && (
                           <p className="text-xs text-gray-500 mb-2">
                             {product.category}
                           </p>
                         )}
-                        
+
                         <div className="flex items-center justify-between">
                           {product.price && product.price > 0 ? (
                             <div className="flex items-center">
@@ -226,7 +220,7 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
                           ) : (
                             <span className="text-sm text-gray-500">Price not set</span>
                           )}
-                          
+
                           {product.image_urls && product.image_urls.length > 0 && (
                             <span className="text-xs text-gray-400">
                               {product.image_urls.length} {product.image_urls.length === 1 ? 'image' : 'images'}
@@ -247,7 +241,7 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
             </div>
             <h3 className="text-sm font-medium text-gray-900 mb-2">No featured products</h3>
             <p className="text-sm text-gray-500 mb-4">
-              {isOwner 
+              {isOwner
                 ? 'Add products and mark them as featured to showcase them here.'
                 : 'This business hasn\'t featured any products yet.'
               }
@@ -310,7 +304,7 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
                   </button>
                 </div>
               </div>
-              
+
               <div className="p-6 max-h-[70vh] overflow-y-auto">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {products.filter(p => p.is_available).map((product) => (
@@ -334,7 +328,7 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
                             <ImageIcon className="w-8 h-8 text-gray-400" />
                           </div>
                         )}
-                        
+
                         {product.is_featured && (
                           <div className="absolute top-2 left-2">
                             <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">

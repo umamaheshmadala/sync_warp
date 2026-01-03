@@ -1,18 +1,30 @@
 // src/components/business/FeaturedOffers.tsx
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Tag, ChevronRight, Calendar, TrendingUp, X } from 'lucide-react';
+import { Tag, ChevronRight, Calendar, TrendingUp, X, Heart } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { supabase } from '@/lib/supabase';
 import type { Offer } from '@/types/offers';
+import { useBusinessUrl } from '@/hooks/useBusinessUrl';
+import { ShareDeal } from '@/components/ShareDeal';
 
 interface FeaturedOffersProps {
   businessId: string;
   businessName: string;
   isOwner: boolean;
+  initialOfferId?: string | null;
+  shareId?: string | null;
 }
 
-export default function FeaturedOffers({ businessId, businessName, isOwner }: FeaturedOffersProps) {
+export default function FeaturedOffers({
+  businessId,
+  businessName,
+  isOwner,
+  initialOfferId,
+  shareId
+}: FeaturedOffersProps) {
   const navigate = useNavigate();
+  const { getBusinessUrl } = useBusinessUrl();
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
@@ -21,6 +33,49 @@ export default function FeaturedOffers({ businessId, businessName, isOwner }: Fe
   useEffect(() => {
     fetchOffers();
   }, [businessId]);
+
+  // Handle deep linking to specific offer
+  useEffect(() => {
+    const handleDeepLink = async () => {
+      if (initialOfferId) {
+        // Check if offer is already in the list
+        const existingOffer = offers.find(o => o.id === initialOfferId);
+
+        if (existingOffer) {
+          setSelectedOffer(existingOffer);
+          handleShareTracking();
+        } else {
+          // Fetch specific offer if not in list
+          try {
+            const { data, error } = await supabase
+              .from('offers')
+              .select('*')
+              .eq('id', initialOfferId)
+              .single();
+
+            if (data && !error) {
+              setSelectedOffer(data);
+              handleShareTracking();
+            }
+          } catch (err) {
+            console.error('Error fetching deep linked offer:', err);
+          }
+        }
+      }
+    };
+
+    if (!loading) {
+      handleDeepLink();
+    }
+  }, [initialOfferId, loading, offers]);
+
+  const handleShareTracking = async () => {
+    if (shareId && initialOfferId) {
+      // Import dynamically to avoid circular dependencies if any
+      const { trackShareClick } = await import('@/services/analyticsService');
+      trackShareClick(shareId, initialOfferId);
+    }
+  };
 
   const fetchOffers = async () => {
     try {
@@ -42,7 +97,7 @@ export default function FeaturedOffers({ businessId, businessName, isOwner }: Fe
         .eq('business_id', businessId)
         .eq('status', 'active')
         .order('created_at', { ascending: false })
-        .limit(4);
+        .limit(5);
 
       if (error) throw error;
       setOffers(data || []);
@@ -77,7 +132,7 @@ export default function FeaturedOffers({ businessId, businessName, isOwner }: Fe
           </h3>
           {isOwner && (
             <button
-              onClick={() => navigate(`/business/${businessId}/offers`)}
+              onClick={() => navigate(`${getBusinessUrl(businessId, businessName)}/offers`)}
               className="flex items-center px-4 py-2 text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors"
             >
               Manage Offers
@@ -86,8 +141,8 @@ export default function FeaturedOffers({ businessId, businessName, isOwner }: Fe
           )}
         </div>
         <p className="text-sm text-gray-500 text-center py-8">
-          {isOwner 
-            ? 'No active offers yet. Create your first promotional offer!' 
+          {isOwner
+            ? 'No active offers yet. Create your first promotional offer!'
             : 'No current offers available.'}
         </p>
       </div>
@@ -102,16 +157,16 @@ export default function FeaturedOffers({ businessId, businessName, isOwner }: Fe
           Current Offers {totalCount > 0 && <span className="ml-2 text-sm text-gray-500">({totalCount})</span>}
         </h3>
         <button
-          onClick={() => navigate(`/business/${businessId}/offers`)}
+          onClick={() => navigate(`${getBusinessUrl(businessId, businessName)}/offers`)}
           className="flex items-center px-4 py-2 text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors"
         >
-          {totalCount > 4 ? `View All (${totalCount})` : isOwner ? 'Manage Offers' : 'View All'}
+          {totalCount > 5 ? `View All (${totalCount})` : isOwner ? 'Manage Offers' : 'View All'}
           <ChevronRight className="w-4 h-4 ml-1" />
         </button>
       </div>
 
-      <p className="text-sm text-gray-600 mb-4">
-        {isOwner 
+      <p className="hidden md:block text-sm text-gray-600 mb-4">
+        {isOwner
           ? 'Your active promotional offers. Track performance and manage them anytime.'
           : 'Check out the latest deals and promotions from this business.'}
       </p>
@@ -121,7 +176,7 @@ export default function FeaturedOffers({ businessId, businessName, isOwner }: Fe
           <div
             key={offer.id}
             onClick={() => setSelectedOffer(offer)}
-            className="border border-gray-200 rounded-lg p-4 hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer group"
+            className="border border-gray-200 rounded-lg p-3 md:p-4 hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer group"
           >
             <div className="flex items-start justify-between">
               <div className="flex-1">
@@ -129,11 +184,11 @@ export default function FeaturedOffers({ businessId, businessName, isOwner }: Fe
                   {offer.title}
                 </h4>
                 {offer.description && (
-                  <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                  <p className="hidden lg:block text-sm text-gray-600 mt-1 line-clamp-2">
                     {offer.description}
                   </p>
                 )}
-                <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                <div className="flex items-center gap-4 mt-1 md:mt-2 text-xs text-gray-500">
                   <span className="flex items-center">
                     <Calendar className="w-3 h-3 mr-1" />
                     Valid until {new Date(offer.valid_until).toLocaleDateString()}
@@ -156,12 +211,12 @@ export default function FeaturedOffers({ businessId, businessName, isOwner }: Fe
         ))}
       </div>
 
-      {totalCount > 4 && (
+      {totalCount > 5 && (
         <button
-          onClick={() => navigate(`/business/${businessId}/offers`)}
+          onClick={() => navigate(`${getBusinessUrl(businessId, businessName)}/offers`)}
           className="mt-4 w-full py-2 text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors"
         >
-          View {totalCount - 4} more offer{totalCount - 4 !== 1 ? 's' : ''}
+          View {totalCount - 5} more offer{totalCount - 5 !== 1 ? 's' : ''}
         </button>
       )}
 
@@ -212,9 +267,34 @@ export default function FeaturedOffers({ businessId, businessName, isOwner }: Fe
                 </p>
               </div>
 
+              {/* Share Section */}
+              <div className="pt-4 border-t border-gray-100 flex justify-between items-center">
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3">Share this Offer</h4>
+                  <ShareDeal deal={selectedOffer} variant="default" size="default" />
+                </div>
+
+                {/* Save Deal Button */}
+                {!isOwner && (
+                  <button
+                    onClick={async () => {
+                      toast.success('Deal saved!');
+                      if (shareId && initialOfferId === selectedOffer.id) {
+                        const { trackShareConversion } = await import('@/services/analyticsService');
+                        trackShareConversion(shareId, selectedOffer.id, 'save');
+                      }
+                    }}
+                    className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                  >
+                    <Heart className="w-4 h-4 mr-2" />
+                    Save Deal
+                  </button>
+                )}
+              </div>
+
               {/* Stats */}
               {isOwner && (
-                <div>
+                <div className="pt-4 border-t border-gray-100">
                   <h4 className="text-sm font-semibold text-gray-700 mb-3">Performance</h4>
                   <div className="grid grid-cols-3 gap-4">
                     <div className="text-center p-4 bg-blue-50 rounded-lg">

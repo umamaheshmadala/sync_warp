@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { format, formatDistanceToNow, isAfter, isBefore } from 'date-fns';
 import type { Offer } from '../../types/offers';
+import { ShareButton } from '../Sharing/ShareButton';
 
 interface OfferCardProps {
   offer: Offer;
@@ -311,15 +312,17 @@ export function OfferCard({
         <span className="text-xs text-gray-500">
           Created {formatDistanceToNow(new Date(offer.created_at), { addSuffix: true })}
         </span>
-        {onShare && (
-          <button
-            onClick={() => onShare(offer)}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
-          >
-            <Share2 className="w-4 h-4" />
-            Share
-          </button>
-        )}
+        <div onClick={(e) => e.stopPropagation()}>
+          <ShareButton
+            shareableType="offer"
+            shareableId={offer.id}
+            shareableTitle={offer.title}
+            shareableDescription={offer.description}
+            shareableImageUrl={offer.icon_image_url}
+            variant="default"
+            className="px-4 py-2 text-sm"
+          />
+        </div>
       </div>
     </div>
   );

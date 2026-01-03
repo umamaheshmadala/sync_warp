@@ -4,12 +4,15 @@ node_modules/
 .pnp.js
 
 # Production builds
-/dist
-/build
+dist/
+build/
 
-# Environment variables - NEVER commit these!
+# Environment variables
 .env
 .env.local
+.env.development
+.env.staging
+.env.production
 .env.development.local
 .env.test.local
 .env.production.local
@@ -19,6 +22,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
+debug-storybook.log
+*storybook.log
 
 # Runtime data
 pids
@@ -26,67 +31,54 @@ pids
 *.seed
 *.pid.lock
 
-# Coverage directory used by tools like istanbul
+# Coverage
 coverage/
 *.lcov
 
-# Dependency directories
-jspm_packages/
-
-# Optional npm cache directory
-.npm
-
-# Optional REPL history
-.node_repl_history
-
-# Output of 'npm pack'
-*.tgz
-
-# Yarn Integrity file
-.yarn-integrity
-
-# Stores VSCode versions used for testing VSCode extensions
-.vscode-test
-
-# IDEs and editors
+# IDEs
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
-
-# OS generated files
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
 
 # Temporary folders
 tmp/
 temp/
-
-# Playwright test results
-/test-results/
-/playwright-report/
-/blob-report/
-/playwright/.cache/
-
-# Project organization - temporary folders
 temp_cleanup/
 debug/
 archive/
-scripts/
+capacitor_build_temp/
+
+# Test results
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
 
 # Development artifacts
 *.log
-*.png
-*.jpg
-*.jpeg
+type_check_*.log
 dev-*.txt
 job-id.txt
 
-# Local Netlify folder
-.netlify
+# Local Netlify
+.netlify/
+
+# Capacitor
+ios/App/Pods
+ios/App/public
+ios/App/Podfile.lock
+android/.idea
+android/.gradle
+android/build
+android/gradle
+android/app/build
+
+# Credentials
+android/app/google-services.json
+ios/App/GoogleService-Info.plist
+
+# Storybook
+storybook-static/

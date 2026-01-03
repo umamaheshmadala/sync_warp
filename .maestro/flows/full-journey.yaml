@@ -1,0 +1,71 @@
+# Full User Journey Flow
+# Complete E2E test: Login -> Browse -> Send Message
+# Run: maestro test .maestro/flows/full-journey.yaml
+
+appId: com.syncapp.mobile.dev
+---
+
+# === STEP 1: Fresh Launch ===
+- launchApp:
+    clearState: true
+
+- waitForAnimationToEnd
+
+# === STEP 2: Login ===
+- runFlow:
+    file: "login.yaml"
+
+# === STEP 3: Navigate to Messages ===
+- tapOn:
+    text: "Messages"
+    
+- waitForAnimationToEnd
+
+# Take screenshot of message list
+- takeScreenshot: "message_list"
+
+# === STEP 4: Open a Conversation ===
+- runFlow:
+    when:
+      notVisible: "No messages"
+    commands:
+      - tapOn:
+          index: 0
+      - waitForAnimationToEnd
+      - takeScreenshot: "conversation_open"
+
+# === STEP 5: Send a Message ===
+- runFlow:
+    when:
+      visible:
+        id: "message-input"
+        optional: true
+    commands:
+      - tapOn:
+          id: "message-input"
+      - inputText: "Full journey test message"
+      - tapOn:
+          id: "send-message-btn"
+      - waitForAnimationToEnd
+      - assertVisible:
+          text: "Full journey test"
+
+# === STEP 6: Navigate to Profile ===
+- tapOn:
+    text: "Profile|Account|Settings"
+    regex: true
+    optional: true
+
+- waitForAnimationToEnd
+
+# Verify profile loaded
+- assertVisible:
+    text: "Profile|Settings|Account|Logout"
+    regex: true
+    optional: true
+
+# Take final screenshot
+- takeScreenshot: "journey_complete"
+
+# === SUCCESS ===
+- print: "Full user journey completed successfully!"

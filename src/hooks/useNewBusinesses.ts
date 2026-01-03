@@ -30,24 +30,19 @@ export function useNewBusinesses(options: UseNewBusinessesOptions = {}) {
       setLoading(true);
       setError(null);
 
-      // Calculate date threshold (e.g., 30 days ago)
-      const thresholdDate = new Date();
-      thresholdDate.setDate(thresholdDate.getDate() - daysThreshold);
-      const thresholdISO = thresholdDate.toISOString();
-
-      // Fetch businesses created after threshold date
+      // Fetch most recent active businesses
+      // We removed the date threshold to ensure we always show something
       const { data, error: fetchError, count } = await supabase
         .from('businesses')
         .select(`
-          *,
-          owner:profiles!fk_businesses_user_id (
-            id,
-            full_name,
-            avatar_url
-          )
-        `, { count: 'exact' })
+            *,
+            owner:profiles!fk_businesses_user_id (
+              id,
+              full_name,
+              avatar_url
+            )
+          `, { count: 'exact' })
         .eq('status', 'active')
-        .gte('created_at', thresholdISO)
         .order('created_at', { ascending: false })
         .limit(limit);
 

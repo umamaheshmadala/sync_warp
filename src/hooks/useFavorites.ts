@@ -17,6 +17,10 @@ export interface FavoriteBusiness {
   latitude?: number;
   longitude?: number;
   rating?: number;
+  review_count?: number;
+  follower_count?: number;
+  logo_url?: string;
+  cover_image_url?: string;
   active_coupons_count: number;
   favorited_at: string;
 }
@@ -48,6 +52,7 @@ interface FavoritesState {
   coupons: FavoriteCoupon[];
   wishlist: WishlistItem[];
   isLoading: boolean;
+  isRefetching?: boolean;
   error: string | null;
   counts: {
     businesses: number;
@@ -109,13 +114,13 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
     }
 
     try {
-      
+
       // First check if business_followers table exists
       const tableCheck = await supabase
         .from('business_followers')
         .select('id', { count: 'exact' })
         .limit(0);
-      
+
       if (tableCheck.error) {
         if (tableCheck.error.code === '42P01') {
           return [];
@@ -124,7 +129,7 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
 
       // First try the database function, fallback to direct query
       let data, error;
-      
+
       try {
         // Use the new unified get_user_favorites function
         // PostgREST expects the exact parameter names from the function signature
@@ -147,11 +152,11 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
             .eq('user_id', user.id)
             .order('followed_at', { ascending: false })
             .range(offset, offset + limit - 1);
-            
+
           if (result.error) {
             return [];
           }
-          
+
           // Map business_followers to business format with actual data
           data = result.data?.map(item => ({
             business_id: item.business_id,
@@ -197,7 +202,7 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
 
       // First try the database function, fallback to direct query
       let data, error;
-      
+
       try {
         // Use the new unified get_user_favorites function
         // PostgREST expects the exact parameter names from the function signature
@@ -210,7 +215,7 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
         error = result.error;
       } catch (funcError) {
         console.warn('Function call failed, using direct query:', funcError);
-        
+
         // Coupons not handled in business_followers
         data = [];
         error = null;
@@ -243,7 +248,7 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
         console.warn('Wishlist table does not exist yet');
         return [];
       }
-      
+
       if (error) throw error;
       return data || [];
     } catch (error) {
@@ -263,6 +268,8 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
 
     if (showLoading) {
       setState(prev => ({ ...prev, isLoading: true, error: null }));
+    } else {
+      setState(prev => ({ ...prev, isRefetching: true, error: null }));
     }
 
     try {
@@ -272,18 +279,18 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
         loadFavoriteCoupons(),
         loadWishlist()
       ]).then(results => [
-        results[0].status === 'fulfilled' ? results[0].value : [],
-        results[1].status === 'fulfilled' ? results[1].value : [],
-        results[2].status === 'fulfilled' ? results[2].value : []
-      ]);
-      
+        results[0].status === 'fulfilled' ? results[0].value : [] as FavoriteBusiness[],
+        results[1].status === 'fulfilled' ? results[1].value : [] as FavoriteCoupon[],
+        results[2].status === 'fulfilled' ? results[2].value : [] as WishlistItem[]
+      ]) as [FavoriteBusiness[], FavoriteCoupon[], WishlistItem[]];
+
       // Update cache
       favoritesCache.current = {
         businesses: new Set(businesses.map(b => b.business_id)),
         coupons: new Set(coupons.map(c => c.coupon_id)),
         lastUpdated: Date.now()
       };
-      
+
 
       setState(prev => ({
         ...prev,
@@ -291,6 +298,7 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
         coupons,
         wishlist,
         isLoading: false,
+        isRefetching: false,
         error: null,
         counts: {
           businesses: businesses.length,
@@ -303,6 +311,7 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
       setState(prev => ({
         ...prev,
         isLoading: false,
+        isRefetching: false,
         error: errorMessage
       }));
     }
@@ -321,7 +330,7 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
       // Get current state before making changes
       const currentlyFavorited = favoritesCache.current.businesses.has(businessId);
       let isFavorited: boolean;
-      
+
       try {
         // First try the database function first
         const { data, error } = await supabase
@@ -339,18 +348,18 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
         isFavorited = data;
       } catch (funcError) {
         console.warn('Function call failed, using direct operations:', funcError);
-        
+
         // Check if business_followers table exists first
         const tableCheck = await supabase
           .from('business_followers')
           .select('id', { count: 'exact' })
           .limit(0);
-        
+
         if (tableCheck.error && tableCheck.error.code === '42P01') {
           toast.error('Follow feature is not available yet. Please contact support.');
           return false;
         }
-        
+
         // Fallback to direct database operations on business_followers table
         const { data: existing } = await supabase
           .from('business_followers')
@@ -358,7 +367,7 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
           .eq('user_id', user.id)
           .eq('business_id', businessId)
           .maybeSingle();
-          
+
         if (existing) {
           // Unfollow
           const { error } = await supabase
@@ -395,21 +404,21 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
         const newBusinesses = isFavorited
           ? prev.businesses // Will be populated by loadFavorites if needed
           : prev.businesses.filter(b => b.business_id !== businessId);
-        
+
         const newCounts = {
           ...prev.counts,
           businesses: isFavorited
             ? prev.counts.businesses + (currentlyFavorited ? 0 : 1)
             : Math.max(0, prev.counts.businesses - 1)
         };
-        
+
         return {
           ...prev,
           businesses: newBusinesses,
           counts: newCounts
         };
       });
-      
+
       // Note: We don't reload here to avoid race conditions.
       // The cache and state are already updated above.
       // The Favorites page will load full data when needed.
@@ -436,7 +445,7 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
       // Get current state before making changes
       const currentlyFavorited = favoritesCache.current.coupons.has(couponId);
       let isFavorited: boolean;
-      
+
       try {
         // Try the database function first
         const { data, error } = await supabase
@@ -454,10 +463,10 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
         isFavorited = data;
       } catch (funcError) {
         console.warn('Function call failed, using direct operations:', funcError);
-        
+
         // Coupons not handled in business_followers table
         // Story 4.11 only handles business following
-        toast.info('Coupon favorites not yet migrated to following system');
+        toast('Coupon favorites not yet migrated to following system', { icon: 'ℹ️' });
         return false;
       }
 
@@ -478,21 +487,21 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
         const newCoupons = isFavorited
           ? prev.coupons // Will be populated by loadFavorites if needed
           : prev.coupons.filter(c => c.coupon_id !== couponId);
-        
+
         const newCounts = {
           ...prev.counts,
           coupons: isFavorited
             ? prev.counts.coupons + (currentlyFavorited ? 0 : 1)
             : Math.max(0, prev.counts.coupons - 1)
         };
-        
+
         return {
           ...prev,
           coupons: newCoupons,
           counts: newCounts
         };
       });
-      
+
       // Note: We don't reload here to avoid race conditions.
       // The cache and state are already updated above.
       // The Favorites page will load full data when needed.
@@ -536,7 +545,7 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
       if (error) {
         // Handle duplicate entry
         if (error.code === '23505') {
-          toast.info('Item is already in your wishlist');
+          toast('Item is already in your wishlist', { icon: 'ℹ️' });
           return false;
         }
         throw error;
@@ -754,7 +763,7 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
     // State
     ...state,
     isAuthenticated: !!user?.id,
-    
+
     // Actions
     loadFavorites,
     loadFavoriteBusinesses,
@@ -765,12 +774,12 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
     addToWishlist,
     removeFromWishlist,
     clearAllFavorites,
-    
+
     // Utilities
     isBusinessFavorited,
     isCouponFavorited,
     refresh: () => loadFavorites(false),
-    
+
     // Stats
     totalFavorites: state.counts.businesses + state.counts.coupons,
     hasAnyFavorites: state.counts.businesses > 0 || state.counts.coupons > 0 || state.counts.wishlist > 0

@@ -1,0 +1,165 @@
+// src/types/messaging.ts
+// Comprehensive type definitions for messaging system
+// Story: 8.2.1 - Messaging Service Layer
+
+/**
+ * Message content types
+ */
+export type MessageType = 'text' | 'image' | 'video' | 'audio' | 'file' | 'link' | 'coupon' | 'deal' | 'system';
+
+/**
+ * Message delivery status
+ */
+export type MessageStatus = 'sending' | 'sent' | 'delivered' | 'read' | 'failed' | 'queued';
+
+/**
+ * Link preview metadata for shared URLs
+ */
+export interface LinkPreview {
+  url: string;
+  title: string;
+  description: string;
+  image?: string;
+  favicon?: string;
+  type: 'generic' | 'sync-coupon' | 'sync-deal' | 'coupon_shared' | 'coupon_share_failed';
+  metadata?: Record<string, any>;
+  siteName?: string;
+}
+
+/**
+ * Core message entity
+ */
+export interface Message {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  content: string;
+  type: MessageType;
+  status?: MessageStatus; // Story 8.10.7
+  media_urls?: string[] | null;
+  thumbnail_url?: string | null;
+  link_previews?: LinkPreview[] | null;
+  shared_coupon_id?: string | null;
+  shared_deal_id?: string | null;
+  reply_to_id?: string | null;
+
+  // Forwarding fields (Story 8.10.6)
+  is_forwarded?: boolean;
+  original_message_id?: string | null;
+  forward_count?: number;
+
+  // Reactions (Story 8.5.5)
+  reactions?: Record<string, string[]>;
+
+  is_edited: boolean;
+  edited_at?: string | null;
+  is_deleted: boolean;
+  deleted_at?: string | null;
+  created_at: string;
+  updated_at: string;
+
+  // Parent message for replies (populated by query)
+  parent_message?: {
+    id: string;
+    content: string;
+    type: MessageType;
+    sender_id: string;
+    sender_name: string;
+    created_at: string;
+  } | null;
+
+  // Optimistic UI fields (client-side only)
+  _optimistic?: boolean;   // True if message is being sent
+  _failed?: boolean;       // True if message failed to send
+  _tempId?: string;        // Temporary ID for optimistic messages
+  _uploadProgress?: number; // Upload progress (0-100) for media uploads
+  _queued?: boolean;       // True if message is queued for offline sync (Epic 8.4)
+  _queueId?: string;       // ID of queued message in offline queue (Epic 8.4)
+
+  // Report status (Story 8.7.2)
+  viewer_has_reported?: boolean; // True if the current viewer has reported this message
+}
+
+/**
+ * Conversation entity
+ */
+export interface Conversation {
+  id: string;
+  type: 'direct' | 'group';
+  participants: string[];
+  group_name?: string | null;
+  group_avatar?: string | null;
+  last_message_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Conversation with enriched participant details and unread count
+ * Used for conversation list UI
+ */
+export interface ConversationWithDetails {
+  conversation_id: string;
+  type: 'direct' | 'group';
+  participants: string[];
+  is_archived: boolean;
+  is_muted: boolean;
+  muted_until?: string | null; // When mute expires (NULL = forever)
+  is_pinned: boolean;
+  is_blocked: boolean; // Whether other participant is blocked (bidirectional)
+  created_at: string;
+  last_message_at?: string | null;
+  last_message_id?: string | null;
+  last_message_content?: string | null;
+  last_message_type?: MessageType | null;
+  last_message_sender_id?: string | null;
+  last_message_timestamp?: string | null;
+  last_message_sender_name?: string | null;
+  last_message_sender_avatar?: string | null;
+  other_participant_id?: string | null; // For direct conversations
+  other_participant_name?: string | null;
+  other_participant_avatar?: string | null;
+  other_participant_online?: boolean | null;
+  unread_count: number;
+  participant1_id?: string;
+  participant2_id?: string;
+}
+
+/**
+ * Parameters for sending a message
+ */
+export interface SendMessageParams {
+  conversationId: string;
+  content: string;
+  type?: MessageType;
+  mediaUrls?: string[];
+  thumbnailUrl?: string;
+  linkPreviews?: LinkPreview[];
+  sharedCouponId?: string;
+  sharedDealId?: string;
+  replyToId?: string;
+  tempId?: string; // For retrying failed messages
+}
+
+/**
+ * Response wrapper for fetchMessages with pagination metadata
+ */
+export interface FetchMessagesResponse {
+  messages: Message[];
+  hasMore: boolean;
+}
+
+/**
+ * Message read receipt
+ */
+export interface MessageReadReceipt {
+  message_id: string;
+  user_id: string;
+  read_at: string | null;
+  created_at: string;
+}
+
+/**
+ * Unsubscribe function type for realtime subscriptions
+ */
+export type UnsubscribeFunction = () => void;

@@ -37,25 +37,28 @@ class NewFriendService {
    */
   async searchUsers(query: string, currentUserId: string): Promise<FriendProfile[]> {
     console.log('🔍 Searching for users:', { query, currentUserId })
-    
+
     try {
       const { data, error } = await supabase
         .from('profiles')
         .select('id, email, full_name, avatar_url, city, interests, is_online, last_active, created_at')
         .neq('id', currentUserId)
         .or(`full_name.ilike.%${query}%,email.ilike.%${query}%`)
+        // Filter out private profiles (privacy_settings->profile_visibility = 'friends')
+        // We use the arrow operator to access the JSON field
+        .not('privacy_settings->>profile_visibility', 'eq', 'friends')
         .limit(10)
 
       if (error) {
         console.error('❌ Search users error:', error)
         throw new Error(`Search failed: ${error.message}`)
       }
-      
+
       const mappedData = (data || []).map(profile => ({
         ...profile,
         user_id: profile.id
       }))
-      
+
       console.log('✅ Found users:', mappedData.length)
       return mappedData
     } catch (error) {
@@ -69,7 +72,7 @@ class NewFriendService {
    */
   async sendFriendRequest(targetUserId: string): Promise<string> {
     console.log('📤 Sending friend request to:', targetUserId)
-    
+
     try {
       const { data, error } = await supabase
         .rpc('send_friend_request', { target_user_id: targetUserId })
@@ -78,7 +81,7 @@ class NewFriendService {
         console.error('❌ Send friend request error:', error)
         throw new Error(`Failed to send friend request: ${error.message}`)
       }
-      
+
       console.log('✅ Friend request sent successfully:', data)
       return data
     } catch (error) {
@@ -92,7 +95,7 @@ class NewFriendService {
    */
   async getFriendRequests(): Promise<FriendRequest[]> {
     console.log('📋 Getting friend requests')
-    
+
     try {
       const { data, error } = await supabase
         .from('pending_friend_requests')
@@ -102,7 +105,7 @@ class NewFriendService {
         console.error('❌ Get friend requests error:', error)
         throw new Error(`Failed to get friend requests: ${error.message}`)
       }
-      
+
       console.log('✅ Got friend requests:', data?.length || 0)
       return data || []
     } catch (error) {
@@ -116,7 +119,7 @@ class NewFriendService {
    */
   async acceptFriendRequest(requestId: string): Promise<boolean> {
     console.log('✅ Accepting friend request:', requestId)
-    
+
     try {
       const { data, error } = await supabase
         .rpc('accept_friend_request', { connection_id: requestId })
@@ -125,7 +128,7 @@ class NewFriendService {
         console.error('❌ Accept friend request error:', error)
         throw new Error(`Failed to accept friend request: ${error.message}`)
       }
-      
+
       console.log('✅ Friend request accepted:', data)
       return data === true
     } catch (error) {
@@ -139,7 +142,7 @@ class NewFriendService {
    */
   async rejectFriendRequest(requestId: string): Promise<boolean> {
     console.log('❌ Rejecting friend request:', requestId)
-    
+
     try {
       const { data, error } = await supabase
         .rpc('reject_friend_request', { connection_id: requestId })
@@ -148,7 +151,7 @@ class NewFriendService {
         console.error('❌ Reject friend request error:', error)
         throw new Error(`Failed to reject friend request: ${error.message}`)
       }
-      
+
       console.log('✅ Friend request rejected:', data)
       return data === true
     } catch (error) {
@@ -162,7 +165,7 @@ class NewFriendService {
    */
   async getFriends(): Promise<Friend[]> {
     console.log('👥 Getting friends list')
-    
+
     try {
       // Get friend IDs from the view
       const { data: friendIds, error: friendsError } = await supabase
@@ -217,14 +220,14 @@ class NewFriendService {
    */
   async removeFriend(friendId: string): Promise<boolean> {
     console.log('🗑️ Removing friend:', friendId)
-    
+
     try {
       const { data: user } = await supabase.auth.getUser()
       if (!user.user) throw new Error('Not authenticated')
-      
+
       const currentUserId = user.user.id
       console.log('🔍 Removing friendship between:', currentUserId, 'and', friendId)
-      
+
       // Use the database function for reliable bidirectional removal
       const { data, error } = await supabase
         .rpc('remove_friend', { friend_user_id: friendId })
@@ -233,14 +236,14 @@ class NewFriendService {
         console.error('❌ Remove friend error:', error)
         throw new Error(`Failed to remove friend: ${error.message}`)
       }
-      
+
       console.log('✅ Friend removal result:', data)
-      
+
       if (!data) {
         console.warn('⚠️ No friendship found to delete - might already be removed')
         // Still return true since the end result is what we want (no friendship)
       }
-      
+
       return true
     } catch (error) {
       console.error('❌ Remove friend error:', error)

@@ -4,16 +4,22 @@ import {
   Wallet,
   Search,
   Filter,
-  TrendingUp,
-  RefreshCcw,
+
   SortAsc,
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../components/ui/select";
 import { UnifiedCouponCard } from '../common/UnifiedCouponCard';
-import { 
+import {
   UserCouponCollection,
-  Coupon, 
+  Coupon,
   CouponCategory,
   CouponRedemption
 } from '../../types/coupon';
@@ -58,10 +64,17 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const [collectedCoupons, setCollectedCoupons] = useState<UserCouponCollection[]>([]);
+  const {
+    userCoupons: collectedCoupons,
+    loading: couponsLoading,
+    fetchUserCoupons: refreshCoupons,
+    redeemCoupon,
+    removeCouponCollection
+  } = useUserCoupons();
+
   const [redemptions, setRedemptions] = useState<CouponRedemption[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const [redemptionsLoading, setRedemptionsLoading] = useState(true);
+
   const [loadingActions, setLoadingActions] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
@@ -73,8 +86,6 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
     businessName: ''
   });
 
-  const { getUserCollectedCoupons, redeemCoupon, removeCouponCollection } = useUserCoupons();
-  
   // Sharing limits integration
   const {
     stats: sharingStats,
@@ -83,7 +94,7 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
     canShareMore,
     refreshStats: refreshSharingStats
   } = useSharingLimits();
-  
+
   // State for share modal
   const [showShareModal, setShowShareModal] = useState(false);
   const [selectedCouponForShare, setSelectedCouponForShare] = useState<{
@@ -91,53 +102,33 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
     collectionId: string;
     coupon: Coupon;
   } | null>(null);
-  
+
   // State for details modal
   const [selectedCouponForView, setSelectedCouponForView] = useState<Coupon | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
 
-  // Load user's wallet data
+  // Load redemptions independently
   useEffect(() => {
-    loadWalletData();
-  }, [userId]);
-
-  // Refresh on tab visibility change
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && !loading) {
-        console.log('[CouponWallet] Tab became visible, refreshing wallet');
-        loadWalletData();
+    const loadRedemptions = async () => {
+      try {
+        setRedemptionsLoading(true);
+        const userRedemptions = await couponService.getUserRedemptions(userId);
+        setRedemptions(userRedemptions);
+      } catch (error) {
+        console.error('Error loading redemptions:', error);
+      } finally {
+        setRedemptionsLoading(false);
       }
     };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [loading]);
-
-  const loadWalletData = async () => {
-    try {
-      setLoading(true);
-      const [collections, userRedemptions] = await Promise.all([
-        getUserCollectedCoupons(userId),
-        couponService.getUserRedemptions(userId)
-      ]);
-      setCollectedCoupons(collections);
-      setRedemptions(userRedemptions);
-    } catch (error) {
-      console.error('Error loading wallet data:', error);
-      toast.error('Failed to load your coupons');
-    } finally {
-      setLoading(false);
+    if (userId) {
+      loadRedemptions();
     }
-  };
+  }, [userId]);
 
-  // Handle refresh
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await loadWalletData();
-    setRefreshing(false);
-    toast.success('Wallet refreshed!');
-  };
+
+  // derived loading state (only block if no coupons AND loading)
+  const loading = couponsLoading && collectedCoupons.length === 0;
 
   // Handle coupon redemption
   const handleRedeemCoupon = async (couponId: string) => {
@@ -145,10 +136,10 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
     if (!collection) return;
 
     setLoadingActions(prev => new Set([...prev, couponId]));
-    
+
     try {
       await redeemCoupon(couponId, userId, collection.business_id);
-      await loadWalletData(); // Refresh data
+      refreshCoupons(); // Refresh data
       toast.success('Coupon redeemed successfully!');
       onCouponRedeem?.(collection.coupon);
     } catch (error) {
@@ -166,14 +157,14 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
   // Handle coupon removal
   const handleRemoveCoupon = async (collectionId: string) => {
     setLoadingActions(prev => new Set([...prev, collectionId]));
-    
+
     try {
       console.log('🗑️ [CouponWallet] Removing coupon collection:', collectionId);
       const success = await removeCouponCollection(collectionId);
-      
+
       if (success) {
         // Immediately update local state for instant UI feedback
-        setCollectedCoupons(prev => prev.filter(c => c.id !== collectionId));
+        // setCollectedCoupons handled by optimistic update in hook
         console.log('✅ [CouponWallet] Coupon removed successfully');
         // Don't show duplicate toast - hook already shows one
       }
@@ -188,18 +179,18 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
       });
     }
   };
-  
+
   // Handle coupon sharing
   const handleShareCoupon = (couponId: string, collectionId: string) => {
     const collection = collectedCoupons.find(c => c.id === collectionId);
     if (!collection) return;
-    
+
     // Check if user can share more
     if (!canShareMore) {
       toast.error('You have reached your daily sharing limit');
       return;
     }
-    
+
     // Open share modal with coupon details
     setSelectedCouponForShare({
       couponId,
@@ -213,29 +204,29 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
   const getCouponStatus = (coupon: Coupon, collection: UserCouponCollection) => {
     const isRedeemed = redemptions.some(r => r.coupon_id === coupon.id);
     if (isRedeemed) return 'redeemed';
-    
-    if (coupon.expires_at) {
+
+    if (coupon.valid_until) {
       const now = new Date();
-      const expiryDate = new Date(coupon.expires_at);
+      const expiryDate = new Date(coupon.valid_until);
       const daysUntilExpiry = Math.ceil((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-      
+
       if (daysUntilExpiry < 0) return 'expired';
       if (daysUntilExpiry <= 3) return 'expiring';
     }
-    
-    if (coupon.usage_limit && coupon.used_count >= coupon.usage_limit) return 'expired';
+
+    if (coupon.total_limit && coupon.usage_count >= coupon.total_limit) return 'expired';
     if (coupon.status !== 'active') return 'expired';
-    
+
     return 'active';
   };
-  
+
   // Check if coupon is shareable
   const isCouponShareable = (collection: any) => {
     // Check if collection has sharing-related fields
     const isShareable = collection.is_shareable !== false;
     const hasBeenShared = collection.has_been_shared === true;
     const isActive = getCouponStatus(collection.coupon, collection) === 'active';
-    
+
     return isShareable && !hasBeenShared && isActive;
   };
 
@@ -243,13 +234,20 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
   const filteredCoupons = useMemo(() => {
     let filtered = collectedCoupons.filter(collection => {
       const coupon = collection.coupon;
+
+      // Skip collections with undefined coupons
+      if (!coupon) {
+        console.warn('⚠️ [CouponWallet] Collection missing coupon data:', collection.id);
+        return false;
+      }
+
       const status = getCouponStatus(coupon, collection);
 
       // Search filter
-      if (searchTerm && 
-          !coupon.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
-          !coupon.description?.toLowerCase().includes(searchTerm.toLowerCase()) &&
-          !coupon.business_name.toLowerCase().includes(searchTerm.toLowerCase())) {
+      if (searchTerm &&
+        !coupon.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
+        !coupon.description?.toLowerCase().includes(searchTerm.toLowerCase()) &&
+        !coupon.business_name.toLowerCase().includes(searchTerm.toLowerCase())) {
         return false;
       }
 
@@ -262,7 +260,7 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
       if (filters.status !== 'all' && status !== filters.status) {
         return false;
       }
-      
+
       // Acquisition filter
       if (filters.acquisition !== 'all') {
         if (filters.acquisition === 'shareable') {
@@ -274,8 +272,8 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
       }
 
       // Business name filter
-      if (filters.businessName && 
-          !coupon.business_name.toLowerCase().includes(filters.businessName.toLowerCase())) {
+      if (filters.businessName &&
+        !coupon.business_name.toLowerCase().includes(filters.businessName.toLowerCase())) {
         return false;
       }
 
@@ -286,7 +284,7 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
     filtered.sort((a, b) => {
       const statusA = getCouponStatus(a.coupon, a);
       const statusB = getCouponStatus(b.coupon, b);
-      
+
       // Always push expired/redeemed coupons to bottom
       if ((statusA === 'expired' || statusA === 'redeemed') && (statusB !== 'expired' && statusB !== 'redeemed')) {
         return 1; // a goes to bottom
@@ -294,17 +292,17 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
       if ((statusB === 'expired' || statusB === 'redeemed') && (statusA !== 'expired' && statusA !== 'redeemed')) {
         return -1; // b goes to bottom
       }
-      
+
       // If both expired or both active, then apply user's sort preference
       switch (filters.sortBy) {
         case 'expiry':
-          if (!a.coupon.expires_at && !b.coupon.expires_at) return 0;
-          if (!a.coupon.expires_at) return 1;
-          if (!b.coupon.expires_at) return -1;
-          return new Date(a.coupon.expires_at).getTime() - new Date(b.coupon.expires_at).getTime();
+          if (!a.coupon.valid_until && !b.coupon.valid_until) return 0;
+          if (!a.coupon.valid_until) return 1;
+          if (!b.coupon.valid_until) return -1;
+          return new Date(a.coupon.valid_until).getTime() - new Date(b.coupon.valid_until).getTime();
         case 'value':
-          const aValue = a.coupon.type === 'percentage' ? a.coupon.value : a.coupon.value;
-          const bValue = b.coupon.type === 'percentage' ? b.coupon.value : b.coupon.value;
+          const aValue = a.coupon.type === 'percentage' ? a.coupon.discount_value : a.coupon.discount_value;
+          const bValue = b.coupon.type === 'percentage' ? b.coupon.discount_value : b.coupon.discount_value;
           return bValue - aValue;
         case 'business':
           return a.coupon.business_name.localeCompare(b.coupon.business_name);
@@ -319,22 +317,25 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
 
   // Get wallet statistics
   const walletStats = useMemo(() => {
-    const total = collectedCoupons.length;
-    const active = collectedCoupons.filter(c => getCouponStatus(c.coupon, c) === 'active').length;
-    const expiring = collectedCoupons.filter(c => getCouponStatus(c.coupon, c) === 'expiring').length;
-    const expired = collectedCoupons.filter(c => getCouponStatus(c.coupon, c) === 'expired').length;
-    const redeemed = collectedCoupons.filter(c => getCouponStatus(c.coupon, c) === 'redeemed').length;
-    const shareable = collectedCoupons.filter(c => isCouponShareable(c)).length;
-    const shared = collectedCoupons.filter(c => (c as any).acquisition_method === 'shared_received').length;
-    
-    const totalSavingsPotential = collectedCoupons
+    // Filter out collections with undefined coupons first
+    const validCoupons = collectedCoupons.filter(c => c.coupon != null);
+
+    const total = validCoupons.length;
+    const active = validCoupons.filter(c => getCouponStatus(c.coupon, c) === 'active').length;
+    const expiring = validCoupons.filter(c => getCouponStatus(c.coupon, c) === 'expiring').length;
+    const expired = validCoupons.filter(c => getCouponStatus(c.coupon, c) === 'expired').length;
+    const redeemed = validCoupons.filter(c => getCouponStatus(c.coupon, c) === 'redeemed').length;
+    const shareable = validCoupons.filter(c => isCouponShareable(c)).length;
+    const shared = validCoupons.filter(c => (c as any).acquisition_method === 'shared_received').length;
+
+    const totalSavingsPotential = validCoupons
       .filter(c => getCouponStatus(c.coupon, c) === 'active')
       .reduce((sum, c) => {
         const coupon = c.coupon;
         if (coupon.type === 'percentage' && coupon.minimum_purchase) {
-          return sum + (coupon.value / 100) * coupon.minimum_purchase;
+          return sum + (coupon.discount_value / 100) * coupon.minimum_purchase;
         }
-        return sum + coupon.value;
+        return sum + coupon.discount_value;
       }, 0);
 
     return { total, active, expiring, expired, redeemed, shareable, shared, totalSavingsPotential };
@@ -343,9 +344,9 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
   // Format discount display
   const formatDiscount = (coupon: Coupon): string => {
     if (coupon.type === 'percentage') {
-      return `${coupon.value}% OFF`;
+      return `${coupon.discount_value}% OFF`;
     }
-    return `₹${coupon.value} OFF`;
+    return `₹${coupon.discount_value} OFF`;
   };
 
   // Get status color
@@ -393,7 +394,7 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
       title: coupon.title,
       discount_type: coupon.discount_type,
       discount_value: coupon.discount_value,
-      business: coupon.business,
+      business: coupon.business_name,
       full_coupon: coupon
     });
 
@@ -411,11 +412,11 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
             description: coupon.description,
             discount_type: coupon.discount_type,
             discount_value: coupon.discount_value,
-            expires_at: coupon.valid_until || coupon.expires_at,
-            business_name: coupon.business?.business_name,
-            business: coupon.business ? {
-              id: coupon.business.id,
-              business_name: coupon.business.business_name
+            expires_at: coupon.valid_until || coupon.valid_until,
+            business_name: coupon.business_name,
+            business: (coupon.business_id && coupon.business_name) ? {
+              id: coupon.business_id,
+              business_name: coupon.business_name
             } : undefined
           }}
           onClick={() => onView(coupon)}
@@ -430,211 +431,58 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
 
   return (
     <div className={`bg-gray-50 min-h-screen ${className}`}>
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <Wallet className="w-7 h-7 text-blue-600" />
-              My Coupon Wallet
-            </h1>
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={handleRefresh}
-                disabled={refreshing}
-                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
-              >
-                <RefreshCcw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
-              </button>
-              <button
-                onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
-                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <SortAsc className="w-5 h-5" />
-              </button>
-            </div>
+      {/* Search and Filters Unified Bar */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 relative z-10">
+        {/* Search and Filters */}
+        <div className="flex flex-row items-center gap-2 mb-6">
+          {/* Search */}
+          <div className="relative flex-1 min-w-0">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search coupons..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            />
           </div>
 
-          {/* Wallet Statistics */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
-            <div className="bg-blue-50 p-3 rounded-lg text-center">
-              <div className="text-2xl font-bold text-blue-600">{walletStats.total}</div>
-              <div className="text-xs text-blue-600">Total</div>
-            </div>
-            <div className="bg-green-50 p-3 rounded-lg text-center">
-              <div className="text-2xl font-bold text-green-600">{walletStats.active}</div>
-              <div className="text-xs text-green-600">Active</div>
-            </div>
-            <div className="bg-yellow-50 p-3 rounded-lg text-center">
-              <div className="text-2xl font-bold text-yellow-600">{walletStats.expiring}</div>
-              <div className="text-xs text-yellow-600">Expiring</div>
-            </div>
-            <div className="bg-red-50 p-3 rounded-lg text-center">
-              <div className="text-2xl font-bold text-red-600">{walletStats.expired}</div>
-              <div className="text-xs text-red-600">Expired</div>
-            </div>
-            <div className="bg-blue-50 p-3 rounded-lg text-center">
-              <div className="text-2xl font-bold text-blue-600">{walletStats.shareable}</div>
-              <div className="text-xs text-blue-600">Can Share</div>
-            </div>
-            <div className="bg-purple-50 p-3 rounded-lg text-center">
-              <div className="text-xl font-bold text-purple-600">₹{Math.round(walletStats.totalSavingsPotential)}</div>
-              <div className="text-xs text-purple-600">Potential Savings</div>
-            </div>
-          </div>
-
-          {/* Search and Filters */}
-          <div className="space-y-3">
-            <div className="flex items-center space-x-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search your coupons..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`px-4 py-3 border rounded-lg transition-colors flex items-center gap-2 ${
-                  showFilters 
-                    ? 'border-blue-500 bg-blue-50 text-blue-700' 
-                    : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                }`}
+          <div className="flex items-center gap-2">
+            {/* Unified Filter Dropdown */}
+            <div className="relative">
+              <Select
+                value={
+                  filters.status !== 'all' ? filters.status :
+                    filters.acquisition !== 'all' ? filters.acquisition :
+                      'all'
+                }
+                onValueChange={(val) => {
+                  if (['active', 'expiring', 'expired', 'redeemed'].includes(val)) {
+                    setFilters(prev => ({ ...prev, status: val as any, acquisition: 'all' }));
+                  } else if (['shareable', 'collected', 'shared_received'].includes(val)) {
+                    setFilters(prev => ({ ...prev, status: 'all', acquisition: val as any }));
+                  } else {
+                    setFilters(prev => ({ ...prev, status: 'all', acquisition: 'all' }));
+                  }
+                }}
               >
-                <Filter className="w-4 h-4" />
-                Filters
-                {showFilters ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-              </button>
+                <SelectTrigger className="w-[180px] bg-white">
+                  <SelectValue placeholder="All Filter" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All ({walletStats.total})</SelectItem>
+                  <SelectItem value="active">Active ({walletStats.active})</SelectItem>
+                  <SelectItem value="expiring">Expiring ({walletStats.expiring})</SelectItem>
+                  <SelectItem value="expired">Expired ({walletStats.expired})</SelectItem>
+                  <SelectItem value="redeemed">Redeemed ({walletStats.redeemed})</SelectItem>
+                  <SelectItem value="shareable">🎁 Can Share ({walletStats.shareable})</SelectItem>
+                  <SelectItem value="collected">📥 Collected ({collectedCoupons.filter(c => (c as any).acquisition_method === 'collected').length})</SelectItem>
+                  <SelectItem value="shared_received">🤝 Received ({walletStats.shared})</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-
-            {/* Quick Filters */}
-            <div className="flex items-center space-x-2 overflow-x-auto pb-2">
-              {/* Status Filters */}
-              {['all', 'active', 'expiring', 'expired', 'redeemed'].map((status) => (
-                <button
-                  key={status}
-                  onClick={() => setFilters(prev => ({ ...prev, status: status as any }))}
-                  className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                    filters.status === status
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white text-gray-600 hover:bg-gray-100'
-                  }`}
-                >
-                  {status.charAt(0).toUpperCase() + status.slice(1)}
-                  {status !== 'all' && (
-                    <span className="ml-1 text-xs">
-                      ({status === 'active' ? walletStats.active : 
-                        status === 'expiring' ? walletStats.expiring :
-                        status === 'expired' ? walletStats.expired :
-                        status === 'redeemed' ? walletStats.redeemed : 0})
-                    </span>
-                  )}
-                </button>
-              ))}
-              
-              {/* Acquisition Filters */}
-              <div className="w-px h-8 bg-gray-300" />
-              {['shareable', 'collected', 'shared_received'].map((acquisition) => (
-                <button
-                  key={acquisition}
-                  onClick={() => setFilters(prev => ({ ...prev, acquisition: acquisition as any }))}
-                  className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                    filters.acquisition === acquisition
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white text-gray-600 hover:bg-gray-100'
-                  }`}
-                >
-                  {acquisition === 'shareable' ? '🎁 Can Share' : 
-                   acquisition === 'collected' ? '📥 Collected' : '🤝 Received'}
-                  <span className="ml-1 text-xs">
-                    ({acquisition === 'shareable' ? walletStats.shareable : 
-                      acquisition === 'shared_received' ? walletStats.shared : 
-                      collectedCoupons.filter(c => (c as any).acquisition_method === 'collected').length})
-                  </span>
-                </button>
-              ))}
-            </div>
-
-            {/* Advanced Filters */}
-            <AnimatePresence>
-              {showFilters && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="bg-white border border-gray-200 rounded-lg p-4 space-y-4"
-                >
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                      <select
-                        value={filters.category}
-                        onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value as any }))}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                      >
-                        <option value="all">All Categories</option>
-                        <option value="food">Food</option>
-                        <option value="shopping">Shopping</option>
-                        <option value="entertainment">Entertainment</option>
-                        <option value="travel">Travel</option>
-                        <option value="health">Health</option>
-                        <option value="education">Education</option>
-                        <option value="services">Services</option>
-                      </select>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
-                      <select
-                        value={filters.sortBy}
-                        onChange={(e) => setFilters(prev => ({ ...prev, sortBy: e.target.value as any }))}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                      >
-                        <option value="added">Recently Added</option>
-                        <option value="expiry">Expiring Soon</option>
-                        <option value="value">Highest Value</option>
-                        <option value="business">Business Name</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Business Name</label>
-                      <input
-                        type="text"
-                        placeholder="Filter by business..."
-                        value={filters.businessName}
-                        onChange={(e) => setFilters(prev => ({ ...prev, businessName: e.target.value }))}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end">
-                    <button
-                      onClick={() => setFilters({
-                        category: 'all',
-                        status: 'all',
-                        acquisition: 'all',
-                        sortBy: 'added',
-                        businessName: ''
-                      })}
-                      className="text-sm text-blue-600 hover:text-blue-800"
-                    >
-                      Reset Filters
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
           </div>
         </div>
-      </div>
-
-      {/* Wallet Content */}
-      <div className="max-w-6xl mx-auto px-4 py-6">
         {/* Results Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -650,18 +498,17 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
         </div>
 
         {/* Coupons Grid */}
-        {loading ? (
+        {loading && collectedCoupons.length === 0 ? (
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
           </div>
         ) : filteredCoupons.length > 0 ? (
           <motion.div
             layout
-            className={`grid gap-6 ${
-              viewMode === 'grid' 
-                ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' 
-                : 'grid-cols-1'
-            }`}
+            className={`grid gap-6 ${viewMode === 'grid'
+              ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+              : 'grid-cols-1'
+              }`}
           >
             <AnimatePresence>
               {filteredCoupons.map((collection) => (
@@ -686,8 +533,8 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
           <div className="text-center py-12">
             <Wallet className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {searchTerm || filters.category !== 'all' || filters.status !== 'all' 
-                ? 'No Matching Coupons' 
+              {searchTerm || filters.category !== 'all' || filters.status !== 'all'
+                ? 'No Matching Coupons'
                 : 'Your Wallet is Empty'
               }
             </h3>
@@ -724,7 +571,7 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
           </div>
         )}
       </div>
-      
+
       {/* Share Coupon Modal */}
       {showShareModal && selectedCouponForShare && (
         <ShareCouponModal
@@ -739,7 +586,7 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
           currentUserId={userId}
           onShareSuccess={() => {
             // Refresh wallet after successful share
-            loadWalletData();
+            refreshCoupons();
             refreshSharingStats();
           }}
         />

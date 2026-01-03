@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 import {
   Map,
   List,
@@ -34,6 +35,7 @@ interface BusinessDiscoveryPageProps {
 
 const BusinessDiscoveryPage: React.FC<BusinessDiscoveryPageProps> = ({ className = '' }) => {
   const navigate = useNavigate();
+  const { getBusinessUrl } = useBusinessUrl();
   const {
     discoverySections,
     isLoading,
@@ -82,7 +84,7 @@ const BusinessDiscoveryPage: React.FC<BusinessDiscoveryPageProps> = ({ className
   const loadInitialData = async () => {
     try {
       await loadDiscoverySections();
-      
+
       // Load personalized recommendations
       const recommendations = await getPersonalizedRecommendations();
       setPersonalizedRecommendations(recommendations);
@@ -113,7 +115,7 @@ const BusinessDiscoveryPage: React.FC<BusinessDiscoveryPageProps> = ({ className
       await handleLocationRequest();
       return;
     }
-    
+
     setNearbyLoading(true);
     try {
       // Try to use the enhanced search service with nearby_businesses function
@@ -130,7 +132,7 @@ const BusinessDiscoveryPage: React.FC<BusinessDiscoveryPageProps> = ({ className
         // Fallback to the hook-based search
         setNearbyBusinesses([]);
       }
-      
+
       // Also trigger the existing search functionality for compatibility
       await searchNearby(radius);
       setSelectedSection('nearby');
@@ -221,7 +223,7 @@ const BusinessDiscoveryPage: React.FC<BusinessDiscoveryPageProps> = ({ className
           </div>
         </div>
       )}
-      
+
       {/* Location Loading */}
       {locationLoading && (
         <div className="mb-8 p-6 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl">
@@ -248,7 +250,7 @@ const BusinessDiscoveryPage: React.FC<BusinessDiscoveryPageProps> = ({ className
                 <p className="text-gray-600">{currentLocation.address}</p>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-3">
               {/* Radius Selector */}
               <select
@@ -274,9 +276,8 @@ const BusinessDiscoveryPage: React.FC<BusinessDiscoveryPageProps> = ({ className
               {/* Toggle Map */}
               <button
                 onClick={() => setShowMap(!showMap)}
-                className={`p-2 border border-gray-300 rounded-lg hover:bg-gray-50 ${
-                  showMap ? 'bg-indigo-100 border-indigo-300' : ''
-                }`}
+                className={`p-2 border border-gray-300 rounded-lg hover:bg-gray-50 ${showMap ? 'bg-indigo-100 border-indigo-300' : ''
+                  }`}
               >
                 {showMap ? <List className="w-5 h-5" /> : <Map className="w-5 h-5" />}
               </button>
@@ -290,7 +291,7 @@ const BusinessDiscoveryPage: React.FC<BusinessDiscoveryPageProps> = ({ className
                 center={currentLocation.coordinates}
                 zoom={12}
                 businesses={discoverySections.flatMap(section => section.businesses)}
-                onBusinessClick={(business) => navigate(`/business/${business.id}`)}
+                onBusinessClick={(business) => navigate(getBusinessUrl(business.id, business.name || business.business_name))}
               />
             </div>
           )}
@@ -335,7 +336,7 @@ const BusinessDiscoveryPage: React.FC<BusinessDiscoveryPageProps> = ({ className
               {nearbyLoading && <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />}
             </div>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {nearbyBusinesses.slice(0, 9).map(business => (
               <div key={business.id} className="relative">
@@ -371,11 +372,11 @@ const BusinessDiscoveryPage: React.FC<BusinessDiscoveryPageProps> = ({ className
                         <div className="text-xs text-gray-500">away</div>
                       </div>
                     </div>
-                    
+
                     {business.description && (
                       <p className="text-sm text-gray-600 mb-3">{business.description.slice(0, 100)}...</p>
                     )}
-                    
+
                     <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
                       {business.address && (
                         <span className="flex items-center space-x-1">
@@ -384,9 +385,9 @@ const BusinessDiscoveryPage: React.FC<BusinessDiscoveryPageProps> = ({ className
                         </span>
                       )}
                     </div>
-                    
+
                     <button
-                      onClick={() => navigate(`/business/${business.id}`)}
+                      onClick={() => navigate(getBusinessUrl(business.id, business.name))}
                       className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium text-sm"
                     >
                       View Business
@@ -410,7 +411,7 @@ const BusinessDiscoveryPage: React.FC<BusinessDiscoveryPageProps> = ({ className
               </div>
             ))}
           </div>
-          
+
           {nearbyBusinesses.length > 9 && (
             <div className="text-center mt-6">
               <button
@@ -444,13 +445,13 @@ const BusinessDiscoveryPage: React.FC<BusinessDiscoveryPageProps> = ({ className
               View All
             </button>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {personalizedRecommendations.slice(0, 6).map(business => (
               <div key={business.id} className="relative">
                 <BusinessCard
                   business={business}
-                  onClick={() => navigate(`/business/${business.id}`)}
+                  onClick={() => navigate(getBusinessUrl(business.id, business.name || business.business_name))}
                   showDistance={!!currentLocation}
                   showFavoriteButton={true}
                 />
@@ -492,7 +493,7 @@ const BusinessDiscoveryPage: React.FC<BusinessDiscoveryPageProps> = ({ className
                 </p>
               </div>
             </div>
-            
+
             <button
               onClick={() => navigate(`/search/advanced?section=${section.type}`)}
               className="text-indigo-600 hover:text-indigo-700 font-medium"
@@ -508,7 +509,7 @@ const BusinessDiscoveryPage: React.FC<BusinessDiscoveryPageProps> = ({ className
                 <div key={business.id} className="relative">
                   <BusinessCard
                     business={business}
-                    onClick={() => navigate(`/business/${business.id}`)}
+                    onClick={() => navigate(getBusinessUrl(business.id, business.name || business.business_name))}
                     showDistance={section.type === 'nearby' && !!currentLocation}
                     showFavoriteButton={true}
                   />
@@ -580,7 +581,7 @@ const BusinessDiscoveryPage: React.FC<BusinessDiscoveryPageProps> = ({ className
                       View Deal
                     </button>
                     <button
-                      onClick={() => navigate(`/business/${coupon.business_id}`)}
+                      onClick={() => navigate(getBusinessUrl(coupon.business_id, coupon.business_name))}
                       className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium"
                     >
                       Visit Store
@@ -599,7 +600,7 @@ const BusinessDiscoveryPage: React.FC<BusinessDiscoveryPageProps> = ({ className
               </div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">No {section.title.toLowerCase()} found</h3>
               <p className="text-gray-600 mb-4">
-                {section.type === 'nearby' 
+                {section.type === 'nearby'
                   ? 'Enable location services to see nearby businesses'
                   : 'Check back later for new content'
                 }

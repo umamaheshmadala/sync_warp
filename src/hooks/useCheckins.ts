@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
-import { notifyMerchantCheckin } from '../services/notificationService';
+import { notifyMerchantCheckin } from '../services/favoriteNotificationService';
 
 export interface CheckinData {
   id: string;

@@ -11,6 +11,7 @@ import useUnifiedFavorites from '../../hooks/useUnifiedFavorites';
 import ProductShareModal from './ProductShareModal';
 import { ProductShareButton } from '../Sharing/ProductShareButton';
 import { FavoriteProductButton } from './FavoriteProductButton';
+import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 
 interface ProductCardProps {
   product: Product;
@@ -30,6 +31,7 @@ export function ProductCard({
   onRemoved
 }: ProductCardProps) {
   const navigate = useNavigate();
+  const { getBusinessUrl } = useBusinessUrl();
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
@@ -65,7 +67,7 @@ export function ProductCard({
       onClick();
     } else {
       // Default: navigate to product details
-      navigate(`/business/${product.business_id}/product/${product.id}`);
+      navigate(`${getBusinessUrl(product.business_id, product.business?.name)}/product/${product.id}`);
     }
   };
 

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import {
   X,
   Gift,
@@ -59,6 +60,8 @@ const ShareCouponModal: React.FC<ShareCouponModalProps> = ({
     refreshStats
   } = useSharingLimits();
 
+  const navigate = useNavigate();
+
   // Handle friend selection
   const handleFriendSelect = (friendId: string, friendEmail: string) => {
     setSelectedFriendId(friendId);
@@ -89,8 +92,8 @@ const ShareCouponModal: React.FC<ShareCouponModalProps> = ({
       setCurrentStep('sharing');
       setErrorMessage(null);
 
-      // Call shareWithValidation with all three parameters
-      await shareWithValidation(selectedFriendId, couponId, collectionId);
+      // Call shareWithValidation with all three parameters and capture result
+      const result = await shareWithValidation(selectedFriendId, couponId, collectionId);
 
       // Success!
       setCurrentStep('success');
@@ -98,11 +101,25 @@ const ShareCouponModal: React.FC<ShareCouponModalProps> = ({
       // Refresh stats
       await refreshStats();
 
-      // Call success callback
+      // Close modal and navigate to conversation
       setTimeout(() => {
+        onClose(); // Close modal first
+        
+        // Show appropriate toast
+        if (result.success) {
+          toast.success('Coupon shared successfully!');
+        } else {
+          toast.error(result.error || 'Coupon sharing failed');
+        }
+        
+        // Navigate to conversation if we have conversation_id
+        if (result.conversation_id) {
+          navigate(`/messages/${result.conversation_id}`);
+        }
+        
+        // Call success callback
         onShareSuccess?.();
-        handleCancel();
-      }, 2000);
+      }, 1500); // Reduced delay for better UX
 
     } catch (error: any) {
       console.error('Error sharing coupon:', error);
@@ -167,9 +184,9 @@ const ShareCouponModal: React.FC<ShareCouponModalProps> = ({
               className="fixed inset-0 z-50 flex items-center justify-center p-4"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+              <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col">
                 {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
+                <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
                       <Gift className="w-6 h-6 text-white" />
@@ -194,7 +211,7 @@ const ShareCouponModal: React.FC<ShareCouponModalProps> = ({
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto">
                   {/* Coupon Preview - Always visible */}
-                  <div className="p-6 border-b border-gray-200 bg-gray-50">
+                  <div className="p-4 border-b border-gray-200 bg-gray-50">
                     <div className="bg-white rounded-xl p-4 border-2 border-blue-200 shadow-sm">
                       <div className="flex items-start space-x-4">
                         {/* Coupon Image */}
@@ -202,7 +219,7 @@ const ShareCouponModal: React.FC<ShareCouponModalProps> = ({
                           <img
                             src={coupon.image_url}
                             alt={coupon.title}
-                            className="w-20 h-20 rounded-lg object-cover flex-shrink-0"
+                            className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
                           />
                         )}
 
@@ -223,13 +240,13 @@ const ShareCouponModal: React.FC<ShareCouponModalProps> = ({
                             {coupon.expires_at && (
                               <div className="flex items-center">
                                 <Calendar className="w-4 h-4 mr-2 text-gray-400" />
-                                Valid until {new Date(coupon.expires_at).toLocaleDateString()}
+                                Valid until {new Date(coupon.valid_until).toLocaleDateString()}
                               </div>
                             )}
                             {coupon.minimum_purchase && (
                               <div className="flex items-center">
                                 <Tag className="w-4 h-4 mr-2 text-gray-400" />
-                                Min. purchase: ₹{coupon.minimum_purchase}
+                                Min. purchase: ₹{coupon.min_purchase_amount}
                               </div>
                             )}
                           </div>
@@ -268,9 +285,9 @@ const ShareCouponModal: React.FC<ShareCouponModalProps> = ({
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: 20 }}
-                        className="p-6"
+                        className="p-4"
                       >
-                        <div className="text-center mb-6">
+                        <div className="text-center mb-4">
                           <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                             <Users className="w-8 h-8 text-blue-600" />
                           </div>
@@ -283,7 +300,7 @@ const ShareCouponModal: React.FC<ShareCouponModalProps> = ({
                           </p>
                         </div>
 
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
                           <ul className="space-y-2 text-sm text-gray-700">
                             <li className="flex items-start">
                               <CheckCircle className="w-5 h-5 text-green-600 mr-2 flex-shrink-0 mt-0.5" />
@@ -295,7 +312,7 @@ const ShareCouponModal: React.FC<ShareCouponModalProps> = ({
                             </li>
                             <li className="flex items-start">
                               <CheckCircle className="w-5 h-5 text-green-600 mr-2 flex-shrink-0 mt-0.5" />
-                              <span>You can share up to {limits?.per_friend_limit || 3} coupons per friend per day</span>
+                              <span>You can share up to {limits?.per_friend_daily || 3} coupons per friend per day</span>
                             </li>
                           </ul>
                         </div>
@@ -303,14 +320,14 @@ const ShareCouponModal: React.FC<ShareCouponModalProps> = ({
                         <div className="flex space-x-3">
                           <button
                             onClick={handleBack}
-                            className="flex-1 px-6 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+                            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors text-sm"
                           >
                             Back
                           </button>
                           <button
                             onClick={handleConfirmShare}
                             disabled={!canShareMore}
-                            className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                            className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 text-sm"
                           >
                             <Share2 className="w-5 h-5" />
                             <span>Confirm & Share</span>
@@ -403,15 +420,26 @@ const ShareCouponModal: React.FC<ShareCouponModalProps> = ({
       </AnimatePresence>
 
       {/* Limit Exceeded Modal */}
-      <LimitExceededModal
-        isOpen={showLimitExceeded}
-        onClose={() => {
-          setShowLimitExceeded(false);
-          handleCancel();
-        }}
-        stats={stats}
-        limits={limits}
-      />
+      {showLimitExceeded && (
+        <LimitExceededModal
+          open={showLimitExceeded}
+          onClose={() => {
+            setShowLimitExceeded(false);
+            handleCancel();
+          }}
+          permissionCheck={{
+            can_share: false,
+            reason: 'Daily limit reached',
+            shares_to_friend_today: 0,
+            per_friend_limit: limits?.per_friend_daily || 3,
+            total_shares_today: stats?.total_shared_today || 0,
+            total_daily_limit: limits?.total_daily || 10,
+            remaining_to_friend: 0,
+            remaining_total: stats?.remaining_today || 0
+          }}
+          isDriver={false}
+        />
+      )}
     </>
   );
 };

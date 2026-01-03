@@ -4,6 +4,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, Check, CheckCheck, X } from 'lucide-react';
+import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useFollowerNotifications } from '../../hooks/useFollowerNotifications';
 import { cn } from '../../lib/utils';
@@ -11,6 +12,7 @@ import { formatDistanceToNow } from 'date-fns';
 
 export const FollowerNotificationBell: React.FC = () => {
   const navigate = useNavigate();
+  const { getBusinessUrl } = useBusinessUrl();
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useFollowerNotifications();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -41,7 +43,10 @@ export const FollowerNotificationBell: React.FC = () => {
     await markAsRead(notification.id);
 
     // Navigate to action URL if available, otherwise business page
-    const targetUrl = notification.action_url || `/business/${notification.business_id}`;
+    const targetUrl = notification.action_url || getBusinessUrl(
+      notification.business_id,
+      notification.business?.business_name
+    );
     navigate(targetUrl);
     setIsOpen(false);
   };
