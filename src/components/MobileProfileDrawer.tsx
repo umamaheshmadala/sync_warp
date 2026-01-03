@@ -78,6 +78,11 @@ export default function MobileProfileDrawer({ isOpen, onClose }: MobileProfileDr
 
   if (!isOpen) return null
 
+  // Format interests for display
+  const displayInterests = profile?.interests && profile.interests.length > 0
+    ? profile.interests.join(' • ')
+    : 'No interests selected'
+
   // Use Portal to escape stacking context of parent (Header/Layout)
   // This is critical for iOS where z-index inside fixed/sticky containers causes issues
   return createPortal(
