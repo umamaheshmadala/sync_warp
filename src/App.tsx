@@ -1,11 +1,12 @@
 import { BrowserRouter as Router } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
-import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister'
+import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister'
 import { Toaster, toast } from 'react-hot-toast'
 import React, { useEffect, useState } from 'react'
 import { Capacitor } from '@capacitor/core'
 import { TextZoom } from '@capacitor/text-zoom'
+import { asyncStorage } from './lib/asyncStorage'
 import AppLayout from './components/layout/AppLayout'
 import AppRouter from './router/Router'
 import { ErrorBoundary } from './components/error'
@@ -23,6 +24,8 @@ import { AppDataPrefetcher } from './components/AppDataPrefetcher'
 import { realtimeService } from './services/realtimeService'
 import { spamConfigService } from './services/SpamConfigService'
 
+// Configure React Query with stale-while-revalidate pattern
+// Shows cached data immediately, then fetches fresh data in background
 // Configure React Query with stale-while-revalidate pattern
 // Shows cached data immediately, then fetches fresh data in background
 const queryClient = new QueryClient({
@@ -51,16 +54,16 @@ const queryClient = new QueryClient({
   },
 })
 
-// Create persister for localStorage
-const persister = createSyncStoragePersister({
-  storage: window.localStorage,
+// Create persister for IndexedDB (Async Storage)
+// This replaces the old localStorage (Sync) persister to remove the 5MB limit
+const persister = createAsyncStoragePersister({
+  storage: asyncStorage,
+  key: 'REACT_QUERY_OFFLINE_CACHE',
 })
 
 // Component that needs Router context
 function AppContent() {
   const user = useAuthStore(state => state.user)
-
-
 
   // Automatically register push notifications when user logs in
   const pushState = usePushNotifications(user?.id ?? null)
@@ -153,6 +156,7 @@ function AppContent() {
 // Main App component
 function App() {
   const [isHydrated, setIsHydrated] = useState(false)
+  const [isStorageMigrated, setIsStorageMigrated] = useState(false)
 
   // Wait for Zustand to hydrate from storage
   useEffect(() => {
@@ -169,8 +173,34 @@ function App() {
     return unsubscribe
   }, [])
 
-  // Don't block on hydration - show app immediately with default state
-  // Hydration will happen in background
+  // Migration from localStorage to IndexedDB
+  useEffect(() => {
+    const migrateCache = async () => {
+      const key = 'REACT_QUERY_OFFLINE_CACHE'
+      const oldData = window.localStorage.getItem(key)
+
+      if (oldData) {
+        console.log('📦 Found legacy cache in localStorage. Migrating to IndexedDB...')
+        try {
+          await asyncStorage.setItem(key, oldData)
+          window.localStorage.removeItem(key)
+          console.log('✅ Migration to IndexedDB successful!')
+          toast.success('App upgraded to high-capacity storage', { icon: '🚀' })
+        } catch (e) {
+          console.error('❌ Storage migration failed:', e)
+        }
+      }
+      setIsStorageMigrated(true)
+    }
+
+    migrateCache()
+  }, [])
+
+  // Don't render until both state and storage are ready
+  // This ensures we don't start a fresh cache if we have one waiting to be migrated
+  if (!isStorageMigrated) {
+    return null // or a splash screen
+  }
 
   return (
     <ErrorBoundary level="page">
@@ -179,7 +209,7 @@ function App() {
         persistOptions={{ persister }}
         onSuccess={() => {
           // Hydration complete - cached data is now available
-          console.log('[React Query] Cache hydrated from storage')
+          console.log('[React Query] Cache hydrated from Async Storage')
         }}
       >
         <Router

@@ -90,6 +90,20 @@ export const AppDataPrefetcher = () => {
                 // 4. Messages (Zustand Store)
                 messagingService.fetchConversations().then(data => {
                     setConversations(data);
+
+                    // [Story 10.3] Smart Prefetching:
+                    // Automatically fetch messages for the top 20 most active conversations
+                    // This ensures the "next likely click" is already cached.
+                    const topActive = data.slice(0, 20);
+                    console.log(`⚡ [AppDataPrefetcher] Prefetching messages for top ${topActive.length} chats`);
+
+                    topActive.forEach(conv => {
+                        queryClient.prefetchQuery({
+                            queryKey: ['messages', conv.conversation_id],
+                            queryFn: () => messagingService.fetchMessages(conv.conversation_id, 20),
+                            staleTime: 1000 * 60 * 5 // 5 min
+                        });
+                    });
                 }).catch(console.warn);
 
                 // 5. Favorites
