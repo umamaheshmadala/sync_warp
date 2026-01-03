@@ -1,5 +1,6 @@
 // src/components/MobileProfileDrawer.tsx
 import React from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { useBusinessUrl } from '../hooks/useBusinessUrl'
@@ -77,12 +78,9 @@ export default function MobileProfileDrawer({ isOpen, onClose }: MobileProfileDr
 
   if (!isOpen) return null
 
-  // Format interests for display
-  const displayInterests = profile?.interests && profile.interests.length > 0
-    ? profile.interests.join(' • ')
-    : 'No interests selected'
-
-  return (
+  // Use Portal to escape stacking context of parent (Header/Layout)
+  // This is critical for iOS where z-index inside fixed/sticky containers causes issues
+  return createPortal(
     <>
       {/* Backdrop */}
       <div
@@ -233,6 +231,7 @@ export default function MobileProfileDrawer({ isOpen, onClose }: MobileProfileDr
           <div className="h-8" />
         </div>
       </div>
-    </>
+    </>,
+    document.body
   )
 }
