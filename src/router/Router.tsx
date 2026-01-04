@@ -388,6 +388,16 @@ export const routes: RouteConfig[] = [
     protected: false,
     title: 'Business Products - SynC'
   },
+  {
+    path: '/business/:slug/offers',
+    element: (
+      <RouteLoader>
+        <BusinessProfile />
+      </RouteLoader>
+    ),
+    protected: false,
+    title: 'Business Offers - SynC'
+  },
 
   // Business Tools (Protected)
   {

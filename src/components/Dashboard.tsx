@@ -78,7 +78,7 @@ const dummyHotOffers: HotOffer[] = [
     imageUrl: null,
     validUntil: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
     discountValue: 50,
-    businessId: 'dummy-business-1'
+    businessId: 'ac269130-cfb0-4c36-b5ad-34931cd19b50'
   },
   {
     id: 'dummy-offer-2',
@@ -89,12 +89,12 @@ const dummyHotOffers: HotOffer[] = [
     imageUrl: null,
     validUntil: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
     discountValue: 0,
-    businessId: 'dummy-business-2'
+    businessId: 'ac269130-cfb0-4c36-b5ad-34931cd19b50'
   }
 ];
 
 const dummyTrendingProducts: TrendingProduct[] = [
-  { id: 'dummy-prod-1', name: '[Demo] Artisan Coffee Beans', business: 'Urban Coffee', price: '₹450', category: 'Food', isTrending: true },
+  { id: 'aa200866-0a07-494a-a8a0-e1a4b1e961c8', name: '[Demo] Artisan Coffee Beans', business: 'Urban Coffee', price: '₹450', category: 'Food', isTrending: true },
   { id: 'dummy-prod-2', name: '[Demo] Chocolate Croissant', business: 'French Bakery', price: '₹120', category: 'Food', isTrending: true },
   { id: 'dummy-prod-3', name: '[Demo] Handmade Soap', business: 'Natural Care', price: '₹85', category: 'Beauty', isTrending: true }
 ];
@@ -157,7 +157,7 @@ const Dashboard: React.FC = () => {
               <div className="flex items-center justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-base md:text-lg truncate">Weekend Deal! 🔥</h3>
-                  <p className="text-xs opacity-90 truncate">Up to 60% off at restaurants</p>
+                  <p className="text-xs opacity-90 truncate">Coming soon.</p>
                 </div>
                 <button
                   onClick={() => navigate('/search')}
@@ -253,50 +253,59 @@ const Dashboard: React.FC = () => {
                 My Wallet
               </button>
             </div>
+            <p className="text-xs text-gray-500 mb-3 -mt-3 italic">
+              Hot offers are the most viewed offers by the user as of now.
+            </p>
 
-            {/* Mobile: 2-column compact grid, Desktop: 2-column horizontal cards */}
-            <div className="grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-6">
+            {/* Mobile: 2-column compact grid, Desktop: 3-column cards */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
               {hotOffers.length === 0 ? (
-                <div className="col-span-2 text-center py-8 text-gray-500">
+                <div className="col-span-2 md:col-span-3 text-center py-8 text-gray-500">
                   <p className="text-lg font-medium">No active offers at the moment</p>
                   <p className="text-sm">Check back soon for exciting deals!</p>
                 </div>
               ) : hotOffers.map((offer, index) => (
                 <div
                   key={offer.id}
-                  onClick={() => navigate(`/offer/${offer.id}`)}
-                  className="bg-white rounded-xl md:rounded-2xl shadow-sm md:shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-105"
+                  onClick={() => navigate(`${getBusinessUrl(offer.businessId, offer.businessName)}/offers?offer=${offer.id}`)}
+                  className="bg-white rounded-xl md:rounded-2xl shadow-sm md:shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-105 flex flex-col h-full"
                 >
-                  {/* Mobile: Vertical compact layout */}
-                  <div className="md:hidden p-3 flex flex-col items-center text-center">
-                    <div className="w-12 h-12 bg-gradient-to-br from-red-400 to-pink-500 flex items-center justify-center text-white rounded-lg mb-2">
-                      <div className="text-center">
-                        <div className="text-sm font-bold">{offer.discount}</div>
+                  <div className="bg-gradient-to-br from-red-500 to-pink-600 p-4 text-white relative h-32 flex flex-col justify-between">
+                    <div className="flex justify-between items-start">
+                      <span className="bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded text-xs font-medium border border-white/30">
+                        {offer.expiresIn}
+                      </span>
+                      <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30">
+                        <span className="text-xs">🔥</span>
                       </div>
                     </div>
-                    <h3 className="font-semibold text-gray-900 text-xs mb-1 truncate w-full">{offer.title}</h3>
-                    <p className="text-xs text-gray-600 mb-2 truncate w-full">{offer.businessName}</p>
-                    <span className="inline-block bg-red-100 text-red-600 px-2 py-0.5 rounded-full text-xs font-medium">
-                      {offer.expiresIn}
-                    </span>
+                    {offer.imageUrl ? (
+                      <img src={offer.imageUrl} alt={offer.title} className="absolute inset-0 w-full h-full object-cover opacity-30 mix-blend-overlay" />
+                    ) : null}
+                    <div className="relative z-10">
+                      <div className="font-bold text-2xl tracking-tight">{offer.discount}</div>
+                    </div>
                   </div>
 
-                  {/* Desktop: Horizontal layout */}
-                  <div className="hidden md:flex items-center">
-                    <div className="w-20 h-20 bg-gradient-to-br from-red-400 to-pink-500 flex items-center justify-center text-white m-4 rounded-xl flex-shrink-0">
-                      <div className="text-center">
-                        <div className="text-base font-semibold">{offer.discount}</div>
-                        <div className="text-xs opacity-90">OFF</div>
-                      </div>
+                  <div className="p-3 md:p-4 flex-1 flex flex-col justify-between">
+                    <div>
+                      <h3 className="font-semibold text-gray-900 text-sm md:text-base mb-1 line-clamp-2">{offer.title}</h3>
+                      <p className="text-sm text-gray-600 mb-2 truncate">{offer.businessName}</p>
                     </div>
-                    <div className="flex-1 p-4 min-w-0">
-                      <h3 className="font-semibold text-gray-900 text-sm mb-1 truncate">{offer.title}</h3>
-                      <p className="text-sm text-gray-600 mb-3 truncate">{offer.businessName}</p>
-                      <span className="inline-block bg-red-100 text-red-600 px-3 py-1 rounded-full text-sm font-medium">
-                        {offer.expiresIn} left
-                      </span>
-                    </div>
+                    <button className="w-full mt-2 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors">
+                      View Offer
+                    </button>
                   </div>
+                </div>
+              ))}
+
+              {/* Empty Slots for Hot Offers */}
+              {[...Array(Math.max(0, 6 - hotOffers.length))].map((_, i) => (
+                <div key={`empty-offer-${i}`} className="bg-gray-50 rounded-xl md:rounded-2xl border border-dashed border-gray-200 flex flex-col items-center justify-center h-full min-h-[160px]">
+                  <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mb-2">
+                    <Star className="w-5 h-5 text-gray-300" />
+                  </div>
+                  <span className="text-gray-400 text-sm font-medium">Coming Soon</span>
                 </div>
               ))}
             </div>
@@ -316,8 +325,11 @@ const Dashboard: React.FC = () => {
                 <h2 className="text-lg font-semibold text-gray-900">Trending Now 📈</h2>
               </div>
             </div>
+            <p className="text-xs text-gray-500 mb-3 -mt-3 italic">
+              Trending products serve the most visited, liked, shared, and saved items.
+            </p>
 
-            {/* Mobile: 2-column compact grid, Desktop: 3-column horizontal cards */}
+            {/* Mobile: 2-column compact grid, Desktop: 3-column cards */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6 mb-2">
               {trendingProducts.length === 0 ? (
                 <div className="col-span-2 md:col-span-3 text-center py-8 text-gray-500">
@@ -327,42 +339,47 @@ const Dashboard: React.FC = () => {
               ) : trendingProducts.map((product, index) => (
                 <div
                   key={product.id}
-                  onClick={() => navigate(`/product/${product.id}`)}
-                  className="bg-white rounded-xl md:rounded-2xl p-3 md:p-4 shadow-sm md:shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer"
+                  onClick={() => navigate(`/products/${product.id}`)}
+                  className="bg-white rounded-xl md:rounded-2xl overflow-hidden shadow-sm md:shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer flex flex-col h-full group"
                 >
-                  {/* Mobile: Vertical compact layout */}
-                  <div className="md:hidden flex flex-col items-center text-center space-y-2">
-                    <div className="w-12 h-12 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-lg flex items-center justify-center">
-                      <span className="text-xl">{index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}</span>
+                  {/* Image Section */}
+                  <div className="aspect-square relative bg-gray-100">
+                    {product.imageUrl ? (
+                      <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 text-gray-300">
+                        <span className="text-4xl">🛍️</span>
+                      </div>
+                    )}
+                    <div className="absolute top-2 left-2">
+                      <span className="bg-white/90 backdrop-blur text-xs font-bold px-2 py-1 rounded-md shadow-sm">
+                        #{index + 1} Trending
+                      </span>
                     </div>
-                    <div className="w-full min-w-0">
-                      <h3 className="font-semibold text-gray-900 text-xs truncate">{product.name}</h3>
-                      <p className="text-xs text-gray-600 truncate">{product.business}</p>
-                      <p className="font-bold text-gray-900 text-sm mt-1">{product.price.replace('Γé╣', '₹')}</p>
-                    </div>
-                    <span className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-2 py-0.5 rounded-full text-xs font-bold">
-                      #{index + 1}
-                    </span>
                   </div>
 
-                  {/* Desktop: Horizontal layout */}
-                  <div className="hidden md:flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-xl flex items-center justify-center">
-                        <span className="text-lg">{index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-gray-900 text-sm truncate">{product.name}</h3>
-                        <p className="text-sm text-gray-600 truncate">{product.business}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-3 ml-4">
-                      <span className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-3 py-1 rounded-full text-sm font-bold">
-                        #{index + 1}
-                      </span>
-                      <p className="font-semibold text-gray-900 text-sm">{product.price.replace('Γé╣', '₹')}</p>
+                  {/* Content Section */}
+                  <div className="p-3 md:p-4 flex-1 flex flex-col">
+                    <h3 className="font-semibold text-gray-900 text-sm md:text-base leading-tight mb-1 line-clamp-2" title={product.name}>
+                      {product.name}
+                    </h3>
+                    <p className="text-xs text-gray-500 mb-2 truncate">{product.business}</p>
+
+                    <div className="mt-auto flex items-center justify-between">
+                      <span className="font-bold text-gray-900">{product.price.replace('Γé╣', '₹')}</span>
+                      <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">{product.category}</span>
                     </div>
                   </div>
+                </div>
+              ))}
+
+              {/* Empty Slots for Trending Products */}
+              {[...Array(Math.max(0, 6 - trendingProducts.length))].map((_, i) => (
+                <div key={`empty-prod-${i}`} className="bg-gray-50 rounded-xl md:rounded-2xl border border-dashed border-gray-200 flex flex-col items-center justify-center h-full min-h-[200px]">
+                  <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-2">
+                    <TrendingUp className="w-6 h-6 text-gray-300" />
+                  </div>
+                  <span className="text-gray-400 text-sm font-medium">Coming Soon</span>
                 </div>
               ))}
             </div>

@@ -14,6 +14,8 @@ interface FeaturedOffersProps {
   isOwner: boolean;
   initialOfferId?: string | null;
   shareId?: string | null;
+  compact?: boolean;
+  onViewAll?: () => void; // Callback to switch to Offers tab
 }
 
 export default function FeaturedOffers({
@@ -21,7 +23,9 @@ export default function FeaturedOffers({
   businessName,
   isOwner,
   initialOfferId,
-  shareId
+  shareId,
+  compact = false,
+  onViewAll
 }: FeaturedOffersProps) {
   const navigate = useNavigate();
   const { getBusinessUrl } = useBusinessUrl();
@@ -90,14 +94,19 @@ export default function FeaturedOffers({
 
       setTotalCount(count || 0);
 
-      // Get first 4 offers
-      const { data, error } = await supabase
+      // Get offers
+      let query = supabase
         .from('offers')
         .select('*')
         .eq('business_id', businessId)
         .eq('status', 'active')
-        .order('created_at', { ascending: false })
-        .limit(5);
+        .order('created_at', { ascending: false });
+
+      if (compact) {
+        query = query.limit(5);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setOffers(data || []);
@@ -156,13 +165,14 @@ export default function FeaturedOffers({
           <Tag className="w-5 h-5 mr-2 text-green-600" />
           Current Offers {totalCount > 0 && <span className="ml-2 text-sm text-gray-500">({totalCount})</span>}
         </h3>
-        <button
-          onClick={() => navigate(`${getBusinessUrl(businessId, businessName)}/offers`)}
-          className="flex items-center px-4 py-2 text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors"
-        >
-          {totalCount > 5 ? `View All (${totalCount})` : isOwner ? 'Manage Offers' : 'View All'}
-          <ChevronRight className="w-4 h-4 ml-1" />
-        </button>
+        {!compact && isOwner && (
+          <button
+            onClick={() => navigate(`${getBusinessUrl(businessId, businessName)}/offers`)}
+            className="flex items-center px-4 py-2 text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors"
+          >
+            Manage
+          </button>
+        )}
       </div>
 
       <p className="hidden md:block text-sm text-gray-600 mb-4">
@@ -171,7 +181,7 @@ export default function FeaturedOffers({
           : 'Check out the latest deals and promotions from this business.'}
       </p>
 
-      <div className="space-y-3">
+      <div className={`space-y-3 ${!compact ? 'max-h-[600px] overflow-y-auto pr-2 custom-scrollbar' : ''}`}>
         {offers.map((offer) => (
           <div
             key={offer.id}
@@ -211,111 +221,134 @@ export default function FeaturedOffers({
         ))}
       </div>
 
-      {totalCount > 5 && (
+
+      {/* View All / Manage Offers Button - Only show if owner or if we want a dedicated page link */}
+      {/* View All Button - Only show in compact mode */}
+      {compact && totalCount > 5 && (
+        <button
+          onClick={() => {
+            // Use callback if provided (preferred for tab switching)
+            if (onViewAll) {
+              onViewAll();
+            } else {
+              // Fallback to navigation
+              navigate(`${getBusinessUrl(businessId, businessName)}/offers`);
+            }
+          }}
+          className="mt-4 w-full py-2 text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors"
+        >
+          View All ({totalCount})
+        </button>
+      )}
+
+      {/* Manage Offers Button - show if owner and NOT compact */}
+      {!compact && isOwner && (
         <button
           onClick={() => navigate(`${getBusinessUrl(businessId, businessName)}/offers`)}
           className="mt-4 w-full py-2 text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors"
         >
-          View {totalCount - 5} more offer{totalCount - 5 !== 1 ? 's' : ''}
+          Manage Offers
         </button>
       )}
 
       {/* Offer Details Modal */}
-      {selectedOffer && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-gray-900">Offer Details</h2>
-              <button
-                onClick={() => setSelectedOffer(null)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <X className="h-5 w-5 text-gray-600" />
-              </button>
-            </div>
-            <div className="p-6 space-y-6">
-              {/* Title and Code */}
-              <div>
-                <h3 className="text-2xl font-bold text-gray-900">{selectedOffer.title}</h3>
-                <p className="text-sm text-gray-500 mt-2">
-                  Code: <span className="font-mono font-semibold text-purple-600">{selectedOffer.offer_code}</span>
-                </p>
+      {
+        selectedOffer && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-gray-900">Offer Details</h2>
+                <button
+                  onClick={() => setSelectedOffer(null)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="h-5 w-5 text-gray-600" />
+                </button>
               </div>
-
-              {/* Description */}
-              {selectedOffer.description && (
+              <div className="p-6 space-y-6">
+                {/* Title and Code */}
                 <div>
-                  <h4 className="text-sm font-semibold text-gray-700 mb-2">Description</h4>
-                  <p className="text-gray-600">{selectedOffer.description}</p>
-                </div>
-              )}
-
-              {/* Terms & Conditions */}
-              {selectedOffer.terms_conditions && (
-                <div>
-                  <h4 className="text-sm font-semibold text-gray-700 mb-2">Terms & Conditions</h4>
-                  <p className="text-gray-600 whitespace-pre-wrap">{selectedOffer.terms_conditions}</p>
-                </div>
-              )}
-
-              {/* Validity */}
-              <div>
-                <h4 className="text-sm font-semibold text-gray-700 mb-2">Validity Period</h4>
-                <p className="text-gray-600">
-                  From: {new Date(selectedOffer.valid_from).toLocaleDateString()}<br />
-                  Until: {new Date(selectedOffer.valid_until).toLocaleDateString()}
-                </p>
-              </div>
-
-              {/* Share Section */}
-              <div className="pt-4 border-t border-gray-100 flex justify-between items-center">
-                <div>
-                  <h4 className="text-sm font-semibold text-gray-700 mb-3">Share this Offer</h4>
-                  <ShareDeal deal={selectedOffer} variant="default" size="default" />
+                  <h3 className="text-2xl font-bold text-gray-900">{selectedOffer.title}</h3>
+                  <p className="text-sm text-gray-500 mt-2">
+                    Code: <span className="font-mono font-semibold text-purple-600">{selectedOffer.offer_code}</span>
+                  </p>
                 </div>
 
-                {/* Save Deal Button */}
-                {!isOwner && (
-                  <button
-                    onClick={async () => {
-                      toast.success('Deal saved!');
-                      if (shareId && initialOfferId === selectedOffer.id) {
-                        const { trackShareConversion } = await import('@/services/analyticsService');
-                        trackShareConversion(shareId, selectedOffer.id, 'save');
-                      }
-                    }}
-                    className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-                  >
-                    <Heart className="w-4 h-4 mr-2" />
-                    Save Deal
-                  </button>
+                {/* Description */}
+                {selectedOffer.description && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-700 mb-2">Description</h4>
+                    <p className="text-gray-600">{selectedOffer.description}</p>
+                  </div>
                 )}
-              </div>
 
-              {/* Stats */}
-              {isOwner && (
-                <div className="pt-4 border-t border-gray-100">
-                  <h4 className="text-sm font-semibold text-gray-700 mb-3">Performance</h4>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="text-center p-4 bg-blue-50 rounded-lg">
-                      <p className="text-2xl font-bold text-blue-600">{selectedOffer.view_count}</p>
-                      <p className="text-xs text-gray-600 mt-1">Views</p>
-                    </div>
-                    <div className="text-center p-4 bg-purple-50 rounded-lg">
-                      <p className="text-2xl font-bold text-purple-600">{selectedOffer.share_count}</p>
-                      <p className="text-xs text-gray-600 mt-1">Shares</p>
-                    </div>
-                    <div className="text-center p-4 bg-green-50 rounded-lg">
-                      <p className="text-2xl font-bold text-green-600">{selectedOffer.click_count}</p>
-                      <p className="text-xs text-gray-600 mt-1">Clicks</p>
+                {/* Terms & Conditions */}
+                {selectedOffer.terms_conditions && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-700 mb-2">Terms & Conditions</h4>
+                    <p className="text-gray-600 whitespace-pre-wrap">{selectedOffer.terms_conditions}</p>
+                  </div>
+                )}
+
+                {/* Validity */}
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-2">Validity Period</h4>
+                  <p className="text-gray-600">
+                    From: {new Date(selectedOffer.valid_from).toLocaleDateString()}<br />
+                    Until: {new Date(selectedOffer.valid_until).toLocaleDateString()}
+                  </p>
+                </div>
+
+                {/* Share Section */}
+                <div className="pt-4 border-t border-gray-100 flex justify-between items-center">
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-700 mb-3">Share this Offer</h4>
+                    <ShareDeal deal={selectedOffer} variant="default" size="default" />
+                  </div>
+
+                  {/* Save Deal Button */}
+                  {!isOwner && (
+                    <button
+                      onClick={async () => {
+                        toast.success('Deal saved!');
+                        if (shareId && initialOfferId === selectedOffer.id) {
+                          const { trackShareConversion } = await import('@/services/analyticsService');
+                          trackShareConversion(shareId, selectedOffer.id, 'save');
+                        }
+                      }}
+                      className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                    >
+                      <Heart className="w-4 h-4 mr-2" />
+                      Save Deal
+                    </button>
+                  )}
+                </div>
+
+                {/* Stats */}
+                {isOwner && (
+                  <div className="pt-4 border-t border-gray-100">
+                    <h4 className="text-sm font-semibold text-gray-700 mb-3">Performance</h4>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="text-center p-4 bg-blue-50 rounded-lg">
+                        <p className="text-2xl font-bold text-blue-600">{selectedOffer.view_count}</p>
+                        <p className="text-xs text-gray-600 mt-1">Views</p>
+                      </div>
+                      <div className="text-center p-4 bg-purple-50 rounded-lg">
+                        <p className="text-2xl font-bold text-purple-600">{selectedOffer.share_count}</p>
+                        <p className="text-xs text-gray-600 mt-1">Shares</p>
+                      </div>
+                      <div className="text-center p-4 bg-green-50 rounded-lg">
+                        <p className="text-2xl font-bold text-green-600">{selectedOffer.click_count}</p>
+                        <p className="text-xs text-gray-600 mt-1">Clicks</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+    </div >
   );
 }

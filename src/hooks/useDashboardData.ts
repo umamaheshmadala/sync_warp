@@ -8,8 +8,8 @@ export const fetchDashboardData = async (userId: string) => {
     const [statsData, businessesData, offersData, productsData] = await Promise.all([
         dashboardService.getDashboardStats(userId),
         dashboardService.getSpotlightBusinesses(3),
-        dashboardService.getHotOffers(2),
-        dashboardService.getTrendingProducts(3),
+        dashboardService.getHotOffers(6),
+        dashboardService.getTrendingProducts(6),
     ]);
 
     return { statsData, businessesData, offersData, productsData };

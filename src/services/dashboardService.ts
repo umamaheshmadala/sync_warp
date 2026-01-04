@@ -38,6 +38,7 @@ export interface TrendingProduct {
   price: string;
   category: string;
   isTrending: boolean;
+  imageUrl?: string | null;
 }
 
 export const dashboardService = {
@@ -119,22 +120,30 @@ export const dashboardService = {
     }
   },
 
-  async getHotOffers(limit = 2): Promise<HotOffer[]> {
+  async getHotOffers(limit = 6): Promise<HotOffer[]> {
     try {
       const { data, error } = await supabase
-        .from('business_coupons')
+        .from('offers')
         .select(`
           id,
           title,
-          discount_value,
-          discount_type,
+          description,
           valid_until,
           business_id,
-          businesses!inner(name)
+          status,
+          view_count,
+          share_count,
+          created_at,
+          icon_image_url
         `)
         .eq('status', 'active')
-        .eq('is_public', true)
         .gte('valid_until', new Date().toISOString())
+        // Sorting logic: Most relevant/engaging first
+        // 1. Most shared (share_count) - highly viral
+        // 2. Most viewed (view_count) - high interest
+        // 3. Newest (created_at) - freshness fallback
+        .order('share_count', { ascending: false })
+        .order('view_count', { ascending: false })
         .order('created_at', { ascending: false })
         .limit(limit);
 
@@ -144,23 +153,34 @@ export const dashboardService = {
         return [];
       }
 
-      return data.map(coupon => {
-        const validUntil = new Date(coupon.valid_until);
+      // Fetch business names separately since offers might not have foreign key set up for direct join in all generic queries yet
+      // Or if relation exists, we could use it. Assuming relation 'business' exists based on schema.
+      const businessIds = [...new Set(data.map(o => o.business_id))];
+      const { data: businesses } = await supabase
+        .from('businesses')
+        .select('id, name')
+        .in('id', businessIds);
+
+      const businessMap = new Map(businesses?.map(b => [b.id, b.name]));
+
+      return data.map(offer => {
+        const validUntil = new Date(offer.valid_until);
         const now = new Date();
         const daysLeft = Math.ceil((validUntil.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        const businessName = businessMap.get(offer.business_id) || 'Business';
 
         return {
-          id: coupon.id,
-          title: coupon.title,
-          businessName: coupon.businesses?.name || 'Business',
-          discount: coupon.discount_type === 'percentage' 
-            ? `${coupon.discount_value}%` 
-            : `₹${coupon.discount_value}`,
+          id: offer.id,
+          title: offer.title,
+          businessName: businessName,
+          // Offers might not have numeric discount value stored simply, using description or a specialized parsing if available
+          // For now, assuming title contains the deal or mapped from description
+          discount: 'Offer', // Placeholder, real offers often have discount in title
           expiresIn: daysLeft > 1 ? `${daysLeft} days` : daysLeft === 1 ? '1 day' : 'Expiring soon',
-          imageUrl: null,
-          validUntil: coupon.valid_until,
-          discountValue: Number(coupon.discount_value),
-          businessId: coupon.business_id,
+          imageUrl: offer.icon_image_url,
+          validUntil: offer.valid_until,
+          discountValue: 0, // Offers table doesn't strictly have discount_value like coupons
+          businessId: offer.business_id,
         };
       });
     } catch (error) {
@@ -169,7 +189,7 @@ export const dashboardService = {
     }
   },
 
-  async getTrendingProducts(limit = 3): Promise<TrendingProduct[]> {
+  async getTrendingProducts(limit = 6): Promise<TrendingProduct[]> {
     try {
       const { data, error } = await supabase
         .from('business_products')
@@ -179,11 +199,19 @@ export const dashboardService = {
           price,
           category,
           is_trending,
+          image_urls,
           businesses!inner(name)
         `)
         .eq('is_available', true)
+        // Trending logic: 
+        // 1. Most Favorited (favorite_count) - strong signal
+        // 2. Most Shared (share_count) - viral signal
+        // 3. System marked 'is_trending'
+        // 4. Freshness
+        .order('favorite_count', { ascending: false })
+        .order('share_count', { ascending: false })
         .order('is_trending', { ascending: false })
-        .order('display_order', { ascending: false })
+        .order('created_at', { ascending: false })
         .limit(limit);
 
       if (error) throw error;
@@ -192,14 +220,31 @@ export const dashboardService = {
         return [];
       }
 
-      return data.map(product => ({
-        id: product.id,
-        name: product.name,
-        business: product.businesses?.name || 'Business',
-        price: `₹${Number(product.price).toFixed(0)}`,
-        category: product.category || 'General',
-        isTrending: product.is_trending || false,
-      }));
+      return data.map(product => {
+        let businessName = 'Business';
+        if (product.businesses) {
+          if (Array.isArray(product.businesses) && product.businesses.length > 0) {
+            businessName = (product.businesses[0] as any).name;
+          } else if ((product.businesses as any).name) {
+            businessName = (product.businesses as any).name;
+          }
+        }
+
+        // Use first image if available
+        const imageUrl = product.image_urls && Array.isArray(product.image_urls) && product.image_urls.length > 0
+          ? product.image_urls[0]
+          : null;
+
+        return {
+          id: product.id,
+          name: product.name,
+          business: businessName,
+          price: `₹${Number(product.price).toFixed(0)}`,
+          category: product.category || 'General',
+          isTrending: product.is_trending || false,
+          imageUrl: imageUrl
+        };
+      });
     } catch (error) {
       console.error('Error fetching trending products:', error);
       return [];

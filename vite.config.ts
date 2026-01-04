@@ -76,6 +76,12 @@ export default defineConfig({
     hmr: {
       // Prevent HMR from triggering on tab focus changes
       overlay: false
+    },
+    watch: {
+      ignored: ['**/android/**', '**/ios/**']
+    },
+    fs: {
+      deny: ['**/.git/**', '**/android/**', '**/ios/**']
     }
   },
   // Optimize for better development experience
