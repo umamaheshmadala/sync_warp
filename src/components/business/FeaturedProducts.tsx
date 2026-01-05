@@ -21,12 +21,14 @@ interface FeaturedProductsProps {
   businessId: string;
   businessName: string;
   isOwner: boolean;
+  viewMode?: 'widget' | 'full';
 }
 
 const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
   businessId,
   businessName,
-  isOwner
+  isOwner,
+  viewMode = 'widget'
 }) => {
   const navigate = useNavigate();
   const { getBusinessUrl } = useBusinessUrl();
@@ -38,7 +40,8 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
 
   useEffect(() => {
     if (products.length > 0) {
-      // Filter featured products (max 4)
+      // In full mode, we might want to show all available products, or handle sorting
+      // For widget mode, we keep existing logic
       const featured = products.filter(p => p.is_featured && p.is_available).slice(0, 4);
       setFeaturedProducts(featured);
     }

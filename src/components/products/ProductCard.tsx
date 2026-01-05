@@ -35,14 +35,14 @@ export function ProductCard({
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  
+
   // Social features - wishlist from simple social
   const {
     isInWishlist,
     toggleWishlist,
     isLoading: socialLoading
   } = useSimpleProductSocial();
-  
+
   // Use UnifiedFavorites for product favorites
   const unifiedFavorites = useUnifiedFavorites();
   const isFavorited = (productId: string) => unifiedFavorites.isFavorited(productId, 'product');
@@ -103,12 +103,12 @@ export function ProductCard({
 
   const handleRemoveClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    
+
     // Show confirmation
     if (!window.confirm('Remove this product from your wishlist?')) {
       return;
     }
-    
+
     try {
       await toggleWishlist(product);
       if (onRemoved) {
@@ -138,6 +138,12 @@ export function ProductCard({
       )}
       onClick={handleCardClick}
       data-testid="product-card"
+      style={{
+        contain: 'layout style paint', // Prevent layout thrashing
+        transform: 'translateZ(0)', // Force GPU layer
+        willChange: 'auto', // Let browser decide
+        contentVisibility: 'auto' // Skip rendering off-screen cards
+      }}
     >
       <CardContent className="p-0">
         {/* Image Container */}
@@ -147,7 +153,7 @@ export function ProductCard({
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
             </div>
           )}
-          
+
           <img
             src={imageError ? '/placeholder-product.jpg' : primaryImage}
             alt={product.name}
@@ -160,7 +166,7 @@ export function ProductCard({
               setImageError(true);
               setImageLoading(false);
             }}
-            loading="lazy"
+            decoding="async"
           />
 
           {/* Featured Badge */}
@@ -182,7 +188,7 @@ export function ProductCard({
               Out of Stock
             </Badge>
           )}
-          
+
           {/* Remove Button */}
           {showRemoveButton && (
             <Button
@@ -268,7 +274,7 @@ export function ProductCard({
           )}
         </div>
       </CardContent>
-      
+
       {/* Share Modal */}
       <ProductShareModal
         isOpen={isShareModalOpen}

@@ -6,7 +6,7 @@ import { useAuthStore } from '../store/authStore';
 import { useMessagingStore } from '../store/messagingStore';
 import { messagingService } from '../services/messagingService';
 import { friendsService } from '../services/friendsService';
-import { fetchDashboardData } from '../hooks/useDashboardData';
+import { dashboardService } from '../services/dashboardService';
 import { fetchUserCouponsForPrefetch } from '../hooks/useCoupons';
 import { syncFavoritesFromDatabase } from '../hooks/useUnifiedFavorites';
 
@@ -66,12 +66,30 @@ export const AppDataPrefetcher = () => {
                 const startTime = Date.now();
 
                 // 1. Critical: Dashboard Data (React Query)
-                // We await this one before hiding splash
-                const dashboardPromise = queryClient.prefetchQuery({
-                    queryKey: ['dashboard', user.id],
-                    queryFn: () => fetchDashboardData(user.id),
-                    staleTime: 1000 * 60 * 5 // 5 min
-                });
+                // We await these before hiding splash. Prefetching individually to match useDashboardData keys.
+                // Note: We use Promise.all to fetch them in parallel.
+                const dashboardPromises = Promise.all([
+                    queryClient.prefetchQuery({
+                        queryKey: ['dashboard', 'stats', user.id],
+                        queryFn: () => dashboardService.getDashboardStats(user.id),
+                        staleTime: 1000 * 60 * 5
+                    }),
+                    queryClient.prefetchQuery({
+                        queryKey: ['dashboard', 'businesses', user.id],
+                        queryFn: () => dashboardService.getSpotlightBusinesses(3),
+                        staleTime: 1000 * 60 * 5
+                    }),
+                    queryClient.prefetchQuery({
+                        queryKey: ['dashboard', 'offers', user.id],
+                        queryFn: () => dashboardService.getHotOffers(6),
+                        staleTime: 1000 * 60 * 5
+                    }),
+                    queryClient.prefetchQuery({
+                        queryKey: ['dashboard', 'products', user.id],
+                        queryFn: () => dashboardService.getTrendingProducts(6),
+                        staleTime: 1000 * 60 * 5
+                    })
+                ]);
 
                 // 2. Wallet/Coupons (Background)
                 queryClient.prefetchQuery({
@@ -117,7 +135,7 @@ export const AppDataPrefetcher = () => {
 
                     await Promise.all([
                         minWait,
-                        Promise.race([dashboardPromise, maxWait])
+                        Promise.race([dashboardPromises, maxWait])
                     ]);
 
                     console.log(`✨ [AppDataPrefetcher] Ready in ${Date.now() - startTime}ms`);

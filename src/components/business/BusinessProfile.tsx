@@ -89,6 +89,14 @@ const BusinessProfile: React.FC = () => {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+
+  // Handle URL tab selection
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [showMoreDropdown, setShowMoreDropdown] = useState(false);
@@ -1132,6 +1140,7 @@ const BusinessProfile: React.FC = () => {
   // Filter tabs based on ownership - only owners see Statistics and Enhanced Profile
   const allTabs = [
     { id: 'overview', label: 'Overview', count: null, ownerOnly: false },
+    { id: 'products', label: 'Products', count: null, ownerOnly: false },
     { id: 'offers', label: 'Offers', count: null, ownerOnly: false },
     { id: 'reviews', label: 'Reviews', count: reviewStats?.total_reviews || business?.total_reviews || 0, ownerOnly: false },
     { id: 'statistics', label: 'Analytics', count: null, ownerOnly: true },
@@ -1622,6 +1631,16 @@ const BusinessProfile: React.FC = () => {
                 transition={{ duration: 0.15 }}
               >
                 {activeTab === 'overview' && renderOverview()}
+                {activeTab === 'products' && (
+                  <div className="space-y-6">
+                    <FeaturedProducts
+                      businessId={business?.id!}
+                      businessName={business?.business_name!}
+                      isOwner={isOwner}
+                      viewMode="full"
+                    />
+                  </div>
+                )}
                 {activeTab === 'offers' && (
                   <div className="space-y-6">
                     <FeaturedOffers

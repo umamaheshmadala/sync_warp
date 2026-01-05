@@ -129,7 +129,7 @@ export default function ReviewStats({ stats, loading = false }: ReviewStatsProps
                 </span>
                 {stat.percentage !== undefined && (
                   <span className="text-sm text-gray-500">
-                    ({stat.percentage.toFixed(0)}%)
+                    ({(stat.percentage ?? 0).toFixed(0)}%)
                   </span>
                 )}
               </div>
@@ -152,7 +152,7 @@ export default function ReviewStats({ stats, loading = false }: ReviewStatsProps
             <div className="flex items-center gap-2">
               <Tag className="w-4 h-4 text-gray-500" />
               <span className="text-gray-600">
-                Avg {stats.average_tags_per_review.toFixed(1)} tags/review
+                Avg {(stats.average_tags_per_review ?? 0).toFixed(1)} tags/review
               </span>
             </div>
           </div>

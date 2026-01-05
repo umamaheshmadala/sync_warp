@@ -39,6 +39,7 @@ export interface TrendingProduct {
   category: string;
   isTrending: boolean;
   imageUrl?: string | null;
+  businessId: string;
 }
 
 export const dashboardService = {
@@ -200,6 +201,7 @@ export const dashboardService = {
           category,
           is_trending,
           image_urls,
+          business_id,
           businesses!inner(name)
         `)
         .eq('is_available', true)
@@ -239,6 +241,7 @@ export const dashboardService = {
           id: product.id,
           name: product.name,
           business: businessName,
+          businessId: product.business_id, // Ensure this field is selected in query
           price: `₹${Number(product.price).toFixed(0)}`,
           category: product.category || 'General',
           isTrending: product.is_trending || false,

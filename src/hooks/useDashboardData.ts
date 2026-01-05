@@ -2,28 +2,65 @@ import { dashboardService } from '../services/dashboardService';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '../store/authStore';
 
-export const fetchDashboardData = async (userId: string) => {
-    if (!userId) return null;
-
-    const [statsData, businessesData, offersData, productsData] = await Promise.all([
-        dashboardService.getDashboardStats(userId),
-        dashboardService.getSpotlightBusinesses(3),
-        dashboardService.getHotOffers(6),
-        dashboardService.getTrendingProducts(6),
-    ]);
-
-    return { statsData, businessesData, offersData, productsData };
-};
-
 export const useDashboardData = () => {
     const { user } = useAuthStore();
+    const userId = user?.id;
+    const isEnabled = !!userId;
 
-    return useQuery({
-        queryKey: ['dashboard', user?.id],
-        queryFn: () => fetchDashboardData(user!.id),
-        enabled: !!user,
+    const statsQuery = useQuery({
+        queryKey: ['dashboard', 'stats', userId],
+        queryFn: () => dashboardService.getDashboardStats(userId!),
+        enabled: isEnabled,
         staleTime: 1000 * 60 * 5, // 5 minutes
-        gcTime: 1000 * 60 * 60 * 24, // 24 hours
-        placeholderData: (previousData) => previousData,
     });
+
+    const businessesQuery = useQuery({
+        queryKey: ['dashboard', 'businesses', userId],
+        queryFn: () => dashboardService.getSpotlightBusinesses(3),
+        enabled: isEnabled,
+        staleTime: 1000 * 60 * 5,
+    });
+
+    const offersQuery = useQuery({
+        queryKey: ['dashboard', 'offers', userId],
+        queryFn: () => dashboardService.getHotOffers(6),
+        enabled: isEnabled,
+        staleTime: 1000 * 60 * 5,
+    });
+
+    const productsQuery = useQuery({
+        queryKey: ['dashboard', 'products', userId],
+        queryFn: () => dashboardService.getTrendingProducts(6),
+        enabled: isEnabled,
+        staleTime: 1000 * 60 * 5,
+    });
+
+    return {
+        // Data
+        statsData: statsQuery.data,
+        businessesData: businessesQuery.data,
+        offersData: offersQuery.data,
+        productsData: productsQuery.data,
+
+        // Loading states
+        isLoadingStats: statsQuery.isLoading,
+        isLoadingBusinesses: businessesQuery.isLoading,
+        isLoadingOffers: offersQuery.isLoading,
+        isLoadingProducts: productsQuery.isLoading,
+
+        // Aggregate loading state (if needed for global spinner, though discouraged)
+        isLoading: statsQuery.isLoading || businessesQuery.isLoading || offersQuery.isLoading || productsQuery.isLoading,
+
+        // Refetch functions
+        refetchStats: statsQuery.refetch,
+        refetchBusinesses: businessesQuery.refetch,
+        refetchOffers: offersQuery.refetch,
+        refetchProducts: productsQuery.refetch,
+        refetchAll: () => {
+            statsQuery.refetch();
+            businessesQuery.refetch();
+            offersQuery.refetch();
+            productsQuery.refetch();
+        }
+    };
 };

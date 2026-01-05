@@ -1,18 +1,11 @@
 ﻿// src/pages/Dashboard/Dashboard.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { useBusinessUrl } from '../hooks/useBusinessUrl';
 import {
-  Bell,
-  MapPin,
-  ChevronDown,
-  Users,
-  User,
-  Heart,
   Star,
   TrendingUp,
-  MessageCircle
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 // BottomNavigation is now handled by AppLayout
@@ -20,27 +13,7 @@ import NotificationHub from './NotificationHub';
 import AdCarousel from './ads/AdCarousel';
 import { FriendLikedDealsSection } from './deals/FriendLikedDealsSection';
 import { NewBusinesses } from './business';
-import { dashboardService, DashboardStats, SpotlightBusiness, HotOffer, TrendingProduct } from '../services/dashboardService';
-
-interface BusinessCard {
-  id: string;
-  name: string;
-  category: string;
-  location: string;
-  rating: number;
-  reviewCount: number;
-  imageUrl: string;
-  isPromoted?: boolean;
-}
-
-interface OfferCard {
-  id: string;
-  title: string;
-  businessName: string;
-  discount: string;
-  expiresIn: string;
-  imageUrl: string;
-}
+import { SpotlightBusiness, HotOffer, TrendingProduct } from '../services/dashboardService';
 
 // Dummy data as fallback - defined outside component for immediate initialization
 const dummySpotlightBusinesses: SpotlightBusiness[] = [
@@ -94,43 +67,40 @@ const dummyHotOffers: HotOffer[] = [
 ];
 
 const dummyTrendingProducts: TrendingProduct[] = [
-  { id: 'aa200866-0a07-494a-a8a0-e1a4b1e961c8', name: '[Demo] Artisan Coffee Beans', business: 'Urban Coffee', price: '₹450', category: 'Food', isTrending: true },
-  { id: 'dummy-prod-2', name: '[Demo] Chocolate Croissant', business: 'French Bakery', price: '₹120', category: 'Food', isTrending: true },
-  { id: 'dummy-prod-3', name: '[Demo] Handmade Soap', business: 'Natural Care', price: '₹85', category: 'Beauty', isTrending: true }
+  { id: 'aa200866-0a07-494a-a8a0-e1a4b1e961c8', name: '[Demo] Artisan Coffee Beans', business: 'Urban Coffee', price: '₹450', category: 'Food', isTrending: true, businessId: 'dummy-business-1' },
+  { id: 'dummy-prod-2', name: '[Demo] Chocolate Croissant', business: 'French Bakery', price: '₹120', category: 'Food', isTrending: true, businessId: 'dummy-business-2' },
+  { id: 'dummy-prod-3', name: '[Demo] Handmade Soap', business: 'Natural Care', price: '₹85', category: 'Beauty', isTrending: true, businessId: 'dummy-business-3' }
 ];
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { getBusinessUrl } = useBusinessUrl();
-  const { user, profile } = useAuthStore();
-  const [selectedCity] = useState(profile?.city || 'Select City');
+  const { profile } = useAuthStore();
   const [showNotifications, setShowNotifications] = useState(false);
-  // Use React Query for automatic caching and background updates
-  // Use extracted hook for dashboard data
-  const { data: dashboardData, isLoading } = useDashboardData();
+
+  // Use extracted hook for dashboard data with granular loading states
+  const {
+    businessesData,
+    offersData,
+    productsData,
+    // We can use these loading states to show skeletons if needed
+    // isLoadingBusinesses,
+    // isLoadingOffers,
+    // isLoadingProducts
+  } = useDashboardData();
 
   // Use cached data or fallback to dummy data
-  const spotlightBusinesses = dashboardData?.businessesData?.length > 0
-    ? dashboardData.businessesData
+  const spotlightBusinesses = businessesData && businessesData.length > 0
+    ? businessesData
     : dummySpotlightBusinesses;
 
-  const hotOffers = dashboardData?.offersData?.length > 0
-    ? dashboardData.offersData
+  const hotOffers = offersData && offersData.length > 0
+    ? offersData
     : dummyHotOffers;
 
-  const trendingProducts = dashboardData?.productsData?.length > 0
-    ? dashboardData.productsData
+  const trendingProducts = productsData && productsData.length > 0
+    ? productsData
     : dummyTrendingProducts;
-
-  const stats = dashboardData?.statsData || {
-    favoritesCount: 0,
-    reviewsCount: 0,
-    collectedCouponsCount: 0,
-    followingCount: 0,
-  };
-
-  // Don't show loading screen - splash screen handles initial load
-  // Dashboard will show with loading states for individual sections
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -280,7 +250,12 @@ const Dashboard: React.FC = () => {
                       </div>
                     </div>
                     {offer.imageUrl ? (
-                      <img src={offer.imageUrl} alt={offer.title} className="absolute inset-0 w-full h-full object-cover opacity-30 mix-blend-overlay" />
+                      <img
+                        src={offer.imageUrl}
+                        alt={offer.title}
+                        className="absolute inset-0 w-full h-full object-cover opacity-30 mix-blend-overlay"
+                        decoding="async"
+                      />
                     ) : null}
                     <div className="relative z-10">
                       <div className="font-bold text-2xl tracking-tight">{offer.discount}</div>
@@ -339,13 +314,21 @@ const Dashboard: React.FC = () => {
               ) : trendingProducts.map((product, index) => (
                 <div
                   key={product.id}
-                  onClick={() => navigate(`/products/${product.id}`)}
+                  onClick={() => {
+                    const businessUrl = getBusinessUrl(product.businessId, product.business);
+                    navigate(`${businessUrl}?tab=products`);
+                  }}
                   className="bg-white rounded-xl md:rounded-2xl overflow-hidden shadow-sm md:shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer flex flex-col h-full group"
                 >
                   {/* Image Section */}
                   <div className="aspect-square relative bg-gray-100">
                     {product.imageUrl ? (
-                      <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
+                      <img
+                        src={product.imageUrl}
+                        alt={product.name}
+                        className="w-full h-full object-cover"
+                        decoding="async"
+                      />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 text-gray-300">
                         <span className="text-4xl">🛍️</span>
