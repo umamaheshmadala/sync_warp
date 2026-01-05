@@ -15,7 +15,7 @@ import ProductView from './ProductView';
 import ProductForm from './ProductForm';
 import { useNavigate } from 'react-router-dom';
 import { ProductCard as CustomerProductCard } from '../products/ProductCard';
-import { ProductCard as BusinessProductCard } from './ProductCard';
+import BusinessProductCard from './ProductCard';
 import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 
 interface FeaturedProductsProps {
