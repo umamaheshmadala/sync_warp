@@ -36,17 +36,22 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
   const { products, loading, fetchProducts, refreshProducts } = useProducts(businessId);
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [showAllProducts, setShowAllProducts] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
   useEffect(() => {
     if (products.length > 0) {
-      // In full mode, we might want to show all available products, or handle sorting
-      // For widget mode, we keep existing logic
-      const featured = products.filter(p => p.is_featured && p.is_available).slice(0, 4);
-      setFeaturedProducts(featured);
+      if (viewMode === 'full') {
+        // Products tab: show ALL products, featured first
+        const featured = products.filter(p => p.is_featured && p.is_available);
+        const nonFeatured = products.filter(p => !p.is_featured && p.is_available);
+        setFeaturedProducts([...featured, ...nonFeatured]);
+      } else {
+        // Overview tab: show only first 4 featured
+        const featured = products.filter(p => p.is_featured && p.is_available).slice(0, 4);
+        setFeaturedProducts(featured);
+      }
     }
-  }, [products]);
+  }, [products, viewMode]);
 
   // Get currency symbol
   const getCurrencySymbol = (currency: string) => {
@@ -66,9 +71,7 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
     setSelectedProduct(product);
   };
 
-  const handleViewAllProducts = () => {
-    setShowAllProducts(true);
-  };
+
 
   const handleManageProducts = () => {
     navigate(`/business/${businessId}/manage/products`);
@@ -112,35 +115,28 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
       <div className="bg-white rounded-lg shadow-sm border p-3">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-            <Star className="w-5 h-5 text-yellow-500 mr-2" />
-            Featured Products
+            {viewMode === 'full' ? (
+              <>
+                <Package className="w-5 h-5 text-indigo-500 mr-2" />
+                All Products
+              </>
+            ) : (
+              <>
+                <Star className="w-5 h-5 text-yellow-500 mr-2" />
+                Featured Products
+              </>
+            )}
           </h3>
 
-          <div className="flex items-center space-x-3">
-            {products.length > 4 && (
-              <button
-                onClick={handleViewAllProducts}
-                className="inline-flex items-center text-sm text-indigo-600 hover:text-indigo-700 font-medium"
-              >
-                View All ({products.length})
-                <ExternalLink className="w-4 h-4 ml-1" />
-              </button>
-            )}
-
-            {isOwner && (
-              <div className="flex items-center space-x-3">
-                <button
-                  onClick={handleManageProducts}
-                  className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-                >
-                  <Package className="w-4 h-4 mr-2" />
-                  Manage Products
-                </button>
-
-
-              </div>
-            )}
-          </div>
+          {isOwner && (
+            <button
+              onClick={handleManageProducts}
+              className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+            >
+              <Package className="w-4 h-4 mr-2" />
+              Manage Products
+            </button>
+          )}
         </div>
 
         {featuredProducts.length > 0 ? (
@@ -218,95 +214,7 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
         )}
       </AnimatePresence>
 
-      {/* View All Products Modal */}
-      <AnimatePresence>
-        {showAllProducts && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-            onClick={() => setShowAllProducts(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="p-6 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-semibold text-gray-900">
-                    All Products - {businessName}
-                  </h2>
-                  <button
-                    onClick={() => setShowAllProducts(false)}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
 
-              <div className="p-6 max-h-[70vh] overflow-y-auto">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {products.filter(p => p.is_available).map((product) => (
-                    <div
-                      key={product.id}
-                      className="bg-gray-50 border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-200 cursor-pointer"
-                      onClick={() => {
-                        setShowAllProducts(false);
-                        handleProductClick(product);
-                      }}
-                    >
-                      <div className="aspect-w-1 aspect-h-1 bg-gray-100">
-                        {product.image_urls && product.image_urls.length > 0 ? (
-                          <img
-                            src={product.image_urls[0]}
-                            alt={product.name}
-                            className="w-full h-32 object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-32 bg-gray-100 flex items-center justify-center">
-                            <ImageIcon className="w-8 h-8 text-gray-400" />
-                          </div>
-                        )}
-
-                        {product.is_featured && (
-                          <div className="absolute top-2 left-2">
-                            <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                              <Star className="w-3 h-3 mr-1 fill-current" />
-                              Featured
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="p-4">
-                        <h4 className="font-medium text-gray-900 mb-1">{product.name}</h4>
-                        {product.description && (
-                          <p className="text-sm text-gray-600 mb-2 line-clamp-2">
-                            {product.description}
-                          </p>
-                        )}
-                        <div className="flex items-center justify-between">
-                          <span className="font-semibold text-gray-900">
-                            {formatPrice(product.price, product.currency)}
-                          </span>
-                          <span className="text-xs text-green-600">Available</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Product Edit Form Modal */}
       <AnimatePresence>
