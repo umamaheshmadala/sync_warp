@@ -108,8 +108,8 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
 
   return (
     <>
-      <div className="bg-white rounded-lg shadow-sm border p-6">
-        <div className="flex items-center justify-between mb-6">
+      <div className="bg-white rounded-lg shadow-sm border p-3">
+        <div className="flex items-center justify-between mb-3">
           <h3 className="text-lg font-semibold text-gray-900 flex items-center">
             <Star className="w-5 h-5 text-yellow-500 mr-2" />
             Featured Products
@@ -143,7 +143,7 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
         </div>
 
         {featuredProducts.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {featuredProducts.map((product, index) => (
               <React.Fragment key={product.id}>
                 {/* Use customer-facing ProductCard for non-owners (with social buttons) */}
