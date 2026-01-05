@@ -146,8 +146,8 @@ export function ProductCard({
       }}
     >
       <CardContent className="p-0">
-        {/* Image Container */}
-        <div className={cn('relative overflow-hidden bg-gray-100', sizeClasses[size])}>
+        {/* Image Container - 9:16 Portrait Aspect Ratio */}
+        <div className="relative overflow-hidden bg-gray-100 aspect-[9/16]">
           {imageLoading && (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -180,9 +180,16 @@ export function ProductCard({
           )}
 
           {/* Stock Status */}
-          {!product.is_available && (
+          {product.is_available ? (
             <Badge
-              className="absolute right-2 top-2 bg-red-500"
+              className="absolute right-2 top-2 bg-green-500 text-white text-xs"
+              variant="secondary"
+            >
+              Available
+            </Badge>
+          ) : (
+            <Badge
+              className="absolute right-2 top-2 bg-red-500 text-xs"
               variant="destructive"
             >
               Out of Stock
@@ -203,27 +210,28 @@ export function ProductCard({
           )}
         </div>
 
-        {/* Product Info */}
-        <div className="p-4">
-          <h3 className="line-clamp-2 font-semibold text-sm md:text-base">
+        {/* Product Info - Compact */}
+        <div className="p-3">
+          <h3 className="line-clamp-1 font-semibold text-sm\">
             {product.name}
           </h3>
 
-          {product.description && (
-            <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
-              {product.description}
+          {/* Business Name */}
+          {product.business?.business_name && (
+            <p className="mt-0.5 text-xs text-gray-500 line-clamp-1">
+              {product.business.business_name}
             </p>
           )}
 
-          {/* Price */}
-          <div className="mt-2 flex items-baseline gap-1">
-            <span className="text-lg font-bold text-primary">
+          {/* Price and Category */}
+          <div className="mt-2 flex items-baseline justify-between">
+            <span className="text-base font-bold text-primary">
               {getCurrencySymbol(product.currency)}
               {product.price?.toLocaleString() || '0'}
             </span>
             {product.category && (
               <span className="text-xs text-muted-foreground">
-                • {product.category}
+                {product.category}
               </span>
             )}
           </div>
