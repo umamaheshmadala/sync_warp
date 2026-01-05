@@ -88,8 +88,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
           }}
         >
           <div className="flex items-center space-x-4">
-            {/* Product Image */}
-            <div className="flex-shrink-0 w-20 h-20">
+            {/* Product Image - Portrait */}
+            <div className="flex-shrink-0 w-24 aspect-[9/16] overflow-hidden rounded-lg bg-gray-100">
               {getImageUrl() && !imageError ? (
                 <img
                   src={getImageUrl()}
@@ -211,18 +211,18 @@ const ProductCard: React.FC<ProductCardProps> = ({
           contentVisibility: 'auto'
         }}
       >
-        {/* Product Image */}
-        <div className="aspect-w-16 aspect-h-12 relative">
+        {/* Product Image - 9:16 Portrait */}
+        <div className="relative bg-gray-100 overflow-hidden aspect-[9/16]">
           {getImageUrl() && !imageError ? (
             <img
               src={getImageUrl()}
               alt={product.name}
-              className="w-full h-48 object-cover"
+              className="w-full h-full object-cover"
               onError={() => setImageError(true)}
               decoding="async"
             />
           ) : (
-            <div className="w-full h-48 bg-gray-100 flex items-center justify-center">
+            <div className="w-full h-full bg-gray-100 flex items-center justify-center">
               <ImageIcon className="w-12 h-12 text-gray-400" />
             </div>
           )}
