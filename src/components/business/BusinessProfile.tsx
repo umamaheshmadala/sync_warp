@@ -1322,9 +1322,9 @@ const BusinessProfile: React.FC = () => {
               <div className="h-36 md:h-48 bg-gray-200 overflow-hidden w-full relative md:rounded-b-lg">
                 {/* Back Button - Inside Cover Photo */}
                 <button
-                  onClick={() => navigate('/business/dashboard')}
+                  onClick={() => navigate(-1)}
                   className="absolute top-3 left-3 md:top-4 md:left-4 z-20 w-9 h-9 md:w-10 md:h-10 flex items-center justify-center bg-white/90 rounded-full text-gray-700 hover:bg-white transition-colors shadow-sm"
-                  title="Back to Dashboard"
+                  title="Go Back"
                 >
                   <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
                 </button>

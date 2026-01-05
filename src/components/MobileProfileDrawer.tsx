@@ -158,6 +158,14 @@ export default function MobileProfileDrawer({ isOpen, onClose }: MobileProfileDr
             >
               View Profile
             </button>
+
+            {/* Manage Businesses Button */}
+            <button
+              onClick={() => handleNavigation('/business/dashboard')}
+              className="text-sm text-indigo-600 hover:text-indigo-700 font-medium block mt-3"
+            >
+              Manage Businesses
+            </button>
           </div>
 
           <div className="border-t border-gray-200" />

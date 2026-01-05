@@ -94,7 +94,7 @@ async function fetchUserBusinesses(userId: string): Promise<Business[]> {
     .from('businesses')
     .select('*')
     .eq('user_id', userId)
-    .order('created_at', { ascending: false });
+    .order('business_name', { ascending: true });
 
   if (error) throw error;
   return data || [];
