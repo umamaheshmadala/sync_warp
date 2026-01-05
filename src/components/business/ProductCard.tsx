@@ -194,21 +194,22 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
 
         </div>
+      </div>
 
-        {/* Product View Modal */}
-        <AnimatePresence>
-          {showProductView && (
-            <ProductView
-              product={product}
-              isOwner={isOwner}
-              isModal={true}
-              onClose={handleCloseProductView}
-              onEdit={onEdit}
-            />
-          )}
-        </AnimatePresence>
-      </>
-      );
+      {/* Product View Modal */}
+      <AnimatePresence>
+        {showProductView && (
+          <ProductView
+            product={product}
+            isOwner={isOwner}
+            isModal={true}
+            onClose={handleCloseProductView}
+            onEdit={onEdit}
+          />
+        )}
+      </AnimatePresence>
+    </>
+  );
 };
 
-      export default ProductCard;
+export default ProductCard;
