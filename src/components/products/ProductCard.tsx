@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, List, X } from 'lucide-react';
+import { Heart, List, X, Star, ImageIcon } from 'lucide-react';
 import { Product } from '../../types/product';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
