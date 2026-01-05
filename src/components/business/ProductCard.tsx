@@ -134,38 +134,6 @@ const ProductCard: React.FC<ProductCardProps> = ({
                   </div>
                 </div>
 
-                {/* Actions */}
-                {isOwner && (
-                  <div className="relative">
-                    <button
-                      onClick={handleDropdownToggle}
-                      className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
-                    >
-                      <MoreVertical className="w-4 h-4" />
-                    </button>
-
-                    {showDropdown && (
-                      <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-10">
-                        <div className="py-1">
-                          <button
-                            onClick={handleDropdownAction(onEdit)}
-                            className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                          >
-                            <Edit3 className="w-4 h-4 mr-3" />
-                            Edit Product
-                          </button>
-                          <button
-                            onClick={handleDropdownAction(onDelete)}
-                            className="flex items-center px-4 py-2 text-sm text-red-700 hover:bg-red-50 w-full text-left"
-                          >
-                            <Trash2 className="w-4 h-4 mr-3" />
-                            Delete Product
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
             </div>
           </div>
@@ -227,29 +195,20 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
         </div>
 
-        {/* Click overlay to close dropdown */}
-        {showDropdown && (
-          <div
-            className="fixed inset-0 z-0"
-            onClick={() => setShowDropdown(false)}
-          />
-        )}
-      </div>
-
-      {/* Product View Modal */}
-      <AnimatePresence>
-        {showProductView && (
-          <ProductView
-            product={product}
-            isOwner={isOwner}
-            isModal={true}
-            onClose={handleCloseProductView}
-            onEdit={onEdit}
-          />
-        )}
-      </AnimatePresence>
-    </>
-  );
+        {/* Product View Modal */}
+        <AnimatePresence>
+          {showProductView && (
+            <ProductView
+              product={product}
+              isOwner={isOwner}
+              isModal={true}
+              onClose={handleCloseProductView}
+              onEdit={onEdit}
+            />
+          )}
+        </AnimatePresence>
+      </>
+      );
 };
 
-export default ProductCard;
+      export default ProductCard;
