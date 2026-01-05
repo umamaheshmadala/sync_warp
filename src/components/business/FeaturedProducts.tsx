@@ -15,6 +15,7 @@ import ProductView from './ProductView';
 import ProductForm from './ProductForm';
 import { useNavigate } from 'react-router-dom';
 import { ProductCard as CustomerProductCard } from '../products/ProductCard';
+import { ProductCard as BusinessProductCard } from './ProductCard';
 import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 
 interface FeaturedProductsProps {
@@ -161,77 +162,18 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
                     />
                   </motion.div>
                 ) : (
-                  /* Owner view - show admin preview (click to view/edit) */
+                  /* Owner view - use business ProductCard component */
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1 }}
-                    className="group cursor-pointer"
-                    onClick={() => handleProductClick(product)}
                   >
-                    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-200">
-                      {/* Product Image */}
-                      <div className="aspect-w-1 aspect-h-1 bg-gray-100 relative">
-                        {product.image_urls && product.image_urls.length > 0 ? (
-                          <img
-                            src={product.image_urls[0]}
-                            alt={product.name}
-                            className="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-200"
-                          />
-                        ) : (
-                          <div className="w-full h-32 bg-gray-100 flex items-center justify-center">
-                            <ImageIcon className="w-8 h-8 text-gray-400" />
-                          </div>
-                        )}
-
-                        {/* Featured badge */}
-                        <div className="absolute top-2 left-2">
-                          <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                            <Star className="w-3 h-3 mr-1 fill-current" />
-                            Featured
-                          </div>
-                        </div>
-
-                        {/* Available badge */}
-                        <div className="absolute top-2 right-2">
-                          <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            <Eye className="w-3 h-3 mr-1" />
-                            Available
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Product Details */}
-                      <div className="p-4">
-                        <h4 className="font-medium text-gray-900 mb-1 line-clamp-1 group-hover:text-indigo-600 transition-colors">
-                          {product.name}
-                        </h4>
-
-                        {product.category && (
-                          <p className="text-xs text-gray-500 mb-2">
-                            {product.category}
-                          </p>
-                        )}
-
-                        <div className="flex items-center justify-between">
-                          {product.price && product.price > 0 ? (
-                            <div className="flex items-center">
-                              <span className="font-semibold text-gray-900">
-                                {formatPrice(product.price, product.currency)}
-                              </span>
-                            </div>
-                          ) : (
-                            <span className="text-sm text-gray-500">Price not set</span>
-                          )}
-
-                          {product.image_urls && product.image_urls.length > 0 && (
-                            <span className="text-xs text-gray-400">
-                              {product.image_urls.length} {product.image_urls.length === 1 ? 'image' : 'images'}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                    <BusinessProductCard
+                      product={product}
+                      businessId={businessId}
+                      viewMode="grid"
+                      onClick={() => handleProductClick(product)}
+                    />
                   </motion.div>
                 )}
               </React.Fragment>
