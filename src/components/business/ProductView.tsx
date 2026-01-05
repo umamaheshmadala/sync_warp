@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  X, 
-  Star, 
-  DollarSign, 
-  Tag, 
-  ImageIcon, 
-  ChevronLeft, 
+import {
+  X,
+  Star,
+  DollarSign,
+  Tag,
+  ImageIcon,
+  ChevronLeft,
   ChevronRight,
-  Edit3
+  Edit3,
+  Trash2
 } from 'lucide-react';
 import { Product, CURRENCIES } from '../../types/product';
 import { useNavigate } from 'react-router-dom';
@@ -20,6 +21,7 @@ interface ProductViewProps {
   isModal?: boolean;
   onClose?: () => void;
   onEdit?: () => void;
+  onDelete?: () => void;
 }
 
 const ProductView: React.FC<ProductViewProps> = ({
@@ -27,7 +29,9 @@ const ProductView: React.FC<ProductViewProps> = ({
   isOwner = false,
   isModal = false,
   onClose,
-  onEdit
+  onClose,
+  onEdit,
+  onDelete
 }) => {
   const navigate = useNavigate();
   const { getBusinessUrl } = useBusinessUrl();
@@ -42,19 +46,19 @@ const ProductView: React.FC<ProductViewProps> = ({
   // Format price display
   const formatPrice = (price?: number, currency = 'INR') => {
     if (!price || price === 0) return 'Price not available';
-    
+
     const symbol = getCurrencySymbol(currency);
     return `${symbol}${price.toLocaleString()}`;
   };
 
   const handlePrevImage = () => {
-    setCurrentImageIndex((prev) => 
+    setCurrentImageIndex((prev) =>
       prev === 0 ? product.image_urls.length - 1 : prev - 1
     );
   };
 
   const handleNextImage = () => {
-    setCurrentImageIndex((prev) => 
+    setCurrentImageIndex((prev) =>
       prev === product.image_urls.length - 1 ? 0 : prev + 1
     );
   };
@@ -83,26 +87,32 @@ const ProductView: React.FC<ProductViewProps> = ({
               Featured
             </div>
           )}
-          <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-            product.is_available
-              ? 'bg-green-100 text-green-800'
-              : 'bg-red-100 text-red-800'
-          }`}>
-            {product.is_available ? 'Available' : 'Unavailable'}
-          </div>
         </div>
-        
+
         <div className="flex items-center space-x-2">
           {isOwner && (
-            <button
-              onClick={handleEditProduct}
-              className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-            >
-              <Edit3 className="w-4 h-4 mr-2" />
-              Edit Product
-            </button>
+            <>
+              <button
+                onClick={handleEditProduct}
+                className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                title="Edit"
+              >
+                <Edit3 className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Edit</span>
+              </button>
+              {onDelete && (
+                <button
+                  onClick={onDelete}
+                  className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-red-600 bg-white hover:bg-red-50 transition-colors"
+                  title="Delete"
+                >
+                  <Trash2 className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Delete</span>
+                </button>
+              )}
+            </>
           )}
-          
+
           {isModal && onClose && (
             <button
               onClick={onClose}
@@ -125,7 +135,7 @@ const ProductView: React.FC<ProductViewProps> = ({
                 alt={product.name}
                 className="w-full h-96 object-cover"
               />
-              
+
               {product.image_urls.length > 1 && (
                 <>
                   <button
@@ -151,11 +161,10 @@ const ProductView: React.FC<ProductViewProps> = ({
                   <button
                     key={index}
                     onClick={() => setCurrentImageIndex(index)}
-                    className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-colors ${
-                      index === currentImageIndex
+                    className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-colors ${index === currentImageIndex
                         ? 'border-blue-500'
                         : 'border-gray-200 hover:border-gray-300'
-                    }`}
+                      }`}
                   >
                     <img
                       src={url}
