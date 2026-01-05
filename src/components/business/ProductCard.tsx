@@ -30,7 +30,6 @@ const ProductCard: React.FC<ProductCardProps> = ({
   onEdit,
   onDelete
 }) => {
-  const [showDropdown, setShowDropdown] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [showProductView, setShowProductView] = useState(false);
 
@@ -54,17 +53,6 @@ const ProductCard: React.FC<ProductCardProps> = ({
       return product.image_urls[0];
     }
     return undefined;
-  };
-
-  const handleDropdownToggle = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setShowDropdown(!showDropdown);
-  };
-
-  const handleDropdownAction = (action: () => void) => (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setShowDropdown(false);
-    action();
   };
 
   const handleProductClick = () => {
@@ -234,56 +222,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
             </div>
           )}
 
-          {/* Multiple Images Indicator - Top Right */}
-          {product.image_urls && product.image_urls.length > 1 && (
-            <div className="absolute top-2 right-2">
-              <div className="bg-black/50 backdrop-blur-sm rounded-md p-1">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  {/* Back card */}
-                  <rect x="3" y="2" width="10" height="12" rx="1.5" fill="white" fillOpacity="0.6" />
-                  {/* Middle card */}
-                  <rect x="2" y="3" width="10" height="12" rx="1.5" fill="white" fillOpacity="0.8" />
-                  {/* Front card */}
-                  <rect x="1" y="4" width="10" height="12" rx="1.5" fill="white" stroke="white" strokeWidth="0.5" />
-                </svg>
-              </div>
-            </div>
-          )}
 
-          {/* Actions Dropdown */}
-          {isOwner && (
-            <div className="absolute bottom-2 right-2">
-              <div className="relative">
-                <button
-                  onClick={handleDropdownToggle}
-                  className="p-2 text-white bg-black bg-opacity-50 hover:bg-opacity-70 rounded-full backdrop-blur-sm"
-                >
-                  <MoreVertical className="w-4 h-4" />
-                </button>
 
-                {showDropdown && (
-                  <div className="absolute right-0 bottom-full mb-2 w-48 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-10">
-                    <div className="py-1">
-                      <button
-                        onClick={handleDropdownAction(onEdit)}
-                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                      >
-                        <Edit3 className="w-4 h-4 mr-3" />
-                        Edit Product
-                      </button>
-                      <button
-                        onClick={handleDropdownAction(onDelete)}
-                        className="flex items-center px-4 py-2 text-sm text-red-700 hover:bg-red-50 w-full text-left"
-                      >
-                        <Trash2 className="w-4 h-4 mr-3" />
-                        Delete Product
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+
         </div>
 
         {/* Click overlay to close dropdown */}
