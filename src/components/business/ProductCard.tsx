@@ -237,8 +237,15 @@ const ProductCard: React.FC<ProductCardProps> = ({
           {/* Multiple Images Indicator - Top Right */}
           {product.image_urls && product.image_urls.length > 1 && (
             <div className="absolute top-2 right-2">
-              <div className="bg-black/50 backdrop-blur-sm rounded-full p-1.5">
-                <ImageIcon className="w-4 h-4 text-white" />
+              <div className="bg-black/50 backdrop-blur-sm rounded-md p-1">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  {/* Back card */}
+                  <rect x="3" y="2" width="10" height="12" rx="1.5" fill="white" fillOpacity="0.6" />
+                  {/* Middle card */}
+                  <rect x="2" y="3" width="10" height="12" rx="1.5" fill="white" fillOpacity="0.8" />
+                  {/* Front card */}
+                  <rect x="1" y="4" width="10" height="12" rx="1.5" fill="white" stroke="white" strokeWidth="0.5" />
+                </svg>
               </div>
             </div>
           )}
