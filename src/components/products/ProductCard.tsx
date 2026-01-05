@@ -223,17 +223,12 @@ export function ProductCard({
             </p>
           )}
 
-          {/* Price and Category */}
-          <div className="mt-2 flex items-baseline justify-between">
+          {/* Price */}
+          <div className="mt-2">
             <span className="text-base font-bold text-primary">
               {getCurrencySymbol(product.currency)}
               {product.price?.toLocaleString() || '0'}
             </span>
-            {product.category && (
-              <span className="text-xs text-muted-foreground">
-                {product.category}
-              </span>
-            )}
           </div>
 
           {/* Actions */}

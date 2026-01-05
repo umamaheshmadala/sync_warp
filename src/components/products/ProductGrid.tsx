@@ -43,7 +43,7 @@ export function ProductGrid({
     return (
       <div className="space-y-4" data-testid="product-grid-loading">
         <h2 className="text-xl font-bold">Featured Products</h2>
-        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1.5">
           {Array.from({ length: limit }).map((_, i) => (
             <div key={i} className="space-y-3">
               <Skeleton className="h-56 w-full" />
@@ -96,7 +96,7 @@ export function ProductGrid({
       </div>
 
       {/* Product Grid */}
-      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1.5">
         {products.map((product) => (
           <ProductCard
             key={product.id}

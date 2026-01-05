@@ -305,7 +305,7 @@ const Dashboard: React.FC = () => {
             </p>
 
             {/* Mobile: 3-column grid, Tablet: 5-column, Desktop: 6-column */}
-            <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-3 md:gap-4 mb-2">
+            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-1.5 md:gap-2 mb-2">
               {trendingProducts.length === 0 ? (
                 <div className="col-span-2 md:col-span-3 text-center py-8 text-gray-500">
                   <p className="text-lg font-medium">No trending products yet</p>
