@@ -544,7 +544,7 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
                 : 'Start collecting coupons to save on your purchases!'
               }
             </p>
-            {(searchTerm || filters.category !== 'all' || filters.status !== 'all' || filters.businessName) ? (
+            {(searchTerm || filters.category !== 'all' || filters.status !== 'all' || filters.businessName) && (
               <button
                 onClick={() => {
                   setSearchTerm('');
@@ -560,7 +560,7 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
               >
                 Clear all filters
               </button>
-              
+            )}
           </div>
         )}
       </div>
