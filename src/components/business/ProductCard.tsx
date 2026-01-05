@@ -301,12 +301,6 @@ const ProductCard: React.FC<ProductCardProps> = ({
             </p>
           )}
 
-          {product.category && (
-            <div className="flex items-center space-x-1 mb-3">
-              <Tag className="w-4 h-4 text-gray-400" />
-              <span className="text-sm text-gray-600">{product.category}</span>
-            </div>
-          )}
 
           {/* Price */}
           <div className="flex items-center space-x-1 mb-4">
@@ -316,15 +310,6 @@ const ProductCard: React.FC<ProductCardProps> = ({
             </span>
           </div>
 
-          {/* Additional Images Count */}
-          {product.image_urls && product.image_urls.length > 1 && (
-            <div className="flex items-center justify-between text-sm text-gray-500">
-              <div className="flex items-center space-x-1">
-                <ImageIcon className="w-4 h-4" />
-                <span>{product.image_urls.length} images</span>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Click overlay to close dropdown */}

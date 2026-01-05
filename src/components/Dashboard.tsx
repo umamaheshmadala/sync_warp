@@ -348,9 +348,8 @@ const Dashboard: React.FC = () => {
                     </h3>
                     <p className="text-xs text-gray-500 mb-2 truncate">{product.business}</p>
 
-                    <div className="mt-auto flex items-center justify-between">
+                    <div className="mt-auto">
                       <span className="font-bold text-gray-900">{product.price.replace('Γé╣', '₹')}</span>
-                      <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">{product.category}</span>
                     </div>
                   </div>
                 </div>
