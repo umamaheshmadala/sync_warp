@@ -170,9 +170,10 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
                   >
                     <BusinessProductCard
                       product={product}
-                      businessId={businessId}
                       viewMode="grid"
-                      onClick={() => handleProductClick(product)}
+                      isOwner={isOwner}
+                      onEdit={() => handleEditProduct(product)}
+                      onDelete={() => {/* Delete handled in manage products */ }}
                     />
                   </motion.div>
                 )}
