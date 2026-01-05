@@ -194,34 +194,31 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
 
 
-        </div>
-
-        {/* Multiple Images Indicator - Top Right */}
-        {product.image_urls && product.image_urls.length > 1 && (
-          <div className="absolute top-2 right-2">
-            <div className="bg-black/50 backdrop-blur-sm rounded-full p-1.5 text-white">
-              <Layers className="w-4 h-4" />
+          {/* Multiple Images Indicator - Top Right */}
+          {product.image_urls && product.image_urls.length > 1 && (
+            <div className="absolute top-2 right-2">
+              <div className="bg-black/50 backdrop-blur-sm rounded-full p-1.5 text-white">
+                <Layers className="w-4 h-4" />
+              </div>
             </div>
-          </div>
-        )}
-
+          )}
+        </div>
       </div>
-    </div >
 
-      {/* Product View Modal */ }
+      {/* Product View Modal */}
       <AnimatePresence>
-  {
-    showProductView && (
-      <ProductView
-        product={product}
-        isOwner={isOwner}
-        isModal={true}
-        onClose={handleCloseProductView}
-        onEdit={onEdit}
-        onDelete={onDelete}
-      />
-    )
-  }
+        {
+          showProductView && (
+            <ProductView
+              product={product}
+              isOwner={isOwner}
+              isModal={true}
+              onClose={handleCloseProductView}
+              onEdit={onEdit}
+              onDelete={onDelete}
+            />
+          )
+        }
       </AnimatePresence >
     </>
   );

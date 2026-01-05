@@ -29,7 +29,6 @@ const ProductView: React.FC<ProductViewProps> = ({
   isOwner = false,
   isModal = false,
   onClose,
-  onClose,
   onEdit,
   onDelete
 }) => {
@@ -162,8 +161,8 @@ const ProductView: React.FC<ProductViewProps> = ({
                     key={index}
                     onClick={() => setCurrentImageIndex(index)}
                     className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-colors ${index === currentImageIndex
-                        ? 'border-blue-500'
-                        : 'border-gray-200 hover:border-gray-300'
+                      ? 'border-blue-500'
+                      : 'border-gray-200 hover:border-gray-300'
                       }`}
                   >
                     <img
