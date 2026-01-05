@@ -17,13 +17,13 @@ export function AllProducts() {
   const navigate = useNavigate();
   const { getBusinessUrl } = useBusinessUrl();
   const { products, loading, error, fetchProducts } = useProducts(businessId);
-  
+
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [currentPage, setCurrentPage] = useState(1);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  
+
   const PRODUCTS_PER_PAGE = 12;
 
   // Extract unique categories from products
@@ -104,7 +104,7 @@ export function AllProducts() {
           <Skeleton className="h-10 flex-1" />
           <Skeleton className="h-10 w-48" />
         </div>
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
           {Array.from({ length: 12 }).map((_, i) => (
             <div key={i} className="space-y-3">
               <Skeleton className="h-56 w-full" />
@@ -140,7 +140,7 @@ export function AllProducts() {
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Store
         </Button>
-        
+
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">All Products</h1>
@@ -222,7 +222,7 @@ export function AllProducts() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4" data-testid="products-grid">
+          <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4" data-testid="products-grid">
             {currentProducts.map((product) => (
               <ProductCard
                 key={product.id}
@@ -243,15 +243,15 @@ export function AllProducts() {
               >
                 Previous
               </Button>
-              
+
               <div className="flex items-center gap-2">
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
                   // Show first page, last page, current page, and pages around current
-                  const showPage = 
+                  const showPage =
                     page === 1 ||
                     page === totalPages ||
                     (page >= currentPage - 1 && page <= currentPage + 1);
-                  
+
                   if (!showPage) {
                     // Show ellipsis for skipped pages
                     if (page === currentPage - 2 || page === currentPage + 2) {

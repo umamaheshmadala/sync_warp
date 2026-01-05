@@ -304,8 +304,8 @@ const Dashboard: React.FC = () => {
               Trending products serve the most visited, liked, shared, and saved items.
             </p>
 
-            {/* Mobile: 2-column compact grid, Desktop: 3-column cards */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6 mb-2">
+            {/* Mobile: 3-column grid, Tablet: 5-column, Desktop: 6-column */}
+            <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-3 md:gap-4 mb-2">
               {trendingProducts.length === 0 ? (
                 <div className="col-span-2 md:col-span-3 text-center py-8 text-gray-500">
                   <p className="text-lg font-medium">No trending products yet</p>

@@ -144,7 +144,7 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
         </div>
 
         {featuredProducts.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
             {featuredProducts.map((product, index) => (
               <React.Fragment key={product.id}>
                 {/* Use customer-facing ProductCard for non-owners (with social buttons) */}
