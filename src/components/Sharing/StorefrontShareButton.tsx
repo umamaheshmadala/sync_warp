@@ -25,6 +25,8 @@ export interface StorefrontShareButtonProps {
   className?: string;
   /** Show text label (true by default) */
   showLabel?: boolean;
+  /** Show icon (true by default) */
+  showIcon?: boolean;
   /** Custom label text */
   label?: string;
   /** Callback on successful share */
@@ -52,6 +54,7 @@ export function StorefrontShareButton({
   size = 'default',
   className,
   showLabel = true,
+  showIcon = true,
   label = 'Share',
   onShareSuccess
 }: StorefrontShareButtonProps) {
@@ -66,7 +69,7 @@ export function StorefrontShareButton({
 
   const handleShare = async () => {
     const url = storefrontUrl || window.location.href;
-    
+
     await share({
       title: businessName,
       text: businessDescription || `Check out ${businessName} on SynC!`,
@@ -80,12 +83,12 @@ export function StorefrontShareButton({
       disabled={isSharing}
       variant={variant}
       size={size}
-      className={cn('gap-2', className)}
+      className={cn(showIcon && showLabel ? 'gap-2' : '', className)}
       aria-label={`Share ${businessName}`}
     >
-      <Share2 className="h-4 w-4" />
+      {showIcon && <Share2 className="h-4 w-4" />}
       {showLabel && (
-        <span className="hidden sm:inline">
+        <span>
           {isSharing ? 'Sharing...' : label}
         </span>
       )}

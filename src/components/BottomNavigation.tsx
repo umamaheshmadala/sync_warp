@@ -114,7 +114,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentRoute }) => 
 
   return (
     <motion.nav
-      className="w-full z-50 bg-white/95 backdrop-blur-lg border-t border-gray-200 pb-[env(safe-area-inset-bottom)]"
+      className="w-full z-50 bg-white border-t border-gray-200 pb-[env(safe-area-inset-bottom)]"
       initial={{ y: 100 }}
       animate={{ y: 0 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}

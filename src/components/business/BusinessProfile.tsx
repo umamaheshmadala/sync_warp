@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { parseBusinessIdentifier } from '../../utils/slugUtils';
@@ -25,7 +25,9 @@ import {
   Package,
   MessageSquare,
   Info,
-  Navigation
+  Navigation,
+  MoreVertical,
+  Share2
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Geolocation } from '@capacitor/geolocation';
@@ -51,68 +53,45 @@ import { AllReviews } from '../reviews/AllReviews';
 import FollowButton from '../following/FollowButton';
 import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 import { FollowerMetricsWidget } from './FollowerMetricsWidget';
-import { useMemo } from 'react';
+import { useBusinessProfile, useBusinessCategories, type Business, type BusinessCategory } from '../../hooks/business';
 
-// TypeScript interfaces
-interface Business {
-  id: string;
-  user_id: string;
-  business_name: string;
-  business_type: string;
-  description: string;
-  business_email?: string;
-  business_phone?: string;
-  address: string;
-  city: string;
-  state: string;
-  postal_code?: string;
-  country: string;
-  latitude?: number;
-  longitude?: number;
-  operating_hours: Record<string, any>;
-  categories: string[];
-  tags: string[];
-  logo_url?: string;
-  cover_image_url?: string;
-  gallery_images: string[];
-  status: 'pending' | 'active' | 'suspended' | 'inactive';
-  verified: boolean;
-  verified_at?: string;
-  website_url?: string;
-  social_media: Record<string, string>;
-  average_rating: number;
-  total_reviews: number;
-  total_checkins: number;
-  created_at: string;
-  updated_at: string;
-}
 
-interface BusinessCategory {
-  id: string;
-  name: string;
-  display_name: string;
-  description?: string;
-  icon_name?: string;
-  is_active: boolean;
-  sort_order: number;
-  created_at: string;
-}
 
 const BusinessProfile: React.FC = () => {
   const params = useParams<{ businessId?: string; slug?: string }>();
-  const businessId = params.businessId || params.slug;
+  const businessIdParam = params.businessId || params.slug;
   const navigate = useNavigate();
   const { getBusinessUrl } = useBusinessUrl();
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const { user } = useAuthStore();
-  const [business, setBusiness] = useState<Business | null>(null);
-  const [loading, setLoading] = useState(true);
+
+  // SWR: Fetch business data with caching (instant load on revisits)
+  const {
+    data: business,
+    isLoading: loading,
+    error: businessError,
+    refetch: refetchBusiness
+  } = useBusinessProfile(businessIdParam);
+
+  // SWR: Fetch business categories with caching
+  const { data: businessCategories = [] } = useBusinessCategories();
+
+  // Handle business fetch error
+  useEffect(() => {
+    if (businessError) {
+      console.error('Error fetching business:', businessError);
+      toast.error('Failed to load business profile');
+      navigate('/dashboard');
+    }
+  }, [businessError, navigate]);
+
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
+  const [showMoreDropdown, setShowMoreDropdown] = useState(false);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [editingReview, setEditingReview] = useState<any>(null);
   const topRef = React.useRef<HTMLDivElement>(null);
@@ -123,11 +102,6 @@ const BusinessProfile: React.FC = () => {
   }, []);
 
   const [reviewsKey, setReviewsKey] = useState(0);
-
-  // Parse the business ID from slug (do this once at the top)
-  const parsedBusinessId = useMemo(() => {
-    return parseBusinessIdentifier(businessId || '');
-  }, [businessId]);
 
   // Load review stats for accurate counts - use full business ID once loaded
   const { stats: reviewStats, refreshStats } = useReviewStats({
@@ -146,9 +120,18 @@ const BusinessProfile: React.FC = () => {
   // Proper day ordering for operating hours
   const dayOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
-  // Editable form state
+  // Editable form state - initialize when business loads
   const [editForm, setEditForm] = useState<Partial<Business>>({});
-  const [businessCategories, setBusinessCategories] = useState<BusinessCategory[]>([]);
+
+  // Sync editForm when business data loads/updates
+  useEffect(() => {
+    if (business) {
+      setEditForm({
+        ...business,
+        operating_hours: business.operating_hours || {}
+      });
+    }
+  }, [business]);
 
   // Image upload states
   const [imageUploads, setImageUploads] = useState({
@@ -188,93 +171,6 @@ const BusinessProfile: React.FC = () => {
     // Note: When clicking tabs manually, the URL won't have these paths, so activeTab won't be overridden
   }, [searchParams, location.pathname]);
 
-  // Load business data and categories
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-
-        console.log('🔍 BusinessProfile: Loading business from URL param:', businessId);
-        console.log('🔍 Parsed ID:', parsedBusinessId);
-
-        // Fetch business data using short ID prefix match or full UUID
-        let businessData;
-        let businessError;
-
-        // If it's 8 chars (short ID), use RPC function or manual filter
-        if (parsedBusinessId && parsedBusinessId.length === 8) {
-          console.log('🔍 Using short ID prefix match:', parsedBusinessId);
-          // Use filter on all businesses where the ID starts with short ID
-          const { data: allBusinesses, error: fetchError } = await supabase
-            .from('businesses')
-            .select('*');
-
-          if (fetchError) {
-            businessError = fetchError;
-          } else {
-            // Filter in JavaScript for businesses where UUID starts with short ID
-            businessData = allBusinesses?.find(b =>
-              b.id.toLowerCase().startsWith(parsedBusinessId.toLowerCase())
-            );
-            if (!businessData) {
-              businessError = { message: 'Business not found', code: 'PGRST116' };
-            }
-          }
-        } else if (parsedBusinessId) {
-          // Full UUID - direct lookup
-          console.log('🔍 Using full UUID match:', parsedBusinessId);
-          const result = await supabase
-            .from('businesses')
-            .select('*')
-            .eq('id', parsedBusinessId)
-            .single();
-          businessData = result.data;
-          businessError = result.error;
-        } else {
-          throw new Error('Invalid business identifier');
-        }
-
-        if (businessError) {
-          console.error('❌ Database error:', businessError);
-          throw businessError;
-        }
-
-        if (!businessData) {
-          console.error('❌ No business found for ID:', parsedBusinessId);
-          throw new Error('Business not found');
-        }
-
-        console.log('✅ Business loaded:', businessData.business_name);
-        setBusiness(businessData);
-        // Initialize edit form with proper operating hours structure
-        setEditForm({
-          ...businessData,
-          operating_hours: businessData.operating_hours || {}
-        });
-
-        // Fetch business categories
-        const { data: categoriesData, error: categoriesError } = await supabase
-          .from('business_categories')
-          .select('*')
-          .eq('is_active', true)
-          .order('sort_order');
-
-        if (categoriesError) throw categoriesError;
-        setBusinessCategories(categoriesData || []);
-
-      } catch (error) {
-        console.error('Error fetching business:', error);
-        toast.error('Failed to load business profile');
-        navigate('/dashboard');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (businessId) {
-      fetchData();
-    }
-  }, [businessId, navigate]);
 
   // Handle review submission
   const handleReviewSubmit = async (reviewData: CreateReviewInput) => {
@@ -305,7 +201,8 @@ const BusinessProfile: React.FC = () => {
         .single();
 
       if (updatedBusiness) {
-        setBusiness(updatedBusiness);
+        // Refetch to update cache with latest data
+        await refetchBusiness();
       }
 
       // Refresh stats and trigger re-render of reviews component
@@ -453,19 +350,13 @@ const BusinessProfile: React.FC = () => {
         [fieldName]: uploadedUrl
       }));
 
-      // Update business state immediately for visual feedback
-      setBusiness(prev => prev ? {
-        ...prev,
-        [fieldName]: uploadedUrl
-      } : null);
-
       // Save to database immediately
       try {
         const updateField = type === 'cover' ? 'cover_image_url' : `${type}_url`;
         const { error } = await supabase
           .from('businesses')
           .update({ [updateField]: uploadedUrl })
-          .eq('id', businessId)
+          .eq('id', business?.id)
           .eq('user_id', user?.id);
 
         if (error) {
@@ -473,19 +364,17 @@ const BusinessProfile: React.FC = () => {
           throw error;
         }
 
+        // Refetch to get updated data
+        await refetchBusiness();
         toast.success(`${type === 'cover' ? 'Cover' : type} image updated successfully!`);
       } catch (error) {
         console.error('Error saving image:', error);
         toast.error(`Failed to save ${type === 'cover' ? 'cover' : type} image: ${error.message}`);
-        // Revert the UI changes on error
+        // Revert the edit form on error
         setEditForm(prev => ({
           ...prev,
           [`${type === 'cover' ? 'cover_image' : type}_url`]: business?.[`${type === 'cover' ? 'cover_image' : type}_url`] || null
         }));
-        setBusiness(prev => prev ? {
-          ...prev,
-          [`${type === 'cover' ? 'cover_image' : type}_url`]: prev[`${type === 'cover' ? 'cover_image' : type}_url`] || null
-        } : null);
       }
     }
   };
@@ -522,11 +411,12 @@ const BusinessProfile: React.FC = () => {
           gallery_images: editForm.gallery_images,
           updated_at: new Date().toISOString()
         })
-        .eq('id', businessId);
+        .eq('id', business?.id);
 
       if (error) throw error;
 
-      setBusiness(editForm as Business);
+      // Refetch to sync cache with database
+      await refetchBusiness();
       setEditing(false);
       toast.success('Business profile updated successfully!');
     } catch (error) {
@@ -623,6 +513,88 @@ const BusinessProfile: React.FC = () => {
       </span>
     );
   };
+
+  // Get business open/closed status based on operating hours
+  const getBusinessOpenStatus = () => {
+    if (!business?.operating_hours) {
+      return { status: 'unknown', text: '', color: '', todayHours: '' };
+    }
+
+    const now = new Date();
+    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const today = dayNames[now.getDay()];
+    const todayHours = business.operating_hours[today];
+
+    if (!todayHours || todayHours.closed) {
+      return {
+        status: 'closed',
+        text: 'Closed for Today',
+        color: 'text-red-600',
+        todayHours: 'Closed'
+      };
+    }
+
+    const { open, close } = todayHours;
+    if (!open || !close) {
+      return { status: 'unknown', text: '', color: '', todayHours: '' };
+    }
+
+    // Parse hours (format: "09:00" or "9:00 AM")
+    const parseTime = (timeStr: string): number => {
+      const [time, period] = timeStr.split(' ');
+      const [hours, minutes] = time.split(':').map(Number);
+      let h = hours;
+      if (period === 'PM' && h !== 12) h += 12;
+      if (period === 'AM' && h === 12) h = 0;
+      return h * 60 + (minutes || 0);
+    };
+
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const openMinutes = parseTime(open);
+    const closeMinutes = parseTime(close);
+
+    // Format hours for display (e.g., "9:00 AM - 6:00 PM")
+    const formatHours = `${open} - ${close}`;
+
+    if (currentMinutes < openMinutes) {
+      return {
+        status: 'closed',
+        text: 'Closed',
+        color: 'text-red-600',
+        todayHours: formatHours
+      };
+    }
+
+    if (currentMinutes >= closeMinutes) {
+      return {
+        status: 'closed',
+        text: 'Closed for Today',
+        color: 'text-red-600',
+        todayHours: formatHours
+      };
+    }
+
+    const minutesUntilClose = closeMinutes - currentMinutes;
+
+    if (minutesUntilClose <= 60) {
+      return {
+        status: 'closing_soon',
+        text: 'Closes Soon',
+        color: 'text-orange-600',
+        todayHours: formatHours
+      };
+    }
+
+    return {
+      status: 'open',
+      text: 'Open',
+      color: 'text-green-600',
+      todayHours: formatHours
+    };
+  };
+
+  const businessOpenStatus = getBusinessOpenStatus();
+
 
   // Render overview tab
   const renderOverview = () => (
@@ -1072,9 +1044,9 @@ const BusinessProfile: React.FC = () => {
       </div>
 
       {/* Share Analytics */}
-      {isOwner && businessId && (
+      {isOwner && business?.id && (
         <ShareAnalytics
-          entityId={businessId}
+          entityId={business.id}
           entityType="storefront"
           title="Storefront Share Analytics"
         />
@@ -1338,16 +1310,16 @@ const BusinessProfile: React.FC = () => {
           <div className="relative group">
             {/* Cover Image Container - Centered and Max Width */}
             <div className="max-w-7xl mx-auto md:px-6 lg:px-8 relative group">
-              {/* Back Button - Absolute Top Left */}
-              <button
-                onClick={() => navigate('/business/dashboard')}
-                className="absolute top-4 left-4 z-20 p-2 bg-white/80 backdrop-blur-sm rounded-full text-gray-700 hover:bg-white transition-all shadow-sm"
-                title="Back to Dashboard"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
+              <div className="h-36 md:h-48 bg-gray-200 overflow-hidden w-full relative md:rounded-b-lg">
+                {/* Back Button - Inside Cover Photo */}
+                <button
+                  onClick={() => navigate('/business/dashboard')}
+                  className="absolute top-3 left-3 md:top-4 md:left-4 z-20 w-9 h-9 md:w-10 md:h-10 flex items-center justify-center bg-white/90 rounded-full text-gray-700 hover:bg-white transition-colors shadow-sm"
+                  title="Back to Dashboard"
+                >
+                  <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
+                </button>
 
-              <div className="h-28 md:h-48 bg-gray-200 overflow-hidden w-full relative md:rounded-b-lg">
                 {business?.cover_image_url ? (
                   <img
                     src={business.cover_image_url}
@@ -1389,52 +1361,43 @@ const BusinessProfile: React.FC = () => {
                       {business?.business_name}
                     </h1>
 
-                    <StorefrontShareButton
-                      businessId={business.id}
-                      businessName={business.business_name}
-                      businessDescription={business.description}
-                      variant="ghost"
-                      size="icon"
-                      showLabel={false}
-                      className="w-8 h-8 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-                      onShareSuccess={() => console.log('Shared')}
-                    />
-
                     {business?.verified && (
                       <CheckCircle className="w-4 h-4 text-blue-500 flex-shrink-0" />
                     )}
                     {getStatusBadge(business?.status)}
                   </div>
-                  <p className="text-gray-600 text-sm mb-1 flex items-center">
-                    <MapPin className="w-3.5 h-3.5 mr-1 text-gray-400" />
+                  {/* Location line */}
+                  <p className="flex items-center text-sm text-gray-600 mb-1">
+                    <MapPin className="w-3.5 h-3.5 mr-1.5 text-gray-400 flex-shrink-0" />
                     {business?.city}, {business?.state}
                   </p>
-                  {/* Contact Info Inline */}
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-600 mb-1">
-                    {business?.business_phone && (
-                      <a href={`tel:${business.business_phone}`} className="flex items-center hover:text-indigo-600">
-                        <Phone className="w-3.5 h-3.5 mr-1 text-gray-400" />
-                        {business.business_phone}
-                      </a>
-                    )}
-                    {business?.business_email && (
-                      <a href={`mailto:${business.business_email}`} className="flex items-center hover:text-indigo-600">
-                        <Mail className="w-3.5 h-3.5 mr-1 text-gray-400" />
-                        {business.business_email}
-                      </a>
-                    )}
-                    <button
-                      onClick={() => setShowInfoModal(true)}
-                      className="flex items-center text-indigo-600 hover:text-indigo-700 font-medium"
-                    >
-                      <Clock className="w-3.5 h-3.5 mr-1" />
-                      View Hours & More
-                    </button>
-                  </div>
-                  {/* Description */}
-                  {business?.description && (
-                    <p className="text-gray-600 text-sm line-clamp-2 mb-2">{business.description}</p>
+
+                  {/* Business Hours Status */}
+                  {businessOpenStatus.text && (
+                    <p className="flex items-center text-sm mb-1.5">
+                      <Clock className="w-3.5 h-3.5 mr-1.5 text-gray-400 flex-shrink-0" />
+                      <span className={`font-medium ${businessOpenStatus.color}`}>
+                        {businessOpenStatus.text}
+                      </span>
+                      {businessOpenStatus.todayHours && (
+                        <span className="text-gray-500 ml-1.5">
+                          · {businessOpenStatus.todayHours}
+                        </span>
+                      )}
+                    </p>
                   )}
+
+                  {/* Phone + More Info line */}
+                  <div className="flex items-center justify-between w-full text-sm text-gray-600 mt-1">
+                    <div className="flex items-center">
+                      {business?.business_phone && (
+                        <a href={`tel:${business.business_phone}`} className="flex items-center hover:text-indigo-600">
+                          <Phone className="w-3.5 h-3.5 mr-1.5 text-gray-400 flex-shrink-0" />
+                          {business.business_phone}
+                        </a>
+                      )}
+                    </div>
+                  </div>
 
                   {/* Action Buttons Row - Desktop Only */}
                   <div className="hidden md:flex flex-wrap items-center gap-2 mt-2">
@@ -1482,6 +1445,50 @@ const BusinessProfile: React.FC = () => {
                         </button>
                       </>
                     )}
+
+                    {/* More Options Dropdown */}
+                    <div className="relative">
+                      <button
+                        onClick={() => setShowMoreDropdown(!showMoreDropdown)}
+                        className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                      >
+                        <MoreVertical className="w-5 h-5" />
+                      </button>
+                      {showMoreDropdown && (
+                        <>
+                          {/* Backdrop to close dropdown */}
+                          <div
+                            className="fixed inset-0 z-10"
+                            onClick={() => setShowMoreDropdown(false)}
+                          />
+                          <div className="absolute right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-20 py-1 min-w-[120px]">
+                            <StorefrontShareButton
+                              businessId={business.id}
+                              businessName={business.business_name}
+                              businessDescription={business.description}
+                              variant="ghost"
+                              showLabel={true}
+                              showIcon={true}
+                              className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 h-auto justify-start rounded-none gap-2"
+                              onShareSuccess={() => {
+                                setShowMoreDropdown(false);
+                                console.log('Shared');
+                              }}
+                            />
+                            <button
+                              onClick={() => {
+                                setShowInfoModal(true);
+                                setShowMoreDropdown(false);
+                              }}
+                              className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                            >
+                              <Info className="w-4 h-4" />
+                              More Info
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1529,6 +1536,49 @@ const BusinessProfile: React.FC = () => {
                     </button>
                   </>
                 )}
+
+                {/* More Options Dropdown - Mobile */}
+                <div className="relative">
+                  <button
+                    onClick={() => setShowMoreDropdown(!showMoreDropdown)}
+                    className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  >
+                    <MoreVertical className="w-5 h-5" />
+                  </button>
+                  {showMoreDropdown && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-10"
+                        onClick={() => setShowMoreDropdown(false)}
+                      />
+                      <div className="absolute right-0 bottom-full mb-2 bg-white border border-gray-200 rounded-lg shadow-lg z-20 py-1 min-w-[120px]">
+                        <StorefrontShareButton
+                          businessId={business.id}
+                          businessName={business.business_name}
+                          businessDescription={business.description}
+                          variant="ghost"
+                          showLabel={true}
+                          showIcon={true}
+                          className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 h-auto justify-start rounded-none gap-2"
+                          onShareSuccess={() => {
+                            setShowMoreDropdown(false);
+                            console.log('Shared');
+                          }}
+                        />
+                        <button
+                          onClick={() => {
+                            setShowInfoModal(true);
+                            setShowMoreDropdown(false);
+                          }}
+                          className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                        >
+                          <Info className="w-4 h-4" />
+                          More Info
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -1566,10 +1616,10 @@ const BusinessProfile: React.FC = () => {
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeTab}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.2 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
               >
                 {activeTab === 'overview' && renderOverview()}
                 {activeTab === 'offers' && (
@@ -1588,17 +1638,12 @@ const BusinessProfile: React.FC = () => {
                 {activeTab === 'statistics' && renderStatistics()}
                 {activeTab === 'enhanced-profile' && (
                   <EnhancedProfileTab
-                    businessId={businessId!}
+                    businessId={business?.id!}
                     business={business!}
                     isOwner={isOwner}
                     onUpdate={async () => {
-                      // Refresh business data after update
-                      const { data } = await supabase
-                        .from('businesses')
-                        .select('*')
-                        .eq('id', businessId)
-                        .single();
-                      if (data) setBusiness(data);
+                      // Refresh business data from cache
+                      await refetchBusiness();
                     }}
                   />
                 )}
