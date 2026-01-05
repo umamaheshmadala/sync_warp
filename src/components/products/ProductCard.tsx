@@ -169,113 +169,24 @@ export function ProductCard({
             decoding="async"
           />
 
-          {/* Featured Badge */}
+          {/* Featured Star - Top Left */}
           {product.is_featured && (
-            <Badge
-              className="absolute left-2 top-2 bg-yellow-500 text-black"
-              variant="secondary"
-            >
-              Featured
-            </Badge>
+            <div className="absolute left-2 top-2">
+              <Star className="w-5 h-5 text-yellow-400 fill-yellow-400 drop-shadow-lg" />
+            </div>
           )}
 
-          {/* Stock Status */}
-          {product.is_available ? (
-            <Badge
-              className="absolute right-2 top-2 bg-green-500 text-white text-xs"
-              variant="secondary"
-            >
-              Available
-            </Badge>
-          ) : (
-            <Badge
-              className="absolute right-2 top-2 bg-red-500 text-xs"
-              variant="destructive"
-            >
-              Out of Stock
-            </Badge>
-          )}
-
-          {/* Remove Button */}
-          {showRemoveButton && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="absolute right-2 top-2 h-8 w-8 rounded-full bg-white/90 p-0 shadow-md backdrop-blur hover:bg-red-50 hover:text-red-600"
-              onClick={handleRemoveClick}
-              aria-label="Remove from wishlist"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-
-        {/* Product Info - Compact */}
-        <div className="p-3">
-          <h3 className="line-clamp-1 font-semibold text-sm\">
-            {product.name}
-          </h3>
-
-          {/* Business Name */}
-          {product.business?.business_name && (
-            <p className="mt-0.5 text-xs text-gray-500 line-clamp-1">
-              {product.business.business_name}
-            </p>
-          )}
-
-          {/* Price */}
-          <div className="mt-2">
-            <span className="text-base font-bold text-primary">
-              {getCurrencySymbol(product.currency)}
-              {product.price?.toLocaleString() || '0'}
-            </span>
-          </div>
-
-          {/* Actions */}
-          {showActions && (
-            <div className="mt-3 flex items-center gap-1">
-              <FavoriteProductButton
-                productId={product.id}
-                variant="icon"
-                size="sm"
-                onClick={(e) => e.stopPropagation()}
-              />
-
-              <ProductShareButton
-                productId={product.id}
-                productName={product.name}
-                productDescription={product.description}
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0"
-                showLabel={false}
-                onShareSuccess={() => {
-                  console.log('Product shared from card');
-                }}
-              />
-
-              <Button
-                variant="ghost"
-                size="sm"
-                className={cn(
-                  'h-8 w-8 p-0 transition-colors',
-                  isInWishlist(product.id) && 'text-blue-500 hover:text-blue-600'
-                )}
-                onClick={handleWishlistClick}
-                disabled={socialLoading}
-                aria-label={isInWishlist(product.id) ? 'Remove from wishlist' : 'Add to wishlist'}
-                data-testid="wishlist-button"
-              >
-                <List
-                  className={cn(
-                    'h-4 w-4',
-                    isInWishlist(product.id) && 'fill-current'
-                  )}
-                />
-              </Button>
+          {/* Multiple Images Indicator - Top Right */}
+          {product.image_urls && product.image_urls.length > 1 && (
+            <div className="absolute right-2 top-2">
+              <div className="bg-black/50 backdrop-blur-sm rounded-full p-1.5">
+                <ImageIcon className="w-4 h-4 text-white" />
+              </div>
             </div>
           )}
         </div>
+
+        {/* No info section - Image only */}
       </CardContent>
 
       {/* Share Modal */}

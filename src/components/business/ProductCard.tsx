@@ -227,29 +227,21 @@ const ProductCard: React.FC<ProductCardProps> = ({
             </div>
           )}
 
-          {/* Status Badges */}
-          <div className="absolute top-2 left-2 flex space-x-2">
-            {product.is_featured && (
-              <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                <Star className="w-3 h-3 mr-1 fill-current" />
-                Featured
-              </div>
-            )}
-          </div>
-
-          <div className="absolute top-2 right-2">
-            <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${product.is_available
-              ? 'bg-green-100 text-green-800'
-              : 'bg-red-100 text-red-800'
-              }`}>
-              {product.is_available ? (
-                <Eye className="w-3 h-3 mr-1" />
-              ) : (
-                <EyeOff className="w-3 h-3 mr-1" />
-              )}
-              {product.is_available ? 'Available' : 'Unavailable'}
+          {/* Featured Star - Top Left */}
+          {product.is_featured && (
+            <div className="absolute top-2 left-2">
+              <Star className="w-5 h-5 text-yellow-400 fill-yellow-400 drop-shadow-lg" />
             </div>
-          </div>
+          )}
+
+          {/* Multiple Images Indicator - Top Right */}
+          {product.image_urls && product.image_urls.length > 1 && (
+            <div className="absolute top-2 right-2">
+              <div className="bg-black/50 backdrop-blur-sm rounded-full p-1.5">
+                <ImageIcon className="w-4 h-4 text-white" />
+              </div>
+            </div>
+          )}
 
           {/* Actions Dropdown */}
           {isOwner && (
@@ -285,31 +277,6 @@ const ProductCard: React.FC<ProductCardProps> = ({
               </div>
             </div>
           )}
-        </div>
-
-        {/* Product Details */}
-        <div className="p-4">
-          <div className="flex items-start justify-between mb-2">
-            <h3 className="text-lg font-semibold text-gray-900 line-clamp-1">
-              {product.name}
-            </h3>
-          </div>
-
-          {product.description && (
-            <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-              {product.description}
-            </p>
-          )}
-
-
-          {/* Price */}
-          <div className="flex items-center space-x-1 mb-4">
-            <DollarSign className="w-5 h-5 text-green-600" />
-            <span className="text-lg font-bold text-gray-900">
-              {formatPrice(product.price, product.currency)}
-            </span>
-          </div>
-
         </div>
 
         {/* Click overlay to close dropdown */}

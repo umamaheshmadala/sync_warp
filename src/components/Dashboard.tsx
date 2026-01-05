@@ -6,6 +6,7 @@ import { useBusinessUrl } from '../hooks/useBusinessUrl';
 import {
   Star,
   TrendingUp,
+  ImageIcon
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 // BottomNavigation is now handled by AppLayout
@@ -320,8 +321,8 @@ const Dashboard: React.FC = () => {
                   }}
                   className="bg-white rounded-xl md:rounded-2xl overflow-hidden shadow-sm md:shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer flex flex-col h-full group"
                 >
-                  {/* Image Section */}
-                  <div className="aspect-square relative bg-gray-100">
+                  {/* Image Section - Full Card */}
+                  <div className="aspect-[9/16] relative bg-gray-100">
                     {product.imageUrl ? (
                       <img
                         src={product.imageUrl}
@@ -334,23 +335,22 @@ const Dashboard: React.FC = () => {
                         <span className="text-4xl">🛍️</span>
                       </div>
                     )}
+
+                    {/* Trending Badge - Top Left */}
                     <div className="absolute top-2 left-2">
-                      <span className="bg-white/90 backdrop-blur text-xs font-bold px-2 py-1 rounded-md shadow-sm">
+                      <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-bold px-2 py-1 rounded-md shadow-lg">
                         #{index + 1} Trending
                       </span>
                     </div>
-                  </div>
 
-                  {/* Content Section */}
-                  <div className="p-3 md:p-4 flex-1 flex flex-col">
-                    <h3 className="font-semibold text-gray-900 text-sm md:text-base leading-tight mb-1 line-clamp-2" title={product.name}>
-                      {product.name}
-                    </h3>
-                    <p className="text-xs text-gray-500 mb-2 truncate">{product.business}</p>
-
-                    <div className="mt-auto">
-                      <span className="font-bold text-gray-900">{product.price.replace('Γé╣', '₹')}</span>
-                    </div>
+                    {/* Multiple Images Indicator - Top Right (if applicable) */}
+                    {product.imageCount && product.imageCount > 1 && (
+                      <div className="absolute top-2 right-2">
+                        <div className="bg-black/50 backdrop-blur-sm rounded-full p-1.5">
+                          <ImageIcon className="w-4 h-4 text-white" />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
