@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { useBusinessUrl } from '../hooks/useBusinessUrl';
+import { getOptimizedImageUrl } from '../utils/imageUtils';
 import {
   Star,
   TrendingUp
@@ -251,10 +252,11 @@ const Dashboard: React.FC = () => {
                     </div>
                     {offer.imageUrl ? (
                       <img
-                        src={offer.imageUrl}
+                        src={getOptimizedImageUrl(offer.imageUrl, 400)}
                         alt={offer.title}
                         className="absolute inset-0 w-full h-full object-cover opacity-30 mix-blend-overlay"
                         decoding="async"
+                        loading="lazy"
                       />
                     ) : null}
                     <div className="relative z-10">
@@ -324,10 +326,11 @@ const Dashboard: React.FC = () => {
                   <div className="aspect-[9/16] relative bg-gray-100">
                     {product.imageUrl ? (
                       <img
-                        src={product.imageUrl}
+                        src={getOptimizedImageUrl(product.imageUrl, 400)}
                         alt={product.name}
                         className="w-full h-full object-cover"
                         decoding="async"
+                        loading="lazy"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 text-gray-300">

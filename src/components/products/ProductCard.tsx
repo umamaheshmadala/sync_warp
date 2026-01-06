@@ -1,17 +1,11 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, List, X, Star } from 'lucide-react';
+import { Star } from 'lucide-react';
 import { Product } from '../../types/product';
 import { Card, CardContent } from '../ui/card';
-import { Button } from '../ui/button';
-import { Badge } from '../ui/badge';
 import { cn } from '../../lib/utils';
-import { useSimpleProductSocial } from '../../hooks/useSimpleProductSocial';
-import useUnifiedFavorites from '../../hooks/useUnifiedFavorites';
-import ProductShareModal from './ProductShareModal';
-import { ProductShareButton } from '../Sharing/ProductShareButton';
-import { FavoriteProductButton } from './FavoriteProductButton';
 import { useBusinessUrl } from '../../hooks/useBusinessUrl';
+import { getOptimizedImageUrl } from '../../utils/imageUtils';
 
 interface ProductCardProps {
   product: Product;
@@ -22,35 +16,30 @@ interface ProductCardProps {
   onRemoved?: () => void;
 }
 
-export function ProductCard({
+const ProductCardBase = ({
   product,
   size = 'medium',
   showActions = true,
   onClick,
   showRemoveButton = false,
   onRemoved
-}: ProductCardProps) {
+}: ProductCardProps) => {
   const navigate = useNavigate();
   const { getBusinessUrl } = useBusinessUrl();
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
-  // Social features - wishlist from simple social
-  const {
-    isInWishlist,
-    toggleWishlist,
-    isLoading: socialLoading
-  } = useSimpleProductSocial();
-
-  // Use UnifiedFavorites for product favorites
-  const unifiedFavorites = useUnifiedFavorites();
-  const isFavorited = (productId: string) => unifiedFavorites.isFavorited(productId, 'product');
+  // Social features removed from card to improve performance
+  // Actions are handled in ProductView modal only
 
   // Get the first image or fallback
-  const primaryImage = product.image_urls && product.image_urls.length > 0
+  const rawImage = product.image_urls && product.image_urls.length > 0
     ? product.image_urls[0]
     : '/placeholder-product.jpg';
+
+  // Optimize image size based on card size
+  const targetWidth = size === 'small' ? 200 : size === 'medium' ? 300 : 400;
+  const primaryImage = getOptimizedImageUrl(rawImage, targetWidth);
 
   // Get currency symbol
   const getCurrencySymbol = (currency: string) => {
@@ -71,59 +60,7 @@ export function ProductCard({
     }
   };
 
-  const handleFavoriteClick = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    try {
-      await unifiedFavorites.toggleFavorite(product.id, 'product', {
-        name: product.name,
-        description: product.description,
-        price: product.price,
-        currency: product.currency,
-        image_url: product.image_urls?.[0],
-        category: product.category,
-        business_id: product.business_id
-      });
-    } catch (error) {
-      console.error('Failed to toggle favorite:', error);
-    }
-  };
-
-  const handleWishlistClick = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    try {
-      await toggleWishlist(product);
-      if (onRemoved && !isInWishlist(product.id)) {
-        // Slight delay to allow toast to show
-        setTimeout(() => onRemoved(), 100);
-      }
-    } catch (error) {
-      console.error('Failed to toggle wishlist:', error);
-    }
-  };
-
-  const handleRemoveClick = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-
-    // Show confirmation
-    if (!window.confirm('Remove this product from your wishlist?')) {
-      return;
-    }
-
-    try {
-      await toggleWishlist(product);
-      if (onRemoved) {
-        setTimeout(() => onRemoved(), 100);
-      }
-    } catch (error) {
-      console.error('Failed to remove from wishlist:', error);
-    }
-  };
-
-  const handleShareClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsShareModalOpen(true);
-  };
-
+  // Removed unused handlers and state for performance
   const sizeClasses = {
     small: 'h-48',
     medium: 'h-56',
@@ -133,33 +70,31 @@ export function ProductCard({
   return (
     <Card
       className={cn(
-        'group cursor-pointer overflow-hidden transition-all hover:shadow-lg',
-        'hover:scale-[1.02]'
+        'group cursor-pointer overflow-hidden transition-all',
       )}
       onClick={handleCardClick}
       data-testid="product-card"
       style={{
-        contain: 'layout style paint', // Prevent layout thrashing
         transform: 'translateZ(0)', // Force GPU layer
-        willChange: 'auto', // Let browser decide
-        contentVisibility: 'auto' // Skip rendering off-screen cards
       }}
     >
       <CardContent className="p-0">
         {/* Image Container - 9:16 Portrait Aspect Ratio */}
         <div className="relative overflow-hidden bg-gray-100 aspect-[9/16]">
+          {/* Blur placeholder (Instagram-style) - shows gradient while loading */}
           {imageLoading && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-            </div>
+            <div
+              className="absolute inset-0 bg-gradient-to-br from-gray-200 via-gray-100 to-gray-200 animate-pulse"
+            />
           )}
 
           <img
             src={imageError ? '/placeholder-product.jpg' : primaryImage}
             alt={product.name}
             className={cn(
-              'h-full w-full object-cover transition-transform duration-300 group-hover:scale-110',
-              imageLoading ? 'opacity-0' : 'opacity-100'
+              'h-full w-full object-cover transition-all duration-500 group-hover:scale-110',
+              // Blur-to-sharp transition for smooth loading
+              imageLoading ? 'opacity-0 scale-105 blur-sm' : 'opacity-100 scale-100 blur-0'
             )}
             onLoad={() => setImageLoading(false)}
             onError={() => {
@@ -167,6 +102,7 @@ export function ProductCard({
               setImageLoading(false);
             }}
             decoding="async"
+            loading="lazy"
           />
 
           {/* Featured Star - Top Left */}
@@ -179,7 +115,7 @@ export function ProductCard({
           {/* Multiple Images Indicator - Top Right */}
           {product.image_urls && product.image_urls.length > 1 && (
             <div className="absolute right-2 top-2">
-              <div className="bg-black/50 backdrop-blur-sm rounded-md p-1">
+              <div className="rounded-md p-1 bg-black/40">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                   {/* Back card */}
                   <rect x="3" y="2" width="10" height="12" rx="1.5" fill="white" fillOpacity="0.6" />
@@ -192,19 +128,15 @@ export function ProductCard({
             </div>
           )}
         </div>
-
-        {/* No info section - Image only */}
       </CardContent>
-
-      {/* Share Modal */}
-      <ProductShareModal
-        isOpen={isShareModalOpen}
-        onClose={() => setIsShareModalOpen(false)}
-        product={product}
-        onShareSuccess={() => {
-          console.log('Product shared successfully');
-        }}
-      />
     </Card>
   );
-}
+}; // End of component logic
+
+// Memoize the component to prevent unnecessary re-renders
+export const ProductCard = React.memo(ProductCardBase, (prevProps, nextProps) => {
+  return prevProps.product.id === nextProps.product.id &&
+    prevProps.size === nextProps.size &&
+    prevProps.showActions === nextProps.showActions &&
+    prevProps.showRemoveButton === nextProps.showRemoveButton;
+});

@@ -40,6 +40,7 @@ export interface TrendingProduct {
   isTrending: boolean;
   imageUrl?: string | null;
   businessId: string;
+  imageCount?: number;
 }
 
 export const dashboardService = {
@@ -245,7 +246,8 @@ export const dashboardService = {
           price: `₹${Number(product.price).toFixed(0)}`,
           category: product.category || 'General',
           isTrending: product.is_trending || false,
-          imageUrl: imageUrl
+          imageUrl: imageUrl,
+          imageCount: product.image_urls?.length || 0
         };
       });
     } catch (error) {

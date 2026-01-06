@@ -15,6 +15,7 @@ import {
 import { Product, CURRENCIES } from '../../types/product';
 import ProductView from './ProductView';
 import { AnimatePresence } from 'framer-motion';
+import { getOptimizedImageUrl } from '../../utils/imageUtils';
 
 interface ProductCardProps {
   product: Product;
@@ -24,7 +25,7 @@ interface ProductCardProps {
   onDelete: () => void;
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({
+const ProductCardBase: React.FC<ProductCardProps> = ({
   product,
   viewMode,
   isOwner,
@@ -48,10 +49,11 @@ const ProductCard: React.FC<ProductCardProps> = ({
     return `${symbol}${price.toLocaleString()}`;
   };
 
-  // Get the first available image
+  // Get the first available image with optimization
   const getImageUrl = (): string | undefined => {
     if (product.image_urls && product.image_urls.length > 0) {
-      return product.image_urls[0];
+      // Use 300px width for grid thumbnails (was loading full-res before!)
+      return getOptimizedImageUrl(product.image_urls[0], 300);
     }
     return undefined;
   };
@@ -71,9 +73,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
           className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-all duration-200 cursor-pointer hover:scale-[1.01]"
           onClick={handleProductClick}
           style={{
-            contain: 'layout style paint',
             transform: 'translateZ(0)',
-            contentVisibility: 'auto'
           }}
         >
           <div className="flex items-center space-x-4">
@@ -86,6 +86,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
                   className="w-full h-full object-cover rounded-lg"
                   onError={() => setImageError(true)}
                   decoding="async"
+                  loading="lazy"
                 />
               ) : (
                 <div className="w-full h-full bg-gray-100 rounded-lg flex items-center justify-center">
@@ -163,9 +164,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
         className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-200 cursor-pointer hover:scale-[1.03]"
         onClick={handleProductClick}
         style={{
-          contain: 'layout style paint',
           transform: 'translateZ(0)',
-          contentVisibility: 'auto'
         }}
       >
         {/* Product Image - 9:16 Portrait */}
@@ -177,6 +176,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
               className="w-full h-full object-cover"
               onError={() => setImageError(true)}
               decoding="async"
+              loading="lazy"
             />
           ) : (
             <div className="w-full h-full bg-gray-100 flex items-center justify-center">
@@ -223,5 +223,11 @@ const ProductCard: React.FC<ProductCardProps> = ({
     </>
   );
 };
+
+const ProductCard = React.memo(ProductCardBase, (prevProps, nextProps) => {
+  return prevProps.product.id === nextProps.product.id &&
+    prevProps.viewMode === nextProps.viewMode &&
+    prevProps.isOwner === nextProps.isOwner;
+});
 
 export default ProductCard;

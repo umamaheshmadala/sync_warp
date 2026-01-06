@@ -80,7 +80,7 @@ const DevMenu = () => {
         </svg>
         {/* Sync timestamp badge */}
         <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-[7px] font-mono px-1 rounded-full whitespace-nowrap">
-          {SYNC_TIMESTAMP}
+          {`V-FIX ${SYNC_TIMESTAMP}`}
         </span>
       </button>
 

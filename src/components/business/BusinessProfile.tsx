@@ -1346,8 +1346,8 @@ const BusinessProfile: React.FC = () => {
               </div>
 
               {/* Profile Photo (Overlapping - 1/4 on cover, 3/4 below) */}
-              <div className="absolute -bottom-[4.5rem] md:-bottom-[7.5rem] left-4 md:left-8 z-30">
-                <div className="rounded-full border-[4px] border-white bg-white shadow-md overflow-hidden w-24 h-24 md:w-40 md:h-40">
+              <div className="absolute -bottom-24 md:-bottom-[9.75rem] left-4 md:left-8 z-30">
+                <div className="rounded-full border-[4px] border-white bg-white shadow-md overflow-hidden w-32 h-32 md:w-52 md:h-52">
                   {business?.logo_url ? (
                     <img
                       src={business.logo_url}
@@ -1367,7 +1367,7 @@ const BusinessProfile: React.FC = () => {
             <div className="max-w-7xl mx-auto px-[5px] pt-[0.5rem] pb-2">
               <div className="flex flex-col md:flex-row justify-between items-start gap-4">
                 {/* Business Name & Details (Pushed right to clear profile pic) */}
-                <div className="mt-0 pl-[7.5rem] md:pl-[12rem] flex flex-col items-start text-left w-full min-h-[5rem] md:min-h-0">
+                <div className="mt-0 pl-[9.5rem] md:pl-[15.5rem] flex flex-col items-start text-left w-full min-h-[5rem] md:min-h-0">
                   <div className="flex flex-wrap items-center gap-2 mb-1">
                     <h1 className="text-lg md:text-2xl font-bold text-gray-900 leading-tight">
                       {business?.business_name}

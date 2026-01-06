@@ -2,6 +2,11 @@ import { useNavigate } from 'react-router-dom';
 import { Package } from 'lucide-react';
 import { useProductDisplay } from '../../hooks/useProductDisplay';
 import { ProductCard } from './ProductCard';
+import { LazyRender } from '../common/LazyRender';
+import * as ReactWindow from 'react-window';
+const gridKey = 'FixedSizeGrid';
+const FixedSizeGrid = (ReactWindow as any)[gridKey];
+import AutoSizer from 'react-virtualized-auto-sizer';
 import { Button } from '../ui/button';
 import { Skeleton } from '../ui/skeleton';
 import { useBusinessUrl } from '../../hooks/useBusinessUrl';
@@ -12,6 +17,46 @@ interface ProductGridProps {
   showViewAll?: boolean;
   onProductClick?: (productId: string) => void;
 }
+
+// Virtualization constants
+const GUTTER_SIZE = 6;
+const CARD_HEIGHT = 224;
+
+interface CellProps {
+  columnIndex: number;
+  rowIndex: number;
+  style: React.CSSProperties;
+  data: {
+    products: any[];
+    columnCount: number;
+    onProductClick?: (id: string) => void;
+  };
+}
+
+const Cell = ({ columnIndex, rowIndex, style, data }: CellProps) => {
+  const { products, columnCount, onProductClick } = data;
+  const index = rowIndex * columnCount + columnIndex;
+  const product = products[index];
+
+  if (!product) return null;
+
+  // Adjust style for gutter
+  const left = parseFloat(style.left as string) + GUTTER_SIZE;
+  const top = parseFloat(style.top as string) + GUTTER_SIZE;
+  const width = parseFloat(style.width as string) - GUTTER_SIZE;
+  const height = parseFloat(style.height as string) - GUTTER_SIZE;
+
+  return (
+    <div style={{ ...style, left, top, width, height }}>
+      <ProductCard
+        product={product}
+        size="medium"
+        showActions={true}
+        onClick={() => onProductClick && onProductClick(product.id)}
+      />
+    </div>
+  );
+};
 
 export function ProductGrid({
   businessId,
@@ -96,16 +141,34 @@ export function ProductGrid({
       </div>
 
       {/* Product Grid */}
-      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1.5">
-        {products.map((product) => (
-          <ProductCard
-            key={product.id}
-            product={product}
-            size="medium"
-            showActions={true}
-            onClick={() => handleProductClick(product.id)}
-          />
-        ))}
+      <div className="h-[500px] w-full">
+        <AutoSizer>
+          {({ height, width }) => {
+            // Responsive column count
+            let columnCount = 3;
+            if (width >= 1024) columnCount = 5; // lg
+            else if (width >= 768) columnCount = 4; // md
+
+            const columnWidth = width / columnCount;
+            const rowCount = Math.ceil(products.length / columnCount);
+
+            return (
+              <FixedSizeGrid
+                columnCount={columnCount}
+                columnWidth={columnWidth}
+                height={height}
+                rowCount={rowCount}
+                rowHeight={CARD_HEIGHT + GUTTER_SIZE}
+                width={width}
+                itemData={{ products, columnCount, onProductClick: handleProductClick }}
+                className="scrollbar-hide"
+                overscanRowCount={5}
+              >
+                {Cell}
+              </FixedSizeGrid>
+            );
+          }}
+        </AutoSizer>
       </div>
 
       {/* View All Button (bottom) */}

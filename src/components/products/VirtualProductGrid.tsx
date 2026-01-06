@@ -1,5 +1,7 @@
 import React from 'react';
-import { FixedSizeGrid as Grid } from 'react-window';
+import * as ReactWindow from 'react-window';
+const gridKey = 'FixedSizeGrid';
+const Grid = (ReactWindow as any)[gridKey];
 import { Product } from '../../types/product';
 
 interface VirtualProductGridProps {
@@ -64,7 +66,7 @@ export function VirtualProductGrid({
             rowCount={rowCount}
             rowHeight={cardHeight + gap}
             width={gridWidth}
-            overscanRowCount={2}
+            overscanRowCount={5}
             style={{ margin: '0 auto' }}
         >
             {Cell}

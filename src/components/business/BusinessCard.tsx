@@ -5,6 +5,7 @@ import { Star } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import type { Business } from '../../types/business';
 import { useBusinessUrl } from '../../hooks/useBusinessUrl';
+import { getOptimizedImageUrl } from '../../utils/imageUtils';
 
 interface BusinessCardProps {
   business: Business;
@@ -33,9 +34,11 @@ export function BusinessCard({
       <div className="hidden md:flex h-32 bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 items-center justify-center relative">
         {business.cover_image_url ? (
           <img
-            src={business.cover_image_url}
+            src={getOptimizedImageUrl(business.cover_image_url, 400)}
             alt={business.name}
             className="w-full h-full object-cover"
+            loading="lazy"
+            decoding="async"
           />
         ) : (
           <div className="text-center">
@@ -51,7 +54,13 @@ export function BusinessCard({
           {/* Mobile only: Icon */}
           <div className="md:hidden flex-shrink-0 w-10 h-10 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-lg flex items-center justify-center text-xl relative">
             {business.logo_url ? (
-              <img src={business.logo_url} alt="" className="w-full h-full object-cover rounded-lg" />
+              <img
+                src={getOptimizedImageUrl(business.logo_url, 100)}
+                alt=""
+                className="w-full h-full object-cover rounded-lg"
+                loading="lazy"
+                decoding="async"
+              />
             ) : (
               <span>🏢</span>
             )}

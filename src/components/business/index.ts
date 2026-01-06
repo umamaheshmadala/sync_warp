@@ -4,8 +4,7 @@
 export { default as BusinessRegistration } from './BusinessRegistration';
 export { default as BusinessDashboard } from './BusinessDashboard';
 export { default as BusinessProfile } from './BusinessProfile';
-export { default as ProductManager } from './ProductManager';
-export { default as ProductManagerPage } from './ProductManagerPage';
+
 export { default as ProductForm } from './ProductForm';
 export { default as ProductCard } from './ProductCard';
 
