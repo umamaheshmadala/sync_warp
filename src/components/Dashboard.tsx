@@ -6,7 +6,8 @@ import { useBusinessUrl } from '../hooks/useBusinessUrl';
 import { getOptimizedImageUrl } from '../utils/imageUtils';
 import {
   Star,
-  TrendingUp
+  TrendingUp,
+  Layers
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 // BottomNavigation is now handled by AppLayout
@@ -337,25 +338,16 @@ const Dashboard: React.FC = () => {
                         <span className="text-4xl">🛍️</span>
                       </div>
                     )}
-                    {/* Trending Icon - Top Left */}
+                    {/* Trending Icon - Top Left (just arrow, no circle) */}
                     <div className="absolute top-2 left-2">
-                      <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-full p-1.5 shadow-lg">
-                        <TrendingUp className="w-4 h-4 text-white" />
-                      </div>
+                      <TrendingUp className="w-5 h-5 text-purple-600 drop-shadow-md" />
                     </div>
 
-                    {/* Multiple Images Indicator - Top Right */}
+                    {/* Multiple Images Indicator - Top Right (matches Products tab) */}
                     {product.imageCount && product.imageCount > 1 && (
                       <div className="absolute top-2 right-2">
-                        <div className="bg-black/50 backdrop-blur-sm rounded-md p-1">
-                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            {/* Back card */}
-                            <rect x="3" y="2" width="10" height="12" rx="1.5" fill="white" fillOpacity="0.6" />
-                            {/* Middle card */}
-                            <rect x="2" y="3" width="10" height="12" rx="1.5" fill="white" fillOpacity="0.8" />
-                            {/* Front card */}
-                            <rect x="1" y="4" width="10" height="12" rx="1.5" fill="white" stroke="white" strokeWidth="0.5" />
-                          </svg>
+                        <div className="bg-black/50 backdrop-blur-sm rounded-full p-1.5 text-white">
+                          <Layers className="w-4 h-4" />
                         </div>
                       </div>
                     )}
