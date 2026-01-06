@@ -27,7 +27,10 @@ import {
   Info,
   Navigation,
   MoreVertical,
-  Share2
+  Share2,
+  LayoutGrid,
+  BarChart,
+  Sparkles
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Geolocation } from '@capacitor/geolocation';
@@ -1139,12 +1142,12 @@ const BusinessProfile: React.FC = () => {
 
   // Filter tabs based on ownership - only owners see Statistics and Enhanced Profile
   const allTabs = [
-    { id: 'overview', label: 'Overview', count: null, ownerOnly: false },
-    { id: 'products', label: 'Products', count: null, ownerOnly: false },
-    { id: 'offers', label: 'Offers', count: null, ownerOnly: false },
-    { id: 'reviews', label: 'Reviews', count: reviewStats?.total_reviews || business?.total_reviews || 0, ownerOnly: false },
-    { id: 'statistics', label: 'Analytics', count: null, ownerOnly: true },
-    { id: 'enhanced-profile', label: 'Enhanced Profile', count: null, ownerOnly: true }
+    { id: 'overview', label: 'Overview', count: null, ownerOnly: false, icon: LayoutGrid },
+    { id: 'products', label: 'Products', count: null, ownerOnly: false, icon: Package },
+    { id: 'offers', label: 'Offers', count: null, ownerOnly: false, icon: Tag },
+    { id: 'reviews', label: 'Reviews', count: reviewStats?.total_reviews || business?.total_reviews || 0, ownerOnly: false, icon: MessageSquare },
+    { id: 'statistics', label: 'Analytics', count: null, ownerOnly: true, icon: BarChart },
+    { id: 'enhanced-profile', label: 'Enhanced Profile', count: null, ownerOnly: true, icon: Sparkles }
   ];
 
   // Filter tabs: non-owners only see Overview and Reviews
@@ -1288,7 +1291,7 @@ const BusinessProfile: React.FC = () => {
       <div className="min-h-screen bg-gray-50">
         {/* Breadcrumbs Navigation */}
         <div className="hidden md:block bg-white border-b border-gray-100">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto px-[5px]">
             <div className="py-3">
               <nav className="flex items-center space-x-2 text-sm">
                 <button
@@ -1318,7 +1321,7 @@ const BusinessProfile: React.FC = () => {
         <div className="bg-white pb-4 border-b">
           <div className="relative group">
             {/* Cover Image Container - Centered and Max Width */}
-            <div className="max-w-7xl mx-auto md:px-6 lg:px-8 relative group">
+            <div className="max-w-7xl mx-auto px-[5px] relative group">
               <div className="h-36 md:h-48 bg-gray-200 overflow-hidden w-full relative md:rounded-b-lg">
                 {/* Back Button - Inside Cover Photo */}
                 <button
@@ -1361,7 +1364,7 @@ const BusinessProfile: React.FC = () => {
             </div>
 
             {/* Info Section (Below Cover - In Normal Flow) */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-[0.5rem] pb-2">
+            <div className="max-w-7xl mx-auto px-[5px] pt-[0.5rem] pb-2">
               <div className="flex flex-col md:flex-row justify-between items-start gap-4">
                 {/* Business Name & Details (Pushed right to clear profile pic) */}
                 <div className="mt-0 pl-[7.5rem] md:pl-[12rem] flex flex-col items-start text-left w-full min-h-[5rem] md:min-h-0">
@@ -1593,35 +1596,48 @@ const BusinessProfile: React.FC = () => {
           </div>
 
           {/* Tabs */}
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto px-[5px]">
             <div className="border-b border-gray-200">
               <nav className="-mb-px flex space-x-8 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                {tabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === tab.id
-                      ? 'border-indigo-500 text-indigo-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                      }`}
-                  >
-                    {tab.label}
-                    {tab.count !== null && (
-                      <span className={`ml-2 py-0.5 px-2 rounded-full text-xs ${activeTab === tab.id
-                        ? 'bg-indigo-100 text-indigo-600'
-                        : 'bg-gray-100 text-gray-900'
-                        }`}>
-                        {tab.count}
+                {tabs.map((tab) => {
+                  const Icon = tab.icon;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center justify-center ${activeTab === tab.id
+                        ? 'border-indigo-500 text-indigo-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        }`}
+                      title={tab.label}
+                    >
+                      <span className="md:hidden">
+                        {Icon && <Icon className="w-5 h-5" />}
                       </span>
-                    )}
-                  </button>
-                ))}
+                      <span className="hidden md:inline">
+                        {tab.label}
+                      </span>
+                      {tab.count !== null && (
+                        <span className={`ml-2 py-0.5 px-2 rounded-full text-xs hidden md:inline-flex ${activeTab === tab.id
+                          ? 'bg-indigo-100 text-indigo-600'
+                          : 'bg-gray-100 text-gray-900'
+                          }`}>
+                          {tab.count}
+                        </span>
+                      )}
+                      {/* Mobile count badge (dot) */}
+                      {tab.count !== null && tab.count > 0 && (
+                        <span className={`md:hidden ml-1 w-1.5 h-1.5 rounded-full ${activeTab === tab.id ? 'bg-indigo-600' : 'bg-gray-400'}`} />
+                      )}
+                    </button>
+                  );
+                })}
               </nav>
             </div>
           </div>
 
           {/* Tab Content */}
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="max-w-7xl mx-auto px-[5px] pt-[25px] pb-2">
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeTab}
