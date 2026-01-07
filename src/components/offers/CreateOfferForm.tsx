@@ -4,10 +4,10 @@
 // =====================================================
 
 import React, { useState, useEffect } from 'react';
-import { 
-  ArrowLeft, 
-  ArrowRight, 
-  Check, 
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
   Calendar,
   FileText,
   Image as ImageIcon,
@@ -30,10 +30,8 @@ interface CreateOfferFormProps {
 }
 
 const STEPS = [
-  { id: 1, title: 'Basic Info', icon: FileText, description: 'Title and description' },
-  { id: 2, title: 'Validity Period', icon: Calendar, description: 'When is this offer valid?' },
-  { id: 3, title: 'Details', icon: ImageIcon, description: 'Terms and icon' },
-  { id: 4, title: 'Review', icon: Eye, description: 'Review and publish' },
+  { id: 1, title: 'Offer Details', icon: FileText, description: 'All offer information' },
+  { id: 2, title: 'Review', icon: Eye, description: 'Review and publish' },
 ];
 
 export function CreateOfferForm({
@@ -80,7 +78,7 @@ export function CreateOfferForm({
           .select('*')
           .eq('id', offerId)
           .single();
-        
+
         if (!error && offer) {
           setFormData({
             title: offer.title,
@@ -98,7 +96,7 @@ export function CreateOfferForm({
         createDraft('New Offer Draft');
       }
     };
-    
+
     loadExistingData();
   }, [offerId]);
 
@@ -124,12 +122,13 @@ export function CreateOfferForm({
   const validateStep = (step: number): boolean => {
     switch (step) {
       case 1:
-        return !!(formData.title && formData.title.trim().length > 0);
+        // Validate all fields in combined step 1
+        return !!(
+          formData.title && formData.title.trim().length > 0 &&
+          formData.valid_from && formData.valid_until &&
+          formData.terms_conditions && formData.terms_conditions.trim().length > 0
+        );
       case 2:
-        return !!(formData.valid_from && formData.valid_until);
-      case 3:
-        return !!(formData.terms_conditions && formData.terms_conditions.trim().length > 0);
-      case 4:
         return true;
       default:
         return false;
@@ -137,7 +136,7 @@ export function CreateOfferForm({
   };
 
   const handleNext = () => {
-    if (validateStep(currentStep) && currentStep < 4) {
+    if (validateStep(currentStep) && currentStep < 2) {
       setCurrentStep(prev => prev + 1);
     }
   };
@@ -149,34 +148,29 @@ export function CreateOfferForm({
   };
 
   const handleSubmit = async () => {
-    if (!validateStep(4)) return;
+    if (!validateStep(2)) return;
 
     let offer;
     if (offerId) {
       // Update existing offer and set to active
-      offer = await updateOffer(offerId, { 
-        ...formData as OfferFormData,
-        status: 'active' 
-      });
+      const updateData = { ...(formData as OfferFormData), status: 'active' as const };
+      offer = await updateOffer(offerId, updateData);
     } else {
       // Create new offer
       offer = await createOffer(formData as OfferFormData);
     }
-    
+
     if (onComplete) {
       onComplete(offer?.id);
     }
   };
 
   const handleSaveAndExit = async () => {
-    // Save as draft offer
+    // Save offer - preserve status when editing existing offers
     let offer;
     if (offerId) {
-      // Update existing offer but keep as draft
-      offer = await updateOffer(offerId, { 
-        ...formData as OfferFormData,
-        status: 'draft' 
-      });
+      // Update existing offer - DON'T change status, just save form data
+      offer = await updateOffer(offerId, formData as OfferFormData);
     } else {
       // Create new draft offer
       const { data: { session } } = await supabase.auth.getSession();
@@ -195,10 +189,10 @@ export function CreateOfferForm({
         })
         .select()
         .single();
-      
+
       if (!error) offer = newDraft;
     }
-    
+
     if (onCancel) {
       onCancel();
     }
@@ -207,12 +201,14 @@ export function CreateOfferForm({
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
-        return <Step1BasicInfo formData={formData} onChange={handleChange} />;
+        return (
+          <CombinedOfferForm
+            formData={formData}
+            onChange={handleChange}
+            businessId={businessId}
+          />
+        );
       case 2:
-        return <Step2ValidityPeriod formData={formData} onChange={handleChange} />;
-      case 3:
-        return <Step3Details formData={formData} onChange={handleChange} businessId={businessId} />;
-      case 4:
         return <Step4Review formData={formData} />;
       default:
         return null;
@@ -233,13 +229,12 @@ export function CreateOfferForm({
               <React.Fragment key={step.id}>
                 <div className="flex flex-col items-center flex-1">
                   <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
-                      isCompleted
-                        ? 'bg-green-500 text-white'
-                        : isActive
+                    className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${isCompleted
+                      ? 'bg-green-500 text-white'
+                      : isActive
                         ? 'bg-purple-600 text-white'
                         : 'bg-gray-200 text-gray-500'
-                    }`}
+                      }`}
                   >
                     {isCompleted ? (
                       <Check className="w-6 h-6" />
@@ -256,9 +251,8 @@ export function CreateOfferForm({
                 </div>
                 {index < STEPS.length - 1 && (
                   <div
-                    className={`h-1 flex-1 mx-2 rounded transition-colors ${
-                      currentStep > step.id ? 'bg-green-500' : 'bg-gray-200'
-                    }`}
+                    className={`h-1 flex-1 mx-2 rounded transition-colors ${currentStep > step.id ? 'bg-green-500' : 'bg-gray-200'
+                      }`}
                   />
                 )}
               </React.Fragment>
@@ -275,8 +269,8 @@ export function CreateOfferForm({
         )}
       </div>
 
-      {/* Step Content */}
-      <div className="bg-white rounded-xl border border-gray-200 p-8 mb-6">
+      {/* Step Content - Scrollable */}
+      <div className="bg-white rounded-xl border border-gray-200 p-8 mb-6 max-h-[60vh] overflow-y-auto">
         {renderStepContent()}
       </div>
 
@@ -314,7 +308,7 @@ export function CreateOfferForm({
             Save & Exit
           </button>
 
-          {currentStep < 4 ? (
+          {currentStep < 2 ? (
             <button
               onClick={handleNext}
               disabled={!validateStep(currentStep)}
@@ -326,7 +320,7 @@ export function CreateOfferForm({
           ) : (
             <button
               onClick={handleSubmit}
-              disabled={isCreating || !validateStep(4)}
+              disabled={isCreating || !validateStep(2)}
               className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {isCreating ? (
@@ -342,6 +336,133 @@ export function CreateOfferForm({
               )}
             </button>
           )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Combined Step: All offer details in one scrollable form
+function CombinedOfferForm({
+  formData,
+  onChange,
+  businessId,
+}: {
+  formData: Partial<OfferFormData>;
+  onChange: (field: keyof OfferFormData, value: any) => void;
+  businessId: string;
+}) {
+  const today = new Date().toISOString().split('T')[0];
+
+  return (
+    <div className="space-y-8">
+      {/* Basic Information Section */}
+      <div>
+        <h2 className="text-xl font-bold text-gray-900 mb-2">Basic Information</h2>
+        <p className="text-gray-600 mb-4">Let's start with the basics of your offer.</p>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Offer Title <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={formData.title || ''}
+              onChange={(e) => onChange('title', e.target.value)}
+              placeholder="e.g., 20% Off All Items"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              maxLength={100}
+            />
+            <p className="text-xs text-gray-500 mt-1">{formData.title?.length || 0}/100 characters</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Description
+            </label>
+            <textarea
+              value={formData.description || ''}
+              onChange={(e) => onChange('description', e.target.value)}
+              placeholder="Describe your offer in detail..."
+              rows={3}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+              maxLength={500}
+            />
+            <p className="text-xs text-gray-500 mt-1">{formData.description?.length || 0}/500 characters</p>
+          </div>
+        </div>
+      </div>
+
+      <hr className="border-gray-200" />
+
+      {/* Validity Period Section */}
+      <div>
+        <h2 className="text-xl font-bold text-gray-900 mb-2">Validity Period</h2>
+        <p className="text-gray-600 mb-4">Set when your offer will be active.</p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Valid From <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="date"
+              value={formData.valid_from || ''}
+              onChange={(e) => onChange('valid_from', e.target.value)}
+              min={today}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Valid Until <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="date"
+              value={formData.valid_until || ''}
+              onChange={(e) => onChange('valid_until', e.target.value)}
+              min={formData.valid_from || today}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            />
+          </div>
+        </div>
+      </div>
+
+      <hr className="border-gray-200" />
+
+      {/* Terms & Conditions Section */}
+      <div>
+        <h2 className="text-xl font-bold text-gray-900 mb-2">Terms & Conditions</h2>
+        <p className="text-gray-600 mb-4">Add terms and an optional icon.</p>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Terms & Conditions <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              value={formData.terms_conditions || ''}
+              onChange={(e) => onChange('terms_conditions', e.target.value)}
+              placeholder="e.g., Valid on purchases above $50. Cannot be combined with other offers."
+              rows={4}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+              maxLength={1000}
+            />
+            <p className="text-xs text-gray-500 mt-1">{formData.terms_conditions?.length || 0}/1000 characters</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Icon Image (Optional)
+            </label>
+            <ImageUpload
+              value={formData.icon_image_url || null}
+              onChange={(url) => onChange('icon_image_url', url)}
+              businessId={businessId}
+            />
+          </div>
         </div>
       </div>
     </div>

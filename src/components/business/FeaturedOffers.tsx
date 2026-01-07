@@ -1,12 +1,14 @@
 // src/components/business/FeaturedOffers.tsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Tag, ChevronRight, Calendar, TrendingUp, X, Heart } from 'lucide-react';
+import { Tag, ChevronRight, Calendar, TrendingUp, X, Heart, Edit3, CheckCircle, AlertCircle, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { supabase } from '@/lib/supabase';
 import type { Offer } from '@/types/offers';
 import { useBusinessUrl } from '@/hooks/useBusinessUrl';
 import { ShareDeal } from '@/components/ShareDeal';
+import { CreateOfferForm } from '@/components/offers';
+import { useAuthStore } from '@/store/authStore';
 
 interface FeaturedOffersProps {
   businessId: string;
@@ -33,6 +35,9 @@ export default function FeaturedOffers({
   const [loading, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
+  const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const { user } = useAuthStore();
 
   useEffect(() => {
     fetchOffers();
@@ -94,12 +99,12 @@ export default function FeaturedOffers({
 
       setTotalCount(count || 0);
 
-      // Get offers
+      // Get offers - fetch active and expired (for display)
       let query = supabase
         .from('offers')
         .select('*')
         .eq('business_id', businessId)
-        .eq('status', 'active')
+        .in('status', ['active', 'expired'])
         .order('created_at', { ascending: false });
 
       if (compact) {
@@ -116,6 +121,27 @@ export default function FeaturedOffers({
       setLoading(false);
     }
   };
+
+  // Helper: Check if an offer is expired based on valid_until date
+  const isOfferExpired = (offer: Offer): boolean => {
+    return new Date(offer.valid_until) < new Date() || offer.status === 'expired';
+  };
+
+  // Sort offers: Active first (sorted by date desc), then expired (sorted by date desc)
+  const sortedOffers = useMemo(() => {
+    return [...offers].sort((a, b) => {
+      const aExpired = isOfferExpired(a);
+      const bExpired = isOfferExpired(b);
+
+      // Active offers come first
+      if (aExpired !== bExpired) {
+        return aExpired ? 1 : -1;
+      }
+
+      // Within same status, sort by created_at (newest first)
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+  }, [offers]);
 
   if (loading) {
     return (
@@ -140,13 +166,15 @@ export default function FeaturedOffers({
             Current Offers
           </h3>
           {isOwner && (
-            <button
-              onClick={() => navigate(`${getBusinessUrl(businessId, businessName)}/offers`)}
-              className="flex items-center px-4 py-2 text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors"
-            >
-              Manage Offers
-              <ChevronRight className="w-4 h-4 ml-1" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowCreateForm(true)}
+                className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                New Offer
+              </button>
+            </div>
           )}
         </div>
         <p className="text-sm text-gray-500 text-center py-8">
@@ -165,6 +193,15 @@ export default function FeaturedOffers({
           <Tag className="w-5 h-5 mr-2 text-green-600" />
           Current Offers {totalCount > 0 && <span className="ml-2 text-sm text-gray-500">({totalCount})</span>}
         </h3>
+        {isOwner && (
+          <button
+            onClick={() => setShowCreateForm(true)}
+            className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            New Offer
+          </button>
+        )}
       </div>
 
       <p className="hidden md:block text-sm text-gray-600 mb-4">
@@ -174,43 +211,67 @@ export default function FeaturedOffers({
       </p>
 
       <div className="space-y-3">
-        {offers.map((offer) => (
-          <div
-            key={offer.id}
-            onClick={() => setSelectedOffer(offer)}
-            className="border border-gray-200 rounded-lg p-3 md:p-4 hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer group"
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <h4 className="font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors">
-                  {offer.title}
-                </h4>
-                {offer.description && (
-                  <p className="hidden lg:block text-sm text-gray-600 mt-1 line-clamp-2">
-                    {offer.description}
-                  </p>
-                )}
-                <div className="flex items-center gap-4 mt-1 md:mt-2 text-xs text-gray-500">
-                  <span className="flex items-center">
-                    <Calendar className="w-3 h-3 mr-1" />
-                    Valid until {new Date(offer.valid_until).toLocaleDateString()}
-                  </span>
-                  {isOwner && (
-                    <span className="flex items-center">
-                      <TrendingUp className="w-3 h-3 mr-1" />
-                      {offer.view_count} views
-                    </span>
+        {sortedOffers.map((offer) => {
+          const expired = isOfferExpired(offer);
+          return (
+            <div
+              key={offer.id}
+              onClick={() => setSelectedOffer(offer)}
+              className={`border rounded-lg p-3 md:p-4 hover:shadow-md transition-all cursor-pointer group ${expired
+                ? 'border-gray-300 bg-gray-50 opacity-75'
+                : 'border-gray-200 hover:border-indigo-300'
+                }`}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    {/* Status Icon */}
+                    {expired ? (
+                      <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                    ) : (
+                      <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                    )}
+                    <h4 className={`font-semibold transition-colors ${expired
+                      ? 'text-gray-500'
+                      : 'text-gray-900 group-hover:text-indigo-600'
+                      }`}>
+                      {offer.title}
+                    </h4>
+                  </div>
+                  {offer.description && (
+                    <p className="hidden lg:block text-sm text-gray-600 mt-1 line-clamp-2">
+                      {offer.description}
+                    </p>
                   )}
+                  <div className="flex items-center gap-4 mt-1 md:mt-2 text-xs text-gray-500">
+                    <span className="flex items-center">
+                      <Calendar className="w-3 h-3 mr-1" />
+                      {expired ? 'Expired' : `Valid until ${new Date(offer.valid_until).toLocaleDateString()}`}
+                    </span>
+                    {isOwner && (
+                      <span className="flex items-center">
+                        <TrendingUp className="w-3 h-3 mr-1" />
+                        {offer.view_count} views
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="ml-4 flex-shrink-0 flex flex-col items-end gap-2">
+                  {/* Status Badge */}
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${expired
+                    ? 'bg-red-100 text-red-700'
+                    : 'bg-green-100 text-green-700'
+                    }`}>
+                    {expired ? 'Expired' : 'Active'}
+                  </span>
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                    {offer.offer_code}
+                  </span>
                 </div>
               </div>
-              <div className="ml-4 flex-shrink-0">
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  {offer.offer_code}
-                </span>
-              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
 
@@ -250,12 +311,26 @@ export default function FeaturedOffers({
             <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
                 <h2 className="text-xl font-semibold text-gray-900">Offer Details</h2>
-                <button
-                  onClick={() => setSelectedOffer(null)}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <X className="h-5 w-5 text-gray-600" />
-                </button>
+                <div className="flex items-center gap-2">
+                  {isOwner && (
+                    <button
+                      onClick={() => {
+                        setEditingOffer(selectedOffer);
+                        setSelectedOffer(null);
+                      }}
+                      className="flex items-center gap-2 px-3 py-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                    >
+                      <Edit3 className="h-4 w-4" />
+                      Edit
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setSelectedOffer(null)}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <X className="h-5 w-5 text-gray-600" />
+                  </button>
+                </div>
               </div>
               <div className="p-6 space-y-6">
                 {/* Title and Code */}
@@ -341,6 +416,43 @@ export default function FeaturedOffers({
           </div>
         )
       }
+
+      {/* Edit Offer Modal */}
+      {editingOffer && user && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6">
+            <CreateOfferForm
+              businessId={businessId}
+              userId={user.id}
+              offerId={editingOffer.id}
+              onComplete={() => {
+                setEditingOffer(null);
+                fetchOffers(); // Refresh offers list
+                toast.success('Offer updated successfully!');
+              }}
+              onCancel={() => setEditingOffer(null)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Create New Offer Modal */}
+      {showCreateForm && user && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6">
+            <CreateOfferForm
+              businessId={businessId}
+              userId={user.id}
+              onComplete={() => {
+                setShowCreateForm(false);
+                fetchOffers(); // Refresh offers list
+                toast.success('Offer created successfully!');
+              }}
+              onCancel={() => setShowCreateForm(false)}
+            />
+          </div>
+        </div>
+      )}
     </div >
   );
 }

@@ -166,7 +166,7 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
                       product={product}
                       size="medium"
                       showActions={true}
-                      onClick={() => navigate(`${getBusinessUrl(businessId, businessName)}/product/${product.id}`)}
+                      onClick={() => handleProductClick(product)}
                     />
                   </LazyRender>
                 ) : (
