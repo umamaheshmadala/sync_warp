@@ -1,5 +1,6 @@
 // src/components/business/FeaturedOffers.tsx
 import { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Tag, ChevronRight, Calendar, TrendingUp, X, Heart, Edit3, CheckCircle, AlertCircle, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -7,8 +8,11 @@ import { supabase } from '@/lib/supabase';
 import type { Offer } from '@/types/offers';
 import { useBusinessUrl } from '@/hooks/useBusinessUrl';
 import { ShareDeal } from '@/components/ShareDeal';
-import { CreateOfferForm } from '@/components/offers';
+import { CreateOfferForm } from '@/components/offers/CreateOfferForm';
 import { useAuthStore } from '@/store/authStore';
+
+
+
 
 interface FeaturedOffersProps {
   businessId: string;
@@ -38,6 +42,8 @@ export default function FeaturedOffers({
   const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const { user } = useAuthStore();
+
+
 
   useEffect(() => {
     fetchOffers();
@@ -157,34 +163,122 @@ export default function FeaturedOffers({
     );
   }
 
-  if (offers.length === 0) {
-    return (
-      <div className="bg-white rounded-lg shadow-sm border p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-            <Tag className="w-5 h-5 mr-2 text-green-600" />
-            Current Offers
-          </h3>
-          {isOwner && (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowCreateForm(true)}
-                className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                New Offer
-              </button>
-            </div>
-          )}
-        </div>
+  // No early return for empty state - handle it in the main render
+  const renderContent = () => {
+    if (offers.length === 0) {
+      return (
         <p className="text-sm text-gray-500 text-center py-8">
           {isOwner
             ? 'No active offers yet. Create your first promotional offer!'
             : 'No current offers available.'}
         </p>
+      );
+    }
+
+    return (
+      <div className="space-y-3">
+        <p className="hidden md:block text-sm text-gray-600 mb-4">
+          {isOwner
+            ? 'Your active promotional offers. Track performance and manage them anytime.'
+            : 'Check out the latest deals and promotions from this business.'}
+        </p>
+
+        <div className="space-y-3">
+          {sortedOffers.map((offer) => {
+            const expired = isOfferExpired(offer);
+            return (
+              <div
+                key={offer.id}
+                onClick={() => setSelectedOffer(offer)}
+                className={`border rounded-lg p-3 md:p-4 hover:shadow-md transition-all cursor-pointer group ${expired
+                  ? 'border-gray-300 bg-gray-50 opacity-75'
+                  : 'border-gray-200 hover:border-indigo-300'
+                  }`}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      {/* Status Icon */}
+                      {expired ? (
+                        <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                      ) : (
+                        <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                      )}
+                      <h4 className={`font-semibold transition-colors ${expired
+                        ? 'text-gray-500'
+                        : 'text-gray-900 group-hover:text-indigo-600'
+                        }`}>
+                        {offer.title}
+                      </h4>
+                    </div>
+                    {offer.description && (
+                      <p className="hidden lg:block text-sm text-gray-600 mt-1 line-clamp-2">
+                        {offer.description}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-4 mt-1 md:mt-2 text-xs text-gray-500">
+                      <span className="flex items-center">
+                        <Calendar className="w-3 h-3 mr-1" />
+                        {expired ? 'Expired' : `Valid until ${new Date(offer.valid_until).toLocaleDateString()}`}
+                      </span>
+                      {isOwner && (
+                        <span className="flex items-center">
+                          <TrendingUp className="w-3 h-3 mr-1" />
+                          {offer.view_count} views
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="ml-4 flex-shrink-0 flex flex-col items-end gap-2">
+                    {/* Status Badge */}
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${expired
+                      ? 'bg-red-100 text-red-700'
+                      : 'bg-green-100 text-green-700'
+                      }`}>
+                      {expired ? 'Expired' : 'Active'}
+                    </span>
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                      {offer.offer_code}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+
+        {/* View All / Manage Offers Button - Only show if owner or if we want a dedicated page link */}
+        {/* View All Button - Only show in compact mode */}
+        {compact && totalCount > 5 && (
+          <button
+            onClick={() => {
+              // Use callback if provided (preferred for tab switching)
+              if (onViewAll) {
+                onViewAll();
+              } else {
+                // Fallback to navigation
+                navigate(`${getBusinessUrl(businessId, businessName)}/offers`);
+              }
+            }}
+            className="mt-4 w-full py-2 text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors"
+          >
+            View All ({totalCount})
+          </button>
+        )}
+
+        {/* Manage Offers Button - show if owner and NOT compact */}
+        {!compact && isOwner && (
+          <button
+            onClick={() => navigate(`${getBusinessUrl(businessId, businessName)}/offers`)}
+            className="mt-4 w-full py-2 text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors"
+          >
+            Manage Offers
+          </button>
+        )}
       </div>
     );
-  }
+  };
 
   return (
     <div className="bg-white rounded-lg shadow-sm border p-6">
@@ -195,7 +289,10 @@ export default function FeaturedOffers({
         </h3>
         {isOwner && (
           <button
-            onClick={() => setShowCreateForm(true)}
+            onClick={() => {
+              console.log('[FeaturedOffers] New Offer Button Clicked');
+              setShowCreateForm(true);
+            }}
             className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
           >
             <Plus className="w-4 h-4" />
@@ -204,222 +301,122 @@ export default function FeaturedOffers({
         )}
       </div>
 
-      <p className="hidden md:block text-sm text-gray-600 mb-4">
-        {isOwner
-          ? 'Your active promotional offers. Track performance and manage them anytime.'
-          : 'Check out the latest deals and promotions from this business.'}
-      </p>
-
-      <div className="space-y-3">
-        {sortedOffers.map((offer) => {
-          const expired = isOfferExpired(offer);
-          return (
-            <div
-              key={offer.id}
-              onClick={() => setSelectedOffer(offer)}
-              className={`border rounded-lg p-3 md:p-4 hover:shadow-md transition-all cursor-pointer group ${expired
-                ? 'border-gray-300 bg-gray-50 opacity-75'
-                : 'border-gray-200 hover:border-indigo-300'
-                }`}
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    {/* Status Icon */}
-                    {expired ? (
-                      <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-                    ) : (
-                      <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                    )}
-                    <h4 className={`font-semibold transition-colors ${expired
-                      ? 'text-gray-500'
-                      : 'text-gray-900 group-hover:text-indigo-600'
-                      }`}>
-                      {offer.title}
-                    </h4>
-                  </div>
-                  {offer.description && (
-                    <p className="hidden lg:block text-sm text-gray-600 mt-1 line-clamp-2">
-                      {offer.description}
-                    </p>
-                  )}
-                  <div className="flex items-center gap-4 mt-1 md:mt-2 text-xs text-gray-500">
-                    <span className="flex items-center">
-                      <Calendar className="w-3 h-3 mr-1" />
-                      {expired ? 'Expired' : `Valid until ${new Date(offer.valid_until).toLocaleDateString()}`}
-                    </span>
-                    {isOwner && (
-                      <span className="flex items-center">
-                        <TrendingUp className="w-3 h-3 mr-1" />
-                        {offer.view_count} views
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="ml-4 flex-shrink-0 flex flex-col items-end gap-2">
-                  {/* Status Badge */}
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${expired
-                    ? 'bg-red-100 text-red-700'
-                    : 'bg-green-100 text-green-700'
-                    }`}>
-                    {expired ? 'Expired' : 'Active'}
-                  </span>
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                    {offer.offer_code}
-                  </span>
-                </div>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-
-
-      {/* View All / Manage Offers Button - Only show if owner or if we want a dedicated page link */}
-      {/* View All Button - Only show in compact mode */}
-      {compact && totalCount > 5 && (
-        <button
-          onClick={() => {
-            // Use callback if provided (preferred for tab switching)
-            if (onViewAll) {
-              onViewAll();
-            } else {
-              // Fallback to navigation
-              navigate(`${getBusinessUrl(businessId, businessName)}/offers`);
-            }
-          }}
-          className="mt-4 w-full py-2 text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors"
-        >
-          View All ({totalCount})
-        </button>
-      )}
-
-      {/* Manage Offers Button - show if owner and NOT compact */}
-      {!compact && isOwner && (
-        <button
-          onClick={() => navigate(`${getBusinessUrl(businessId, businessName)}/offers`)}
-          className="mt-4 w-full py-2 text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors"
-        >
-          Manage Offers
-        </button>
-      )}
+      {renderContent()}
 
       {/* Offer Details Modal */}
-      {
-        selectedOffer && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-gray-900">Offer Details</h2>
-                <div className="flex items-center gap-2">
-                  {isOwner && (
-                    <button
-                      onClick={() => {
-                        setEditingOffer(selectedOffer);
-                        setSelectedOffer(null);
-                      }}
-                      className="flex items-center gap-2 px-3 py-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                    >
-                      <Edit3 className="h-4 w-4" />
-                      Edit
-                    </button>
-                  )}
-                  <button
-                    onClick={() => setSelectedOffer(null)}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                  >
-                    <X className="h-5 w-5 text-gray-600" />
-                  </button>
-                </div>
-              </div>
-              <div className="p-6 space-y-6">
-                {/* Title and Code */}
-                <div>
-                  <h3 className="text-2xl font-bold text-gray-900">{selectedOffer.title}</h3>
-                  <p className="text-sm text-gray-500 mt-2">
-                    Code: <span className="font-mono font-semibold text-purple-600">{selectedOffer.offer_code}</span>
-                  </p>
-                </div>
-
-                {/* Description */}
-                {selectedOffer.description && (
-                  <div>
-                    <h4 className="text-sm font-semibold text-gray-700 mb-2">Description</h4>
-                    <p className="text-gray-600">{selectedOffer.description}</p>
-                  </div>
-                )}
-
-                {/* Terms & Conditions */}
-                {selectedOffer.terms_conditions && (
-                  <div>
-                    <h4 className="text-sm font-semibold text-gray-700 mb-2">Terms & Conditions</h4>
-                    <p className="text-gray-600 whitespace-pre-wrap">{selectedOffer.terms_conditions}</p>
-                  </div>
-                )}
-
-                {/* Validity */}
-                <div>
-                  <h4 className="text-sm font-semibold text-gray-700 mb-2">Validity Period</h4>
-                  <p className="text-gray-600">
-                    From: {new Date(selectedOffer.valid_from).toLocaleDateString()}<br />
-                    Until: {new Date(selectedOffer.valid_until).toLocaleDateString()}
-                  </p>
-                </div>
-
-                {/* Share Section */}
-                <div className="pt-4 border-t border-gray-100 flex justify-between items-center">
-                  <div>
-                    <h4 className="text-sm font-semibold text-gray-700 mb-3">Share this Offer</h4>
-                    <ShareDeal deal={selectedOffer} variant="default" size="default" />
-                  </div>
-
-                  {/* Save Deal Button */}
-                  {!isOwner && (
-                    <button
-                      onClick={async () => {
-                        toast.success('Deal saved!');
-                        if (shareId && initialOfferId === selectedOffer.id) {
-                          const { trackShareConversion } = await import('@/services/analyticsService');
-                          trackShareConversion(shareId, selectedOffer.id, 'save');
-                        }
-                      }}
-                      className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-                    >
-                      <Heart className="w-4 h-4 mr-2" />
-                      Save Deal
-                    </button>
-                  )}
-                </div>
-
-                {/* Stats */}
+      {selectedOffer && createPortal(
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[9999]">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-900">Offer Details</h2>
+              <div className="flex items-center gap-2">
                 {isOwner && (
-                  <div className="pt-4 border-t border-gray-100">
-                    <h4 className="text-sm font-semibold text-gray-700 mb-3">Performance</h4>
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="text-center p-4 bg-blue-50 rounded-lg">
-                        <p className="text-2xl font-bold text-blue-600">{selectedOffer.view_count}</p>
-                        <p className="text-xs text-gray-600 mt-1">Views</p>
-                      </div>
-                      <div className="text-center p-4 bg-purple-50 rounded-lg">
-                        <p className="text-2xl font-bold text-purple-600">{selectedOffer.share_count}</p>
-                        <p className="text-xs text-gray-600 mt-1">Shares</p>
-                      </div>
-                      <div className="text-center p-4 bg-green-50 rounded-lg">
-                        <p className="text-2xl font-bold text-green-600">{selectedOffer.click_count}</p>
-                        <p className="text-xs text-gray-600 mt-1">Clicks</p>
-                      </div>
-                    </div>
-                  </div>
+                  <button
+                    onClick={() => {
+                      setEditingOffer(selectedOffer);
+                      setSelectedOffer(null);
+                    }}
+                    className="flex items-center gap-2 px-3 py-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                  >
+                    <Edit3 className="h-4 w-4" />
+                    Edit
+                  </button>
                 )}
+                <button
+                  onClick={() => setSelectedOffer(null)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="h-5 w-5 text-gray-600" />
+                </button>
               </div>
             </div>
+            <div className="p-6 space-y-6">
+              {/* Title and Code */}
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900">{selectedOffer.title}</h3>
+                <p className="text-sm text-gray-500 mt-2">
+                  Code: <span className="font-mono font-semibold text-purple-600">{selectedOffer.offer_code}</span>
+                </p>
+              </div>
+
+              {/* Description */}
+              {selectedOffer.description && (
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-2">Description</h4>
+                  <p className="text-gray-600">{selectedOffer.description}</p>
+                </div>
+              )}
+
+              {/* Terms & Conditions */}
+              {selectedOffer.terms_conditions && (
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-2">Terms & Conditions</h4>
+                  <p className="text-gray-600 whitespace-pre-wrap">{selectedOffer.terms_conditions}</p>
+                </div>
+              )}
+
+              {/* Validity */}
+              <div>
+                <h4 className="text-sm font-semibold text-gray-700 mb-2">Validity Period</h4>
+                <p className="text-gray-600">
+                  From: {new Date(selectedOffer.valid_from).toLocaleDateString()}<br />
+                  Until: {new Date(selectedOffer.valid_until).toLocaleDateString()}
+                </p>
+              </div>
+
+              {/* Share Section */}
+              <div className="pt-4 border-t border-gray-100 flex justify-between items-center">
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3">Share this Offer</h4>
+                  <ShareDeal deal={selectedOffer} variant="default" size="default" />
+                </div>
+
+                {/* Save Deal Button */}
+                {!isOwner && (
+                  <button
+                    onClick={async () => {
+                      toast.success('Deal saved!');
+                      if (shareId && initialOfferId === selectedOffer.id) {
+                        const { trackShareConversion } = await import('@/services/analyticsService');
+                        trackShareConversion(shareId, selectedOffer.id, 'save');
+                      }
+                    }}
+                    className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                  >
+                    <Heart className="w-4 h-4 mr-2" />
+                    Save Deal
+                  </button>
+                )}
+              </div>
+
+              {/* Stats */}
+              {isOwner && (
+                <div className="pt-4 border-t border-gray-100">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3">Performance</h4>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="text-center p-4 bg-blue-50 rounded-lg">
+                      <p className="text-2xl font-bold text-blue-600">{selectedOffer.view_count}</p>
+                      <p className="text-xs text-gray-600 mt-1">Views</p>
+                    </div>
+                    <div className="text-center p-4 bg-purple-50 rounded-lg">
+                      <p className="text-2xl font-bold text-purple-600">{selectedOffer.share_count}</p>
+                      <p className="text-xs text-gray-600 mt-1">Shares</p>
+                    </div>
+                    <div className="text-center p-4 bg-green-50 rounded-lg">
+                      <p className="text-2xl font-bold text-green-600">{selectedOffer.click_count}</p>
+                      <p className="text-xs text-gray-600 mt-1">Clicks</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-        )
-      }
+        </div>
+        , document.body)}
 
       {/* Edit Offer Modal */}
-      {editingOffer && user && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      {editingOffer && user && createPortal(
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[9999]">
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6">
             <CreateOfferForm
               businessId={businessId}
@@ -434,11 +431,11 @@ export default function FeaturedOffers({
             />
           </div>
         </div>
-      )}
+        , document.body)}
 
       {/* Create New Offer Modal */}
-      {showCreateForm && user && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      {showCreateForm && user && createPortal(
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[9999]">
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6">
             <CreateOfferForm
               businessId={businessId}
@@ -452,7 +449,7 @@ export default function FeaturedOffers({
             />
           </div>
         </div>
-      )}
+        , document.body)}
     </div >
   );
 }

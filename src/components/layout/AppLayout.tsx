@@ -71,13 +71,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     updateTimezone();
   }, []);
 
-  if (isAuthPage) {
-    return <>{children}</>;
-  }
-
-  // Hide bottom navigation when keyboard is visible anywhere to make space
-  const shouldShowBottomNav = !isKeyboardVisible;
-
   // React Query client for instant background data refresh
   const queryClient = useQueryClient();
 
@@ -91,6 +84,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     // Small delay to ensure user sees the refresh happening
     await new Promise(resolve => setTimeout(resolve, 200));
   }, [queryClient]);
+
+  if (isAuthPage) {
+    return <>{children}</>;
+  }
+
+  // Hide bottom navigation when keyboard is visible anywhere to make space
+  // Also hide if keyboard is visible
+  const shouldShowBottomNav = !isKeyboardVisible && !isAuthPage;
 
   return (
     <GestureHandler
