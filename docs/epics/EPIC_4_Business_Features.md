@@ -438,11 +438,55 @@
 **Migration Impact**: Zero data loss, backward compatible, gradual rollout  
 **Document**: `docs/stories/STORY_4.11_Follow_Business.md`
 
+
 **Time Estimate**: 8 days (2 days DB + 2 days UI + 2 days feed + 2 days analytics)
 
 ---
 
+## Story 4.12B: Offer Categorization & Enhanced UX ✨ NEW - 📝 FULLY SPECIFIED
+**What you'll see**: Transform offer creation into a guided, categorized selection system with 86 standardized Indian market offer types.
+
+**Priority**: 🔴 **HIGH** - Significantly improves merchant and customer experience
+
+**User Experience** - Merchants:
+- 📝 As a merchant, I want to select an offer category from a dropdown (e.g., "Product-based / BOGO")
+- 📝 As a merchant, I want to select an offer type from a filtered dropdown (e.g., "Buy One Get One Free")
+- 📝 As a merchant, I want the system to auto-assign the correct category icon to my offer
+- 📝 As a merchant, I want to see "Popular" tags on frequently-used offer types
+
+**User Experience** - Customers:
+- 📝 As a customer, I want to see a category icon on each offer card for quick identification
+- 📝 As a customer, I want to see an offer type badge (e.g., "BOGO", "Flash Sale")
+- 📝 As a customer, I want to see a "Trending" badge on popular offers
+- 📝 As a customer, I do NOT see expired offers (only merchants see them)
+
+**What will be built**:
+- 📝 `offer_categories` table (16 categories with Lucide icon mappings)
+- 📝 `offer_types` table (86 offer types seeded from CSV)
+- 📝 Category dropdown in CreateOfferForm (Step 0)
+- 📝 Offer Type dropdown filtered by category (Step 1)
+- 📝 Category icon display on OfferCard
+- 📝 Offer type badge display on OfferCard
+- 📝 Trending badge with view+share based scoring
+- 📝 Consumer-only filtering (hide expired offers)
+- 📝 Admin panel for category/type management (Phase II)
+
+**Technical Features**:
+- ✅ Flat category hierarchy (from CSV)
+- ✅ Lucide icons for all 16 categories
+- ✅ Trending = views + shares*2 scoring
+- ✅ Legacy offers display with generic icon/badge
+- ✅ Dynamic categories via admin panel support
+- ✅ No custom offers allowed (catalog only)
+
+**Document**: `docs/stories/STORY_4.12B_Offer_Categorization.md`
+
+**Time Estimate**: 5-7 days (1 day DB + 2 days CreateOfferForm + 1 day OfferCard + 1-2 days polish)
+
+---
+
 ## Epic 4 Summary
+
 
 **Total Stories**: 11 stories (6 core + 4 enhancements + 1 engagement)
 **Status**: 🟢 **64% COMPLETE** - 6 core stories delivered, 1 enhancement complete, 4 stories specified

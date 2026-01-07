@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { Tag, ChevronRight, Calendar, TrendingUp, X, Heart, Edit3, CheckCircle, AlertCircle, Plus } from 'lucide-react';
+import { Tag, ChevronRight, Calendar, TrendingUp, X, Heart, Edit3, CheckCircle, AlertCircle, Plus, Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { supabase } from '@/lib/supabase';
 import type { Offer } from '@/types/offers';
@@ -10,6 +10,7 @@ import { useBusinessUrl } from '@/hooks/useBusinessUrl';
 import { ShareDeal } from '@/components/ShareDeal';
 import { CreateOfferForm } from '@/components/offers/CreateOfferForm';
 import { useAuthStore } from '@/store/authStore';
+import { getCategoryIcon } from '@/utils/iconMap';
 
 
 
@@ -106,12 +107,26 @@ export default function FeaturedOffers({
       setTotalCount(count || 0);
 
       // Get offers - fetch active and expired (for display)
+      // Get offers - fetch active and expired (for display)
       let query = supabase
         .from('offers')
-        .select('*')
+        .select(`
+          *,
+          offer_type:offer_types(
+            *,
+            category:offer_categories(*)
+          )
+        `)
         .eq('business_id', businessId)
-        .in('status', ['active', 'expired'])
         .order('created_at', { ascending: false });
+
+      if (isOwner) {
+        query = query.in('status', ['active', 'expired', 'draft', 'paused']);
+      } else {
+        // Consumers see only active, non-expired offers
+        query = query.eq('status', 'active')
+          .gte('valid_until', new Date().toISOString());
+      }
 
       if (compact) {
         query = query.limit(5);
@@ -198,9 +213,14 @@ export default function FeaturedOffers({
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      {/* Status Icon */}
+                      {/* Status Icon or Category Icon */}
                       {expired ? (
                         <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                      ) : offer.offer_type?.category ? (
+                        (() => {
+                          const Icon = getCategoryIcon(offer.offer_type.category.icon_name);
+                          return <Icon className="w-4 h-4 text-purple-600 flex-shrink-0" />;
+                        })()
                       ) : (
                         <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
                       )}
@@ -237,9 +257,11 @@ export default function FeaturedOffers({
                       }`}>
                       {expired ? 'Expired' : 'Active'}
                     </span>
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                      {offer.offer_code}
-                    </span>
+                    {offer.offer_type && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-100">
+                        {offer.offer_type.offer_name}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>

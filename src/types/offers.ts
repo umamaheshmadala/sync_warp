@@ -5,14 +5,14 @@ export type OfferStatus = 'draft' | 'active' | 'paused' | 'expired' | 'archived'
 
 export type ShareChannel = 'whatsapp' | 'facebook' | 'twitter' | 'in_app' | 'other';
 
-export type LifecycleEventType = 
-  | 'created' 
-  | 'activated' 
-  | 'deactivated' 
-  | 'expired' 
-  | 'extended' 
-  | 'duplicated' 
-  | 'archived' 
+export type LifecycleEventType =
+  | 'created'
+  | 'activated'
+  | 'deactivated'
+  | 'expired'
+  | 'extended'
+  | 'duplicated'
+  | 'archived'
   | 'deleted';
 
 export interface Offer {
@@ -24,7 +24,7 @@ export interface Offer {
   valid_from: string; // ISO date string
   valid_until: string; // ISO date string
   created_at: string;
-  
+
   // New fields from Story 4.12
   status: OfferStatus;
   offer_code: string;
@@ -36,13 +36,17 @@ export interface Offer {
   updated_at: string | null;
   activated_at: string | null;
   expired_at: string | null;
-  
+
   // Relations (optional, populated with joins)
   business?: {
     id: string;
     business_name: string;
     business_image: string | null;
   };
+
+  // Story 4.12B
+  offer_type_id?: string;
+  offer_type?: OfferType;
 }
 
 export interface OfferDraft {
@@ -57,6 +61,7 @@ export interface OfferDraft {
     icon_image_url?: string;
     valid_from?: string;
     valid_until?: string;
+    offer_type_id?: string;
   };
   step_completed: number; // 1-4
   created_at: string;
@@ -67,21 +72,21 @@ export interface OfferAnalytics {
   id: string;
   offer_id: string;
   business_id: string;
-  
+
   // View metrics
   total_views: number;
   unique_viewers: number;
-  
+
   // Share metrics
   total_shares: number;
   unique_sharers: number;
   share_channels: Record<ShareChannel, number>;
-  
+
   // Click metrics
   total_clicks: number;
   unique_clickers: number;
   click_sources: Record<string, number>;
-  
+
   // Daily stats for charts
   daily_stats: Array<{
     date: string;
@@ -89,7 +94,7 @@ export interface OfferAnalytics {
     shares: number;
     clicks: number;
   }>;
-  
+
   created_at: string;
   updated_at: string;
 }
@@ -124,6 +129,7 @@ export interface OfferFormData {
   icon_image_url: string | null;
   valid_from: string;
   valid_until: string;
+  offer_type_id?: string;
 }
 
 // API response types
@@ -155,4 +161,24 @@ export interface OfferFilters {
 export interface OfferSortOptions {
   field: 'created_at' | 'valid_from' | 'valid_until' | 'view_count' | 'share_count' | 'title';
   direction: 'asc' | 'desc';
+}
+
+// Story 4.12B: Offer Categorization Types
+export interface OfferCategory {
+  id: string;
+  name: string;
+  icon_name: string; // Lucide icon name
+  display_order: number;
+}
+
+export interface OfferType {
+  id: string;
+  category_id: string;
+  offer_name: string;
+  description: string | null;
+  example: string | null;
+  frequency: string | null; // "Very frequently", etc.
+  display_order: number;
+  // Optional join
+  category?: OfferCategory;
 }
