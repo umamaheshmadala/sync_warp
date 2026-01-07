@@ -216,10 +216,10 @@ export function CreateOfferForm({
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      {/* Progress Bar */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <div className="flex items-center justify-between mb-6">
+    <div className="min-h-full flex flex-col relative">
+      {/* Progress Bar - Compact & Sticky */}
+      <div className="sticky top-0 z-20 bg-white border-b border-gray-200 p-4 shrink-0 shadow-sm">
+        <div className="flex items-center justify-between max-w-lg mx-auto">
           {STEPS.map((step, index) => {
             const StepIcon = step.icon;
             const isActive = currentStep === step.id;
@@ -227,9 +227,9 @@ export function CreateOfferForm({
 
             return (
               <React.Fragment key={step.id}>
-                <div className="flex flex-col items-center flex-1">
+                <div className="flex flex-col items-center">
                   <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${isCompleted
+                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${isCompleted
                       ? 'bg-green-500 text-white'
                       : isActive
                         ? 'bg-purple-600 text-white'
@@ -237,21 +237,18 @@ export function CreateOfferForm({
                       }`}
                   >
                     {isCompleted ? (
-                      <Check className="w-6 h-6" />
+                      <Check className="w-4 h-4" />
                     ) : (
-                      <StepIcon className="w-6 h-6" />
+                      <StepIcon className="w-4 h-4" />
                     )}
                   </div>
-                  <p className={`text-sm font-medium mt-2 ${isActive ? 'text-purple-600' : 'text-gray-600'}`}>
+                  <p className={`text-xs font-medium mt-1 ${isActive ? 'text-purple-600' : 'text-gray-500'}`}>
                     {step.title}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1 text-center hidden sm:block">
-                    {step.description}
                   </p>
                 </div>
                 {index < STEPS.length - 1 && (
                   <div
-                    className={`h-1 flex-1 mx-2 rounded transition-colors ${currentStep > step.id ? 'bg-green-500' : 'bg-gray-200'
+                    className={`h-0.5 w-16 mx-2 rounded transition-colors ${currentStep > step.id ? 'bg-green-500' : 'bg-gray-200'
                       }`}
                   />
                 )}
@@ -259,28 +256,20 @@ export function CreateOfferForm({
             );
           })}
         </div>
-
-        {/* Auto-save indicator */}
-        {isSaving && (
-          <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            <span>Saving draft...</span>
-          </div>
-        )}
       </div>
 
-      {/* Step Content - Scrollable */}
-      <div className="bg-white rounded-xl border border-gray-200 p-8 mb-6 max-h-[60vh] overflow-y-auto">
+      {/* Step Content */}
+      <div className="flex-1 p-6">
         {renderStepContent()}
       </div>
 
-      {/* Navigation */}
-      <div className="flex items-center justify-between">
+      {/* Navigation - Sticky Bottom */}
+      <div className="sticky bottom-0 z-20 p-4 border-t border-gray-200 bg-gray-50 flex items-center justify-between shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
         <div className="flex gap-3">
           {currentStep > 1 && (
             <button
               onClick={handlePrevious}
-              className="flex items-center gap-2 px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
               Previous
@@ -289,7 +278,7 @@ export function CreateOfferForm({
           {onCancel && (
             <button
               onClick={onCancel}
-              className="px-6 py-3 text-gray-600 hover:text-gray-900 transition-colors"
+              className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
             >
               Cancel
             </button>
@@ -301,7 +290,7 @@ export function CreateOfferForm({
           <button
             onClick={handleSaveAndExit}
             disabled={isSaving}
-            className="flex items-center gap-2 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50"
             title="Save as draft and exit"
           >
             {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
@@ -312,7 +301,7 @@ export function CreateOfferForm({
             <button
               onClick={handleNext}
               disabled={!validateStep(currentStep)}
-              className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center gap-2 px-4 py-2 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Next
               <ArrowRight className="w-4 h-4" />
@@ -321,7 +310,7 @@ export function CreateOfferForm({
             <button
               onClick={handleSubmit}
               disabled={isCreating || !validateStep(2)}
-              className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center gap-2 px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {isCreating ? (
                 <>
@@ -358,8 +347,7 @@ function CombinedOfferForm({
     <div className="space-y-8">
       {/* Basic Information Section */}
       <div>
-        <h2 className="text-xl font-bold text-gray-900 mb-2">Basic Information</h2>
-        <p className="text-gray-600 mb-4">Let's start with the basics of your offer.</p>
+        <h2 className="text-lg font-bold text-gray-900 mb-4">Basic Information</h2>
 
         <div className="space-y-4">
           <div>
@@ -398,8 +386,7 @@ function CombinedOfferForm({
 
       {/* Validity Period Section */}
       <div>
-        <h2 className="text-xl font-bold text-gray-900 mb-2">Validity Period</h2>
-        <p className="text-gray-600 mb-4">Set when your offer will be active.</p>
+        <h2 className="text-lg font-bold text-gray-900 mb-4">Validity Period</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -434,8 +421,7 @@ function CombinedOfferForm({
 
       {/* Terms & Conditions Section */}
       <div>
-        <h2 className="text-xl font-bold text-gray-900 mb-2">Terms & Conditions</h2>
-        <p className="text-gray-600 mb-4">Add terms and an optional icon.</p>
+        <h2 className="text-lg font-bold text-gray-900 mb-4">Terms & Conditions</h2>
 
         <div className="space-y-4">
           <div>
@@ -562,11 +548,6 @@ function Step2ValidityPeriod({
         </div>
       </div>
 
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <p className="text-sm text-blue-700">
-          <strong>Tip:</strong> Choose dates carefully. Your offer will automatically activate on the start date and expire on the end date.
-        </p>
-      </div>
     </div>
   );
 }
@@ -622,8 +603,7 @@ function Step4Review({ formData }: { formData: Partial<OfferFormData> }) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Review Your Offer</h2>
-        <p className="text-gray-600">Please review all details before publishing.</p>
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">Review Your Offer</h2>
       </div>
 
       <div className="space-y-4">
@@ -670,11 +650,6 @@ function Step4Review({ formData }: { formData: Partial<OfferFormData> }) {
         )}
       </div>
 
-      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-        <p className="text-sm text-green-700">
-          <strong>Ready to publish?</strong> Your offer will be created as a draft and you can activate it later from the offers list.
-        </p>
-      </div>
     </div>
   );
 }

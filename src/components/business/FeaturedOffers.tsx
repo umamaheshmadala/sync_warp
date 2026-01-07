@@ -417,7 +417,7 @@ export default function FeaturedOffers({
       {/* Edit Offer Modal */}
       {editingOffer && user && createPortal(
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[9999]">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto relative">
             <CreateOfferForm
               businessId={businessId}
               userId={user.id}
@@ -436,7 +436,7 @@ export default function FeaturedOffers({
       {/* Create New Offer Modal */}
       {showCreateForm && user && createPortal(
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[9999]">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto relative">
             <CreateOfferForm
               businessId={businessId}
               userId={user.id}
