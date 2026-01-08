@@ -188,9 +188,8 @@ export function OfferCard({
               </div>
             </div>
 
-            {/* Description */}
             {offer.description && (
-              <p className="text-sm text-gray-600 mt-3 line-clamp-2">
+              <p className="text-sm text-gray-600 mt-3 hidden lg:line-clamp-2">
                 {offer.description}
               </p>
             )}

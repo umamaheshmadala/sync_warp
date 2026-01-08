@@ -118,7 +118,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <PullToRefresh
             onRefresh={handlePullToRefresh}
             disabled={isMessagesRoute}
-            className="w-full max-w-4xl mx-auto min-h-full md:pt-16"
+            className="w-full max-w-4xl mx-auto min-h-full"
           >
             <div style={{ paddingTop: 'calc(54px + env(safe-area-inset-top, 0px))' }}>
               {children}

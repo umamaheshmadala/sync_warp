@@ -1292,7 +1292,7 @@ const BusinessProfile: React.FC = () => {
         {/* Breadcrumbs Navigation */}
         <div className="hidden md:block bg-white border-b border-gray-100">
           <div className="max-w-7xl mx-auto px-[5px]">
-            <div className="py-3">
+            <div className="py-0">
               <nav className="flex items-center space-x-2 text-sm">
                 <button
                   onClick={() => navigate('/dashboard')}

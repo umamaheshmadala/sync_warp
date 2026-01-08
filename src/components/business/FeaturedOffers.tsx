@@ -1,7 +1,7 @@
 // src/components/business/FeaturedOffers.tsx
 import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Tag, ChevronRight, Calendar, TrendingUp, X, Heart, Edit3, CheckCircle, AlertCircle, Plus, Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { supabase } from '@/lib/supabase';
@@ -43,6 +43,21 @@ export default function FeaturedOffers({
   const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const { user } = useAuthStore();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Helper to clear URL params when closing modal
+  const handleCloseModal = () => {
+    setSelectedOffer(null);
+
+    // Clear offer params from URL to prevent auto-reopening
+    if (searchParams.get('offer') || searchParams.get('offerId') || searchParams.get('share_id')) {
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('offer');
+      newParams.delete('offerId');
+      newParams.delete('share_id');
+      setSearchParams(newParams, { replace: true });
+    }
+  };
 
 
 
@@ -205,63 +220,74 @@ export default function FeaturedOffers({
               <div
                 key={offer.id}
                 onClick={() => setSelectedOffer(offer)}
-                className={`border rounded-lg p-3 md:p-4 hover:shadow-md transition-all cursor-pointer group ${expired
-                  ? 'border-gray-300 bg-gray-50 opacity-75'
-                  : 'border-gray-200 hover:border-indigo-300'
+                className={`border rounded-xl p-4 hover:shadow-md transition-all cursor-pointer group ${expired
+                  ? 'border-gray-200 bg-gray-50 opacity-75'
+                  : 'border-gray-200 hover:border-indigo-300 bg-white'
                   }`}
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      {/* Status Icon or Category Icon */}
+                <div className="flex items-start gap-4">
+                  {/* Left Column: Dedicated Icon Space */}
+                  <div className="flex-shrink-0">
+                    <div className={`w-12 h-12 md:w-16 md:h-16 rounded-lg flex items-center justify-center border ${expired ? 'bg-gray-100 border-gray-200' : 'bg-indigo-50 border-indigo-100'
+                      }`}>
                       {expired ? (
-                        <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                        <AlertCircle className="w-6 h-6 md:w-8 md:h-8 text-gray-400" />
                       ) : offer.offer_type?.category ? (
                         (() => {
                           const Icon = getCategoryIcon(offer.offer_type.category.icon_name);
-                          return <Icon className="w-4 h-4 text-purple-600 flex-shrink-0" />;
+                          return <Icon className="w-6 h-6 md:w-8 md:h-8 text-indigo-600" />;
                         })()
                       ) : (
-                        <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                        <CheckCircle className="w-6 h-6 md:w-8 md:h-8 text-indigo-600" />
                       )}
-                      <h4 className={`font-semibold transition-colors ${expired
-                        ? 'text-gray-500'
-                        : 'text-gray-900 group-hover:text-indigo-600'
-                        }`}>
-                        {offer.title}
-                      </h4>
                     </div>
-                    {offer.description && (
-                      <p className="hidden lg:block text-sm text-gray-600 mt-1 line-clamp-2">
-                        {offer.description}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-4 mt-1 md:mt-2 text-xs text-gray-500">
+                  </div>
+
+                  {/* Right Column: Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <h4 className={`font-semibold text-lg leading-tight mb-1 ${expired
+                          ? 'text-gray-500'
+                          : 'text-gray-900 group-hover:text-indigo-600 transition-colors'
+                          }`}>
+                          {offer.title}
+                        </h4>
+                        {offer.description && (
+                          <p className="text-sm text-gray-600 mb-2 hidden lg:line-clamp-2">
+                            {offer.description}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Status / Type Badge */}
+                      <div className="flex-shrink-0 flex flex-col items-end gap-2">
+                        {offer.offer_type && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-100 whitespace-nowrap">
+                            {offer.offer_type.offer_name}
+                          </span>
+                        )}
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${expired
+                          ? 'bg-gray-100 text-gray-600'
+                          : 'bg-green-100 text-green-700'
+                          }`}>
+                          {expired ? 'Expired' : 'Active'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center flex-wrap gap-4 mt-1 text-xs text-gray-500">
                       <span className="flex items-center">
-                        <Calendar className="w-3 h-3 mr-1" />
+                        <Calendar className="w-3.5 h-3.5 mr-1.5" />
                         {expired ? 'Expired' : `Valid until ${new Date(offer.valid_until).toLocaleDateString()}`}
                       </span>
                       {isOwner && (
                         <span className="flex items-center">
-                          <TrendingUp className="w-3 h-3 mr-1" />
+                          <TrendingUp className="w-3.5 h-3.5 mr-1.5" />
                           {offer.view_count} views
                         </span>
                       )}
                     </div>
-                  </div>
-                  <div className="ml-4 flex-shrink-0 flex flex-col items-end gap-2">
-                    {/* Status Badge */}
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${expired
-                      ? 'bg-red-100 text-red-700'
-                      : 'bg-green-100 text-green-700'
-                      }`}>
-                      {expired ? 'Expired' : 'Active'}
-                    </span>
-                    {offer.offer_type && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-100">
-                        {offer.offer_type.offer_name}
-                      </span>
-                    )}
                   </div>
                 </div>
               </div>
@@ -345,7 +371,7 @@ export default function FeaturedOffers({
                   </button>
                 )}
                 <button
-                  onClick={() => setSelectedOffer(null)}
+                  onClick={handleCloseModal}
                   className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 >
                   <X className="h-5 w-5 text-gray-600" />

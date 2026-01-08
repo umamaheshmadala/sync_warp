@@ -27,8 +27,10 @@ export interface HotOffer {
   expiresIn: string;
   imageUrl: string | null;
   validUntil: string;
+  validUntil: string;
   discountValue: number;
   businessId: string;
+  businessLogo?: string | null;
 }
 
 export interface TrendingProduct {
@@ -160,16 +162,18 @@ export const dashboardService = {
       const businessIds = [...new Set(data.map(o => o.business_id))];
       const { data: businesses } = await supabase
         .from('businesses')
-        .select('id, name')
+        .select('id, name, logo_url')
         .in('id', businessIds);
 
-      const businessMap = new Map(businesses?.map(b => [b.id, b.name]));
+      const businessMap = new Map(businesses?.map(b => [b.id, { name: b.name, logo: b.logo_url }]));
 
       return data.map(offer => {
         const validUntil = new Date(offer.valid_until);
         const now = new Date();
         const daysLeft = Math.ceil((validUntil.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-        const businessName = businessMap.get(offer.business_id) || 'Business';
+        const businessInfo = businessMap.get(offer.business_id);
+        const businessName = businessInfo?.name || 'Business';
+        const businessLogo = businessInfo?.logo || null;
 
         return {
           id: offer.id,
@@ -183,6 +187,7 @@ export const dashboardService = {
           validUntil: offer.valid_until,
           discountValue: 0, // Offers table doesn't strictly have discount_value like coupons
           businessId: offer.business_id,
+          businessLogo: businessLogo
         };
       });
     } catch (error) {

@@ -7,7 +7,8 @@ import { getOptimizedImageUrl } from '../utils/imageUtils';
 import {
   Star,
   TrendingUp,
-  Layers
+  Layers,
+  ChevronRight
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 // BottomNavigation is now handled by AppLayout
@@ -229,10 +230,10 @@ const Dashboard: React.FC = () => {
               Hot offers are the most viewed offers by the user as of now.
             </p>
 
-            {/* Mobile: 2-column compact grid, Desktop: 3-column cards */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
+            {/* Mobile: 1-column list, Tablet: 2-column, Desktop: 3-column */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
               {hotOffers.length === 0 ? (
-                <div className="col-span-2 md:col-span-3 text-center py-8 text-gray-500">
+                <div className="col-span-1 md:col-span-2 lg:col-span-3 text-center py-8 text-gray-500">
                   <p className="text-lg font-medium">No active offers at the moment</p>
                   <p className="text-sm">Check back soon for exciting deals!</p>
                 </div>
@@ -240,50 +241,64 @@ const Dashboard: React.FC = () => {
                 <div
                   key={offer.id}
                   onClick={() => navigate(`${getBusinessUrl(offer.businessId, offer.businessName)}/offers?offer=${offer.id}`)}
-                  className="bg-white rounded-xl md:rounded-2xl shadow-sm md:shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-105 flex flex-col h-full"
+                  className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer hover:shadow-md transition-all duration-300 hover:border-indigo-100 group"
                 >
-                  <div className="bg-gradient-to-br from-red-500 to-pink-600 p-4 text-white relative h-32 flex flex-col justify-between">
-                    <div className="flex justify-between items-start">
-                      <span className="bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded text-xs font-medium border border-white/30">
-                        {offer.expiresIn}
-                      </span>
-                      <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30">
-                        <span className="text-xs">🔥</span>
+                  <div className="p-3 md:p-4 flex items-start gap-3 md:gap-4">
+                    {/* Left: Business Avatar */}
+                    <div className="flex-shrink-0">
+                      {offer.businessLogo ? (
+                        <img
+                          src={getOptimizedImageUrl(offer.businessLogo, 64)}
+                          alt={offer.businessName}
+                          className="w-12 h-12 rounded-lg object-cover border border-gray-100"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-lg bg-indigo-50 flex items-center justify-center border border-indigo-100">
+                          <span className="text-lg font-bold text-indigo-600">
+                            {offer.businessName.charAt(0)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Right: Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start mb-1">
+                        <div className="min-w-0 pr-2">
+                          <p className="text-xs text-gray-500 font-medium truncate mb-0.5">
+                            {offer.businessName}
+                          </p>
+                          <h3 className="text-sm md:text-base font-bold text-gray-900 leading-tight line-clamp-2 group-hover:text-indigo-600 transition-colors">
+                            {offer.title}
+                          </h3>
+                        </div>
+                        {/* Trending Icon */}
+                        <div className="flex-shrink-0 text-orange-500">
+                          <TrendingUp className="w-4 h-4" />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between mt-2">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-50 text-red-600">
+                          ⏱ {offer.expiresIn}
+                        </span>
+
+                        <span className="text-xs font-medium text-indigo-600 flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          View <ChevronRight className="w-3 h-3 ml-0.5" />
+                        </span>
                       </div>
                     </div>
-                    {offer.imageUrl ? (
-                      <img
-                        src={getOptimizedImageUrl(offer.imageUrl, 400)}
-                        alt={offer.title}
-                        className="absolute inset-0 w-full h-full object-cover opacity-30 mix-blend-overlay"
-                        decoding="async"
-                        loading="lazy"
-                      />
-                    ) : null}
-                    <div className="relative z-10">
-                      <div className="font-bold text-2xl tracking-tight">{offer.discount}</div>
-                    </div>
-                  </div>
-
-                  <div className="p-3 md:p-4 flex-1 flex flex-col justify-between">
-                    <div>
-                      <h3 className="font-semibold text-gray-900 text-sm md:text-base mb-1 line-clamp-2">{offer.title}</h3>
-                      <p className="text-sm text-gray-600 mb-2 truncate">{offer.businessName}</p>
-                    </div>
-                    <button className="w-full mt-2 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors">
-                      View Offer
-                    </button>
                   </div>
                 </div>
               ))}
 
               {/* Empty Slots for Hot Offers */}
               {[...Array(Math.max(0, 6 - hotOffers.length))].map((_, i) => (
-                <div key={`empty-offer-${i}`} className="bg-gray-50 rounded-xl md:rounded-2xl border border-dashed border-gray-200 flex flex-col items-center justify-center h-full min-h-[160px]">
-                  <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mb-2">
-                    <Star className="w-5 h-5 text-gray-300" />
+                <div key={`empty-offer-${i}`} className="bg-gray-50 rounded-xl border border-dashed border-gray-200 flex items-center justify-center p-4 min-h-[100px]">
+                  <div className="flex items-center gap-3 text-gray-400">
+                    <Star className="w-5 h-5" />
+                    <span className="text-sm font-medium">Coming Soon</span>
                   </div>
-                  <span className="text-gray-400 text-sm font-medium">Coming Soon</span>
                 </div>
               ))}
             </div>
