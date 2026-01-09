@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { parseBusinessIdentifier } from '../../utils/slugUtils';
 import {
@@ -25,7 +25,12 @@ import {
   Package,
   MessageSquare,
   Info,
-  Navigation
+  Navigation,
+  MoreVertical,
+  Share2,
+  LayoutGrid,
+  BarChart,
+  Sparkles
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Geolocation } from '@capacitor/geolocation';
@@ -51,69 +56,56 @@ import { AllReviews } from '../reviews/AllReviews';
 import FollowButton from '../following/FollowButton';
 import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 import { FollowerMetricsWidget } from './FollowerMetricsWidget';
-import { useMemo } from 'react';
+import { useBusinessProfile, useBusinessCategories, type Business, type BusinessCategory } from '../../hooks/business';
 
-// TypeScript interfaces
-interface Business {
-  id: string;
-  user_id: string;
-  business_name: string;
-  business_type: string;
-  description: string;
-  business_email?: string;
-  business_phone?: string;
-  address: string;
-  city: string;
-  state: string;
-  postal_code?: string;
-  country: string;
-  latitude?: number;
-  longitude?: number;
-  operating_hours: Record<string, any>;
-  categories: string[];
-  tags: string[];
-  logo_url?: string;
-  cover_image_url?: string;
-  gallery_images: string[];
-  status: 'pending' | 'active' | 'suspended' | 'inactive';
-  verified: boolean;
-  verified_at?: string;
-  website_url?: string;
-  social_media: Record<string, string>;
-  average_rating: number;
-  total_reviews: number;
-  total_checkins: number;
-  created_at: string;
-  updated_at: string;
-}
 
-interface BusinessCategory {
-  id: string;
-  name: string;
-  display_name: string;
-  description?: string;
-  icon_name?: string;
-  is_active: boolean;
-  sort_order: number;
-  created_at: string;
-}
 
 const BusinessProfile: React.FC = () => {
   const params = useParams<{ businessId?: string; slug?: string }>();
-  const businessId = params.businessId || params.slug;
+  const businessIdParam = params.businessId || params.slug;
   const navigate = useNavigate();
   const { getBusinessUrl } = useBusinessUrl();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const { user } = useAuthStore();
-  const [business, setBusiness] = useState<Business | null>(null);
-  const [loading, setLoading] = useState(true);
+
+  // SWR: Fetch business data with caching (instant load on revisits)
+  const {
+    data: business,
+    isLoading: loading,
+    error: businessError,
+    refetch: refetchBusiness
+  } = useBusinessProfile(businessIdParam);
+
+  // SWR: Fetch business categories with caching
+  const { data: businessCategories = [] } = useBusinessCategories();
+
+  // Handle business fetch error
+  useEffect(() => {
+    if (businessError) {
+      console.error('Error fetching business:', businessError);
+      toast.error('Failed to load business profile');
+      navigate('/dashboard');
+    }
+  }, [businessError, navigate]);
+
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+
+  // Handle URL tab selection
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
+  const [showMoreDropdown, setShowMoreDropdown] = useState(false);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [editingReview, setEditingReview] = useState<any>(null);
+  const topRef = React.useRef<HTMLDivElement>(null);
 
   // Scroll to top on mount
   useEffect(() => {
@@ -121,11 +113,6 @@ const BusinessProfile: React.FC = () => {
   }, []);
 
   const [reviewsKey, setReviewsKey] = useState(0);
-
-  // Parse the business ID from slug (do this once at the top)
-  const parsedBusinessId = useMemo(() => {
-    return parseBusinessIdentifier(businessId || '');
-  }, [businessId]);
 
   // Load review stats for accurate counts - use full business ID once loaded
   const { stats: reviewStats, refreshStats } = useReviewStats({
@@ -144,9 +131,18 @@ const BusinessProfile: React.FC = () => {
   // Proper day ordering for operating hours
   const dayOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
-  // Editable form state
+  // Editable form state - initialize when business loads
   const [editForm, setEditForm] = useState<Partial<Business>>({});
-  const [businessCategories, setBusinessCategories] = useState<BusinessCategory[]>([]);
+
+  // Sync editForm when business data loads/updates
+  useEffect(() => {
+    if (business) {
+      setEditForm({
+        ...business,
+        operating_hours: business.operating_hours || {}
+      });
+    }
+  }, [business]);
 
   // Image upload states
   const [imageUploads, setImageUploads] = useState({
@@ -161,109 +157,31 @@ const BusinessProfile: React.FC = () => {
   });
 
   // Handle URL params (tab selection and offer code redirect)
+  // This effect only runs on mount and when URL changes (not when activeTab changes)
   useEffect(() => {
-    const offerCode = searchParams.get('offer');
-    const tab = searchParams.get('tab');
+    const tabParam = searchParams.get('tab');
+    const isOffersRoute = location.pathname.endsWith('/offers');
+    const isProductsRoute = location.pathname.endsWith('/products');
+    const isCouponsRoute = location.pathname.endsWith('/coupons');
 
-    // Handle direct tab navigation
-    if (tab && ['overview', 'reviews', 'statistics', 'enhanced-profile'].includes(tab)) {
-      setActiveTab(tab);
+    // Set tab based on URL path
+    if (isOffersRoute) {
+      setActiveTab('offers');
+      // Scroll to top when navigating to offers
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+        document.querySelector('main')?.scrollTo({ top: 0, behavior: 'instant' });
+      }, 0);
+    } else if (isProductsRoute) {
+      setActiveTab('products');
+    } else if (isCouponsRoute) {
+      setActiveTab('coupons');
+    } else if (tabParam && ['overview', 'reviews', 'statistics', 'enhanced-profile', 'offers'].includes(tabParam)) {
+      setActiveTab(tabParam);
     }
+    // Note: When clicking tabs manually, the URL won't have these paths, so activeTab won't be overridden
+  }, [searchParams, location.pathname]);
 
-    // Handle offer code - redirect to offers management page
-    if (offerCode && businessId && business) {
-      const slug = getBusinessUrl(businessId, business.business_name);
-      navigate(`${slug}/offers?offer=${offerCode}`);
-    }
-  }, [searchParams, businessId, navigate]);
-
-  // Load business data and categories
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-
-        console.log('🔍 BusinessProfile: Loading business from URL param:', businessId);
-        console.log('🔍 Parsed ID:', parsedBusinessId);
-
-        // Fetch business data using short ID prefix match or full UUID
-        let businessData;
-        let businessError;
-
-        // If it's 8 chars (short ID), use RPC function or manual filter
-        if (parsedBusinessId && parsedBusinessId.length === 8) {
-          console.log('🔍 Using short ID prefix match:', parsedBusinessId);
-          // Use filter on all businesses where the ID starts with short ID
-          const { data: allBusinesses, error: fetchError } = await supabase
-            .from('businesses')
-            .select('*');
-
-          if (fetchError) {
-            businessError = fetchError;
-          } else {
-            // Filter in JavaScript for businesses where UUID starts with short ID
-            businessData = allBusinesses?.find(b =>
-              b.id.toLowerCase().startsWith(parsedBusinessId.toLowerCase())
-            );
-            if (!businessData) {
-              businessError = { message: 'Business not found', code: 'PGRST116' };
-            }
-          }
-        } else if (parsedBusinessId) {
-          // Full UUID - direct lookup
-          console.log('🔍 Using full UUID match:', parsedBusinessId);
-          const result = await supabase
-            .from('businesses')
-            .select('*')
-            .eq('id', parsedBusinessId)
-            .single();
-          businessData = result.data;
-          businessError = result.error;
-        } else {
-          throw new Error('Invalid business identifier');
-        }
-
-        if (businessError) {
-          console.error('❌ Database error:', businessError);
-          throw businessError;
-        }
-
-        if (!businessData) {
-          console.error('❌ No business found for ID:', parsedBusinessId);
-          throw new Error('Business not found');
-        }
-
-        console.log('✅ Business loaded:', businessData.business_name);
-        setBusiness(businessData);
-        // Initialize edit form with proper operating hours structure
-        setEditForm({
-          ...businessData,
-          operating_hours: businessData.operating_hours || {}
-        });
-
-        // Fetch business categories
-        const { data: categoriesData, error: categoriesError } = await supabase
-          .from('business_categories')
-          .select('*')
-          .eq('is_active', true)
-          .order('sort_order');
-
-        if (categoriesError) throw categoriesError;
-        setBusinessCategories(categoriesData || []);
-
-      } catch (error) {
-        console.error('Error fetching business:', error);
-        toast.error('Failed to load business profile');
-        navigate('/dashboard');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (businessId) {
-      fetchData();
-    }
-  }, [businessId, navigate]);
 
   // Handle review submission
   const handleReviewSubmit = async (reviewData: CreateReviewInput) => {
@@ -294,7 +212,8 @@ const BusinessProfile: React.FC = () => {
         .single();
 
       if (updatedBusiness) {
-        setBusiness(updatedBusiness);
+        // Refetch to update cache with latest data
+        await refetchBusiness();
       }
 
       // Refresh stats and trigger re-render of reviews component
@@ -442,19 +361,13 @@ const BusinessProfile: React.FC = () => {
         [fieldName]: uploadedUrl
       }));
 
-      // Update business state immediately for visual feedback
-      setBusiness(prev => prev ? {
-        ...prev,
-        [fieldName]: uploadedUrl
-      } : null);
-
       // Save to database immediately
       try {
         const updateField = type === 'cover' ? 'cover_image_url' : `${type}_url`;
         const { error } = await supabase
           .from('businesses')
           .update({ [updateField]: uploadedUrl })
-          .eq('id', businessId)
+          .eq('id', business?.id)
           .eq('user_id', user?.id);
 
         if (error) {
@@ -462,19 +375,17 @@ const BusinessProfile: React.FC = () => {
           throw error;
         }
 
+        // Refetch to get updated data
+        await refetchBusiness();
         toast.success(`${type === 'cover' ? 'Cover' : type} image updated successfully!`);
       } catch (error) {
         console.error('Error saving image:', error);
         toast.error(`Failed to save ${type === 'cover' ? 'cover' : type} image: ${error.message}`);
-        // Revert the UI changes on error
+        // Revert the edit form on error
         setEditForm(prev => ({
           ...prev,
           [`${type === 'cover' ? 'cover_image' : type}_url`]: business?.[`${type === 'cover' ? 'cover_image' : type}_url`] || null
         }));
-        setBusiness(prev => prev ? {
-          ...prev,
-          [`${type === 'cover' ? 'cover_image' : type}_url`]: prev[`${type === 'cover' ? 'cover_image' : type}_url`] || null
-        } : null);
       }
     }
   };
@@ -511,11 +422,12 @@ const BusinessProfile: React.FC = () => {
           gallery_images: editForm.gallery_images,
           updated_at: new Date().toISOString()
         })
-        .eq('id', businessId);
+        .eq('id', business?.id);
 
       if (error) throw error;
 
-      setBusiness(editForm as Business);
+      // Refetch to sync cache with database
+      await refetchBusiness();
       setEditing(false);
       toast.success('Business profile updated successfully!');
     } catch (error) {
@@ -613,25 +525,97 @@ const BusinessProfile: React.FC = () => {
     );
   };
 
+  // Get business open/closed status based on operating hours
+  const getBusinessOpenStatus = () => {
+    if (!business?.operating_hours) {
+      return { status: 'unknown', text: '', color: '', todayHours: '' };
+    }
+
+    const now = new Date();
+    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const today = dayNames[now.getDay()];
+    const todayHours = business.operating_hours[today];
+
+    if (!todayHours || todayHours.closed) {
+      return {
+        status: 'closed',
+        text: 'Closed for Today',
+        color: 'text-red-600',
+        todayHours: 'Closed'
+      };
+    }
+
+    const { open, close } = todayHours;
+    if (!open || !close) {
+      return { status: 'unknown', text: '', color: '', todayHours: '' };
+    }
+
+    // Parse hours (format: "09:00" or "9:00 AM")
+    const parseTime = (timeStr: string): number => {
+      const [time, period] = timeStr.split(' ');
+      const [hours, minutes] = time.split(':').map(Number);
+      let h = hours;
+      if (period === 'PM' && h !== 12) h += 12;
+      if (period === 'AM' && h === 12) h = 0;
+      return h * 60 + (minutes || 0);
+    };
+
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const openMinutes = parseTime(open);
+    const closeMinutes = parseTime(close);
+
+    // Format hours for display (e.g., "9:00 AM - 6:00 PM")
+    const formatHours = `${open} - ${close}`;
+
+    if (currentMinutes < openMinutes) {
+      return {
+        status: 'closed',
+        text: 'Closed',
+        color: 'text-red-600',
+        todayHours: formatHours
+      };
+    }
+
+    if (currentMinutes >= closeMinutes) {
+      return {
+        status: 'closed',
+        text: 'Closed for Today',
+        color: 'text-red-600',
+        todayHours: formatHours
+      };
+    }
+
+    const minutesUntilClose = closeMinutes - currentMinutes;
+
+    if (minutesUntilClose <= 60) {
+      return {
+        status: 'closing_soon',
+        text: 'Closes Soon',
+        color: 'text-orange-600',
+        todayHours: formatHours
+      };
+    }
+
+    return {
+      status: 'open',
+      text: 'Open',
+      color: 'text-green-600',
+      todayHours: formatHours
+    };
+  };
+
+  const businessOpenStatus = getBusinessOpenStatus();
+
+
   // Render overview tab
   const renderOverview = () => (
     <div className="space-y-6">
-      {/* Business Info */}
-      <div className="bg-white rounded-lg shadow-sm border p-6">
-        <div className="flex justify-between items-start mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Business Information</h3>
-          {isOwner && (
-            <button
-              onClick={() => setEditing(true)}
-              className="flex items-center px-3 py-2 text-sm text-indigo-600 hover:bg-indigo-50 rounded-lg"
-            >
-              <Edit3 className="w-4 h-4 mr-1" />
-              Edit
-            </button>
-          )}
-        </div>
-
-        {editing && isOwner ? (
+      {/* Editing Form - Shown only when editing */}
+      {editing && isOwner && (
+        <div className="bg-white rounded-lg shadow-sm border p-6">
+          <div className="flex justify-between items-start mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Edit Business Information</h3>
+          </div>
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Business Name</label>
@@ -738,7 +722,6 @@ const BusinessProfile: React.FC = () => {
                         handleFormChange('latitude', location.lat);
                         handleFormChange('longitude', location.lng);
                         if (address) {
-                          // Parse address components
                           const addressParts = address.split(', ');
                           if (addressParts.length > 0) {
                             handleFormChange('address', addressParts[0]);
@@ -754,7 +737,6 @@ const BusinessProfile: React.FC = () => {
                       <h3 className="text-lg font-medium text-gray-900 mb-2">Google Maps Not Available</h3>
                       <p className="text-gray-600 mb-4">Please add your Google Maps API key to enable location selection.</p>
 
-                      {/* Fallback coordinate inputs */}
                       <div className="max-w-md mx-auto space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                           <div>
@@ -796,7 +778,6 @@ const BusinessProfile: React.FC = () => {
                   )}
                 </div>
 
-                {/* Current coordinates display */}
                 {editForm.latitude && editForm.longitude && (
                   <div className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg">
                     <p className="font-medium mb-1">Selected Coordinates:</p>
@@ -980,64 +961,8 @@ const BusinessProfile: React.FC = () => {
               </button>
             </div>
           </div>
-        ) : (
-          <div className="space-y-4">
-            {/* Desktop: Compact Grid Layout */}
-            <div className="hidden md:block">
-              <div className="flex items-start justify-between gap-6">
-                {/* Info Column */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-gray-900 font-medium mb-1 line-clamp-1">{business?.business_name}</p>
-                  <p className="text-gray-600 text-sm line-clamp-2">{business?.description}</p>
-                  <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
-                    <span>{business?.business_type}</span>
-                    <span>•</span>
-                    {getStatusBadge(business?.status)}
-                  </div>
-                </div>
-
-                {/* Contact/Loc Column */}
-                <div className="flex-1 min-w-0 border-l pl-6">
-                  <div className="space-y-1.5 text-sm text-gray-600">
-                    <p className="flex items-center"><MapPin className="w-3.5 h-3.5 mr-2 text-gray-400" /> {business?.address}, {business?.city}</p>
-                    {business?.business_phone && <p className="flex items-center"><Phone className="w-3.5 h-3.5 mr-2 text-gray-400" /> {business?.business_phone}</p>}
-                    {business?.business_email && <p className="flex items-center"><Mail className="w-3.5 h-3.5 mr-2 text-gray-400" /> {business?.business_email}</p>}
-                  </div>
-                </div>
-
-                {/* Hours/Link Column */}
-                <div className="border-l pl-6">
-                  <button
-                    onClick={() => setShowInfoModal(true)}
-                    className="text-indigo-600 hover:text-indigo-700 text-sm font-medium flex items-center whitespace-nowrap"
-                  >
-                    <Clock className="w-4 h-4 mr-2" />
-                    View Hours & More
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Mobile: Summary Row */}
-            <div className="md:hidden flex items-center justify-between">
-              <div className="min-w-0 flex-1 pr-4">
-                <h4 className="font-medium text-gray-900 truncate">{business?.business_name}</h4>
-                <p className="text-xs text-gray-500 truncate flex items-center mt-1">
-                  <MapPin className="w-3 h-3 mr-1" />
-                  {business?.address}, {business?.city}
-                </p>
-              </div>
-              <button
-                onClick={() => setShowInfoModal(true)}
-                className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-xs font-medium text-gray-700 transition-colors whitespace-nowrap"
-              >
-                More Info
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
+        </div>
+      )}
 
 
       {/* Tags */}
@@ -1060,8 +985,15 @@ const BusinessProfile: React.FC = () => {
           businessId={business.id}
           businessName={business.business_name}
           isOwner={isOwner}
-          initialOfferId={searchParams.get('offerId')}
+          initialOfferId={searchParams.get('offer') || searchParams.get('offerId')}
           shareId={searchParams.get('share_id')}
+          compact={true}
+          onViewAll={() => {
+            setActiveTab('offers');
+            // Scroll to top
+            window.scrollTo(0, 0);
+            document.querySelector('main')?.scrollTo({ top: 0, behavior: 'instant' });
+          }}
         />
       )}
 
@@ -1123,9 +1055,9 @@ const BusinessProfile: React.FC = () => {
       </div>
 
       {/* Share Analytics */}
-      {isOwner && businessId && (
+      {isOwner && business?.id && (
         <ShareAnalytics
-          entityId={businessId}
+          entityId={business.id}
           entityType="storefront"
           title="Storefront Share Analytics"
         />
@@ -1210,10 +1142,12 @@ const BusinessProfile: React.FC = () => {
 
   // Filter tabs based on ownership - only owners see Statistics and Enhanced Profile
   const allTabs = [
-    { id: 'overview', label: 'Overview', count: null, ownerOnly: false },
-    { id: 'reviews', label: 'Reviews', count: reviewStats?.total_reviews || business?.total_reviews || 0, ownerOnly: false },
-    { id: 'statistics', label: 'Analytics', count: null, ownerOnly: true },
-    { id: 'enhanced-profile', label: 'Enhanced Profile', count: null, ownerOnly: true }
+    { id: 'overview', label: 'Overview', count: null, ownerOnly: false, icon: LayoutGrid },
+    { id: 'products', label: 'Products', count: null, ownerOnly: false, icon: Package },
+    { id: 'offers', label: 'Offers', count: null, ownerOnly: false, icon: Tag },
+    { id: 'reviews', label: 'Reviews', count: reviewStats?.total_reviews || business?.total_reviews || 0, ownerOnly: false, icon: MessageSquare },
+    { id: 'statistics', label: 'Analytics', count: null, ownerOnly: true, icon: BarChart },
+    { id: 'enhanced-profile', label: 'Enhanced Profile', count: null, ownerOnly: true, icon: Sparkles }
   ];
 
   // Filter tabs: non-owners only see Overview and Reviews
@@ -1268,9 +1202,20 @@ const BusinessProfile: React.FC = () => {
             >
               <div className="px-6 py-4 border-b flex justify-between items-center bg-gray-50">
                 <h3 className="font-semibold text-lg text-gray-900">Business Details</h3>
-                <button onClick={() => setShowInfoModal(false)} className="p-1 hover:bg-gray-200 rounded-full">
-                  <X className="w-5 h-5 text-gray-500" />
-                </button>
+                <div className="flex items-center gap-2">
+                  {isOwner && (
+                    <button
+                      onClick={() => { setShowInfoModal(false); setEditing(true); }}
+                      className="flex items-center px-3 py-1.5 text-sm text-indigo-600 hover:bg-indigo-50 rounded-lg"
+                    >
+                      <Edit3 className="w-4 h-4 mr-1" />
+                      Edit
+                    </button>
+                  )}
+                  <button onClick={() => setShowInfoModal(false)} className="p-1 hover:bg-gray-200 rounded-full">
+                    <X className="w-5 h-5 text-gray-500" />
+                  </button>
+                </div>
               </div>
               <div className="p-6 space-y-6">
                 <div>
@@ -1346,8 +1291,8 @@ const BusinessProfile: React.FC = () => {
       <div className="min-h-screen bg-gray-50">
         {/* Breadcrumbs Navigation */}
         <div className="hidden md:block bg-white border-b border-gray-100">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="py-3">
+          <div className="max-w-7xl mx-auto px-[5px]">
+            <div className="py-0">
               <nav className="flex items-center space-x-2 text-sm">
                 <button
                   onClick={() => navigate('/dashboard')}
@@ -1376,17 +1321,17 @@ const BusinessProfile: React.FC = () => {
         <div className="bg-white pb-4 border-b">
           <div className="relative group">
             {/* Cover Image Container - Centered and Max Width */}
-            <div className="max-w-7xl mx-auto md:px-6 lg:px-8 relative group">
-              {/* Back Button - Absolute Top Left */}
-              <button
-                onClick={() => navigate('/business/dashboard')}
-                className="absolute top-4 left-4 z-20 p-2 bg-white/80 backdrop-blur-sm rounded-full text-gray-700 hover:bg-white transition-all shadow-sm"
-                title="Back to Dashboard"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
+            <div className="max-w-7xl mx-auto px-[5px] relative group">
+              <div className="h-36 md:h-48 bg-gray-200 overflow-hidden w-full relative md:rounded-b-lg">
+                {/* Back Button - Inside Cover Photo */}
+                <button
+                  onClick={() => navigate(-1)}
+                  className="absolute top-3 left-3 md:top-4 md:left-4 z-20 w-9 h-9 md:w-10 md:h-10 flex items-center justify-center bg-white/90 rounded-full text-gray-700 hover:bg-white transition-colors shadow-sm"
+                  title="Go Back"
+                >
+                  <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
+                </button>
 
-              <div className="h-48 md:h-80 bg-gray-200 overflow-hidden w-full relative md:rounded-b-lg">
                 {business?.cover_image_url ? (
                   <img
                     src={business.cover_image_url}
@@ -1401,8 +1346,8 @@ const BusinessProfile: React.FC = () => {
               </div>
 
               {/* Profile Photo (Overlapping - 1/4 on cover, 3/4 below) */}
-              <div className="absolute -bottom-[4.5rem] md:-bottom-[7.5rem] left-4 md:left-8 z-30">
-                <div className="rounded-full border-[4px] border-white bg-white shadow-md overflow-hidden w-24 h-24 md:w-40 md:h-40">
+              <div className="absolute -bottom-24 md:-bottom-[9.75rem] left-4 md:left-8 z-30">
+                <div className="rounded-full border-[4px] border-white bg-white shadow-md overflow-hidden w-32 h-32 md:w-52 md:h-52">
                   {business?.logo_url ? (
                     <img
                       src={business.logo_url}
@@ -1419,38 +1364,55 @@ const BusinessProfile: React.FC = () => {
             </div>
 
             {/* Info Section (Below Cover - In Normal Flow) */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-[0.5rem] pb-2">
+            <div className="max-w-7xl mx-auto px-[5px] pt-[0.5rem] pb-2">
               <div className="flex flex-col md:flex-row justify-between items-start gap-4">
                 {/* Business Name & Details (Pushed right to clear profile pic) */}
-                <div className="mt-0 pl-[7.5rem] md:pl-[12rem] flex flex-col items-start text-left w-full min-h-[5rem] md:min-h-0">
+                <div className="mt-0 pl-[9.5rem] md:pl-[15.5rem] flex flex-col items-start text-left w-full min-h-[5rem] md:min-h-0">
                   <div className="flex flex-wrap items-center gap-2 mb-1">
                     <h1 className="text-lg md:text-2xl font-bold text-gray-900 leading-tight">
                       {business?.business_name}
                     </h1>
-
-                    <StorefrontShareButton
-                      businessId={business.id}
-                      businessName={business.business_name}
-                      businessDescription={business.description}
-                      variant="ghost"
-                      size="icon"
-                      showLabel={false}
-                      className="w-8 h-8 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-                      onShareSuccess={() => console.log('Shared')}
-                    />
 
                     {business?.verified && (
                       <CheckCircle className="w-4 h-4 text-blue-500 flex-shrink-0" />
                     )}
                     {getStatusBadge(business?.status)}
                   </div>
-                  <p className="text-gray-600 text-sm mb-2 flex items-center">
-                    <MapPin className="w-3.5 h-3.5 mr-1 text-gray-400" />
+                  {/* Location line */}
+                  <p className="flex items-center text-sm text-gray-600 mb-1">
+                    <MapPin className="w-3.5 h-3.5 mr-1.5 text-gray-400 flex-shrink-0" />
                     {business?.city}, {business?.state}
                   </p>
 
+                  {/* Business Hours Status */}
+                  {businessOpenStatus.text && (
+                    <p className="flex items-center text-sm mb-1.5">
+                      <Clock className="w-3.5 h-3.5 mr-1.5 text-gray-400 flex-shrink-0" />
+                      <span className={`font-medium ${businessOpenStatus.color}`}>
+                        {businessOpenStatus.text}
+                      </span>
+                      {businessOpenStatus.todayHours && (
+                        <span className="text-gray-500 ml-1.5">
+                          · {businessOpenStatus.todayHours}
+                        </span>
+                      )}
+                    </p>
+                  )}
+
+                  {/* Phone + More Info line */}
+                  <div className="flex items-center justify-between w-full text-sm text-gray-600 mt-1">
+                    <div className="flex items-center">
+                      {business?.business_phone && (
+                        <a href={`tel:${business.business_phone}`} className="flex items-center hover:text-indigo-600">
+                          <Phone className="w-3.5 h-3.5 mr-1.5 text-gray-400 flex-shrink-0" />
+                          {business.business_phone}
+                        </a>
+                      )}
+                    </div>
+                  </div>
+
                   {/* Action Buttons Row - Desktop Only */}
-                  <div className="hidden md:flex flex-wrap items-center gap-2 mt-4">
+                  <div className="hidden md:flex flex-wrap items-center gap-2 mt-2">
                     {!isOwner && user && (
                       <FollowButton
                         businessId={business.id}
@@ -1495,6 +1457,50 @@ const BusinessProfile: React.FC = () => {
                         </button>
                       </>
                     )}
+
+                    {/* More Options Dropdown */}
+                    <div className="relative">
+                      <button
+                        onClick={() => setShowMoreDropdown(!showMoreDropdown)}
+                        className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                      >
+                        <MoreVertical className="w-5 h-5" />
+                      </button>
+                      {showMoreDropdown && (
+                        <>
+                          {/* Backdrop to close dropdown */}
+                          <div
+                            className="fixed inset-0 z-10"
+                            onClick={() => setShowMoreDropdown(false)}
+                          />
+                          <div className="absolute right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-20 py-1 min-w-[120px]">
+                            <StorefrontShareButton
+                              businessId={business.id}
+                              businessName={business.business_name}
+                              businessDescription={business.description}
+                              variant="ghost"
+                              showLabel={true}
+                              showIcon={true}
+                              className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 h-auto justify-start rounded-none gap-2"
+                              onShareSuccess={() => {
+                                setShowMoreDropdown(false);
+                                console.log('Shared');
+                              }}
+                            />
+                            <button
+                              onClick={() => {
+                                setShowInfoModal(true);
+                                setShowMoreDropdown(false);
+                              }}
+                              className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                            >
+                              <Info className="w-4 h-4" />
+                              More Info
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1542,64 +1548,137 @@ const BusinessProfile: React.FC = () => {
                     </button>
                   </>
                 )}
+
+                {/* More Options Dropdown - Mobile */}
+                <div className="relative">
+                  <button
+                    onClick={() => setShowMoreDropdown(!showMoreDropdown)}
+                    className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  >
+                    <MoreVertical className="w-5 h-5" />
+                  </button>
+                  {showMoreDropdown && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-10"
+                        onClick={() => setShowMoreDropdown(false)}
+                      />
+                      <div className="absolute right-0 bottom-full mb-2 bg-white border border-gray-200 rounded-lg shadow-lg z-20 py-1 min-w-[120px]">
+                        <StorefrontShareButton
+                          businessId={business.id}
+                          businessName={business.business_name}
+                          businessDescription={business.description}
+                          variant="ghost"
+                          showLabel={true}
+                          showIcon={true}
+                          className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 h-auto justify-start rounded-none gap-2"
+                          onShareSuccess={() => {
+                            setShowMoreDropdown(false);
+                            console.log('Shared');
+                          }}
+                        />
+                        <button
+                          onClick={() => {
+                            setShowInfoModal(true);
+                            setShowMoreDropdown(false);
+                          }}
+                          className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                        >
+                          <Info className="w-4 h-4" />
+                          More Info
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>
 
           {/* Tabs */}
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto px-[5px]">
             <div className="border-b border-gray-200">
               <nav className="-mb-px flex space-x-8 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                {tabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === tab.id
-                      ? 'border-indigo-500 text-indigo-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                      }`}
-                  >
-                    {tab.label}
-                    {tab.count !== null && (
-                      <span className={`ml-2 py-0.5 px-2 rounded-full text-xs ${activeTab === tab.id
-                        ? 'bg-indigo-100 text-indigo-600'
-                        : 'bg-gray-100 text-gray-900'
-                        }`}>
-                        {tab.count}
+                {tabs.map((tab) => {
+                  const Icon = tab.icon;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center justify-center ${activeTab === tab.id
+                        ? 'border-indigo-500 text-indigo-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        }`}
+                      title={tab.label}
+                    >
+                      <span className="md:hidden">
+                        {Icon && <Icon className="w-5 h-5" />}
                       </span>
-                    )}
-                  </button>
-                ))}
+                      <span className="hidden md:inline">
+                        {tab.label}
+                      </span>
+                      {tab.count !== null && (
+                        <span className={`ml-2 py-0.5 px-2 rounded-full text-xs hidden md:inline-flex ${activeTab === tab.id
+                          ? 'bg-indigo-100 text-indigo-600'
+                          : 'bg-gray-100 text-gray-900'
+                          }`}>
+                          {tab.count}
+                        </span>
+                      )}
+                      {/* Mobile count badge (dot) */}
+                      {tab.count !== null && tab.count > 0 && (
+                        <span className={`md:hidden ml-1 w-1.5 h-1.5 rounded-full ${activeTab === tab.id ? 'bg-indigo-600' : 'bg-gray-400'}`} />
+                      )}
+                    </button>
+                  );
+                })}
               </nav>
             </div>
           </div>
 
           {/* Tab Content */}
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="max-w-7xl mx-auto px-[5px] pt-[25px] pb-2">
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeTab}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.2 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
               >
                 {activeTab === 'overview' && renderOverview()}
+                {activeTab === 'products' && (
+                  <div className="space-y-6">
+                    <FeaturedProducts
+                      businessId={business?.id!}
+                      businessName={business?.business_name!}
+                      isOwner={isOwner}
+                      viewMode="full"
+                    />
+                  </div>
+                )}
+                {activeTab === 'offers' && (
+                  <div className="space-y-6">
+                    <FeaturedOffers
+                      businessId={business?.id!}
+                      businessName={business?.business_name!}
+                      isOwner={isOwner}
+                      initialOfferId={searchParams.get('offer') || searchParams.get('offerId')}
+                      shareId={searchParams.get('share_id')}
+                      compact={false}
+                    />
+                  </div>
+                )}
                 {activeTab === 'reviews' && renderReviews()}
                 {activeTab === 'statistics' && renderStatistics()}
                 {activeTab === 'enhanced-profile' && (
                   <EnhancedProfileTab
-                    businessId={businessId!}
+                    businessId={business?.id!}
                     business={business!}
                     isOwner={isOwner}
                     onUpdate={async () => {
-                      // Refresh business data after update
-                      const { data } = await supabase
-                        .from('businesses')
-                        .select('*')
-                        .eq('id', businessId)
-                        .single();
-                      if (data) setBusiness(data);
+                      // Refresh business data from cache
+                      await refetchBusiness();
                     }}
                   />
                 )}

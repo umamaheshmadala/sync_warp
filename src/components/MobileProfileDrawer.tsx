@@ -151,12 +151,20 @@ export default function MobileProfileDrawer({ isOpen, onClose }: MobileProfileDr
           <div className="border-t border-gray-200" />
 
           {/* Profile Analytics (like LinkedIn) */}
-          <div className="px-6 py-4">
+          <div className="px-6 py-2">
             <button
               onClick={() => handleNavigation('/profile')}
               className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
             >
               View Profile
+            </button>
+
+            {/* Manage Businesses Button */}
+            <button
+              onClick={() => handleNavigation('/business/dashboard')}
+              className="text-sm text-indigo-600 hover:text-indigo-700 font-medium block mt-1"
+            >
+              Manage Businesses
             </button>
           </div>
 

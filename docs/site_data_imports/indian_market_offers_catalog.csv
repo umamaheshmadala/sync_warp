@@ -1,0 +1,86 @@
+Category,Offer Name,Description,Example (Indian Market Context),Frequency in Indian Market
+Product-based / BOGO,Buy One Get One Free (BOGO),Buy one item and get another of the same or similar item free.,"Buy 1 pizza, get 1 free at Domino's on specific days.",Very frequently
+Product-based / BOGO,Buy One Get One at 50% Off,"Second item is sold at a discounted rate, usually 50% off.","Buy 1 shirt, get 2nd at 50% off in apparel stores like Max, Lifestyle.",Very frequently
+Product-based / BOGO,1+1 / 2+1 / 3+1 Offers,Buy multiple items and get one or more items free.,1+1 on personal care like shampoos or soaps in supermarkets.,Very frequently
+Bundles & Combos,Combo Packs / Value Packs,Two or more products sold together at a lower combined price.,Burger + Fries + Coke combo in QSR outlets like McDonald's.,Very frequently
+Quantity / Volume,Bulk Purchase Discount,Discounts applicable when buying in large quantities.,Save more on 5kg or 10kg rice/atta packs vs 1kg packs in supermarkets.,Very frequently
+Quantity / Volume,Multi-Pack Savings,Multi-unit packs priced cheaper than buying single units.,Pack of 6 soft drink cans vs single can pricing.,Very frequently
+Price-based,"Percentage Discount (Flat 10%, 20%, 50%)",Fixed percentage reduction on product or cart value.,Flat 50% off on fashion during end of season sale.,Very frequently
+Price-based,Up to X% Off,"Range-based discount, only some items are at highest discount.",Up to 70% off on Amazon Great Indian Festival.,Very frequently
+Cashback & Wallet,"Wallet Cashback (Paytm, PhonePe etc.)",Cashback credited to digital wallet after transaction.,10% Paytm cashback on petrol pumps or DTH recharge.,Very frequently
+Cashback & Wallet,Bank/Card Cashback,Cashback credited back to bank/credit card.,10% HDFC/ICICI/SBI credit card cashback during festive sales.,Very frequently
+Cart / Order-based,Minimum Purchase Discount,Discount applied when order exceeds a threshold.,₹200 off on orders above ₹1499 on Myntra.,Very frequently
+Cart / Order-based,Free Shipping Above Threshold,Delivery charges waived above a certain order amount.,Free delivery on grocery orders above ₹500.,Very frequently
+Cart / Order-based,First Order Discount,Special discount for the first purchase by a new customer.,Flat 50% off on first food order on Swiggy/Zomato.,Very frequently
+Customer Segment,Loyalty Points Program,"Points earned on purchases, redeemable later.",Supermarket chains and brands offering loyalty cards/points.,Very frequently
+Time-based,Flash Sale,Short time-limited deep discounts.,2-hour flash sale on mobile apps / e-commerce.,Very frequently
+Time-based,Festive Sales,Large campaigns around festivals with deep discounts.,"Diwali, Navratri, Pongal, Eid, Christmas sale events.",Very frequently
+Time-based,End-of-Season Sale (EOSS),Discounts to clear out seasonal inventory.,Winter sale or summer sale in fashion retail.,Very frequently
+Time-based,Countdown / Limited Time Offers,Offers shown with countdown timers to create urgency.,Deal of the day with countdown clock on e-commerce apps.,Very frequently
+Coupon / Promo-based,Promo Code Discount,Customer enters a code at checkout to unlock discount.,Use code SAVE20 to get 20% off on food delivery.,Very frequently
+Coupon / Promo-based,Scratch Card Rewards,Digital scratch cards with hidden rewards post-transaction.,Scratch cards on Google Pay / PhonePe after payments.,Very frequently
+Psychological Pricing,Was–Now Pricing,Shows original price with a strike-through and current discount price.,"MRP ₹1999, Now ₹999 on product label.",Very frequently
+Psychological Pricing,Charm Pricing (₹999 instead of ₹1000),Price ending in .99 or similar to appear cheaper.,"Most consumer products priced at ₹99, ₹199, ₹999.",Very frequently
+Psychological Pricing,Anchor Pricing,Display a higher 'compare at' price next to current offer price.,Showing '₹2999' crossed out and '₹1499' as current price.,Very frequently
+Channel / Payment-based,Bank / Card Specific Discount,Extra discount when using certain banks or card networks.,10% instant discount on SBI / HDFC cards in major sales.,Very frequently
+Gifts & Freebies,Mystery Gift,Customer receives an unknown surprise gift.,Mystery gift during festive sales on e-commerce sites.,Less frequently
+Cart / Order-based,Free Shipping on All Orders,No delivery fees regardless of order size.,Free shipping on some D2C brand websites as a USP.,Less frequently
+Cart / Order-based,Waived COD Fee,Cash-on-delivery handling charges are removed.,No COD fee during special promotions on some e-commerce sites.,Less frequently
+Customer Segment,Student Discount,Special lower pricing for students.,"Software subscriptions (Spotify, Adobe) with student plans.",Less frequently
+Customer Segment,Senior Citizen Discount,Discounts for elderly customers.,Pharmacies and some travel booking for senior citizens.,Less frequently
+Customer Segment,Corporate / Professional Discount,Discounts for employees of specific companies or professions.,Special bank tie-up offers for employees of IT companies.,Less frequently
+Subscription,First Month at Discounted Price,Introductory lower-priced first billing cycle.,₹1 for first month of some OTT or music streaming services.,Less frequently
+Subscription,Discounted Renewal,Lower price for renewing before or on expiry.,Discount on yearly renewal of antivirus or SaaS tools.,Less frequently
+Value-added,Free Training / Onboarding,Training provided at no extra cost.,Free onboarding for enterprise software solutions.,Less frequently
+Value-added,Accidental Damage Protection Free,Insurance against accidental damage at no cost.,Free screen damage protection on smartphones bought during offers.,Less frequently
+Value-added,Free Upgrade to Premium Plan,Higher tier plan offered at same price as lower tier.,Free speed upgrade in broadband plans for limited period.,Less frequently
+Special / Risk-Free,Try Before You Buy (TBYB),"Product is delivered, paid only if customer keeps it.",TBYB on eyewear or fashion categories on some platforms.,Less frequently
+Special / Risk-Free,Beta User Incentive,Rewards/discounts for testing new products or features.,Early access deals or lifetime discounts for first users of SaaS/app.,Less frequently
+Product-based / BOGO,Mix & Match BOGO,Any combination of products within a group qualifies for offer.,Buy any 2 snacks from a brand and get 1 free in Big Bazaar-style hypermarkets.,Frequently
+Bundles & Combos,Family Packs / Party Combos,Larger packs or family-sized combos at value pricing.,Family meal combos at KFC / Pizza Hut.,Frequently
+Bundles & Combos,Starter Kits / Introductory Bundles,Set of starter products offered at a discount to encourage trial.,Skin-care starter kits on Nykaa.,Frequently
+Bundles & Combos,Cross-Product Bundles,Different but complementary products bundled together.,Smartphone + back cover + screen guard bundles on Amazon/Flipkart.,Frequently
+Gifts & Freebies,Free Gift with Purchase,Customer gets an additional gift item on qualifying purchases.,Free tote bag with beauty purchase above ₹1999 on Nykaa.,Frequently
+Gifts & Freebies,Free Sample with Order,Trial-size products included to encourage future purchase.,Free sachets of shampoo with grocery orders.,Frequently
+Price-based,Flat Amount Discount (₹500 off),Fixed rupee discount on product or cart.,"Flat ₹500 off on smartphones above ₹10,000.",Frequently
+Price-based,Tiered Discount by Cart Value,Higher cart value unlocks higher discounts.,"Save 5% on ₹1500, 10% on ₹3000, 15% on ₹5000 on fashion sites.",Frequently
+Price-based,Markdown / Clearance Sale,Prices permanently reduced to clear old stock.,Season-end clearance sale in malls and stores.,Frequently
+Price-based,Open-Box / Refurbished Discount,"Discounts on returned, open-box, or refurbished items.",Open-box phone deals on Flipkart & Amazon.,Frequently
+Cashback & Wallet,Instant Cashback,Immediate reduction in payable amount at checkout.,Instant 10% cashback on using certain wallets at Zomato/Swiggy.,Frequently
+Cashback & Wallet,Cashback Vouchers / Promo Credit,Coupons or credits for future purchases.,Cashback coupons on Amazon Pay balance for bill payments.,Frequently
+Cart / Order-based,Free Add-on Above Threshold,Free product added when cart crosses specific value.,Free dessert on Swiggy orders above ₹500 from a restaurant.,Frequently
+Cart / Order-based,App-Only First Order Offer,First order discount only via mobile app.,Extra 10% off on first order through mobile app for clothing brands.,Frequently
+Cart / Order-based,Prepaid Payment Discount,Extra discount for online/prepaid payment compared to COD.,₹50 off if you pay online instead of Cash on Delivery.,Frequently
+Customer Segment,Member-Exclusive Pricing,Special prices or discounts for loyalty or paid members.,Amazon Prime member exclusive deals.,Frequently
+Customer Segment,Birthday / Anniversary Offers,Personalised discounts around customer’s special dates.,"Salons, restaurants and e-commerce sending birthday discount codes.",Frequently
+Customer Segment,Referral Bonus (Referrer),Existing user gets reward for bringing new user.,Refer a friend and get ₹100 wallet credit on fintech apps.,Frequently
+Customer Segment,Referral Bonus (Referee),New user gets reward when joining via referral.,Both get ₹100 on referral sign-ups on trading or payment apps.,Frequently
+Time-based,Lightning Deal,Limited time + limited quantity high discounts.,Amazon lightning deals during Great Indian Festival.,Frequently
+Time-based,Happy Hours,Discounts available only during certain hours of the day.,Happy hour offers on beverages in cafes and bars.,Frequently
+Time-based,Weekend Specials,Offers valid only on Saturdays/Sundays.,Weekend sale on fashion and electronics.,Frequently
+Time-based,New Year / Year-End Sale,Special offers around year end / new year.,New Year’s mega sale campaigns across online platforms.,Frequently
+Coupon / Promo-based,Auto-Applied Coupons,Coupons applied automatically without user entering code.,Best available coupon auto-applied at checkout on some sites.,Frequently
+Coupon / Promo-based,Exclusive / Secret Coupons,"Special codes shared via email, SMS or influencer.",Influencer-only coupon codes on Instagram.,Frequently
+Coupon / Promo-based,Spin-the-Wheel Offers,Gamified wheel to win varied discounts.,Spin the wheel on D2C brand websites for a one-time discount.,Frequently
+Coupon / Promo-based,Coupon for Next Purchase,Discount voucher issued for future orders.,₹200 off voucher for next order on completion of current purchase.,Frequently
+Subscription,Subscribe & Save,Recurring subscription gets lower per-unit price.,Monthly subscription for groceries or milk delivery at discount.,Frequently
+Subscription,Free Trial Period,Limited-time free access to service.,30-day free trial on OTT or SaaS platforms.,Frequently
+Value-added,Free Installation / Setup,Installation service provided free with purchase.,Free AC or TV installation from electronics retailers.,Frequently
+Value-added,Free Demo / Consultation,No-cost consultation or demo for high-ticket services.,Free interior design consultation from furniture brands.,Frequently
+Value-added,Extended Warranty Free,Additional warranty period at no extra charge.,Extra 1-year warranty on electronics during festive sales.,Frequently
+Value-added,Trade-in / Exchange Bonus,Extra value on old product when exchanging for new.,Exchange offers on old smartphones or TVs with bonus value.,Frequently
+Channel / Payment-based,App-Only Price,Discount only when ordering via mobile app.,Extra 5% off on app orders vs website on fashion platforms.,Frequently
+Channel / Payment-based,Store-Only Exclusive Offer,Discounts only available at physical stores.,In-store only flat 50% clearance sale boards.,Frequently
+Channel / Payment-based,Online-Only Exclusive Offer,Special pricing on online orders.,Online-only price for electronics cheaper than store price.,Frequently
+Channel / Payment-based,UPI Payment Discount,Discounts for paying via UPI apps.,Extra ₹50 off when paying via UPI at certain websites.,Frequently
+Channel / Payment-based,No-Cost EMI,Convert bill into EMIs without extra interest charge to customer.,"No-cost EMI on smartphones, TVs, and other electronics.",Frequently
+Channel / Payment-based,BNPL (Buy Now Pay Later) Incentives,Special offers for using BNPL providers.,"Cashback or discounts for transactions via Simpl, LazyPay etc.",Frequently
+Gamified / Engagement,Coins / Points for Actions,"Points earned for purchases or activities, redeemable later.","Reward coins on gaming, learning or shopping apps redeemable for benefits.",Frequently
+Gamified / Engagement,Daily Check-In / Streak Rewards,Rewards for consecutive days of app usage or ordering.,"Food, gaming, or learning apps rewarding streaks.",Frequently
+Gamified / Engagement,Milestone / Achievement Rewards,Unlock rewards after crossing certain usage or spend milestones.,Rewards for completing 10 rides/orders on mobility or delivery apps.,Frequently
+Gamified / Engagement,Spin-the-Wheel (Gamified Discount),Interactive wheel with different rewards per slice.,Spin-the-wheel popups on D2C websites for first-time users.,Frequently
+Special / Risk-Free,Try & Return / Free Returns,Customer can try product and return if unsatisfied.,Free 7-day return on fashion items.,Frequently
+Special / Risk-Free,No-Questions-Asked Returns,Easy returns without detailed justification.,Simplified return policies on major e-commerce platforms.,Frequently
+Special / Risk-Free,Early Bird Offer,Special pricing for early adopters or early bookers.,Early bird discounts on event tickets or online courses.,Frequently
+Special / Risk-Free,Pre-Order Discount,Lower price or bonus for ordering before official launch.,Pre-order smartphones or games with bonus goodies.,Frequently
+Subscription,Locked-in Long Term Pricing,Price locked for users who subscribe for long term.,Founding member plans for new digital products.,Almost never

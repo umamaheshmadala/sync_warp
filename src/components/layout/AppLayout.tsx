@@ -1,7 +1,8 @@
 import { useLocation } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Keyboard, KeyboardResize } from '@capacitor/keyboard';
 import { Capacitor } from '@capacitor/core';
+import { useQueryClient } from '@tanstack/react-query';
 import Header from './Header';
 import BottomNavigation from '../BottomNavigation';
 import { useNavigate } from 'react-router-dom';
@@ -9,6 +10,7 @@ import { useNavigationPreferences } from '../../hooks/useNavigationState';
 import GestureHandler from '../GestureHandler';
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 import { notificationSettingsService } from '@/services/notificationSettingsService';
+import { PullToRefresh } from '@/components/ui/PullToRefresh';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
@@ -69,12 +71,27 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     updateTimezone();
   }, []);
 
+  // React Query client for instant background data refresh
+  const queryClient = useQueryClient();
+
+  // Pull-to-refresh handler - invalidates all React Query cache to trigger background refetch
+  // This keeps components mounted (no white screen) and shows fresh data in ~1-2 seconds
+  const handlePullToRefresh = useCallback(async () => {
+    // Invalidate all queries - this triggers background refetch
+    // Components stay mounted and show stale data until fresh data arrives
+    await queryClient.invalidateQueries();
+
+    // Small delay to ensure user sees the refresh happening
+    await new Promise(resolve => setTimeout(resolve, 200));
+  }, [queryClient]);
+
   if (isAuthPage) {
     return <>{children}</>;
   }
 
   // Hide bottom navigation when keyboard is visible anywhere to make space
-  const shouldShowBottomNav = !isKeyboardVisible;
+  // Also hide if keyboard is visible
+  const shouldShowBottomNav = !isKeyboardVisible && !isAuthPage;
 
   return (
     <GestureHandler
@@ -92,23 +109,30 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <Header />
         <main
           className={`flex-1 flex flex-col min-h-0 relative ${isMessagesRoute ? 'overflow-hidden' : 'overflow-y-auto'}`}
+          style={{
+            overscrollBehaviorY: 'none', // Prevent bounce effects
+            WebkitOverflowScrolling: 'touch' // Ensure momentum scrolling
+          }}
         >
           {/* Content needs to account for header height + safe area */}
-          <div
-            className="w-full max-w-4xl mx-auto min-h-full md:pt-16"
-            style={{ paddingTop: 'calc(54px + env(safe-area-inset-top, 0px))' }}
+          <PullToRefresh
+            onRefresh={handlePullToRefresh}
+            disabled={isMessagesRoute}
+            className="w-full max-w-4xl mx-auto min-h-full"
           >
-            {children}
-            {/* Spacer for Bottom Navigation - Physical element ensures scroll clearance */}
-            <div
-              className="w-full transition-all duration-200"
-              style={{
-                height: shouldShowBottomNav
-                  ? 'calc(56px + env(safe-area-inset-bottom, 0px) + 3px)'
-                  : '0px'
-              }}
-            />
-          </div>
+            <div style={{ paddingTop: 'calc(54px + env(safe-area-inset-top, 0px))' }}>
+              {children}
+              {/* Spacer for Bottom Navigation - Physical element ensures scroll clearance */}
+              <div
+                className="w-full transition-all duration-200"
+                style={{
+                  height: shouldShowBottomNav
+                    ? 'calc(56px + env(safe-area-inset-bottom, 0px) + 3px)'
+                    : '0px'
+                }}
+              />
+            </div>
+          </PullToRefresh>
         </main>
 
         {/* Fixed Bottom Navigation */}

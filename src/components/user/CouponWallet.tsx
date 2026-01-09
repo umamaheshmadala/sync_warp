@@ -544,7 +544,7 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
                 : 'Start collecting coupons to save on your purchases!'
               }
             </p>
-            {(searchTerm || filters.category !== 'all' || filters.status !== 'all' || filters.businessName) ? (
+            {(searchTerm || filters.category !== 'all' || filters.status !== 'all' || filters.businessName) && (
               <button
                 onClick={() => {
                   setSearchTerm('');
@@ -559,13 +559,6 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
                 className="text-blue-600 hover:text-blue-800 font-medium"
               >
                 Clear all filters
-              </button>
-            ) : (
-              <button
-                onClick={() => window.location.href = '/discover'}
-                className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-              >
-                Discover Coupons
               </button>
             )}
           </div>

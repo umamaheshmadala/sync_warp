@@ -1,18 +1,14 @@
 ﻿// src/pages/Dashboard/Dashboard.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { useBusinessUrl } from '../hooks/useBusinessUrl';
+import { getOptimizedImageUrl } from '../utils/imageUtils';
 import {
-  Bell,
-  MapPin,
-  ChevronDown,
-  Users,
-  User,
-  Heart,
   Star,
   TrendingUp,
-  MessageCircle
+  Layers,
+  ChevronRight
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 // BottomNavigation is now handled by AppLayout
@@ -20,27 +16,7 @@ import NotificationHub from './NotificationHub';
 import AdCarousel from './ads/AdCarousel';
 import { FriendLikedDealsSection } from './deals/FriendLikedDealsSection';
 import { NewBusinesses } from './business';
-import { dashboardService, DashboardStats, SpotlightBusiness, HotOffer, TrendingProduct } from '../services/dashboardService';
-
-interface BusinessCard {
-  id: string;
-  name: string;
-  category: string;
-  location: string;
-  rating: number;
-  reviewCount: number;
-  imageUrl: string;
-  isPromoted?: boolean;
-}
-
-interface OfferCard {
-  id: string;
-  title: string;
-  businessName: string;
-  discount: string;
-  expiresIn: string;
-  imageUrl: string;
-}
+import { SpotlightBusiness, HotOffer, TrendingProduct } from '../services/dashboardService';
 
 // Dummy data as fallback - defined outside component for immediate initialization
 const dummySpotlightBusinesses: SpotlightBusiness[] = [
@@ -78,7 +54,7 @@ const dummyHotOffers: HotOffer[] = [
     imageUrl: null,
     validUntil: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
     discountValue: 50,
-    businessId: 'dummy-business-1'
+    businessId: 'ac269130-cfb0-4c36-b5ad-34931cd19b50'
   },
   {
     id: 'dummy-offer-2',
@@ -89,48 +65,45 @@ const dummyHotOffers: HotOffer[] = [
     imageUrl: null,
     validUntil: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
     discountValue: 0,
-    businessId: 'dummy-business-2'
+    businessId: 'ac269130-cfb0-4c36-b5ad-34931cd19b50'
   }
 ];
 
 const dummyTrendingProducts: TrendingProduct[] = [
-  { id: 'dummy-prod-1', name: '[Demo] Artisan Coffee Beans', business: 'Urban Coffee', price: '₹450', category: 'Food', isTrending: true },
-  { id: 'dummy-prod-2', name: '[Demo] Chocolate Croissant', business: 'French Bakery', price: '₹120', category: 'Food', isTrending: true },
-  { id: 'dummy-prod-3', name: '[Demo] Handmade Soap', business: 'Natural Care', price: '₹85', category: 'Beauty', isTrending: true }
+  { id: 'aa200866-0a07-494a-a8a0-e1a4b1e961c8', name: '[Demo] Artisan Coffee Beans', business: 'Urban Coffee', price: '₹450', category: 'Food', isTrending: true, businessId: 'dummy-business-1' },
+  { id: 'dummy-prod-2', name: '[Demo] Chocolate Croissant', business: 'French Bakery', price: '₹120', category: 'Food', isTrending: true, businessId: 'dummy-business-2' },
+  { id: 'dummy-prod-3', name: '[Demo] Handmade Soap', business: 'Natural Care', price: '₹85', category: 'Beauty', isTrending: true, businessId: 'dummy-business-3' }
 ];
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { getBusinessUrl } = useBusinessUrl();
-  const { user, profile } = useAuthStore();
-  const [selectedCity] = useState(profile?.city || 'Select City');
+  const { profile } = useAuthStore();
   const [showNotifications, setShowNotifications] = useState(false);
-  // Use React Query for automatic caching and background updates
-  // Use extracted hook for dashboard data
-  const { data: dashboardData, isLoading } = useDashboardData();
+
+  // Use extracted hook for dashboard data with granular loading states
+  const {
+    businessesData,
+    offersData,
+    productsData,
+    // We can use these loading states to show skeletons if needed
+    // isLoadingBusinesses,
+    // isLoadingOffers,
+    // isLoadingProducts
+  } = useDashboardData();
 
   // Use cached data or fallback to dummy data
-  const spotlightBusinesses = dashboardData?.businessesData?.length > 0
-    ? dashboardData.businessesData
+  const spotlightBusinesses = businessesData && businessesData.length > 0
+    ? businessesData
     : dummySpotlightBusinesses;
 
-  const hotOffers = dashboardData?.offersData?.length > 0
-    ? dashboardData.offersData
+  const hotOffers = offersData && offersData.length > 0
+    ? offersData
     : dummyHotOffers;
 
-  const trendingProducts = dashboardData?.productsData?.length > 0
-    ? dashboardData.productsData
+  const trendingProducts = productsData && productsData.length > 0
+    ? productsData
     : dummyTrendingProducts;
-
-  const stats = dashboardData?.statsData || {
-    favoritesCount: 0,
-    reviewsCount: 0,
-    collectedCouponsCount: 0,
-    followingCount: 0,
-  };
-
-  // Don't show loading screen - splash screen handles initial load
-  // Dashboard will show with loading states for individual sections
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -157,7 +130,7 @@ const Dashboard: React.FC = () => {
               <div className="flex items-center justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-base md:text-lg truncate">Weekend Deal! 🔥</h3>
-                  <p className="text-xs opacity-90 truncate">Up to 60% off at restaurants</p>
+                  <p className="text-xs opacity-90 truncate">Coming soon.</p>
                 </div>
                 <button
                   onClick={() => navigate('/search')}
@@ -253,49 +226,78 @@ const Dashboard: React.FC = () => {
                 My Wallet
               </button>
             </div>
+            <p className="text-xs text-gray-500 mb-3 -mt-3 italic">
+              Hot offers are the most viewed offers by the user as of now.
+            </p>
 
-            {/* Mobile: 2-column compact grid, Desktop: 2-column horizontal cards */}
-            <div className="grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-6">
+            {/* Mobile: 1-column list, Tablet: 2-column, Desktop: 3-column */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
               {hotOffers.length === 0 ? (
-                <div className="col-span-2 text-center py-8 text-gray-500">
+                <div className="col-span-1 md:col-span-2 lg:col-span-3 text-center py-8 text-gray-500">
                   <p className="text-lg font-medium">No active offers at the moment</p>
                   <p className="text-sm">Check back soon for exciting deals!</p>
                 </div>
               ) : hotOffers.map((offer, index) => (
                 <div
                   key={offer.id}
-                  onClick={() => navigate(`/offer/${offer.id}`)}
-                  className="bg-white rounded-xl md:rounded-2xl shadow-sm md:shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-105"
+                  onClick={() => navigate(`${getBusinessUrl(offer.businessId, offer.businessName)}/offers?offer=${offer.id}`)}
+                  className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer hover:shadow-md transition-all duration-300 hover:border-indigo-100 group"
                 >
-                  {/* Mobile: Vertical compact layout */}
-                  <div className="md:hidden p-3 flex flex-col items-center text-center">
-                    <div className="w-12 h-12 bg-gradient-to-br from-red-400 to-pink-500 flex items-center justify-center text-white rounded-lg mb-2">
-                      <div className="text-center">
-                        <div className="text-sm font-bold">{offer.discount}</div>
-                      </div>
+                  <div className="p-3 md:p-4 flex items-start gap-3 md:gap-4">
+                    {/* Left: Business Avatar */}
+                    <div className="flex-shrink-0">
+                      {offer.businessLogo ? (
+                        <img
+                          src={getOptimizedImageUrl(offer.businessLogo, 64)}
+                          alt={offer.businessName}
+                          className="w-12 h-12 rounded-lg object-cover border border-gray-100"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-lg bg-indigo-50 flex items-center justify-center border border-indigo-100">
+                          <span className="text-lg font-bold text-indigo-600">
+                            {offer.businessName.charAt(0)}
+                          </span>
+                        </div>
+                      )}
                     </div>
-                    <h3 className="font-semibold text-gray-900 text-xs mb-1 truncate w-full">{offer.title}</h3>
-                    <p className="text-xs text-gray-600 mb-2 truncate w-full">{offer.businessName}</p>
-                    <span className="inline-block bg-red-100 text-red-600 px-2 py-0.5 rounded-full text-xs font-medium">
-                      {offer.expiresIn}
-                    </span>
-                  </div>
 
-                  {/* Desktop: Horizontal layout */}
-                  <div className="hidden md:flex items-center">
-                    <div className="w-20 h-20 bg-gradient-to-br from-red-400 to-pink-500 flex items-center justify-center text-white m-4 rounded-xl flex-shrink-0">
-                      <div className="text-center">
-                        <div className="text-base font-semibold">{offer.discount}</div>
-                        <div className="text-xs opacity-90">OFF</div>
+                    {/* Right: Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start mb-1">
+                        <div className="min-w-0 pr-2">
+                          <p className="text-xs text-gray-500 font-medium truncate mb-0.5">
+                            {offer.businessName}
+                          </p>
+                          <h3 className="text-sm md:text-base font-bold text-gray-900 leading-tight line-clamp-2 group-hover:text-indigo-600 transition-colors">
+                            {offer.title}
+                          </h3>
+                        </div>
+                        {/* Trending Icon */}
+                        <div className="flex-shrink-0 text-orange-500">
+                          <TrendingUp className="w-4 h-4" />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between mt-2">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-50 text-red-600">
+                          ⏱ {offer.expiresIn}
+                        </span>
+
+                        <span className="text-xs font-medium text-indigo-600 flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          View <ChevronRight className="w-3 h-3 ml-0.5" />
+                        </span>
                       </div>
                     </div>
-                    <div className="flex-1 p-4 min-w-0">
-                      <h3 className="font-semibold text-gray-900 text-sm mb-1 truncate">{offer.title}</h3>
-                      <p className="text-sm text-gray-600 mb-3 truncate">{offer.businessName}</p>
-                      <span className="inline-block bg-red-100 text-red-600 px-3 py-1 rounded-full text-sm font-medium">
-                        {offer.expiresIn} left
-                      </span>
-                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {/* Empty Slots for Hot Offers */}
+              {[...Array(Math.max(0, 6 - hotOffers.length))].map((_, i) => (
+                <div key={`empty-offer-${i}`} className="bg-gray-50 rounded-xl border border-dashed border-gray-200 flex items-center justify-center p-4 min-h-[100px]">
+                  <div className="flex items-center gap-3 text-gray-400">
+                    <Star className="w-5 h-5" />
+                    <span className="text-sm font-medium">Coming Soon</span>
                   </div>
                 </div>
               ))}
@@ -316,9 +318,12 @@ const Dashboard: React.FC = () => {
                 <h2 className="text-lg font-semibold text-gray-900">Trending Now 📈</h2>
               </div>
             </div>
+            <p className="text-xs text-gray-500 mb-3 -mt-3 italic">
+              Trending products serve the most visited, liked, shared, and saved items.
+            </p>
 
-            {/* Mobile: 2-column compact grid, Desktop: 3-column horizontal cards */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6 mb-2">
+            {/* Mobile: 3-column grid, Tablet: 5-column, Desktop: 6-column */}
+            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-1.5 md:gap-2 mb-2">
               {trendingProducts.length === 0 ? (
                 <div className="col-span-2 md:col-span-3 text-center py-8 text-gray-500">
                   <p className="text-lg font-medium">No trending products yet</p>
@@ -327,42 +332,51 @@ const Dashboard: React.FC = () => {
               ) : trendingProducts.map((product, index) => (
                 <div
                   key={product.id}
-                  onClick={() => navigate(`/product/${product.id}`)}
-                  className="bg-white rounded-xl md:rounded-2xl p-3 md:p-4 shadow-sm md:shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer"
+                  onClick={() => {
+                    const businessUrl = getBusinessUrl(product.businessId, product.business);
+                    navigate(`${businessUrl}?tab=products`);
+                  }}
+                  className="bg-white rounded-xl md:rounded-2xl overflow-hidden shadow-sm md:shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer flex flex-col h-full group"
                 >
-                  {/* Mobile: Vertical compact layout */}
-                  <div className="md:hidden flex flex-col items-center text-center space-y-2">
-                    <div className="w-12 h-12 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-lg flex items-center justify-center">
-                      <span className="text-xl">{index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}</span>
+                  {/* Image Section - Full Card */}
+                  <div className="aspect-[9/16] relative bg-gray-100">
+                    {product.imageUrl ? (
+                      <img
+                        src={getOptimizedImageUrl(product.imageUrl, 400)}
+                        alt={product.name}
+                        className="w-full h-full object-cover"
+                        decoding="async"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 text-gray-300">
+                        <span className="text-4xl">🛍️</span>
+                      </div>
+                    )}
+                    {/* Trending Icon - Top Left (just arrow, no circle) */}
+                    <div className="absolute top-2 left-2">
+                      <TrendingUp className="w-5 h-5 text-purple-600 drop-shadow-md" />
                     </div>
-                    <div className="w-full min-w-0">
-                      <h3 className="font-semibold text-gray-900 text-xs truncate">{product.name}</h3>
-                      <p className="text-xs text-gray-600 truncate">{product.business}</p>
-                      <p className="font-bold text-gray-900 text-sm mt-1">{product.price.replace('Γé╣', '₹')}</p>
-                    </div>
-                    <span className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-2 py-0.5 rounded-full text-xs font-bold">
-                      #{index + 1}
-                    </span>
-                  </div>
 
-                  {/* Desktop: Horizontal layout */}
-                  <div className="hidden md:flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-xl flex items-center justify-center">
-                        <span className="text-lg">{index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}</span>
+                    {/* Multiple Images Indicator - Top Right (matches Products tab) */}
+                    {product.imageCount && product.imageCount > 1 && (
+                      <div className="absolute top-2 right-2">
+                        <div className="bg-black/50 backdrop-blur-sm rounded-full p-1.5 text-white">
+                          <Layers className="w-4 h-4" />
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-gray-900 text-sm truncate">{product.name}</h3>
-                        <p className="text-sm text-gray-600 truncate">{product.business}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-3 ml-4">
-                      <span className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-3 py-1 rounded-full text-sm font-bold">
-                        #{index + 1}
-                      </span>
-                      <p className="font-semibold text-gray-900 text-sm">{product.price.replace('Γé╣', '₹')}</p>
-                    </div>
+                    )}
                   </div>
+                </div>
+              ))}
+
+              {/* Empty Slots for Trending Products */}
+              {[...Array(Math.max(0, 6 - trendingProducts.length))].map((_, i) => (
+                <div key={`empty-prod-${i}`} className="bg-gray-50 rounded-xl md:rounded-2xl border border-dashed border-gray-200 flex flex-col items-center justify-center h-full min-h-[200px]">
+                  <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-2">
+                    <TrendingUp className="w-6 h-6 text-gray-300" />
+                  </div>
+                  <span className="text-gray-400 text-sm font-medium">Coming Soon</span>
                 </div>
               ))}
             </div>

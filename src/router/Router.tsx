@@ -27,7 +27,7 @@ const BusinessOnboardingPage = lazy(() => import('../components/business/Busines
 const BusinessProfile = lazy(() => import('../components/business/BusinessProfile'))
 const BusinessAnalyticsPage = lazy(() => import('../components/business/BusinessAnalyticsPage'))
 const BusinessQRCodePage = lazy(() => import('../components/business/BusinessQRCodePage'))
-const ProductManagerPage = lazy(() => import('../components/business/ProductManagerPage'))
+
 const CouponManagerPage = lazy(() => import('../components/business/CouponManagerPage'))
 const OfferManagerPage = lazy(() => import('../components/business/OfferManagerPage'))
 const CampaignManagerPage = lazy(() => import('../components/business/CampaignManagerPage'))
@@ -388,6 +388,16 @@ export const routes: RouteConfig[] = [
     protected: false,
     title: 'Business Products - SynC'
   },
+  {
+    path: '/business/:slug/offers',
+    element: (
+      <RouteLoader>
+        <BusinessProfile />
+      </RouteLoader>
+    ),
+    protected: false,
+    title: 'Business Offers - SynC'
+  },
 
   // Business Tools (Protected)
   {
@@ -420,16 +430,7 @@ export const routes: RouteConfig[] = [
     protected: true,
     title: 'Business QR Code - SynC'
   },
-  {
-    path: '/business/:businessId/manage/products',
-    element: (
-      <RouteLoader>
-        <ProductManagerPage />
-      </RouteLoader>
-    ),
-    protected: true,
-    title: 'Product Manager - SynC'
-  },
+
   {
     path: '/business/:businessId/manage/coupons',
     element: (

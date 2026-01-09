@@ -1,30 +1,71 @@
 import { useState, useEffect } from 'react';
+import { Product } from '../../types/product';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Search, SlidersHorizontal } from 'lucide-react';
 import { useProducts } from '../../hooks/useProducts';
 import { ProductCard } from './ProductCard';
+import { LazyRender } from '../common/LazyRender';
 import { Button } from '../ui/button';
 import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Skeleton } from '../ui/skeleton';
-import { Product } from '../../types/product';
+import * as ReactWindow from 'react-window';
+const gridKey = 'FixedSizeGrid';
+const FixedSizeGrid = (ReactWindow as any)[gridKey];
+import AutoSizer from 'react-virtualized-auto-sizer';
 
 type SortOption = 'newest' | 'price-low' | 'price-high' | 'name-asc' | 'name-desc';
+
+// Virtualization constants
+const GUTTER_SIZE = 6;
+const CARD_HEIGHT = 224;
+
+interface CellProps {
+  columnIndex: number;
+  rowIndex: number;
+  style: React.CSSProperties;
+  data: {
+    products: Product[];
+    columnCount: number;
+  };
+}
+
+const Cell = ({ columnIndex, rowIndex, style, data }: CellProps) => {
+  const { products, columnCount } = data;
+  const index = rowIndex * columnCount + columnIndex;
+  const product = products[index];
+
+  if (!product) return null;
+
+  // Adjust style for gutter
+  const left = parseFloat(style.left as string) + GUTTER_SIZE;
+  const top = parseFloat(style.top as string) + GUTTER_SIZE;
+  const width = parseFloat(style.width as string) - GUTTER_SIZE;
+  const height = parseFloat(style.height as string) - GUTTER_SIZE;
+
+  return (
+    <div style={{ ...style, left, top, width, height }}>
+      <ProductCard
+        product={product}
+        size="medium"
+        showActions={true}
+      />
+    </div>
+  );
+};
 
 export function AllProducts() {
   const { businessId } = useParams<{ businessId: string }>();
   const navigate = useNavigate();
   const { getBusinessUrl } = useBusinessUrl();
   const { products, loading, error, fetchProducts } = useProducts(businessId);
-  
+
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
-  const [currentPage, setCurrentPage] = useState(1);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  
-  const PRODUCTS_PER_PAGE = 12;
+  // const PRODUCTS_PER_PAGE = 12; // Removed in favor of virtualization
 
   // Extract unique categories from products
   const categories = ['all', ...Array.from(new Set(products.map(p => p.category).filter(Boolean)))];
@@ -74,14 +115,12 @@ export function AllProducts() {
     });
 
     setFilteredProducts(filtered);
-    setCurrentPage(1); // Reset to first page when filters change
+    setFilteredProducts(filtered);
+    // setCurrentPage(1); // Virtualization doesn't need pages
   }, [products, searchTerm, selectedCategory, sortBy]);
 
-  // Pagination
-  const totalPages = Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE);
-  const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
-  const endIndex = startIndex + PRODUCTS_PER_PAGE;
-  const currentProducts = filteredProducts.slice(startIndex, endIndex);
+  // Pagination removal - verify usage of filteredProducts directly
+  const currentProducts = filteredProducts; // Use all filtered products for virtualization
 
   const handleBack = () => {
     // Extract business name from first product if available
@@ -89,10 +128,7 @@ export function AllProducts() {
     navigate(getBusinessUrl(businessId!, businessName));
   };
 
-  const handlePageChange = (newPage: number) => {
-    setCurrentPage(newPage);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  // Pagination handled by virtualization
 
   // Loading State
   if (loading) {
@@ -104,7 +140,7 @@ export function AllProducts() {
           <Skeleton className="h-10 flex-1" />
           <Skeleton className="h-10 w-48" />
         </div>
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1.5">
           {Array.from({ length: 12 }).map((_, i) => (
             <div key={i} className="space-y-3">
               <Skeleton className="h-56 w-full" />
@@ -140,7 +176,7 @@ export function AllProducts() {
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Store
         </Button>
-        
+
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">All Products</h1>
@@ -222,71 +258,37 @@ export function AllProducts() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4" data-testid="products-grid">
-            {currentProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                size="medium"
-                showActions={true}
-              />
-            ))}
+          <div className="h-[calc(100vh-280px)] w-full min-h-[500px]" data-testid="products-grid">
+            <AutoSizer>
+              {({ height, width }) => {
+                // Responsive column count
+                let columnCount = 3;
+                if (width >= 1024) columnCount = 5; // lg
+                else if (width >= 768) columnCount = 4; // md
+
+                const columnWidth = width / columnCount;
+                const rowCount = Math.ceil(currentProducts.length / columnCount);
+
+                return (
+                  <FixedSizeGrid
+                    columnCount={columnCount}
+                    columnWidth={columnWidth}
+                    height={height}
+                    rowCount={rowCount}
+                    rowHeight={CARD_HEIGHT + GUTTER_SIZE}
+                    width={width}
+                    itemData={{ products: currentProducts, columnCount }}
+                    className="scrollbar-hide"
+                    overscanRowCount={5}
+                  >
+                    {Cell}
+                  </FixedSizeGrid>
+                );
+              }}
+            </AutoSizer>
           </div>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="mt-8 flex items-center justify-center gap-2">
-              <Button
-                variant="outline"
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-              >
-                Previous
-              </Button>
-              
-              <div className="flex items-center gap-2">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
-                  // Show first page, last page, current page, and pages around current
-                  const showPage = 
-                    page === 1 ||
-                    page === totalPages ||
-                    (page >= currentPage - 1 && page <= currentPage + 1);
-                  
-                  if (!showPage) {
-                    // Show ellipsis for skipped pages
-                    if (page === currentPage - 2 || page === currentPage + 2) {
-                      return <span key={page} className="px-2">...</span>;
-                    }
-                    return null;
-                  }
-
-                  return (
-                    <Button
-                      key={page}
-                      variant={currentPage === page ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => handlePageChange(page)}
-                      className="min-w-[2.5rem]"
-                    >
-                      {page}
-                    </Button>
-                  );
-                })}
-              </div>
-
-              <Button
-                variant="outline"
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-              >
-                Next
-              </Button>
-            </div>
-          )}
-
-          {/* Page Info */}
           <p className="mt-4 text-center text-sm text-muted-foreground">
-            Showing {startIndex + 1}-{Math.min(endIndex, filteredProducts.length)} of {filteredProducts.length} products
+            Showing {currentProducts.length} products
           </p>
         </>
       )}

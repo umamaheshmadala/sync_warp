@@ -3,12 +3,12 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { 
-  Offer, 
-  OfferFormData, 
-  OfferFilters, 
-  OfferSortOptions, 
-  OfferStatus 
+import {
+  Offer,
+  OfferFormData,
+  OfferFilters,
+  OfferSortOptions,
+  OfferStatus
 } from '../types/offers';
 
 interface UseOffersOptions {
@@ -23,22 +23,23 @@ interface UseOffersReturn {
   offers: Offer[];
   isLoading: boolean;
   error: string | null;
-  
+
   // Fetch operations
   fetchOffers: (page?: number) => Promise<void>;
   refreshOffers: () => Promise<void>;
-  
+
   // CRUD operations
   createOffer: (data: OfferFormData) => Promise<Offer | null>;
   updateOffer: (id: string, data: Partial<OfferFormData>) => Promise<Offer | null>;
   deleteOffer: (id: string) => Promise<boolean>;
-  
+
   // Status management
   activateOffer: (id: string) => Promise<boolean>;
   pauseOffer: (id: string) => Promise<boolean>;
   archiveOffer: (id: string) => Promise<boolean>;
   duplicateOffer: (id: string) => Promise<Offer | null>;
-  
+  extendExpiry: (id: string, days: number) => Promise<boolean>;
+
   // Pagination
   currentPage: number;
   totalPages: number;
@@ -72,7 +73,14 @@ export const useOffers = (options: UseOffersOptions = {}): UseOffersReturn => {
     try {
       let query = supabase
         .from('offers')
-        .select('*, business:businesses(id, business_name)', { count: 'exact' });
+        .select(`
+          *,
+          business:businesses(id, business_name),
+          offer_type:offer_types(
+            *,
+            category:offer_categories(*)
+          )
+        `, { count: 'exact' });
 
       // Apply business filter
       if (businessId) {
@@ -134,7 +142,7 @@ export const useOffers = (options: UseOffersOptions = {}): UseOffersReturn => {
     try {
       // Get current user session
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       const { data: offer, error: createError } = await supabase
         .from('offers')
         .insert({
@@ -167,7 +175,7 @@ export const useOffers = (options: UseOffersOptions = {}): UseOffersReturn => {
 
   // Update existing offer
   const updateOffer = useCallback(async (
-    id: string, 
+    id: string,
     data: Partial<OfferFormData> & { status?: OfferStatus }
   ): Promise<Offer | null> => {
     setIsLoading(true);
@@ -325,20 +333,20 @@ export const useOffers = (options: UseOffersOptions = {}): UseOffersReturn => {
     offers,
     isLoading,
     error,
-    
+
     fetchOffers,
     refreshOffers,
-    
+
     createOffer,
     updateOffer,
     deleteOffer,
-    
+
     activateOffer,
     pauseOffer,
     archiveOffer,
     extendExpiry,
     duplicateOffer,
-    
+
     currentPage,
     totalPages,
     totalCount,

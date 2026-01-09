@@ -1,6 +1,6 @@
 // useSimpleProductSocial.ts
 // Simplified product social features using the existing favorites table
-// This hook provides favorite/wishlist/share functionality without requiring enhanced favorites tables
+// optimized with global caching to prevent N+1 query issues
 
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
@@ -9,235 +9,213 @@ import type { Product } from '../types/product';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '@/lib/supabase';
 
-interface UseSimpleProductSocialReturn {
-  // Favorite operations
-  isFavorited: (productId: string) => boolean;
-  toggleFavorite: (product: Product) => Promise<void>;
-  
-  // Wishlist operations (for now, we'll store wishlist in localStorage)
-  isInWishlist: (productId: string) => boolean;
-  toggleWishlist: (product: Product) => Promise<void>;
-  
-  // Counts
-  favoriteCount: number;
-  wishlistCount: number;
-  
-  // Loading states
-  isLoading: boolean;
-  error: string | null;
-}
+// Global state to prevent re-fetching for every card
+let globalFavorites: SimpleFavorite[] = [];
+let globalWishlist: Set<string> = new Set();
+let isInitialized = false;
+let isLoadingGlobal = false;
+// Listeners for state updates
+const listeners: Set<() => void> = new Set();
 
-/**
- * Hook for product-specific social features (favorites and wishlist)
- * Uses the simple existing favorites table
- */
-export const useSimpleProductSocial = (): UseSimpleProductSocialReturn => {
-  const user = useAuthStore((state) => state.user);
-  const [favorites, setFavorites] = useState<SimpleFavorite[]>([]);
-  const [wishlist, setWishlist] = useState<Set<string>>(new Set());
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+const notifyListeners = () => {
+  listeners.forEach((listener) => listener());
+};
 
-  // Load favorites and wishlist on mount and when user changes
-  useEffect(() => {
-    if (user) {
-      loadFavorites();
-      loadWishlistFromDatabase();
-    } else {
-      setFavorites([]);
-      setWishlist(new Set());
-    }
-  }, [user]);
+// Singleton data loader
+const loadGlobalData = async (userId: string) => {
+  if (isLoadingGlobal || isInitialized) return;
 
-  const loadFavorites = async () => {
+  try {
+    isLoadingGlobal = true;
+    notifyListeners(); // Update loading state
+
+    // 1. Load Favorites
+    let favorites: SimpleFavorite[] = [];
     try {
-      setIsLoading(true);
-      const data = await simpleFavoritesService.getFavorites('product');
-      setFavorites(data);
-      setError(null);
+      favorites = await simpleFavoritesService.getFavorites('product');
     } catch (err) {
       console.error('Failed to load favorites:', err);
-      setError('Failed to load favorites');
-    } finally {
-      setIsLoading(false);
     }
-  };
 
-  const loadWishlistFromDatabase = async () => {
-    if (!user?.id) return;
-    
+    // 2. Load Wishlist
+    let wishlistIds = new Set<string>();
     try {
       // Load from Supabase
       const { data, error } = await supabase
         .from('user_wishlist_items')
         .select('item_id')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .eq('item_type', 'product');
-      
-      if (error) {
-        console.error('Failed to load wishlist from database:', error);
+
+      if (!error && data) {
+        data.forEach(item => wishlistIds.add(item.item_id));
+        // Sync to localStorage
+        localStorage.setItem(`wishlist_${userId}`, JSON.stringify([...wishlistIds]));
+      } else {
         // Fallback to localStorage
-        const stored = localStorage.getItem(`wishlist_${user.id}`);
+        const stored = localStorage.getItem(`wishlist_${userId}`);
         if (stored) {
-          setWishlist(new Set(JSON.parse(stored)));
+          wishlistIds = new Set(JSON.parse(stored));
         }
-        return;
       }
-      
-      const wishlistIds = new Set(data?.map(item => item.item_id) || []);
-      setWishlist(wishlistIds);
-      
-      // Sync to localStorage for offline access
-      localStorage.setItem(`wishlist_${user.id}`, JSON.stringify([...wishlistIds]));
     } catch (err) {
       console.error('Failed to load wishlist:', err);
+      // Fallback
+      const stored = localStorage.getItem(`wishlist_${userId}`);
+      if (stored) {
+        wishlistIds = new Set(JSON.parse(stored));
+      }
     }
-  };
 
+    // Update global state
+    globalFavorites = favorites;
+    globalWishlist = wishlistIds;
+    isInitialized = true;
+  } finally {
+    isLoadingGlobal = false;
+    notifyListeners();
+  }
+};
+
+interface UseSimpleProductSocialReturn {
+  isFavorited: (productId: string) => boolean;
+  toggleFavorite: (product: Product) => Promise<void>;
+  isInWishlist: (productId: string) => boolean;
+  toggleWishlist: (product: Product) => Promise<void>;
+  favoriteCount: number;
+  wishlistCount: number;
+  isLoading: boolean;
+  error: string | null;
+}
+
+export const useSimpleProductSocial = (): UseSimpleProductSocialReturn => {
+  const user = useAuthStore((state) => state.user);
+  // Local state just forces re-render when global state changes
+  const [, setForceUpdate] = useState({});
+
+  useEffect(() => {
+    if (!user) {
+      globalFavorites = [];
+      globalWishlist = new Set();
+      isInitialized = false;
+      notifyListeners();
+      return;
+    }
+
+    // Initialize if needed
+    if (!isInitialized && !isLoadingGlobal) {
+      loadGlobalData(user.id);
+    }
+
+    const listener = () => setForceUpdate({});
+    listeners.add(listener);
+    return () => {
+      listeners.delete(listener);
+    };
+  }, [user]);
+
+  // Database sync helper for wishlist
   const saveWishlistToDatabase = async (productId: string, add: boolean) => {
     if (!user?.id) return;
-    
     try {
       if (add) {
-        // Add to database
-        const { error } = await supabase
-          .from('user_wishlist_items')
-          .insert({
-            user_id: user.id,
-            item_type: 'product',
-            item_id: productId
-          });
-        
-        if (error && error.code !== '23505') { // Ignore duplicate key errors
-          console.error('Failed to add to wishlist in database:', error);
-        }
+        await supabase.from('user_wishlist_items').insert({
+          user_id: user.id,
+          item_type: 'product',
+          item_id: productId
+        });
       } else {
-        // Remove from database
-        const { error } = await supabase
-          .from('user_wishlist_items')
-          .delete()
+        await supabase.from('user_wishlist_items').delete()
           .eq('user_id', user.id)
           .eq('item_type', 'product')
           .eq('item_id', productId);
-        
-        if (error) {
-          console.error('Failed to remove from wishlist in database:', error);
-        }
       }
     } catch (err) {
-      console.error('Failed to sync wishlist to database:', err);
+      console.error('Failed to sync wishlist to DB:', err);
     }
   };
-  
-  const saveWishlist = (newWishlist: Set<string>, productId: string, add: boolean) => {
+
+  const isFavorited = useCallback((productId: string) => {
+    return globalFavorites.some(fav => fav.entity_id === productId);
+  }, []);
+
+  const isInWishlist = useCallback((productId: string) => {
+    return globalWishlist.has(productId);
+  }, []);
+
+  const toggleFavorite = useCallback(async (product: Product) => {
+    if (!user) {
+      toast.error('Please sign in to save favorites');
+      return;
+    }
+
     try {
-      // Update local state
-      setWishlist(newWishlist);
-      localStorage.setItem(`wishlist_${user?.id}`, JSON.stringify([...newWishlist]));
-      
-      // Sync to database in background
-      saveWishlistToDatabase(productId, add);
-      
-      // Dispatch event for other components
-      window.dispatchEvent(new CustomEvent('wishlistUpdated', { detail: { count: newWishlist.size } }));
-    } catch (err) {
-      console.error('Failed to save wishlist:', err);
+      const currentlyFavorited = globalFavorites.some(fav => fav.entity_id === product.id);
+
+      // Optimistic update
+      if (currentlyFavorited) {
+        globalFavorites = globalFavorites.filter(fav => fav.entity_id !== product.id);
+        notifyListeners();
+        toast.success('Removed from favorites');
+        await simpleFavoritesService.removeByEntity('product', product.id);
+      } else {
+        // We need the ID from the server usually, but for optimistic UI we can wait or fake it.
+        // For correctness with this service, we'll await.
+        const newFavorite = await simpleFavoritesService.addToFavorites('product', product.id);
+        globalFavorites = [newFavorite, ...globalFavorites];
+        notifyListeners();
+        toast.success('Added to favorites!');
+      }
+    } catch (error) {
+      console.error('Failed to toggle favorite:', error);
+      toast.error('Failed to update favorites');
+      // Revert would be complex here without undo log, but typical for simple apps to just fail
+      // Mark as uninitialized to force refetch could be a strategy
+      isInitialized = false;
     }
-  };
+  }, [user]);
 
-  // Check if product is favorited
-  const isFavorited = useCallback(
-    (productId: string): boolean => {
-      return favorites.some(fav => fav.entity_id === productId);
-    },
-    [favorites]
-  );
+  const toggleWishlist = useCallback(async (product: Product) => {
+    if (!user) {
+      toast.error('Please sign in to manage wishlist');
+      return;
+    }
 
-  // Check if product is in wishlist
-  const isInWishlist = useCallback(
-    (productId: string): boolean => {
-      return wishlist.has(productId);
-    },
-    [wishlist]
-  );
+    try {
+      const currentlyInWishlist = globalWishlist.has(product.id);
+      const newWishlist = new Set(globalWishlist);
 
-  // Toggle favorite status
-  const toggleFavorite = useCallback(
-    async (product: Product): Promise<void> => {
-      if (!user) {
-        toast.error('Please sign in to save favorites');
-        return;
+      if (currentlyInWishlist) {
+        newWishlist.delete(product.id);
+        toast.success('Removed from wishlist');
+      } else {
+        newWishlist.add(product.id);
+        toast.success('Added to wishlist!');
       }
 
-      try {
-        const currentlyFavorited = isFavorited(product.id);
-        
-        if (currentlyFavorited) {
-          // Remove from favorites
-          await simpleFavoritesService.removeByEntity('product', product.id);
-          setFavorites(prev => prev.filter(fav => fav.entity_id !== product.id));
-          toast.success('Removed from favorites');
-        } else {
-          // Add to favorites
-          const newFavorite = await simpleFavoritesService.addToFavorites('product', product.id);
-          setFavorites(prev => [newFavorite, ...prev]);
-          toast.success('Added to favorites!');
-        }
-      } catch (error) {
-        console.error('Failed to toggle product favorite:', error);
-        toast.error('Failed to update favorites');
-        throw error;
-      }
-    },
-    [user, isFavorited]
-  );
+      // Optimistic update
+      globalWishlist = newWishlist;
+      notifyListeners();
 
-  // Toggle wishlist status
-  const toggleWishlist = useCallback(
-    async (product: Product): Promise<void> => {
-      if (!user) {
-        toast.error('Please sign in to manage wishlist');
-        return;
-      }
+      // Persist
+      localStorage.setItem(`wishlist_${user.id}`, JSON.stringify([...newWishlist]));
+      saveWishlistToDatabase(product.id, !currentlyInWishlist);
 
-      try {
-        const currentlyInWishlist = isInWishlist(product.id);
-        const newWishlist = new Set(wishlist);
-        
-        if (currentlyInWishlist) {
-          newWishlist.delete(product.id);
-          saveWishlist(newWishlist, product.id, false);
-          toast.success('Removed from wishlist');
-        } else {
-          newWishlist.add(product.id);
-          saveWishlist(newWishlist, product.id, true);
-          toast.success('Added to wishlist!');
-        }
-      } catch (error) {
-        console.error('Failed to toggle product wishlist:', error);
-        toast.error('Failed to update wishlist');
-        throw error;
-      }
-    },
-    [user, isInWishlist, wishlist]
-  );
+    } catch (error) {
+      console.error('Failed to toggle wishlist:', error);
+      toast.error('Failed to update wishlist');
+    }
+  }, [user]);
 
   return {
-    // Favorite operations
     isFavorited,
     toggleFavorite,
-    
-    // Wishlist operations
     isInWishlist,
     toggleWishlist,
-    
-    // Counts
-    favoriteCount: favorites.length,
-    wishlistCount: wishlist.size,
-    
-    // States
-    isLoading,
-    error,
+    favoriteCount: globalFavorites.length,
+    wishlistCount: globalWishlist.size,
+    isLoading: isLoadingGlobal,
+    error: null,
   };
 };
 

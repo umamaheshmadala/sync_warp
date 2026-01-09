@@ -16,6 +16,9 @@ export interface Product {
   last_updated_at?: string; // For auto-deletion tracking
   created_at: string;
   updated_at: string;
+  business?: {
+    name: string;
+  };
 }
 
 export interface ProductFormData {

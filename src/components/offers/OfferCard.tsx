@@ -5,11 +5,11 @@
 
 import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Calendar, 
-  Eye, 
-  Share2, 
-  MousePointerClick, 
+import {
+  Calendar,
+  Eye,
+  Share2,
+  MousePointerClick,
   MoreVertical,
   Clock,
   CheckCircle,
@@ -17,11 +17,14 @@ import {
   Archive,
   BarChart3,
   Copy,
-  CalendarPlus
+  CalendarPlus,
+  Zap,
+  Tag
 } from 'lucide-react';
 import { format, formatDistanceToNow, isAfter, isBefore } from 'date-fns';
 import type { Offer } from '../../types/offers';
 import { ShareButton } from '../Sharing/ShareButton';
+import { getCategoryIcon } from '../../utils/iconMap';
 
 interface OfferCardProps {
   offer: Offer;
@@ -77,30 +80,30 @@ export function OfferCard({
 
   // Status badge configuration
   const statusConfig = {
-    draft: { 
-      icon: Clock, 
-      label: 'Draft', 
-      className: 'bg-gray-100 text-gray-700 border-gray-200' 
+    draft: {
+      icon: Clock,
+      label: 'Draft',
+      className: 'bg-gray-100 text-gray-700 border-gray-200'
     },
-    active: { 
-      icon: CheckCircle, 
-      label: 'Active', 
-      className: 'bg-green-100 text-green-700 border-green-200' 
+    active: {
+      icon: CheckCircle,
+      label: 'Active',
+      className: 'bg-green-100 text-green-700 border-green-200'
     },
-    paused: { 
-      icon: Pause, 
-      label: 'Paused', 
-      className: 'bg-yellow-100 text-yellow-700 border-yellow-200' 
+    paused: {
+      icon: Pause,
+      label: 'Paused',
+      className: 'bg-yellow-100 text-yellow-700 border-yellow-200'
     },
-    expired: { 
-      icon: Calendar, 
-      label: 'Expired', 
-      className: 'bg-red-100 text-red-700 border-red-200' 
+    expired: {
+      icon: Calendar,
+      label: 'Expired',
+      className: 'bg-red-100 text-red-700 border-red-200'
     },
-    archived: { 
-      icon: Archive, 
-      label: 'Archived', 
-      className: 'bg-gray-100 text-gray-500 border-gray-200' 
+    archived: {
+      icon: Archive,
+      label: 'Archived',
+      className: 'bg-gray-100 text-gray-500 border-gray-200'
     },
   };
 
@@ -109,14 +112,22 @@ export function OfferCard({
 
   // Check if offer is currently valid (only for active status)
   const now = new Date();
-  const isValid = offer.status === 'active' && 
-                  isAfter(now, new Date(offer.valid_from)) && 
-                  isBefore(now, new Date(offer.valid_until));
+  const isValid = offer.status === 'active' &&
+    isAfter(now, new Date(offer.valid_from)) &&
+    isBefore(now, new Date(offer.valid_until));
   const isExpired = isAfter(now, new Date(offer.valid_until));
   const isScheduled = isBefore(now, new Date(offer.valid_from));
 
+  // Calculate trending status
+  const isTrending = (offer.view_count + (offer.share_count * 2)) > 50;
+
+  // Get Category Icon
+  const CategoryIcon = offer.offer_type?.category?.icon_name
+    ? getCategoryIcon(offer.offer_type.category.icon_name)
+    : Calendar;
+
   return (
-    <div 
+    <div
       className="bg-white rounded-xl border border-gray-200 hover:shadow-lg transition-shadow duration-200 cursor-pointer"
       onClick={() => onViewDetails && onViewDetails(offer)}
     >
@@ -131,8 +142,9 @@ export function OfferCard({
               className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
             />
           ) : (
-            <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-pink-100 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Calendar className="w-8 h-8 text-purple-600" />
+            <div className={`w-16 h-16 rounded-lg flex items-center justify-center flex-shrink-0 ${offer.offer_type ? 'bg-purple-50' : 'bg-gradient-to-br from-purple-100 to-pink-100'
+              }`}>
+              <CategoryIcon className="w-8 h-8 text-purple-600" />
             </div>
           )}
 
@@ -148,16 +160,36 @@ export function OfferCard({
                 </p>
               </div>
 
-              {/* Status Badge */}
-              <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border ${currentStatus.className}`}>
-                <StatusIcon className="w-3.5 h-3.5" />
-                <span className="text-xs font-semibold">{currentStatus.label}</span>
+              {/* Badges Container */}
+              <div className="flex flex-wrap gap-2 mt-1">
+                {/* Status Badge */}
+                <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border ${currentStatus.className}`}>
+                  <StatusIcon className="w-3 h-3" />
+                  <span className="text-xs font-semibold">{currentStatus.label}</span>
+                </div>
+
+                {/* Type Badge */}
+                {offer.offer_type && (
+                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-full border bg-blue-50 text-blue-700 border-blue-200">
+                    <Tag className="w-3 h-3" />
+                    <span className="text-xs font-semibold line-clamp-1 max-w-[120px]">
+                      {offer.offer_type.offer_name}
+                    </span>
+                  </div>
+                )}
+
+                {/* Trending Badge */}
+                {isTrending && (
+                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 border border-orange-200">
+                    <Zap className="w-3 h-3 fill-orange-700 text-orange-700" />
+                    <span className="text-[10px] font-bold uppercase tracking-wider">Trending</span>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Description */}
             {offer.description && (
-              <p className="text-sm text-gray-600 mt-3 line-clamp-2">
+              <p className="text-sm text-gray-600 mt-3 hidden lg:line-clamp-2">
                 {offer.description}
               </p>
             )}
@@ -177,7 +209,7 @@ export function OfferCard({
               </button>
 
               {showMenu && (
-                <div 
+                <div
                   className="absolute right-0 top-10 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-10"
                   onClick={(e) => e.stopPropagation()}
                 >
