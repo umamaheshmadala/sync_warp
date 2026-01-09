@@ -1412,13 +1412,16 @@ const BusinessProfile: React.FC = () => {
                   </div>
 
                   {/* Action Buttons Row - Desktop Only */}
-                  <div className="hidden md:flex flex-wrap items-center gap-2 mt-2">
+                  <div className="hidden md:flex flex-wrap items-center gap-2 mt-2 w-full max-w-2xl">
                     {!isOwner && user && (
-                      <FollowButton
-                        businessId={business.id}
-                        variant="default"
-                        size="default"
-                      />
+                      <div className="flex-1">
+                        <FollowButton
+                          businessId={business.id}
+                          variant="default"
+                          size="default"
+                          className="w-full justify-center"
+                        />
+                      </div>
                     )}
                     {/* Navigate Button */}
                     <button
@@ -1431,18 +1434,32 @@ const BusinessProfile: React.FC = () => {
                           window.open(`https://www.google.com/maps/search/?api=1&query=${query}`);
                         }
                       }}
-                      className="inline-flex flex-1 justify-center items-center px-2 py-2 border border-gray-300 shadow-sm text-xs md:text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 md:flex-none md:px-3"
+                      className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50"
                       title="Navigate"
                     >
-                      <Navigation className="w-3.5 h-3.5 mr-1.5 md:mr-2 md:w-4 md:h-4" />
+                      <Navigation className="w-4 h-4 mr-2" />
                       <span>Navigate</span>
                     </button>
+
+                    {/* Share Button (Promoted for Non-Owners) */}
+                    {!isOwner && (
+                      <StorefrontShareButton
+                        businessId={business.id}
+                        businessName={business.business_name}
+                        businessDescription={business.description}
+                        variant="ghost"
+                        showLabel={true}
+                        showIcon={true}
+                        className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50"
+                        onShareSuccess={() => console.log('Shared')}
+                      />
+                    )}
 
                     {isOwner && (
                       <>
                         <button
                           onClick={() => navigate(`/business/${business?.id}/manage/campaigns`)}
-                          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-pink-600 hover:bg-pink-700 transition-colors"
+                          className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-pink-600 hover:bg-pink-700 transition-colors"
                         >
                           <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-trending-up'%3E%3Cpolyline points='22 7 13.5 15.5 8.5 10.5 2 17'/%3E%3Cpolyline points='16 7 22 7 22 13'/%3E%3C/svg%3E" alt="" className="w-4 h-4 mr-2" />
                           Campaigns
@@ -1450,10 +1467,10 @@ const BusinessProfile: React.FC = () => {
 
                         <button
                           onClick={() => navigate(`/business/${business?.id}/manage/coupons`)}
-                          className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50"
+                          className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50"
                         >
                           <Tag className="w-4 h-4 mr-2" />
-                          Manage Coupons
+                          Coupons
                         </button>
                       </>
                     )}
@@ -1474,19 +1491,22 @@ const BusinessProfile: React.FC = () => {
                             onClick={() => setShowMoreDropdown(false)}
                           />
                           <div className="absolute right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-20 py-1 min-w-[120px]">
-                            <StorefrontShareButton
-                              businessId={business.id}
-                              businessName={business.business_name}
-                              businessDescription={business.description}
-                              variant="ghost"
-                              showLabel={true}
-                              showIcon={true}
-                              className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 h-auto justify-start rounded-none gap-2"
-                              onShareSuccess={() => {
-                                setShowMoreDropdown(false);
-                                console.log('Shared');
-                              }}
-                            />
+                            {/* Show Share in dropdown only for Owners (since it's not in primary row) */}
+                            {isOwner && (
+                              <StorefrontShareButton
+                                businessId={business.id}
+                                businessName={business.business_name}
+                                businessDescription={business.description}
+                                variant="ghost"
+                                showLabel={true}
+                                showIcon={true}
+                                className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 h-auto justify-start rounded-none gap-2"
+                                onShareSuccess={() => {
+                                  setShowMoreDropdown(false);
+                                  console.log('Shared');
+                                }}
+                              />
+                            )}
                             <button
                               onClick={() => {
                                 setShowInfoModal(true);
@@ -1508,10 +1528,13 @@ const BusinessProfile: React.FC = () => {
               {/* Action Buttons Row - Mobile Only (Full Width) */}
               <div className="md:hidden flex flex-row items-stretch gap-2 mt-2 w-full">
                 {!isOwner && user && (
-                  <FollowButton
-                    businessId={business.id}
-                    businessName={business.business_name}
-                  />
+                  <div className="flex-1">
+                    <FollowButton
+                      businessId={business.id}
+                      businessName={business.business_name}
+                      className="w-full justify-center"
+                    />
+                  </div>
                 )}
                 <button
                   onClick={() => {
@@ -1522,18 +1545,32 @@ const BusinessProfile: React.FC = () => {
                       window.open(`https://www.google.com/maps/search/?api=1&query=${query}`);
                     }
                   }}
-                  className="inline-flex flex-1 justify-center items-center px-2 py-2 border border-gray-300 shadow-sm text-xs font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50"
+                  className="flex-1 inline-flex justify-center items-center px-2 py-2 border border-gray-300 shadow-sm text-xs font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50"
                   title="Navigate"
                 >
                   <Navigation className="w-3.5 h-3.5 mr-1.5" />
                   <span>Navigate</span>
                 </button>
 
+                {/* Share Button (Promoted for Non-Owners) */}
+                {!isOwner && (
+                  <StorefrontShareButton
+                    businessId={business.id}
+                    businessName={business.business_name}
+                    businessDescription={business.description}
+                    variant="ghost"
+                    showLabel={true}
+                    showIcon={true}
+                    className="flex-1 inline-flex justify-center items-center px-2 py-2 border border-gray-300 shadow-sm text-xs font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50"
+                    onShareSuccess={() => console.log('Shared')}
+                  />
+                )}
+
                 {isOwner && (
                   <>
                     <button
                       onClick={() => navigate(`/business/${business?.id}/manage/campaigns`)}
-                      className="inline-flex flex-1 justify-center items-center px-2 py-2 border border-transparent text-xs font-medium rounded-lg shadow-sm text-white bg-pink-600 hover:bg-pink-700 transition-colors"
+                      className="flex-1 inline-flex justify-center items-center px-2 py-2 border border-transparent text-xs font-medium rounded-lg shadow-sm text-white bg-pink-600 hover:bg-pink-700 transition-colors"
                     >
                       <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-trending-up'%3E%3Cpolyline points='22 7 13.5 15.5 8.5 10.5 2 17'/%3E%3Cpolyline points='16 7 22 7 22 13'/%3E%3C/svg%3E" alt="" className="w-3.5 h-3.5 mr-1.5" />
                       Campaigns
@@ -1541,7 +1578,7 @@ const BusinessProfile: React.FC = () => {
 
                     <button
                       onClick={() => navigate(`/business/${business?.id}/manage/coupons`)}
-                      className="inline-flex flex-1 justify-center items-center px-2 py-2 border border-gray-300 shadow-sm text-xs font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50"
+                      className="flex-1 inline-flex justify-center items-center px-2 py-2 border border-gray-300 shadow-sm text-xs font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50"
                     >
                       <Tag className="w-3.5 h-3.5 mr-1.5" />
                       Coupons
@@ -1553,7 +1590,7 @@ const BusinessProfile: React.FC = () => {
                 <div className="relative">
                   <button
                     onClick={() => setShowMoreDropdown(!showMoreDropdown)}
-                    className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                    className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-50 min-w-[2.5rem]"
                   >
                     <MoreVertical className="w-5 h-5" />
                   </button>
@@ -1564,19 +1601,22 @@ const BusinessProfile: React.FC = () => {
                         onClick={() => setShowMoreDropdown(false)}
                       />
                       <div className="absolute right-0 bottom-full mb-2 bg-white border border-gray-200 rounded-lg shadow-lg z-20 py-1 min-w-[120px]">
-                        <StorefrontShareButton
-                          businessId={business.id}
-                          businessName={business.business_name}
-                          businessDescription={business.description}
-                          variant="ghost"
-                          showLabel={true}
-                          showIcon={true}
-                          className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 h-auto justify-start rounded-none gap-2"
-                          onShareSuccess={() => {
-                            setShowMoreDropdown(false);
-                            console.log('Shared');
-                          }}
-                        />
+                        {/* Show Share in dropdown only for Owners */}
+                        {isOwner && (
+                          <StorefrontShareButton
+                            businessId={business.id}
+                            businessName={business.business_name}
+                            businessDescription={business.description}
+                            variant="ghost"
+                            showLabel={true}
+                            showIcon={true}
+                            className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 h-auto justify-start rounded-none gap-2"
+                            onShareSuccess={() => {
+                              setShowMoreDropdown(false);
+                              console.log('Shared');
+                            }}
+                          />
+                        )}
                         <button
                           onClick={() => {
                             setShowInfoModal(true);

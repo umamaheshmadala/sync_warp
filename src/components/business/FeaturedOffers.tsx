@@ -11,6 +11,7 @@ import { ShareDeal } from '@/components/ShareDeal';
 import { CreateOfferForm } from '@/components/offers/CreateOfferForm';
 import { useAuthStore } from '@/store/authStore';
 import { getCategoryIcon } from '@/utils/iconMap';
+import { FavoriteOfferButton } from '@/components/favorites/FavoriteOfferButton';
 
 
 
@@ -276,16 +277,25 @@ export default function FeaturedOffers({
                       </div>
                     </div>
 
-                    <div className="flex items-center flex-wrap gap-4 mt-1 text-xs text-gray-500">
-                      <span className="flex items-center">
-                        <Calendar className="w-3.5 h-3.5 mr-1.5" />
-                        {expired ? 'Expired' : `Valid until ${new Date(offer.valid_until).toLocaleDateString()}`}
-                      </span>
-                      {isOwner && (
+                    <div className="flex items-center justify-between mt-2">
+                      <div className="flex items-center flex-wrap gap-4 text-xs text-gray-500">
                         <span className="flex items-center">
-                          <TrendingUp className="w-3.5 h-3.5 mr-1.5" />
-                          {offer.view_count} views
+                          <Calendar className="w-3.5 h-3.5 mr-1.5" />
+                          {expired ? 'Expired' : `Valid until ${new Date(offer.valid_until).toLocaleDateString()}`}
                         </span>
+                        {isOwner && (
+                          <span className="flex items-center">
+                            <TrendingUp className="w-3.5 h-3.5 mr-1.5" />
+                            {offer.view_count} views
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Favorite Button - Story 4.13 */}
+                      {!isOwner && (
+                        <div onClick={(e) => e.stopPropagation()}>
+                          <FavoriteOfferButton offerId={offer.id} className="text-xs px-2 py-1 h-8" />
+                        </div>
                       )}
                     </div>
                   </div>
@@ -419,21 +429,9 @@ export default function FeaturedOffers({
                   <ShareDeal deal={selectedOffer} variant="default" size="default" />
                 </div>
 
-                {/* Save Deal Button */}
+                {/* Favorite Button - Story 4.13 */}
                 {!isOwner && (
-                  <button
-                    onClick={async () => {
-                      toast.success('Deal saved!');
-                      if (shareId && initialOfferId === selectedOffer.id) {
-                        const { trackShareConversion } = await import('@/services/analyticsService');
-                        trackShareConversion(shareId, selectedOffer.id, 'save');
-                      }
-                    }}
-                    className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-                  >
-                    <Heart className="w-4 h-4 mr-2" />
-                    Save Deal
-                  </button>
+                  <FavoriteOfferButton offerId={selectedOffer.id} />
                 )}
               </div>
 

@@ -25,6 +25,7 @@ import { format, formatDistanceToNow, isAfter, isBefore } from 'date-fns';
 import type { Offer } from '../../types/offers';
 import { ShareButton } from '../Sharing/ShareButton';
 import { getCategoryIcon } from '../../utils/iconMap';
+import { FavoriteOfferButton } from '../favorites/FavoriteOfferButton';
 
 interface OfferCardProps {
   offer: Offer;
@@ -344,7 +345,11 @@ export function OfferCard({
         <span className="text-xs text-gray-500">
           Created {formatDistanceToNow(new Date(offer.created_at), { addSuffix: true })}
         </span>
-        <div onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+          {/* Favorite Button - Story 4.13 */}
+          <FavoriteOfferButton offerId={offer.id} className="text-xs px-3 py-1.5" />
+
+          {/* Share Button */}
           <ShareButton
             shareableType="offer"
             shareableId={offer.id}

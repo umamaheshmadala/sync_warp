@@ -14,6 +14,7 @@ import {
 import { Product, CURRENCIES } from '../../types/product';
 import { useNavigate } from 'react-router-dom';
 import { useBusinessUrl } from '../../hooks/useBusinessUrl';
+import { FavoriteProductButton } from '../favorites/FavoriteProductButton';
 
 interface ProductViewProps {
   product: Product;
@@ -228,6 +229,13 @@ const ProductView: React.FC<ProductViewProps> = ({
               {new Date(product.updated_at).toLocaleDateString()}
             </div>
           </div>
+
+          {/* Favorite Button in bottom-right area - Story 4.13 */}
+          {!isOwner && (
+            <div className="flex justify-end mt-4">
+              <FavoriteProductButton productId={product.id} />
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -80,6 +80,7 @@ const BusinessDiscoveryPage = lazy(() => import('../components/discovery/Busines
 const CategoryBrowserPage = lazy(() => import('../components/categories/CategoryBrowserPage'))
 const TrendingCouponsPage = lazy(() => import('../components/coupons/TrendingCouponsPage'))
 const UnifiedFavoritesPage = lazy(() => import('../components/favorites/UnifiedFavoritesPage'))
+const FavoritesPage = lazy(() => import('../components/favorites/FavoritesPage'))
 const FollowingPage = lazy(() => import('../components/following/FollowingPage'))
 const FollowerFeed = lazy(() => import('../components/following/FollowerFeed'))
 const MyReviewsPage = lazy(() => import('../pages/MyReviewsPage'))
@@ -295,9 +296,9 @@ export const routes: RouteConfig[] = [
   {
     path: '/favorites',
     element: (
-      <RouteLoader>
-        <UnifiedFavoritesPage />
-      </RouteLoader>
+      <ProtectedRoute>
+        <FavoritesPage />
+      </ProtectedRoute>
     ),
     protected: true,
     title: 'Favorites - SynC',

@@ -23,6 +23,7 @@ import { useRealtimeFriends } from './hooks/friends/useRealtimeFriends'
 import { AppDataPrefetcher } from './components/AppDataPrefetcher'
 import { realtimeService } from './services/realtimeService'
 import { spamConfigService } from './services/SpamConfigService'
+import { FavoritesProvider } from './contexts/FavoritesContext'
 
 // Configure React Query with stale-while-revalidate pattern
 // Shows cached data immediately, then fetches fresh data in background
@@ -120,10 +121,12 @@ function AppContent() {
   return (
     <>
       <OfflineBanner />
-      <AppLayout>
-        <AppDataPrefetcher />
-        <AppRouter />
-      </AppLayout>
+      <FavoritesProvider>
+        <AppLayout>
+          <AppDataPrefetcher />
+          <AppRouter />
+        </AppLayout>
+      </FavoritesProvider>
       <DevMenu />
       <Toaster
         position="top-right"

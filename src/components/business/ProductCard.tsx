@@ -16,6 +16,7 @@ import { Product, CURRENCIES } from '../../types/product';
 import ProductView from './ProductView';
 import { AnimatePresence } from 'framer-motion';
 import { getOptimizedImageUrl } from '../../utils/imageUtils';
+import { FavoriteProductButton } from '../favorites/FavoriteProductButton';
 
 interface ProductCardProps {
   product: Product;
@@ -161,14 +162,14 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
   return (
     <>
       <div
-        className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-200 cursor-pointer hover:scale-[1.03]"
+        className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-200 cursor-pointer hover:scale-[1.03] flex flex-col h-full"
         onClick={handleProductClick}
         style={{
           transform: 'translateZ(0)',
         }}
       >
-        {/* Product Image - 9:16 Portrait */}
-        <div className="relative bg-gray-100 overflow-hidden aspect-[9/16]">
+        {/* Product Image - Aspect Ratio */}
+        <div className="relative bg-gray-100 overflow-hidden aspect-[4/5] sm:aspect-[1/1]">
           {getImageUrl() && !imageError ? (
             <img
               src={getImageUrl()}
@@ -186,22 +187,58 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
 
           {/* Featured Star - Top Left */}
           {product.is_featured && (
-            <div className="absolute top-2 left-2">
+            <div className="absolute top-2 left-2 z-10">
               <Star className="w-5 h-5 text-yellow-400 fill-yellow-400 drop-shadow-lg" />
             </div>
           )}
 
-
-
-
           {/* Multiple Images Indicator - Top Right */}
           {product.image_urls && product.image_urls.length > 1 && (
-            <div className="absolute top-2 right-2">
+            <div className="absolute top-2 right-2 z-10">
               <div className="bg-black/50 backdrop-blur-sm rounded-full p-1.5 text-white">
                 <Layers className="w-4 h-4" />
               </div>
             </div>
           )}
+        </div>
+
+        {/* Product Details Footer */}
+        <div className="p-3 flex flex-col flex-1">
+          <div className="flex justify-between items-start mb-2">
+            <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 leading-snug" title={product.name}>
+              {product.name}
+            </h3>
+          </div>
+
+          <div className="mt-auto space-y-2">
+            {/* Category & Availability */}
+            <div className="flex items-center justify-between text-xs">
+              {product.category && (
+                <div className="flex items-center text-gray-500">
+                  <Tag className="w-3 h-3 mr-1" />
+                  <span className="truncate max-w-[80px]">{product.category}</span>
+                </div>
+              )}
+              <div className={`px-1.5 py-0.5 rounded-full font-medium ${product.is_available
+                ? 'bg-green-100 text-green-800'
+                : 'bg-red-100 text-red-800'
+                }`}>
+                {product.is_available ? 'Available' : 'Unavailable'}
+              </div>
+            </div>
+
+            {/* Price and Favorite Action */}
+            <div className="flex items-center justify-between pt-1 border-t border-gray-100">
+              <div className="font-bold text-gray-900">
+                {formatPrice(product.price, product.currency)}
+              </div>
+
+              {/* Favorite Button - Story 4.13 */}
+              <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                <FavoriteProductButton productId={product.id} iconOnly={true} />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
