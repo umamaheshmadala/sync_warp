@@ -47,11 +47,11 @@ export const FavoriteProductButton: React.FC<FavoriteProductButtonProps> = ({
             onClick={handleToggleFavorite}
             disabled={isLoading}
             className={`flex items-center justify-center transition-colors disabled:opacity-50 ${iconOnly
-                    ? `p-2 rounded-full ${isFavorited ? 'bg-red-50 hover:bg-red-100' : 'bg-white/90 hover:bg-white'} shadow-md`
-                    : `px-4 py-2 border rounded-lg ${isFavorited
-                        ? 'bg-red-50 border-red-200 text-red-600 hover:bg-red-100'
-                        : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
-                    }`
+                ? `p-2 rounded-full ${isFavorited ? 'bg-red-50 hover:bg-red-100' : 'bg-white/90 hover:bg-white'} shadow-md`
+                : `px-2 py-1 border rounded-md ${isFavorited
+                    ? 'bg-red-50 border-red-200 text-red-600 hover:bg-red-100'
+                    : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                }`
                 } ${className}`}
             aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
         >
@@ -60,7 +60,7 @@ export const FavoriteProductButton: React.FC<FavoriteProductButtonProps> = ({
                     } ${!iconOnly && 'mr-2'}`}
             />
             {!iconOnly && (
-                <span className="hidden md:inline">
+                <span className="text-xs">
                     {isFavorited ? 'Favorited' : 'Favorite'}
                 </span>
             )}

@@ -233,9 +233,9 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
                 {formatPrice(product.price, product.currency)}
               </div>
 
-              {/* Favorite Button - Story 4.13 */}
+              {/* Favorite Button - Story 4.13 - Shows "Favorite"/"Favorited" like Offer cards */}
               <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-                <FavoriteProductButton productId={product.id} iconOnly={true} />
+                <FavoriteProductButton productId={product.id} iconOnly={false} />
               </div>
             </div>
           </div>

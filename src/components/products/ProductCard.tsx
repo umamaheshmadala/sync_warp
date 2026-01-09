@@ -6,6 +6,7 @@ import { Card, CardContent } from '../ui/card';
 import { cn } from '../../lib/utils';
 import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 import { getOptimizedImageUrl } from '../../utils/imageUtils';
+import { FavoriteProductButton } from '../favorites/FavoriteProductButton';
 
 interface ProductCardProps {
   product: Product;
@@ -127,6 +128,11 @@ const ProductCardBase = ({
               </div>
             </div>
           )}
+
+          {/* Favorite Button - Bottom Right - Story 4.13 */}
+          <div className="absolute bottom-2 right-2" onClick={(e) => e.stopPropagation()}>
+            <FavoriteProductButton productId={product.id} iconOnly={true} />
+          </div>
         </div>
       </CardContent>
     </Card>
