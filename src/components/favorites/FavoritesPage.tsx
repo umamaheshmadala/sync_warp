@@ -13,11 +13,13 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useFavoritesContext } from '../../contexts/FavoritesContext';
-import { FavoriteOfferCard } from './FavoriteOfferCard';
+// Using storefront OfferCard for visual consistency
+import { OfferCard } from '../offers/OfferCard';
 // Replaced FavoriteProductCard with ProductCard for consistency
 import ProductCard from '../business/ProductCard';
 import type { Product } from '../../types/product';
-import type { FavoriteProduct } from '../../services/favoritesService';
+import type { Offer } from '../../types/offers';
+import type { FavoriteOffer, FavoriteProduct } from '../../services/favoritesService';
 
 type ActiveTab = 'offers' | 'products';
 
@@ -38,6 +40,38 @@ const mapFavoriteToProduct = (fav: FavoriteProduct): Product => {
     updated_at: fav.favorited_at,
     business: {
       name: fav.business_name
+    }
+  };
+};
+
+// Helper to map FavoriteOffer to Offer for the OfferCard component
+const mapFavoriteToOffer = (fav: FavoriteOffer): Offer => {
+  // Determine if expired
+  const isExpired = new Date(fav.valid_until) < new Date();
+
+  return {
+    id: fav.id,
+    business_id: fav.business_id,
+    title: fav.title,
+    description: fav.description || null,
+    terms_conditions: null,
+    valid_from: fav.valid_from,
+    valid_until: fav.valid_until,
+    created_at: fav.favorited_at,
+    status: isExpired ? 'expired' : 'active',
+    offer_code: fav.offer_code,
+    icon_image_url: fav.icon_image_url || null,
+    view_count: fav.view_count,
+    share_count: fav.share_count,
+    click_count: 0,
+    created_by: null,
+    updated_at: null,
+    activated_at: null,
+    expired_at: isExpired ? fav.valid_until : null,
+    business: {
+      id: fav.business_id,
+      business_name: fav.business_name,
+      business_image: fav.business_logo || null
     }
   };
 };
@@ -260,10 +294,11 @@ const FavoritesPage: React.FC = () => {
           >
             {activeTab === 'offers'
               ? filteredOffers.map(offer => (
-                <FavoriteOfferCard
+                <OfferCard
                   key={offer.id}
-                  offer={offer}
-                  onRemove={handleRemoveFavorite}
+                  offer={mapFavoriteToOffer(offer)}
+                  showActions={false}
+                  showStats={false}
                 />
               ))
               : filteredProducts.map(product => (
