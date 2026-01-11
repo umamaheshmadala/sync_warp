@@ -114,25 +114,34 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             WebkitOverflowScrolling: 'touch' // Ensure momentum scrolling
           }}
         >
-          {/* Content needs to account for header height + safe area */}
-          <PullToRefresh
-            onRefresh={handlePullToRefresh}
-            disabled={isMessagesRoute}
-            className="w-full max-w-4xl mx-auto min-h-full"
-          >
-            <div style={{ paddingTop: 'calc(54px + env(safe-area-inset-top, 0px))' }}>
+          {/* Messages route needs full-width layout without PullToRefresh constraints */}
+          {isMessagesRoute ? (
+            <div
+              className="w-full h-full flex flex-col"
+              style={{ paddingTop: 'calc(54px + env(safe-area-inset-top, 0px))' }}
+            >
               {children}
-              {/* Spacer for Bottom Navigation - Physical element ensures scroll clearance */}
-              <div
-                className="w-full transition-all duration-200"
-                style={{
-                  height: shouldShowBottomNav
-                    ? 'calc(56px + env(safe-area-inset-bottom, 0px) + 3px)'
-                    : '0px'
-                }}
-              />
             </div>
-          </PullToRefresh>
+          ) : (
+            <PullToRefresh
+              onRefresh={handlePullToRefresh}
+              disabled={false}
+              className="w-full max-w-4xl mx-auto min-h-full"
+            >
+              <div style={{ paddingTop: 'calc(54px + env(safe-area-inset-top, 0px))' }}>
+                {children}
+                {/* Spacer for Bottom Navigation - Physical element ensures scroll clearance */}
+                <div
+                  className="w-full transition-all duration-200"
+                  style={{
+                    height: shouldShowBottomNav
+                      ? 'calc(56px + env(safe-area-inset-bottom, 0px) + 3px)'
+                      : '0px'
+                  }}
+                />
+              </div>
+            </PullToRefresh>
+          )}
         </main>
 
         {/* Fixed Bottom Navigation */}
