@@ -23,6 +23,7 @@ import { useAuthStore } from '../../store/authStore';
 import { toast } from 'react-hot-toast';
 import { RegistrationCompleteScreen } from './RegistrationCompleteScreen';
 import { BusinessSearchInput } from './BusinessSearchInput';
+import { BusinessPhoneVerification } from './BusinessPhoneVerification';
 import { BusinessSearchResult, parseOpeningHours } from '@/services/businessSearchService';
 
 // TypeScript interfaces
@@ -82,6 +83,8 @@ const BusinessRegistration: React.FC = () => {
   const [selectedImages, setSelectedImages] = useState<SelectedImages>({ logo: null, cover: null, gallery: [] });
   const [showCompletionScreen, setShowCompletionScreen] = useState(false);
   const [registeredBusinessId, setRegisteredBusinessId] = useState<string | null>(null);
+  const [phoneVerified, setPhoneVerified] = useState(false); // Can we proceed?
+  const [isOtpVerified, setIsOtpVerified] = useState(false); // Did we actually verify?
 
   // Form data state
   const [formData, setFormData] = useState<BusinessFormData>({
@@ -236,6 +239,13 @@ const BusinessRegistration: React.FC = () => {
 
     switch (step) {
       case 1:
+        if (!phoneVerified) {
+          toast.error('Please verify your phone number or click Skip');
+          return false;
+        }
+        break;
+
+      case 2:
         if (!formData.businessName.trim()) newErrors.businessName = 'Business name is required';
         if (!formData.businessType) newErrors.businessType = 'Business type is required';
         if (!formData.category) newErrors.category = 'Category is required';
@@ -245,7 +255,7 @@ const BusinessRegistration: React.FC = () => {
         }
         break;
 
-      case 2:
+      case 3:
         if (!formData.address.trim()) newErrors.address = 'Address is required';
         if (!formData.city.trim()) newErrors.city = 'City is required';
         if (!formData.state.trim()) newErrors.state = 'State is required';
@@ -254,7 +264,7 @@ const BusinessRegistration: React.FC = () => {
         }
         break;
 
-      case 3:
+      case 4:
         // Operating hours validation - ensure open time is before close time
         Object.keys(formData.operatingHours).forEach(day => {
           const hours = formData.operatingHours[day];
@@ -264,7 +274,7 @@ const BusinessRegistration: React.FC = () => {
         });
         break;
 
-      case 4:
+      case 5:
         // No required validations for final step
         break;
     }
@@ -276,13 +286,13 @@ const BusinessRegistration: React.FC = () => {
   // Handle next step
   const handleNext = () => {
     if (validateStep(currentStep)) {
-      setCurrentStep(prev => Math.min(prev + 1, 4));
+      setCurrentStep(prev => Math.min(prev + 1, 5));
     }
   };
 
   // Handle previous step
   const handlePrevious = () => {
-    setCurrentStep(prev => Math.max(prev - 1, 1));
+    setCurrentStep(prev => Math.max(prev - 1, 0));
   };
 
   // Get location using geocoding API
@@ -317,7 +327,7 @@ const BusinessRegistration: React.FC = () => {
 
   // Submit business registration
   const handleSubmit = async () => {
-    if (!validateStep(4)) return;
+    if (!validateStep(5)) return;
 
     setLoading(true);
     try {
@@ -360,7 +370,10 @@ const BusinessRegistration: React.FC = () => {
         cover_image_url: coverUrl,
         gallery_images: galleryUrls,
         website_url: formData.websiteUrl,
-        social_media: formData.socialMedia,
+
+
+        phone_verified: isOtpVerified,
+        claim_status: isOtpVerified ? 'verified' : 'unclaimed',
         status: 'pending' // Will need admin approval
       };
 
@@ -386,7 +399,7 @@ const BusinessRegistration: React.FC = () => {
   };
 
   // Step components
-  const renderStep1 = () => (
+  const renderStep2 = () => (
     <div className="space-y-6">
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -500,7 +513,7 @@ const BusinessRegistration: React.FC = () => {
     </div>
   );
 
-  const renderStep2 = () => (
+  const renderStep3 = () => (
     <div className="space-y-6">
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -655,7 +668,7 @@ const BusinessRegistration: React.FC = () => {
     </div>
   );
 
-  const renderStep3 = () => (
+  const renderStep4 = () => (
     <div className="space-y-6">
       <h4 className="font-medium text-gray-700">Operating Hours</h4>
 
@@ -710,7 +723,7 @@ const BusinessRegistration: React.FC = () => {
     </div>
   );
 
-  const renderStep4 = () => (
+  const renderStep5 = () => (
     <div className="space-y-6">
       <div>
         <h4 className="font-medium text-gray-700 mb-4">Business Images</h4>
@@ -847,12 +860,46 @@ const BusinessRegistration: React.FC = () => {
     </div>
   );
 
+
+
+  const renderStep1 = () => (
+    <div className="space-y-6">
+      <div className="text-center mb-6">
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">
+          Verify Business Phone
+        </h2>
+        <p className="text-gray-600">
+          We need to verify that you own this business number to prevent fraud.
+        </p>
+      </div>
+
+      <BusinessPhoneVerification
+        initialPhone={formData.businessPhone}
+        onVerified={(verified) => {
+          setPhoneVerified(verified);
+          setIsOtpVerified(verified);
+          if (verified) {
+            // Logic to auto-fill formData phone if verified?
+            // It's already bound to formData.businessPhone
+            // We'll let handleNext take care of advancement.
+          }
+        }}
+        onSkip={() => {
+          setPhoneVerified(true); // Allow proceed
+          setIsOtpVerified(false); // Not verified
+          toast('Verification skipped. Admin approval required.', { icon: '⚠️' });
+        }}
+      />
+    </div>
+  );
+
   const steps = [
     { number: 0, title: 'Find Business', icon: Search },
-    { number: 1, title: 'Basic Info', icon: User },
-    { number: 2, title: 'Location', icon: MapPin },
-    { number: 3, title: 'Hours', icon: Clock },
-    { number: 4, title: 'Final Details', icon: Camera }
+    { number: 1, title: 'Verify Phone', icon: Phone },
+    { number: 2, title: 'Basic Info', icon: User },
+    { number: 3, title: 'Location', icon: MapPin },
+    { number: 4, title: 'Hours', icon: Clock },
+    { number: 5, title: 'Final Details', icon: Camera }
   ];
 
   // Handle business selection from Google Places search
@@ -960,10 +1007,10 @@ const BusinessRegistration: React.FC = () => {
               <div key={step.number} className="flex-1">
                 <div className="flex flex-col items-center">
                   <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 ${isCompleted
-                      ? 'bg-green-500 text-white'
-                      : isActive
-                        ? 'bg-indigo-600 text-white'
-                        : 'bg-gray-300 text-gray-600'
+                    ? 'bg-green-500 text-white'
+                    : isActive
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-gray-300 text-gray-600'
                     }`}>
                     {isCompleted ? (
                       <Check className="w-6 h-6" />
@@ -1000,6 +1047,7 @@ const BusinessRegistration: React.FC = () => {
               {currentStep === 2 && renderStep2()}
               {currentStep === 3 && renderStep3()}
               {currentStep === 4 && renderStep4()}
+              {currentStep === 5 && renderStep5()}
             </motion.div>
           </AnimatePresence>
         </div>
@@ -1011,15 +1059,15 @@ const BusinessRegistration: React.FC = () => {
               onClick={handlePrevious}
               disabled={currentStep === 0}
               className={`flex items-center px-6 py-2 rounded-lg ${currentStep === 0
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-gray-600 text-white hover:bg-gray-700'
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-gray-600 text-white hover:bg-gray-700'
                 }`}
             >
               <ChevronLeft className="w-4 h-4 mr-2" />
               Previous
             </button>
 
-            {currentStep < 4 ? (
+            {currentStep < 5 ? (
               <button
                 onClick={handleNext}
                 className="flex items-center px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
