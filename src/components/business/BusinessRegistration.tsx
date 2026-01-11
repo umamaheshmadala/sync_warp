@@ -1,26 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  User, 
-  MapPin, 
-  Phone, 
-  Mail, 
-  Globe, 
-  Clock, 
-  Camera, 
-  FileText, 
-  ChevronLeft, 
+import {
+  User,
+  MapPin,
+  Phone,
+  Mail,
+  Globe,
+  Clock,
+  Camera,
+  FileText,
+  ChevronLeft,
   ChevronRight,
   Check,
   Upload,
   X,
-  Plus
+  Plus,
+  Search
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
 import { toast } from 'react-hot-toast';
 import { RegistrationCompleteScreen } from './RegistrationCompleteScreen';
+import { BusinessSearchInput } from './BusinessSearchInput';
+import { BusinessSearchResult, parseOpeningHours } from '@/services/businessSearchService';
 
 // TypeScript interfaces
 interface OperatingHours {
@@ -73,7 +76,7 @@ interface SelectedImages {
 const BusinessRegistration: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(0); // Start at Step 0 (Search)
   const [loading, setLoading] = useState(false);
   const [businessCategories, setBusinessCategories] = useState<BusinessCategory[]>([]);
   const [selectedImages, setSelectedImages] = useState<SelectedImages>({ logo: null, cover: null, gallery: [] });
@@ -89,7 +92,7 @@ const BusinessRegistration: React.FC = () => {
     description: '',
     businessEmail: '',
     businessPhone: '',
-    
+
     // Step 2: Location & Contact
     address: '',
     city: '',
@@ -103,7 +106,7 @@ const BusinessRegistration: React.FC = () => {
       instagram: '',
       twitter: ''
     },
-    
+
     // Step 3: Operating Hours
     operatingHours: {
       monday: { open: '09:00', close: '18:00', closed: false },
@@ -114,7 +117,7 @@ const BusinessRegistration: React.FC = () => {
       saturday: { open: '09:00', close: '18:00', closed: false },
       sunday: { open: '09:00', close: '18:00', closed: true }
     },
-    
+
     // Step 4: Media & Final Details
     tags: []
   });
@@ -148,7 +151,7 @@ const BusinessRegistration: React.FC = () => {
       ...prev,
       [field]: value
     }));
-    
+
     // Clear error for this field
     if (errors[field]) {
       setErrors(prev => ({
@@ -393,9 +396,8 @@ const BusinessRegistration: React.FC = () => {
           type="text"
           value={formData.businessName}
           onChange={(e) => handleInputChange('businessName', e.target.value)}
-          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
-            errors.businessName ? 'border-red-500' : 'border-gray-300'
-          }`}
+          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${errors.businessName ? 'border-red-500' : 'border-gray-300'
+            }`}
           placeholder="Enter your business name"
         />
         {errors.businessName && (
@@ -410,9 +412,8 @@ const BusinessRegistration: React.FC = () => {
         <select
           value={formData.businessType}
           onChange={(e) => handleInputChange('businessType', e.target.value)}
-          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
-            errors.businessType ? 'border-red-500' : 'border-gray-300'
-          }`}
+          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${errors.businessType ? 'border-red-500' : 'border-gray-300'
+            }`}
         >
           <option value="">Select business type</option>
           <option value="Sole Proprietorship">Sole Proprietorship</option>
@@ -433,9 +434,8 @@ const BusinessRegistration: React.FC = () => {
         <select
           value={formData.category}
           onChange={(e) => handleInputChange('category', e.target.value)}
-          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
-            errors.category ? 'border-red-500' : 'border-gray-300'
-          }`}
+          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${errors.category ? 'border-red-500' : 'border-gray-300'
+            }`}
         >
           <option value="">Select category</option>
           {businessCategories.map(category => (
@@ -457,9 +457,8 @@ const BusinessRegistration: React.FC = () => {
           value={formData.description}
           onChange={(e) => handleInputChange('description', e.target.value)}
           rows={4}
-          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
-            errors.description ? 'border-red-500' : 'border-gray-300'
-          }`}
+          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${errors.description ? 'border-red-500' : 'border-gray-300'
+            }`}
           placeholder="Describe your business..."
         />
         {errors.description && (
@@ -476,9 +475,8 @@ const BusinessRegistration: React.FC = () => {
             type="email"
             value={formData.businessEmail}
             onChange={(e) => handleInputChange('businessEmail', e.target.value)}
-            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
-              errors.businessEmail ? 'border-red-500' : 'border-gray-300'
-            }`}
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${errors.businessEmail ? 'border-red-500' : 'border-gray-300'
+              }`}
             placeholder="business@example.com"
           />
           {errors.businessEmail && (
@@ -512,9 +510,8 @@ const BusinessRegistration: React.FC = () => {
           value={formData.address}
           onChange={(e) => handleInputChange('address', e.target.value)}
           rows={3}
-          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
-            errors.address ? 'border-red-500' : 'border-gray-300'
-          }`}
+          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${errors.address ? 'border-red-500' : 'border-gray-300'
+            }`}
           placeholder="Enter full address"
         />
         {errors.address && (
@@ -531,9 +528,8 @@ const BusinessRegistration: React.FC = () => {
             type="text"
             value={formData.city}
             onChange={(e) => handleInputChange('city', e.target.value)}
-            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
-              errors.city ? 'border-red-500' : 'border-gray-300'
-            }`}
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${errors.city ? 'border-red-500' : 'border-gray-300'
+              }`}
             placeholder="City"
           />
           {errors.city && (
@@ -549,9 +545,8 @@ const BusinessRegistration: React.FC = () => {
             type="text"
             value={formData.state}
             onChange={(e) => handleInputChange('state', e.target.value)}
-            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
-              errors.state ? 'border-red-500' : 'border-gray-300'
-            }`}
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${errors.state ? 'border-red-500' : 'border-gray-300'
+              }`}
             placeholder="State"
           />
           {errors.state && (
@@ -604,9 +599,8 @@ const BusinessRegistration: React.FC = () => {
           type="url"
           value={formData.websiteUrl}
           onChange={(e) => handleInputChange('websiteUrl', e.target.value)}
-          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
-            errors.websiteUrl ? 'border-red-500' : 'border-gray-300'
-          }`}
+          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${errors.websiteUrl ? 'border-red-500' : 'border-gray-300'
+            }`}
           placeholder="https://yourwebsite.com"
         />
         {errors.websiteUrl && (
@@ -616,7 +610,7 @@ const BusinessRegistration: React.FC = () => {
 
       <div className="space-y-4">
         <h4 className="font-medium text-gray-700">Social Media (Optional)</h4>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -664,7 +658,7 @@ const BusinessRegistration: React.FC = () => {
   const renderStep3 = () => (
     <div className="space-y-6">
       <h4 className="font-medium text-gray-700">Operating Hours</h4>
-      
+
       {Object.keys(formData.operatingHours).map(day => (
         <div key={day} className="border rounded-lg p-4">
           <div className="flex items-center justify-between mb-4">
@@ -693,7 +687,7 @@ const BusinessRegistration: React.FC = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Closing Time
@@ -720,7 +714,7 @@ const BusinessRegistration: React.FC = () => {
     <div className="space-y-6">
       <div>
         <h4 className="font-medium text-gray-700 mb-4">Business Images</h4>
-        
+
         {/* Logo Upload */}
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -854,16 +848,92 @@ const BusinessRegistration: React.FC = () => {
   );
 
   const steps = [
+    { number: 0, title: 'Find Business', icon: Search },
     { number: 1, title: 'Basic Info', icon: User },
     { number: 2, title: 'Location', icon: MapPin },
     { number: 3, title: 'Hours', icon: Clock },
     { number: 4, title: 'Final Details', icon: Camera }
   ];
 
+  // Handle business selection from Google Places search
+  const handleBusinessSelect = (business: BusinessSearchResult) => {
+    // Pre-fill form with Google Places data
+    setFormData(prev => ({
+      ...prev,
+      businessName: business.name,
+      businessPhone: business.phone,
+      websiteUrl: business.website,
+      address: business.address,
+      city: business.city,
+      state: business.state,
+      postalCode: business.postalCode,
+      latitude: business.latitude,
+      longitude: business.longitude,
+      category: business.category || prev.category
+    }));
+
+    // Pre-fill operating hours if available
+    if (business.openingHours) {
+      const parsedHours = parseOpeningHours({ weekday_text: business.openingHours, periods: [] });
+      if (parsedHours) {
+        setFormData(prev => ({
+          ...prev,
+          operatingHours: {
+            ...prev.operatingHours,
+            ...parsedHours
+          }
+        }));
+      }
+    }
+
+    toast.success(`Found "${business.name}"! Details pre-filled.`);
+    setCurrentStep(1); // Move to Step 1 (Basic Info)
+  };
+
+  // Handle manual entry (business not found in Google)
+  const handleManualEntry = (businessName: string) => {
+    if (businessName) {
+      setFormData(prev => ({
+        ...prev,
+        businessName: businessName
+      }));
+    }
+    setCurrentStep(1); // Move to Step 1 (Basic Info)
+  };
+
+  // Render Step 0: Business Search
+  const renderStep0 = () => (
+    <div className="space-y-6">
+      <div className="text-center mb-6">
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">
+          Let's find your business
+        </h2>
+        <p className="text-gray-600">
+          Search for your business to auto-fill your details, or add it as new
+        </p>
+      </div>
+
+      <BusinessSearchInput
+        onBusinessSelect={handleBusinessSelect}
+        onManualEntry={handleManualEntry}
+      />
+
+      <div className="mt-8 pt-6 border-t border-gray-200">
+        <button
+          type="button"
+          onClick={() => handleManualEntry('')}
+          className="w-full px-4 py-3 text-indigo-600 border border-indigo-300 rounded-lg hover:bg-indigo-50 transition-colors font-medium"
+        >
+          Skip search and enter details manually
+        </button>
+      </div>
+    </div>
+  );
+
   // Show completion screen if registration successful
   if (showCompletionScreen && registeredBusinessId) {
     return (
-      <RegistrationCompleteScreen 
+      <RegistrationCompleteScreen
         businessId={registeredBusinessId}
         businessName={formData.businessName}
       />
@@ -889,29 +959,26 @@ const BusinessRegistration: React.FC = () => {
             return (
               <div key={step.number} className="flex-1">
                 <div className="flex flex-col items-center">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 ${
-                    isCompleted 
-                      ? 'bg-green-500 text-white' 
-                      : isActive 
-                        ? 'bg-indigo-600 text-white' 
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 ${isCompleted
+                      ? 'bg-green-500 text-white'
+                      : isActive
+                        ? 'bg-indigo-600 text-white'
                         : 'bg-gray-300 text-gray-600'
-                  }`}>
+                    }`}>
                     {isCompleted ? (
                       <Check className="w-6 h-6" />
                     ) : (
                       <Icon className="w-6 h-6" />
                     )}
                   </div>
-                  <p className={`text-sm font-medium ${
-                    isActive ? 'text-indigo-600' : 'text-gray-600'
-                  }`}>
+                  <p className={`text-sm font-medium ${isActive ? 'text-indigo-600' : 'text-gray-600'
+                    }`}>
                     {step.title}
                   </p>
                 </div>
                 {step.number < steps.length && (
-                  <div className={`h-1 mt-6 ${
-                    step.number < currentStep ? 'bg-green-500' : 'bg-gray-300'
-                  }`} />
+                  <div className={`h-1 mt-6 ${step.number < currentStep ? 'bg-green-500' : 'bg-gray-300'
+                    }`} />
                 )}
               </div>
             );
@@ -928,6 +995,7 @@ const BusinessRegistration: React.FC = () => {
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3 }}
             >
+              {currentStep === 0 && renderStep0()}
               {currentStep === 1 && renderStep1()}
               {currentStep === 2 && renderStep2()}
               {currentStep === 3 && renderStep3()}
@@ -936,39 +1004,40 @@ const BusinessRegistration: React.FC = () => {
           </AnimatePresence>
         </div>
 
-        {/* Navigation */}
-        <div className="flex justify-between">
-          <button
-            onClick={handlePrevious}
-            disabled={currentStep === 1}
-            className={`flex items-center px-6 py-2 rounded-lg ${
-              currentStep === 1
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-gray-600 text-white hover:bg-gray-700'
-            }`}
-          >
-            <ChevronLeft className="w-4 h-4 mr-2" />
-            Previous
-          </button>
+        {/* Navigation - Hide on Step 0 */}
+        {currentStep > 0 && (
+          <div className="flex justify-between">
+            <button
+              onClick={handlePrevious}
+              disabled={currentStep === 0}
+              className={`flex items-center px-6 py-2 rounded-lg ${currentStep === 0
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-gray-600 text-white hover:bg-gray-700'
+                }`}
+            >
+              <ChevronLeft className="w-4 h-4 mr-2" />
+              Previous
+            </button>
 
-          {currentStep < 4 ? (
-            <button
-              onClick={handleNext}
-              className="flex items-center px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-            >
-              Next
-              <ChevronRight className="w-4 h-4 ml-2" />
-            </button>
-          ) : (
-            <button
-              onClick={handleSubmit}
-              disabled={loading}
-              className="flex items-center px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
-            >
-              {loading ? 'Submitting...' : 'Submit Registration'}
-            </button>
-          )}
-        </div>
+            {currentStep < 4 ? (
+              <button
+                onClick={handleNext}
+                className="flex items-center px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+              >
+                Next
+                <ChevronRight className="w-4 h-4 ml-2" />
+              </button>
+            ) : (
+              <button
+                onClick={handleSubmit}
+                disabled={loading}
+                className="flex items-center px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+              >
+                {loading ? 'Submitting...' : 'Submit Registration'}
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
