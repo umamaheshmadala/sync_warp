@@ -9,6 +9,8 @@
  */
 
 // Types
+import { isApiAvailable, logApiUsage } from './apiUsageService';
+
 export interface PlacePrediction {
     place_id: string;
     description: string;
@@ -208,6 +210,13 @@ export async function searchBusinesses(query: string): Promise<PlacePrediction[]
         return [];
     }
 
+    // Check API Availability (Quota/Circuit Breaker)
+    const isAvailable = await isApiAvailable('google_places');
+    if (!isAvailable) {
+        console.warn('Google Places API quota exceeded or disabled.');
+        throw new Error('API_QUOTA_EXCEEDED');
+    }
+
     // Mock Mode
     if (USE_MOCK) {
         console.log('Using Mock Search for:', query);
@@ -232,15 +241,19 @@ export async function searchBusinesses(query: string): Promise<PlacePrediction[]
             },
             (predictions, status) => {
                 if (status === google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
+                    logApiUsage('google_places', 'autocomplete', { status: 'success' });
                     resolve([]);
                     return;
                 }
 
                 if (status !== google.maps.places.PlacesServiceStatus.OK || !predictions) {
                     console.error('Places autocomplete error:', status);
+                    logApiUsage('google_places', 'autocomplete', { status: 'error' });
                     reject(new Error('Search failed'));
                     return;
                 }
+
+                logApiUsage('google_places', 'autocomplete', { status: 'success' });
 
                 const results: PlacePrediction[] = predictions.map(p => ({
                     place_id: p.place_id || '',
@@ -272,6 +285,12 @@ export async function getPlaceDetails(placeId: string): Promise<PlaceDetails | n
         return MOCK_DETAILS[placeId] || null;
     }
 
+    // Check API Availability
+    const isAvailable = await isApiAvailable('google_places');
+    if (!isAvailable) {
+        throw new Error('API_QUOTA_EXCEEDED');
+    }
+
     if (!initPlacesServices() || !placesService) {
         console.error('Google Places service not initialized');
         throw new Error('Search service not available');
@@ -300,9 +319,12 @@ export async function getPlaceDetails(placeId: string): Promise<PlaceDetails | n
 
                 if (status !== google.maps.places.PlacesServiceStatus.OK || !place) {
                     console.error('Place details error:', status);
+                    logApiUsage('google_places', 'details', { status: 'error' });
                     resolve(null);
                     return;
                 }
+
+                logApiUsage('google_places', 'details', { status: 'success' });
 
                 const details: PlaceDetails = {
                     name: place.name || '',

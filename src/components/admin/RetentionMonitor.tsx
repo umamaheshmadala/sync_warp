@@ -14,7 +14,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
-import { useAuthStore } from '../../stores/authStore'
+import { useAuthStore } from '../../store/authStore'
 import { Calendar, Trash2, Database, RefreshCw, AlertCircle, CheckCircle, Clock } from 'lucide-react'
 import { toast } from 'sonner'
 

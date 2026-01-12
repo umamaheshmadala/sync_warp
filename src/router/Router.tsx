@@ -37,6 +37,9 @@ const FollowerAnalyticsDashboard = lazy(() => import('../components/business/Fol
 const FollowerList = lazy(() => import('../components/business/FollowerList'))
 const BusinessCheckinsPage = lazy(() => import('../components/checkins/BusinessCheckinsPage'))
 
+// Admin Components
+const AdminDashboard = lazy(() => import('../pages/admin/AdminDashboard'))
+
 // Product components
 const ProductDetails = lazy(() => import('../components/products').then(m => ({ default: m.ProductDetails })))
 const AllProducts = lazy(() => import('../components/products').then(m => ({ default: m.AllProducts })))
@@ -389,6 +392,7 @@ export const routes: RouteConfig[] = [
     protected: false,
     title: 'Business Products - SynC'
   },
+  // Business Offers - SynC
   {
     path: '/business/:slug/offers',
     element: (
@@ -398,6 +402,24 @@ export const routes: RouteConfig[] = [
     ),
     protected: false,
     title: 'Business Offers - SynC'
+  },
+
+  // Admin Routes (Protected)
+  {
+    path: '/admin',
+    element: (
+      <RouteLoader>
+        <AdminDashboard />
+      </RouteLoader>
+    ),
+    protected: true,
+    title: 'System Admin - SynC'
+  },
+  {
+    path: '/admin/dashboard',
+    element: <Navigate to="/admin" replace />,
+    protected: true,
+    title: 'System Admin - SynC'
   },
 
   // Business Tools (Protected)

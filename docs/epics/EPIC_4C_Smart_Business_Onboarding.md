@@ -217,6 +217,7 @@ ADD COLUMN claim_status TEXT DEFAULT 'manual';
 **Priority:** 🟡 P2 - MEDIUM  
 **Effort:** 1 day  
 **Dependencies:** Story 4C.1  
+**Status:** ✅ Completed  
 
 **User Stories:**
 - As the platform, I want to track API usage against quotas
@@ -448,8 +449,8 @@ supabase/
 2. ✅ Story 4C.2 (Phone OTP) - MUST HAVE
 3. ✅ Story 4C.3 (Smart Search) - MUST HAVE
 4. ✅ Story 4C.4 (Verification) - MUST HAVE
-5. ⚪ Story 4C.5 (Enhanced Steps) - SHOULD HAVE
-6. ⚪ Story 4C.6 (Monitoring) - NICE TO HAVE
+5. ✅ Story 4C.5 (Enhanced Steps) - SHOULD HAVE
+6. ✅ Story 4C.6 (Monitoring) - NICE TO HAVE
 7. ⚪ Story 4C.7 (Claim Flow) - NICE TO HAVE
 
 ---

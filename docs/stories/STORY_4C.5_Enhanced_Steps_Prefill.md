@@ -4,7 +4,7 @@
 **Priority:** 🟠 P1 - HIGH  
 **Effort:** 2 days  
 **Dependencies:** Story 4C.3 (Smart Search)  
-**Status:** 📋 Ready for Implementation
+**Status:** ✅ Completed
 
 ---
 
@@ -22,10 +22,10 @@ Update the existing registration steps (Basic Details, Location, Hours/Media) to
 **So that** I don't have to re-enter information
 
 **Acceptance Criteria:**
-- [ ] Pre-filled fields are visually marked
-- [ ] All pre-filled fields are editable
-- [ ] Editing clears the "pre-filled" indicator
-- [ ] Empty fields marked as "needs input"
+- [x] Pre-filled fields are visually marked
+- [x] All pre-filled fields are editable
+- [x] Editing clears the "pre-filled" indicator
+- [x] Empty fields marked as "needs input"
 
 ---
 
@@ -35,10 +35,10 @@ Update the existing registration steps (Basic Details, Location, Hours/Media) to
 **So that** I know how it will look to customers
 
 **Acceptance Criteria:**
-- [ ] Preview card updates in real-time
-- [ ] Shows logo, name, category, rating placeholder
-- [ ] Visible on desktop (side panel)
-- [ ] Collapsible on mobile
+- [x] Preview card updates in real-time
+- [x] Shows logo, name, category, rating placeholder
+- [x] Visible on desktop (side panel)
+- [x] Collapsible on mobile
 
 ---
 
@@ -48,10 +48,10 @@ Update the existing registration steps (Basic Details, Location, Hours/Media) to
 **So that** I don't have to set each day manually
 
 **Acceptance Criteria:**
-- [ ] Templates: Standard, Always Open, Restaurant, Custom
-- [ ] Selecting template pre-fills all days
-- [ ] Can still edit individual days after
-- [ ] Template selector at top of hours section
+- [x] Templates: Standard, Always Open, Restaurant, Custom
+- [x] Selecting template pre-fills all days
+- [x] Can still edit individual days after
+- [x] Template selector at top of hours section
 
 ---
 
@@ -61,10 +61,10 @@ Update the existing registration steps (Basic Details, Location, Hours/Media) to
 **So that** I can verify it's correct
 
 **Acceptance Criteria:**
-- [ ] Map shows pin at business coordinates
-- [ ] Pin can be dragged to adjust location
-- [ ] Coordinates update when pin is moved
-- [ ] Map is optional (uses static image if no API key)
+- [x] Map shows pin at business coordinates
+- [x] Pin can be dragged to adjust location
+- [x] Coordinates update when pin is moved
+- [x] Map is optional (uses static image if no API key)
 
 ---
 
