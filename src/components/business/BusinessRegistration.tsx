@@ -24,7 +24,12 @@ import { toast } from 'react-hot-toast';
 import { RegistrationCompleteScreen } from './RegistrationCompleteScreen';
 import { BusinessSearchInput } from './BusinessSearchInput';
 import { BusinessPhoneVerification } from './BusinessPhoneVerification';
-import { BusinessSearchResult, parseOpeningHours } from '@/services/businessSearchService';
+import { Step0_SmartSearch, BusinessPrefillData } from './onboarding/steps/Step0_SmartSearch';
+import { Step1_PhoneVerify } from './onboarding/steps/Step1_PhoneVerify';
+import { Step2_BasicDetails } from './onboarding/steps/Step2_BasicDetails';
+import { Step4_OperatingHours } from './onboarding/steps/Step4_OperatingHours';
+import { parseOpeningHours } from '@/services/businessSearchService';
+import { useQueryClient } from '@tanstack/react-query';
 
 // TypeScript interfaces
 interface OperatingHours {
@@ -56,6 +61,10 @@ interface BusinessFormData {
   socialMedia: SocialMedia;
   operatingHours: Record<string, OperatingHours>;
   tags: string[];
+  googlePlaceId?: string;
+  phone_verified?: boolean;
+  claim_status?: 'verified' | 'unclaimed' | 'pending' | 'manual';
+  phone_verified_at?: string;
 }
 
 interface BusinessCategory {
@@ -77,6 +86,7 @@ interface SelectedImages {
 const BusinessRegistration: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const queryClient = useQueryClient();
   const [currentStep, setCurrentStep] = useState(0); // Start at Step 0 (Search)
   const [loading, setLoading] = useState(false);
   const [businessCategories, setBusinessCategories] = useState<BusinessCategory[]>([]);
@@ -122,10 +132,16 @@ const BusinessRegistration: React.FC = () => {
     },
 
     // Step 4: Media & Final Details
-    tags: []
+    tags: [],
+
+    // Internal State
+    googlePlaceId: undefined,
+    phone_verified: false,
+    claim_status: 'unclaimed'
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [prefilledFields, setPrefilledFields] = useState<string[]>([]);
 
   // Fetch business categories on component mount
   useEffect(() => {
@@ -199,10 +215,20 @@ const BusinessRegistration: React.FC = () => {
     }
   };
 
+
+
   const handleRemoveTag = (tagToRemove) => {
     setFormData(prev => ({
       ...prev,
       tags: prev.tags.filter(tag => tag !== tagToRemove)
+    }));
+  };
+
+  // Handle bulk operating hours change (from templates)
+  const handleBulkOperatingHoursChange = (hours) => {
+    setFormData(prev => ({
+      ...prev,
+      operatingHours: hours
     }));
   };
 
@@ -235,7 +261,7 @@ const BusinessRegistration: React.FC = () => {
 
   // Form validation for each step
   const validateStep = (step) => {
-    const newErrors = {};
+    const newErrors: Record<string, string> = {};
 
     switch (step) {
       case 1:
@@ -370,7 +396,7 @@ const BusinessRegistration: React.FC = () => {
         cover_image_url: coverUrl,
         gallery_images: galleryUrls,
         website_url: formData.websiteUrl,
-
+        google_place_id: formData.googlePlaceId || null,
 
         phone_verified: isOtpVerified,
         claim_status: isOtpVerified ? 'verified' : 'unclaimed',
@@ -383,16 +409,28 @@ const BusinessRegistration: React.FC = () => {
         .select('id')
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('[Registration] Supabase error:', {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint
+        });
+        throw error;
+      }
 
       // Show transition screen instead of navigating directly
       setRegisteredBusinessId(newBusiness.id);
+
+      // Invalidate dashboard query to ensure fresh data
+      queryClient.invalidateQueries({ queryKey: ['businessDashboard'] });
+
       setShowCompletionScreen(true);
       toast.success('Business registration submitted successfully!');
 
-    } catch (error) {
-      console.error('Registration error:', error);
-      toast.error('Failed to register business. Please try again.');
+    } catch (error: any) {
+      console.error('[Registration] Error:', error);
+      toast.error(error?.message || 'Failed to register business. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -400,117 +438,13 @@ const BusinessRegistration: React.FC = () => {
 
   // Step components
   const renderStep2 = () => (
-    <div className="space-y-6">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Business Name *
-        </label>
-        <input
-          type="text"
-          value={formData.businessName}
-          onChange={(e) => handleInputChange('businessName', e.target.value)}
-          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${errors.businessName ? 'border-red-500' : 'border-gray-300'
-            }`}
-          placeholder="Enter your business name"
-        />
-        {errors.businessName && (
-          <p className="mt-1 text-sm text-red-600">{errors.businessName}</p>
-        )}
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Business Type *
-        </label>
-        <select
-          value={formData.businessType}
-          onChange={(e) => handleInputChange('businessType', e.target.value)}
-          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${errors.businessType ? 'border-red-500' : 'border-gray-300'
-            }`}
-        >
-          <option value="">Select business type</option>
-          <option value="Sole Proprietorship">Sole Proprietorship</option>
-          <option value="Partnership">Partnership</option>
-          <option value="Private Limited">Private Limited</option>
-          <option value="LLP">Limited Liability Partnership (LLP)</option>
-          <option value="Public Limited">Public Limited</option>
-        </select>
-        {errors.businessType && (
-          <p className="mt-1 text-sm text-red-600">{errors.businessType}</p>
-        )}
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Category *
-        </label>
-        <select
-          value={formData.category}
-          onChange={(e) => handleInputChange('category', e.target.value)}
-          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${errors.category ? 'border-red-500' : 'border-gray-300'
-            }`}
-        >
-          <option value="">Select category</option>
-          {businessCategories.map(category => (
-            <option key={category.id} value={category.name}>
-              {category.display_name}
-            </option>
-          ))}
-        </select>
-        {errors.category && (
-          <p className="mt-1 text-sm text-red-600">{errors.category}</p>
-        )}
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Description *
-        </label>
-        <textarea
-          value={formData.description}
-          onChange={(e) => handleInputChange('description', e.target.value)}
-          rows={4}
-          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${errors.description ? 'border-red-500' : 'border-gray-300'
-            }`}
-          placeholder="Describe your business..."
-        />
-        {errors.description && (
-          <p className="mt-1 text-sm text-red-600">{errors.description}</p>
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Business Email
-          </label>
-          <input
-            type="email"
-            value={formData.businessEmail}
-            onChange={(e) => handleInputChange('businessEmail', e.target.value)}
-            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${errors.businessEmail ? 'border-red-500' : 'border-gray-300'
-              }`}
-            placeholder="business@example.com"
-          />
-          {errors.businessEmail && (
-            <p className="mt-1 text-sm text-red-600">{errors.businessEmail}</p>
-          )}
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Business Phone
-          </label>
-          <input
-            type="tel"
-            value={formData.businessPhone}
-            onChange={(e) => handleInputChange('businessPhone', e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-            placeholder="+91 98765 43210"
-          />
-        </div>
-      </div>
-    </div>
+    <Step2_BasicDetails
+      formData={formData}
+      onFieldChange={handleInputChange}
+      prefilledFields={prefilledFields}
+      categories={businessCategories}
+      errors={errors}
+    />
   );
 
   const renderStep3 = () => (
@@ -669,58 +603,12 @@ const BusinessRegistration: React.FC = () => {
   );
 
   const renderStep4 = () => (
-    <div className="space-y-6">
-      <h4 className="font-medium text-gray-700">Operating Hours</h4>
-
-      {Object.keys(formData.operatingHours).map(day => (
-        <div key={day} className="border rounded-lg p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h5 className="font-medium text-gray-700 capitalize">{day}</h5>
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                checked={formData.operatingHours[day].closed}
-                onChange={(e) => handleOperatingHoursChange(day, 'closed', e.target.checked)}
-                className="mr-2"
-              />
-              <span className="text-sm text-gray-600">Closed</span>
-            </label>
-          </div>
-
-          {!formData.operatingHours[day].closed && (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Opening Time
-                </label>
-                <input
-                  type="time"
-                  value={formData.operatingHours[day].open}
-                  onChange={(e) => handleOperatingHoursChange(day, 'open', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Closing Time
-                </label>
-                <input
-                  type="time"
-                  value={formData.operatingHours[day].close}
-                  onChange={(e) => handleOperatingHoursChange(day, 'close', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-          )}
-
-          {errors[`${day}_hours`] && (
-            <p className="mt-2 text-sm text-red-600">{errors[`${day}_hours`]}</p>
-          )}
-        </div>
-      ))}
-    </div>
+    <Step4_OperatingHours
+      operatingHours={formData.operatingHours}
+      onHoursChange={handleOperatingHoursChange}
+      onBulkHoursChange={handleBulkOperatingHoursChange}
+      errors={errors}
+    />
   );
 
   const renderStep5 = () => (
@@ -824,17 +712,21 @@ const BusinessRegistration: React.FC = () => {
             onKeyPress={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault();
-                handleAddTag(e.target.value.trim());
-                e.target.value = '';
+                const target = e.target as HTMLInputElement;
+                handleAddTag(target.value.trim());
+                target.value = '';
               }
             }}
           />
           <button
             type="button"
             onClick={(e) => {
-              const input = e.target.previousElementSibling;
-              handleAddTag(input.value.trim());
-              input.value = '';
+              const target = e.target as HTMLElement;
+              const input = target.previousElementSibling as HTMLInputElement;
+              if (input) {
+                handleAddTag(input.value.trim());
+                input.value = '';
+              }
             }}
             className="px-4 py-2 bg-indigo-600 text-white rounded-r-lg hover:bg-indigo-700"
           >
@@ -862,35 +754,27 @@ const BusinessRegistration: React.FC = () => {
 
 
 
+  /* Step 1: Phone Verification */
   const renderStep1 = () => (
-    <div className="space-y-6">
-      <div className="text-center mb-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">
-          Verify Business Phone
-        </h2>
-        <p className="text-gray-600">
-          We need to verify that you own this business number to prevent fraud.
-        </p>
-      </div>
-
-      <BusinessPhoneVerification
-        initialPhone={formData.businessPhone}
-        onVerified={(verified) => {
-          setPhoneVerified(verified);
-          setIsOtpVerified(verified);
-          if (verified) {
-            // Logic to auto-fill formData phone if verified?
-            // It's already bound to formData.businessPhone
-            // We'll let handleNext take care of advancement.
-          }
-        }}
-        onSkip={() => {
-          setPhoneVerified(true); // Allow proceed
-          setIsOtpVerified(false); // Not verified
-          toast('Verification skipped. Admin approval required.', { icon: '⚠️' });
-        }}
-      />
-    </div>
+    <Step1_PhoneVerify
+      phoneNumber={formData.businessPhone}
+      businessName={formData.businessName}
+      isPrefilledFromGoogle={!!formData.googlePlaceId}
+      onPhoneChange={(phone) => setFormData(prev => ({ ...prev, businessPhone: phone }))}
+      onVerified={() => {
+        setIsOtpVerified(true);
+        // Also update the form data status immediately
+        setFormData(prev => ({ ...prev, phone_verified: true, claim_status: 'verified' }));
+        toast.success("Phone verified successfully!");
+        setCurrentStep(2);
+      }}
+      onSkip={() => {
+        setIsOtpVerified(false);
+        setFormData(prev => ({ ...prev, phone_verified: false, claim_status: 'unclaimed' }));
+        toast('Verification skipped. You can verify later.', { icon: '⚠️' });
+        setCurrentStep(2);
+      }}
+    />
   );
 
   const steps = [
@@ -903,7 +787,15 @@ const BusinessRegistration: React.FC = () => {
   ];
 
   // Handle business selection from Google Places search
-  const handleBusinessSelect = (business: BusinessSearchResult) => {
+  const handleBusinessSelect = (business: BusinessPrefillData) => {
+    // Determine which fields are being pre-filled
+    const newPrefilledFields: string[] = [];
+    if (business.name) newPrefilledFields.push('businessName');
+    if (business.phone) newPrefilledFields.push('businessPhone');
+    if (business.category) newPrefilledFields.push('category');
+
+    setPrefilledFields(newPrefilledFields);
+
     // Pre-fill form with Google Places data
     setFormData(prev => ({
       ...prev,
@@ -916,22 +808,16 @@ const BusinessRegistration: React.FC = () => {
       postalCode: business.postalCode,
       latitude: business.latitude,
       longitude: business.longitude,
+      googlePlaceId: business.googlePlaceId,
       category: business.category || prev.category
     }));
 
-    // Pre-fill operating hours if available
+    // Operating hours pre-fill will be handled in a later story
+    /* 
     if (business.openingHours) {
-      const parsedHours = parseOpeningHours({ weekday_text: business.openingHours, periods: [] });
-      if (parsedHours) {
-        setFormData(prev => ({
-          ...prev,
-          operatingHours: {
-            ...prev.operatingHours,
-            ...parsedHours
-          }
-        }));
-      }
+      // Future implementation
     }
+    */
 
     toast.success(`Found "${business.name}"! Details pre-filled.`);
     setCurrentStep(1); // Move to Step 1 (Basic Info)
@@ -948,33 +834,15 @@ const BusinessRegistration: React.FC = () => {
     setCurrentStep(1); // Move to Step 1 (Basic Info)
   };
 
-  // Render Step 0: Business Search
+  // Render  /* Step 0: Smart Search */
   const renderStep0 = () => (
-    <div className="space-y-6">
-      <div className="text-center mb-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">
-          Let's find your business
-        </h2>
-        <p className="text-gray-600">
-          Search for your business to auto-fill your details, or add it as new
-        </p>
-      </div>
-
-      <BusinessSearchInput
-        onBusinessSelect={handleBusinessSelect}
-        onManualEntry={handleManualEntry}
-      />
-
-      <div className="mt-8 pt-6 border-t border-gray-200">
-        <button
-          type="button"
-          onClick={() => handleManualEntry('')}
-          className="w-full px-4 py-3 text-indigo-600 border border-indigo-300 rounded-lg hover:bg-indigo-50 transition-colors font-medium"
-        >
-          Skip search and enter details manually
-        </button>
-      </div>
-    </div>
+    <Step0_SmartSearch
+      onBusinessSelected={handleBusinessSelect}
+      onAddNewBusiness={handleManualEntry}
+      onSkipToManual={() => {
+        handleManualEntry('');
+      }}
+    />
   );
 
   // Show completion screen if registration successful

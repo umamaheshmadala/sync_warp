@@ -3,6 +3,7 @@ import { Phone, Check, RefreshCw, AlertCircle, ArrowRight } from 'lucide-react';
 import { OtpInput } from '../auth/OtpInput';
 import { supabase } from '../../lib/supabase';
 import { toast } from 'react-hot-toast';
+import { useAuthStore } from '../../store/authStore';
 
 interface Props {
     initialPhone?: string;
@@ -15,6 +16,7 @@ export const BusinessPhoneVerification: React.FC<Props> = ({
     onVerified,
     onSkip
 }) => {
+    const { user } = useAuthStore();
     // Normalize initial phone (strip spaces/dashes)
     const [phoneNumber, setPhoneNumber] = useState(initialPhone);
     const [otp, setOtp] = useState('');
@@ -52,9 +54,20 @@ export const BusinessPhoneVerification: React.FC<Props> = ({
         const formattedPhone = `+91${phoneNumber.replace(/[^0-9]/g, '').slice(-10)}`;
 
         try {
-            const { error } = await supabase.auth.signInWithOtp({
-                phone: formattedPhone,
-            });
+            let error;
+            if (user) {
+                // If user is logged in, update their profile (links phone to account)
+                const res = await supabase.auth.updateUser({
+                    phone: formattedPhone,
+                });
+                error = res.error;
+            } else {
+                // Determine if we need to sign up or sign in
+                const res = await supabase.auth.signInWithOtp({
+                    phone: formattedPhone,
+                });
+                error = res.error;
+            }
 
             if (error) throw error;
 
@@ -80,15 +93,35 @@ export const BusinessPhoneVerification: React.FC<Props> = ({
         const formattedPhone = `+91${phoneNumber.replace(/[^0-9]/g, '').slice(-10)}`;
 
         try {
-            const { data, error } = await supabase.auth.verifyOtp({
-                phone: formattedPhone,
-                token: otp,
-                type: 'sms'
-            });
+            let data, error;
+
+            if (user) {
+                // Verify the phone change OTP
+                const res = await supabase.auth.verifyOtp({
+                    phone: formattedPhone,
+                    token: otp,
+                    type: 'phone_change'
+                });
+                data = res.data;
+                error = res.error;
+            } else {
+                // Verify login OTP
+                const res = await supabase.auth.verifyOtp({
+                    phone: formattedPhone,
+                    token: otp,
+                    type: 'sms'
+                });
+                data = res.data;
+                error = res.error;
+            }
 
             if (error) throw error;
 
-            if (data.session) {
+            if (error) throw error;
+
+            // data.user handles the case for updateUser (phone_change)
+            // data.session handles the case for signInWithOtp
+            if (data.session || data.user) {
                 toast.success('Phone verified successfully!');
                 onVerified(true);
             } else {
@@ -207,8 +240,8 @@ export const BusinessPhoneVerification: React.FC<Props> = ({
                                 onClick={handleSendOtp}
                                 disabled={cooldown > 0 || loading}
                                 className={`font-medium ${cooldown > 0
-                                        ? 'text-gray-400 cursor-not-allowed'
-                                        : 'text-indigo-600 hover:text-indigo-700'
+                                    ? 'text-gray-400 cursor-not-allowed'
+                                    : 'text-indigo-600 hover:text-indigo-700'
                                     }`}
                             >
                                 {cooldown > 0 ? `Resend code in ${cooldown}s` : 'Resend Code'}

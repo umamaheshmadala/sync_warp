@@ -79,6 +79,7 @@ Transform SynC's business registration from a manual data-entry process into a Y
 **Priority:** 🔴 P0 - CRITICAL  
 **Effort:** 3 days  
 **Dependencies:** None  
+**Status:** ✅ Completed  
 
 **User Stories:**
 - As a business owner, I want to verify I own the business phone number
@@ -115,6 +116,7 @@ ADD COLUMN claim_status TEXT DEFAULT 'manual';
 **Priority:** 🔴 P0 - CRITICAL  
 **Effort:** 2 days  
 **Dependencies:** Story 4C.1  
+**Status:** ✅ Completed  
 
 **User Stories:**
 - As a business owner, I want to start by searching for my business
@@ -149,6 +151,7 @@ ADD COLUMN claim_status TEXT DEFAULT 'manual';
 **Priority:** 🔴 P0 - CRITICAL  
 **Effort:** 2 days  
 **Dependencies:** Story 4C.2, Story 4C.3  
+**Status:** ✅ Completed  
 
 **User Stories:**
 - As a business owner, I want to prove I own this business
