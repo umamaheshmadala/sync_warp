@@ -34,7 +34,9 @@ export interface Business {
   is_active?: boolean; // Keep for backward compatibility
   created_at: string;
   updated_at?: string;
-  
+  claim_status?: string; // e.g. 'unclaimed', 'claimed_pending', 'claimed_verified'
+  phone_verified?: boolean;
+
   // Joined data
   owner?: {
     id: string;

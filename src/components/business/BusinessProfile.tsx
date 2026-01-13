@@ -57,6 +57,8 @@ import FollowButton from '../following/FollowButton';
 import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 import { FollowerMetricsWidget } from './FollowerMetricsWidget';
 import { useBusinessProfile, useBusinessCategories, type Business, type BusinessCategory } from '../../hooks/business';
+import { VerificationBadge } from './VerificationBadge';
+import { ClaimBusinessButton } from './ClaimBusinessButton';
 
 
 
@@ -1373,9 +1375,12 @@ const BusinessProfile: React.FC = () => {
                       {business?.business_name}
                     </h1>
 
-                    {business?.verified && (
-                      <CheckCircle className="w-4 h-4 text-blue-500 flex-shrink-0" />
-                    )}
+                    {/* Verification Badge */}
+                    <VerificationBadge
+                      status={business?.claim_status || 'unclaimed'}
+                      phoneVerified={business?.phone_verified}
+                      className="ml-1"
+                    />
                     {getStatusBadge(business?.status)}
                   </div>
                   {/* Location line */}
@@ -1413,6 +1418,18 @@ const BusinessProfile: React.FC = () => {
 
                   {/* Action Buttons Row - Desktop Only */}
                   <div className="hidden md:flex flex-wrap items-center gap-2 mt-2 w-full max-w-2xl">
+                    <ClaimBusinessButton
+                      businessId={business.id}
+                      businessName={business.business_name}
+                      businessPhone={business.business_phone || ''}
+                      claimStatus={business.claim_status || 'unclaimed'}
+                      ownerId={business.user_id}
+                      onClaimed={() => {
+                        refetchBusiness();
+                        toast.success('Claim successful! Refreshing...');
+                      }}
+                      className="flex-1 justify-center"
+                    />
                     {!isOwner && user && (
                       <div className="flex-1">
                         <FollowButton
@@ -1527,6 +1544,17 @@ const BusinessProfile: React.FC = () => {
 
               {/* Action Buttons Row - Mobile Only (Full Width) */}
               <div className="md:hidden flex flex-row items-stretch gap-2 mt-2 w-full">
+                <ClaimBusinessButton
+                  businessId={business.id}
+                  businessName={business.business_name}
+                  businessPhone={business.business_phone || ''}
+                  claimStatus={business.claim_status || 'unclaimed'}
+                  ownerId={business.user_id}
+                  onClaimed={() => {
+                    refetchBusiness();
+                  }}
+                  className="flex-1 justify-center text-xs px-2"
+                />
                 {!isOwner && user && (
                   <div className="flex-1">
                     <FollowButton

@@ -91,7 +91,7 @@ export function BusinessActivationWidget() {
                 </h3>
             </div>
 
-            <div className="divide-y divide-gray-100 max-h-[400px] overflow-y-auto">
+            <div className="divide-y divide-gray-100 lg:max-h-[400px] lg:overflow-y-auto">
                 {businesses.length === 0 ? (
                     <div className="p-8 text-center text-gray-500">
                         <CheckCircle className="w-12 h-12 text-green-100 mx-auto mb-3" />

@@ -6,6 +6,7 @@ import { formatDistanceToNow } from 'date-fns';
 import type { Business } from '../../types/business';
 import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 import { getOptimizedImageUrl } from '../../utils/imageUtils';
+import { VerificationBadge } from './VerificationBadge';
 
 interface BusinessCardProps {
   business: Business;
@@ -67,7 +68,15 @@ export function BusinessCard({
           </div>
 
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-gray-900 text-sm mb-1 truncate">{business.name}</h3>
+            <div className="flex items-center gap-1 mb-1">
+              <h3 className="font-semibold text-gray-900 text-sm truncate">{business.name}</h3>
+              <VerificationBadge
+                status={business.claim_status || 'unclaimed'}
+                phoneVerified={business.phone_verified}
+                size="sm"
+                showTooltip={false}
+              />
+            </div>
             <p className="text-xs md:text-sm text-gray-600 mb-2 md:mb-3 truncate">
               {business.city}, {business.state}
             </p>

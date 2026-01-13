@@ -28,9 +28,11 @@ import {
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
 import { toast } from 'react-hot-toast';
-import { OnboardingReminderBanner } from './OnboardingReminderBanner';
+import { OnboardingReminderBanner } from './OnboardingReminderBanner'; // Keep if used elsewhere, otherwise remove? 
+// No, I should remove it if unused, but safety first.
+import { ConsolidatedOnboardingBanner } from './ConsolidatedOnboardingBanner';
 import { FollowerMetricsWidget } from './FollowerMetricsWidget';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 // TypeScript interfaces
 interface Business {
@@ -105,15 +107,49 @@ const BusinessDashboard: React.FC = () => {
   const { getBusinessUrl } = useBusinessUrl();
   const { user } = useAuthStore();
 
+  const queryClient = useQueryClient();
+
   // Use React Query with SWR pattern - cached data shown immediately
   const { data: businesses = [], isLoading: loading } = useQuery({
     queryKey: ['businessDashboard', user?.id],
-    queryFn: () => fetchUserBusinesses(user!.id),
+    queryFn: async () => {
+      const data = await fetchUserBusinesses(user!.id);
+      console.log('BusinessDashboard fetched:', data);
+      return data;
+    },
     enabled: !!user?.id,
-    staleTime: 2 * 60 * 1000, // 2 minutes - data considered fresh
-    gcTime: 10 * 60 * 1000, // 10 minutes - cache retained
-    refetchOnWindowFocus: false,
+    staleTime: 0, // Always fetch fresh data
+    refetchOnMount: 'always',
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: true,
   });
+
+  // Realtime subscription to listen for status changes
+  React.useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel(`business-dashboard-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'businesses',
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          // Invalidate and refetch when any business data changes
+          queryClient.invalidateQueries({ queryKey: ['businessDashboard', user.id] });
+          toast.success('Business information updated');
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, queryClient]);
 
   // Calculate stats from businesses (memoized)
   const stats = useMemo<BusinessStats>(() => {
@@ -333,18 +369,10 @@ const BusinessDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Onboarding Reminder - Show for ALL businesses if not completed */}
+        {/* Onboarding Reminder - Consolidated Banner */}
         {businesses.length > 0 && (
-          <div className="space-y-2 mb-4">
-            {businesses.map(business => (
-              !business.onboarding_completed_at && (
-                <OnboardingReminderBanner
-                  key={business.id}
-                  businessId={business.id}
-                  businessName={business.business_name}
-                />
-              )
-            ))}
+          <div className="mb-6">
+            <ConsolidatedOnboardingBanner businesses={businesses} />
           </div>
         )}
 

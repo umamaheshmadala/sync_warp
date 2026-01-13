@@ -33,6 +33,8 @@ export interface Business {
     total_checkins: number;
     created_at: string;
     updated_at: string;
+    claim_status?: string;
+    phone_verified?: boolean;
 }
 
 export interface BusinessCategory {
