@@ -72,6 +72,11 @@ const config: CapacitorConfig = {
       androidScaleType: "CENTER_CROP",
       splashFullScreen: true,
       splashImmersive: true
+    },
+    StatusBar: {
+      overlay: true,
+      style: "DARK",
+      backgroundColor: "#ffffffff"
     }
   }
 };

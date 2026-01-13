@@ -1,5 +1,5 @@
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
-import { List, LogOut, User, Settings, UserPlus, Search, MessageCircle, Store, PlusCircle } from 'lucide-react';
+import { List, LogOut, User, Settings, UserPlus, Search, MessageCircle, Store, PlusCircle, ShieldAlert } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { supabase } from '../../lib/supabase';
@@ -261,6 +261,19 @@ export default function Header() {
               title="My Businesses"
             >
               <Store className="h-7 w-7" />
+            </Button>
+          )}
+
+          {/* Admin Dashboard - Desktop Only (Conditional) */}
+          {(profile?.role === 'admin' || (profile as any)?.is_admin) && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="hidden md:flex relative text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 h-10 w-10"
+              onClick={() => navigate('/admin')}
+              title="Admin Dashboard"
+            >
+              <ShieldAlert className="h-7 w-7" />
             </Button>
           )}
 

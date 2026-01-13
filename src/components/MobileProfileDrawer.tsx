@@ -166,6 +166,16 @@ export default function MobileProfileDrawer({ isOpen, onClose }: MobileProfileDr
             >
               Manage Businesses
             </button>
+
+            {/* Admin Dashboard - Conditional */}
+            {(profile?.role === 'admin' || (profile as any)?.is_admin) && (
+              <button
+                onClick={() => handleNavigation('/admin')}
+                className="text-sm text-red-600 hover:text-red-700 font-medium block mt-1"
+              >
+                Admin Dashboard
+              </button>
+            )}
           </div>
 
           <div className="border-t border-gray-200" />
