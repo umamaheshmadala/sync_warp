@@ -272,14 +272,14 @@ export default function FeaturedOffers({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <h4 className={`font-semibold text-lg leading-tight mb-1 ${expired
+                        <h4 className={`font-semibold text-lg leading-tight mb-0.5 lg:mb-1 ${expired
                           ? 'text-gray-500'
                           : 'text-gray-900 group-hover:text-indigo-600 transition-colors'
                           }`}>
                           {offer.title}
                         </h4>
                         {offer.description && (
-                          <p className="text-sm text-gray-600 mb-1 hidden lg:line-clamp-2">
+                          <p className="text-sm text-gray-600 hidden lg:block lg:mb-1 lg:line-clamp-2">
                             {offer.description}
                           </p>
                         )}
@@ -312,7 +312,7 @@ export default function FeaturedOffers({
                       <div className="flex items-center flex-wrap gap-4 text-xs text-gray-500">
                         <span className="flex items-center">
                           <Calendar className="w-3.5 h-3.5 mr-1 text-gray-400" />
-                          {expired ? 'Expired' : `Expires in ${getDaysRemaining(offer.valid_until)} days`}
+                          {expired ? 'Expired' : `Exp in ${getDaysRemaining(offer.valid_until)} days`}
                         </span>
                         {isOwner && (
                           <span className="flex items-center">
