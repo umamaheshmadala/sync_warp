@@ -7,6 +7,7 @@ import { cn } from '../../lib/utils';
 import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 import { getOptimizedImageUrl } from '../../utils/imageUtils';
 import { FavoriteProductButton } from '../favorites/FavoriteProductButton';
+import { ProductShareButton } from '../Sharing/ProductShareButton';
 
 interface ProductCardProps {
   product: Product;
@@ -132,6 +133,21 @@ const ProductCardBase = ({
           {/* Favorite Button - Bottom Right - Story 4.13 */}
           <div className="absolute bottom-2 right-2" onClick={(e) => e.stopPropagation()}>
             <FavoriteProductButton productId={product.id} iconOnly={true} />
+          </div>
+
+          {/* Share Button - Bottom Left - Story 10.1.3 */}
+          <div className="absolute bottom-2 left-2" onClick={(e) => e.stopPropagation()}>
+            <ProductShareButton
+              productId={product.id}
+              productName={product.name}
+              productPrice={product.price}
+              productCurrency={product.currency || 'INR'}
+              productImage={product.image_urls?.[0]}
+              businessId={product.business_id}
+              businessName={product.business?.name || ''}
+              businessSlug={(product.business as any)?.slug || product.business_id}
+              variant="icon"
+            />
           </div>
         </div>
       </CardContent>

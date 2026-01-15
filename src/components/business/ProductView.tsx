@@ -15,6 +15,7 @@ import { Product, CURRENCIES } from '../../types/product';
 import { useNavigate } from 'react-router-dom';
 import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 import { FavoriteProductButton } from '../favorites/FavoriteProductButton';
+import { ProductShareButton } from '../Sharing/ProductShareButton';
 
 interface ProductViewProps {
   product: Product;
@@ -111,6 +112,22 @@ const ProductView: React.FC<ProductViewProps> = ({
                 </button>
               )}
             </>
+          )}
+
+          {/* Share Button - Story 10.1.3 */}
+          {!isOwner && (
+            <ProductShareButton
+              productId={product.id}
+              productName={product.name}
+              productPrice={product.price}
+              productCurrency={product.currency || 'INR'}
+              productImage={product.image_urls?.[0]}
+              businessId={product.business_id}
+              businessName={product.business?.name || ''}
+              businessSlug={product.business?.slug || product.business_id}
+              variant="outline"
+              size="sm"
+            />
           )}
 
           {isModal && onClose && (

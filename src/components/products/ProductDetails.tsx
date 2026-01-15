@@ -9,7 +9,7 @@ import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Skeleton } from '../ui/skeleton';
 import { ProductCard } from './ProductCard';
-import ProductShareModal from './ProductShareModal';
+
 import { ProductShareButton } from '../Sharing/ProductShareButton';
 import { cn } from '../../lib/utils';
 
@@ -18,24 +18,24 @@ export function ProductDetails() {
   const navigate = useNavigate();
   const { getBusinessUrl } = useBusinessUrl();
   const { product, loading, error, fetchProduct, fetchProducts } = useProducts(businessId);
-  
+
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
   const [imageLoading, setImageLoading] = useState(true);
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  
+
+
   // Social features
   const {
     isInWishlist,
     toggleWishlist,
     isLoading: socialLoading
   } = useSimpleProductSocial();
-  
+
   // Use UnifiedFavorites for product favorites
   const unifiedFavorites = useUnifiedFavorites();
-  
+
   const isFavorited = (productId: string) => unifiedFavorites.isFavorited(productId, 'product');
-  
+
   const toggleFavorite = async (product: any) => {
     await unifiedFavorites.toggleFavorite(product.id, 'product', {
       name: product.name,
@@ -91,9 +91,7 @@ export function ProductDetails() {
     }
   };
 
-  const handleShareClick = () => {
-    setIsShareModalOpen(true);
-  };
+
 
   const getCurrencySymbol = (currency: string) => {
     const symbols: { [key: string]: string } = {
@@ -189,7 +187,7 @@ export function ProductDetails() {
                 setImageLoading(false);
               }}
             />
-            
+
             {/* Badges */}
             {product.is_featured && (
               <Badge className="absolute left-3 top-3 bg-yellow-500 text-black">
@@ -213,11 +211,10 @@ export function ProductDetails() {
                     setSelectedImageIndex(index);
                     setImageLoading(true);
                   }}
-                  className={`h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg border-2 transition-all ${
-                    selectedImageIndex === index
-                      ? 'border-primary'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
+                  className={`h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg border-2 transition-all ${selectedImageIndex === index
+                    ? 'border-primary'
+                    : 'border-gray-200 hover:border-gray-300'
+                    }`}
                 >
                   <img
                     src={image}
@@ -289,6 +286,11 @@ export function ProductDetails() {
               productId={product.id}
               productName={product.name}
               productDescription={product.description}
+              productPrice={product.price}
+              productCurrency={product.currency}
+              productImage={product.image_urls?.[0]}
+              businessId={product.business_id}
+              businessName={product.business?.name || ''}
               variant="outline"
               size="default"
               className="flex-1"
@@ -348,18 +350,8 @@ export function ProductDetails() {
           </div>
         </div>
       )}
-      
-      {/* Share Modal */}
-      {product && (
-        <ProductShareModal
-          isOpen={isShareModalOpen}
-          onClose={() => setIsShareModalOpen(false)}
-          product={product}
-          onShareSuccess={() => {
-            console.log('Product shared successfully');
-          }}
-        />
-      )}
+
+
     </div>
   );
 }

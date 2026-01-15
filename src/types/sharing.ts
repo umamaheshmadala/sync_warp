@@ -32,6 +32,7 @@ export interface ShareOptions {
         description: string;
         imageUrl?: string;
         url: string;
+        metadata?: Record<string, any>;
     };
 }
 
