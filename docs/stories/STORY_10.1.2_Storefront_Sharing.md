@@ -302,6 +302,374 @@ export function StorefrontShareButton({
 
 ---
 
+### AC-11: Full ShareModal Implementation
+**Given** ShareModal is the core sharing component  
+**When** this story is complete  
+**Then** `src/components/sharing/ShareModal.tsx` has full implementation:
+
+```tsx
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Share } from '@capacitor/share';
+import { Capacitor } from '@capacitor/core';
+import { 
+  MessageCircle, Link, Mail, MoreHorizontal, X, Facebook, Twitter, 
+  Loader2, Check, AlertCircle 
+} from 'lucide-react';
+import { useState } from 'react';
+import { FaFacebook, FaTwitter, FaWhatsapp } from 'react-icons/fa';
+import { useUnifiedShare, usePlatform } from '@/hooks';
+import { toast } from 'sonner';
+import { FriendPickerModal } from './FriendPickerModal';
+
+interface ShareModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  entityType: 'storefront' | 'product' | 'offer' | 'profile';
+  entityId: string;
+  title: string;
+  description: string;
+  imageUrl?: string;
+  url: string;
+}
+
+export function ShareModal({
+  isOpen,
+  onClose,
+  entityType,
+  entityId,
+  title,
+  description,
+  imageUrl,
+  url
+}: ShareModalProps) {
+  const [showFriendPicker, setShowFriendPicker] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+  const [shareError, setShareError] = useState<string | null>(null);
+  
+  const { 
+    shareToChat, 
+    shareClipboard, 
+    shareToPlatform, 
+    shareNative, 
+    isNativeShareSupported 
+  } = useUnifiedShare();
+  const { isMobile } = usePlatform();
+  
+  const shareOptions = { entityType, entityId, entityData: { title, description, imageUrl, url } };
+  
+  const handleCopyLink = async () => {
+    setIsSharing(true);
+    setShareError(null);
+    try {
+      const result = await shareClipboard(shareOptions);
+      if (result.success) {
+        toast.success('Link copied to clipboard!');
+        onClose();
+      }
+    } catch (error) {
+      setShareError('Failed to copy link');
+      toast.error('Failed to copy link');
+    } finally {
+      setIsSharing(false);
+    }
+  };
+  
+  const handleSocialShare = async (platform: 'facebook' | 'twitter' | 'whatsapp' | 'email') => {
+    setIsSharing(true);
+    setShareError(null);
+    try {
+      const result = await shareToPlatform(shareOptions, platform);
+      if (result.success) {
+        onClose();
+      }
+    } catch (error) {
+      setShareError(`Failed to share to ${platform}`);
+    } finally {
+      setIsSharing(false);
+    }
+  };
+  
+  const handleNativeShare = async () => {
+    setIsSharing(true);
+    setShareError(null);
+    try {
+      const result = await shareNative(shareOptions);
+      if (result.success) {
+        onClose();
+      }
+    } catch (error) {
+      setShareError('Share failed');
+    } finally {
+      setIsSharing(false);
+    }
+  };
+  
+  const handleChatShare = async (friendIds: string[], message?: string) => {
+    setIsSharing(true);
+    setShareError(null);
+    try {
+      const result = await shareToChat(shareOptions, friendIds, message);
+      if (result.success) {
+        toast.success(`Shared with ${friendIds.length} friend${friendIds.length > 1 ? 's' : ''}`);
+        setShowFriendPicker(false);
+        onClose();
+      }
+    } catch (error) {
+      setShareError('Failed to share');
+      toast.error('Failed to share');
+    } finally {
+      setIsSharing(false);
+    }
+  };
+  
+  return (
+    <>
+      <Dialog open={isOpen && !showFriendPicker} onOpenChange={onClose}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Share</DialogTitle>
+          </DialogHeader>
+          
+          {/* Entity Preview */}
+          <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+            {imageUrl ? (
+              <img src={imageUrl} alt="" className="w-12 h-12 rounded-lg object-cover" />
+            ) : (
+              <div className="w-12 h-12 rounded-lg bg-gray-200 flex items-center justify-center">
+                <Share2 className="w-6 h-6 text-gray-400" />
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <h4 className="font-semibold text-gray-900 truncate">{title}</h4>
+              <p className="text-sm text-gray-500 line-clamp-2">{description}</p>
+            </div>
+          </div>
+          
+          {/* Error Message */}
+          {shareError && (
+            <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 p-2 rounded">
+              <AlertCircle className="w-4 h-4" />
+              {shareError}
+            </div>
+          )}
+          
+          {/* Primary Actions */}
+          <div className="space-y-2">
+            <button
+              onClick={() => setShowFriendPicker(true)}
+              disabled={isSharing}
+              className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50"
+            >
+              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                <MessageCircle className="w-5 h-5 text-blue-600" />
+              </div>
+              <span className="font-medium">Send to Friend</span>
+            </button>
+            
+            <button
+              onClick={handleCopyLink}
+              disabled={isSharing}
+              className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50"
+            >
+              <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                {isSharing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Link className="w-5 h-5 text-gray-600" />}
+              </div>
+              <span className="font-medium">Copy Link</span>
+            </button>
+          </div>
+          
+          {/* Divider */}
+          <div className="border-t my-2" />
+          
+          {/* Social Share Buttons */}
+          <div className="flex items-center justify-center gap-4">
+            <button
+              onClick={() => handleSocialShare('facebook')}
+              disabled={isSharing}
+              className="w-12 h-12 rounded-full bg-[#1877F2] hover:bg-[#1877F2]/90 flex items-center justify-center disabled:opacity-50"
+              title="Share on Facebook"
+            >
+              <FaFacebook className="w-6 h-6 text-white" />
+            </button>
+            
+            <button
+              onClick={() => handleSocialShare('twitter')}
+              disabled={isSharing}
+              className="w-12 h-12 rounded-full bg-black hover:bg-gray-800 flex items-center justify-center disabled:opacity-50"
+              title="Share on X"
+            >
+              <FaTwitter className="w-6 h-6 text-white" />
+            </button>
+            
+            <button
+              onClick={() => handleSocialShare('whatsapp')}
+              disabled={isSharing}
+              className="w-12 h-12 rounded-full bg-[#25D366] hover:bg-[#25D366]/90 flex items-center justify-center disabled:opacity-50"
+              title="Share on WhatsApp"
+            >
+              <FaWhatsapp className="w-6 h-6 text-white" />
+            </button>
+            
+            <button
+              onClick={() => handleSocialShare('email')}
+              disabled={isSharing}
+              className="w-12 h-12 rounded-full bg-gray-600 hover:bg-gray-700 flex items-center justify-center disabled:opacity-50"
+              title="Share via Email"
+            >
+              <Mail className="w-6 h-6 text-white" />
+            </button>
+            
+            {/* More button (mobile only) */}
+            {isMobile && isNativeShareSupported && (
+              <button
+                onClick={handleNativeShare}
+                disabled={isSharing}
+                className="w-12 h-12 rounded-full bg-purple-600 hover:bg-purple-700 flex items-center justify-center disabled:opacity-50"
+                title="More sharing options"
+              >
+                <MoreHorizontal className="w-6 h-6 text-white" />
+              </button>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Friend Picker Sub-Modal */}
+      <FriendPickerModal
+        isOpen={showFriendPicker}
+        onClose={() => setShowFriendPicker(false)}
+        onSend={handleChatShare}
+        title={`Share "${title}"`}
+        isLoading={isSharing}
+      />
+    </>
+  );
+}
+```
+
+---
+
+### AC-12: Share Button Disabled States
+**Given** share buttons can be disabled  
+**When** certain conditions are met  
+**Then** disable the button with appropriate visual feedback:
+
+| Condition | Disabled | Visual Feedback |
+|-----------|----------|-----------------|
+| User not authenticated | For Chat share only | "Log in to share with friends" |
+| No network (offline) | For Social shares | Tooltip: "You're offline" |
+| Rate limited | All shares | Tooltip: "Wait X seconds" |
+| Currently sharing | All buttons | Show spinner, disabled styling |
+| Entity deleted/invalid | All shares | Hide share button entirely |
+
+```tsx
+interface ShareButtonDisabledState {
+  disabled: boolean;
+  reason?: string;
+  tooltip?: string;
+}
+
+function getShareButtonState(
+  user: User | null,
+  isOnline: boolean,
+  rateLimiter: ShareRateLimiter,
+  entityValid: boolean
+): ShareButtonDisabledState {
+  if (!entityValid) {
+    return { disabled: true, reason: 'invalid_entity' };
+  }
+  
+  if (!isOnline) {
+    return { 
+      disabled: false, // Copy link still works offline
+      tooltip: 'Some sharing options unavailable offline'
+    };
+  }
+  
+  const rateCheck = rateLimiter.canShare(user?.id, entityId);
+  if (!rateCheck.allowed) {
+    return { 
+      disabled: true, 
+      reason: 'rate_limited',
+      tooltip: `Please wait ${Math.ceil(rateCheck.retryAfter!)}s`
+    };
+  }
+  
+  return { disabled: false };
+}
+```
+
+---
+
+### AC-13: Message Type Clarification
+**Given** chat messages need correct typing  
+**When** sending a share via chat  
+**Then** the message type IS `'link'`:
+
+```typescript
+// In messagingService.sendMessage()
+// The 'type' field for shared links:
+const message = {
+  conversation_id: conversationId,
+  sender_id: user.id,
+  content: customMessage || `Check out ${title}!`,
+  type: 'link', // <-- THIS IS THE CORRECT TYPE
+  status: 'sending',
+  link_previews: [{
+    url: shareUrl,
+    title: title,
+    description: description,
+    image: imageUrl,
+    type: `sync-${entityType}`, // e.g., 'sync-storefront'
+    metadata: {
+      entityType,
+      entityId,
+      // ... entity-specific fields
+    }
+  }]
+};
+```
+
+---
+
+### AC-14: Error States and Retry Logic
+**Given** shares can fail  
+**When** an error occurs  
+**Then** show appropriate feedback and retry options:
+
+```tsx
+function ShareErrorBanner({ error, onRetry }: { error: ShareError; onRetry: () => void }) {
+  const messages: Record<ShareError['type'], { message: string; canRetry: boolean }> = {
+    network: { message: "You're offline. Check your connection.", canRetry: true },
+    cancelled: { message: '', canRetry: false }, // Don't show for cancellations
+    permission: { message: 'Permission denied. Check your browser settings.', canRetry: true },
+    rate_limit: { message: 'Too many shares. Please wait a moment.', canRetry: false },
+    database: { message: 'Failed to save. Please try again.', canRetry: true },
+    unknown: { message: 'Something went wrong. Please try again.', canRetry: true }
+  };
+  
+  const { message, canRetry } = messages[error.type];
+  
+  if (!message) return null;
+  
+  return (
+    <div className="flex items-center justify-between bg-red-50 text-red-700 p-3 rounded-lg">
+      <div className="flex items-center gap-2">
+        <AlertCircle className="w-4 h-4" />
+        <span className="text-sm">{message}</span>
+      </div>
+      {canRetry && (
+        <button onClick={onRetry} className="text-sm font-medium underline">
+          Retry
+        </button>
+      )}
+    </div>
+  );
+}
+```
+
+---
+
 ## 📁 Files to Create/Modify
 
 ### New Files

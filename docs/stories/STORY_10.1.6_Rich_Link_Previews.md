@@ -416,6 +416,96 @@ function StorefrontPreview({ preview }: { preview: LinkPreview }) {
 
 ---
 
+### AC-11: Preview Loading Skeleton
+**Given** preview data is being fetched  
+**When** the preview is loading  
+**Then** show a skeleton placeholder:
+
+```tsx
+function PreviewSkeleton() {
+  return (
+    <div className="flex items-start gap-3 p-3 animate-pulse">
+      {/* Image skeleton */}
+      <div className="w-12 h-12 rounded-lg bg-gray-200" />
+      
+      {/* Content skeleton */}
+      <div className="flex-1 space-y-2">
+        <div className="h-4 bg-gray-200 rounded w-3/4" />
+        <div className="h-3 bg-gray-200 rounded w-1/2" />
+        <div className="h-3 bg-gray-200 rounded w-1/4" />
+      </div>
+    </div>
+  );
+}
+
+// Usage in LinkPreviewCard
+function LinkPreviewCard({ preview, isLoading, ...props }: Props) {
+  if (isLoading) {
+    return (
+      <div className="rounded-lg border border-gray-200 overflow-hidden">
+        <PreviewSkeleton />
+      </div>
+    );
+  }
+  
+  // ... rest of component
+}
+```
+
+---
+
+### AC-12: Preview Error States
+**Given** preview fetching can fail  
+**When** an error occurs  
+**Then** show appropriate fallback:
+
+```tsx
+interface PreviewError {
+  type: 'not_found' | 'private' | 'network' | 'unknown';
+  message: string;
+}
+
+function PreviewErrorState({ error, url }: { error: PreviewError; url: string }) {
+  const icons: Record<PreviewError['type'], LucideIcon> = {
+    not_found: AlertTriangle,
+    private: Lock,
+    network: WifiOff,
+    unknown: AlertCircle
+  };
+  
+  const Icon = icons[error.type];
+  
+  return (
+    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+      <div className="w-10 h-10 rounded-lg bg-gray-200 flex items-center justify-center">
+        <Icon className="w-5 h-5 text-gray-400" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm text-gray-500">{error.message}</p>
+        <a 
+          href={url} 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="text-xs text-blue-600 hover:underline truncate block"
+        >
+          {url}
+        </a>
+      </div>
+    </div>
+  );
+}
+
+// Error messages by type
+const errorMessages: Record<PreviewError['type'], string> = {
+  not_found: 'This content is no longer available',
+  private: 'This content is private',
+  network: 'Failed to load preview',
+  unknown: 'Preview unavailable'
+};
+```
+
+---
+
 ## 🧪 Testing Checklist
 
 ### Visual Tests

@@ -295,6 +295,311 @@ function hashIP(ip: string): string {
 
 ---
 
+### AC-12: useUnifiedShare React Hook
+**Given** React components need easy access to share functionality  
+**When** this story is complete  
+**Then** `src/hooks/useUnifiedShare.ts` exists with:
+
+```typescript
+interface UseUnifiedShareReturn {
+  // Share actions
+  shareNative: (options: ShareOptions) => Promise<ShareResult>;
+  shareClipboard: (options: ShareOptions) => Promise<ShareResult>;
+  shareToPlatform: (options: ShareOptions, platform: SharePlatform) => Promise<ShareResult>;
+  shareToChat: (options: ShareOptions, friendIds: string[], message?: string) => Promise<ShareResult>;
+  
+  // Platform detection
+  isNativeShareSupported: boolean;
+  platform: 'ios' | 'android' | 'web';
+  isMobile: boolean;
+  
+  // State
+  isSharing: boolean;
+  error: Error | null;
+  lastShareResult: ShareResult | null;
+  
+  // Utilities
+  generateShareUrl: (options: ShareOptions, method: ShareMethod) => string;
+  resetError: () => void;
+}
+
+export function useUnifiedShare(): UseUnifiedShareReturn {
+  const [isSharing, setIsSharing] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  const [lastShareResult, setLastShareResult] = useState<ShareResult | null>(null);
+  const { platform, isNativeShareSupported, isMobile } = usePlatform();
+  
+  const shareNative = useCallback(async (options: ShareOptions) => {
+    setIsSharing(true);
+    setError(null);
+    try {
+      const result = await unifiedShareService.shareNative(options);
+      setLastShareResult(result);
+      return result;
+    } catch (err) {
+      setError(err as Error);
+      throw err;
+    } finally {
+      setIsSharing(false);
+    }
+  }, []);
+  
+  // ... other methods
+  
+  return {
+    shareNative,
+    shareClipboard,
+    shareToPlatform,
+    shareToChat,
+    isNativeShareSupported,
+    platform,
+    isMobile,
+    isSharing,
+    error,
+    lastShareResult,
+    generateShareUrl: unifiedShareService.generateShareUrl.bind(unifiedShareService),
+    resetError: () => setError(null)
+  };
+}
+```
+
+---
+
+### AC-13: @capacitor/share Integration
+**Given** native apps need native share sheet  
+**When** sharing on iOS/Android  
+**Then** use Capacitor Share plugin:
+
+```typescript
+import { Share } from '@capacitor/share';
+import { Capacitor } from '@capacitor/core';
+
+class UnifiedShareService {
+  async shareNative(options: ShareOptions): Promise<ShareResult> {
+    const shareUrl = this.generateShareUrl(options, 'native_share');
+    
+    // Check if we're in a native app context
+    if (Capacitor.isNativePlatform()) {
+      try {
+        await Share.share({
+          title: options.entityData.title,
+          text: options.entityData.description,
+          url: shareUrl,
+          dialogTitle: `Share ${options.entityType}`
+        });
+        
+        // Track the share
+        const shareEventId = await this.trackShare(options, 'native_share');
+        
+        return {
+          success: true,
+          method: 'native_share',
+          shareEventId
+        };
+      } catch (error) {
+        // User cancelled or share failed
+        if ((error as Error).message?.includes('cancelled')) {
+          return { success: false, method: 'native_share', error: 'User cancelled' };
+        }
+        throw error;
+      }
+    }
+    
+    // Fallback to Web Share API
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: options.entityData.title,
+          text: options.entityData.description,
+          url: shareUrl
+        });
+        
+        const shareEventId = await this.trackShare(options, 'native_share');
+        return { success: true, method: 'native_share', shareEventId };
+      } catch (error) {
+        if ((error as Error).name === 'AbortError') {
+          return { success: false, method: 'native_share', error: 'User cancelled' };
+        }
+        throw error;
+      }
+    }
+    
+    // Final fallback to clipboard
+    return this.shareClipboard(options);
+  }
+}
+```
+
+---
+
+### AC-14: Error Handling
+**Given** shares can fail for various reasons  
+**When** a share error occurs  
+**Then** handle appropriately:
+
+| Error Type | Handling | User Feedback |
+|------------|----------|---------------|
+| Network offline | Queue for later OR show error | "You're offline. Try again when connected." |
+| Share cancelled | Return success: false, no error | (No message needed) |
+| Permission denied | Show permission prompt | "Please allow sharing in your browser settings." |
+| Rate limited | Block share, cooldown | "Please wait a moment before sharing again." |
+| Database error | Log, return error | "Failed to share. Please try again." |
+| Unknown error | Log, return error | "Something went wrong. Please try again." |
+
+```typescript
+interface ShareError {
+  type: 'network' | 'cancelled' | 'permission' | 'rate_limit' | 'database' | 'unknown';
+  message: string;
+  retryable: boolean;
+}
+
+function handleShareError(error: unknown): ShareError {
+  if (error instanceof Error) {
+    if (error.name === 'AbortError' || error.message.includes('cancelled')) {
+      return { type: 'cancelled', message: 'Share cancelled', retryable: false };
+    }
+    if (error.message.includes('Permission')) {
+      return { type: 'permission', message: 'Permission denied', retryable: true };
+    }
+    if (!navigator.onLine) {
+      return { type: 'network', message: 'No network connection', retryable: true };
+    }
+  }
+  return { type: 'unknown', message: 'Share failed', retryable: true };
+}
+```
+
+---
+
+### AC-15: Offline Behavior
+**Given** users may try to share while offline  
+**When** share is attempted without network  
+**Then**:
+
+1. **Copy Link**: Always works (generates URL locally)
+2. **In-App Chat**: Queue message for when online (existing offline queue)
+3. **Social Buttons**: Show error (require network)
+4. **Native Share**: May work if app is cached, track later
+5. **Analytics**: Queue tracking events for sync when online
+
+```typescript
+async shareWithOfflineSupport(options: ShareOptions, method: ShareMethod): Promise<ShareResult> {
+  const isOnline = navigator.onLine;
+  
+  if (method === 'copy_link') {
+    // Always works offline - just generate URL
+    const url = this.generateShareUrl(options, method);
+    await navigator.clipboard.writeText(url);
+    
+    // Queue tracking for later
+    if (!isOnline) {
+      offlineQueue.addShareEvent(options, method);
+    } else {
+      await this.trackShare(options, method);
+    }
+    
+    return { success: true, method };
+  }
+  
+  if (method === 'chat' && !isOnline) {
+    // Use existing offline message queue from Epic 8.4
+    // Message will be sent when back online
+    return { success: true, method, error: 'Queued for sending when online' };
+  }
+  
+  if (!isOnline && ['facebook', 'twitter', 'whatsapp', 'email'].includes(method)) {
+    throw new Error('Cannot share to external apps while offline');
+  }
+  
+  // Proceed with regular share
+  return this.share(options, method);
+}
+```
+
+---
+
+### AC-16: Rate Limiting
+**Given** spam prevention is needed  
+**When** user shares repeatedly  
+**Then** enforce rate limits:
+
+| Limit Type | Value | Reset |
+|------------|-------|-------|
+| Shares per entity per minute | 5 | 60 seconds |
+| Shares per user per minute | 10 | 60 seconds |
+| Same entity same recipient | 1 per hour | 1 hour |
+
+```typescript
+class ShareRateLimiter {
+  private shareTimestamps: Map<string, number[]> = new Map();
+  
+  private readonly LIMITS = {
+    ENTITY_PER_MINUTE: 5,
+    USER_PER_MINUTE: 10,
+    SAME_RECIPIENT_MINUTES: 60
+  };
+  
+  canShare(userId: string, entityId: string, recipientId?: string): { allowed: boolean; retryAfter?: number } {
+    const now = Date.now();
+    const oneMinuteAgo = now - 60_000;
+    
+    // Check user rate limit
+    const userKey = `user:${userId}`;
+    const userShares = this.getRecentShares(userKey, oneMinuteAgo);
+    if (userShares.length >= this.LIMITS.USER_PER_MINUTE) {
+      const oldestShare = userShares[0];
+      return { allowed: false, retryAfter: (oldestShare + 60_000 - now) / 1000 };
+    }
+    
+    // Check entity rate limit
+    const entityKey = `entity:${userId}:${entityId}`;
+    const entityShares = this.getRecentShares(entityKey, oneMinuteAgo);
+    if (entityShares.length >= this.LIMITS.ENTITY_PER_MINUTE) {
+      const oldestShare = entityShares[0];
+      return { allowed: false, retryAfter: (oldestShare + 60_000 - now) / 1000 };
+    }
+    
+    // Check same recipient limit (if sending via chat)
+    if (recipientId) {
+      const recipientKey = `recipient:${userId}:${entityId}:${recipientId}`;
+      const oneHourAgo = now - 60 * 60_000;
+      const recipientShares = this.getRecentShares(recipientKey, oneHourAgo);
+      if (recipientShares.length >= 1) {
+        const lastShare = recipientShares[0];
+        return { allowed: false, retryAfter: (lastShare + 60 * 60_000 - now) / 1000 };
+      }
+    }
+    
+    return { allowed: true };
+  }
+  
+  recordShare(userId: string, entityId: string, recipientId?: string): void {
+    const now = Date.now();
+    this.addShare(`user:${userId}`, now);
+    this.addShare(`entity:${userId}:${entityId}`, now);
+    if (recipientId) {
+      this.addShare(`recipient:${userId}:${entityId}:${recipientId}`, now);
+    }
+  }
+  
+  private getRecentShares(key: string, after: number): number[] {
+    const shares = this.shareTimestamps.get(key) || [];
+    return shares.filter(ts => ts > after);
+  }
+  
+  private addShare(key: string, timestamp: number): void {
+    const shares = this.shareTimestamps.get(key) || [];
+    shares.push(timestamp);
+    // Keep only last 20 timestamps per key
+    this.shareTimestamps.set(key, shares.slice(-20));
+  }
+}
+
+export const shareRateLimiter = new ShareRateLimiter();
+```
+
+---
+
 ## 📁 Files to Create/Modify
 
 ### New Files

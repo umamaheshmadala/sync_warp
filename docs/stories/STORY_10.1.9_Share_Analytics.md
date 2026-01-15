@@ -414,3 +414,106 @@ class UnifiedShareService {
 - Caching: Consider caching analytics for dashboard
 - Real-time: Not needed for analytics (hourly refresh is fine)
 - Attribution window: Consider 7-day conversion window
+
+---
+
+## 🔒 Data Retention & Privacy Policy
+
+### Data Retention Schedule
+
+| Table | Retention Period | Archive/Delete | Justification |
+|-------|------------------|----------------|---------------|
+| `share_events` | 90 days | Archive to cold storage | Business analytics need |
+| `share_clicks` | 30 days | Hard delete | Not needed long-term |
+| `share_conversions` | 90 days | Archive with events | Attribution tracking |
+| Aggregated stats | Indefinite | Keep summaries | Dashboard data |
+
+### Automated Cleanup Job
+```sql
+-- Run weekly via pg_cron or Supabase Edge Function
+-- 1. Delete old clicks (> 30 days)
+DELETE FROM share_clicks
+WHERE clicked_at < NOW() - INTERVAL '30 days';
+
+-- 2. Archive old share events (> 90 days)
+-- Option A: Move to archive table
+INSERT INTO share_events_archive
+SELECT * FROM share_events
+WHERE created_at < NOW() - INTERVAL '90 days';
+
+DELETE FROM share_events
+WHERE created_at < NOW() - INTERVAL '90 days';
+
+-- Option B: Just delete (simpler)
+DELETE FROM share_events
+WHERE created_at < NOW() - INTERVAL '90 days';
+```
+
+### GDPR Compliance
+
+1. **Right to Deletion**: When a user deletes their account:
+   ```sql
+   -- User deletion cascades
+   -- share_events.user_id already has ON DELETE SET NULL
+   -- share_conversions.converted_user_id has ON DELETE SET NULL
+   
+   -- Additional cleanup if needed:
+   DELETE FROM share_events WHERE user_id = deleted_user_id;
+   DELETE FROM share_conversions WHERE converted_user_id = deleted_user_id;
+   ```
+
+2. **Data Export**: Include share data in GDPR export:
+   ```typescript
+   async exportUserShareData(userId: string): Promise<UserShareExport> {
+     const [shares, conversions] = await Promise.all([
+       supabase.from('share_events').select('*').eq('user_id', userId),
+       supabase.from('share_conversions').select('*').eq('converted_user_id', userId)
+     ]);
+     
+     return {
+       shares_created: shares.data,
+       conversions_from_shares: conversions.data
+     };
+   }
+   ```
+
+3. **Anonymization**: For analytics, anonymize old data:
+   ```sql
+   -- After 90 days, anonymize user_id
+   UPDATE share_events
+   SET user_id = NULL
+   WHERE created_at < NOW() - INTERVAL '90 days'
+   AND user_id IS NOT NULL;
+   ```
+
+### Attribution Window
+
+- **Default**: 7 days from click to conversion
+- Conversions outside window are NOT attributed to share
+- Implementation:
+  ```typescript
+  const ATTRIBUTION_WINDOW_DAYS = 7;
+  
+  async trackConversion(ref: string, type: string, userId: string) {
+    const { data: shareEvent } = await supabase
+      .from('share_events')
+      .select('created_at')
+      .eq('id', ref)
+      .single();
+    
+    if (!shareEvent) return;
+    
+    const daysSinceShare = Math.floor(
+      (Date.now() - new Date(shareEvent.created_at).getTime()) / (1000 * 60 * 60 * 24)
+    );
+    
+    if (daysSinceShare > ATTRIBUTION_WINDOW_DAYS) {
+      console.log('Conversion outside attribution window, not tracking');
+      return;
+    }
+    
+    // Track conversion
+    await supabase.from('share_conversions').insert({...});
+  }
+  ```
+
