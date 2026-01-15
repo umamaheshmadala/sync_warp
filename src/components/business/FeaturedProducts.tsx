@@ -24,13 +24,15 @@ interface FeaturedProductsProps {
   businessName: string;
   isOwner: boolean;
   viewMode?: 'widget' | 'full';
+  showAddButton?: boolean;
 }
 
 const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
   businessId,
   businessName,
   isOwner,
-  viewMode = 'widget'
+  viewMode = 'widget',
+  showAddButton
 }) => {
   const navigate = useNavigate();
   const { getBusinessUrl } = useBusinessUrl();
@@ -40,6 +42,9 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+  // Determine if add button should be shown
+  const shouldShowAddButton = isOwner && (showAddButton ?? viewMode === 'full');
 
   useEffect(() => {
     if (products.length > 0) {
@@ -129,13 +134,13 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
 
   return (
     <>
-      {isOwner && (
-        <div className="hidden md:flex justify-end mb-4 px-[5px]">
+      {shouldShowAddButton && (
+        <div className="flex justify-end mb-4 px-[5px]">
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 transition-colors"
+            className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
           >
-            <Plus className="w-4 h-4 mr-2" />
+            <Plus className="w-4 h-4" />
             Add Products
           </button>
         </div>
@@ -143,48 +148,22 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
 
       <div className="relative p-[5px]">
 
-        {isOwner && (
-          <button
-            onClick={() => setIsAddModalOpen(true)}
-            className="absolute -top-[25px] right-[5px] z-10 md:hidden inline-flex items-center justify-center w-[20px] h-[20px] min-w-[20px] min-h-[20px] p-0 rounded bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition-colors leading-none"
-            style={{ width: '20px', height: '20px', minWidth: '20px', minHeight: '20px' }}
-            title="Add Product"
-          >
-            <Plus className="w-5 h-5" />
-          </button>
-        )}
+
 
         {featuredProducts.length > 0 ? (
           <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-1.5">
             {featuredProducts.map((product) => (
               <div key={product.id}>
-                {!isOwner ? (
-                  <LazyRender
-                    placeholder={<div className="h-56 bg-gray-100 rounded-lg" />}
-                  >
-                    <CustomerProductCard
-                      product={product}
-                      size="medium"
-                      showActions={true}
-                      onClick={() => handleProductClick(product)}
-                    />
-                  </LazyRender>
-                ) : (
-                  <LazyRender
-                    placeholder={<div className="h-56 bg-gray-200 rounded-lg" />}
-                  >
-                    <BusinessProductCard
-                      product={product}
-                      viewMode="grid"
-                      isOwner={isOwner}
-                      onEdit={() => handleEditProduct(product)}
-                      onDelete={() => {
-                        setSelectedProduct(product);
-                        setDeleteModalOpen(true);
-                      }}
-                    />
-                  </LazyRender>
-                )}
+                <LazyRender
+                  placeholder={<div className="h-56 bg-gray-100 rounded-lg" />}
+                >
+                  <CustomerProductCard
+                    product={product}
+                    size="medium"
+                    showActions={true}
+                    onClick={() => handleProductClick(product)}
+                  />
+                </LazyRender>
               </div>
             ))}
           </div>
@@ -193,12 +172,12 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
             <Package className="h-12 w-12 mx-auto text-gray-400 mb-3" />
             <h3 className="text-lg font-medium text-gray-900 mb-1">No Featured Products</h3>
             <p className="text-sm">Highlight your best products here!</p>
-            {isOwner && (
+            {shouldShowAddButton && (
               <button
                 onClick={() => setIsAddModalOpen(true)}
-                className="mt-4 inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+                className="mt-4 flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
               >
-                <Plus className="w-4 h-4 mr-2" />
+                <Plus className="w-4 h-4" />
                 Add Products
               </button>
             )}

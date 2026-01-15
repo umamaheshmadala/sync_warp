@@ -49,24 +49,19 @@ export function ClaimBusinessButton({
     const isOwner = user && ownerId === user.id;
     const isMainClaimed = claimStatus === 'claimed_verified';
 
-    // If user owns it, don't show claim button
-    if (isOwner) return null;
-
-    // If someone else owns it and it's verified, don't show (it's taken)
-    // Note: logic might be subtle if 'unclaimed' but user_id is set (rare/inconsistent state), 
-    // but generally rely on claim_status.
-    // Actually, if it is 'claimed_verified', we definitely hide it.
+    // If already verified, hide it (even for owner)
     if (isMainClaimed) return null;
 
-    // If it has an owner but NOT verified, technically it might be in pending state?
-    // But strict check:
+    // Logic: 
+    // - Non-owners see it if unclaimed/manual/no-owner
+    // - Owners see it if UNCLAIMED (to verify their business)
+
     const isClaimable = claimStatus === 'unclaimed' ||
         claimStatus === 'manual' ||
-        !ownerId; // If no owner_id, it is claimable regardless of status (unless status says verified which implies owner)
+        !ownerId ||
+        (isOwner && claimStatus !== 'claimed_verified');
 
     if (!isClaimable) {
-        // If status is 'claimed_pending', maybe we show "Claim Pending" or similar?
-        // For now, per requirements, just hide if not claimable.
         return null;
     }
 
@@ -76,6 +71,9 @@ export function ClaimBusinessButton({
             navigate('/login'); // Redirect to login
             return;
         }
+
+        // If rendered in dropdown, we might want to close it? 
+        // Logic handled by parent probably or just opening modal is fine.
 
         setLoading(true);
         try {
@@ -124,18 +122,37 @@ export function ClaimBusinessButton({
         }
     };
 
+    // Render based on variant or default
+    const buttonText = isOwner ? "Verify Ownership" : "Claim this business";
+
     return (
         <>
-            <button
-                onClick={() => setIsModalOpen(true)}
-                className={cn(
-                    "inline-flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-xl font-medium hover:bg-amber-600 transition-colors shadow-sm",
-                    className
-                )}
-            >
-                <Shield className="w-4 h-4" />
-                Claim this business
-            </button>
+            {className?.includes('text-left') ? (
+                // Menu Item Style (detected via generic className or explicit variant if added)
+                // Assuming simple button for now based on usage context
+                <button
+                    onClick={() => setIsModalOpen(true)}
+                    className={cn(
+                        "w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2",
+                        className
+                    )}
+                >
+                    <Shield className="w-4 h-4" />
+                    {buttonText}
+                </button>
+            ) : (
+                // Default Button Style
+                <button
+                    onClick={() => setIsModalOpen(true)}
+                    className={cn(
+                        "inline-flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-xl font-medium hover:bg-amber-600 transition-colors shadow-sm",
+                        className
+                    )}
+                >
+                    <Shield className="w-4 h-4" />
+                    {buttonText}
+                </button>
+            )}
 
             {/* Claim Modal */}
             <AnimatePresence>

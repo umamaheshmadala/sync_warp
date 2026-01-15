@@ -9,11 +9,13 @@ import { useFavoritesContext } from '../../contexts/FavoritesContext';
 interface FavoriteOfferButtonProps {
     offerId: string;
     className?: string;
+    iconClassName?: string;
 }
 
 export const FavoriteOfferButton: React.FC<FavoriteOfferButtonProps> = ({
     offerId,
-    className = ''
+    className = '',
+    iconClassName = 'w-4 h-4'
 }) => {
     const favorites = useFavoritesContext();
     const [isFavorited, setIsFavorited] = useState(false);
@@ -44,14 +46,14 @@ export const FavoriteOfferButton: React.FC<FavoriteOfferButtonProps> = ({
         <button
             onClick={handleToggleFavorite}
             disabled={isLoading}
-            className={`flex items-center px-4 py-2 border rounded-lg transition-colors disabled:opacity-50 ${isFavorited
-                    ? 'bg-red-50 border-red-200 text-red-600 hover:bg-red-100'
-                    : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+            className={`flex items-center justify-center px-4 py-2 border rounded-lg transition-colors disabled:opacity-50 ${isFavorited
+                ? 'bg-red-50 border-red-200 text-red-600 hover:bg-red-100'
+                : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
                 } ${className}`}
             aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
         >
             <Heart
-                className={`w-4 h-4 mr-2 transition-all ${isFavorited ? 'fill-red-500 text-red-500' : 'text-gray-600'
+                className={`${iconClassName} mr-2 transition-all ${isFavorited ? 'fill-red-500 text-red-500' : 'text-gray-600'
                     }`}
             />
             <span className="hidden md:inline">

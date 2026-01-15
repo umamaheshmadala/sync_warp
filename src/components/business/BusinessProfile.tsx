@@ -990,6 +990,9 @@ const BusinessProfile: React.FC = () => {
           initialOfferId={searchParams.get('offer') || searchParams.get('offerId')}
           shareId={searchParams.get('share_id')}
           compact={true}
+          className=""
+          showHeading={false}
+          showAddButton={false}
           onViewAll={() => {
             setActiveTab('offers');
             // Scroll to top
@@ -1418,18 +1421,7 @@ const BusinessProfile: React.FC = () => {
 
                   {/* Action Buttons Row - Desktop Only */}
                   <div className="hidden md:flex flex-wrap items-center gap-2 mt-2 w-full max-w-2xl">
-                    <ClaimBusinessButton
-                      businessId={business.id}
-                      businessName={business.business_name}
-                      businessPhone={business.business_phone || ''}
-                      claimStatus={business.claim_status || 'unclaimed'}
-                      ownerId={business.user_id}
-                      onClaimed={() => {
-                        refetchBusiness();
-                        toast.success('Claim successful! Refreshing...');
-                      }}
-                      className="flex-1 justify-center"
-                    />
+
                     {!isOwner && user && (
                       <div className="flex-1">
                         <FollowButton
@@ -1534,6 +1526,18 @@ const BusinessProfile: React.FC = () => {
                               <Info className="w-4 h-4" />
                               More Info
                             </button>
+                            <ClaimBusinessButton
+                              businessId={business.id}
+                              businessName={business.business_name}
+                              businessPhone={business.business_phone || ''}
+                              claimStatus={business.claim_status || 'unclaimed'}
+                              ownerId={business.user_id}
+                              onClaimed={() => {
+                                setShowMoreDropdown(false);
+                                refetchBusiness();
+                              }}
+                              className="text-left justify-start rounded-none"
+                            />
                           </div>
                         </>
                       )}
@@ -1544,17 +1548,7 @@ const BusinessProfile: React.FC = () => {
 
               {/* Action Buttons Row - Mobile Only (Full Width) */}
               <div className="md:hidden flex flex-row items-stretch gap-2 mt-2 w-full">
-                <ClaimBusinessButton
-                  businessId={business.id}
-                  businessName={business.business_name}
-                  businessPhone={business.business_phone || ''}
-                  claimStatus={business.claim_status || 'unclaimed'}
-                  ownerId={business.user_id}
-                  onClaimed={() => {
-                    refetchBusiness();
-                  }}
-                  className="flex-1 justify-center text-xs px-2"
-                />
+
                 {!isOwner && user && (
                   <div className="flex-1">
                     <FollowButton
@@ -1615,6 +1609,7 @@ const BusinessProfile: React.FC = () => {
                 )}
 
                 {/* More Options Dropdown - Mobile */}
+                {/* More Options Dropdown - Mobile */}
                 <div className="relative">
                   <button
                     onClick={() => setShowMoreDropdown(!showMoreDropdown)}
@@ -1628,7 +1623,7 @@ const BusinessProfile: React.FC = () => {
                         className="fixed inset-0 z-10"
                         onClick={() => setShowMoreDropdown(false)}
                       />
-                      <div className="absolute right-0 bottom-full mb-2 bg-white border border-gray-200 rounded-lg shadow-lg z-20 py-1 min-w-[120px]">
+                      <div className="absolute right-0 top-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-20 py-1 min-w-[150px]">
                         {/* Show Share in dropdown only for Owners */}
                         {isOwner && (
                           <StorefrontShareButton
@@ -1638,7 +1633,7 @@ const BusinessProfile: React.FC = () => {
                             variant="ghost"
                             showLabel={true}
                             showIcon={true}
-                            className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 h-auto justify-start rounded-none gap-2"
+                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 h-auto justify-start rounded-none gap-2"
                             onShareSuccess={() => {
                               setShowMoreDropdown(false);
                               console.log('Shared');
@@ -1650,11 +1645,23 @@ const BusinessProfile: React.FC = () => {
                             setShowInfoModal(true);
                             setShowMoreDropdown(false);
                           }}
-                          className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                          className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                         >
                           <Info className="w-4 h-4" />
                           More Info
                         </button>
+                        <ClaimBusinessButton
+                          businessId={business.id}
+                          businessName={business.business_name}
+                          businessPhone={business.business_phone || ''}
+                          claimStatus={business.claim_status || 'unclaimed'}
+                          ownerId={business.user_id}
+                          onClaimed={() => {
+                            setShowMoreDropdown(false);
+                            refetchBusiness();
+                          }}
+                          className="text-left justify-start rounded-none px-4 py-2 w-full"
+                        />
                       </div>
                     </>
                   )}
@@ -1734,6 +1741,8 @@ const BusinessProfile: React.FC = () => {
                       initialOfferId={searchParams.get('offer') || searchParams.get('offerId')}
                       shareId={searchParams.get('share_id')}
                       compact={false}
+                      className=""
+                      showHeading={false}
                     />
                   </div>
                 )}

@@ -109,7 +109,7 @@ const ProductCardBase = ({
           {/* Featured Star - Top Left */}
           {product.is_featured && (
             <div className="absolute left-2 top-2">
-              <Star className="w-5 h-5 text-yellow-400 fill-yellow-400 drop-shadow-lg" />
+              <Star className="w-[25px] h-[25px] text-yellow-400 fill-yellow-400 drop-shadow-lg" />
             </div>
           )}
 
@@ -117,7 +117,7 @@ const ProductCardBase = ({
           {product.image_urls && product.image_urls.length > 1 && (
             <div className="absolute right-2 top-2">
               <div className="rounded-md p-1 bg-black/40">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg width="25" height="25" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                   {/* Back card */}
                   <rect x="3" y="2" width="10" height="12" rx="1.5" fill="white" fillOpacity="0.6" />
                   {/* Middle card */}
