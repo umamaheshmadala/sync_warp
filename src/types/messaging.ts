@@ -21,7 +21,7 @@ export interface LinkPreview {
   description: string;
   image?: string;
   favicon?: string;
-  type: 'generic' | 'sync-coupon' | 'sync-deal' | 'coupon_shared' | 'coupon_share_failed';
+  type: 'generic' | 'sync-coupon' | 'sync-deal' | 'sync-storefront' | 'sync-product' | 'sync-offer' | 'sync-profile' | 'coupon_shared' | 'coupon_share_failed';
   metadata?: Record<string, any>;
   siteName?: string;
 }

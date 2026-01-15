@@ -5,6 +5,7 @@
 import { Share } from '@capacitor/share';
 import { Capacitor } from '@capacitor/core';
 import { supabase } from '../lib/supabase';
+import { messagingService } from './messagingService';
 import {
     ShareOptions,
     ShareMethod,
@@ -370,9 +371,36 @@ class UnifiedShareService {
             // Generate share URL
             const shareUrl = this.generateShareUrl(options, 'chat', shareEventIds[0]);
 
-            // TODO: Integrate with messagingService to send actual messages
-            // This will be connected in Story 10.1.2
-            console.log('Share to chat:', { friendIds, shareUrl, message });
+            // Send message to each friend
+            for (let i = 0; i < friendIds.length; i++) {
+                const friendId = friendIds[i];
+
+                // Create or get conversation with this friend
+                const conversationId = await messagingService.createOrGetConversation(friendId);
+
+                // Prepare link preview - matches Story 10.1.2 AC-5 message structure
+                const linkPreview = {
+                    url: shareUrl,
+                    title: options.entityData.title,
+                    description: options.entityData.description || '',
+                    image: options.entityData.imageUrl || null,
+                    type: `sync-${options.entityType}` as const, // e.g. 'sync-storefront', 'sync-product'
+                    metadata: {
+                        entityType: options.entityType,
+                        entityId: options.entityId,
+                    }
+                };
+
+                // Send message with link preview
+                await messagingService.sendMessage({
+                    conversationId,
+                    content: message || `Check out ${options.entityData.title}!`,
+                    type: 'link',
+                    linkPreviews: [linkPreview],
+                });
+            }
+
+            console.log('✅ Share to chat completed:', { friendIds, shareUrl, message });
 
             return {
                 success: true,
