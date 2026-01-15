@@ -1,7 +1,7 @@
 # Story 10.1.2: Storefront Sharing
 
 **Epic:** [Epic 10.1: Unified Sharing Ecosystem](../epics/EPIC_10.1_Unified_Sharing_Ecosystem.md)  
-**Status:** 🔴 NOT STARTED  
+**Status:** � IN PROGRESS (ShareModal + StorefrontShareButton complete, FriendPicker pending)  
 **Priority:** 🔴 Critical  
 **Effort:** 2 days  
 **Dependencies:** Story 10.1.1 (Share Infrastructure)

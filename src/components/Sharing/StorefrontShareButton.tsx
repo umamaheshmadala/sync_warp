@@ -1,12 +1,14 @@
 // src/components/sharing/StorefrontShareButton.tsx
 // Share button for business storefronts
 // Story 4.9 - Social Sharing Actions
+// Story 10.1.2 - Enhanced with ShareModal integration
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Share2 } from 'lucide-react';
-import { useWebShare } from '@/hooks/useWebShare';
+import { useUnifiedShare } from '@/hooks/useUnifiedShare';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { ShareModal } from './ShareModal';
 
 export interface StorefrontShareButtonProps {
   /** Business ID */
@@ -15,6 +17,8 @@ export interface StorefrontShareButtonProps {
   businessName: string;
   /** Business description for share text */
   businessDescription?: string;
+  /** Business logo/image URL */
+  businessImageUrl?: string;
   /** Custom storefront URL (defaults to current window location) */
   storefrontUrl?: string;
   /** Button variant */
@@ -31,6 +35,8 @@ export interface StorefrontShareButtonProps {
   label?: string;
   /** Callback on successful share */
   onShareSuccess?: () => void;
+  /** Show modal with all share options (true) or quick share (false) */
+  showModal?: boolean;
 }
 
 /**
@@ -38,10 +44,19 @@ export interface StorefrontShareButtonProps {
  * 
  * @example
  * ```tsx
+ * // Modal mode (default) - opens ShareModal with all options
  * <StorefrontShareButton
  *   businessId={business.id}
  *   businessName={business.name}
  *   businessDescription={business.description}
+ *   showModal={true}
+ * />
+ * 
+ * // Quick mode - triggers native share directly
+ * <StorefrontShareButton
+ *   businessId={business.id}
+ *   businessName={business.name}
+ *   showModal={false}
  * />
  * ```
  */
@@ -49,6 +64,7 @@ export function StorefrontShareButton({
   businessId,
   businessName,
   businessDescription,
+  businessImageUrl,
   storefrontUrl,
   variant = 'outline',
   size = 'default',
@@ -56,42 +72,79 @@ export function StorefrontShareButton({
   showLabel = true,
   showIcon = true,
   label = 'Share',
-  onShareSuccess
+  onShareSuccess,
+  showModal = true,
 }: StorefrontShareButtonProps) {
-  const { share, isSharing, isSupported } = useWebShare({
-    entityType: 'storefront',
-    entityId: businessId,
-    metadata: {
-      business_name: businessName
-    },
-    onSuccess: onShareSuccess
-  });
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleShare = async () => {
-    const url = storefrontUrl || window.location.href;
+  const { shareNative, isSharing } = useUnifiedShare();
 
-    await share({
-      title: businessName,
-      text: businessDescription || `Check out ${businessName} on SynC!`,
-      url
-    });
+  const url = storefrontUrl || window.location.href;
+
+  const handleClick = async () => {
+    if (showModal) {
+      setIsModalOpen(true);
+    } else {
+      // Quick share mode - use native share directly
+      try {
+        const result = await shareNative({
+          entityType: 'storefront',
+          entityId: businessId,
+          entityData: {
+            title: businessName,
+            description: businessDescription || `Check out ${businessName} on SynC!`,
+            imageUrl: businessImageUrl,
+            url,
+          },
+        });
+        if (result.success) {
+          onShareSuccess?.();
+        }
+      } catch (err) {
+        console.error('Share failed:', err);
+      }
+    }
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+  };
+
+  const handleShareSuccess = () => {
+    onShareSuccess?.();
   };
 
   return (
-    <Button
-      onClick={handleShare}
-      disabled={isSharing}
-      variant={variant}
-      size={size}
-      className={cn(showIcon && showLabel ? 'gap-2' : '', className)}
-      aria-label={`Share ${businessName}`}
-    >
-      {showIcon && <Share2 className="h-4 w-4" />}
-      {showLabel && (
-        <span>
-          {isSharing ? 'Sharing...' : label}
-        </span>
-      )}
-    </Button>
+    <>
+      <Button
+        onClick={handleClick}
+        disabled={isSharing}
+        variant={variant}
+        size={size}
+        className={cn(showIcon && showLabel ? 'gap-2' : '', className)}
+        aria-label={`Share ${businessName}`}
+      >
+        {showIcon && <Share2 className="h-4 w-4" />}
+        {showLabel && (
+          <span>
+            {isSharing ? 'Sharing...' : label}
+          </span>
+        )}
+      </Button>
+
+      {/* Share Modal */}
+      <ShareModal
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        entityType="storefront"
+        entityId={businessId}
+        title={businessName}
+        description={businessDescription}
+        imageUrl={businessImageUrl}
+        url={url}
+        onShareSuccess={handleShareSuccess}
+      />
+    </>
   );
 }
+
