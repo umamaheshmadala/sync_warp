@@ -1,4 +1,4 @@
-# 🚀 EPIC 10: Local-First Architecture (The "LinkedIn Feel")
+# 🚀 EPIC 10.2: Local-First Architecture (The "LinkedIn Feel")
 
 **Epic Owner:** Frontend Engineering
 **Dependencies:** Epic 8.4 (Offline Support), Epic 7.4 (Push Notifications)
@@ -62,28 +62,30 @@ Transform the application from a "connected client" to a true **Local-First** ap
 
 ## 📋 **Stories**
 
-### **Story 10.1: Async Storage Migration** `📝 PLANNING`
+### **Story 10.2.1: Async Storage Migration** `📝 PLANNING`
 **Goal:** Migrate TanStack Query persister from `localStorage` to `IndexedDB`.
 **Tasks:**
 *   Install `idb-keyval` and `@tanstack/query-async-storage-persister`.
 *   Replace `createSyncStoragePersister` with `createAsyncStoragePersister` in `App.tsx`.
 *   Implement migration logic (clear old localStorage cache on first run).
 *   Verify no UI blocking on large datasets.
+**See:** [STORY_10.2.1_Async_Storage_Migration.md](../stories/STORY_10.2.1_Async_Storage_Migration.md)
 
-### **Story 10.2: Background Data Sync** `📝 PLANNING`
+### **Story 10.2.2: Background Data Sync** `📝 PLANNING`
 **Goal:** Wake app invisibly to fetch fresh data.
 **Tasks:**
 *   Backend: Send "silent" push notifications (data-only, no alert) on new activity.
 *   Mobile: Implement `Capacitor Background Runner` or `PushNotification` listener for data payloads.
 *   Trigger `queryClient.prefetchQuery` in background handler.
+**See:** [STORY_10.2.2_Background_Data_Sync.md](../stories/STORY_10.2.2_Background_Data_Sync.md)
 
-### **Story 10.3: Aggressive Prefetching Logic** `📝 PLANNING`
+### **Story 10.2.3: Aggressive Prefetching Logic** `📝 PLANNING`
 **Goal:** Pre-load likely next screens.
 **Tasks:**
 *   Update `AppDataPrefetcher` to be smarter (prioritize active chats).
 *   Add hover/touch-start prefetching for navigation links.
 
-### **Story 10.4: Image CDN Optimization** `✅ COMPLETE`
+### **Story 10.2.4: Image CDN Optimization** `✅ COMPLETE`
 **Goal:** Achieve Pro-tier image optimization on Free tier using a dedicated image CDN proxy.
 **Implementation:** Use `wsrv.nl` as a proxy to resize, convert to WebP, and cache Supabase images globally.
 **Files Modified:**
@@ -91,7 +93,7 @@ Transform the application from a "connected client" to a true **Local-First** ap
 *   `src/components/products/ProductCard.tsx` - Blur placeholder UI.
 *   `src/components/business/ProductCard.tsx` - Blur placeholder UI.
 **Completion Date:** 2026-01-06
-**See:** [STORY_10.4_Image_CDN_Optimization.md](../stories/STORY_10.4_Image_CDN_Optimization.md)
+**See:** [STORY_10.2.4_Image_CDN_Optimization.md](../stories/STORY_10.2.4_Image_CDN_Optimization.md)
 
 ---
 

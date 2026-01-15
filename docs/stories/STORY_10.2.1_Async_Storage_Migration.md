@@ -1,7 +1,7 @@
-# 📝 STORY 10.1: Async Storage Migration
+# 📝 STORY 10.2.1: Async Storage Migration
 
 **Story Owner:** Frontend Engineering
-**Epic:** Epic 10: Local-First Architecture
+**Epic:** [Epic 10.2: Local-First Architecture](../epics/EPIC_10.2_Local_First_Architecture.md)
 **Status:** 📝 **PLANNING**
 **Priority:** High
 

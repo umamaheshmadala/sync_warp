@@ -1,9 +1,9 @@
-# 📝 STORY 10.2: Background Data Sync (Silent Push)
+# 📝 STORY 10.2.2: Background Data Sync (Silent Push)
 
 **Story Owner:** Frontend / Mobile Engineering
-**Epic:** Epic 10: Local-First Architecture
+**Epic:** [Epic 10.2: Local-First Architecture](../epics/EPIC_10.2_Local_First_Architecture.md)
 **Status:** 📝 **PLANNING**
-**Priority:** Medium (After 10.1)
+**Priority:** Medium (After 10.2.1)
 
 ---
 

@@ -1,6 +1,6 @@
-# 📖 STORY 10.4: Image CDN Optimization
+# 📖 STORY 10.2.4: Image CDN Optimization
 
-**Epic:** [EPIC 10: Local-First Architecture](../epics/EPIC_10_Local_First_Architecture.md)
+**Epic:** [Epic 10.2: Local-First Architecture](../epics/EPIC_10.2_Local_First_Architecture.md)
 **Status:** ✅ **COMPLETE**
 **Completed:** 2026-01-06
 **Owner:** Frontend Engineering
