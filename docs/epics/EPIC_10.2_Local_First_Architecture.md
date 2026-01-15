@@ -84,6 +84,7 @@ Transform the application from a "connected client" to a true **Local-First** ap
 **Tasks:**
 *   Update `AppDataPrefetcher` to be smarter (prioritize active chats).
 *   Add hover/touch-start prefetching for navigation links.
+**See:** [STORY_10.2.3_Aggressive_Prefetching.md](../stories/STORY_10.2.3_Aggressive_Prefetching.md)
 
 ### **Story 10.2.4: Image CDN Optimization** `✅ COMPLETE`
 **Goal:** Achieve Pro-tier image optimization on Free tier using a dedicated image CDN proxy.
