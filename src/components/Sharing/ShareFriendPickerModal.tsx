@@ -126,7 +126,10 @@ export function ShareFriendPickerModal({
                 {
                     entityType,
                     entityId,
-                    entityData,
+                    entityData: {
+                        ...entityData,
+                        description: entityData.description || '',
+                    },
                 },
                 selectedFriends,
                 customMessage || undefined
@@ -176,6 +179,7 @@ export function ShareFriendPickerModal({
             className="fixed inset-0 z-[10001] bg-black/50 flex items-end md:items-center justify-center"
             style={{ pointerEvents: 'auto' }}
             onClick={(e) => e.target === e.currentTarget && onClose()}
+            onPointerDown={(e) => e.stopPropagation()}
         >
             <div className="w-full bg-white md:max-w-lg md:rounded-lg rounded-t-2xl max-h-[90vh] overflow-hidden flex flex-col animate-in slide-in-from-bottom-4 duration-200">
                 {/* Header */}
