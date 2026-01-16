@@ -79,7 +79,11 @@ async function fetchOrganicFallbacks(limit: number): Promise<OrganicContent[]> {
 
     if (error) throw error;
 
-    return (businesses || []).map((business, index) => ({
+    if (!businesses || businesses.length === 0) {
+      return createMockOrganicContent(limit);
+    }
+
+    return businesses.map((business, index) => ({
       id: business.id,
       type: 'business' as const,
       title: business.business_name,
