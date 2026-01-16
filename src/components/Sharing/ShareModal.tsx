@@ -33,6 +33,8 @@ export interface ShareModalProps {
     imageUrl?: string;
     url: string;
     onShareSuccess?: () => void;
+    /** If true, disables external sharing (social media, copy link) - used for private profiles */
+    isPrivate?: boolean;
 }
 
 export function ShareModal({
@@ -45,6 +47,7 @@ export function ShareModal({
     imageUrl,
     url,
     onShareSuccess,
+    isPrivate = false,
 }: ShareModalProps) {
     const [copied, setCopied] = useState(false);
     const [showFriendPicker, setShowFriendPicker] = useState(false);
@@ -75,6 +78,10 @@ export function ShareModal({
     };
 
     const handleCopyLink = async () => {
+        if (isPrivate) {
+            toast.error('This profile is private and can only be shared within SynC');
+            return;
+        }
         try {
             const result = await shareClipboard(shareOptions);
             if (result.success) {
@@ -92,40 +99,30 @@ export function ShareModal({
         setShowFriendPicker(true);
     };
 
-    const handleFacebookShare = async () => {
-        try {
-            await shareToPlatform(shareOptions, 'facebook');
-            onShareSuccess?.();
-        } catch (err) {
-            toast.error('Failed to share to Facebook');
+    const handleExternalShare = (platform: 'facebook' | 'twitter' | 'whatsapp' | 'email') => {
+        if (isPrivate) {
+            toast.error('This profile is private and can only be shared within SynC');
+            return;
         }
+        return shareToPlatform(shareOptions, platform)
+            .then(() => onShareSuccess?.())
+            .catch(() => toast.error(`Failed to share to ${platform}`));
+    };
+
+    const handleFacebookShare = async () => {
+        await handleExternalShare('facebook');
     };
 
     const handleTwitterShare = async () => {
-        try {
-            await shareToPlatform(shareOptions, 'twitter');
-            onShareSuccess?.();
-        } catch (err) {
-            toast.error('Failed to share to Twitter');
-        }
+        await handleExternalShare('twitter');
     };
 
     const handleWhatsAppShare = async () => {
-        try {
-            await shareToPlatform(shareOptions, 'whatsapp');
-            onShareSuccess?.();
-        } catch (err) {
-            toast.error('Failed to share to WhatsApp');
-        }
+        await handleExternalShare('whatsapp');
     };
 
     const handleEmailShare = async () => {
-        try {
-            await shareToPlatform(shareOptions, 'email');
-            onShareSuccess?.();
-        } catch (err) {
-            toast.error('Failed to share via email');
-        }
+        await handleExternalShare('email');
     };
 
     const handleNativeShare = async () => {

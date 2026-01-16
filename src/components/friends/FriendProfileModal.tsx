@@ -12,6 +12,7 @@ import { toast } from "react-hot-toast";
 import { useIsBlocked, useBlockUser, useUnblockUser } from "../../hooks/useBlock";
 import { useAuthStore } from "../../store/authStore";
 import { friendsService } from "../../services/friendsService";
+import { ShareModal } from "../Sharing/ShareModal";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -49,6 +50,7 @@ export function FriendProfileModal({ friendId, isOpen, onClose }: FriendProfileM
     const [showUnfriendDialog, setShowUnfriendDialog] = useState(false);
     const [showBlockDialog, setShowBlockDialog] = useState(false);
     const [showAddFriendDialog, setShowAddFriendDialog] = useState(false);
+    const [showShareModal, setShowShareModal] = useState(false);
 
     if (!friendId) return null;
 
@@ -102,25 +104,8 @@ export function FriendProfileModal({ friendId, isOpen, onClose }: FriendProfileM
         onClose();
     };
 
-    const handleShare = async () => {
-        if (!data?.profile) return;
-
-        const shareData = {
-            title: `Check out ${data.profile.full_name}'s profile on SynC`,
-            text: `Connect with ${data.profile.full_name} on SynC!`,
-            url: window.location.href,
-        };
-
-        try {
-            if (navigator.share) {
-                await navigator.share(shareData);
-            } else {
-                await navigator.clipboard.writeText(shareData.url);
-                toast.success("Profile link copied to clipboard");
-            }
-        } catch (err) {
-            console.error("Error sharing:", err);
-        }
+    const handleShare = () => {
+        setShowShareModal(true);
     };
 
     const contentProps = {
@@ -216,6 +201,21 @@ export function FriendProfileModal({ friendId, isOpen, onClose }: FriendProfileM
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {/* Share Profile Modal - Story 10.1.5 */}
+            {data?.profile && (
+                <ShareModal
+                    isOpen={showShareModal}
+                    onClose={() => setShowShareModal(false)}
+                    entityType="profile"
+                    entityId={friendId}
+                    title={data.profile.full_name || 'SynC User'}
+                    description={`${data.profile.full_name} is on SynC - Connect with them!`}
+                    imageUrl={data.profile.avatar_url}
+                    url={`/profile/${friendId}`}
+                    isPrivate={false}
+                />
+            )}
         </>
     );
 }

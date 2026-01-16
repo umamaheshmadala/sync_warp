@@ -4,10 +4,11 @@
 import { useState } from 'react'
 import { useAuthStore } from '../store/authStore'
 import { useNavigationPreferences } from '../hooks/useNavigationState'
-import { User, MapPin, Phone, Mail, Edit3, Camera, Settings, Smartphone, MessageSquare, FileText } from 'lucide-react'
+import { User, MapPin, Phone, Mail, Edit3, Camera, Settings, Smartphone, MessageSquare, FileText, Share2 } from 'lucide-react'
 import UserReviewsList from './reviews/UserReviewsList'
 import { AvatarUpload, ProfileEditForm, ProfileSettings, ProfileCompletionWizard, InlineEditField, MyActivityTab } from './profile/index'
 import { useCities } from '../hooks/useCities'
+import { ProfileShareButton } from './Sharing/ProfileShareButton'
 
 export default function Profile() {
   const { user, profile, updateProfile } = useAuthStore()
@@ -58,15 +59,27 @@ export default function Profile() {
 
       {/* Profile Header */}
       <div className="bg-white text-gray-900 rounded-lg shadow-md border border-gray-200 mb-2 relative mt-16 md:mt-0 overflow-visible md:overflow-hidden">
-        {/* Single Edit Button in top right corner */}
+        {/* Edit and Share Buttons in top right corner */}
         {!isEditingProfile && (
-          <button
-            onClick={handleStartEdit}
-            className="absolute top-3 right-3 z-10 p-2 text-gray-400 hover:text-blue-600 transition-all hover:bg-blue-50 rounded-lg"
-            title="Edit Profile"
-          >
-            <Edit3 className="h-5 w-5" />
-          </button>
+          <div className="absolute top-3 right-3 z-10 flex items-center gap-1">
+            <ProfileShareButton
+              userId={user?.id || ''}
+              fullName={profile?.full_name || user?.user_metadata?.full_name || 'User'}
+              avatarUrl={profile?.avatar_url}
+              isOwnProfile={true}
+              isPrivate={false}
+              variant="ghost"
+              size="icon"
+              className="p-2 text-gray-400 hover:text-blue-600 transition-all hover:bg-blue-50 rounded-lg"
+            />
+            <button
+              onClick={handleStartEdit}
+              className="p-2 text-gray-400 hover:text-blue-600 transition-all hover:bg-blue-50 rounded-lg"
+              title="Edit Profile"
+            >
+              <Edit3 className="h-5 w-5" />
+            </button>
+          </div>
         )}
 
         <div className="px-3 py-2.5">
