@@ -2,6 +2,7 @@
 // React hook for unified sharing functionality (Story 10.1.1)
 
 import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { unifiedShareService } from '../services/unifiedShareService';
 import { usePlatform } from './usePlatform';
 import {
@@ -60,6 +61,7 @@ interface UseUnifiedShareReturn {
  * ```
  */
 export function useUnifiedShare(): UseUnifiedShareReturn {
+    const queryClient = useQueryClient();
     const [isSharing, setIsSharing] = useState(false);
     const [error, setError] = useState<ShareError | null>(null);
     const [lastShareResult, setLastShareResult] = useState<ShareResult | null>(null);
@@ -179,9 +181,7 @@ export function useUnifiedShare(): UseUnifiedShareReturn {
         }
     }, []);
 
-    /**
-     * Share via in-app chat
-     */
+    // Share via in-app chat
     const shareToChat = useCallback(async (
         options: ShareOptions,
         friendIds: string[],
@@ -196,6 +196,10 @@ export function useUnifiedShare(): UseUnifiedShareReturn {
 
             if (!result.success && result.error) {
                 setError({ type: 'unknown', message: result.error, retryable: true });
+            } else if (result.success) {
+                // Invalidate messages cache to show the new message in chat immediately
+                // This fixes the issue where sender doesn't see their own shared message
+                queryClient.invalidateQueries({ queryKey: ['messages'] });
             }
 
             return result;
@@ -210,7 +214,7 @@ export function useUnifiedShare(): UseUnifiedShareReturn {
         } finally {
             setIsSharing(false);
         }
-    }, []);
+    }, [queryClient]);
 
     /**
      * Generate share URL with UTM parameters

@@ -22,7 +22,36 @@ export interface LinkPreview {
   image?: string;
   favicon?: string;
   type: 'generic' | 'sync-coupon' | 'sync-deal' | 'sync-storefront' | 'sync-product' | 'sync-offer' | 'sync-profile' | 'coupon_shared' | 'coupon_share_failed';
-  metadata?: Record<string, any>;
+  metadata?: {
+    // Storefront
+    businessId?: string;
+    businessSlug?: string;
+    businessLogo?: string;
+
+    // Product
+    productId?: string;
+    price?: number;
+    currency?: string;
+    businessName?: string;
+
+    // Offer
+    offerId?: string;
+    discountValue?: number;
+    discountType?: 'percentage' | 'fixed' | 'bogo';
+    validUntil?: string;
+
+    // Profile
+    userId?: string;
+    isPrivate?: boolean;
+
+    // Legacy / Common
+    brandName?: string;
+    savings?: number;
+    originalPrice?: number;
+    entityType?: 'storefront' | 'product' | 'offer' | 'profile';
+    entityId?: string;
+    [key: string]: any;
+  };
   siteName?: string;
 }
 

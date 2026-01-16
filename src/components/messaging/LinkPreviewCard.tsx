@@ -1,231 +1,119 @@
-// src/components/messaging/LinkPreviewCard.tsx
 import React from 'react'
-import { X, Gift, Tag, ExternalLink } from 'lucide-react'
-import { LinkPreview } from '../../services/linkPreviewService'
+import { X } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { LinkPreview } from '../../types/messaging'
+import { cn } from '../../lib/utils'
+import {
+  StorefrontPreview,
+  ProductPreview,
+  OfferPreview,
+  ProfilePreview,
+  GenericPreview,
+  GenericLoadingPreview
+} from './previews'
 
 interface Props {
   preview: LinkPreview
   onRemove?: () => void
   showRemoveButton?: boolean
+  isLoading?: boolean
 }
 
-export function LinkPreviewCard({ preview, onRemove, showRemoveButton = true }: Props) {
-  const handleLinkClick = (e: React.MouseEvent, url: string) => {
+export function LinkPreviewCard({ preview, onRemove, showRemoveButton = true, isLoading }: Props) {
+  const navigate = useNavigate()
+
+  if (isLoading) {
+    return (
+      <div className="rounded-lg overflow-hidden border border-gray-200 bg-white">
+        <GenericLoadingPreview />
+      </div>
+    )
+  }
+
+  const handleClick = (e: React.MouseEvent) => {
+    // If clicking remove button or interactive elements
+    if ((e.target as HTMLElement).closest('button')) return
+
     e.preventDefault()
-    window.open(url, '_blank', 'noopener,noreferrer')
+
+    // Storefront/Product/Offer/Profile navigation
+    if (['sync-storefront', 'sync-product', 'sync-offer', 'sync-profile', 'sync-deal', 'sync-coupon'].includes(preview.type)) {
+      const { businessSlug, productId, offerId, userId, entityId } = preview.metadata || {}
+
+      switch (preview.type) {
+        case 'sync-storefront':
+          if (businessSlug) navigate(`/business/${businessSlug}`)
+          break
+        case 'sync-product':
+          if (businessSlug && (productId || entityId)) navigate(`/business/${businessSlug}/product/${productId || entityId}`)
+          break
+        case 'sync-coupon':
+          const couponId = (preview.metadata as any)?.couponId || entityId
+          if (couponId) navigate(`/coupons/${couponId}`)
+          break
+        case 'sync-offer':
+        case 'sync-deal':
+          const oid = offerId || entityId
+          if (businessSlug && oid) navigate(`/business/${businessSlug}/offer/${oid}`)
+          else if (oid) navigate(`/offers/${oid}`)
+          break
+        case 'sync-profile':
+          if (userId || entityId) navigate(`/profile/${userId || entityId}`)
+          break
+      }
+      return
+    }
+
+    // Generic or System
+    if (preview.url && !preview.url.startsWith('/')) {
+      window.open(preview.url, '_blank', 'noopener,noreferrer')
+    }
   }
-  
-  const renderSyncCouponPreview = () => (
-    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-3 flex gap-3">
-      <div className="flex-shrink-0">
-        <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center">
-          <Gift className="w-6 h-6 text-white" />
-        </div>
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1">
-            <h4 className="font-semibold text-gray-900 text-sm line-clamp-1">
-              {preview.title}
-            </h4>
-            <p className="text-xs text-gray-600 mt-1 line-clamp-2">
-              {preview.description}
-            </p>
-            {preview.metadata?.brandName && (
-              <p className="text-xs text-blue-600 mt-1">
-                {preview.metadata.brandName}
-              </p>
-            )}
-          </div>
-          {showRemoveButton && onRemove && (
-            <button
-              onClick={onRemove}
-              className="flex-shrink-0 p-1 hover:bg-blue-100 rounded"
-              aria-label="Remove preview"
-            >
-              <X className="w-4 h-4 text-gray-500" />
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  )
 
-  const renderSyncDealPreview = () => (
-    <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-3 flex gap-3">
-      <div className="flex-shrink-0">
-        {preview.image ? (
-          <img 
-            src={preview.image} 
-            alt=""
-            className="w-12 h-12 rounded-lg object-cover"
-          />
-        ) : (
-          <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center">
-            <Tag className="w-6 h-6 text-white" />
-          </div>
-        )}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1">
-            <h4 className="font-semibold text-gray-900 text-sm line-clamp-1">
-              {preview.title}
-            </h4>
-            <p className="text-xs text-gray-600 mt-1 line-clamp-2">
-              {preview.description}
-            </p>
-            {preview.metadata?.savings && (
-              <p className="text-xs font-medium text-green-600 mt-1">
-                Save ${preview.metadata.savings.toFixed(2)}
-              </p>
-            )}
-          </div>
-          {showRemoveButton && onRemove && (
-            <button
-              onClick={onRemove}
-              className="flex-shrink-0 p-1 hover:bg-green-100 rounded"
-              aria-label="Remove preview"
-            >
-              <X className="w-4 h-4 text-gray-500" />
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  )
+  const getPreviewStyles = (type: LinkPreview['type']) => {
+    switch (type) {
+      case 'sync-storefront': return 'bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200'
+      case 'sync-product': return 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-200'
+      case 'sync-offer':
+      case 'sync-deal':
+      case 'sync-coupon':
+        return 'bg-gradient-to-r from-orange-50 to-red-50 border-orange-200'
+      case 'sync-profile': return 'bg-white border-gray-200'
+      default: return 'bg-gray-50 border-gray-200'
+    }
+  }
 
-  const renderGenericPreview = () => (
-    <div className="bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
-      {preview.image && (
-        <img 
-          src={preview.image} 
-          alt=""
-          className="w-full h-32 object-cover"
-        />
+  const renderContent = () => {
+    switch (preview.type) {
+      case 'sync-storefront': return <StorefrontPreview preview={preview} />
+      case 'sync-product': return <ProductPreview preview={preview} />
+      case 'sync-offer': return <OfferPreview preview={preview} />
+      case 'sync-profile': return <ProfilePreview preview={preview} />
+
+      // Legacy mapping
+      case 'sync-deal': return <OfferPreview preview={preview} />
+      case 'sync-coupon': return <OfferPreview preview={preview} />
+
+      default: return <GenericPreview preview={preview} />
+    }
+  }
+
+  return (
+    <div className={cn('rounded-lg overflow-hidden border relative group cursor-pointer transition-all hover:shadow-md', getPreviewStyles(preview.type))}>
+      <div onClick={handleClick}>
+        {renderContent()}
+      </div>
+
+      {showRemoveButton && onRemove && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onRemove() }}
+          className="absolute top-2 right-2 p-1 bg-white/80 hover:bg-white rounded-full transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100 shadow-sm z-10"
+          aria-label="Remove preview"
+        >
+          <X className="w-3 h-3 text-gray-500" />
+        </button>
       )}
-      <div className="p-3">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1 min-w-0">
-            <h4 className="font-semibold text-gray-900 text-sm line-clamp-1 flex items-center gap-1">
-              {preview.favicon && (
-                <img src={preview.favicon} alt="" className="w-4 h-4" />
-              )}
-              {preview.title}
-            </h4>
-            {preview.description && (
-              <p className="text-xs text-gray-600 mt-1 line-clamp-2">
-                {preview.description}
-              </p>
-            )}
-            <button
-              onClick={(e) => handleLinkClick(e, preview.url)}
-              className="text-xs text-blue-600 hover:underline mt-1 inline-flex items-center gap-1"
-            >
-              {new URL(preview.url).hostname}
-              <ExternalLink className="w-3 h-3" />
-            </button>
-          </div>
-          {showRemoveButton && onRemove && (
-            <button
-              onClick={onRemove}
-              className="flex-shrink-0 p-1 hover:bg-gray-200 rounded"
-              aria-label="Remove preview"
-            >
-              <X className="w-4 h-4 text-gray-500" />
-            </button>
-          )}
-        </div>
-      </div>
     </div>
   )
-
-  const renderCouponShared = () => (
-    <div className="bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-300 rounded-lg p-4 shadow-sm">
-      <div className="flex gap-3">
-        <div className="flex-shrink-0">
-          <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-            <Gift className="w-7 h-7 text-white" />
-          </div>
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2 mb-2">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                <Gift className="w-4 h-4 text-purple-600" />
-                <span className="text-xs font-semibold text-purple-600 uppercase tracking-wide">
-                  Coupon Shared
-                </span>
-              </div>
-              <h4 className="font-bold text-gray-900 text-base line-clamp-1">
-                {preview.title}
-              </h4>
-            </div>
-          </div>
-          
-          {preview.description && (
-            <p className="text-sm text-gray-700 mb-2">
-              {preview.description}
-            </p>
-          )}
-          
-          {preview.metadata && (
-            <div className="space-y-1 text-xs text-gray-600">
-              {preview.metadata.business_name && (
-                <div className="flex items-center gap-1">
-                  <Tag className="w-3 h-3" />
-                  <span>{preview.metadata.business_name}</span>
-                </div>
-              )}
-              {preview.metadata.valid_until && (
-                <div className="flex items-center gap-1">
-                  <span className="font-medium">Expires:</span>
-                  <span>{new Date(preview.metadata.valid_until).toLocaleDateString()}</span>
-                </div>
-              )}
-              {preview.metadata.discount_value && (
-                <div className="inline-block mt-2 px-3 py-1 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-full font-bold text-sm">
-                  {preview.metadata.discount_value}% OFF
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-
-  const renderCouponShareFailed = () => (
-    <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
-      <div className="flex gap-3">
-        <div className="flex-shrink-0">
-          <div className="w-12 h-12 bg-red-500 rounded-lg flex items-center justify-center">
-            <X className="w-6 h-6 text-white" />
-          </div>
-        </div>
-        <div className="flex-1 min-w-0">
-          <h4 className="font-semibold text-red-900 text-sm mb-1">
-            {preview.title}
-          </h4>
-          <p className="text-xs text-red-700">
-            {preview.description}
-          </p>
-        </div>
-      </div>
-    </div>
-  )
-
-  switch (preview.type) {
-    case 'sync-coupon':
-      return renderSyncCouponPreview()
-    case 'sync-deal':
-      return renderSyncDealPreview()
-    case 'coupon_shared':
-      return renderCouponShared()
-    case 'coupon_share_failed':
-      return renderCouponShareFailed()
-    case 'generic':
-    default:
-      return renderGenericPreview()
-  }
 }
+

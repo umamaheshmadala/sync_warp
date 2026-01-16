@@ -1,7 +1,7 @@
 # Story 10.1.6: Rich Link Previews in Chat
 
 **Epic:** [Epic 10.1: Unified Sharing Ecosystem](../epics/EPIC_10.1_Unified_Sharing_Ecosystem.md)  
-**Status:** 🔴 NOT STARTED  
+**Status:** 🟢 COMPLETED  
 **Priority:** 🔴 Critical  
 **Effort:** 3 days  
 **Dependencies:** Stories 10.1.1-5 (All entity sharing stories)
@@ -509,46 +509,46 @@ const errorMessages: Record<PreviewError['type'], string> = {
 ## 🧪 Testing Checklist
 
 ### Visual Tests
-- [ ] Storefront preview renders with purple/blue gradient
-- [ ] Product preview renders with green accent and price
-- [ ] Offer preview renders with orange/red urgency styling
-- [ ] Profile preview renders with neutral gray
-- [ ] All previews have appropriate icons/badges
-- [ ] Fallback renders when data is missing
+- [x] Storefront preview renders with purple/blue gradient
+- [x] Product preview renders with green accent and price
+- [x] Offer preview renders with orange/red urgency styling
+- [x] Profile preview renders with neutral gray
+- [x] All previews have appropriate icons/badges
+- [x] Fallback renders when data is missing
 
 ### Functional Tests
-- [ ] Click on storefront preview navigates to business page
-- [ ] Click on product preview navigates to product view
-- [ ] Click on offer preview navigates to offer details
-- [ ] Click on profile preview navigates to profile
-- [ ] External URLs open in new tab
+- [x] Click on storefront preview navigates to business page
+- [x] Click on product preview navigates to product view
+- [x] Click on offer preview navigates to offer details
+- [x] Click on profile preview navigates to profile
+- [x] External URLs open in new tab
 
 ### Data Tests
-- [ ] Preview generates correctly for storefront URLs
-- [ ] Preview generates correctly for product URLs
-- [ ] Preview generates correctly for offer URLs
-- [ ] Preview generates correctly for profile URLs
-- [ ] Private profile shows limited info
+- [x] Preview generates correctly for storefront URLs
+- [x] Preview generates correctly for product URLs
+- [x] Preview generates correctly for offer URLs
+- [x] Preview generates correctly for profile URLs
+- [x] Private profile shows limited info
 
 ### Edge Cases
-- [ ] Deleted entity shows fallback
-- [ ] Very long title/description is truncated
-- [ ] Missing image shows icon fallback
-- [ ] Invalid URL shows generic preview
+- [x] Deleted entity shows fallback
+- [x] Very long title/description is truncated
+- [x] Missing image shows icon fallback
+- [x] Invalid URL shows generic preview
 
 ---
 
 ## ✅ Definition of Done
 
-- [ ] All 4 new preview components created
-- [ ] LinkPreviewCard routes to correct preview
-- [ ] LinkPreviewService detects and fetches SynC URLs
-- [ ] Type definitions updated
-- [ ] Click navigation working
-- [ ] Entity-specific styling applied
-- [ ] Fallbacks working
-- [ ] All tests passing
-- [ ] Code reviewed and merged
+- [x] All 4 new preview components created
+- [x] LinkPreviewCard routes to correct preview
+- [x] LinkPreviewService detects and fetches SynC URLs
+- [x] Type definitions updated
+- [x] Click navigation working
+- [x] Entity-specific styling applied
+- [x] Fallbacks working
+- [x] All tests passing
+- [x] Code reviewed and merged
 
 ---
 

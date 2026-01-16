@@ -1,6 +1,6 @@
 # Epic 10.1: Unified Sharing Ecosystem
 
-**Status:** 🟡 IN PROGRESS (5/10 stories complete)
+**Status:** 🟡 IN PROGRESS (6/10 stories complete)
 **Priority:** 🔴 Critical  
 **Effort Estimate:** 15-20 days  
 **Dependencies:**  
@@ -83,7 +83,7 @@ This epic creates a **unified, comprehensive sharing system** that enables users
 | 10.1.3 | Product Sharing | ✅ COMPLETE | 2 days | 10.1.1 |
 | 10.1.4 | Offer Sharing | ✅ COMPLETE | 2 days | 10.1.1 |
 | 10.1.5 | User Profile Sharing | ✅ COMPLETE | 1 day | 10.1.1 |
-| 10.1.6 | Rich Link Previews in Chat | 🔴 Critical | 3 days | 10.1.1-5 |
+| 10.1.6 | Rich Link Previews in Chat | ✅ COMPLETE | 3 days | 10.1.1-5 |
 | 10.1.7 | In-Chat Action Buttons | 🔴 Critical | 2 days | 10.1.6 |
 | 10.1.8 | Multi-Friend Chat Forwarding | 🟡 Medium | 2 days | 10.1.6 |
 | 10.1.9 | Share Analytics & Tracking | 🟡 Medium | 2 days | 10.1.1-5 |
