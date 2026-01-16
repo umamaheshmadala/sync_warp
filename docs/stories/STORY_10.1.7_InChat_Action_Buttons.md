@@ -1,7 +1,7 @@
 # Story 10.1.7: In-Chat Action Buttons
 
 **Epic:** [Epic 10.1: Unified Sharing Ecosystem](../epics/EPIC_10.1_Unified_Sharing_Ecosystem.md)  
-**Status:** 🔴 NOT STARTED  
+**Status:** � COMPLETED  
 **Priority:** 🔴 Critical  
 **Effort:** 2 days  
 **Dependencies:** Story 10.1.6 (Rich Link Previews)

@@ -388,6 +388,7 @@ class UnifiedShareService {
                     metadata: {
                         entityType: options.entityType,
                         entityId: options.entityId,
+                        shareEventId: shareEventIds[i], // Add tracking ID
                         ...(options.entityData.metadata || {}),
                     }
                 };
