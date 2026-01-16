@@ -4,6 +4,7 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Plus, X } from 'lucide-react';
 import { useBusinessUrl } from '@/hooks/useBusinessUrl';
 import { OffersList, CreateOfferForm, OfferAnalyticsDashboard } from '../offers';
+import { OfferShareButton } from '../Sharing/OfferShareButton';
 import { ExtendExpiryModal } from '../offers/ExtendExpiryModal';
 import { useOffers } from '@/hooks/useOffers';
 import { useAuthStore } from '@/store/authStore';
@@ -337,6 +338,25 @@ export default function OfferManagerPage() {
                   From: {new Date(viewDetailsOffer.valid_from).toLocaleDateString()}<br />
                   Until: {new Date(viewDetailsOffer.valid_until).toLocaleDateString()}
                 </p>
+              </div>
+
+              {/* Share Section - Story 10.1.4 */}
+              <div className="pt-4 border-t border-gray-100">
+                <h4 className="text-sm font-semibold text-gray-700 mb-3">Share this Offer</h4>
+                <OfferShareButton
+                  offerId={viewDetailsOffer.id}
+                  offerTitle={viewDetailsOffer.title}
+                  offerDescription={viewDetailsOffer.description}
+                  validUntil={viewDetailsOffer.valid_until}
+                  offerImage={viewDetailsOffer.icon_image_url}
+                  businessId={actualBusinessId || businessId || ''}
+                  businessName={business?.business_name || 'Business'}
+                  variant="default"
+                  size="default"
+                  showLabel={true}
+                  label="Share"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                />
               </div>
 
               {/* Stats */}

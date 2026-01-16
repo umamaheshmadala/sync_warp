@@ -7,6 +7,8 @@ import { useNavigate } from 'react-router-dom';
 import { Calendar, Tag, TrendingUp, Trash2, ExternalLink } from 'lucide-react';
 import { FavoriteOffer } from '../../services/favoritesService';
 import { useBusinessUrl } from '../../hooks/useBusinessUrl';
+import { FavoriteOfferButton } from './FavoriteOfferButton';
+import { OfferShareButton } from '../Sharing/OfferShareButton';
 
 interface FavoriteOfferCardProps {
     offer: FavoriteOffer;
@@ -35,11 +37,27 @@ export const FavoriteOfferCard: React.FC<FavoriteOfferCardProps> = ({
     return (
         <div
             onClick={handleCardClick}
-            className={`border rounded-xl p-4 hover:shadow-md transition-all cursor-pointer group ${isExpired
+            className={`relative border rounded-xl p-4 hover:shadow-md transition-all cursor-pointer group ${isExpired
                 ? 'border-gray-200 bg-gray-50 opacity-75'
                 : 'border-gray-200 hover:border-indigo-300 bg-white'
                 }`}
         >
+            <div className="absolute top-2 right-2 flex gap-1 z-10">
+                <FavoriteOfferButton offerId={offer.id} className="h-8 w-8 bg-white/50 hover:bg-white [&_span]:hidden px-0" />
+                <OfferShareButton
+                    offerId={offer.id}
+                    offerTitle={offer.title}
+                    offerDescription={offer.description}
+                    validUntil={offer.valid_until}
+                    offerImage={offer.icon_image_url}
+                    businessId={offer.business_id}
+                    businessName={offer.business_name}
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 bg-white/50 hover:bg-white rounded-full"
+                />
+            </div>
+
             <div className="flex items-start gap-4">
                 {/* Icon/Image */}
                 <div className="flex-shrink-0">
@@ -65,24 +83,15 @@ export const FavoriteOfferCard: React.FC<FavoriteOfferCardProps> = ({
                 <div className="flex-1 min-w-0">
                     {/* Header */}
                     <div className="flex items-start justify-between gap-2 mb-2">
-                        <div>
+                        <div className="pr-16"> {/* Padding for absolute buttons */}
                             <h4
-                                className={`font-semibold text-lg leading-tight ${isExpired ? 'text-gray-500' : 'text-gray-900 group-hover:text-indigo-600'
+                                className={`font-semibold text-lg leading-tight line-clamp-1 ${isExpired ? 'text-gray-500' : 'text-gray-900 group-hover:text-indigo-600'
                                     }`}
                             >
                                 {offer.title}
                             </h4>
-                            <p className="text-sm text-gray-600 mt-1">{offer.business_name}</p>
+                            <p className="text-sm text-gray-600 mt-1 line-clamp-1">{offer.business_name}</p>
                         </div>
-
-                        {/* Remove button */}
-                        <button
-                            onClick={handleRemove}
-                            className="p-2 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
-                            aria-label="Remove from favorites"
-                        >
-                            <Trash2 className="w-4 h-4 text-gray-400 hover:text-red-600" />
-                        </button>
                     </div>
 
                     {/* Description */}
@@ -106,16 +115,12 @@ export const FavoriteOfferCard: React.FC<FavoriteOfferCardProps> = ({
                     </div>
 
                     {/* Status Badge */}
-                    <div className="mt-2">
-                        <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${isExpired ? 'bg-gray-100 text-gray-600' : 'bg-green-100 text-green-700'
-                                }`}
-                        >
-                            {isExpired ? 'Expired' : 'Active'}
-                        </span>
+                    <div className="mt-2 text-right">
+                        {/* Original remove button was redundant or misplaced, kept in header usually but here we have absolute buttons now */}
                     </div>
                 </div>
             </div>
         </div>
     );
 };
+

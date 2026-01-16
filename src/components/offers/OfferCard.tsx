@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { format, formatDistanceToNow, isAfter, isBefore } from 'date-fns';
 import type { Offer } from '../../types/offers';
-import { ShareButton } from '../Sharing/ShareButton';
+import { OfferShareButton } from '../Sharing/OfferShareButton';
 import { getCategoryIcon } from '../../utils/iconMap';
 import { FavoriteOfferButton } from '../favorites/FavoriteOfferButton';
 
@@ -350,14 +350,18 @@ export function OfferCard({
           <FavoriteOfferButton offerId={offer.id} className="text-xs px-3 py-1.5" />
 
           {/* Share Button */}
-          <ShareButton
-            shareableType="offer"
-            shareableId={offer.id}
-            shareableTitle={offer.title}
-            shareableDescription={offer.description}
-            shareableImageUrl={offer.icon_image_url}
-            variant="default"
-            className="px-4 py-2 text-sm"
+          <OfferShareButton
+            offerId={offer.id}
+            offerTitle={offer.title}
+            offerDescription={offer.description}
+            validUntil={offer.valid_until}
+            offerImage={offer.icon_image_url}
+            businessId={offer.business_id}
+            businessName={offer.business?.business_name || 'Sync Business'}
+            variant="ghost"
+            className="px-4 py-2 text-sm text-gray-700 hover:text-purple-600 hover:bg-purple-50"
+            showLabel={true}
+            label="Share"
           />
         </div>
       </div>

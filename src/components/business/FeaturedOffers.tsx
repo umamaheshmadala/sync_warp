@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 import { supabase } from '@/lib/supabase';
 import type { Offer } from '@/types/offers';
 import { useBusinessUrl } from '@/hooks/useBusinessUrl';
-import { ShareDeal } from '@/components/ShareDeal';
+import { OfferShareButton } from '@/components/Sharing/OfferShareButton';
 import { CreateOfferForm } from '@/components/offers/CreateOfferForm';
 import { useAuthStore } from '@/store/authStore';
 import { getCategoryIcon } from '@/utils/iconMap';
@@ -297,7 +297,18 @@ export default function FeaturedOffers({
                         )}
 
                         {!isOwner && (
-                          <div onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                            <OfferShareButton
+                              offerId={offer.id}
+                              offerTitle={offer.title}
+                              offerDescription={offer.description}
+                              validUntil={offer.valid_until}
+                              offerImage={offer.icon_image_url}
+                              businessId={businessId}
+                              businessName={businessName}
+                              variant="icon"
+                              size="icon"
+                            />
                             <FavoriteOfferButton
                               offerId={offer.id}
                               className="p-0 md:p-1 h-auto text-xs justify-center border-none shadow-none"
@@ -453,11 +464,24 @@ export default function FeaturedOffers({
                 </p>
               </div>
 
-              {/* Share Section */}
+              {/* Share Section - Updated for Story 10.1.4 */}
               <div className="pt-4 border-t border-gray-100 flex justify-between items-center">
                 <div>
                   <h4 className="text-sm font-semibold text-gray-700 mb-3">Share this Offer</h4>
-                  <ShareDeal deal={selectedOffer} variant="default" size="default" />
+                  <OfferShareButton
+                    offerId={selectedOffer.id}
+                    offerTitle={selectedOffer.title}
+                    offerDescription={selectedOffer.description}
+                    validUntil={selectedOffer.valid_until}
+                    offerImage={selectedOffer.icon_image_url}
+                    businessId={businessId}
+                    businessName={businessName}
+                    variant="default"
+                    size="default"
+                    showLabel={true}
+                    label="Share"
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                  />
                 </div>
 
                 {/* Favorite Button - Story 4.13 */}

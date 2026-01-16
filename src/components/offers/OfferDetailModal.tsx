@@ -3,18 +3,20 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  X, 
-  Calendar, 
-  Clock, 
-  Share2, 
-  Eye, 
+import {
+  X,
+  Calendar,
+  Clock,
+  Share2,
+  Eye,
   MousePointerClick,
   Tag,
   Info
 } from 'lucide-react';
 import { format } from 'date-fns';
 import type { Offer } from '../../types/offers';
+import { Button } from '@/components/ui/button';
+import { OfferShareButton } from '../Sharing/OfferShareButton';
 
 interface OfferDetailModalProps {
   offer: Offer;
@@ -166,16 +168,21 @@ export const OfferDetailModal: React.FC<OfferDetailModalProps> = ({
               >
                 Close
               </button>
-              {onShare && (
-                <button
-                  onClick={() => onShare(offer)}
-                  className="flex items-center gap-2 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
-                >
-                  <Share2 className="w-4 h-4" />
-                  Share This Offer
-                </button>
-              )}
-            </div>
+              {/* Share Button (New Story 10.1.4) */}
+              <OfferShareButton
+                offerId={offer.id}
+                offerTitle={offer.title}
+                offerDescription={offer.description}
+                validUntil={offer.valid_until}
+                offerImage={offer.icon_image_url}
+                businessId={offer.business_id}
+                businessName={offer.business?.business_name || 'Sync Business'}
+                variant="default" // Using default (solid color) for prominence
+                size="default"
+                showLabel={true}
+                label="Share This Offer"
+                className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white"
+              /></div>
           </div>
         </motion.div>
       </motion.div>

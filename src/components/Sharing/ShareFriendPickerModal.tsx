@@ -173,7 +173,7 @@ export function ShareFriendPickerModal({
 
     const modalContent = (
         <div
-            className="fixed inset-0 z-50 bg-black/50 flex items-end md:items-center justify-center"
+            className="fixed inset-0 z-[10001] bg-black/50 flex items-end md:items-center justify-center"
             onClick={(e) => e.target === e.currentTarget && onClose()}
         >
             <div className="w-full bg-white md:max-w-lg md:rounded-lg rounded-t-2xl max-h-[90vh] overflow-hidden flex flex-col animate-in slide-in-from-bottom-4 duration-200">
