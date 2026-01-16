@@ -336,8 +336,14 @@ export function ShareModal({
                     </div>
                 )}
             </div>
+        </div>
+    );
 
-            {/* Friend Picker Modal */}
+    return (
+        <>
+            {createPortal(modalContent, document.body)}
+
+            {/* Friend Picker Modal - rendered as sibling for proper z-index stacking */}
             <ShareFriendPickerModal
                 isOpen={showFriendPicker}
                 onClose={() => setShowFriendPicker(false)}
@@ -355,10 +361,8 @@ export function ShareModal({
                     onClose();
                 }}
             />
-        </div>
+        </>
     );
-
-    return createPortal(modalContent, document.body);
 }
 
 export default ShareModal;
