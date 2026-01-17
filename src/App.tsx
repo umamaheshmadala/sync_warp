@@ -24,6 +24,7 @@ import { AppDataPrefetcher } from './components/AppDataPrefetcher'
 import { realtimeService } from './services/realtimeService'
 import { spamConfigService } from './services/SpamConfigService'
 import { FavoritesProvider } from './contexts/FavoritesContext'
+import { DeepLinkModalProvider } from './components/providers/DeepLinkModalProvider'
 
 // Configure React Query with stale-while-revalidate pattern
 // Shows cached data immediately, then fetches fresh data in background
@@ -127,6 +128,7 @@ function AppContent() {
           <AppRouter />
         </AppLayout>
       </FavoritesProvider>
+      <DeepLinkModalProvider />
       <DevMenu />
       <Toaster
         position="top-right"

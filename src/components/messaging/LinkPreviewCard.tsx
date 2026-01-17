@@ -19,6 +19,7 @@ import { FavoriteOfferButton } from '../favorites/FavoriteOfferButton'
 import { AddFriendButton } from '../friends/AddFriendButton'
 import { unifiedShareService } from '../../services/unifiedShareService'
 import { useAuthStore } from '../../store/authStore'
+import { useDeepLinkStore } from '../../store/deepLinkStore'
 
 interface Props {
   preview: LinkPreview
@@ -31,6 +32,9 @@ interface Props {
 export function LinkPreviewCard({ preview, onRemove, showRemoveButton = true, isLoading, showActions = true }: Props) {
   const navigate = useNavigate()
   const user = useAuthStore(state => state.user)
+
+  // Deep link store for opening modals (AC-18)
+  const { openOffer, openProfile, openProduct } = useDeepLinkStore()
 
   if (isLoading) {
     return (
@@ -46,16 +50,23 @@ export function LinkPreviewCard({ preview, onRemove, showRemoveButton = true, is
 
     e.preventDefault()
 
-    // Storefront/Product/Offer/Profile navigation
+    // Storefront/Product/Offer/Profile navigation - NOW WITH MODAL SUPPORT (AC-18)
     if (['sync-storefront', 'sync-product', 'sync-offer', 'sync-profile', 'sync-deal', 'sync-coupon'].includes(preview.type)) {
-      const { businessSlug, productId, offerId, userId, entityId } = preview.metadata || {}
+      const { businessSlug, productId, offerId, userId, entityId, businessId } = preview.metadata || {}
 
       switch (preview.type) {
         case 'sync-storefront':
+          // Storefront: Navigate to page (not modal)
           if (businessSlug) navigate(`/business/${businessSlug}`)
+          else if (businessId || entityId) navigate(`/business/${businessId || entityId}`)
           break
         case 'sync-product':
-          if (businessSlug && (productId || entityId)) navigate(`/business/${businessSlug}/product/${productId || entityId}`)
+          // Product: Open modal
+          const pid = productId || entityId
+          const bsForProduct = businessSlug || businessId
+          if (pid && bsForProduct) {
+            openProduct(pid, bsForProduct)
+          }
           break
         case 'sync-coupon':
           const couponId = (preview.metadata as any)?.couponId || entityId
@@ -63,12 +74,18 @@ export function LinkPreviewCard({ preview, onRemove, showRemoveButton = true, is
           break
         case 'sync-offer':
         case 'sync-deal':
+          // Offer: Open modal
           const oid = offerId || entityId
-          if (businessSlug && oid) navigate(`/business/${businessSlug}/offer/${oid}`)
-          else if (oid) navigate(`/offers/${oid}`)
+          if (oid) {
+            openOffer(oid)
+          }
           break
         case 'sync-profile':
-          if (userId || entityId) navigate(`/profile/${userId || entityId}`)
+          // Profile: Open modal
+          const uid = userId || entityId
+          if (uid) {
+            openProfile(uid)
+          }
           break
       }
       return

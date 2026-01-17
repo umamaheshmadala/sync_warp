@@ -396,7 +396,9 @@ class UnifiedShareService {
                 // Send message with link preview
                 await messagingService.sendMessage({
                     conversationId,
-                    content: message || `Check out ${options.entityData.title}!`,
+                    content: message
+                        ? `${message} ${shareUrl}`
+                        : `Check out ${options.entityData.title}! ${shareUrl}`,
                     type: 'link',
                     linkPreviews: [linkPreview],
                 });

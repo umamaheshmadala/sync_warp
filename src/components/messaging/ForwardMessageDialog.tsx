@@ -180,8 +180,20 @@ export function ForwardMessageDialog({ message, onClose, onForwarded }: Props) {
         })
       )
 
-      // 2. Forward message to these conversations
-      await messagingService.forwardMessage(message.id, conversationIds)
+      // 2. Prepare content with URL fallback if needed
+      let forwardContent = message.content
+      if (message.link_previews && message.link_previews.length > 0) {
+        const url = message.link_previews[0].url
+        // Only append if the URL isn't already in the content
+        if (url && !message.content?.includes(url)) {
+          forwardContent = message.content
+            ? `${message.content} ${url}`
+            : `Check this out! ${url}`
+        }
+      }
+
+      // 3. Forward message to these conversations
+      await messagingService.forwardMessage(message.id, conversationIds, forwardContent)
 
       toast.success(`Forwarded to ${selectedFriendIds.length} friend${selectedFriendIds.length > 1 ? 's' : ''}`)
       onForwarded()

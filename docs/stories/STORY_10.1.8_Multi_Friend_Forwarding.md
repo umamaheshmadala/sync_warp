@@ -1,7 +1,8 @@
 # Story 10.1.8: Multi-Friend Chat Forwarding
 
 **Epic:** [Epic 10.1: Unified Sharing Ecosystem](../epics/EPIC_10.1_Unified_Sharing_Ecosystem.md)  
-**Status:** 🟢 COMPLETED  
+**Status:** ✅ COMPLETED  
+**Completed:** 2026-01-17  
 **Priority:** 🟡 Medium  
 **Effort:** 2 days  
 **Dependencies:** Story 10.1.6 (Rich Link Previews)
@@ -11,6 +12,9 @@
 ## 📋 Overview
 
 Enhance the chat forwarding functionality to support selecting multiple friends at once, forwarding all message types (text, media, links), and displaying "Forwarded" labels on forwarded messages.
+
+> [!IMPORTANT]
+> **Bug Fix Required**: When forwarding rich link previews (offers, storefronts, profiles) to multiple friends, ALL recipients must receive the full rich preview with metadata - not just the first recipient. Additionally, the message content must include the actual clickable URL as a fallback.
 
 ---
 
@@ -495,6 +499,177 @@ function MessagePreview({ message }: { message: Message }) {
 - [ ] Toast confirmations
 - [ ] All tests passing
 - [ ] Code reviewed and merged
+
+---
+
+### AC-12: Consistent Rich Previews for ALL Recipients (BUG FIX)
+**Given** I forward a message with a rich link preview (offer, storefront, profile) to multiple friends  
+**When** any recipient views the forwarded message  
+**Then**:
+- ALL recipients see the full rich link preview card (not just the first recipient)
+- The preview includes: image, title, description, and action buttons
+- The `link_previews` JSON data must be copied identically to each forwarded message
+
+**Root Cause**: The current implementation may only attach `link_previews` to the first message or the RPC may not properly duplicate the preview metadata.
+
+**Fix Required in**: `src/services/messagingService.ts` or the `forward_message_to_conversations` RPC
+
+---
+
+### AC-13: Clickable URL Fallback in Message Content
+**Given** I forward a message with a link preview  
+**When** the message is displayed (even if preview fails to render)  
+**Then**:
+- The message content includes the actual clickable URL (not just "Check out [name]")
+- Format: `Check out [Entity Name]! [URL]` where URL is the full clickable link
+- Example: `Check out Referral Bonus (Referrer)! https://sync.app/offers/abc123`
+- Example: `Check out Test User 3! https://sync.app/profile/user123`
+- Example: `Check out Urban Coffee! https://sync.app/business/urban-coffee`
+
+**Rationale**: Even if the rich preview fails to render, users can still click the URL to navigate to the shared entity.
+
+**Files to Update**:
+- `src/services/unifiedShareService.ts` - `shareToChat` method should include URL in content
+- `src/components/messaging/ForwardMessageDialog.tsx` - Ensure URL is preserved/included when forwarding
+
+---
+
+### AC-14: Truncated URL Display (Mobile-Friendly)
+**Given** a message contains a URL (either shared or forwarded)  
+**When** the message is displayed in chat  
+**Then**:
+- The URL is truncated for display using the industry-standard format:
+  - Show: `domain/path-segment` (e.g., `sync.app/offers/abc123...`)
+  - Hide: All query parameters (`?utm_source=...`, `&ref=...`, etc.)
+  - If the path is long, truncate with ellipsis after ~40 characters
+- The full URL is preserved in the underlying data for copying/navigation
+- **Example Transformations**:
+  | Full URL | Displayed URL |
+  |----------|---------------|
+  | `http://localhost:5173/business/ac269130-cfb0.../offer/21156bac...?utm_source=sync&utm_medium=share&ref=...` | `localhost:5173/business/ac269.../offer/2115...` |
+  | `https://sync.app/profile/user123?ref=abc` | `sync.app/profile/user123` |
+  | `https://sync.app/offers/special-deal` | `sync.app/offers/special-deal` |
+
+**Files to Update**:
+- `src/components/messaging/MessageBubble.tsx` - Add URL truncation utility
+- `src/utils/urlUtils.ts` - Create `truncateUrl(url: string, maxLength?: number): string`
+
+---
+
+### AC-15: Copy Link via Context Menu
+**Given** a message contains a truncated URL  
+**When** the user long-presses (mobile) or right-clicks (desktop) on the link  
+**Then**:
+- A context menu appears with a "Copy Link" option
+- Selecting "Copy Link" copies the **full, untruncated URL** to the clipboard
+- A toast notification confirms: "Link copied to clipboard"
+
+**Implementation Notes**:
+- Use `navigator.clipboard.writeText(fullUrl)` for copy
+- Store full URL in a `data-full-url` attribute or similar
+
+---
+
+### AC-16: Clickable Link with Smart Navigation
+**Given** a message contains a URL  
+**When** the user taps/clicks on the link  
+**Then**:
+- **Internal links** (same domain, e.g., `sync.app/*`, `localhost:5173/*`):
+  - Navigate within the app using React Router (no page reload)
+  - Scroll to top or appropriate section
+- **External links** (different domain):
+  - Open in a new browser tab (`target="_blank"`)
+  - Include `rel="noopener noreferrer"` for security
+
+**Detection Logic**:
+```typescript
+const isInternalLink = (url: string): boolean => {
+  const appDomains = ['sync.app', 'localhost', window.location.host];
+  try {
+    const urlObj = new URL(url, window.location.origin);
+    return appDomains.some(domain => urlObj.host.includes(domain));
+  } catch {
+    return false;
+  }
+};
+```
+
+---
+
+### AC-17: Tooltip on Hover (Desktop Only)
+**Given** a message contains a truncated URL  
+**When** the user hovers over the link on desktop  
+**Then**:
+- A tooltip appears showing the **full URL**
+- Tooltip appears after a short delay (~300ms) to avoid flickering
+- Tooltip disappears when the mouse leaves the link
+
+**Implementation Notes**:
+- Use `title` attribute for native tooltip, or a custom tooltip component for better styling
+- On mobile/touch devices, tooltips are not applicable (use long-press context menu instead)
+
+**UI Mockup**:
+```
+┌────────────────────────────────────────────┐
+│  Check this out! sync.app/offers/abc1...   │
+│                    ↓                        │
+│  ┌──────────────────────────────────────┐  │
+│  │ https://sync.app/offers/abc123456... │  │ <- Tooltip
+│  └──────────────────────────────────────┘  │
+└────────────────────────────────────────────┘
+```
+
+---
+
+### AC-18: In-App Deep Link Navigation from Chat
+**Given** a message contains a clickable URL pointing to an in-app entity  
+**When** the user taps/clicks the link  
+**Then** the app navigates to the appropriate view **within the app** (not external browser):
+
+| URL Pattern | Navigation Behavior |
+|-------------|---------------------|
+| `/offers/{offerId}` | Open **Offer Details Modal** (same as tapping an offer card) |
+| `/business/{businessId}/offer/{offerId}` | Open **Offer Details Modal** |
+| `/profile/{userId}` | Open **Friend Profile Modal** (same as tapping a friend card) |
+| `/user/{userId}` | Open **Friend Profile Modal** |
+| `/business/{businessId}` | Navigate to **Business Profile Page** (storefront) |
+| `/business/{businessId}/products/{productId}` | Open **Product Details Modal** |
+
+**Context Preservation Rules:**
+- **Modals** (Offer, Profile, Product): Closing the modal returns the user to the **originating page** (e.g., back to chat)
+- **Page Navigation** (Storefront): Uses browser history; back button returns to originating page
+
+**Implementation Notes:**
+1. Parse the URL to extract entity type and ID
+2. Prevent default link behavior and external navigation
+3. Use the appropriate modal component or React Router navigation
+4. Works on both **web** and **mobile (native)** platforms
+
+**URL Parsing Logic:**
+```typescript
+interface DeepLinkTarget {
+  type: 'offer' | 'profile' | 'business' | 'product';
+  entityId: string;
+  businessId?: string; // For products and business-scoped offers
+}
+
+function parseDeepLink(url: string): DeepLinkTarget | null {
+  const patterns = [
+    { regex: /\/offers\/([a-f0-9-]+)/i, type: 'offer' },
+    { regex: /\/business\/([^\/]+)\/offer\/([a-f0-9-]+)/i, type: 'offer', hasBusinessId: true },
+    { regex: /\/profile\/([a-f0-9-]+)/i, type: 'profile' },
+    { regex: /\/user\/([a-f0-9-]+)/i, type: 'profile' },
+    { regex: /\/business\/([^\/]+)\/products\/([a-f0-9-]+)/i, type: 'product', hasBusinessId: true },
+    { regex: /\/business\/([^\/]+)\/?$/i, type: 'business' },
+  ];
+  // ... match and extract IDs
+}
+```
+
+**Files to Update:**
+- `src/utils/urlUtils.ts` - Add `parseDeepLink()` function
+- `src/components/messaging/ClickableUrl.tsx` - Use deep link parsing for navigation
+- May need to import modal components or use global modal state
 
 ---
 

@@ -308,7 +308,8 @@ class MessagingService {
    */
   async forwardMessage(
     messageId: string,
-    conversationIds: string[]
+    conversationIds: string[],
+    forwardContent?: string
   ): Promise<void> {
     return this.retryWithBackoff(async () => {
       if (!this.isOnline && Capacitor.isNativePlatform()) {
@@ -321,17 +322,50 @@ class MessagingService {
         "conversations"
       );
 
-      const { data, error } = await supabase.rpc(
-        "forward_message_to_conversations",
-        {
-          p_message_id: messageId,
-          p_conversation_ids: conversationIds,
-        }
-      );
+      // 1. Fetch original message details
+      const { data: originalMessage, error: fetchError } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('id', messageId)
+        .single();
 
-      if (error) throw error;
+      if (fetchError || !originalMessage) {
+        throw new Error('Original message not found');
+      }
 
-      console.log("✅ Message forwarded to", data?.length, "conversations");
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // 2. Prepare messages for insertion
+      const messagesToInsert = conversationIds.map(conversationId => ({
+        conversation_id: conversationId,
+        sender_id: user.id,
+        content: forwardContent || originalMessage.content, // Use provided content (with URL) or original
+        type: originalMessage.type,
+        media_urls: originalMessage.media_urls,
+        link_previews: originalMessage.link_previews, // ✅ FIX: Explicitly copy link_previews
+        is_forwarded: true,
+        original_message_id: messageId
+      }));
+
+      // 3. Insert all forwarded messages
+      // We use a loop/Promise.all to ensure we can track failures individually if needed, 
+      // but a bulk insert is more efficient. Bulk insert is atomic by default.
+      const { error: insertError } = await supabase
+        .from('messages')
+        .insert(messagesToInsert);
+
+      if (insertError) throw insertError;
+
+      // 4. Update forward count on original message (fire and forget)
+      // We do this in a separate non-blocking call or just await it.
+      try {
+        await supabase.rpc('increment_forward_count', { message_id: messageId });
+      } catch (error) {
+        // Ignore error if RPC fails or doesn't exist
+      }
+
+      console.log("✅ Message forwarded successfully");
     });
   }
 

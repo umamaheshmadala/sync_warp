@@ -40,6 +40,8 @@ import { MessageReactions } from './MessageReactions'
 import { ReactionUserList } from './ReactionUserList'
 import { MessageEmojiPicker } from './MessageEmojiPicker'
 import { ReportDialog } from '../reporting/ReportDialog'
+import { ClickableUrl } from './ClickableUrl'
+import { parseMessageContent } from '../../utils/urlUtils'
 
 interface MessageBubbleProps {
   message: Message
@@ -786,7 +788,20 @@ export function MessageBubble({
                         !isExpanded && needsReadMore ? "line-clamp-7 max-h-[140px] overflow-hidden" : ""
                       )}
                     >
-                      {content}
+                      {/* Parse content and render URLs as clickable links (AC-14 through AC-17) */}
+                      {parseMessageContent(content).map((segment, index) =>
+                        segment.type === 'url' ? (
+                          <ClickableUrl
+                            key={`url-${index}`}
+                            url={segment.fullUrl || segment.content}
+                            isOwnMessage={isOwn}
+                          />
+                        ) : (
+                          <React.Fragment key={`text-${index}`}>
+                            {segment.content}
+                          </React.Fragment>
+                        )
+                      )}
                     </p>
 
                     {!isExpanded && needsReadMore && (
