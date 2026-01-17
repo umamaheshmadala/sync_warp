@@ -56,6 +56,8 @@ import { AllReviews } from '../reviews/AllReviews';
 import FollowButton from '../following/FollowButton';
 import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 import { FollowerMetricsWidget } from './FollowerMetricsWidget';
+import { BusinessShareDashboard } from './BusinessShareDashboard';
+import BusinessCheckinAnalytics from '../checkins/BusinessCheckinAnalytics';
 import { useBusinessProfile, useBusinessCategories, type Business, type BusinessCategory } from '../../hooks/business';
 import { VerificationBadge } from './VerificationBadge';
 import { ClaimBusinessButton } from './ClaimBusinessButton';
@@ -1013,12 +1015,10 @@ const BusinessProfile: React.FC = () => {
     </div>
   );
 
-  // Render statistics tab
+  // Render statistics tab - Comprehensive Business Analytics
   const renderStatistics = () => (
     <div className="space-y-6">
-      {/* Follower Analytics Section */}
-      <FollowerMetricsWidget businessId={business?.id!} />
-
+      {/* Quick Stats Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white rounded-lg shadow-sm border p-6">
           <div className="flex items-center">
@@ -1059,23 +1059,24 @@ const BusinessProfile: React.FC = () => {
         </div>
       </div>
 
-      {/* Share Analytics */}
-      {isOwner && business?.id && (
-        <ShareAnalytics
-          entityId={business.id}
-          entityType="storefront"
-          title="Storefront Share Analytics"
+      {/* Follower Analytics Section */}
+      <FollowerMetricsWidget businessId={business?.id!} />
+
+      {/* Check-in Analytics Section */}
+      {business?.id && (
+        <BusinessCheckinAnalytics
+          businessId={business.id}
+          businessName={business.business_name}
         />
       )}
 
-      <div className="bg-white rounded-lg shadow-sm border p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance Overview</h3>
-        <div className="text-center py-12 text-gray-500">
-          <Calendar className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-          <p>Detailed analytics coming soon!</p>
-          <p className="text-sm mt-2">Track your business performance, customer engagement, and growth metrics.</p>
-        </div>
-      </div>
+      {/* Share Analytics Dashboard - Story 10.1.10 */}
+      {isOwner && business?.id && (
+        <BusinessShareDashboard
+          businessId={business.id}
+          businessName={business.business_name}
+        />
+      )}
     </div>
   );
 
