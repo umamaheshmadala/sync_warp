@@ -57,6 +57,7 @@ import FollowButton from '../following/FollowButton';
 import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 import { FollowerMetricsWidget } from './FollowerMetricsWidget';
 import { BusinessShareDashboard } from './BusinessShareDashboard';
+import { BusinessEngagementLog } from './analytics/BusinessEngagementLog';
 import BusinessCheckinAnalytics from '../checkins/BusinessCheckinAnalytics';
 import { useBusinessProfile, useBusinessCategories, type Business, type BusinessCategory } from '../../hooks/business';
 import { VerificationBadge } from './VerificationBadge';
@@ -1070,16 +1071,21 @@ const BusinessProfile: React.FC = () => {
         />
       )}
 
+      {/* Comprehensive Engagement Log - Story 10.1.9 */}
+      {business?.id && (
+        <BusinessEngagementLog businessId={business.id} />
+      )}
+
       {/* Check-in Analytics Section - Coming Soon */}
-      <div className="bg-white rounded-lg border p-6">
+      <div className="bg-white rounded-lg border p-6 mb-6">
         <div className="flex items-center gap-2 mb-4">
           <MapPin className="w-5 h-5 text-green-600" />
-          <h3 className="text-lg font-semibold text-gray-900">Check-in Analytics</h3>
+          <h3 className="text-lg font-semibold text-gray-900">Check-in Trends (Charts)</h3>
         </div>
         <div className="text-center py-8 text-gray-500">
           <Calendar className="w-12 h-12 mx-auto mb-4 text-gray-300" />
           <p className="font-medium">Coming Soon</p>
-          <p className="text-sm mt-2">Detailed check-in trends, peak hours, and visitor patterns will be available here.</p>
+          <p className="text-sm mt-2">Aggregate charts for peak hours and visitor patterns will be available here.</p>
         </div>
       </div>
     </div>

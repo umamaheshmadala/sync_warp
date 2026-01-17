@@ -261,6 +261,48 @@ CREATE POLICY "Business owners can view entity shares"
 
 ---
 
+### STORY 10.1.9: Comprehensive Customer Engagement Analytics
+**Priority:** 🔴 Critical  
+**Effort:** 3 days  
+**Dependencies:** 10.1.1-5
+
+#### Description
+Implement a comprehensive "Customer Engagement Log" within the Business Analytics tab. This feature consolidates **every single interaction** a user has with a business into a unified view, including Shares, Check-ins, Reviews, Redemptions, and Favorites.
+
+#### Acceptance Criteria
+
+##### Unified Engagement Data
+- [x] Create `get_business_engagement_log` RPC function
+- [x] Union data from 5 sources:
+  1. Shares (Storefront)
+  2. Check-ins
+  3. Reviews (Power Rate)
+  4. Coupon Redemptions
+  5. Favorites (Offers & Products)
+- [x] Display actual user names and avatars
+
+##### Business Engagement UI
+- [x] Create `BusinessEngagementLog` component
+- [x] Display chronological feed of interactions
+- [x] Use distinct icons/badges for each event type
+- [x] Add "Refresh" button for real-time updates
+
+##### Analytics Integration
+- [x] Integrate into Business Profile -> Analytics tab
+- [x] Ensure performant loading with pagination
+
+#### Technical Notes
+- **RPC Function**: `get_business_engagement_log` handles complex unions and joins with `profiles` table.
+- **Real-time**: Implemented via manual refresh button to avoid heavy subscription overhead initially.
+
+#### Testing Checklist
+- [x] All 5 interaction types appear in the log
+- [x] User details load correctly
+- [x] Pagination works (Load More)
+- [x] Refresh button updates the list
+
+---
+
 ### STORY 10.1.2: Storefront Sharing
 **Priority:** 🔴 Critical  
 **Effort:** 2 days  
