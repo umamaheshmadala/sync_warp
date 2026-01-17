@@ -127,10 +127,10 @@ export function useBusinessShareAnalytics(
 
                 if (storeError) throw storeError;
 
-                return processShareEvents(storefrontShares || [], now, weekAgo, monthAgo);
+                return processShareEvents(storefrontShares || [], now, weekAgo, monthAgo, businessId);
             }
 
-            return processShareEvents(shareEvents || [], now, weekAgo, monthAgo);
+            return processShareEvents(shareEvents || [], now, weekAgo, monthAgo, businessId);
         },
         enabled: enabled && !!businessId,
         staleTime: 5 * 60 * 1000,
@@ -140,7 +140,7 @@ export function useBusinessShareAnalytics(
 /**
  * Process share events into analytics summary
  */
-function processShareEvents(
+async function processShareEvents(
     events: Array<{
         id: string;
         entity_type: string;
@@ -152,8 +152,9 @@ function processShareEvents(
     }>,
     now: Date,
     weekAgo: Date,
-    monthAgo: Date
-): BusinessShareAnalytics {
+    monthAgo: Date,
+    businessId: string
+): Promise<BusinessShareAnalytics> {
     const totalShares = events.length;
 
     const sharesThisWeek = events.filter(e => new Date(e.created_at) >= weekAgo).length;
@@ -181,7 +182,7 @@ function processShareEvents(
         .map(([date, count]) => ({ date, count }))
         .sort((a, b) => a.date.localeCompare(b.date));
 
-    // Top shared items
+    // Top shared items - aggregate first
     const itemMap: Record<string, {
         shares: number;
         clicks: number;
@@ -195,13 +196,63 @@ function processShareEvents(
         itemMap[key].shares++;
         itemMap[key].clicks += e.share_clicks_unified?.length || 0;
     });
+
+    // Fetch actual entity names
+    const entityIds = Object.keys(itemMap).map(key => {
+        const [entityType, entityId] = key.split(':');
+        return { entityType, entityId };
+    });
+
+    // Extract unique IDs by type
+    const offerIds = entityIds.filter(e => e.entityType === 'offer').map(e => e.entityId);
+    const productIds = entityIds.filter(e => e.entityType === 'product').map(e => e.entityId);
+    const storefrontIds = entityIds.filter(e => e.entityType === 'storefront').map(e => e.entityId);
+
+    // Fetch names from database
+    const entityNames: Record<string, string> = {};
+
+    // Fetch offer titles
+    if (offerIds.length > 0) {
+        const { data: offers } = await supabase
+            .from('offers')
+            .select('id, title')
+            .in('id', offerIds);
+        offers?.forEach(o => {
+            entityNames[`offer:${o.id}`] = o.title;
+        });
+    }
+
+    // Fetch product names
+    if (productIds.length > 0) {
+        const { data: products } = await supabase
+            .from('products')
+            .select('id, name')
+            .in('id', productIds);
+        products?.forEach(p => {
+            entityNames[`product:${p.id}`] = p.name;
+        });
+    }
+
+    // Fetch business names (storefronts)
+    if (storefrontIds.length > 0) {
+        const { data: businesses } = await supabase
+            .from('businesses')
+            .select('id, business_name')
+            .in('id', storefrontIds);
+        businesses?.forEach(b => {
+            entityNames[`storefront:${b.id}`] = b.business_name;
+        });
+    }
+
+    // Build top shared items with actual names
     const topSharedItems = Object.entries(itemMap)
         .map(([key, data]) => {
             const [entityType, entityId] = key.split(':');
+            const title = entityNames[key] || `${entityType.charAt(0).toUpperCase() + entityType.slice(1)}`;
             return {
                 entityId,
                 entityType,
-                title: `${entityType} ${entityId.substring(0, 8)}`, // Placeholder - would need entity lookup
+                title,
                 shares: data.shares,
                 clicks: data.clicks,
                 ctr: data.shares > 0 ? (data.clicks / data.shares) * 100 : 0,
