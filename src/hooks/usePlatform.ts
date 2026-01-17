@@ -44,7 +44,7 @@ export const getPlatformStyles = () => {
     // Platform-specific spacing
     statusBarHeight: platform === 'ios' ? '44px' : platform === 'android' ? '24px' : '0px',
     // Safe area insets
-    safeAreaTop: platform === 'ios' ? 'env(safe-area-inset-top)' : '0px',
-    safeAreaBottom: platform === 'ios' ? 'env(safe-area-inset-bottom)' : '0px'
+    safeAreaTop: (platform === 'ios' || platform === 'android') ? 'env(safe-area-inset-top)' : '0px',
+    safeAreaBottom: (platform === 'ios' || platform === 'android') ? 'env(safe-area-inset-bottom)' : '0px'
   };
 };

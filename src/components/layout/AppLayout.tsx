@@ -2,6 +2,7 @@ import { useLocation } from 'react-router-dom';
 import { useEffect, useState, useCallback } from 'react';
 import { Keyboard, KeyboardResize } from '@capacitor/keyboard';
 import { Capacitor } from '@capacitor/core';
+import { StatusBar, Style } from '@capacitor/status-bar';
 import { useQueryClient } from '@tanstack/react-query';
 import Header from './Header';
 import BottomNavigation from '../BottomNavigation';
@@ -31,6 +32,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   // Configure Keyboard and Listeners
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
+
+    // Fix Android Safe Area / Status Bar Overlap - Re-applied as Runtime Fix works best for Physical Devices
+    if (Capacitor.getPlatform() === 'android') {
+      StatusBar.setOverlaysWebView({ overlay: false }).catch(() => { });
+      StatusBar.setBackgroundColor({ color: '#ffffff' }).catch(() => { });
+      StatusBar.setStyle({ style: Style.Light }).catch(() => { });
+    }
 
     // Set Keyboard Resize Mode to Native as requested by user
     Keyboard.setResizeMode({ mode: KeyboardResize.Native });

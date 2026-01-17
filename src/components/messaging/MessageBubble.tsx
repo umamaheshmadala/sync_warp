@@ -768,7 +768,7 @@ export function MessageBubble({
               ) : (
                 <div className="flex flex-col gap-2">
                   {message.link_previews && message.link_previews.length > 0 && (
-                    <div className="space-y-2">
+                    <div className="space-y-2 w-full max-w-[75vw]">
                       {message.link_previews.map((preview, index) => (
                         <LinkPreviewCard
                           key={`${preview.url}-${index}`}
