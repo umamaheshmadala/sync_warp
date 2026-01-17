@@ -25,6 +25,7 @@ import {
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
 import BusinessCheckinAnalytics from '../checkins/BusinessCheckinAnalytics';
+import { BusinessShareDashboard } from './BusinessShareDashboard';
 import { toast } from 'react-hot-toast';
 
 interface Business {
@@ -95,7 +96,7 @@ const BusinessAnalyticsPage: React.FC = () => {
       .eq('id', businessId)
       .eq('user_id', user?.id)
       .single();
-    
+
     if (data) setBusiness(data);
     setRefreshing(false);
     toast.success('Analytics refreshed');
@@ -195,7 +196,7 @@ const BusinessAnalyticsPage: React.FC = () => {
                 Back to Dashboard
               </Link>
             </div>
-            
+
             <button
               onClick={handleRefresh}
               disabled={refreshing}
@@ -221,7 +222,7 @@ const BusinessAnalyticsPage: React.FC = () => {
                     <BarChart3 className="w-8 h-8 text-gray-400" />
                   </div>
                 )}
-                
+
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">{business.business_name}</h1>
                   <p className="text-gray-600">{business.business_type}</p>
@@ -231,7 +232,7 @@ const BusinessAnalyticsPage: React.FC = () => {
                   </div>
                 </div>
               </div>
-              
+
               <div className="text-right">
                 {getStatusBadge(business.status)}
                 <p className="text-sm text-gray-500 mt-2">
@@ -257,10 +258,9 @@ const BusinessAnalyticsPage: React.FC = () => {
                   <p className="text-sm font-medium text-gray-600">{stat.label}</p>
                   <p className="text-2xl font-bold text-gray-900 mt-2">{stat.value}</p>
                   {stat.change && (
-                    <p className={`text-sm mt-1 flex items-center ${
-                      stat.changeType === 'increase' ? 'text-green-600' : 
+                    <p className={`text-sm mt-1 flex items-center ${stat.changeType === 'increase' ? 'text-green-600' :
                       stat.changeType === 'decrease' ? 'text-red-600' : 'text-gray-600'
-                    }`}>
+                      }`}>
                       {stat.changeType === 'increase' && <TrendingUp className="w-3 h-3 mr-1" />}
                       {stat.change}
                     </p>
@@ -280,8 +280,21 @@ const BusinessAnalyticsPage: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
         >
-          <BusinessCheckinAnalytics 
-            businessId={businessId!} 
+          <BusinessCheckinAnalytics
+            businessId={businessId!}
+            businessName={business.business_name}
+          />
+        </motion.div>
+
+        {/* Share Analytics Dashboard - Story 10.1.10 */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="mt-8"
+        >
+          <BusinessShareDashboard
+            businessId={businessId!}
             businessName={business.business_name}
           />
         </motion.div>
@@ -300,7 +313,7 @@ const BusinessAnalyticsPage: React.FC = () => {
                 <p className="text-sm text-gray-600">Update business information</p>
               </div>
             </Link>
-            
+
             <Link
               to={`${getBusinessUrl(businessId!, business?.business_name)}/qr`}
               className="flex items-center p-4 border rounded-lg hover:bg-gray-50 transition-colors"
@@ -311,7 +324,7 @@ const BusinessAnalyticsPage: React.FC = () => {
                 <p className="text-sm text-gray-600">Generate check-in QR code</p>
               </div>
             </Link>
-            
+
             <Link
               to={`${getBusinessUrl(businessId!, business?.business_name)}/reviews`}
               className="flex items-center p-4 border rounded-lg hover:bg-gray-50 transition-colors"
