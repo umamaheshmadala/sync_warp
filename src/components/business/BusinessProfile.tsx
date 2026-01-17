@@ -1062,6 +1062,14 @@ const BusinessProfile: React.FC = () => {
       {/* Follower Analytics Section */}
       <FollowerMetricsWidget businessId={business?.id!} />
 
+      {/* Share Analytics Dashboard - Story 10.1.10 */}
+      {isOwner && business?.id && (
+        <BusinessShareDashboard
+          businessId={business.id}
+          businessName={business.business_name}
+        />
+      )}
+
       {/* Check-in Analytics Section - Coming Soon */}
       <div className="bg-white rounded-lg border p-6">
         <div className="flex items-center gap-2 mb-4">
@@ -1074,14 +1082,6 @@ const BusinessProfile: React.FC = () => {
           <p className="text-sm mt-2">Detailed check-in trends, peak hours, and visitor patterns will be available here.</p>
         </div>
       </div>
-
-      {/* Share Analytics Dashboard - Story 10.1.10 */}
-      {isOwner && business?.id && (
-        <BusinessShareDashboard
-          businessId={business.id}
-          businessName={business.business_name}
-        />
-      )}
     </div>
   );
 

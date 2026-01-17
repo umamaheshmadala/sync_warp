@@ -36,6 +36,7 @@ export interface BusinessShareAnalytics {
         id: string;
         entityType: string;
         entityId: string;
+        title: string;
         method: string;
         createdAt: string;
         clicks: number;
@@ -262,14 +263,19 @@ async function processShareEvents(
         .slice(0, 10);
 
     // Recent shares
-    const recentShares = events.slice(0, 20).map(e => ({
-        id: e.id,
-        entityType: e.entity_type,
-        entityId: e.entity_id,
-        method: e.share_method,
-        createdAt: e.created_at,
-        clicks: e.share_clicks_unified?.length || 0,
-    }));
+    const recentShares = events.slice(0, 20).map(e => {
+        const key = `${e.entity_type}:${e.entity_id}`;
+        const title = entityNames[key] || `${e.entity_type.charAt(0).toUpperCase() + e.entity_type.slice(1)}`;
+        return {
+            id: e.id,
+            entityType: e.entity_type,
+            entityId: e.entity_id,
+            title,
+            method: e.share_method,
+            createdAt: e.created_at,
+            clicks: e.share_clicks_unified?.length || 0,
+        };
+    });
 
     return {
         totalShares,
