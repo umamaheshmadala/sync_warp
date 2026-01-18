@@ -64,8 +64,11 @@ export function LinkPreviewCard({ preview, onRemove, showRemoveButton = true, is
           // Product: Open modal
           const pid = productId || entityId
           const bsForProduct = businessSlug || businessId
-          if (pid && bsForProduct) {
-            openProduct(pid, bsForProduct)
+          const previewImage = preview.image
+
+          if (pid) {
+            // Pass preview image as fallback
+            openProduct(pid, bsForProduct, previewImage)
           }
           break
         case 'sync-coupon':

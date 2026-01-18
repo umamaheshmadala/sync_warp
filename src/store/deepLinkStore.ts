@@ -35,11 +35,12 @@ interface DeepLinkState {
     productModalOpen: boolean;
     productId: string | null;
     productBusinessId: string | null;
+    productPreviewImage: string | null;
 
     // Actions
     openOffer: (offerId: string) => void;
     openProfile: (userId: string) => void;
-    openProduct: (productId: string, businessId: string) => void;
+    openProduct: (productId: string, businessId?: string, previewImage?: string) => void;
     closeAll: () => void;
 
     // Parse and handle deep link
@@ -125,6 +126,7 @@ export const useDeepLinkStore = create<DeepLinkState>((set, get) => ({
     productModalOpen: false,
     productId: null,
     productBusinessId: null,
+    productPreviewImage: null,
 
     openOffer: (offerId: string) => {
         set({
@@ -142,11 +144,12 @@ export const useDeepLinkStore = create<DeepLinkState>((set, get) => ({
         });
     },
 
-    openProduct: (productId: string, businessId: string) => {
+    openProduct: (productId: string, businessId?: string, previewImage?: string) => {
         set({
             productModalOpen: true,
             productId,
-            productBusinessId: businessId,
+            productBusinessId: businessId || null,
+            productPreviewImage: previewImage || null,
             currentTarget: { type: 'product', entityId: productId, businessId },
         });
     },
@@ -161,6 +164,7 @@ export const useDeepLinkStore = create<DeepLinkState>((set, get) => ({
             productModalOpen: false,
             productId: null,
             productBusinessId: null,
+            productPreviewImage: null,
         });
     },
 

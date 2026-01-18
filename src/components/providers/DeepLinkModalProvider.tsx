@@ -26,6 +26,7 @@ export function DeepLinkModalProvider() {
         productModalOpen,
         productId,
         productBusinessId,
+        productPreviewImage,
         closeAll,
     } = useDeepLinkStore();
 
@@ -74,8 +75,9 @@ export function DeepLinkModalProvider() {
     }, [offerModalOpen, offerId]);
 
     // Fetch product when modal opens
+    // Fetch product when modal opens
     useEffect(() => {
-        if (productModalOpen && productId && productBusinessId) {
+        if (productModalOpen && productId) {
             setProductLoading(true);
 
             const fetchProduct = async () => {
@@ -87,7 +89,21 @@ export function DeepLinkModalProvider() {
                         .single();
 
                     if (error) throw error;
-                    setProduct(data);
+
+                    // Adapt DB schema (image_url) to Component Prop (image_urls)
+                    // Fallback to preview image from store if both are missing
+                    const finalImageUrls = data.image_urls || (data.image_url ? [data.image_url] : []);
+
+                    if (finalImageUrls.length === 0 && productPreviewImage) {
+                        finalImageUrls.push(productPreviewImage);
+                    }
+
+                    const adaptedProduct = {
+                        ...data,
+                        image_urls: finalImageUrls
+                    };
+
+                    setProduct(adaptedProduct);
                 } catch (error) {
                     console.error('Failed to fetch product:', error);
                     setProduct(null);
@@ -100,7 +116,7 @@ export function DeepLinkModalProvider() {
         } else {
             setProduct(null);
         }
-    }, [productModalOpen, productId, productBusinessId]);
+    }, [productModalOpen, productId, productPreviewImage]);
 
     return (
         <>
@@ -212,7 +228,7 @@ export function DeepLinkModalProvider() {
             )}
 
             {/* Product View Modal */}
-            {productModalOpen && productBusinessId && (
+            {productModalOpen && (
                 productLoading ? (
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
                         <div className="bg-white rounded-lg p-6">

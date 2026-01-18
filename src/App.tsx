@@ -127,8 +127,8 @@ function AppContent() {
           <AppDataPrefetcher />
           <AppRouter />
         </AppLayout>
+        <DeepLinkModalProvider />
       </FavoritesProvider>
-      <DeepLinkModalProvider />
       <DevMenu />
       <Toaster
         position="top-right"

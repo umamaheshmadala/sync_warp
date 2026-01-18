@@ -13,6 +13,7 @@ export interface Product {
   is_featured: boolean; // Featured products show in storefront
   display_order: number; // Only used for trending products
   image_urls: string[];
+  image_url?: string; // Legacy/DB support
   last_updated_at?: string; // For auto-deletion tracking
   created_at: string;
   updated_at: string;

@@ -58,7 +58,7 @@ Enhance the chat link preview system to show rich, branded preview cards for all
 | Price | Price, highlighted in green, larger font |
 | Business | Business name, muted, smaller |
 | Badge | "Product" label |
-| Click Action | Navigate to product details |
+| Click Action | **Open Product Modal** (in-context) |
 
 **Preview Card:**
 ```
@@ -324,28 +324,37 @@ function getPreviewStyles(type: LinkPreview['type']): string {
 ### AC-9: Click Handler with Navigation
 **Given** a user clicks on a preview card  
 **When** the click is processed  
-**Then** navigate to the entity page:
+**Then** handle navigation efficiently (Modals preferred for in-app content):
 
 ```typescript
+const { openOffer, openProfile, openProduct } = useDeepLinkStore();
 const navigate = useNavigate();
 
 const handleClick = (e: React.MouseEvent) => {
   e.preventDefault(); // Prevent default link behavior in chat
   
-  const { entityType, entityId, businessSlug } = preview.metadata || {};
+  const { entityType, entityId, businessSlug, businessId, productId, offerId, userId } = preview.metadata || {};
   
   switch (entityType) {
     case 'storefront':
       navigate(`/business/${businessSlug}`);
       break;
     case 'product':
-      navigate(`/business/${businessSlug}/product/${entityId}`);
+      // Open Product Modal
+      // Requires: productId/entityId AND businessSlug/businessId
+      const pid = productId || entityId;
+      const bid = businessSlug || businessId;
+      if (pid && bid) openProduct(pid, bid);
       break;
     case 'offer':
-      navigate(`/business/${businessSlug}/offer/${entityId}`);
+      // Open Offer Modal
+      const oid = offerId || entityId;
+      if (oid) openOffer(oid);
       break;
     case 'profile':
-      navigate(`/profile/${entityId}`);
+      // Open Profile Modal
+      const uid = userId || entityId;
+      if (uid) openProfile(uid);
       break;
     default:
       // For external URLs, open in new tab
