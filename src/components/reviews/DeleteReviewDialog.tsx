@@ -25,7 +25,7 @@ export function DeleteReviewDialog({
 }: DeleteReviewDialogProps) {
     return (
         <AlertDialog open={isOpen} onOpenChange={onClose}>
-            <AlertDialogContent>
+            <AlertDialogContent className="bg-white">
                 <AlertDialogHeader>
                     <AlertDialogTitle className="flex items-center gap-2">
                         <Trash2 className="w-5 h-5 text-destructive" />

@@ -73,21 +73,21 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
     const handleConfirmDelete = async () => {
       setIsDeleting(true);
       try {
-        await deleteReview(review.id);
-        toast.success('Review deleted');
+        // Delegate deletion to parent component via prop
+        // This prevents double-delete calls and ensures parent state (like lists) updates correctly
+        if (onDelete) {
+          await onDelete(review.id);
+          toast.success('Review deleted');
+        }
 
-        // Invalidate queries to refresh the UI
-        queryClient.invalidateQueries({ queryKey: ['business-reviews', review.business_id] });
+        // Also invalidate stats just in case parent doesn't handle it
         queryClient.invalidateQueries({ queryKey: ['review-stats', review.business_id] });
         queryClient.invalidateQueries({ queryKey: ['review-eligibility', review.business_id] });
-
-        // Notify parent if needed
-        onDelete?.(review.id);
 
         setShowDeleteDialog(false);
       } catch (error) {
         console.error('Delete error:', error);
-        toast.error(error instanceof Error ? error.message : 'Could not delete review');
+        toast.error('Could not delete review');
       } finally {
         setIsDeleting(false);
       }

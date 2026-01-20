@@ -192,8 +192,8 @@ export default function BusinessReviews({
                 {filters.recommendation !== undefined
                   ? `No ${filters.recommendation ? 'positive' : 'negative'} reviews found.`
                   : businessName
-                  ? `Be the first to review ${businessName}!`
-                  : 'Be the first to leave a review!'}
+                    ? `Have you visited ${businessName}? Share your experience to help others!`
+                    : 'Be the first to share your experience!'}
               </p>
             </motion.div>
           )}
