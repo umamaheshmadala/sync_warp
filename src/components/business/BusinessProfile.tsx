@@ -44,7 +44,7 @@ import BusinessReviewForm from '../reviews/BusinessReviewForm';
 import EnhancedProfileTab from './EnhancedProfileTab';
 import { useUserCheckin } from '../../hooks/useUserCheckin';
 import { useReviewStats } from '../../hooks/useReviewStats';
-import { createReview } from '../../services/reviewService';
+import { createReview, getUserBusinessReview } from '../../services/reviewService';
 import { useSystemSettings } from '../../hooks/useSystemSettings';
 import type { CreateReviewInput } from '../../types/review';
 import { StorefrontShareButton } from '../Sharing/StorefrontShareButton';
@@ -111,6 +111,7 @@ const BusinessProfile: React.FC = () => {
   const [showMoreDropdown, setShowMoreDropdown] = useState(false);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [editingReview, setEditingReview] = useState<any>(null);
+  const [userReview, setUserReview] = useState<any>(null);
   const topRef = React.useRef<HTMLDivElement>(null);
 
   // Scroll to top on mount
@@ -125,11 +126,25 @@ const BusinessProfile: React.FC = () => {
     businessId: business?.id,
   });
 
-  // Fetch global settings
-  const { requireGpsCheckin, isLoading: isSettingsLoading } = useSystemSettings();
-
   // Check if current user owns this business
   const isOwner = user?.id === business?.user_id;
+
+  // Fetch user's existing review to toggle Write/Manage button
+  useEffect(() => {
+    if (business?.id && user?.id && !isOwner) {
+      getUserBusinessReview(business.id).then(review => {
+        // Only set if it's an active (non-deleted) review
+        if (review && !review.deleted_at) {
+          setUserReview(review);
+        } else {
+          setUserReview(null);
+        }
+      });
+    }
+  }, [business?.id, user?.id, isOwner, reviewsKey]);
+
+  // Fetch global settings
+  const { requireGpsCheckin, isLoading: isSettingsLoading } = useSystemSettings();
 
   // Check if user has checked in at this business - use full business ID once loaded
   const { checkin, hasCheckin, isLoading: isLoadingCheckin } = useUserCheckin(
@@ -1099,47 +1114,64 @@ const BusinessProfile: React.FC = () => {
   // Render reviews tab
   const renderReviews = () => (
     <div className="space-y-4">
-      {/* Write Review Button - Only show for non-owners */}
+      {/* Write/Manage Review Button - Only show for non-owners */}
       {!isOwner && user && (
         <div className="bg-white rounded-lg shadow-sm border p-4">
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                Share Your Experience
+                {userReview ? 'Your Review' : 'Share Your Experience'}
               </h3>
-              {/* GPS check-in requirement prompt */}
-              {!isSettingsLoading && requireGpsCheckin ? (
-                !hasCheckin ? (
-                  <div className="flex items-start space-x-2 text-sm text-amber-600">
-                    <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              {userReview ? (
+                <div className="flex items-start space-x-2 text-sm text-gray-600">
+                  <p>You have already reviewed this business.</p>
+                </div>
+              ) : (
+                /* GPS check-in requirement prompt */
+                !isSettingsLoading && requireGpsCheckin ? (
+                  !hasCheckin ? (
+                    <div className="flex items-start space-x-2 text-sm text-amber-600">
+                      <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                      <p>
+                        Check in at this business to leave a review.
+                        GPS verification ensures authentic reviews.
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-600">
+                      Checked in {checkin && new Date(checkin.checked_in_at).toLocaleDateString()}
+                    </p>
+                  )
+                ) : (
+                  <div className="flex items-start space-x-2 text-sm text-blue-600">
+                    <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
                     <p>
-                      Check in at this business to leave a review.
-                      GPS verification ensures authentic reviews.
+                      <strong>[Testing Mode]</strong> GPS check-in disabled. Write your review anytime.
                     </p>
                   </div>
-                ) : (
-                  <p className="text-sm text-gray-600">
-                    Checked in {checkin && new Date(checkin.checked_in_at).toLocaleDateString()}
-                  </p>
                 )
-              ) : (
-                <div className="flex items-start space-x-2 text-sm text-blue-600">
-                  <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                  <p>
-                    <strong>[Testing Mode]</strong> GPS check-in disabled. Write your review anytime.
-                  </p>
-                </div>
               )}
             </div>
-            <button
-              onClick={handleOpenReviewModal}
-              disabled={isLoadingCheckin}
-              className="flex items-center px-4 py-2 rounded-lg font-medium transition-colors bg-indigo-600 text-white hover:bg-indigo-700"
-              title="Write a review"
-            >
-              <MessageSquare className="w-4 h-4 mr-2" />
-              Write Review
-            </button>
+            {userReview ? (
+              <button
+                onClick={() => handleEditReview(userReview)}
+                className="flex items-center px-4 py-2 rounded-lg font-medium transition-colors bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                title="Manage your review"
+              >
+                <Edit3 className="w-4 h-4 mr-2" />
+                Manage Review
+              </button>
+            ) : (
+              <button
+                onClick={handleOpenReviewModal}
+                disabled={isLoadingCheckin}
+                className="flex items-center px-4 py-2 rounded-lg font-medium transition-colors bg-indigo-600 text-white hover:bg-indigo-700"
+                title="Write a review"
+              >
+                <MessageSquare className="w-4 h-4 mr-2" />
+                Write Review
+              </button>
+            )}
           </div>
         </div>
       )}

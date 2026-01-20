@@ -32,16 +32,7 @@ export function DeleteReviewDialog({
                         Delete Review?
                     </AlertDialogTitle>
                     <AlertDialogDescription>
-                        Are you sure you want to delete your review? This action will:
-                        <ul className="list-disc list-inside mt-2 space-y-1">
-                            <li>Remove the review from public view</li>
-                            <li>Update business review statistics</li>
-                            <li>Allow you to write a new review if you wish</li>
-                        </ul>
-                        <p className="mt-3 text-sm">
-                            <strong>Note:</strong> For legal compliance, review data is retained
-                            in our system but will not be visible to anyone.
-                        </p>
+                        Are you sure you want to delete the review?
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
