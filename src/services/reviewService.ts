@@ -60,30 +60,34 @@ export async function createReview(input: CreateReviewInput): Promise<BusinessRe
     throw new Error(`Review text must be ${REVIEW_TEXT_WORD_LIMIT} words or less`);
   }
 
-  // TEMP: Check-in verification bypassed for desktop testing
+  // GPS check-in verification - ensures user has physically visited business
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     throw new Error('User not authenticated');
   }
 
-  // Skip check-in verification for testing
-  // const { data: verifyData, error: verifyError } = await supabase
-  //   .rpc('verify_checkin_for_review', {
-  //     p_user_id: user.id,
-  //     p_business_id: input.business_id,
-  //     p_checkin_id: input.checkin_id,
-  //   });
+  // Verify GPS check-in before allowing review
+  if (input.checkin_id) {
+    const { data: verifyData, error: verifyError } = await supabase
+      .rpc('verify_checkin_for_review', {
+        p_user_id: user.id,
+        p_business_id: input.business_id,
+        p_checkin_id: input.checkin_id,
+      });
 
-  // if (verifyError) {
-  //   console.error('❌ Check-in verification error:', verifyError);
-  //   throw new Error('Failed to verify check-in');
-  // }
+    if (verifyError) {
+      console.error('❌ Check-in verification error:', verifyError);
+      throw new Error('Failed to verify check-in. Please try again.');
+    }
 
-  // if (!verifyData) {
-  //   throw new Error('You must check in at this business before leaving a review');
-  // }
-  
-  console.log('⚠️  [Testing Mode] Check-in verification bypassed');
+    if (!verifyData) {
+      throw new Error('Invalid check-in. You must check in at this business before leaving a review.');
+    }
+
+    console.log('✅ Check-in verified for review');
+  } else {
+    throw new Error('You must check in at this business before leaving a review');
+  }
 
   // Create the review
   const { data, error } = await supabase
@@ -566,7 +570,7 @@ export async function getUserBusinessReview(
   } else {
     console.log('ℹ️ No existing review found');
   }
-  
+
   return data;
 }
 
@@ -576,7 +580,7 @@ export default {
   countWords,
   validateWordCount,
   canEditReview,
-  
+
   // Review CRUD
   createReview,
   getBusinessReviews,
@@ -584,16 +588,16 @@ export default {
   getUserReviews,
   updateReview,
   deleteReview,
-  
+
   // Statistics
   getReviewStats,
   getUserReviewActivity,
-  
+
   // Responses
   createResponse,
   updateResponse,
   deleteResponse,
-  
+
   // Check-ins
   getUserCheckins,
   hasUserReviewed,

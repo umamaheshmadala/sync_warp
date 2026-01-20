@@ -195,11 +195,11 @@ const BusinessProfile: React.FC = () => {
       return;
     }
 
-    // TEMP: Check-in validation bypassed for desktop testing
-    // if (!hasCheckin) {
-    //   toast.error('You must check in before writing a review');
-    //   return;
-    // }
+    // GPS check-in validation
+    if (!hasCheckin) {
+      toast.error('You must check in at this business before writing a review');
+      return;
+    }
 
     setIsSubmittingReview(true);
 
@@ -245,11 +245,11 @@ const BusinessProfile: React.FC = () => {
       return;
     }
 
-    // TEMP: Check-in validation bypassed for desktop testing
-    // if (!hasCheckin) {
-    //   toast.error('You must check in at this business before writing a review');
-    //   return;
-    // }
+    // GPS check-in validation
+    if (!hasCheckin) {
+      toast.error('You must check in at this business before writing a review');
+      return;
+    }
 
     setEditingReview(null);
     setShowReviewModal(true);
@@ -1103,13 +1103,13 @@ const BusinessProfile: React.FC = () => {
               <h3 className="text-lg font-semibold text-gray-900 mb-1">
                 Share Your Experience
               </h3>
-              {/* TEMP: Check-in requirement bypassed for desktop testing */}
+              {/* GPS check-in requirement prompt */}
               {!hasCheckin ? (
-                <div className="flex items-start space-x-2 text-sm text-blue-600">
-                  <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <div className="flex items-start space-x-2 text-sm text-amber-600">
+                  <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
                   <p>
-                    <strong>[Testing Mode]</strong> Check-in requirement temporarily disabled for desktop testing.
-                    In production, users must check in before reviewing.
+                    Check in at this business to leave a review.
+                    GPS verification ensures authentic reviews.
                   </p>
                 </div>
               ) : (
