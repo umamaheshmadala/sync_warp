@@ -21,7 +21,7 @@ Fix critical gaps that prevent the Reviews Module from functioning properly. The
 | Story | Title | Effort | Priority |
 |-------|-------|--------|----------|
 | 11.1.1 | Add Write Review Button to Storefront | 2 days | 🔴 Critical |
-| 11.1.2 | Re-enable GPS Check-in Verification | 1 day | DONE ✅ |
+| 11.1.2 | Re-enable GPS Check-in Verification | 1 day | 🚧 Partial (Testing Pending) |
 | 11.1.3 | Remove 24-Hour Edit Window (Always Editable) | 0.5 days | 🟡 Medium |
 | 11.1.4 | Implement Soft Delete for Reviews | 0.5 days | 🟡 Medium |
 | 11.1.5 | Configure All Reviews Route (/business/:id/reviews) | 0.5 days | 🟡 Medium |
