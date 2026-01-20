@@ -560,6 +560,54 @@ export async function getPhotoReviewCount(businessId: string): Promise<number> {
 
 ---
 
+## Implementation Guidelines
+
+> **IMPORTANT**: Follow these guidelines when implementing this story.
+
+### 1. Pre-Implementation Codebase Analysis
+Before starting implementation:
+- [ ] Check existing AllReviews component from Story 11.1.5
+- [ ] Review existing filter/sort patterns
+- [ ] Look for infinite scroll implementations
+- [ ] Check URL query parameter handling patterns
+- [ ] Document findings in the implementation plan
+
+### 2. Database Migration Execution
+- [ ] Use **Supabase MCP tools** to execute SQL migrations when possible
+- [ ] Use `mcp_supabase-mcp-server_execute_sql` for running scripts
+- [ ] Only request manual SQL execution if MCP lacks required privileges
+- [ ] Verify migration success with follow-up queries
+
+### 3. Acceptance Criteria Verification
+After implementation is complete:
+- [ ] Go through EACH acceptance criterion one by one
+- [ ] Mark each criterion as verified with evidence (screenshot, test result, or code reference)
+- [ ] Document any deviations or edge cases discovered
+- [ ] Get sign-off before proceeding to user testing
+
+### 4. User Testing Plan
+Once acceptance criteria are verified, execute this testing flow:
+
+**Test Route 1: Filtering**
+1. Open All Reviews page
+2. Select "Most Recent" sort
+3. Select "GPS Verified" filter
+4. Verify results update immediately
+
+**Test Route 2: Search**
+1. Type in search box
+2. Verify reviews filter by text content
+3. Clear search → All reviews return
+4. Search with filters → Combined results
+
+**Test Route 3: URL Persistence**
+1. Apply filters and sort
+2. Copy URL and open in new tab
+3. Verify same filters/sort applied
+4. Share URL → Works for others
+
+---
+
 ## Definition of Done
 
 - [ ] Most Helpful sort working with vote counts

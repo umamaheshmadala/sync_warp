@@ -743,6 +743,54 @@ function TrendIndicator({ trend }: { trend: 'improving' | 'declining' | 'stable'
 
 ---
 
+## Implementation Guidelines
+
+> **IMPORTANT**: Follow these guidelines when implementing this story.
+
+### 1. Pre-Implementation Codebase Analysis
+Before starting implementation:
+- [ ] Check for existing dashboard/analytics components
+- [ ] Review chart libraries in use (recharts, chart.js, etc.)
+- [ ] Look for existing metric card patterns
+- [ ] Check business owner dashboard structure
+- [ ] Document findings in the implementation plan
+
+### 2. Database Migration Execution
+- [ ] Use **Supabase MCP tools** to execute SQL migrations when possible
+- [ ] Use `mcp_supabase-mcp-server_execute_sql` for running scripts
+- [ ] Only request manual SQL execution if MCP lacks required privileges
+- [ ] Verify migration success with follow-up queries
+
+### 3. Acceptance Criteria Verification
+After implementation is complete:
+- [ ] Go through EACH acceptance criterion one by one
+- [ ] Mark each criterion as verified with evidence (screenshot, test result, or code reference)
+- [ ] Document any deviations or edge cases discovered
+- [ ] Get sign-off before proceeding to user testing
+
+### 4. User Testing Plan
+Once acceptance criteria are verified, execute this testing flow:
+
+**Test Route 1: Dashboard Access**
+1. Login as business owner
+2. Navigate to business dashboard
+3. Click "Review Analytics" tab
+4. Verify dashboard loads with metrics
+
+**Test Route 2: Metric Accuracy**
+1. Verify total reviews count matches actual
+2. Check recommendation rate calculation
+3. Verify trend charts show correct periods
+4. Test date range filter
+
+**Test Route 3: Competitor Comparison**
+1. Navigate to competitor section
+2. Verify comparison shows same-category businesses
+3. Check percentile ranking is accurate
+4. Verify privacy (no exact competitor data shown)
+
+---
+
 ## Definition of Done
 
 - [ ] All 10 required metrics implemented

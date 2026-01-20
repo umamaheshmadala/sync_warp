@@ -496,6 +496,53 @@ describe('Write Review Flow Integration', () => {
 
 ---
 
+## Implementation Guidelines
+
+> **IMPORTANT**: Follow these guidelines when implementing this story.
+
+### 1. Pre-Implementation Codebase Analysis
+Before starting implementation:
+- [ ] Search for similar features in the existing codebase
+- [ ] Check `src/components/reviews/` for reusable components
+- [ ] Review `src/services/reviewService.ts` for existing patterns
+- [ ] Identify any existing UI patterns in `src/components/` that can be reused
+- [ ] Document findings in the implementation plan
+
+### 2. Database Migration Execution
+- [ ] Use **Supabase MCP tools** to execute SQL migrations when possible
+- [ ] Use `mcp_supabase-mcp-server_execute_sql` for running scripts
+- [ ] Only request manual SQL execution if MCP lacks required privileges
+- [ ] Verify migration success with follow-up queries
+
+### 3. Acceptance Criteria Verification
+After implementation is complete:
+- [ ] Go through EACH acceptance criterion one by one
+- [ ] Mark each criterion as verified with evidence (screenshot, test result, or code reference)
+- [ ] Document any deviations or edge cases discovered
+- [ ] Get sign-off before proceeding to user testing
+
+### 4. User Testing Plan
+Once acceptance criteria are verified, execute this testing flow:
+
+**Test Route 1: Basic Functionality**
+1. Navigate to any business storefront
+2. Click on the "Reviews" tab
+3. Verify "Write Review" button is visible
+4. Click button and verify modal opens
+5. Confirm GPS check happens (if not checked in)
+
+**Test Route 2: Edge Cases**
+1. Test with already reviewed business (button should be hidden/different)
+2. Test without being logged in (should prompt login)
+3. Test on mobile viewport
+
+**Test Route 3: Accessibility**
+1. Tab navigation to button works
+2. Screen reader announces button correctly
+3. Button has proper contrast
+
+---
+
 ## Definition of Done
 
 - [ ] Write Review button visible in Reviews tab for all users

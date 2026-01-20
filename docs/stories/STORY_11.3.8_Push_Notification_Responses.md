@@ -383,6 +383,54 @@ describe('Review Response Notification', () => {
 
 ---
 
+## Implementation Guidelines
+
+> **IMPORTANT**: Follow these guidelines when implementing this story.
+
+### 1. Pre-Implementation Codebase Analysis
+Before starting implementation:
+- [ ] Review existing push notification infrastructure
+- [ ] Check FCM/OneSignal integration patterns
+- [ ] Review notification settings/preferences UI
+- [ ] Look for existing notification types
+- [ ] Document findings in the implementation plan
+
+### 2. Database Migration Execution
+- [ ] Use **Supabase MCP tools** to execute SQL migrations when possible
+- [ ] Use `mcp_supabase-mcp-server_execute_sql` for running scripts
+- [ ] Only request manual SQL execution if MCP lacks required privileges
+- [ ] Verify migration success with follow-up queries
+
+### 3. Acceptance Criteria Verification
+After implementation is complete:
+- [ ] Go through EACH acceptance criterion one by one
+- [ ] Mark each criterion as verified with evidence (screenshot, test result, or code reference)
+- [ ] Document any deviations or edge cases discovered
+- [ ] Get sign-off before proceeding to user testing
+
+### 4. User Testing Plan
+Once acceptance criteria are verified, execute this testing flow:
+
+**Test Route 1: Push Notification Receipt**
+1. Submit review on a business
+2. Login as business owner (different device)
+3. Respond to the review
+4. Verify reviewer receives push notification
+
+**Test Route 2: Deep Link**
+1. Tap push notification
+2. Verify app opens to correct review
+3. Response is visible and highlighted
+4. Test when app is closed vs backgrounded
+
+**Test Route 3: Settings**
+1. Navigate to notification settings
+2. Disable review notifications
+3. Get a response → No notification
+4. Re-enable → Notifications work again
+
+---
+
 ## Definition of Done
 
 - [ ] Push notification sent on response

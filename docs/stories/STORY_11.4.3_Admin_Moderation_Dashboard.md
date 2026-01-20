@@ -636,6 +636,55 @@ describe('ModerationQueue', () => {
 
 ---
 
+## Implementation Guidelines
+
+> **IMPORTANT**: Follow these guidelines when implementing this story.
+
+### 1. Pre-Implementation Codebase Analysis
+Before starting implementation:
+- [ ] Check existing admin dashboard structure
+- [ ] Review table/data grid components in use
+- [ ] Look for existing bulk action patterns
+- [ ] Check existing sheet/drawer components
+- [ ] Document findings in the implementation plan
+
+### 2. Database Migration Execution
+- [ ] Use **Supabase MCP tools** to execute SQL migrations when possible
+- [ ] Use `mcp_supabase-mcp-server_execute_sql` for running scripts
+- [ ] Only request manual SQL execution if MCP lacks required privileges
+- [ ] Verify migration success with follow-up queries
+
+### 3. Acceptance Criteria Verification
+After implementation is complete:
+- [ ] Go through EACH acceptance criterion one by one
+- [ ] Mark each criterion as verified with evidence (screenshot, test result, or code reference)
+- [ ] Document any deviations or edge cases discovered
+- [ ] Get sign-off before proceeding to user testing
+
+### 4. User Testing Plan
+Once acceptance criteria are verified, execute this testing flow:
+
+**Test Route 1: Queue Navigation**
+1. Login as admin
+2. Navigate to /admin/moderation
+3. Verify pending reviews visible
+4. Verify reported reviews visible
+5. Check count badges accurate
+
+**Test Route 2: Individual Actions**
+1. Click review → Details open
+2. Click Approve → Review approved
+3. Click Reject → Reason prompt → Review rejected
+4. Verify both logged in audit trail
+
+**Test Route 3: Bulk Actions**
+1. Select multiple reviews
+2. Click "Approve Selected"
+3. Confirm → All approved
+4. Verify all removed from queue
+
+---
+
 ## Definition of Done
 
 - [ ] Dashboard page accessible at /admin/moderation

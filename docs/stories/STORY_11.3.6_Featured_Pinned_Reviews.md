@@ -420,6 +420,53 @@ describe('FeaturedReviews Component', () => {
 
 ---
 
+## Implementation Guidelines
+
+> **IMPORTANT**: Follow these guidelines when implementing this story.
+
+### 1. Pre-Implementation Codebase Analysis
+Before starting implementation:
+- [ ] Check for existing pin/featured patterns in codebase
+- [ ] Review review card component structure
+- [ ] Look for existing toggle/switch patterns
+- [ ] Check business owner dashboard components
+- [ ] Document findings in the implementation plan
+
+### 2. Database Migration Execution
+- [ ] Use **Supabase MCP tools** to execute SQL migrations when possible
+- [ ] Use `mcp_supabase-mcp-server_execute_sql` for running scripts
+- [ ] Only request manual SQL execution if MCP lacks required privileges
+- [ ] Verify migration success with follow-up queries
+
+### 3. Acceptance Criteria Verification
+After implementation is complete:
+- [ ] Go through EACH acceptance criterion one by one
+- [ ] Mark each criterion as verified with evidence (screenshot, test result, or code reference)
+- [ ] Document any deviations or edge cases discovered
+- [ ] Get sign-off before proceeding to user testing
+
+### 4. User Testing Plan
+Once acceptance criteria are verified, execute this testing flow:
+
+**Test Route 1: Pin Functionality**
+1. Login as business owner
+2. Navigate to business reviews
+3. Find a positive review
+4. Click "Pin" button → Review marked as pinned
+
+**Test Route 2: Display Verification**
+1. View business storefront as customer
+2. Verify pinned reviews appear first
+3. Check "Featured" badge visible
+4. Verify max 3 pinned limit
+
+**Test Route 3: Management**
+1. Try pinning 4th review → Error/warning
+2. Unpin a review → Moves to normal position
+3. Verify only owner can pin their business reviews
+
+---
+
 ## Definition of Done
 
 - [ ] Is_featured column added

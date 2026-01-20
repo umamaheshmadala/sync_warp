@@ -716,6 +716,54 @@ describe('ReviewPhotoGallery', () => {
 
 ---
 
+## Implementation Guidelines
+
+> **IMPORTANT**: Follow these guidelines when implementing this story.
+
+### 1. Pre-Implementation Codebase Analysis
+Before starting implementation:
+- [ ] Find existing `ReviewPhotoUpload.tsx` component
+- [ ] Check current photo storage in Supabase bucket
+- [ ] Review drag-and-drop libraries already in use (e.g., `@dnd-kit`)
+- [ ] Check existing image compression/resize utilities
+- [ ] Document findings in the implementation plan
+
+### 2. Database Migration Execution
+- [ ] Use **Supabase MCP tools** to execute SQL migrations when possible
+- [ ] Use `mcp_supabase-mcp-server_execute_sql` for running scripts
+- [ ] Only request manual SQL execution if MCP lacks required privileges
+- [ ] Verify migration success with follow-up queries
+
+### 3. Acceptance Criteria Verification
+After implementation is complete:
+- [ ] Go through EACH acceptance criterion one by one
+- [ ] Mark each criterion as verified with evidence (screenshot, test result, or code reference)
+- [ ] Document any deviations or edge cases discovered
+- [ ] Get sign-off before proceeding to user testing
+
+### 4. User Testing Plan
+Once acceptance criteria are verified, execute this testing flow:
+
+**Test Route 1: Photo Upload**
+1. Open review form
+2. Click "Add Photo" → File picker opens
+3. Select image <1MB → Upload succeeds with progress
+4. Add 5 photos → "Add Photo" button hidden/disabled
+5. Counter shows "5/5 photos"
+
+**Test Route 2: Photo Management**
+1. Upload 3 photos
+2. Drag to reorder → Order updates visually
+3. Click X on photo → Confirmation dialog
+4. Confirm removal → Counter updates
+
+**Test Route 3: Size Validation**
+1. Try uploading >1MB file → Error message shown
+2. Try uploading non-image file → Rejected
+3. Verify uploaded photos display correctly in review
+
+---
+
 ## Definition of Done
 
 - [ ] Database schema supports photo_urls array

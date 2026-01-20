@@ -234,6 +234,53 @@ export interface Review {
 
 ---
 
+## Implementation Guidelines
+
+> **IMPORTANT**: Follow these guidelines when implementing this story.
+
+### 1. Pre-Implementation Codebase Analysis
+Before starting implementation:
+- [ ] Check existing check-in verification system
+- [ ] Review Story 11.1.2 GPS implementation
+- [ ] Look for existing badge components
+- [ ] Check ReviewCard component structure
+- [ ] Document findings in the implementation plan
+
+### 2. Database Migration Execution
+- [ ] Use **Supabase MCP tools** to execute SQL migrations when possible
+- [ ] Use `mcp_supabase-mcp-server_execute_sql` for running scripts
+- [ ] Only request manual SQL execution if MCP lacks required privileges
+- [ ] Verify migration success with follow-up queries
+
+### 3. Acceptance Criteria Verification
+After implementation is complete:
+- [ ] Go through EACH acceptance criterion one by one
+- [ ] Mark each criterion as verified with evidence (screenshot, test result, or code reference)
+- [ ] Document any deviations or edge cases discovered
+- [ ] Get sign-off before proceeding to user testing
+
+### 4. User Testing Plan
+Once acceptance criteria are verified, execute this testing flow:
+
+**Test Route 1: Badge Display**
+1. Find review from GPS-verified check-in
+2. Verify "Verified Visit" badge visible
+3. Hover/tap → Tooltip explains badge
+4. Badge visible in All Reviews page
+
+**Test Route 2: Non-verified Reviews**
+1. Find review without GPS check-in
+2. Verify no badge displayed
+3. Check backfill worked for old reviews
+
+**Test Route 3: New Reviews**
+1. Check in to business (GPS verified)
+2. Submit review
+3. Verify gps_verified=true
+4. Badge appears immediately
+
+---
+
 ## Definition of Done
 
 - [ ] `gps_verified` column added to reviews

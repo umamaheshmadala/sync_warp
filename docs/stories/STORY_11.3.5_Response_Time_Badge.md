@@ -344,6 +344,53 @@ describe('Response Time Calculation', () => {
 
 ---
 
+## Implementation Guidelines
+
+> **IMPORTANT**: Follow these guidelines when implementing this story.
+
+### 1. Pre-Implementation Codebase Analysis
+Before starting implementation:
+- [ ] Check for existing badge components
+- [ ] Review response submission flow
+- [ ] Look for timestamp tracking patterns
+- [ ] Find existing business profile badges
+- [ ] Document findings in the implementation plan
+
+### 2. Database Migration Execution
+- [ ] Use **Supabase MCP tools** to execute SQL migrations when possible
+- [ ] Use `mcp_supabase-mcp-server_execute_sql` for running scripts
+- [ ] Only request manual SQL execution if MCP lacks required privileges
+- [ ] Verify migration success with follow-up queries
+
+### 3. Acceptance Criteria Verification
+After implementation is complete:
+- [ ] Go through EACH acceptance criterion one by one
+- [ ] Mark each criterion as verified with evidence (screenshot, test result, or code reference)
+- [ ] Document any deviations or edge cases discovered
+- [ ] Get sign-off before proceeding to user testing
+
+### 4. User Testing Plan
+Once acceptance criteria are verified, execute this testing flow:
+
+**Test Route 1: Response Time Tracking**
+1. Submit a review on a business
+2. Login as business owner
+3. Respond to the review
+4. Verify response_time_hours calculated correctly
+
+**Test Route 2: Badge Display**
+1. View business with quick response pattern
+2. Verify "Quick Responder" badge visible
+3. Check tooltip shows average time
+4. Verify threshold (24hrs) is correct
+
+**Test Route 3: Edge Cases**
+1. Business with no responses → No badge
+2. Business with slow responses → No badge
+3. Badge updates after new responses
+
+---
+
 ## Definition of Done
 
 - [ ] Response time calculated on insert

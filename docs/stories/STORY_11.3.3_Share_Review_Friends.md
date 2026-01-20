@@ -443,6 +443,53 @@ describe('ReviewLinkPreview', () => {
 
 ---
 
+## Implementation Guidelines
+
+> **IMPORTANT**: Follow these guidelines when implementing this story.
+
+### 1. Pre-Implementation Codebase Analysis
+Before starting implementation:
+- [ ] Review existing chat/messaging system
+- [ ] Check for share functionality patterns
+- [ ] Find existing contact picker or friend selector components
+- [ ] Look for existing rich link preview implementations
+- [ ] Document findings in the implementation plan
+
+### 2. Database Migration Execution
+- [ ] Use **Supabase MCP tools** to execute SQL migrations when possible
+- [ ] Use `mcp_supabase-mcp-server_execute_sql` for running scripts
+- [ ] Only request manual SQL execution if MCP lacks required privileges
+- [ ] Verify migration success with follow-up queries
+
+### 3. Acceptance Criteria Verification
+After implementation is complete:
+- [ ] Go through EACH acceptance criterion one by one
+- [ ] Mark each criterion as verified with evidence (screenshot, test result, or code reference)
+- [ ] Document any deviations or edge cases discovered
+- [ ] Get sign-off before proceeding to user testing
+
+### 4. User Testing Plan
+Once acceptance criteria are verified, execute this testing flow:
+
+**Test Route 1: Share to Chat**
+1. Find a review you want to share
+2. Click "Share" button → Friend picker opens
+3. Select friends and/or groups
+4. Confirm → Message sent with review card
+
+**Test Route 2: Review Card in Chat**
+1. Open chat where review was shared
+2. Verify rich preview card displays
+3. Tap card → Opens review detail
+4. Verify business link works
+
+**Test Route 3: Private Messaging**
+1. Find "Message" button on review
+2. Click → Opens chat with reviewer
+3. Verify business owners cannot initiate
+
+---
+
 ## Definition of Done
 
 - [ ] Share button on all review cards

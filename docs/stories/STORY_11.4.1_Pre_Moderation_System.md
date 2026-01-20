@@ -718,6 +718,56 @@ describe('Review Visibility', () => {
 
 ---
 
+## Implementation Guidelines
+
+> **IMPORTANT**: Follow these guidelines when implementing this story.
+
+### 1. Pre-Implementation Codebase Analysis
+Before starting implementation:
+- [ ] Check for existing moderation patterns in codebase
+- [ ] Review RLS policy patterns
+- [ ] Look for existing notification services
+- [ ] Check admin role definitions
+- [ ] Document findings in the implementation plan
+
+### 2. Database Migration Execution
+- [ ] Use **Supabase MCP tools** to execute SQL migrations when possible
+- [ ] Use `mcp_supabase-mcp-server_execute_sql` for running scripts
+- [ ] Only request manual SQL execution if MCP lacks required privileges
+- [ ] Verify migration success with follow-up queries
+
+### 3. Acceptance Criteria Verification
+After implementation is complete:
+- [ ] Go through EACH acceptance criterion one by one
+- [ ] Mark each criterion as verified with evidence (screenshot, test result, or code reference)
+- [ ] Document any deviations or edge cases discovered
+- [ ] Get sign-off before proceeding to user testing
+
+### 4. User Testing Plan
+Once acceptance criteria are verified, execute this testing flow:
+
+**Test Route 1: Review Submission**
+1. Login as regular user
+2. Submit a new review
+3. Verify review status is "pending"
+4. Verify review visible to reviewer with pending badge
+5. Verify NOT visible in public storefront
+
+**Test Route 2: Admin Approval**
+1. Login as admin
+2. Navigate to moderation queue
+3. Find pending review → Approve it
+4. Verify review now visible publicly
+5. Verify reviewer received approval notification
+
+**Test Route 3: Admin Rejection**
+1. Find pending review → Reject with reason
+2. Verify review not visible publicly
+3. Verify reviewer received rejection notification
+4. Check rejection reason stored in database
+
+---
+
 ## Definition of Done
 
 - [ ] All new reviews start with `moderation_status = 'pending'`

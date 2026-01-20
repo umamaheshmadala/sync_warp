@@ -465,6 +465,54 @@ describe('Badge Calculation', () => {
 
 ---
 
+## Implementation Guidelines
+
+> **IMPORTANT**: Follow these guidelines when implementing this story.
+
+### 1. Pre-Implementation Codebase Analysis
+Before starting implementation:
+- [ ] Check for existing badge patterns (verified, etc.)
+- [ ] Review business profile header components
+- [ ] Look for tooltip components in use
+- [ ] Check search result card structure
+- [ ] Document findings in the implementation plan
+
+### 2. Database Migration Execution
+- [ ] Use **Supabase MCP tools** to execute SQL migrations when possible
+- [ ] Use `mcp_supabase-mcp-server_execute_sql` for running scripts
+- [ ] Only request manual SQL execution if MCP lacks required privileges
+- [ ] Verify migration success with follow-up queries
+
+### 3. Acceptance Criteria Verification
+After implementation is complete:
+- [ ] Go through EACH acceptance criterion one by one
+- [ ] Mark each criterion as verified with evidence (screenshot, test result, or code reference)
+- [ ] Document any deviations or edge cases discovered
+- [ ] Get sign-off before proceeding to user testing
+
+### 4. User Testing Plan
+Once acceptance criteria are verified, execute this testing flow:
+
+**Test Route 1: Badge Calculation**
+1. Find business with <3 reviews → No badge
+2. Find business with 75%+ → "Recommended" badge
+3. Find business with 90%+ → "Highly Recommended"
+4. Find business with 95%+ → "Very Highly Recommended"
+
+**Test Route 2: Badge Display**
+1. Open business storefront
+2. Verify badge visible in header
+3. Hover/tap → Tooltip shows stats
+4. Check badge in search results
+
+**Test Route 3: Real-time Updates**
+1. Submit positive review (as last reviewer)
+2. Wait for moderation
+3. After approval → Badge should update
+4. Verify calculation is correct
+
+---
+
 ## Definition of Done
 
 - [ ] Three badge tiers calculated correctly

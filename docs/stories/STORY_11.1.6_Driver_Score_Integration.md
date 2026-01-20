@@ -440,6 +440,54 @@ total_score = (collected * 1.0) + (shared * 2.0) + (redeemed * 3.0)
 
 ---
 
+## Implementation Guidelines
+
+> **IMPORTANT**: Follow these guidelines when implementing this story.
+
+### 1. Pre-Implementation Codebase Analysis
+Before starting implementation:
+- [ ] Locate existing Driver system in `src/types/campaigns.ts`
+- [ ] Review `driver_profiles` table and related triggers
+- [ ] Check existing scoring functions in database
+- [ ] Find `reviews_score` integration points
+- [ ] Document findings in the implementation plan
+
+### 2. Database Migration Execution
+- [ ] Use **Supabase MCP tools** to execute SQL migrations when possible
+- [ ] Use `mcp_supabase-mcp-server_execute_sql` for running scripts
+- [ ] Only request manual SQL execution if MCP lacks required privileges
+- [ ] Verify migration success with follow-up queries
+
+### 3. Acceptance Criteria Verification
+After implementation is complete:
+- [ ] Go through EACH acceptance criterion one by one
+- [ ] Mark each criterion as verified with evidence (screenshot, test result, or code reference)
+- [ ] Document any deviations or edge cases discovered
+- [ ] Get sign-off before proceeding to user testing
+
+### 4. User Testing Plan
+Once acceptance criteria are verified, execute this testing flow:
+
+**Test Route 1: Score Integration**
+1. Note user's current driver score
+2. Submit a new review
+3. Wait for trigger execution
+4. Verify driver score increased
+5. Check `reviews_score` component specifically
+
+**Test Route 2: Score Calculation Verification**
+1. Create test user with known activity
+2. Submit multiple reviews
+3. Verify score increments correctly each time
+4. Check algorithm weights match configuration
+
+**Test Route 3: Edge Cases**
+1. Submit review then edit → Score should not double
+2. Delete review → Score adjustment (if applicable)
+3. Verify rejected reviews don't count
+
+---
+
 ## Definition of Done
 
 - [ ] Verified database trigger exists for reviews → driver score

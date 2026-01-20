@@ -567,6 +567,54 @@ describe('MyReviewsPage', () => {
 
 ---
 
+## Implementation Guidelines
+
+> **IMPORTANT**: Follow these guidelines when implementing this story.
+
+### 1. Pre-Implementation Codebase Analysis
+Before starting implementation:
+- [ ] Check existing "My Reviews" page location
+- [ ] Review user profile components
+- [ ] Look for existing metrics/stats display patterns
+- [ ] Check view tracking implementations
+- [ ] Document findings in the implementation plan
+
+### 2. Database Migration Execution
+- [ ] Use **Supabase MCP tools** to execute SQL migrations when possible
+- [ ] Use `mcp_supabase-mcp-server_execute_sql` for running scripts
+- [ ] Only request manual SQL execution if MCP lacks required privileges
+- [ ] Verify migration success with follow-up queries
+
+### 3. Acceptance Criteria Verification
+After implementation is complete:
+- [ ] Go through EACH acceptance criterion one by one
+- [ ] Mark each criterion as verified with evidence (screenshot, test result, or code reference)
+- [ ] Document any deviations or edge cases discovered
+- [ ] Get sign-off before proceeding to user testing
+
+### 4. User Testing Plan
+Once acceptance criteria are verified, execute this testing flow:
+
+**Test Route 1: My Reviews Dashboard**
+1. Navigate to user profile
+2. Click "My Reviews" tab
+3. Verify stats summary visible (total, helpful, views)
+4. Verify review list loads correctly
+
+**Test Route 2: View Tracking**
+1. View someone else's review
+2. Check that view is logged (admin verification)
+3. Verify owner's view count incremented
+4. View same review again → No duplicate count
+
+**Test Route 3: Impact Metrics**
+1. Check helpful votes count
+2. Verify matches actual votes received
+3. Check responses received count
+4. Verify all numbers accurate
+
+---
+
 ## Definition of Done
 
 - [ ] Stats summary showing all metrics

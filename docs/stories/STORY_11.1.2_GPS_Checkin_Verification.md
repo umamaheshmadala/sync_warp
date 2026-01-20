@@ -517,6 +517,53 @@ describe('Full Check-in to Review Flow', () => {
 
 ---
 
+## Implementation Guidelines
+
+> **IMPORTANT**: Follow these guidelines when implementing this story.
+
+### 1. Pre-Implementation Codebase Analysis
+Before starting implementation:
+- [ ] Search for similar features in the existing codebase
+- [ ] Check `src/components/reviews/` for reusable components
+- [ ] Review `src/services/reviewService.ts` for existing verification patterns
+- [ ] Check `src/services/checkinService.ts` for GPS/location utilities
+- [ ] Document findings in the implementation plan
+
+### 2. Database Migration Execution
+- [ ] Use **Supabase MCP tools** to execute SQL migrations when possible
+- [ ] Use `mcp_supabase-mcp-server_execute_sql` for running scripts
+- [ ] Only request manual SQL execution if MCP lacks required privileges
+- [ ] Verify migration success with follow-up queries
+
+### 3. Acceptance Criteria Verification
+After implementation is complete:
+- [ ] Go through EACH acceptance criterion one by one
+- [ ] Mark each criterion as verified with evidence (screenshot, test result, or code reference)
+- [ ] Document any deviations or edge cases discovered
+- [ ] Get sign-off before proceeding to user testing
+
+### 4. User Testing Plan
+Once acceptance criteria are verified, execute this testing flow:
+
+**Test Route 1: Basic GPS Verification**
+1. Open mobile device with GPS enabled
+2. Navigate to a business storefront
+3. Click "Check In" and allow location access
+4. Verify check-in is recorded
+5. Click "Write Review" and confirm it opens
+
+**Test Route 2: Rejection Scenarios**
+1. Try submitting review without check-in → Should be blocked
+2. Try submitting review far from business → Should be blocked
+3. Try using expired check-in (if applicable)
+
+**Test Route 3: Error Handling**
+1. Test with GPS disabled
+2. Test with location permission denied
+3. Verify error messages are user-friendly
+
+---
+
 ## Definition of Done
 
 - [ ] GPS bypass code completely removed from `reviewService.ts`

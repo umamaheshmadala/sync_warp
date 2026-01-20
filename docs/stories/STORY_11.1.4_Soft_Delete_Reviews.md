@@ -613,6 +613,54 @@ describe('UNIQUE constraint with soft delete', () => {
 
 ---
 
+## Implementation Guidelines
+
+> **IMPORTANT**: Follow these guidelines when implementing this story.
+
+### 1. Pre-Implementation Codebase Analysis
+Before starting implementation:
+- [ ] Search for existing soft delete patterns in codebase
+- [ ] Check if `deleted_at` columns exist on other tables
+- [ ] Review RLS policies for similar exclusion patterns
+- [ ] Check existing confirmation dialog components
+- [ ] Document findings in the implementation plan
+
+### 2. Database Migration Execution
+- [ ] Use **Supabase MCP tools** to execute SQL migrations when possible
+- [ ] Use `mcp_supabase-mcp-server_execute_sql` for running scripts
+- [ ] Only request manual SQL execution if MCP lacks required privileges
+- [ ] Verify migration success with follow-up queries
+
+### 3. Acceptance Criteria Verification
+After implementation is complete:
+- [ ] Go through EACH acceptance criterion one by one
+- [ ] Mark each criterion as verified with evidence (screenshot, test result, or code reference)
+- [ ] Document any deviations or edge cases discovered
+- [ ] Get sign-off before proceeding to user testing
+
+### 4. User Testing Plan
+Once acceptance criteria are verified, execute this testing flow:
+
+**Test Route 1: Delete Functionality**
+1. Navigate to My Reviews page
+2. Find a review with delete option
+3. Click delete → Confirm dialog appears
+4. Confirm delete → Review disappears from list
+5. Verify review not visible in business storefront
+
+**Test Route 2: Soft Delete Verification**
+1. Delete a review
+2. Query database directly (admin) → `deleted_at` should be set
+3. Confirm review data still exists in DB
+4. Verify deleted reviews excluded from counts
+
+**Test Route 3: Edge Cases**
+1. Try to delete already-deleted review (should fail gracefully)
+2. Check admin can still view deleted reviews
+3. Verify deletion reason is stored properly
+
+---
+
 ## Definition of Done
 
 - [ ] Soft delete implemented (sets deleted_at, doesn't remove row)

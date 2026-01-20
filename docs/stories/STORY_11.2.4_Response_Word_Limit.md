@@ -381,6 +381,54 @@ describe('ReviewResponseForm', () => {
 
 ---
 
+## Implementation Guidelines
+
+> **IMPORTANT**: Follow these guidelines when implementing this story.
+
+### 1. Pre-Implementation Codebase Analysis
+Before starting implementation:
+- [ ] Find existing `ReviewResponseForm.tsx` component
+- [ ] Check response word limit in database constraints
+- [ ] Review shared `WordCounter.tsx` from Story 11.2.1
+- [ ] Look for response submission service functions
+- [ ] Document findings in the implementation plan
+
+### 2. Database Migration Execution
+- [ ] Use **Supabase MCP tools** to execute SQL migrations when possible
+- [ ] Use `mcp_supabase-mcp-server_execute_sql` for running scripts
+- [ ] Only request manual SQL execution if MCP lacks required privileges
+- [ ] Verify migration success with follow-up queries
+
+### 3. Acceptance Criteria Verification
+After implementation is complete:
+- [ ] Go through EACH acceptance criterion one by one
+- [ ] Mark each criterion as verified with evidence (screenshot, test result, or code reference)
+- [ ] Document any deviations or edge cases discovered
+- [ ] Get sign-off before proceeding to user testing
+
+### 4. User Testing Plan
+Once acceptance criteria are verified, execute this testing flow:
+
+**Test Route 1: Response Word Limit**
+1. Login as business owner
+2. Find a review on your business
+3. Click "Respond" → Form opens
+4. Type 150 words → Should be accepted
+5. Type 151 words → Error/disabled submit
+
+**Test Route 2: Word Counter**
+1. Type in response field
+2. Verify counter shows "X / 150 words"
+3. Verify color changes near limit
+4. Submit valid response → Saves successfully
+
+**Test Route 3: Existing Responses**
+1. Edit existing response (<50 words from before)
+2. Extend to 150 words → Should save
+3. Verify display of longer responses
+
+---
+
 ## Definition of Done
 
 - [ ] Database constraint updated to 150 words

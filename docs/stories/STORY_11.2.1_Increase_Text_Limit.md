@@ -539,6 +539,52 @@ describe('Review Submission with Word Limits', () => {
 
 ---
 
+## Implementation Guidelines
+
+> **IMPORTANT**: Follow these guidelines when implementing this story.
+
+### 1. Pre-Implementation Codebase Analysis
+Before starting implementation:
+- [ ] Find existing `WordCounter.tsx` component
+- [ ] Check current word limit validation in `reviewService.ts`
+- [ ] Review database constraints on `business_reviews.text`
+- [ ] Look for similar validation patterns in forms
+- [ ] Document findings in the implementation plan
+
+### 2. Database Migration Execution
+- [ ] Use **Supabase MCP tools** to execute SQL migrations when possible
+- [ ] Use `mcp_supabase-mcp-server_execute_sql` for running scripts
+- [ ] Only request manual SQL execution if MCP lacks required privileges
+- [ ] Verify migration success with follow-up queries
+
+### 3. Acceptance Criteria Verification
+After implementation is complete:
+- [ ] Go through EACH acceptance criterion one by one
+- [ ] Mark each criterion as verified with evidence (screenshot, test result, or code reference)
+- [ ] Document any deviations or edge cases discovered
+- [ ] Get sign-off before proceeding to user testing
+
+### 4. User Testing Plan
+Once acceptance criteria are verified, execute this testing flow:
+
+**Test Route 1: Word Limit Increase**
+1. Open review form
+2. Type exactly 150 words → Should be accepted
+3. Type 151 words → Should show error/warning
+4. Verify counter shows "X / 150 words"
+
+**Test Route 2: Minimum Validation**
+1. Enter only whitespace → Should be treated as empty (allowed)
+2. Enter 1 word → Should be accepted
+3. Enter 0 words but have text open → Verify behavior
+
+**Test Route 3: Edge Cases**
+1. Paste long text (200+ words) → Should trim/warn
+2. Edit existing review with new limit
+3. Verify counter color changes at 80%/93%
+
+---
+
 ## Definition of Done
 
 - [ ] Database constraint updated to 150 words max

@@ -662,6 +662,52 @@ describe('HelpfulButton', () => {
 
 ---
 
+## Implementation Guidelines
+
+> **IMPORTANT**: Follow these guidelines when implementing this story.
+
+### 1. Pre-Implementation Codebase Analysis
+Before starting implementation:
+- [ ] Check for existing like/vote components in codebase
+- [ ] Review Supabase Realtime subscriptions patterns
+- [ ] Look for existing button toggle animations
+- [ ] Check `src/services/` for similar vote/interaction patterns
+- [ ] Document findings in the implementation plan
+
+### 2. Database Migration Execution
+- [ ] Use **Supabase MCP tools** to execute SQL migrations when possible
+- [ ] Use `mcp_supabase-mcp-server_execute_sql` for running scripts
+- [ ] Only request manual SQL execution if MCP lacks required privileges
+- [ ] Verify migration success with follow-up queries
+
+### 3. Acceptance Criteria Verification
+After implementation is complete:
+- [ ] Go through EACH acceptance criterion one by one
+- [ ] Mark each criterion as verified with evidence (screenshot, test result, or code reference)
+- [ ] Document any deviations or edge cases discovered
+- [ ] Get sign-off before proceeding to user testing
+
+### 4. User Testing Plan
+Once acceptance criteria are verified, execute this testing flow:
+
+**Test Route 1: Vote Functionality**
+1. Find a review on storefront
+2. Click "Helpful" button → Button fills/highlights
+3. Verify count increments
+4. Click again → Button unfills, count decrements
+
+**Test Route 2: Real-time Updates**
+1. Open same review in two browser tabs
+2. Vote in Tab 1 → Verify Tab 2 updates live
+3. Check no page refresh needed
+
+**Test Route 3: Edge Cases**
+1. Try voting on own review → Should be blocked
+2. Try voting when not logged in → Prompt login
+3. Verify "Most Helpful" sort works
+
+---
+
 ## Definition of Done
 
 - [ ] Database table and RLS policies created

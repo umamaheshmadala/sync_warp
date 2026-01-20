@@ -525,6 +525,54 @@ describe('EditedIndicator', () => {
 
 ---
 
+## Implementation Guidelines
+
+> **IMPORTANT**: Follow these guidelines when implementing this story.
+
+### 1. Pre-Implementation Codebase Analysis
+Before starting implementation:
+- [ ] Search for similar edit patterns in existing codebase
+- [ ] Check `src/components/reviews/` for existing edit functionality
+- [ ] Review `src/services/reviewService.ts` for update patterns
+- [ ] Look for existing timestamp/label patterns (e.g., "(edited)" labels elsewhere)
+- [ ] Document findings in the implementation plan
+
+### 2. Database Migration Execution
+- [ ] Use **Supabase MCP tools** to execute SQL migrations when possible
+- [ ] Use `mcp_supabase-mcp-server_execute_sql` for running scripts
+- [ ] Only request manual SQL execution if MCP lacks required privileges
+- [ ] Verify migration success with follow-up queries
+
+### 3. Acceptance Criteria Verification
+After implementation is complete:
+- [ ] Go through EACH acceptance criterion one by one
+- [ ] Mark each criterion as verified with evidence (screenshot, test result, or code reference)
+- [ ] Document any deviations or edge cases discovered
+- [ ] Get sign-off before proceeding to user testing
+
+### 4. User Testing Plan
+Once acceptance criteria are verified, execute this testing flow:
+
+**Test Route 1: Edit Functionality**
+1. Create a new review
+2. Wait for approved status (or use pending review)
+3. Click Edit → Should open edit modal
+4. Modify content and save
+5. Verify "(edited)" label appears
+
+**Test Route 2: Edit Tracking**
+1. Edit a review multiple times
+2. Verify edit_count increments correctly
+3. Check updated_at timestamp updates
+4. Verify edit history is tracked
+
+**Test Route 3: Edge Cases**
+1. Edit immediately after creation
+2. Edit after response from business owner
+3. Verify edited review still visible in all views
+
+---
+
 ## Definition of Done
 
 - [ ] 24-hour edit restriction removed

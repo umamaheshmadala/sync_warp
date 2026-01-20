@@ -656,6 +656,53 @@ describe('Reminder Edge Function', () => {
 
 ---
 
+## Implementation Guidelines
+
+> **IMPORTANT**: Follow these guidelines when implementing this story.
+
+### 1. Pre-Implementation Codebase Analysis
+Before starting implementation:
+- [ ] Check existing check-in flow and components
+- [ ] Review push notification infrastructure
+- [ ] Find existing modal/prompt patterns
+- [ ] Check scheduled job/cron patterns in codebase
+- [ ] Document findings in the implementation plan
+
+### 2. Database Migration Execution
+- [ ] Use **Supabase MCP tools** to execute SQL migrations when possible
+- [ ] Use `mcp_supabase-mcp-server_execute_sql` for running scripts
+- [ ] Only request manual SQL execution if MCP lacks required privileges
+- [ ] Verify migration success with follow-up queries
+
+### 3. Acceptance Criteria Verification
+After implementation is complete:
+- [ ] Go through EACH acceptance criterion one by one
+- [ ] Mark each criterion as verified with evidence (screenshot, test result, or code reference)
+- [ ] Document any deviations or edge cases discovered
+- [ ] Get sign-off before proceeding to user testing
+
+### 4. User Testing Plan
+Once acceptance criteria are verified, execute this testing flow:
+
+**Test Route 1: Post Check-in Prompt**
+1. Check in to a business
+2. Verify prompt appears: "How was your visit?"
+3. Click "Write Review" → Opens review form
+4. Click "Maybe Later" → Prompt dismisses
+
+**Test Route 2: 4-Hour Reminder**
+1. Check in to business, dismiss prompt
+2. Wait 4 hours (or simulate)
+3. Verify push notification received
+4. Tap notification → Opens review form
+
+**Test Route 3: Edge Cases**
+1. Check in and submit review immediately → No reminder
+2. Multiple check-ins same business → Only one reminder
+3. Opt out of notifications → No reminder
+
+---
+
 ## Definition of Done
 
 - [ ] Prompt appears after successful check-in

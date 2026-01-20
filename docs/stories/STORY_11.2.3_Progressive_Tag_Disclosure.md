@@ -696,6 +696,53 @@ describe('ReviewTagSelector', () => {
 
 ---
 
+## Implementation Guidelines
+
+> **IMPORTANT**: Follow these guidelines when implementing this story.
+
+### 1. Pre-Implementation Codebase Analysis
+Before starting implementation:
+- [ ] Find existing tag components in `src/components/`
+- [ ] Check current tag storage format in `business_reviews`
+- [ ] Review `proposed_review_tags.md` for tag definitions
+- [ ] Look for similar chip/tag selection patterns
+- [ ] Document findings in the implementation plan
+
+### 2. Database Migration Execution
+- [ ] Use **Supabase MCP tools** to execute SQL migrations when possible
+- [ ] Use `mcp_supabase-mcp-server_execute_sql` for running scripts
+- [ ] Only request manual SQL execution if MCP lacks required privileges
+- [ ] Verify migration success with follow-up queries
+
+### 3. Acceptance Criteria Verification
+After implementation is complete:
+- [ ] Go through EACH acceptance criterion one by one
+- [ ] Mark each criterion as verified with evidence (screenshot, test result, or code reference)
+- [ ] Document any deviations or edge cases discovered
+- [ ] Get sign-off before proceeding to user testing
+
+### 4. User Testing Plan
+Once acceptance criteria are verified, execute this testing flow:
+
+**Test Route 1: Progressive Disclosure**
+1. Open review form → See first 5 tags
+2. Select a tag → 5 more tags appear
+3. Select another → 5 more appear (15 total max)
+4. Verify smooth animation
+
+**Test Route 2: Tag Selection**
+1. Click tag → Toggle selection state
+2. Select multiple tags → All show as selected
+3. Deselect tag → Removed from selection
+4. Submit → Tags saved with review
+
+**Test Route 3: Category-Specific Tags**
+1. Review a Restaurant → See restaurant-specific tags
+2. Review a Retail business → See retail-specific tags
+3. Verify core tags appear for all categories
+
+---
+
 ## Definition of Done
 
 - [ ] Tags organized in 3 rounds of 5 each

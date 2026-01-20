@@ -527,6 +527,56 @@ describe('Infinite Scroll', () => {
 
 ---
 
+## Implementation Guidelines
+
+> **IMPORTANT**: Follow these guidelines when implementing this story.
+
+### 1. Pre-Implementation Codebase Analysis
+Before starting implementation:
+- [ ] Check existing routing patterns in `src/router/Router.tsx`
+- [ ] Review `src/pages/` for similar page structures
+- [ ] Check for existing infinite scroll implementations
+- [ ] Look for SEO metadata patterns in other pages
+- [ ] Document findings in the implementation plan
+
+### 2. Database Migration Execution
+- [ ] Use **Supabase MCP tools** to execute SQL migrations when possible
+- [ ] Use `mcp_supabase-mcp-server_execute_sql` for running scripts
+- [ ] Only request manual SQL execution if MCP lacks required privileges
+- [ ] Verify migration success with follow-up queries
+
+### 3. Acceptance Criteria Verification
+After implementation is complete:
+- [ ] Go through EACH acceptance criterion one by one
+- [ ] Mark each criterion as verified with evidence (screenshot, test result, or code reference)
+- [ ] Document any deviations or edge cases discovered
+- [ ] Get sign-off before proceeding to user testing
+
+### 4. User Testing Plan
+Once acceptance criteria are verified, execute this testing flow:
+
+**Test Route 1: Navigation**
+1. Navigate to a business storefront
+2. Go to Reviews tab
+3. Click "View All Reviews" link
+4. Verify redirects to `/business/:id/reviews`
+5. Verify page loads correctly
+
+**Test Route 2: Infinite Scroll**
+1. Open All Reviews page with 20+ reviews
+2. Scroll to bottom of initial list
+3. Verify more reviews load automatically
+4. Continue scrolling until no more reviews
+5. Verify loading indicators work correctly
+
+**Test Route 3: Filters & SEO**
+1. Test filter dropdowns (rating, date)
+2. Apply filters → URL updates with params
+3. Share filtered URL → Loads with filters applied
+4. Check page meta tags in source
+
+---
+
 ## Definition of Done
 
 - [ ] Route `/business/:id/reviews` configured and working

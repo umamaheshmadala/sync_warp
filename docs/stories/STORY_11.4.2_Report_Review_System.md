@@ -733,6 +733,54 @@ describe('Report Service', () => {
 
 ---
 
+## Implementation Guidelines
+
+> **IMPORTANT**: Follow these guidelines when implementing this story.
+
+### 1. Pre-Implementation Codebase Analysis
+Before starting implementation:
+- [ ] Check for existing report patterns (posts, comments, etc.)
+- [ ] Review modal/dialog patterns in codebase
+- [ ] Look for existing reason selection components
+- [ ] Check dropdown menu patterns on cards
+- [ ] Document findings in the implementation plan
+
+### 2. Database Migration Execution
+- [ ] Use **Supabase MCP tools** to execute SQL migrations when possible
+- [ ] Use `mcp_supabase-mcp-server_execute_sql` for running scripts
+- [ ] Only request manual SQL execution if MCP lacks required privileges
+- [ ] Verify migration success with follow-up queries
+
+### 3. Acceptance Criteria Verification
+After implementation is complete:
+- [ ] Go through EACH acceptance criterion one by one
+- [ ] Mark each criterion as verified with evidence (screenshot, test result, or code reference)
+- [ ] Document any deviations or edge cases discovered
+- [ ] Get sign-off before proceeding to user testing
+
+### 4. User Testing Plan
+Once acceptance criteria are verified, execute this testing flow:
+
+**Test Route 1: Report Submission**
+1. Find a review on storefront
+2. Click "..." menu → "Report Review"
+3. Select reason + optional details
+4. Submit → Success message shown
+5. Button changes to "Reported"
+
+**Test Route 2: Duplicate Prevention**
+1. Try reporting same review again
+2. Verify "Already Reported" state
+3. Cannot submit duplicate report
+
+**Test Route 3: Business Owner Reports**
+1. Login as business owner
+2. Report review on own business
+3. Verify report marked as from owner
+4. Verify appears with priority in admin queue
+
+---
+
 ## Definition of Done
 
 - [ ] Report button visible on all reviews (except own)
