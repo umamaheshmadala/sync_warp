@@ -789,6 +789,35 @@ Once acceptance criteria are verified, execute this testing flow:
 3. Check percentile ranking is accurate
 4. Verify privacy (no exact competitor data shown)
 
+### 5. Browser Testing & Evidence Collection
+
+> **IMPORTANT**: All features must be browser-tested with evidence collected before confirming completion.
+
+**Test Environment:**
+- Local dev server: `http://localhost:5173`
+- Do NOT start the dev server (it's already running)
+- Only restart if necessary
+
+**Test Credentials:**
+| User | Email | Password |
+|------|-------|----------|
+| Test User 1 | testuser1@gmail.com | Testuser@1 |
+| Test User 3 | testuser3@gmail.com | Testuser@1 |
+| Test User 4 | testuser4@gmail.com | Testuser@1 |
+| Test User 5 | testuser5@gmail.com | Testuser@1 |
+
+**Evidence Collection Requirements:**
+- [ ] **Screenshot each test step** using browser automation
+- [ ] **Record browser session** for key user flows
+- [ ] **Save screenshots** to artifacts folder with descriptive names
+- [ ] **Document actual vs expected** behavior for each test
+
+**Completion Criteria:**
+- [ ] All browser tests pass with visual evidence
+- [ ] Screenshots/recordings saved as artifacts
+- [ ] Only confirm implementation complete when ALL evidence collected
+- [ ] Any failing tests must be fixed before marking complete
+
 ---
 
 ## Definition of Done
