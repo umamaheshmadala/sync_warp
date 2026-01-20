@@ -248,6 +248,81 @@ export async function getBusinessReviews(
 }
 
 /**
+ * Get paginated reviews for infinite scroll
+ */
+export async function getBusinessReviewsPaginated(
+  businessId: string,
+  options: {
+    offset: number;
+    limit: number;
+    filters?: ReviewFilters;
+    includeDeleted?: boolean;
+  }
+): Promise<BusinessReviewWithDetails[]> {
+  const { offset, limit, filters, includeDeleted } = options;
+  console.log('📚 Fetching paginated reviews:', { businessId, offset, limit, filters });
+
+  let query = supabase
+    .from('business_reviews_with_details')
+    .select('*')
+    .eq('business_id', businessId);
+
+  // Exclude deleted reviews by default
+  if (!includeDeleted) {
+    query = query.is('deleted_at', null);
+  }
+
+  // Apply filters
+  if (filters) {
+    if (filters.recommendation !== undefined) {
+      query = query.eq('recommendation', filters.recommendation);
+    }
+    if (filters.has_text) {
+      query = query.not('review_text', 'is', null);
+    }
+    if (filters.has_photo) {
+      query = query.not('photo_url', 'is', null);
+    }
+    if (filters.user_id) {
+      query = query.eq('user_id', filters.user_id);
+    }
+    if (filters.tags && filters.tags.length > 0) {
+      query = query.contains('tags', filters.tags);
+    }
+
+    // Apply sorting
+    const sortBy = filters.sort_by || 'newest';
+    switch (sortBy) {
+      case 'oldest':
+        query = query.order('created_at', { ascending: true });
+        break;
+      case 'most_helpful':
+        // TODO: Implement helpful sorting when backend supports it
+        query = query.order('created_at', { ascending: false });
+        break;
+      case 'newest':
+      default:
+        query = query.order('created_at', { ascending: false });
+        break;
+    }
+  } else {
+    query = query.order('created_at', { ascending: false });
+  }
+
+  // Apply pagination
+  query = query.range(offset, offset + limit - 1);
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error('❌ Get paginated reviews error:', error);
+    throw new Error(`Failed to fetch reviews: ${error.message}`);
+  }
+
+  return data || [];
+}
+
+/**
  * Get a single review by ID
  */
 export async function getReview(reviewId: string): Promise<BusinessReviewWithDetails> {

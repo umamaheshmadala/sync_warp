@@ -87,6 +87,7 @@ const FavoritesPage = lazy(() => import('../components/favorites/FavoritesPage')
 const FollowingPage = lazy(() => import('../components/following/FollowingPage'))
 const FollowerFeed = lazy(() => import('../components/following/FollowerFeed'))
 const MyReviewsPage = lazy(() => import('../pages/MyReviewsPage'))
+const AllReviewsPage = lazy(() => import('../pages/AllReviewsPage'))
 const NotificationsPage = lazy(() => import('../pages/NotificationsPage'))
 const StorageTest = lazy(() => import('../pages/test/StorageTest'))
 const ContactSyncTestPage = lazy(() => import('../pages/ContactSyncTestPage'))
@@ -402,6 +403,17 @@ export const routes: RouteConfig[] = [
     ),
     protected: false,
     title: 'Business Offers - SynC'
+  },
+  {
+    path: '/business/:id/reviews',
+    element: (
+      <RouteLoader>
+        <AllReviewsPage />
+      </RouteLoader>
+    ),
+    protected: false,
+    title: 'Business Reviews - SynC',
+    description: 'View all reviews for a business'
   },
 
   // Admin Routes (Protected)

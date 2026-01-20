@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, LayoutDashboard, ShieldAlert } from 'lucide-react';
@@ -5,6 +6,7 @@ import ApiUsageWidget from '../../components/admin/ApiUsageWidget';
 import { RetentionMonitor } from '../../components/admin/RetentionMonitor';
 import { BusinessActivationWidget } from '../../components/admin/BusinessActivationWidget';
 import { AdminSettingsWidget } from '../../components/admin/AdminSettingsWidget';
+import { DriverScoreWidget } from '../../components/admin/DriverScoreWidget';
 import { useAuthStore } from '../../store/authStore';
 
 export default function AdminDashboard() {
@@ -72,8 +74,13 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Business Management Section - New */}
+                    {/* Column 1: Management & Stats */}
                     <div className="space-y-6">
+                        <section>
+                            <h2 className="text-lg font-semibold text-gray-700 mb-3">User & Driver Management</h2>
+                            <DriverScoreWidget />
+                        </section>
+
                         <section>
                             <h2 className="text-lg font-semibold text-gray-700 mb-3">Business Management</h2>
                             <BusinessActivationWidget />
@@ -85,7 +92,7 @@ export default function AdminDashboard() {
                         </section>
                     </div>
 
-                    {/* Data Maintenance Section */}
+                    {/* Column 2: Settings & Maintenance */}
                     <div className="space-y-6">
                         <section>
                             <h2 className="text-lg font-semibold text-gray-700 mb-3">Platform Settings</h2>

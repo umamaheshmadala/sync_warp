@@ -4,7 +4,10 @@
 **Priority:** 🟢 P2 - LOW  
 **Effort:** 0.5 days  
 **Dependencies:** None  
-**Status:** 📋 Ready for Implementation
+**Status:** ✅ Verified
+
+> **Verification Report:** [verification_driver_score.md](file:///C:/Users/umama/.gemini/antigravity/brain/0bb1a754-071a-45e3-9679-7c05c2708f44/verification_driver_score.md)  
+> **Algorithm Documentation:** [driver_score_algorithm.md](file:///c:/Users/umama/OneDrive/Documents/GitHub/sync_warp/docs/features/driver_score_algorithm.md)
 
 ---
 
@@ -81,6 +84,20 @@ The Driver system is fully implemented:
 - [ ] Badge visible on profile card and avatar
 - [ ] Badge recalculates periodically (or on score change)
 
+---
+
+### US-11.1.6.4: Admin Dashboard Integration
+**As a** platform admin  
+**I want to** see user driver scores in the admin dashboard  
+**So that** I can verify the system is working and monitor top users
+ 
+**Acceptance Criteria:**
+- [ ] New "User Driver Scores" widget in Admin Dashboard
+- [ ] Lists users with their total driver score
+- [ ] Shows breakdown of score components (reviews, checkins, etc.)
+- [ ] "Recalculate Score" button to force update for a user
+- [ ] Indicates if user has "Driver" status (Gold Badge)
+ 
 ---
 
 ## Technical Requirements

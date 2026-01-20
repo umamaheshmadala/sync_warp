@@ -1,10 +1,12 @@
+
 // =====================================================
 // Story 5.2: Business Reviews List Component
 // =====================================================
 
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, AlertCircle, Loader } from 'lucide-react';
+import { MessageSquare, AlertCircle, Loader, ArrowRight } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import ReviewCard from './ReviewCard';
 import ReviewFilters from './ReviewFilters';
@@ -25,6 +27,7 @@ interface BusinessReviewsProps {
   showFilters?: boolean;
   realtime?: boolean;
   isBusinessOwner?: boolean;
+  limit?: number; // Add limit prop
 }
 
 export default function BusinessReviews({
@@ -36,6 +39,7 @@ export default function BusinessReviews({
   showFilters = true,
   realtime = true,
   isBusinessOwner = false,
+  limit
 }: BusinessReviewsProps) {
   const { user } = useAuthStore();
   const [filters, setFilters] = useState<ReviewFiltersType>({
@@ -119,6 +123,16 @@ export default function BusinessReviews({
     }
   };
 
+  // Sort reviews
+  const sortedReviews = [...reviews].sort((a, b) => {
+    if (filters.sort_by === 'newest') return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    if (filters.sort_by === 'oldest') return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+    return 0;
+  });
+
+  // Limit reviews if prop provided
+  const displayedReviews = limit ? sortedReviews.slice(0, limit) : sortedReviews;
+
   // Loading state
   if (reviewsLoading) {
     return (
@@ -154,7 +168,7 @@ export default function BusinessReviews({
       )}
 
       {/* Filters */}
-      {showFilters && (
+      {showFilters && !limit && (
         <ReviewFilters
           filters={filters}
           onFiltersChange={setFilters}
@@ -165,8 +179,8 @@ export default function BusinessReviews({
       {/* Reviews List */}
       <div className="space-y-4">
         <AnimatePresence mode="popLayout">
-          {reviews.length > 0 ? (
-            reviews.map((review) => (
+          {displayedReviews.length > 0 ? (
+            displayedReviews.map((review) => (
               <ReviewCard
                 key={review.id}
                 review={review}
@@ -200,12 +214,22 @@ export default function BusinessReviews({
         </AnimatePresence>
       </div>
 
-      {/* Review Count Footer */}
+      {/* Review Count Footer / View All Link */}
       {reviews.length > 0 && (
         <div className="text-center pt-4 pb-2">
-          <p className="text-sm text-gray-500">
-            Showing {reviews.length} {reviews.length === 1 ? 'review' : 'reviews'}
-          </p>
+          {limit && reviews.length > limit ? (
+            <Link
+              to={`/business/${businessId}/reviews`}
+              className="inline-flex items-center gap-2 text-blue-600 font-medium hover:text-blue-700 hover:underline transition-colors"
+            >
+              View all {stats?.total_reviews || reviews.length} reviews
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          ) : (
+            <p className="text-sm text-gray-500">
+              Showing {reviews.length} {reviews.length === 1 ? 'review' : 'reviews'}
+            </p>
+          )}
         </div>
       )}
 

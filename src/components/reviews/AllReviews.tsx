@@ -1,5 +1,3 @@
-// AllReviews.tsx
-// Component for displaying all reviews with infinite scroll
 
 import React from 'react';
 import InfiniteScroll from 'react-infinite-scroll-component';
@@ -7,28 +5,38 @@ import { Star, Loader2, CheckCircle } from 'lucide-react';
 import { useInfiniteReviews } from '../../hooks/useInfiniteReviews';
 import { ReviewsLoadingState } from './ReviewsLoadingState';
 import { ReviewsErrorState } from './ReviewsErrorState';
+import ReviewCard from './ReviewCard'; // Import shared component
+
+import type { BusinessReviewWithDetails } from '../../types/review';
 
 interface AllReviewsProps {
   businessId: string;
-  sortBy?: 'recent' | 'rating' | 'helpful';
-  minRating?: number;
+  filters?: {
+    sort_by?: 'newest' | 'oldest' | 'highest_rated' | 'lowest_rated';
+    recommendation?: boolean;
+    has_text?: boolean;
+    has_photo?: boolean;
+  };
+  onEdit?: (review: BusinessReviewWithDetails) => void;
+  onDelete?: (reviewId: string) => void;
 }
 
 export const AllReviews: React.FC<AllReviewsProps> = ({
   businessId,
-  sortBy = 'recent',
-  minRating
+  filters,
+  onEdit,
+  onDelete
 }) => {
   const {
     reviews,
-    isLoading,
+    loading,
     error,
     hasMore,
     loadMore
-  } = useInfiniteReviews(businessId, { sortBy, minRating });
+  } = useInfiniteReviews({ businessId, filters });
 
   // Initial loading state
-  if (isLoading && reviews.length === 0) {
+  if (loading && reviews.length === 0) {
     return <ReviewsLoadingState count={5} />;
   }
 
@@ -78,96 +86,15 @@ export const AllReviews: React.FC<AllReviewsProps> = ({
         className="space-y-6"
       >
         {reviews.map((review) => (
-          <ReviewCard key={review.id} review={review} />
+          <ReviewCard
+            key={review.id}
+            review={review}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            showBusinessName={false}
+          />
         ))}
       </InfiniteScroll>
-    </div>
-  );
-};
-
-// Individual Review Card Component
-interface ReviewCardProps {
-  review: {
-    id: string;
-    user_id: string;
-    rating: number;
-    review_text?: string;
-    created_at: string;
-    user_name?: string;
-    user_avatar?: string;
-  };
-}
-
-const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) return 'Today';
-    if (diffDays === 1) return 'Yesterday';
-    if (diffDays < 7) return `${diffDays} days ago`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-    if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
-    return date.toLocaleDateString();
-  };
-
-  return (
-    <div className="bg-white rounded-lg shadow-sm border p-6 hover:shadow-md transition-shadow">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center space-x-3">
-          {/* User Avatar */}
-          <div className="flex-shrink-0">
-            {review.user_avatar ? (
-              <img
-                src={review.user_avatar}
-                alt={review.user_name || 'User'}
-                className="h-10 w-10 rounded-full object-cover"
-              />
-            ) : (
-              <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
-                <span className="text-indigo-600 font-medium">
-                  {review.user_name?.[0]?.toUpperCase() || 'U'}
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* User Info */}
-          <div>
-            <h4 className="font-medium text-gray-900">
-              {review.user_name || 'Anonymous User'}
-            </h4>
-            <p className="text-sm text-gray-500">{formatDate(review.created_at)}</p>
-          </div>
-        </div>
-
-        {/* Rating */}
-        <div className="flex items-center space-x-1">
-          {[1, 2, 3, 4, 5].map((star) => (
-            <Star
-              key={star}
-              className={`h-5 w-5 ${
-                star <= review.rating
-                  ? 'text-yellow-400 fill-yellow-400'
-                  : 'text-gray-300'
-              }`}
-            />
-          ))}
-          <span className="ml-2 text-sm font-medium text-gray-700">
-            {review.rating}.0
-          </span>
-        </div>
-      </div>
-
-      {/* Review Text */}
-      {review.review_text && (
-        <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-          {review.review_text}
-        </p>
-      )}
     </div>
   );
 };
