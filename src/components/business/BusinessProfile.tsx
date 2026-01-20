@@ -1032,6 +1032,22 @@ const BusinessProfile: React.FC = () => {
           isOwner={isOwner}
         />
       )}
+
+      {/* Reviews Section (Preview) */}
+      <div className="bg-white rounded-lg shadow-sm border p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Latest Reviews</h3>
+        <BusinessReviews
+          key={`overview-${reviewsKey}`}
+          businessId={business?.id!}
+          businessName={business?.business_name || ''}
+          isBusinessOwner={isOwner}
+          onEdit={handleEditReview}
+          realtime={true}
+          limit={3}
+          showFilters={false}
+          showStats={false}
+        />
+      </div>
     </div>
   );
 
@@ -1184,6 +1200,7 @@ const BusinessProfile: React.FC = () => {
         isBusinessOwner={isOwner}
         onEdit={handleEditReview}
         realtime={true}
+        limit={10}
       />
     </div>
   );
