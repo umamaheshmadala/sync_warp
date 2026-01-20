@@ -35,13 +35,12 @@ export function validateWordCount(text: string, limit: number): boolean {
 }
 
 /**
- * Check if a review can be edited (within 24 hours)
+ * Check if a review can be edited
+ * Story 11.1.3: Reviews are now ALWAYS editable by their author
  */
-export function canEditReview(createdAt: string): boolean {
-  const created = new Date(createdAt);
-  const now = new Date();
-  const hoursDiff = (now.getTime() - created.getTime()) / (1000 * 60 * 60);
-  return hoursDiff < 24;
+export function canEditReview(_createdAt: string): boolean {
+  // Removed 24-hour restriction - reviews are always editable
+  return true;
 }
 
 // =====================================================
@@ -262,9 +261,8 @@ export async function updateReview(
     throw new Error('Failed to fetch review for update');
   }
 
-  if (!canEditReview(currentReview.created_at)) {
-    throw new Error('Reviews can only be edited within 24 hours of creation');
-  }
+  // Story 11.1.3: 24-hour edit restriction removed
+  // Reviews are now always editable by their author
 
   // Verify user owns the review
   const { data: { user } } = await supabase.auth.getUser();
