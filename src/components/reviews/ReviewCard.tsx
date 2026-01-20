@@ -17,8 +17,12 @@ import {
   Reply,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { toast } from 'react-hot-toast';
+import { useQueryClient } from '@tanstack/react-query';
 import type { BusinessReviewWithDetails } from '../../types/review';
 import { useAuthStore } from '../../store/authStore';
+import { deleteReview } from '../../services/reviewService';
+import { DeleteReviewDialog } from './DeleteReviewDialog';
 
 interface ReviewCardProps {
   review: BusinessReviewWithDetails;
@@ -44,11 +48,15 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
     ref
   ) => {
     const { user } = useAuthStore();
+    const queryClient = useQueryClient();
     const [showMenu, setShowMenu] = useState(false);
     const [showPhoto, setShowPhoto] = useState(false);
 
+    // Delete dialog state
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+
     const isOwnReview = user?.id === review.user_id;
-    // Story 11.1.3: Reviews are now always editable by author
     const canEdit = isOwnReview;
     const timeAgo = formatDistanceToNow(new Date(review.created_at), { addSuffix: true });
 
@@ -57,10 +65,31 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
       onEdit?.(review);
     };
 
-    const handleDelete = () => {
+    const handleDeleteClick = () => {
       setShowMenu(false);
-      if (window.confirm('Are you sure you want to delete this review?')) {
+      setShowDeleteDialog(true);
+    };
+
+    const handleConfirmDelete = async () => {
+      setIsDeleting(true);
+      try {
+        await deleteReview(review.id);
+        toast.success('Review deleted');
+
+        // Invalidate queries to refresh the UI
+        queryClient.invalidateQueries({ queryKey: ['business-reviews', review.business_id] });
+        queryClient.invalidateQueries({ queryKey: ['review-stats', review.business_id] });
+        queryClient.invalidateQueries({ queryKey: ['review-eligibility', review.business_id] });
+
+        // Notify parent if needed
         onDelete?.(review.id);
+
+        setShowDeleteDialog(false);
+      } catch (error) {
+        console.error('Delete error:', error);
+        toast.error(error instanceof Error ? error.message : 'Could not delete review');
+      } finally {
+        setIsDeleting(false);
       }
     };
 
@@ -156,7 +185,7 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
                       </button>
                     )}
                     <button
-                      onClick={handleDelete}
+                      onClick={handleDeleteClick}
                       className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -168,6 +197,13 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
             </div>
           )}
         </div>
+
+        <DeleteReviewDialog
+          isOpen={showDeleteDialog}
+          onClose={() => setShowDeleteDialog(false)}
+          onConfirm={handleConfirmDelete}
+          isDeleting={isDeleting}
+        />
 
         {/* Recommendation Badge */}
         <div className="mb-4">

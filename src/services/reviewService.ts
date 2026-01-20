@@ -139,9 +139,59 @@ export async function createReview(input: CreateReviewInput): Promise<BusinessRe
 /**
  * Get reviews for a business
  */
+/**
+ * Soft delete a review
+ * Marks the review as deleted without removing from database
+ */
+export async function deleteReview(reviewId: string): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error('You must be logged in to delete a review');
+  }
+
+  // Verify ownership
+  const { data: review, error: fetchError } = await supabase
+    .from('business_reviews')
+    .select('id, user_id, deleted_at')
+    .eq('id', reviewId)
+    .single();
+
+  if (fetchError || !review) {
+    throw new Error('Review not found');
+  }
+
+  if (review.user_id !== user.id) {
+    throw new Error('You can only delete your own reviews');
+  }
+
+  if (review.deleted_at) {
+    throw new Error('This review has already been deleted');
+  }
+
+  // Perform soft delete
+  const { error: deleteError } = await supabase
+    .from('business_reviews')
+    .update({
+      deleted_at: new Date().toISOString(),
+      deleted_by: user.id
+    })
+    .eq('id', reviewId);
+
+  if (deleteError) {
+    console.error('[ReviewService] Soft delete error:', deleteError);
+    throw new Error('Could not delete review. Please try again.');
+  }
+
+  console.log(`[ReviewService] Review ${reviewId} soft deleted by ${user.id}`);
+}
+
+/**
+ * Get reviews for a business (excludes deleted reviews by default)
+ */
 export async function getBusinessReviews(
   businessId: string,
-  filters?: ReviewFilters
+  filters?: ReviewFilters & { includeDeleted?: boolean }
 ): Promise<BusinessReviewWithDetails[]> {
   console.log('📚 Fetching reviews for business:', businessId, filters);
 
@@ -149,6 +199,11 @@ export async function getBusinessReviews(
     .from('business_reviews_with_details')
     .select('*')
     .eq('business_id', businessId);
+
+  // Exclude deleted reviews by default
+  if (!filters?.includeDeleted) {
+    query = query.is('deleted_at', null);
+  }
 
   // Apply filters
   if (filters) {
@@ -209,6 +264,12 @@ export async function getReview(reviewId: string): Promise<BusinessReviewWithDet
     throw new Error(`Failed to fetch review: ${error.message}`);
   }
 
+  if (data.deleted_at) {
+    console.log('⚠️ Fetched review is deleted:', reviewId);
+    // Depending on requirements, we might want to throw error or return it marked as deleted.
+    // For now, returning it but logging warning. UI should handle it.
+  }
+
   console.log('✅ Review fetched:', data);
   return data;
 }
@@ -234,6 +295,11 @@ export async function getUserReviews(userId?: string): Promise<BusinessReviewWit
     .eq('user_id', targetUserId)
     .order('created_at', { ascending: false });
 
+  // Note: We might want to see deleted reviews here to show "Deleted" history,
+  // or filter them out.
+  // For now we include them so user can see what they deleted.
+  // If we want to hide them, add .is('deleted_at', null);
+
   if (error) {
     console.error('❌ Get user reviews error:', error);
     throw new Error(`Failed to fetch user reviews: ${error.message}`);
@@ -244,7 +310,7 @@ export async function getUserReviews(userId?: string): Promise<BusinessReviewWit
 }
 
 /**
- * Update a review (within 24 hours only)
+ * Update a review
  */
 export async function updateReview(
   reviewId: string,
@@ -260,7 +326,7 @@ export async function updateReview(
   // Get current review to check if can edit
   const { data: currentReview, error: fetchError } = await supabase
     .from('business_reviews')
-    .select('created_at, user_id')
+    .select('created_at, user_id, deleted_at')
     .eq('id', reviewId)
     .single();
 
@@ -269,8 +335,9 @@ export async function updateReview(
     throw new Error('Failed to fetch review for update');
   }
 
-  // Story 11.1.3: 24-hour edit restriction removed
-  // Reviews are now always editable by their author
+  if (currentReview.deleted_at) {
+    throw new Error('Cannot edit a deleted review');
+  }
 
   // Verify user owns the review
   const { data: { user } } = await supabase.auth.getUser();
@@ -300,25 +367,6 @@ export async function updateReview(
 
   console.log('✅ Review updated successfully:', data);
   return data;
-}
-
-/**
- * Delete a review
- */
-export async function deleteReview(reviewId: string): Promise<void> {
-  console.log('🗑️ Deleting review:', reviewId);
-
-  const { error } = await supabase
-    .from('business_reviews')
-    .delete()
-    .eq('id', reviewId);
-
-  if (error) {
-    console.error('❌ Delete review error:', error);
-    throw new Error(`Failed to delete review: ${error.message}`);
-  }
-
-  console.log('✅ Review deleted successfully');
 }
 
 // =====================================================

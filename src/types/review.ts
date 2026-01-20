@@ -15,9 +15,13 @@ export interface BusinessReview {
   updated_at: string;
   is_edited: boolean;
   edit_count: number;
+  deleted_at: string | null;
+  deleted_by: string | null;
+  deletion_reason: string | null;
 }
 
 export interface BusinessReviewWithDetails extends BusinessReview {
+  business_name: string | null;
   user_name: string;
   user_avatar: string | null;
   user_city: string | null;
