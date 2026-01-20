@@ -4,6 +4,7 @@ import { ArrowLeft, LayoutDashboard, ShieldAlert } from 'lucide-react';
 import ApiUsageWidget from '../../components/admin/ApiUsageWidget';
 import { RetentionMonitor } from '../../components/admin/RetentionMonitor';
 import { BusinessActivationWidget } from '../../components/admin/BusinessActivationWidget';
+import { AdminSettingsWidget } from '../../components/admin/AdminSettingsWidget';
 import { useAuthStore } from '../../store/authStore';
 
 export default function AdminDashboard() {
@@ -86,6 +87,11 @@ export default function AdminDashboard() {
 
                     {/* Data Maintenance Section */}
                     <div className="space-y-6">
+                        <section>
+                            <h2 className="text-lg font-semibold text-gray-700 mb-3">Platform Settings</h2>
+                            <AdminSettingsWidget />
+                        </section>
+
                         <section>
                             <h2 className="text-lg font-semibold text-gray-700 mb-3">Data Retention</h2>
                             <RetentionMonitor />

@@ -45,6 +45,7 @@ import EnhancedProfileTab from './EnhancedProfileTab';
 import { useUserCheckin } from '../../hooks/useUserCheckin';
 import { useReviewStats } from '../../hooks/useReviewStats';
 import { createReview } from '../../services/reviewService';
+import { isGpsCheckinRequired } from '../../services/adminSettingsService';
 import type { CreateReviewInput } from '../../types/review';
 import { StorefrontShareButton } from '../Sharing/StorefrontShareButton';
 import { ShareAnalytics } from '../analytics/ShareAnalytics';
@@ -195,8 +196,8 @@ const BusinessProfile: React.FC = () => {
       return;
     }
 
-    // GPS check-in validation
-    if (!hasCheckin) {
+    // GPS check-in validation (respects admin setting)
+    if (isGpsCheckinRequired() && !hasCheckin) {
       toast.error('You must check in at this business before writing a review');
       return;
     }
@@ -245,8 +246,8 @@ const BusinessProfile: React.FC = () => {
       return;
     }
 
-    // GPS check-in validation
-    if (!hasCheckin) {
+    // GPS check-in validation (respects admin setting)
+    if (isGpsCheckinRequired() && !hasCheckin) {
       toast.error('You must check in at this business before writing a review');
       return;
     }
@@ -1104,18 +1105,27 @@ const BusinessProfile: React.FC = () => {
                 Share Your Experience
               </h3>
               {/* GPS check-in requirement prompt */}
-              {!hasCheckin ? (
-                <div className="flex items-start space-x-2 text-sm text-amber-600">
-                  <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              {isGpsCheckinRequired() ? (
+                !hasCheckin ? (
+                  <div className="flex items-start space-x-2 text-sm text-amber-600">
+                    <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                    <p>
+                      Check in at this business to leave a review.
+                      GPS verification ensures authentic reviews.
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-600">
+                    Checked in {checkin && new Date(checkin.checked_in_at).toLocaleDateString()}
+                  </p>
+                )
+              ) : (
+                <div className="flex items-start space-x-2 text-sm text-blue-600">
+                  <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
                   <p>
-                    Check in at this business to leave a review.
-                    GPS verification ensures authentic reviews.
+                    <strong>[Testing Mode]</strong> GPS check-in disabled. Write your review anytime.
                   </p>
                 </div>
-              ) : (
-                <p className="text-sm text-gray-600">
-                  Checked in {checkin && new Date(checkin.checked_in_at).toLocaleDateString()}
-                </p>
               )}
             </div>
             <button

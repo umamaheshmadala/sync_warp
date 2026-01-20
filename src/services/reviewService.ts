@@ -65,27 +65,35 @@ export async function createReview(input: CreateReviewInput): Promise<BusinessRe
     throw new Error('User not authenticated');
   }
 
-  // Verify GPS check-in before allowing review
-  if (input.checkin_id) {
-    const { data: verifyData, error: verifyError } = await supabase
-      .rpc('verify_checkin_for_review', {
-        p_user_id: user.id,
-        p_business_id: input.business_id,
-        p_checkin_id: input.checkin_id,
-      });
+  // Check if GPS check-in is required (admin setting)
+  const { isGpsCheckinRequired } = await import('./adminSettingsService');
+  const requireCheckin = isGpsCheckinRequired();
 
-    if (verifyError) {
-      console.error('❌ Check-in verification error:', verifyError);
-      throw new Error('Failed to verify check-in. Please try again.');
+  if (requireCheckin) {
+    // Verify GPS check-in before allowing review
+    if (input.checkin_id) {
+      const { data: verifyData, error: verifyError } = await supabase
+        .rpc('verify_checkin_for_review', {
+          p_user_id: user.id,
+          p_business_id: input.business_id,
+          p_checkin_id: input.checkin_id,
+        });
+
+      if (verifyError) {
+        console.error('❌ Check-in verification error:', verifyError);
+        throw new Error('Failed to verify check-in. Please try again.');
+      }
+
+      if (!verifyData) {
+        throw new Error('Invalid check-in. You must check in at this business before leaving a review.');
+      }
+
+      console.log('✅ Check-in verified for review');
+    } else {
+      throw new Error('You must check in at this business before leaving a review');
     }
-
-    if (!verifyData) {
-      throw new Error('Invalid check-in. You must check in at this business before leaving a review.');
-    }
-
-    console.log('✅ Check-in verified for review');
   } else {
-    throw new Error('You must check in at this business before leaving a review');
+    console.log('⚠️ GPS check-in requirement disabled by admin (Testing Mode)');
   }
 
   // Create the review
