@@ -45,7 +45,7 @@ import EnhancedProfileTab from './EnhancedProfileTab';
 import { useUserCheckin } from '../../hooks/useUserCheckin';
 import { useReviewStats } from '../../hooks/useReviewStats';
 import { createReview } from '../../services/reviewService';
-import { isGpsCheckinRequired } from '../../services/adminSettingsService';
+import { useSystemSettings } from '../../hooks/useSystemSettings';
 import type { CreateReviewInput } from '../../types/review';
 import { StorefrontShareButton } from '../Sharing/StorefrontShareButton';
 import { ShareAnalytics } from '../analytics/ShareAnalytics';
@@ -125,6 +125,9 @@ const BusinessProfile: React.FC = () => {
     businessId: business?.id,
   });
 
+  // Fetch global settings
+  const { requireGpsCheckin, isLoading: isSettingsLoading } = useSystemSettings();
+
   // Check if current user owns this business
   const isOwner = user?.id === business?.user_id;
 
@@ -197,7 +200,7 @@ const BusinessProfile: React.FC = () => {
     }
 
     // GPS check-in validation (respects admin setting)
-    if (isGpsCheckinRequired() && !hasCheckin) {
+    if (!isSettingsLoading && requireGpsCheckin && !hasCheckin) {
       toast.error('You must check in at this business before writing a review');
       return;
     }
@@ -247,7 +250,7 @@ const BusinessProfile: React.FC = () => {
     }
 
     // GPS check-in validation (respects admin setting)
-    if (isGpsCheckinRequired() && !hasCheckin) {
+    if (!isSettingsLoading && requireGpsCheckin && !hasCheckin) {
       toast.error('You must check in at this business before writing a review');
       return;
     }
@@ -1105,7 +1108,7 @@ const BusinessProfile: React.FC = () => {
                 Share Your Experience
               </h3>
               {/* GPS check-in requirement prompt */}
-              {isGpsCheckinRequired() ? (
+              {!isSettingsLoading && requireGpsCheckin ? (
                 !hasCheckin ? (
                   <div className="flex items-start space-x-2 text-sm text-amber-600">
                     <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />

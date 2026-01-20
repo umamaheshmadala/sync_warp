@@ -65,9 +65,9 @@ export async function createReview(input: CreateReviewInput): Promise<BusinessRe
     throw new Error('User not authenticated');
   }
 
-  // Check if GPS check-in is required (admin setting)
-  const { isGpsCheckinRequired } = await import('./adminSettingsService');
-  const requireCheckin = isGpsCheckinRequired();
+  // Check if GPS check-in is required (global system setting)
+  const { fetchGpsCheckinRequirement } = await import('./adminSettingsService');
+  const requireCheckin = await fetchGpsCheckinRequirement();
 
   if (requireCheckin) {
     // Verify GPS check-in before allowing review

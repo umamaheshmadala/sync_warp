@@ -18,7 +18,11 @@ export function AdminSettingsWidget() {
 
     useEffect(() => {
         // Load settings on mount
-        setSettings(getAdminSettings());
+        async function load() {
+            const data = await getAdminSettings();
+            setSettings(data);
+        }
+        load();
     }, []);
 
     const handleToggleGpsCheckin = async () => {
@@ -27,8 +31,11 @@ export function AdminSettingsWidget() {
         setIsUpdating(true);
         try {
             const newValue = !settings.requireGpsCheckinForReviews;
-            toggleGpsCheckinRequirement(newValue);
-            setSettings(getAdminSettings());
+            await toggleGpsCheckinRequirement(newValue);
+
+            // Refresh settings to confirm update
+            const updated = await getAdminSettings();
+            setSettings(updated);
 
             toast.success(
                 newValue

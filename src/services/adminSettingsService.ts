@@ -2,9 +2,9 @@
 // Admin Settings Service
 // =====================================================
 // Provides global admin-configurable settings
-// Uses localStorage for persistence (can be migrated to database later)
+// Uses 'system_settings' table in database for global persistence.
 
-const SETTINGS_KEY = 'sync_admin_settings';
+import { supabase } from '../lib/supabase';
 
 export interface AdminSettings {
     /** If true, GPS check-in is required before writing a review */
@@ -19,56 +19,72 @@ const DEFAULT_SETTINGS: AdminSettings = {
 };
 
 /**
- * Get current admin settings
+ * Get current admin settings from Database
  */
-export function getAdminSettings(): AdminSettings {
+export async function getAdminSettings(): Promise<AdminSettings> {
     try {
-        const stored = localStorage.getItem(SETTINGS_KEY);
-        if (stored) {
-            return { ...DEFAULT_SETTINGS, ...JSON.parse(stored) };
-        }
+        const { data, error } = await supabase
+            .from('system_settings')
+            .select('key, value, updated_at')
+            .in('key', ['require_gps_checkin_for_reviews']);
+
+        if (error) throw error;
+
+        const settings: AdminSettings = { ...DEFAULT_SETTINGS };
+
+        data?.forEach((row) => {
+            if (row.key === 'require_gps_checkin_for_reviews') {
+                settings.requireGpsCheckinForReviews = row.value as boolean;
+                settings.updatedAt = row.updated_at;
+            }
+        });
+
+        return settings;
     } catch (error) {
         console.error('Error reading admin settings:', error);
+        return DEFAULT_SETTINGS;
     }
-    return DEFAULT_SETTINGS;
 }
 
 /**
- * Update admin settings
+ * Update a specific system setting
  */
-export function updateAdminSettings(updates: Partial<AdminSettings>): AdminSettings {
-    const current = getAdminSettings();
-    const updated = {
-        ...current,
-        ...updates,
-        updatedAt: new Date().toISOString(),
-    };
-    try {
-        localStorage.setItem(SETTINGS_KEY, JSON.stringify(updated));
-        console.log('✅ Admin settings updated:', updated);
-    } catch (error) {
-        console.error('❌ Error saving admin settings:', error);
+export async function updateSystemSetting(key: string, value: any): Promise<void> {
+    const { error } = await supabase
+        .from('system_settings')
+        .upsert({
+            key,
+            value,
+            updated_at: new Date().toISOString()
+        })
+        .select();
+
+    if (error) {
+        console.error(`❌ Error updating setting ${key}:`, error);
+        throw error;
     }
-    return updated;
+    console.log(`✅ Setting ${key} updated:`, value);
 }
 
 /**
- * Check if GPS check-in is required for reviews
+ * Initialize/Sync settings (helper for initial check)
+ * Returns the boolean value for GPS requirement
  */
-export function isGpsCheckinRequired(): boolean {
-    return getAdminSettings().requireGpsCheckinForReviews;
+export async function fetchGpsCheckinRequirement(): Promise<boolean> {
+    const settings = await getAdminSettings();
+    return settings.requireGpsCheckinForReviews;
 }
 
 /**
  * Toggle GPS check-in requirement
  */
-export function toggleGpsCheckinRequirement(enabled: boolean): void {
-    updateAdminSettings({ requireGpsCheckinForReviews: enabled });
+export async function toggleGpsCheckinRequirement(enabled: boolean): Promise<void> {
+    await updateSystemSetting('require_gps_checkin_for_reviews', enabled);
 }
 
 export default {
     getAdminSettings,
-    updateAdminSettings,
-    isGpsCheckinRequired,
+    updateSystemSetting,
+    fetchGpsCheckinRequirement,
     toggleGpsCheckinRequirement,
 };
