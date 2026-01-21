@@ -85,7 +85,7 @@ export function VerificationBadge({
             title={showTooltip ? finalConfig.tooltip : undefined}
         >
             <EffectiveIcon className={iconSizes[size]} />
-            <span>{finalConfig.label}</span>
+            <span className="hidden sm:inline">{finalConfig.label}</span>
         </div>
     );
 }

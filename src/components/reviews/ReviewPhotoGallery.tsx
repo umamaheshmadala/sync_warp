@@ -4,9 +4,10 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 interface ReviewPhotoGalleryProps {
     photos: string[] | null;
+    compact?: boolean;
 }
 
-export function ReviewPhotoGallery({ photos }: ReviewPhotoGalleryProps) {
+export function ReviewPhotoGallery({ photos, compact = false }: ReviewPhotoGalleryProps) {
     const [lightboxOpen, setLightboxOpen] = useState(false);
     const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -30,25 +31,27 @@ export function ReviewPhotoGallery({ photos }: ReviewPhotoGalleryProps) {
         setLightboxOpen(true);
     };
 
+    const sizeClass = compact ? 'w-12 h-12' : 'w-24 h-24';
+
     return (
         <>
             {/* Thumbnail Grid */}
-            <div className="mt-3">
+            <div className="mt-2">
                 {validPhotos.length === 1 ? (
-                    // Single photo - larger display
+                    // Single photo - larger display, but respect compact
                     <img
                         src={validPhotos[0]}
                         alt="Review photo"
-                        className="w-full max-h-64 object-cover rounded-lg cursor-zoom-in border border-gray-100"
+                        className={`${compact ? 'w-32 h-20' : 'w-full max-h-64'} object-cover rounded-lg cursor-zoom-in border border-gray-100`}
                         onClick={() => openLightbox(0)}
                     />
                 ) : (
                     // Multiple photos - scrollable row
-                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
+                    <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
                         {validPhotos.slice(0, 4).map((url, index) => (
                             <div
                                 key={`${url}-${index}`}
-                                className="relative flex-shrink-0 w-24 h-24 cursor-pointer group"
+                                className={`relative flex-shrink-0 ${sizeClass} cursor-pointer group`}
                                 onClick={() => openLightbox(index)}
                             >
                                 <img
@@ -60,7 +63,7 @@ export function ReviewPhotoGallery({ photos }: ReviewPhotoGalleryProps) {
                                 {/* "+X more" overlay on 4th photo */}
                                 {index === 3 && validPhotos.length > 4 && (
                                     <div className="absolute inset-0 bg-black/60 rounded-lg flex items-center justify-center backdrop-blur-[2px]">
-                                        <span className="text-white font-semibold text-lg">
+                                        <span className="text-white font-semibold text-xs">
                                             +{validPhotos.length - 4}
                                         </span>
                                     </div>

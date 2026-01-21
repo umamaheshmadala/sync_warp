@@ -20,8 +20,8 @@ Add engagement features (helpful votes, sharing, review requests) and comprehens
 
 | Story | Title | Effort | Priority | Status |
 |-------|-------|--------|----------|--------|
-| 11.3.1 | Helpful Vote System (Public Votes, Always Show Count) | 3 days | 🟡 Medium | ✅ Verified |
-| 11.3.2 | Review Request After Check-in + 4hr Reminder | 2 days | 🟡 Medium | |
+| 11.3.1 | Helpful Vote System (Public Votes, Always Show Count) | 3 days | 🟡 Medium | ✅ Completed |
+| 11.3.2 | Review Request After Check-in + 4hr Reminder | 2 days | 🟡 Medium | ✅ Completed |
 | 11.3.3 | Share Review to Friends | 2 days | 🟢 Low | |
 | 11.3.4 | Business Review Analytics Dashboard | 5 days | 🟡 Medium | |
 | 11.3.5 | Response Time Tracking Badge | 1 day | 🟢 Low | |

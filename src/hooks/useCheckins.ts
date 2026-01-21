@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
 import { notifyMerchantCheckin } from '../services/favoriteNotificationService';
+import { fetchGpsCheckinRequirement } from '../services/adminSettingsService';
 
 export interface CheckinData {
   id: string;
@@ -99,6 +100,25 @@ export const useCheckins = (): UseCheckinsReturn => {
   const [isCheckingIn, setIsCheckingIn] = useState(false);
   const [isLoadingCheckins, setIsLoadingCheckins] = useState(false);
   const [isLoadingNearby, setIsLoadingNearby] = useState(false);
+
+  // Admin settings state
+  const [gpsCheckinRequired, setGpsCheckinRequired] = useState<boolean>(true);
+
+  // Fetch admin settings on mount
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const required = await fetchGpsCheckinRequirement();
+        setGpsCheckinRequired(required);
+        if (!required) {
+          console.log('⚠️ [useCheckins] GPS Check-in Bypass Enabled (Testing Mode)');
+        }
+      } catch (error) {
+        console.error('Failed to load check-in settings:', error);
+      }
+    };
+    loadSettings();
+  }, []);
 
   // Haversine formula for distance calculation (improved accuracy)
   const calculateDistance = useCallback((lat1: number, lon1: number, lat2: number, lon2: number): number => {
@@ -264,6 +284,11 @@ export const useCheckins = (): UseCheckinsReturn => {
 
   // Check if user can check in to a business
   const canCheckIn = useCallback((business: NearbyBusiness): boolean => {
+    // If GPS check-in is NOT required (Bypass Mode), allow check-in regardless of distance
+    if (!gpsCheckinRequired) {
+      return true;
+    }
+
     // Check distance
     if (business.distance > MAX_CHECKIN_DISTANCE) {
       return false;
@@ -284,7 +309,7 @@ export const useCheckins = (): UseCheckinsReturn => {
     }
 
     return true;
-  }, [location.accuracy]);
+  }, [location.accuracy, gpsCheckinRequired]);
 
   // Get last check-in for a business
   const getLastCheckin = useCallback((businessId: string): CheckinData | null => {
@@ -294,23 +319,44 @@ export const useCheckins = (): UseCheckinsReturn => {
   }, [userCheckins]);
 
   // Perform check-in
-  const performCheckin = useCallback(async (businessId: string): Promise<CheckinData | null> => {
+  const performCheckin = useCallback(async (businessId: string, businessOverride?: any): Promise<CheckinData | null> => {
     if (!user?.id) {
       toast.error('Please log in to check in');
       return null;
     }
 
     // Find the business
-    const business = nearbyBusinesses.find(b => b.id === businessId);
+    let business = nearbyBusinesses.find(b => b.id === businessId);
+
+    // If not found in nearby list but we have an override (e.g. from Business Profile page)
+    if (!business && businessOverride) {
+      // Calculate distance for the override
+      const dist = (location.latitude && location.longitude && businessOverride.latitude && businessOverride.longitude)
+        ? calculateDistance(
+          location.latitude,
+          location.longitude,
+          businessOverride.latitude,
+          businessOverride.longitude
+        )
+        : 0;
+
+      business = {
+        ...businessOverride,
+        distance: dist
+      } as NearbyBusiness;
+    }
+
     if (!business) {
-      toast.error('Business not found');
+      // If still no business (and no override provided or valid), try fetching it? 
+      // For now, rely on override. 
+      // Actually, if we are in BusinessProfile, we SHOULD pass the override.
+      // If we are in "Nearby" list, it should be in nearbyBusinesses.
+      toast.error('Business not found (GPS info missing)');
       return null;
     }
 
     // Check GPS requirement
-    // Dynamic import to avoid circular dependencies if any
-    const { fetchGpsCheckinRequirement } = await import('../services/adminSettingsService');
-    const requireGps = await fetchGpsCheckinRequirement();
+    const requireGps = gpsCheckinRequired;
 
     // Check if user can check in (only if GPS is required)
     if (requireGps) {
@@ -397,8 +443,8 @@ export const useCheckins = (): UseCheckinsReturn => {
       ).catch(err => console.error('Failed to send check-in notification:', err));
 
       // Analytics tracking
-      if (typeof gtag !== 'undefined') {
-        gtag('event', 'check_in', {
+      if (typeof window.gtag !== 'undefined') {
+        window.gtag('event', 'check_in', {
           event_category: 'engagement',
           event_label: business.business_name,
           business_type: business.business_type,
@@ -414,7 +460,7 @@ export const useCheckins = (): UseCheckinsReturn => {
     } finally {
       setIsCheckingIn(false);
     }
-  }, [user?.id, location.latitude, location.longitude, nearbyBusinesses, canCheckIn, calculateDistance]);
+  }, [user?.id, location.latitude, location.longitude, nearbyBusinesses, canCheckIn, calculateDistance, gpsCheckinRequired]);
 
   // Get user's check-in history
   const getUserCheckins = useCallback(async (limit: number = 20): Promise<CheckinData[]> => {

@@ -43,6 +43,9 @@ import BusinessReviews from '../reviews/BusinessReviews';
 import BusinessReviewForm from '../reviews/BusinessReviewForm';
 import EnhancedProfileTab from './EnhancedProfileTab';
 import { useUserCheckin } from '../../hooks/useUserCheckin';
+import { useCheckins } from '../../hooks/useCheckins';
+import ReviewRequestModal from '../reviews/ReviewRequestModal';
+import { createReviewRequest } from '../../services/reviewRequestService';
 import { useReviewStats } from '../../hooks/useReviewStats';
 import { createReview, getUserBusinessReview } from '../../services/reviewService';
 import { useSystemSettings } from '../../hooks/useSystemSettings';
@@ -159,10 +162,42 @@ const BusinessProfile: React.FC = () => {
   const { requireGpsCheckin, isLoading: isSettingsLoading } = useSystemSettings();
 
   // Check if user has checked in at this business - use full business ID once loaded
-  const { checkin, hasCheckin, isLoading: isLoadingCheckin } = useUserCheckin(
+  const { checkin, hasCheckin, isLoading: isLoadingCheckin, refetch: refetchUserCheckin } = useUserCheckin(
     business?.id,
     !isOwner && !!user?.id // Only check if user is logged in and not the owner
   );
+
+  const checkins = useCheckins();
+  const [showReviewRequestModal, setShowReviewRequestModal] = useState(false);
+  const [lastCheckinId, setLastCheckinId] = useState<string | null>(null);
+
+  const handleCheckIn = async () => {
+    if (!business?.id) return;
+
+    // Perform check-in
+    const result = await checkins.performCheckin(business.id, business);
+
+    if (result) {
+      setLastCheckinId(result.id);
+
+      // Create review request
+      try {
+        await createReviewRequest(result.id, business.id);
+      } catch (error) {
+        console.error('Failed to create review request:', error);
+        // Continue anyway to show modal
+      }
+
+      // Refresh checkin status so "Write Review" works immediately
+      await refetchUserCheckin();
+
+      // Refresh business data (checkins count)
+      await refetchBusiness();
+
+      // Show modal
+      setShowReviewRequestModal(true);
+    }
+  };
 
   // Proper day ordering for operating hours
   const dayOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
@@ -1046,17 +1081,21 @@ const BusinessProfile: React.FC = () => {
       )}
 
       {/* Reviews Section (Preview) */}
-      <div className="bg-white rounded-lg shadow-sm border p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Latest Reviews</h3>
-        <BusinessReviews
-          key={`overview-${reviewsKey}`}
-          businessId={business?.id!}
-          businessName={business?.business_name || ''}
-          isBusinessOwner={isOwner}
-          onEdit={handleEditReview}
-          showFilters={false}
-          showStats={false}
-        />
+      <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100">
+          <h3 className="text-lg font-semibold text-gray-900">Latest Reviews</h3>
+        </div>
+        <div className="p-0">
+          <BusinessReviews
+            key={`overview-${reviewsKey}`}
+            businessId={business?.id!}
+            businessName={business?.business_name || ''}
+            isBusinessOwner={isOwner}
+            onEdit={handleEditReview}
+            showFilters={false}
+            showStats={false}
+          />
+        </div>
       </div>
     </div>
   );
@@ -1510,11 +1549,24 @@ const BusinessProfile: React.FC = () => {
                           businessId={business.id}
                           variant="default"
                           size="default"
-                          className="w-full justify-center"
+                          className="w-full justify-center h-10"
                         />
                       </div>
                     )}
-                    {/* Navigate Button */}
+
+                    {/* Check-In Button */}
+                    {!isOwner && user && (
+                      <button
+                        onClick={handleCheckIn}
+                        disabled={checkins.isCheckingIn}
+                        className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed h-10"
+                      >
+                        <MapPin className="w-4 h-4 mr-2" />
+                        {checkins.isCheckingIn ? 'Checking in...' : 'Check In'}
+                      </button>
+                    )}
+
+                    {/* Navigate Button - Always visible to reach 3 buttons (Follow, Check In, Navigate) */}
                     <button
                       onClick={() => {
                         if (business?.latitude && business?.longitude) {
@@ -1525,32 +1577,18 @@ const BusinessProfile: React.FC = () => {
                           window.open(`https://www.google.com/maps/search/?api=1&query=${query}`);
                         }
                       }}
-                      className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50"
+                      className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 h-10"
                       title="Navigate"
                     >
                       <Navigation className="w-4 h-4 mr-2" />
                       <span>Navigate</span>
                     </button>
 
-                    {/* Share Button (Promoted for Non-Owners) */}
-                    {!isOwner && (
-                      <StorefrontShareButton
-                        businessId={business.id}
-                        businessName={business.business_name}
-                        businessDescription={business.description}
-                        variant="ghost"
-                        showLabel={true}
-                        showIcon={true}
-                        className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50"
-                        onShareSuccess={() => console.log('Shared')}
-                      />
-                    )}
-
                     {isOwner && (
                       <>
                         <button
                           onClick={() => navigate(`/business/${business?.id}/manage/campaigns`)}
-                          className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-pink-600 hover:bg-pink-700 transition-colors"
+                          className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-pink-600 hover:bg-pink-700 transition-colors h-10"
                         >
                           <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-trending-up'%3E%3Cpolyline points='22 7 13.5 15.5 8.5 10.5 2 17'/%3E%3Cpolyline points='16 7 22 7 22 13'/%3E%3C/svg%3E" alt="" className="w-4 h-4 mr-2" />
                           Campaigns
@@ -1558,7 +1596,7 @@ const BusinessProfile: React.FC = () => {
 
                         <button
                           onClick={() => navigate(`/business/${business?.id}/manage/coupons`)}
-                          className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50"
+                          className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 h-10"
                         >
                           <Tag className="w-4 h-4 mr-2" />
                           Coupons
@@ -1570,7 +1608,7 @@ const BusinessProfile: React.FC = () => {
                     <div className="relative">
                       <button
                         onClick={() => setShowMoreDropdown(!showMoreDropdown)}
-                        className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                        className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-50 min-w-[2.5rem]"
                       >
                         <MoreVertical className="w-5 h-5" />
                       </button>
@@ -1581,8 +1619,25 @@ const BusinessProfile: React.FC = () => {
                             className="fixed inset-0 z-10"
                             onClick={() => setShowMoreDropdown(false)}
                           />
-                          <div className="absolute right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-20 py-1 min-w-[120px]">
-                            {/* Show Share in dropdown only for Owners (since it's not in primary row) */}
+                          <div className="absolute right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-20 py-1 min-w-[160px]">
+
+                            {/* Share Button (Always in dropdown for non-owners now) */}
+                            {!isOwner && (
+                              <StorefrontShareButton
+                                businessId={business.id}
+                                businessName={business.business_name}
+                                businessDescription={business.description}
+                                variant="ghost"
+                                showLabel={true}
+                                showIcon={true}
+                                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 h-auto justify-start rounded-none gap-2"
+                                onShareSuccess={() => {
+                                  setShowMoreDropdown(false);
+                                  console.log('Shared');
+                                }}
+                              />
+                            )}
+
                             {isOwner && (
                               <StorefrontShareButton
                                 businessId={business.id}
@@ -1591,19 +1646,20 @@ const BusinessProfile: React.FC = () => {
                                 variant="ghost"
                                 showLabel={true}
                                 showIcon={true}
-                                className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 h-auto justify-start rounded-none gap-2"
+                                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 h-auto justify-start rounded-none gap-2"
                                 onShareSuccess={() => {
                                   setShowMoreDropdown(false);
                                   console.log('Shared');
                                 }}
                               />
                             )}
+
                             <button
                               onClick={() => {
                                 setShowInfoModal(true);
                                 setShowMoreDropdown(false);
                               }}
-                              className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                             >
                               <Info className="w-4 h-4" />
                               More Info
@@ -1618,7 +1674,7 @@ const BusinessProfile: React.FC = () => {
                                 setShowMoreDropdown(false);
                                 refetchBusiness();
                               }}
-                              className="text-left justify-start rounded-none"
+                              className="text-left justify-start rounded-none px-4 py-2 w-full"
                             />
                           </div>
                         </>
@@ -1636,10 +1692,24 @@ const BusinessProfile: React.FC = () => {
                     <FollowButton
                       businessId={business.id}
                       businessName={business.business_name}
-                      className="w-full justify-center"
+                      className="w-full justify-center h-10"
                     />
                   </div>
                 )}
+
+                {/* Check-In Button - Mobile */}
+                {!isOwner && user && (
+                  <button
+                    onClick={handleCheckIn}
+                    disabled={checkins.isCheckingIn}
+                    className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-blue-200 shadow-sm text-sm font-medium rounded-lg text-blue-700 bg-blue-50 hover:bg-blue-100 disabled:opacity-50 h-10"
+                  >
+                    <MapPin className="w-4 h-4 mr-2" />
+                    {checkins.isCheckingIn ? '...' : 'Check In'}
+                  </button>
+                )}
+
+                {/* Navigate Button - Mobile - Always visible */}
                 <button
                   onClick={() => {
                     if (business?.latitude && business?.longitude) {
@@ -1649,32 +1719,18 @@ const BusinessProfile: React.FC = () => {
                       window.open(`https://www.google.com/maps/search/?api=1&query=${query}`);
                     }
                   }}
-                  className="flex-1 inline-flex justify-center items-center px-2 py-2 border border-gray-300 shadow-sm text-xs font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50"
+                  className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 h-10"
                   title="Navigate"
                 >
-                  <Navigation className="w-3.5 h-3.5 mr-1.5" />
+                  <Navigation className="w-4 h-4 mr-2" />
                   <span>Navigate</span>
                 </button>
-
-                {/* Share Button (Promoted for Non-Owners) */}
-                {!isOwner && (
-                  <StorefrontShareButton
-                    businessId={business.id}
-                    businessName={business.business_name}
-                    businessDescription={business.description}
-                    variant="ghost"
-                    showLabel={true}
-                    showIcon={true}
-                    className="flex-1 inline-flex justify-center items-center px-2 py-2 border border-gray-300 shadow-sm text-xs font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50"
-                    onShareSuccess={() => console.log('Shared')}
-                  />
-                )}
 
                 {isOwner && (
                   <>
                     <button
                       onClick={() => navigate(`/business/${business?.id}/manage/campaigns`)}
-                      className="flex-1 inline-flex justify-center items-center px-2 py-2 border border-transparent text-xs font-medium rounded-lg shadow-sm text-white bg-pink-600 hover:bg-pink-700 transition-colors"
+                      className="flex-1 inline-flex justify-center items-center px-2 py-2 border border-transparent text-xs font-medium rounded-lg shadow-sm text-white bg-pink-600 hover:bg-pink-700 transition-colors h-10"
                     >
                       <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-trending-up'%3E%3Cpolyline points='22 7 13.5 15.5 8.5 10.5 2 17'/%3E%3Cpolyline points='16 7 22 7 22 13'/%3E%3C/svg%3E" alt="" className="w-3.5 h-3.5 mr-1.5" />
                       Campaigns
@@ -1682,7 +1738,7 @@ const BusinessProfile: React.FC = () => {
 
                     <button
                       onClick={() => navigate(`/business/${business?.id}/manage/coupons`)}
-                      className="flex-1 inline-flex justify-center items-center px-2 py-2 border border-gray-300 shadow-sm text-xs font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50"
+                      className="flex-1 inline-flex justify-center items-center px-2 py-2 border border-gray-300 shadow-sm text-xs font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 h-10"
                     >
                       <Tag className="w-3.5 h-3.5 mr-1.5" />
                       Coupons
@@ -1690,7 +1746,6 @@ const BusinessProfile: React.FC = () => {
                   </>
                 )}
 
-                {/* More Options Dropdown - Mobile */}
                 {/* More Options Dropdown - Mobile */}
                 <div className="relative">
                   <button
@@ -1705,23 +1760,24 @@ const BusinessProfile: React.FC = () => {
                         className="fixed inset-0 z-10"
                         onClick={() => setShowMoreDropdown(false)}
                       />
-                      <div className="absolute right-0 top-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-20 py-1 min-w-[150px]">
-                        {/* Show Share in dropdown only for Owners */}
-                        {isOwner && (
-                          <StorefrontShareButton
-                            businessId={business.id}
-                            businessName={business.business_name}
-                            businessDescription={business.description}
-                            variant="ghost"
-                            showLabel={true}
-                            showIcon={true}
-                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 h-auto justify-start rounded-none gap-2"
-                            onShareSuccess={() => {
-                              setShowMoreDropdown(false);
-                              console.log('Shared');
-                            }}
-                          />
-                        )}
+                      <div className="absolute right-0 top-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-20 py-1 min-w-[160px]">
+
+                        {/* Show Share in dropdown for everyone except Owner (who has dedicated logic above? No, owner share also here) */}
+                        {/* Actually, share is always here now for uniformity */}
+                        <StorefrontShareButton
+                          businessId={business.id}
+                          businessName={business.business_name}
+                          businessDescription={business.description}
+                          variant="ghost"
+                          showLabel={true}
+                          showIcon={true}
+                          className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 h-auto justify-start rounded-none gap-2"
+                          onShareSuccess={() => {
+                            setShowMoreDropdown(false);
+                            console.log('Shared');
+                          }}
+                        />
+
                         <button
                           onClick={() => {
                             setShowInfoModal(true);
@@ -1755,14 +1811,14 @@ const BusinessProfile: React.FC = () => {
           {/* Tabs */}
           <div className="max-w-7xl mx-auto px-[5px]">
             <div className="border-b border-gray-200">
-              <nav className="-mb-px flex space-x-8 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+              <nav className="-mb-px flex w-full justify-between items-center overflow-x-auto pb-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                 {tabs.map((tab) => {
                   const Icon = tab.icon;
                   return (
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center justify-center ${activeTab === tab.id
+                      className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex-1 flex items-center justify-center ${activeTab === tab.id
                         ? 'border-indigo-500 text-indigo-600'
                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                         }`}
@@ -1846,6 +1902,21 @@ const BusinessProfile: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Review Request Modal */}
+      {business && lastCheckinId && (
+        <ReviewRequestModal
+          isOpen={showReviewRequestModal}
+          onClose={() => setShowReviewRequestModal(false)}
+          businessId={business.id}
+          businessName={business.business_name}
+          checkinId={lastCheckinId}
+          onWriteReview={() => {
+            setShowReviewRequestModal(false);
+            handleOpenReviewModal();
+          }}
+        />
+      )}
     </>
   );
 };

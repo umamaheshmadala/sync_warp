@@ -23,7 +23,8 @@ export interface BusinessReview {
 
 export interface BusinessReviewWithDetails extends BusinessReview {
   business_name: string | null;
-  user_name: string;
+  reviewer_name: string; // Renamed from user_name to break cache
+  user_name?: string; // Deprecated
   user_avatar: string | null;
   user_city: string | null;
   is_helpful_by_user?: boolean; // Optimized single-query fetch

@@ -31,7 +31,7 @@ export async function toggleHelpfulVote(reviewId: string): Promise<boolean> {
         .select('id')
         .eq('review_id', reviewId)
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
     if (existingVote) {
         // Remove vote
@@ -87,7 +87,7 @@ export async function hasUserVoted(reviewId: string): Promise<boolean> {
         .select('id')
         .eq('review_id', reviewId)
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
     return !!data;
 }

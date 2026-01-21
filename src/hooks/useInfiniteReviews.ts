@@ -63,7 +63,7 @@ export function useInfiniteReviews({ businessId, filters }: UseInfiniteReviewsOp
       console.error('Error fetching reviews:', err);
       throw err;
     }
-  }, [businessId, filters]);
+  }, [businessId, filters?.sort_by, filters?.recommendation]);
 
   /**
    * Load initial page of reviews

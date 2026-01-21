@@ -22,7 +22,7 @@ CREATE OR REPLACE VIEW business_reviews_with_details AS
     br.deleted_by,
     br.deletion_reason,
     b.name AS business_name,
-    p.full_name AS user_name,
+    COALESCE(p.full_name, p.username, 'Anonymous') AS user_name,
     p.avatar_url AS user_avatar,
     p.city AS user_city,
     brr.id AS response_id,

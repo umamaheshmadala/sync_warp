@@ -163,7 +163,7 @@ export default function BusinessReviews({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* Statistics */}
       {showStats && stats && (
         <ReviewStats stats={stats} loading={statsLoading} />
@@ -182,7 +182,7 @@ export default function BusinessReviews({
       )}
 
       {/* Reviews List with Infinite Scroll */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         {reviews.length > 0 ? (
           <InfiniteScroll
             dataLength={reviews.length}
