@@ -6,7 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ThumbsUp, ThumbsDown, X, CheckCircle, AlertCircle } from 'lucide-react';
 import { countWords, updateReview } from '../../services/reviewService';
-import { REVIEW_TEXT_WORD_LIMIT, REVIEW_TAGS } from '../../types/review';
+import { REVIEW_TEXT_WORD_LIMIT, REVIEW_TEXT_MIN_WORDS } from '../../types/review';
 import type { CreateReviewInput, UpdateReviewInput } from '../../types/review';
 import ReviewTagSelector from './ReviewTagSelector';
 import ReviewPhotoUpload from './ReviewPhotoUpload';
@@ -40,8 +40,10 @@ export default function BusinessReviewForm({
   const [reviewText, setReviewText] = useState(
     editMode && existingReview ? existingReview.review_text || '' : ''
   );
-  const [photoUrl, setPhotoUrl] = useState<string | null>(
-    editMode && existingReview ? existingReview.photo_url || null : null
+  const [photoUrls, setPhotoUrls] = useState<string[]>(
+    editMode && existingReview
+      ? (existingReview.photo_urls || (existingReview.photo_url ? [existingReview.photo_url] : []))
+      : []
   );
   const [selectedTags, setSelectedTags] = useState<string[]>(
     editMode && existingReview ? existingReview.tags || [] : []
@@ -64,14 +66,45 @@ export default function BusinessReviewForm({
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newText = e.target.value;
     const newWordCount = countWords(newText);
-
-    // Allow typing but warn if over limit
     setReviewText(newText);
 
-    if (newWordCount > REVIEW_TEXT_WORD_LIMIT) {
-      setError(`Review text exceeds ${REVIEW_TEXT_WORD_LIMIT} word limit`);
+    // Check limits
+    if (newText.trim()) {
+      if (newWordCount < REVIEW_TEXT_MIN_WORDS) {
+        // Don't show error immediately while typing, but clear if fixed
+        // validation happens on submit
+      } else if (newWordCount > REVIEW_TEXT_WORD_LIMIT) {
+        setError(`Review text exceeds ${REVIEW_TEXT_WORD_LIMIT} word limit`);
+      } else {
+        setError(null);
+      }
     } else {
       setError(null);
+    }
+  };
+
+
+  // Handle paste - trim if too long
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const pastedText = e.clipboardData.getData('text');
+    const currentText = reviewText;
+    const newText = currentText + pastedText;
+
+    // Simple count check
+    const newWordCount = countWords(newText);
+
+    if (newWordCount > REVIEW_TEXT_WORD_LIMIT) {
+      e.preventDefault();
+
+      // Trim to limit
+      // This is a rough approximation, splitting by space
+      const words = newText.trim().split(/\s+/);
+      const trimmedWords = words.slice(0, REVIEW_TEXT_WORD_LIMIT);
+      const trimmedText = trimmedWords.join(' ');
+
+      setReviewText(trimmedText);
+      setWordCount(REVIEW_TEXT_WORD_LIMIT);
+      setError(`Pasted text was trimmed to ${REVIEW_TEXT_WORD_LIMIT} words limit`);
     }
   };
 
@@ -79,8 +112,21 @@ export default function BusinessReviewForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!isValid || isOverLimit) {
-      setError('Please select a recommendation and ensure text is within word limit');
+    // Validate text
+    if (reviewText.trim()) {
+      const currentWordCount = countWords(reviewText);
+      if (currentWordCount < REVIEW_TEXT_MIN_WORDS) {
+        setError(`Please write at least ${REVIEW_TEXT_MIN_WORDS} word${REVIEW_TEXT_MIN_WORDS > 1 ? 's' : ''}`);
+        return;
+      }
+      if (currentWordCount > REVIEW_TEXT_WORD_LIMIT) {
+        setError(`Review text exceeds ${REVIEW_TEXT_WORD_LIMIT} word limit`);
+        return;
+      }
+    }
+
+    if (!isValid) {
+      setError('Please select a recommendation');
       return;
     }
 
@@ -93,7 +139,7 @@ export default function BusinessReviewForm({
         await updateReview(existingReview.id, {
           recommendation: recommendation!,
           review_text: reviewText.trim() || undefined,
-          photo_url: photoUrl || undefined,
+          photo_urls: photoUrls.length > 0 ? photoUrls : undefined,
           tags: selectedTags.length > 0 ? selectedTags : undefined,
         });
 
@@ -110,7 +156,7 @@ export default function BusinessReviewForm({
           business_id: businessId,
           recommendation: recommendation!,
           review_text: reviewText.trim() || undefined,
-          photo_url: photoUrl || undefined,
+          photo_urls: photoUrls.length > 0 ? photoUrls : undefined,
           tags: selectedTags.length > 0 ? selectedTags : undefined,
           checkin_id: checkinId || undefined,  // TEMP: Allow null for desktop testing
         });
@@ -275,6 +321,7 @@ export default function BusinessReviewForm({
             <textarea
               value={reviewText}
               onChange={handleTextChange}
+              onPaste={handlePaste}
               placeholder="What made your experience great or not so great?"
               rows={4}
               className={`
@@ -284,8 +331,9 @@ export default function BusinessReviewForm({
               `}
             />
             <WordCounter
-              current={wordCount}
-              limit={REVIEW_TEXT_WORD_LIMIT}
+              text={reviewText}
+              maxWords={REVIEW_TEXT_WORD_LIMIT}
+              minWords={REVIEW_TEXT_MIN_WORDS}
               className="absolute bottom-3 right-3"
             />
           </div>
@@ -294,11 +342,11 @@ export default function BusinessReviewForm({
           </p>
         </div>
 
-        {/* Photo Upload - TEMP: Disabled due to missing bucket */}
-        {/* <ReviewPhotoUpload
-          photoUrl={photoUrl}
-          onPhotoChange={setPhotoUrl}
-        /> */}
+        {/* Photo Upload */}
+        <ReviewPhotoUpload
+          photos={photoUrls}
+          onChange={setPhotoUrls}
+        />
 
         {/* Tags Selector */}
         <ReviewTagSelector

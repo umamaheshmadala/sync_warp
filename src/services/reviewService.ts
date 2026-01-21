@@ -15,20 +15,49 @@ import type {
   UpdateResponseInput,
   ReviewFilters,
 } from '../types/review';
-import { REVIEW_TEXT_WORD_LIMIT, RESPONSE_TEXT_WORD_LIMIT } from '../types/review';
+import {
+  REVIEW_TEXT_WORD_LIMIT,
+  RESPONSE_TEXT_WORD_LIMIT,
+  REVIEW_TEXT_MIN_WORDS
+} from '../types/review';
 import { notifyMerchantNewReview, notifyUserReviewResponse } from './favoriteNotificationService';
 
 /**
  * Utility function to count words in text
  */
 export function countWords(text: string | null | undefined): number {
-  if (!text || text.trim() === '') return 0;
-  return text.trim().split(/\s+/).length;
+  if (!text || !text.trim()) return 0;
+  return text.trim().split(/\s+/).filter(word => word.length > 0).length;
 }
 
 /**
  * Utility function to validate word count
  */
+export function validateReviewText(text: string | null | undefined): { valid: boolean; error?: string } {
+  if (!text || !text.trim()) {
+    // Text is optional
+    return { valid: true };
+  }
+
+  const wordCount = countWords(text);
+
+  if (wordCount < REVIEW_TEXT_MIN_WORDS) {
+    return {
+      valid: false,
+      error: `Review text must be at least ${REVIEW_TEXT_MIN_WORDS} word${REVIEW_TEXT_MIN_WORDS > 1 ? 's' : ''}`
+    };
+  }
+
+  if (wordCount > REVIEW_TEXT_WORD_LIMIT) {
+    return {
+      valid: false,
+      error: `Review text must be ${REVIEW_TEXT_WORD_LIMIT} words or less`
+    };
+  }
+
+  return { valid: true };
+}
+
 export function validateWordCount(text: string, limit: number): boolean {
   const wordCount = countWords(text);
   return wordCount <= limit;
@@ -55,8 +84,9 @@ export async function createReview(input: CreateReviewInput): Promise<BusinessRe
   console.log('📝 Creating review:', input);
 
   // Validate word count if text is provided
-  if (input.review_text && !validateWordCount(input.review_text, REVIEW_TEXT_WORD_LIMIT)) {
-    throw new Error(`Review text must be ${REVIEW_TEXT_WORD_LIMIT} words or less`);
+  const textValidation = validateReviewText(input.review_text);
+  if (!textValidation.valid) {
+    throw new Error(textValidation.error);
   }
 
   // GPS check-in verification - ensures user has physically visited business
@@ -104,7 +134,7 @@ export async function createReview(input: CreateReviewInput): Promise<BusinessRe
       user_id: user.id,
       recommendation: input.recommendation,
       review_text: input.review_text || null,
-      photo_url: input.photo_url || null,
+      photo_urls: input.photo_urls || [],
       tags: input.tags || [],
       checkin_id: input.checkin_id || null,  // TEMP: Allow null for testing
     })
@@ -214,7 +244,7 @@ export async function getBusinessReviews(
       query = query.not('review_text', 'is', null);
     }
     if (filters.has_photo) {
-      query = query.not('photo_url', 'is', null);
+      query = query.neq('photo_urls', '{}');
     }
     if (filters.user_id) {
       query = query.eq('user_id', filters.user_id);
@@ -394,8 +424,11 @@ export async function updateReview(
   console.log('✏️ Updating review:', reviewId, input);
 
   // Validate word count if text is provided
-  if (input.review_text && !validateWordCount(input.review_text, REVIEW_TEXT_WORD_LIMIT)) {
-    throw new Error(`Review text must be ${REVIEW_TEXT_WORD_LIMIT} words or less`);
+  if (input.review_text !== undefined) {
+    const textValidation = validateReviewText(input.review_text);
+    if (!textValidation.valid) {
+      throw new Error(textValidation.error);
+    }
   }
 
   // Get current review to check if can edit
@@ -424,7 +457,7 @@ export async function updateReview(
   const updateData: any = {};
   if (input.recommendation !== undefined) updateData.recommendation = input.recommendation;
   if (input.review_text !== undefined) updateData.review_text = input.review_text;
-  if (input.photo_url !== undefined) updateData.photo_url = input.photo_url;
+  if (input.photo_urls !== undefined) updateData.photo_urls = input.photo_urls;
   if (input.tags !== undefined) updateData.tags = input.tags;
 
   // Update the review

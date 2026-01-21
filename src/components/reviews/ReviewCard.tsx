@@ -23,6 +23,8 @@ import type { BusinessReviewWithDetails } from '../../types/review';
 import { useAuthStore } from '../../store/authStore';
 import { deleteReview } from '../../services/reviewService';
 import { DeleteReviewDialog } from './DeleteReviewDialog';
+import { ReviewPhotoGallery } from './ReviewPhotoGallery';
+import ReviewTagDisplay from './ReviewTagDisplay';
 
 interface ReviewCardProps {
   review: BusinessReviewWithDetails;
@@ -50,7 +52,6 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
     const { user } = useAuthStore();
     const queryClient = useQueryClient();
     const [showMenu, setShowMenu] = useState(false);
-    const [showPhoto, setShowPhoto] = useState(false);
 
     // Delete dialog state
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -237,39 +238,12 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
           </p>
         )}
 
-        {/* Photo */}
-        {review.photo_url && (
-          <div className="mb-4">
-            <motion.button
-              onClick={() => setShowPhoto(true)}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="relative rounded-xl overflow-hidden w-full aspect-video bg-gray-100"
-            >
-              <img
-                src={review.photo_url}
-                alt="Review photo"
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-10 transition-all flex items-center justify-center">
-                <ImageIcon className="w-8 h-8 text-white opacity-0 hover:opacity-100 transition-opacity" />
-              </div>
-            </motion.button>
-          </div>
-        )}
+        {/* Photo Gallery */}
+        <ReviewPhotoGallery photos={review.photo_urls} />
 
         {/* Tags */}
         {review.tags && review.tags.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-4">
-            {review.tags.map((tag, index) => (
-              <span
-                key={index}
-                className="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-full"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
+          <ReviewTagDisplay tagIds={review.tags} maxVisible={5} />
         )}
 
         {/* Business Owner Response Section */}
@@ -329,28 +303,7 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
           ) : null}
         </div>
 
-        {/* Photo Modal */}
-        <AnimatePresence>
-          {showPhoto && review.photo_url && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowPhoto(false)}
-              className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4"
-            >
-              <motion.img
-                initial={{ scale: 0.9 }}
-                animate={{ scale: 1 }}
-                exit={{ scale: 0.9 }}
-                src={review.photo_url}
-                alt="Review photo"
-                className="max-w-full max-h-full object-contain rounded-lg"
-                onClick={(e) => e.stopPropagation()}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
+
       </motion.div>
     );
   }

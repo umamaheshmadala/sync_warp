@@ -8,7 +8,7 @@ export interface BusinessReview {
   user_id: string;
   recommendation: boolean; // true = Recommend, false = Don't Recommend
   review_text: string | null;
-  photo_url: string | null;
+  photo_urls: string[];
   tags: string[];
   checkin_id: string;
   created_at: string;
@@ -64,7 +64,7 @@ export interface CreateReviewInput {
   business_id: string;
   recommendation: boolean;
   review_text?: string;
-  photo_url?: string;
+  photo_urls?: string[];
   tags?: string[];
   checkin_id: string;
 }
@@ -72,7 +72,7 @@ export interface CreateReviewInput {
 export interface UpdateReviewInput {
   recommendation?: boolean; // Allow changing recommendation within 24 hours
   review_text?: string;
-  photo_url?: string;
+  photo_urls?: string[];
   tags?: string[];
 }
 
@@ -98,7 +98,7 @@ export interface ReviewFilters {
 export interface ReviewFormData {
   recommendation: boolean | null;
   review_text: string;
-  photo_url: string | null;
+  photo_urls: string[];
   tags: string[];
   wordCount: number;
 }
@@ -130,8 +130,9 @@ export const REVIEW_TAGS = [
 export type ReviewTag = typeof REVIEW_TAGS[number];
 
 // Word count limits
-export const REVIEW_TEXT_WORD_LIMIT = 30;
-export const RESPONSE_TEXT_WORD_LIMIT = 50;
+export const REVIEW_TEXT_WORD_LIMIT = 150;
+export const REVIEW_TEXT_MIN_WORDS = 1;
+export const RESPONSE_TEXT_WORD_LIMIT = 150;
 
 // Edit time limit (24 hours)
 export const REVIEW_EDIT_TIME_LIMIT_HOURS = 24;

@@ -4,7 +4,7 @@
 **Priority:** 🟡 P1 - MEDIUM  
 **Effort:** 3 days  
 **Dependencies:** None  
-**Status:** 📋 Ready for Implementation
+**Status:** ✅ User Testing Complete | 🤖 Automated Browser Testing Pending
 
 ---
 
@@ -62,17 +62,17 @@ Upgrade from single photo to multi-photo support in reviews. Users can upload up
 
 ---
 
-### US-11.2.2.3: Photo Size Validation
+### US-11.2.2.3: Photo Optimization
 **As a** platform  
-**I want to** limit each photo to 1MB  
-**So that** storage costs are controlled
+**I want to** automatically compress uploaded photos  
+**So that** I can save storage space and improve loading times without burdening the user
 
 **Acceptance Criteria:**
-- [ ] Validate file size before upload
-- [ ] Reject files over 1MB with message: "Photo must be under 1MB"
-- [ ] Show file size during selection if over limit
-- [ ] Suggest compression if file too large
-- [ ] Client-side compression optional (auto-resize large images)
+- [ ] Automatically compress images over 1MB
+- [ ] Optimize images to max 1920px width/height
+- [ ] Convert to efficient format (WebP/JPEG) if possible
+- [ ] Maintain visual quality while reducing file size
+- [ ] Only reject if compression fails or file is not an image
 
 ---
 

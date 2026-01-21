@@ -50,9 +50,9 @@ export default function ReviewResponseForm({
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newText = e.target.value;
     const newWordCount = countWords(newText);
-    
+
     setResponseText(newText);
-    
+
     if (newWordCount > RESPONSE_TEXT_WORD_LIMIT) {
       setError(`Response text exceeds ${RESPONSE_TEXT_WORD_LIMIT} word limit`);
     } else {
@@ -62,7 +62,7 @@ export default function ReviewResponseForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!isValid || isOverLimit) {
       setError('Please enter a valid response within the word limit');
       return;
@@ -85,7 +85,7 @@ export default function ReviewResponseForm({
       }
 
       setShowSuccess(true);
-      
+
       setTimeout(() => {
         onCancel();
       }, 1500);
@@ -174,8 +174,8 @@ export default function ReviewResponseForm({
               disabled={isSubmitting}
             />
             <WordCounter
-              current={wordCount}
-              limit={RESPONSE_TEXT_WORD_LIMIT}
+              text={responseText}
+              maxWords={RESPONSE_TEXT_WORD_LIMIT}
               className="absolute bottom-3 right-3"
             />
           </div>
