@@ -82,6 +82,20 @@ export default function ReviewFilters({
             >
               Oldest First
             </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => updateFilter('sort_by', 'most-helpful')}
+              className={`
+                px-4 py-2 rounded-lg text-sm font-medium transition-all
+                ${filters.sort_by === 'most-helpful'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }
+              `}
+            >
+              Most Helpful
+            </motion.button>
           </div>
         </div>
 

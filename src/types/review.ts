@@ -10,6 +10,7 @@ export interface BusinessReview {
   review_text: string | null;
   photo_urls: string[];
   tags: string[];
+  helpful_count: number;
   checkin_id: string;
   created_at: string;
   updated_at: string;
@@ -25,6 +26,7 @@ export interface BusinessReviewWithDetails extends BusinessReview {
   user_name: string;
   user_avatar: string | null;
   user_city: string | null;
+  is_helpful_by_user?: boolean; // Optimized single-query fetch
   response_id: string | null;
   response_text: string | null;
   response_created_at: string | null;
@@ -92,7 +94,7 @@ export interface ReviewFilters {
   has_photo?: boolean; // Filter reviews with photos
   tags?: string[]; // Filter by tags
   user_id?: string; // Filter by specific user
-  sort_by?: 'newest' | 'oldest' | 'most_helpful'; // Sort options
+  sort_by?: 'newest' | 'oldest' | 'most-helpful'; // Sort options
 }
 
 export interface ReviewFormData {

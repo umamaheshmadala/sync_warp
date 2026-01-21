@@ -91,6 +91,20 @@ Implement a review request system that prompts users to leave a review after com
 
 ---
 
+### US-11.3.2.5: GPS Check-in Bypass (Testing Mode)
+**As a** developer/tester
+**I want to** be able to simulate check-ins without physical presence
+**So that** I can test the flow remotely
+
+**Acceptance Criteria:**
+- [ ] Linked to `require_gps_checkin_for_reviews` system setting
+- [ ] If toggle OFF: Check-in succeeds without GPS validation
+- [ ] If toggle ON: Enforce GPS distance check
+- [ ] Toggle managed via Admin Settings
+- [ ] Bypass logs a warning in console for visibility
+
+---
+
 ## Technical Requirements
 
 ### Database Schema

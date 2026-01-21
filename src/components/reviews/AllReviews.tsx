@@ -12,7 +12,7 @@ import type { BusinessReviewWithDetails } from '../../types/review';
 interface AllReviewsProps {
   businessId: string;
   filters?: {
-    sort_by?: 'newest' | 'oldest' | 'highest_rated' | 'lowest_rated';
+    sort_by?: 'newest' | 'oldest' | 'highest_rated' | 'lowest_rated' | 'most-helpful';
     recommendation?: boolean;
     has_text?: boolean;
     has_photo?: boolean;

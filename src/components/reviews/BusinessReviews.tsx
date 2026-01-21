@@ -1,18 +1,20 @@
 
 // =====================================================
-// Story 5.2: Business Reviews List Component
+// Story 11.3.7: Business Reviews List Component (Consolidated)
 // =====================================================
 
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, AlertCircle, Loader, ArrowRight } from 'lucide-react';
+import { MessageSquare, AlertCircle, Loader2, CheckCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import InfiniteScroll from 'react-infinite-scroll-component';
+
 import ReviewCard from './ReviewCard';
 import ReviewFilters from './ReviewFilters';
 import ReviewStats from './ReviewStats';
 import ReviewResponseForm from './ReviewResponseForm';
-import { useReviews } from '../../hooks/useReviews';
+
+import { useInfiniteReviews } from '../../hooks/useInfiniteReviews';
 import { useReviewStats } from '../../hooks/useReviewStats';
 import { useAuthStore } from '../../store/authStore';
 import { createResponse, updateResponse } from '../../services/reviewService';
@@ -25,9 +27,7 @@ interface BusinessReviewsProps {
   onDelete?: (reviewId: string) => void;
   showStats?: boolean;
   showFilters?: boolean;
-  realtime?: boolean;
   isBusinessOwner?: boolean;
-  limit?: number; // Add limit prop
 }
 
 export default function BusinessReviews({
@@ -37,9 +37,7 @@ export default function BusinessReviews({
   onDelete,
   showStats = true,
   showFilters = true,
-  realtime = true,
   isBusinessOwner = false,
-  limit
 }: BusinessReviewsProps) {
   const { user } = useAuthStore();
   const [filters, setFilters] = useState<ReviewFiltersType>({
@@ -54,16 +52,20 @@ export default function BusinessReviews({
   } | null>(null);
   const [isSubmittingResponse, setIsSubmittingResponse] = useState(false);
 
-  // Load reviews with filters
+  // Load reviews with infinite scroll
   const {
     reviews,
-    loading: reviewsLoading,
-    error: reviewsError,
-    deleteReview,
-  } = useReviews({
+    loading,
+    error,
+    hasMore,
+    loadMore,
+    refresh
+  } = useInfiniteReviews({
     businessId,
-    filters,
-    realtime,
+    filters: {
+      sort_by: filters.sort_by,
+      recommendation: filters.recommendation
+    }
   });
 
   // Load statistics
@@ -76,10 +78,14 @@ export default function BusinessReviews({
 
   const handleDelete = async (reviewId: string) => {
     try {
-      await deleteReview(reviewId);
+      // We might need to manually remove from list or refresh
+      // For now, refreshing the list is safest
+      await refresh();
       onDelete?.(reviewId);
+      toast.success('Review deleted');
     } catch (err) {
       console.error('Delete error:', err);
+      toast.error('Failed to delete review');
     }
   };
 
@@ -113,32 +119,22 @@ export default function BusinessReviews({
       }
 
       setResponseModal(null);
-      // Trigger refetch of reviews to show new/updated response
-      window.location.reload(); // Simple approach - can be improved with state management
+      // Refresh reviews to show the new response
+      refresh();
     } catch (error) {
       console.error('Error submitting response:', error);
-      throw error; // Let the form handle error display
+      throw error;
     } finally {
       setIsSubmittingResponse(false);
     }
   };
 
-  // Sort reviews
-  const sortedReviews = [...reviews].sort((a, b) => {
-    if (filters.sort_by === 'newest') return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-    if (filters.sort_by === 'oldest') return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-    return 0;
-  });
-
-  // Limit reviews if prop provided
-  const displayedReviews = limit ? sortedReviews.slice(0, limit) : sortedReviews;
-
-  // Loading state
-  if (reviewsLoading) {
+  // Initial Loading state (only for first load)
+  if (loading && reviews.length === 0) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
-          <Loader className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-3" />
+          <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-3" />
           <p className="text-gray-600">Loading reviews...</p>
         </div>
       </div>
@@ -146,7 +142,7 @@ export default function BusinessReviews({
   }
 
   // Error state
-  if (reviewsError) {
+  if (error && reviews.length === 0) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center max-w-md">
@@ -154,7 +150,13 @@ export default function BusinessReviews({
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
             Failed to Load Reviews
           </h3>
-          <p className="text-gray-600 text-sm">{reviewsError}</p>
+          <p className="text-gray-600 text-sm">{error}</p>
+          <button
+            onClick={() => refresh()}
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium"
+          >
+            Try Again
+          </button>
         </div>
       </div>
     );
@@ -168,70 +170,73 @@ export default function BusinessReviews({
       )}
 
       {/* Filters */}
-      {showFilters && !limit && (
+      {showFilters && (
         <ReviewFilters
           filters={filters}
-          onFiltersChange={setFilters}
+          onFiltersChange={(newFilters) => {
+            setFilters(newFilters);
+            // useInfiniteReviews watches filters and auto-refreshes
+          }}
           reviewCount={reviews.length}
         />
       )}
 
-      {/* Reviews List */}
+      {/* Reviews List with Infinite Scroll */}
       <div className="space-y-4">
-        <AnimatePresence mode="popLayout">
-          {displayedReviews.length > 0 ? (
-            displayedReviews.map((review) => (
-              <ReviewCard
-                key={review.id}
-                review={review}
-                onEdit={onEdit}
-                onDelete={handleDelete}
-                onRespond={handleRespond}
-                isBusinessOwner={isBusinessOwner}
-              />
-            ))
-          ) : (
-            // Empty State
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300"
-            >
-              <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                No Reviews Yet
-              </h3>
-              <p className="text-gray-600 text-sm max-w-sm mx-auto">
-                {filters.recommendation !== undefined
-                  ? `No ${filters.recommendation ? 'positive' : 'negative'} reviews found.`
-                  : businessName
-                    ? `Have you visited ${businessName}? Share your experience to help others!`
-                    : 'Be the first to share your experience!'}
-              </p>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* Review Count Footer / View All Link */}
-      {reviews.length > 0 && (
-        <div className="text-center pt-4 pb-2">
-          {limit && reviews.length > limit ? (
-            <Link
-              to={`/business/${businessId}/reviews`}
-              className="inline-flex items-center gap-2 text-blue-600 font-medium hover:text-blue-700 hover:underline transition-colors"
-            >
-              View all {stats?.total_reviews || reviews.length} reviews
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          ) : (
-            <p className="text-sm text-gray-500">
-              Showing {reviews.length} {reviews.length === 1 ? 'review' : 'reviews'}
+        {reviews.length > 0 ? (
+          <InfiniteScroll
+            dataLength={reviews.length}
+            next={loadMore}
+            hasMore={hasMore}
+            loader={
+              <div className="flex justify-center items-center py-6 overflow-hidden">
+                <Loader2 className="h-6 w-6 text-indigo-600 animate-spin mr-2" />
+                <span className="text-gray-600">Loading more...</span>
+              </div>
+            }
+            endMessage={
+              <div className="text-center py-8">
+                <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2 opacity-50" />
+                <p className="text-gray-500 text-sm">You've seen all the reviews</p>
+              </div>
+            }
+            scrollThreshold={0.8}
+            style={{ overflow: 'hidden' }} // Fixes scrollbar issues in some containers
+          >
+            <div className="space-y-4">
+              {reviews.map((review) => (
+                <ReviewCard
+                  key={review.id}
+                  review={review}
+                  onEdit={onEdit}
+                  onDelete={handleDelete}
+                  onRespond={handleRespond}
+                  isBusinessOwner={isBusinessOwner}
+                />
+              ))}
+            </div>
+          </InfiniteScroll>
+        ) : (
+          // Empty State
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300"
+          >
+            <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              No Reviews Yet
+            </h3>
+            <p className="text-gray-600 text-sm max-w-sm mx-auto">
+              {filters.recommendation !== undefined
+                ? `No ${filters.recommendation ? 'positive' : 'negative'} reviews found.`
+                : businessName
+                  ? `Have you visited ${businessName}? Share your experience!`
+                  : 'Be the first to share your experience!'}
             </p>
-          )}
-        </div>
-      )}
+          </motion.div>
+        )}
+      </div>
 
       {/* Response Modal */}
       <AnimatePresence>

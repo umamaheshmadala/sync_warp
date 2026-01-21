@@ -326,30 +326,56 @@ export async function getBusinessReviewsPaginated(
       case 'oldest':
         query = query.order('created_at', { ascending: true });
         break;
-      case 'most_helpful':
-        // TODO: Implement helpful sorting when backend supports it
-        query = query.order('created_at', { ascending: false });
-        break;
-      case 'newest':
-      default:
-        query = query.order('created_at', { ascending: false });
-        break;
+        query = query.neq('photo_urls', '{}');
     }
-  } else {
-    query = query.order('created_at', { ascending: false });
+    if (filters.user_id) {
+      query = query.eq('user_id', filters.user_id);
+    }
+    if (filters.tags && filters.tags.length > 0) {
+      query = query.contains('tags', filters.tags);
+    }
+  }
+
+  // Apply sorting
+  const sortBy = filters?.sort_by || 'newest';
+  switch (sortBy) {
+    case 'oldest':
+      query = query.order('created_at', { ascending: true });
+      break;
+    case 'most-helpful':
+      query = query.order('helpful_count', { ascending: false, nullsFirst: false })
+        .order('created_at', { ascending: false });
+      break;
+    case 'newest':
+    default:
+      query = query.order('created_at', { ascending: false });
+      break;
   }
 
   // Apply pagination
   query = query.range(offset, offset + limit - 1);
 
-  const { data, error } = await query;
+  const { data, error, count } = await query;
 
   if (error) {
     console.error('❌ Get paginated reviews error:', error);
     throw new Error(`Failed to fetch reviews: ${error.message}`);
   }
 
-  return data || [];
+  // Transform data to match interface
+  const reviews: BusinessReviewWithDetails[] = (data || []).map((review: any) => ({
+    ...review,
+    user_name: review.profiles?.full_name || 'Anonymous',
+    user_avatar: review.profiles?.avatar_url || null,
+    user_city: review.profiles?.city || null,
+    response_id: review.business_review_responses?.[0]?.id || null,
+    response_text: review.business_review_responses?.[0]?.response_text || null,
+    response_created_at: review.business_review_responses?.[0]?.created_at || null,
+    response_updated_at: review.business_review_responses?.[0]?.updated_at || null,
+    helpful_count: review.helpful_count || 0
+  }));
+
+  return reviews;
 }
 
 /**
@@ -497,7 +523,7 @@ export async function getReviewStats(businessId: string): Promise<ReviewStats> {
   }
 
   console.log('✅ Review stats fetched:', data);
-  return data;
+  return data as ReviewStats;
 }
 
 /**

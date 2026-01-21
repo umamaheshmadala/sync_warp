@@ -25,6 +25,7 @@ import { deleteReview } from '../../services/reviewService';
 import { DeleteReviewDialog } from './DeleteReviewDialog';
 import { ReviewPhotoGallery } from './ReviewPhotoGallery';
 import ReviewTagDisplay from './ReviewTagDisplay';
+import { HelpfulButton } from './HelpfulButton';
 
 interface ReviewCardProps {
   review: BusinessReviewWithDetails;
@@ -245,6 +246,15 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
         {review.tags && review.tags.length > 0 && (
           <ReviewTagDisplay tagIds={review.tags} maxVisible={5} />
         )}
+
+        {/* Helpful Button */}
+        <div className="mt-4 pt-3 border-t border-gray-100">
+          <HelpfulButton
+            reviewId={review.id}
+            reviewAuthorId={review.user_id}
+            initialCount={review.helpful_count}
+          />
+        </div>
 
         {/* Business Owner Response Section */}
         <div className="mt-4 pt-4 border-t border-gray-200">

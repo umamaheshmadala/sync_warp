@@ -1,4 +1,111 @@
-# Story 11.3.7: All Reviews Page Enhancements
+# Story 11.3.7: Consolidate Reviews into Storefront Tab
+ 
+ **Epic:** [EPIC 11.3 - Reviews Engagement & Analytics](../epics/EPIC_11.3_Reviews_Engagement_Analytics.md)  
+ **Priority:** 🟡 P1 - MEDIUM  
+ **Effort:** 2 days  
+ **Dependencies:** Story 11.1.5 (Route Configuration), Story 11.3.1 (Helpful Votes)  
+ **Status:** 📋 Ready for Implementation
+ 
+ ---
+ 
+ ## Overview
+ 
+ Consolidate the "All Reviews" page functionality directly into the "Reviews" tab of the Business Storefront. Remove the separate full-page route and potentially confusing "view all" navigation, replacing it with a single, robust infinite-scrolling list within the main business profile view.
+ 
+ ---
+ 
+ ## Problem Statement
+ 
+ ### Current State
+ - `BusinessReviews.tsx` shows a limited list of reviews.
+ - Users have to click "View all" to traverse to a separate page (`AllReviewsPage.tsx`) to see the full list with pagination.
+ - This fragmented experience is unnecessary and disrupts the browsing flow.
+ 
+ ### Desired State
+ - The "Reviews" tab in the Business Storefront shows *all* reviews.
+ - Uses infinite scroll (pagination) directly in the tab.
+ - Has all advanced filtering and sorting capabilities (including "Most Helpful").
+ - No separate "All Reviews" page/route needed.
+ 
+ ---
+ 
+ ## User Stories
+ 
+ ### US-11.3.7.1: Storefront Infinite Scroll
+ **As a** user viewing a business profile  
+ **I want to** scroll through all reviews directly on the reviews tab  
+ **So that** I don't have to leave the main page to see more feedback
+ 
+ **Acceptance Criteria:**
+ - [ ] Reviews tab implements infinite scroll (load more on scroll or button)
+ - [ ] No "View all reviews" link to external page
+ - [ ] Keeps loading more reviews as user scrolls down
+ - [ ] Shows total count correctly
+ 
+ ### US-11.3.7.2: Advanced Filtering in Tab
+ **As a** user in the reviews tab  
+ **I want to** sort and filter reviews using advanced options  
+ **So that** I can find relevant information easily without navigating away
+ 
+ **Acceptance Criteria:**
+ - [ ] "Most Helpful" sort option available and working
+ - [ ] Filter by Rating, Photos, Tags available
+ - [ ] Filters update the list in-place
+ 
+ ### US-11.3.7.3: Remove Legacy Route
+ **As a** developer  
+ **I want to** remove the redundant All Reviews page  
+ **So that** the codebase is cleaner and user flow is simplified
+ 
+ **Acceptance Criteria:**
+ - [ ] `AllReviewsPage.tsx` removed or deprecated
+ - [ ] Route `/business/:id/reviews` redirected to main business profile (or removed)
+ - [ ] Any internal links to the old page updated to point to the Reviews tab
+ 
+ ---
+ 
+ ## Technical Requirements
+ 
+ ### Component Refactoring
+ 
+ **`src/components/reviews/BusinessReviews.tsx`**
+ - Upgrade to use `useInfiniteReviews` hook (inherited from AllReviewsPage logic) instead of simple `useReviews`.
+ - Implement `InfiniteScroll` component or "Load More" mechanism within the tab layout.
+ - Incorporate the `EnhancedReviewFilters` component (if created) or update existing `ReviewFilters`.
+ 
+ **`src/router/routes.tsx`** (or equivalent)
+ - Remove the `/business/:id/reviews` route definition.
+ 
+ ### Data Fetching implementation
+ - Ensure `useInfiniteReviews` works seamlessly within the `BusinessReviews` context (which might be mounted inside a tab).
+ - Check for any conflict with `useReviewStats` or other data fetching.
+ 
+ ---
+ 
+ ## Testing Plan
+ 
+ ### Manual Testing Checklist
+ - [ ] Open Business Profile -> Reviews Tab
+ - [ ] Verify initial list loads
+ - [ ] Scroll/Click "Load More" -> Verify next batch loads
+ - [ ] Test Sort ("Most Helpful", "Newest")
+ - [ ] Test Filters (Recommended, Photos)
+ - [ ] Verify no "Link to all reviews" exists
+ - [ ] Verify performance (no jittery scrolling)
+ 
+ ### Browser Testing
+ - [ ] Automated scroll test in Reviews tab
+ - [ ] Filter interaction test
+ 
+ ---
+ 
+ ## Definition of Done
+ 
+ - [ ] `BusinessReviews` component supports full infinite scroll pagination
+ - [ ] "All Reviews" standalone page is removed/deleted
+ - [ ] All sorting/filtering options from the standalone page are preserved in the tab
+ - [ ] User flow is contained entirely within the Business Storefront
+
 
 **Epic:** [EPIC 11.3 - Reviews Engagement & Analytics](../epics/EPIC_11.3_Reviews_Engagement_Analytics.md)  
 **Priority:** 🟡 P1 - MEDIUM  

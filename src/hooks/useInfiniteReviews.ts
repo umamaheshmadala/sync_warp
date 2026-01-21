@@ -12,7 +12,7 @@ const PAGE_SIZE = 10;
 export interface UseInfiniteReviewsOptions {
   businessId: string;
   filters?: {
-    sort_by?: 'newest' | 'oldest' | 'highest_rated' | 'lowest_rated';
+    sort_by?: 'newest' | 'oldest' | 'highest_rated' | 'lowest_rated' | 'most-helpful';
     recommendation?: boolean;
   };
 }

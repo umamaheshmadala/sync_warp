@@ -24,7 +24,7 @@ export default function AllReviewsPage() {
 
     // State for filters
     const [filterType, setFilterType] = useState<'all' | 'recommend' | 'not-recommend'>('all');
-    const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'highest_rated' | 'lowest_rated'>('newest');
+    const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'highest_rated' | 'lowest_rated' | 'most-helpful'>('newest');
 
     // State for editing
     const [editingReview, setEditingReview] = useState<BusinessReviewWithDetails | null>(null);
@@ -53,7 +53,7 @@ export default function AllReviewsPage() {
         try {
             await updateReview(editingReview.id, {
                 review_text: data.review_text,
-                photo_url: data.photo_url,
+                photo_urls: data.photo_url ? [data.photo_url] : [], // Adapter for legacy form data
                 recommendation: data.recommendation,
                 tags: data.tags
             });
@@ -154,6 +154,7 @@ export default function AllReviewsPage() {
                         >
                             <option value="newest">Newest First</option>
                             <option value="oldest">Oldest First</option>
+                            <option value="most-helpful">Most Helpful</option>
                             {/* <option value="highest_rated">Highest Rated</option> */}
                             {/* <option value="lowest_rated">Lowest Rated</option> */}
                         </select>
