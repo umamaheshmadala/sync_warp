@@ -104,6 +104,19 @@ Implement a review request system that prompts users to leave a review after com
 - [ ] Bypass logs a warning in console for visibility
 
 ---
+ 
+### US-11.3.2.6: Storefront Check-in & GPS Bypass
+**As a** user viewing a business profile
+**I want to** check in directly from the profile page
+**So that** I don't need to navigate to a separate check-in page
+ 
+**Acceptance Criteria:**
+- [ ] **Storefront Button:** Add "Check In" button to `BusinessProfile` header (Desktop & Mobile)
+- [ ] **Placement:** Adjacent to Follow/Navigate buttons
+- [ ] **Flow:** Clicking check-in triggers GPS validation (unless bypassed) -> Success -> Review Prompt
+- [ ] **Testing Mode:** If `require_gps_checkin_for_reviews` is OFF, disable distance validation in UI (fix "Too Far" state)
+ 
+---
 
 ## Technical Requirements
 

@@ -143,6 +143,18 @@ const BusinessProfile: React.FC = () => {
     }
   }, [business?.id, user?.id, isOwner, reviewsKey]);
 
+  // Handle navigation from Review Request Modal (Deep linking)
+  useEffect(() => {
+    if (location.state && (location.state as any).openReviewForm) {
+      // Small timeout to ensure data is ready and animations are smooth
+      setTimeout(() => {
+        handleOpenReviewModal();
+        // Clear state to prevent reopening
+        navigate(location.pathname, { replace: true, state: {} });
+      }, 500);
+    }
+  }, [location.state, navigate]);
+
   // Fetch global settings
   const { requireGpsCheckin, isLoading: isSettingsLoading } = useSystemSettings();
 
@@ -1042,8 +1054,6 @@ const BusinessProfile: React.FC = () => {
           businessName={business?.business_name || ''}
           isBusinessOwner={isOwner}
           onEdit={handleEditReview}
-          realtime={true}
-          limit={3}
           showFilters={false}
           showStats={false}
         />
@@ -1199,8 +1209,6 @@ const BusinessProfile: React.FC = () => {
         businessName={business?.business_name || ''}
         isBusinessOwner={isOwner}
         onEdit={handleEditReview}
-        realtime={true}
-        limit={10}
       />
     </div>
   );

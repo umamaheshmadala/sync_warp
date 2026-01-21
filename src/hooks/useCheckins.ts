@@ -52,16 +52,16 @@ export interface LocationState {
 export interface UseCheckinsReturn {
   // Location state
   location: LocationState;
-  
+
   // Check-in data
   userCheckins: CheckinData[];
   nearbyBusinesses: NearbyBusiness[];
-  
+
   // Loading states
   isCheckingIn: boolean;
   isLoadingCheckins: boolean;
   isLoadingNearby: boolean;
-  
+
   // Functions
   requestLocation: () => Promise<void>;
   performCheckin: (businessId: string) => Promise<CheckinData | null>;
@@ -79,7 +79,7 @@ const CHECKIN_COOLDOWN = 60 * 60 * 1000; // 1 hour in milliseconds
 
 export const useCheckins = (): UseCheckinsReturn => {
   const { user } = useAuthStore();
-  
+
   // Location state
   const [location, setLocation] = useState<LocationState>({
     latitude: null,
@@ -90,11 +90,11 @@ export const useCheckins = (): UseCheckinsReturn => {
     hasPermission: false,
     isSupported: !!navigator.geolocation,
   });
-  
+
   // Check-in data
   const [userCheckins, setUserCheckins] = useState<CheckinData[]>([]);
   const [nearbyBusinesses, setNearbyBusinesses] = useState<NearbyBusiness[]>([]);
-  
+
   // Loading states
   const [isCheckingIn, setIsCheckingIn] = useState(false);
   const [isLoadingCheckins, setIsLoadingCheckins] = useState(false);
@@ -108,10 +108,10 @@ export const useCheckins = (): UseCheckinsReturn => {
     const Δφ = (lat2 - lat1) * Math.PI / 180;
     const Δλ = (lon2 - lon1) * Math.PI / 180;
 
-    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ/2) * Math.sin(Δλ/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+      Math.cos(φ1) * Math.cos(φ2) *
+      Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
     return R * c; // Distance in meters
   }, []);
@@ -133,7 +133,7 @@ export const useCheckins = (): UseCheckinsReturn => {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude, accuracy } = position.coords;
-          
+
           setLocation({
             latitude,
             longitude,
@@ -143,13 +143,13 @@ export const useCheckins = (): UseCheckinsReturn => {
             hasPermission: true,
             isSupported: true,
           });
-          
+
           console.log('📍 [useCheckins] Location acquired:', { latitude, longitude, accuracy });
           resolve();
         },
         (error) => {
           let errorMessage = 'Failed to get location';
-          
+
           switch (error.code) {
             case error.PERMISSION_DENIED:
               errorMessage = 'Location access denied. Please enable location permissions.';
@@ -164,14 +164,14 @@ export const useCheckins = (): UseCheckinsReturn => {
               errorMessage = 'An unknown location error occurred.';
               break;
           }
-          
+
           setLocation(prev => ({
             ...prev,
             error: errorMessage,
             isLoading: false,
             hasPermission: false,
           }));
-          
+
           console.error('📍 [useCheckins] Location error:', error);
           reject(new Error(errorMessage));
         },
@@ -189,9 +189,9 @@ export const useCheckins = (): UseCheckinsReturn => {
     if (!location.latitude || !location.longitude) {
       throw new Error('Location not available');
     }
-    
+
     setIsLoadingNearby(true);
-    
+
     try {
       const { data, error } = await supabase.rpc('nearby_businesses', {
         user_lat: location.latitude,
@@ -199,10 +199,10 @@ export const useCheckins = (): UseCheckinsReturn => {
         radius_km: radiusKm,
         result_limit: 50,
       });
-      
+
       if (error) {
         console.error('Error fetching nearby businesses:', error);
-        
+
         // Fallback: manual distance calculation
         const { data: businesses, error: fallbackError } = await supabase
           .from('businesses')
@@ -220,9 +220,9 @@ export const useCheckins = (): UseCheckinsReturn => {
           .eq('status', 'active')
           .not('latitude', 'is', null)
           .not('longitude', 'is', null);
-        
+
         if (fallbackError) throw fallbackError;
-        
+
         const nearbyWithDistance = businesses
           .map(business => ({
             ...business,
@@ -235,11 +235,11 @@ export const useCheckins = (): UseCheckinsReturn => {
           }))
           .filter(business => business.distance <= radiusKm * 1000)
           .sort((a, b) => a.distance - b.distance);
-        
+
         setNearbyBusinesses(nearbyWithDistance);
         return nearbyWithDistance;
       }
-      
+
       // Add distance to each business
       const businessesWithDistance = data.map(business => ({
         ...business,
@@ -250,7 +250,7 @@ export const useCheckins = (): UseCheckinsReturn => {
           business.longitude
         ),
       }));
-      
+
       setNearbyBusinesses(businessesWithDistance);
       return businessesWithDistance;
     } catch (error) {
@@ -268,12 +268,12 @@ export const useCheckins = (): UseCheckinsReturn => {
     if (business.distance > MAX_CHECKIN_DISTANCE) {
       return false;
     }
-    
+
     // Check location accuracy
     if (location.accuracy && location.accuracy > MIN_ACCURACY) {
       return false;
     }
-    
+
     // Check cooldown period
     const lastCheckin = getLastCheckin(business.id);
     if (lastCheckin) {
@@ -282,7 +282,7 @@ export const useCheckins = (): UseCheckinsReturn => {
         return false;
       }
     }
-    
+
     return true;
   }, [location.accuracy]);
 
@@ -299,49 +299,59 @@ export const useCheckins = (): UseCheckinsReturn => {
       toast.error('Please log in to check in');
       return null;
     }
-    
-    if (!location.latitude || !location.longitude) {
-      toast.error('Location not available');
-      return null;
-    }
-    
+
     // Find the business
     const business = nearbyBusinesses.find(b => b.id === businessId);
     if (!business) {
       toast.error('Business not found');
       return null;
     }
-    
-    // Check if user can check in
-    if (!canCheckIn(business)) {
-      if (business.distance > MAX_CHECKIN_DISTANCE) {
-        toast.error(`You're too far from ${business.business_name}. Please get closer to check in.`);
-      } else {
-        toast.error(`You've already checked in recently. Please wait before checking in again.`);
+
+    // Check GPS requirement
+    // Dynamic import to avoid circular dependencies if any
+    const { fetchGpsCheckinRequirement } = await import('../services/adminSettingsService');
+    const requireGps = await fetchGpsCheckinRequirement();
+
+    // Check if user can check in (only if GPS is required)
+    if (requireGps) {
+      if (!location.latitude || !location.longitude) {
+        toast.error('Location not available');
+        return null;
       }
-      return null;
+
+      if (!canCheckIn(business)) {
+        if (business.distance > MAX_CHECKIN_DISTANCE) {
+          toast.error(`You're too far from ${business.business_name}. Please get closer to check in.`);
+        } else {
+          toast.error(`You've already checked in recently. Please wait before checking in again.`);
+        }
+        return null;
+      }
+    } else {
+      console.warn('⚠️ GPS check-in bypass enabled (Testing Mode) - Skipping distance check');
     }
-    
+
     setIsCheckingIn(true);
-    
+
     try {
-      const distance = calculateDistance(
+      // Calculate distance if we have location, otherwise default to 0 for bypass
+      const distance = (location.latitude && location.longitude) ? calculateDistance(
         location.latitude,
         location.longitude,
         business.latitude,
         business.longitude
-      );
-      
+      ) : 0;
+
       const checkinData = {
         business_id: businessId,
         user_id: user.id,
-        user_latitude: location.latitude,
-        user_longitude: location.longitude,
+        user_latitude: location.latitude || 0, // Default for bypass
+        user_longitude: location.longitude || 0, // Default for bypass
         distance_from_business: distance,
-        verified: distance <= MAX_CHECKIN_DISTANCE,
-        verification_method: 'gps' as const,
+        verified: requireGps ? distance <= MAX_CHECKIN_DISTANCE : true, // Always verified if bypass enabled
+        verification_method: requireGps ? 'gps' : 'manual',
       };
-      
+
       const { data, error } = await supabase
         .from('business_checkins')
         .insert([checkinData])
@@ -356,36 +366,36 @@ export const useCheckins = (): UseCheckinsReturn => {
           )
         `)
         .single();
-      
+
       if (error) throw error;
-      
+
       // Update business check-in count
       await supabase
         .from('businesses')
-        .update({ 
-          total_checkins: (business.total_checkins || 0) + 1 
+        .update({
+          total_checkins: (business.total_checkins || 0) + 1
         })
         .eq('id', businessId);
-      
+
       // Update local state
       setUserCheckins(prev => [data, ...prev]);
-      setNearbyBusinesses(prev => 
-        prev.map(b => 
-          b.id === businessId 
+      setNearbyBusinesses(prev =>
+        prev.map(b =>
+          b.id === businessId
             ? { ...b, total_checkins: (b.total_checkins || 0) + 1 }
             : b
         )
       );
-      
+
       toast.success(`Successfully checked in to ${business.business_name}! 🎉`);
-      
+
       // Send notification to merchant (non-blocking)
       notifyMerchantCheckin(
         businessId,
         user.id,
         business.business_name
       ).catch(err => console.error('Failed to send check-in notification:', err));
-      
+
       // Analytics tracking
       if (typeof gtag !== 'undefined') {
         gtag('event', 'check_in', {
@@ -395,7 +405,7 @@ export const useCheckins = (): UseCheckinsReturn => {
           distance: Math.round(distance),
         });
       }
-      
+
       return data;
     } catch (error) {
       console.error('Check-in error:', error);
@@ -409,9 +419,9 @@ export const useCheckins = (): UseCheckinsReturn => {
   // Get user's check-in history
   const getUserCheckins = useCallback(async (limit: number = 20): Promise<CheckinData[]> => {
     if (!user?.id) return [];
-    
+
     setIsLoadingCheckins(true);
-    
+
     try {
       const { data, error } = await supabase
         .from('business_checkins')
@@ -428,9 +438,9 @@ export const useCheckins = (): UseCheckinsReturn => {
         .eq('user_id', user.id)
         .order('checked_in_at', { ascending: false })
         .limit(limit);
-      
+
       if (error) throw error;
-      
+
       setUserCheckins(data || []);
       return data || [];
     } catch (error) {
@@ -459,9 +469,9 @@ export const useCheckins = (): UseCheckinsReturn => {
         `)
         .eq('business_id', businessId)
         .order('checked_in_at', { ascending: false });
-      
+
       if (error) throw error;
-      
+
       return data || [];
     } catch (error) {
       console.error('Error fetching business check-ins:', error);
