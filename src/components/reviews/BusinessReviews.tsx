@@ -194,12 +194,7 @@ export default function BusinessReviews({
                 <span className="text-gray-600">Loading more...</span>
               </div>
             }
-            endMessage={
-              <div className="text-center py-8">
-                <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2 opacity-50" />
-                <p className="text-gray-500 text-sm">You've seen all the reviews</p>
-              </div>
-            }
+            endMessage={null}
             scrollThreshold={0.8}
             style={{ overflow: 'hidden' }} // Fixes scrollbar issues in some containers
           >

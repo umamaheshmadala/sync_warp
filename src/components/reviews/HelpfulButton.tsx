@@ -48,19 +48,18 @@ export function HelpfulButton({ reviewId, reviewAuthorId, initialCount = 0 }: He
                 onClick={toggleVote}
                 disabled={isVoting || !canVote}
                 className={cn(
-                    'gap-1.5 h-8',
+                    'gap-1.5 h-8 px-3',
                     hasVoted && 'bg-blue-600 text-white hover:bg-blue-700'
                 )}
             >
                 <ThumbsUp className={cn(
-                    'w-3.5 h-3.5',
+                    'w-4 h-4',
                     hasVoted && 'fill-current'
                 )} />
-                Helpful
             </Button>
 
             {/* Vote count with voter list dropdown */}
-            {count > 0 ? (
+            {count > 0 && (
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <button
@@ -68,8 +67,8 @@ export function HelpfulButton({ reviewId, reviewAuthorId, initialCount = 0 }: He
                             className="text-xs text-gray-500 hover:text-blue-600 hover:underline transition-colors focus:outline-none"
                         >
                             {count === 1
-                                ? '1 person found this helpful'
-                                : `${count} people found this helpful`}
+                                ? '1 person'
+                                : `${count} people`}
                         </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="w-64 p-0" align="start">
@@ -109,10 +108,6 @@ export function HelpfulButton({ reviewId, reviewAuthorId, initialCount = 0 }: He
                         )}
                     </DropdownMenuContent>
                 </DropdownMenu>
-            ) : (
-                <span className="text-xs text-gray-400">
-                    Be the first to find this helpful
-                </span>
             )}
         </div>
     );
