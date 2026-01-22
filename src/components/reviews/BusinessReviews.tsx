@@ -10,6 +10,7 @@ import { toast } from 'react-hot-toast';
 import InfiniteScroll from 'react-infinite-scroll-component';
 
 import ReviewCard from './ReviewCard';
+import { FeaturedReviews } from './FeaturedReviews';
 import ReviewFilters from './ReviewFilters';
 import ReviewStats from './ReviewStats';
 import ReviewResponseForm from './ReviewResponseForm';
@@ -17,7 +18,7 @@ import ReviewResponseForm from './ReviewResponseForm';
 import { useInfiniteReviews } from '../../hooks/useInfiniteReviews';
 import { useReviewStats } from '../../hooks/useReviewStats';
 import { useAuthStore } from '../../store/authStore';
-import { createResponse, updateResponse } from '../../services/reviewService';
+import { createResponse, updateResponse, deleteReview } from '../../services/reviewService';
 import type { ReviewFilters as ReviewFiltersType, CreateResponseInput, UpdateResponseInput } from '../../types/review';
 
 interface BusinessReviewsProps {
@@ -80,11 +81,12 @@ export default function BusinessReviews({
 
   const handleDelete = async (reviewId: string) => {
     try {
-      // We might need to manually remove from list or refresh
-      // For now, refreshing the list is safest
+      // Actually delete the review first
+      await deleteReview(reviewId);
+      // Then refresh the list
       await refresh();
       onDelete?.(reviewId);
-      toast.success('Review deleted');
+      // Note: Toast is already shown in ReviewCard after onDelete completes
     } catch (err) {
       console.error('Delete error:', err);
       toast.error('Failed to delete review');
@@ -183,11 +185,14 @@ export default function BusinessReviews({
         />
       )}
 
+      {/* Featured Reviews (Pinned) */}
+      <FeaturedReviews businessId={businessId} isOwner={isBusinessOwner} onRefresh={() => refresh()} />
+
       {/* Reviews List with Infinite Scroll */}
       <div className="space-y-3">
-        {reviews.length > 0 ? (
+        {reviews.filter(r => !r.is_featured).length > 0 ? (
           <InfiniteScroll
-            dataLength={reviews.length}
+            dataLength={reviews.filter(r => !r.is_featured).length}
             next={loadMore}
             hasMore={hasMore}
             loader={
@@ -201,7 +206,7 @@ export default function BusinessReviews({
             style={{ overflow: 'hidden' }} // Fixes scrollbar issues in some containers
           >
             <div className="space-y-4">
-              {reviews.map((review) => (
+              {reviews.filter(r => !r.is_featured).map((review) => (
                 <ReviewCard
                   key={review.id}
                   review={review}
@@ -210,6 +215,8 @@ export default function BusinessReviews({
                   onRespond={handleRespond}
                   isBusinessOwner={isBusinessOwner}
                   businessImage={businessImage}
+                  isFeatured={review.is_featured || false}
+                  onFeatureToggle={() => refresh()}
                 />
               ))}
             </div>

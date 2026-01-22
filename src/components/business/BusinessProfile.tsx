@@ -66,6 +66,7 @@ import BusinessCheckinAnalytics from '../checkins/BusinessCheckinAnalytics';
 import { useBusinessProfile, useBusinessCategories, type Business, type BusinessCategory } from '../../hooks/business';
 import { VerificationBadge } from './VerificationBadge';
 import { ClaimBusinessButton } from './ClaimBusinessButton';
+import ReviewAnalyticsDashboard from '../../pages/business/ReviewAnalyticsDashboard';
 
 
 
@@ -1104,46 +1105,8 @@ const BusinessProfile: React.FC = () => {
   // Render statistics tab - Comprehensive Business Analytics
   const renderStatistics = () => (
     <div className="space-y-6">
-      {/* Quick Stats Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-lg shadow-sm border p-6">
-          <div className="flex items-center">
-            <div className="p-3 bg-yellow-100 rounded-lg">
-              <Star className="w-6 h-6 text-yellow-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Average Rating</p>
-              <p className="text-2xl font-semibold text-gray-900">
-                {business?.average_rating ? business.average_rating.toFixed(1) : 'N/A'}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm border p-6">
-          <div className="flex items-center">
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <Users className="w-6 h-6 text-blue-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Reviews</p>
-              <p className="text-2xl font-semibold text-gray-900">{business?.total_reviews || 0}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm border p-6">
-          <div className="flex items-center">
-            <div className="p-3 bg-green-100 rounded-lg">
-              <MapPin className="w-6 h-6 text-green-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Check-ins</p>
-              <p className="text-2xl font-semibold text-gray-900">{business?.total_checkins || 0}</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Review Analytics Dashboard (Story 11.3.4) */}
+      {business?.id && <ReviewAnalyticsDashboard businessId={business.id} />}
 
       {/* Follower Analytics Section */}
       <FollowerMetricsWidget businessId={business?.id!} />

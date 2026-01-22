@@ -23,7 +23,7 @@ import { toast } from 'react-hot-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import type { BusinessReviewWithDetails } from '../../types/review';
 import { useAuthStore } from '../../store/authStore';
-import { deleteReview } from '../../services/reviewService';
+import { deleteReview, featureReview, unfeatureReview } from '../../services/reviewService';
 import { DeleteReviewDialog } from './DeleteReviewDialog';
 import { ReviewPhotoGallery } from './ReviewPhotoGallery';
 import ReviewTagDisplay from './ReviewTagDisplay';
@@ -35,6 +35,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Pin } from 'lucide-react';
 
 interface ReviewCardProps {
   review: BusinessReviewWithDetails;
@@ -45,6 +46,9 @@ interface ReviewCardProps {
   compact?: boolean;
   isBusinessOwner?: boolean;
   businessImage?: string;
+  isFeatured?: boolean; // New prop
+  showFeaturedBadge?: boolean; // New prop
+  onFeatureToggle?: () => void; // New prop
 }
 
 const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
@@ -58,10 +62,12 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
       compact = false,
       isBusinessOwner = false,
       businessImage,
+      isFeatured = false,
+      showFeaturedBadge = false,
+      onFeatureToggle,
     },
     ref
   ) => {
-    // ... existing hook calls ...
     const { user } = useAuthStore();
     const queryClient = useQueryClient();
     const navigate = useNavigate();
@@ -74,6 +80,24 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
     const isOwnReview = user?.id === review.user_id;
     const canEdit = isOwnReview;
     const timeAgo = formatDistanceToNow(new Date(review.created_at), { addSuffix: true });
+
+    const handleFeatureClick = async () => {
+      try {
+        if (isFeatured) {
+          await unfeatureReview(review.id);
+          toast.success('Review unpinned');
+        } else {
+          await featureReview(review.id);
+          toast.success('Review pinned!');
+        }
+        // Invalidate queries to refresh list
+        queryClient.invalidateQueries({ queryKey: ['featured-reviews', review.business_id] });
+        queryClient.invalidateQueries({ queryKey: ['business-reviews', review.business_id] });
+        onFeatureToggle?.();
+      } catch (error: any) {
+        toast.error(error.message || 'Could not update pin status');
+      }
+    };
 
     const handleEdit = () => {
       onEdit?.(review);
@@ -114,11 +138,20 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
         className={`
-          bg-white rounded-xl border border-gray-200 overflow-hidden
+          bg-white rounded-xl border overflow-hidden
           hover:shadow-md transition-shadow
           ${compact ? 'p-4' : 'p-6'}
+          ${isFeatured ? 'border-indigo-200 bg-indigo-50/10' : 'border-gray-200'}
         `}
       >
+        {/* Featured Badge */}
+        {showFeaturedBadge && isFeatured && (
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-indigo-600 mb-2">
+            <Pin className="w-3.5 h-3.5 fill-indigo-600" />
+            Featured Review
+          </div>
+        )}
+
         {/* Business Name (if showing in user profile) */}
         {showBusinessName && review.business_name && (
           <div className="mb-3 pb-3 border-b border-gray-200">
@@ -217,7 +250,7 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
             )}
 
             {/* Actions Menu */}
-            {isOwnReview && (
+            {(isOwnReview || isBusinessOwner) && (
               <div className="relative">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -228,16 +261,27 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-40">
-                    {canEdit && (
+                    {/* Business Owner Actions */}
+                    {isBusinessOwner && (
+                      <DropdownMenuItem onClick={handleFeatureClick} className="cursor-pointer">
+                        <Pin className="w-4 h-4 mr-2" />
+                        {isFeatured ? 'Unpin Review' : 'Pin Review'}
+                      </DropdownMenuItem>
+                    )}
+
+                    {/* User Actions */}
+                    {isOwnReview && canEdit && (
                       <DropdownMenuItem onClick={handleEdit} className="cursor-pointer">
                         <Edit2 className="w-4 h-4 mr-2" />
                         Edit
                       </DropdownMenuItem>
                     )}
-                    <DropdownMenuItem onClick={handleDeleteClick} className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50">
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Delete
-                    </DropdownMenuItem>
+                    {isOwnReview && (
+                      <DropdownMenuItem onClick={handleDeleteClick} className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50">
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>

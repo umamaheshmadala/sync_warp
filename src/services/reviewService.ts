@@ -792,6 +792,76 @@ export async function logReviewShare(
   }
 }
 
+// =====================================================
+// FEATURED REVIEWS (Story 11.3.6)
+// =====================================================
+
+/**
+ * Feature/Pin a review (business owner only)
+ */
+export async function featureReview(reviewId: string): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { error } = await supabase
+    .from('business_reviews')
+    .update({
+      is_featured: true,
+      featured_at: new Date().toISOString(),
+      featured_by: user.id
+    })
+    .eq('id', reviewId);
+
+  if (error) {
+    if (error.message.includes('Maximum 3')) {
+      throw new Error('You can only feature up to 3 reviews. Unpin one first.');
+    }
+    throw error;
+  }
+}
+
+/**
+ * Unfeature/Unpin a review
+ */
+export async function unfeatureReview(reviewId: string): Promise<void> {
+  const { error } = await supabase
+    .from('business_reviews')
+    .update({
+      is_featured: false,
+      featured_at: null,
+      featured_by: null
+    })
+    .eq('id', reviewId);
+
+  if (error) throw error;
+}
+
+/**
+ * Get featured reviews for a business
+ */
+export async function getFeaturedReviews(businessId: string): Promise<BusinessReviewWithDetails[]> {
+  const { data, error } = await supabase
+    .from('business_reviews_with_details')
+    .select('*')
+    .eq('business_id', businessId)
+    .eq('is_featured', true)
+    .is('deleted_at', null)
+    .order('featured_at', { ascending: false });
+
+  if (error) throw error;
+  return (data || []).map((review: any) => ({
+    ...review,
+    user_name: review.profiles?.full_name || 'Anonymous',
+    user_avatar: review.profiles?.avatar_url || null,
+    user_city: review.profiles?.city || null,
+    response_id: review.business_review_responses?.[0]?.id || null,
+    response_text: review.business_review_responses?.[0]?.response_text || null,
+    response_created_at: review.business_review_responses?.[0]?.created_at || null,
+    response_updated_at: review.business_review_responses?.[0]?.updated_at || null,
+    helpful_count: review.helpful_count || 0
+  }));
+}
+
 // Export service as default
 export default {
   // Utility functions
@@ -821,4 +891,9 @@ export default {
   getUserCheckins,
   hasUserReviewed,
   getUserBusinessReview,
+
+  // Featured Reviews
+  featureReview,
+  unfeatureReview,
+  getFeaturedReviews,
 };
