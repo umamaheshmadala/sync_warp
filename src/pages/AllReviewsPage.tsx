@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     ArrowLeft,
@@ -20,6 +20,7 @@ import { toast } from 'react-hot-toast';
 export default function AllReviewsPage() {
     const { id: businessId } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const location = useLocation();
     const { data: business, isLoading: businessLoading } = useBusinessProfile(businessId);
 
     // State for filters
@@ -28,6 +29,34 @@ export default function AllReviewsPage() {
 
     // State for editing
     const [editingReview, setEditingReview] = useState<BusinessReviewWithDetails | null>(null);
+
+    // Deep linking scroll effect
+    useEffect(() => {
+        if (location.hash) {
+            const id = location.hash.replace('#', '');
+
+            // Poll for element presence (max 10 attempts, 500ms interval)
+            let attempts = 0;
+            const interval = setInterval(() => {
+                const element = document.getElementById(id);
+                if (element) {
+                    clearInterval(interval);
+                    // Add delay to ensure layout is stable
+                    setTimeout(() => {
+                        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        element.classList.add('ring-2', 'ring-blue-500', 'ring-offset-2');
+                        setTimeout(() => {
+                            element.classList.remove('ring-2', 'ring-blue-500', 'ring-offset-2');
+                        }, 3000);
+                    }, 500);
+                }
+                attempts++;
+                if (attempts > 10) clearInterval(interval);
+            }, 500);
+
+            return () => clearInterval(interval);
+        }
+    }, [location.hash]);
 
     if (!businessId) return null;
 

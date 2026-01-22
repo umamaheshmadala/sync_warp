@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useMessages } from '../../hooks/useMessages'
 import { useTypingIndicator } from '../../hooks/useTypingIndicator'
 import { useSendMessage } from '../../hooks/useSendMessage'
@@ -55,6 +55,7 @@ import { useFriendProfile } from '../../hooks/friends/useFriendProfile'
 export default function ChatScreen() {
   const { conversationId } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const { updateConversation } = useMessagingStore() // For clearing unread count
   const { messages, isLoading, hasMore, loadMore } = useMessages(conversationId || null)
   const { isTyping, typingUserIds, handleTyping } = useTypingIndicator(conversationId || null)
@@ -534,6 +535,7 @@ export default function ChatScreen() {
           onCancelReply={handleCancelReply}
           editingMessage={editingMessage}
           onCancelEdit={handleCancelEdit}
+          initialText={location.state?.initialMessage as string | undefined}
         />
       )}
 

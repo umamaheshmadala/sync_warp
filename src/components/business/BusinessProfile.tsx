@@ -1094,6 +1094,7 @@ const BusinessProfile: React.FC = () => {
             onEdit={handleEditReview}
             showFilters={false}
             showStats={false}
+            businessImage={business?.logo_url}
           />
         </div>
       </div>
@@ -1248,6 +1249,7 @@ const BusinessProfile: React.FC = () => {
         businessName={business?.business_name || ''}
         isBusinessOwner={isOwner}
         onEdit={handleEditReview}
+        businessImage={business?.logo_url}
       />
     </div>
   );

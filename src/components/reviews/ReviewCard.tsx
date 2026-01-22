@@ -4,6 +4,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import {
   ThumbsUp,
   ThumbsDown,
@@ -15,6 +16,7 @@ import {
   Image as ImageIcon,
   MessageSquare,
   Reply,
+  Share2,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'react-hot-toast';
@@ -26,6 +28,7 @@ import { DeleteReviewDialog } from './DeleteReviewDialog';
 import { ReviewPhotoGallery } from './ReviewPhotoGallery';
 import ReviewTagDisplay from './ReviewTagDisplay';
 import { HelpfulButton } from './HelpfulButton';
+import { ShareToFriendsModal } from '@/components/chat/ShareToFriendsModal';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,6 +44,7 @@ interface ReviewCardProps {
   showBusinessName?: boolean;
   compact?: boolean;
   isBusinessOwner?: boolean;
+  businessImage?: string;
 }
 
 const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
@@ -53,15 +57,19 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
       showBusinessName = false,
       compact = false,
       isBusinessOwner = false,
+      businessImage,
     },
     ref
   ) => {
+    // ... existing hook calls ...
     const { user } = useAuthStore();
     const queryClient = useQueryClient();
+    const navigate = useNavigate();
 
     // Delete dialog state
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [showShareModal, setShowShareModal] = useState(false);
 
     const isOwnReview = user?.id === review.user_id;
     const canEdit = isOwnReview;
@@ -101,6 +109,7 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
     return (
       <motion.div
         ref={ref}
+        id={`review-${review.id}`} // Add ID for deep linking
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
@@ -148,8 +157,8 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
                   {/* Recommendation Icon - Prominent & Adjacent */}
                   <div
                     className={`flex items-center justify-center w-6 h-6 rounded-full ${review.recommendation
-                        ? 'bg-green-100 text-green-600'
-                        : 'bg-red-100 text-red-600'
+                      ? 'bg-green-100 text-green-600'
+                      : 'bg-red-100 text-red-600'
                       }`}
                     title={review.recommendation ? "Recommended" : "Not Recommended"}
                   >
@@ -170,32 +179,70 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
             </div>
           </div>
 
-          {/* Actions Menu */}
-          {isOwnReview && (
-            <div className="relative">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-gray-200"
-                  >
-                    <MoreVertical className="w-4 h-4 text-gray-500" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-40">
-                  {canEdit && (
-                    <DropdownMenuItem onClick={handleEdit} className="cursor-pointer">
-                      <Edit2 className="w-4 h-4 mr-2" />
-                      Edit
+          <div className="flex items-center gap-1">
+            {/* Share Button */}
+            <button
+              onClick={() => setShowShareModal(true)}
+              className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+              title="Share Review"
+            >
+              <Share2 className="w-4 h-4" />
+            </button>
+
+            {/* Message Reviewer Button (Story 11.3.3.4) */}
+            {!isOwnReview && !isBusinessOwner && (
+              <button
+                onClick={async () => {
+                  try {
+                    // Start conversation
+                    const { messagingService } = await import('../../services/messagingService');
+                    const conversationId = await messagingService.createOrGetConversation(review.user_id);
+
+                    // Navigate to chat with context
+                    navigate(`/messages/${conversationId}`, {
+                      state: {
+                        initialMessage: `Asking about your review of ${review.business_name || 'Business'}`
+                      }
+                    });
+                  } catch (error) {
+                    console.error('Failed to start chat:', error);
+                    toast.error('Could not start chat');
+                  }
+                }}
+                className="p-1.5 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-full transition-colors"
+                title="Message Reviewer"
+              >
+                <MessageSquare className="w-4 h-4" />
+              </button>
+            )}
+
+            {/* Actions Menu */}
+            {isOwnReview && (
+              <div className="relative">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-gray-200"
+                    >
+                      <MoreVertical className="w-4 h-4 text-gray-500" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-40">
+                    {canEdit && (
+                      <DropdownMenuItem onClick={handleEdit} className="cursor-pointer">
+                        <Edit2 className="w-4 h-4 mr-2" />
+                        Edit
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem onClick={handleDeleteClick} className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50">
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete
                     </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem onClick={handleDeleteClick} className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50">
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            )}
+          </div>
         </div>
 
         <DeleteReviewDialog
@@ -225,7 +272,6 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
         )}
 
         {/* Helpful Button - Conditional Divider */}
-        {/* Only show top border if there is content above it (text/photos/tags) */}
         <div className={`mt-2 pt-2 ${review.review_text || (review.photo_urls && review.photo_urls.length > 0) ? 'border-t border-gray-50' : ''}`}>
           <HelpfulButton
             reviewId={review.id}
@@ -235,7 +281,6 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
         </div>
 
         {/* Business Owner Response Section */}
-        {/* ... (Existing Response Logic) ... */}
         {(review.response_text || (isBusinessOwner && onRespond)) && (
           <div className="mt-3 pt-3 border-t border-gray-100">
             {review.response_text ? (
@@ -281,11 +326,11 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
                 whileTap={{ scale: 0.99 }}
                 onClick={() => onRespond(review.id, review.business_id)}
                 className="
-              w-full flex items-center justify-center gap-2 px-4 py-2
-              bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-gray-900
-              border border-gray-200 hover:border-gray-300
-              rounded-lg text-sm font-medium transition-all
-            "
+                  w-full flex items-center justify-center gap-2 px-4 py-2
+                  bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-gray-900
+                  border border-gray-200 hover:border-gray-300
+                  rounded-lg text-sm font-medium transition-all
+                "
               >
                 <Reply className="w-3.5 h-3.5" />
                 Respond
@@ -294,7 +339,22 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
           </div>
         )}
 
-
+        <ShareToFriendsModal
+          isOpen={showShareModal}
+          onClose={() => setShowShareModal(false)}
+          contentType="review"
+          contentId={review.id}
+          title={`Review of ${review.business_name || 'Business'} by ${review.reviewer_name || 'User'}`}
+          previewData={{
+            reviewerName: review.reviewer_name || 'SyncWarp User',
+            reviewerAvatar: review.user_avatar,
+            recommendation: review.recommendation,
+            excerpt: review.review_text?.slice(0, 100),
+            businessName: review.business_name || 'Business',
+            businessId: review.business_id,
+            businessImage: businessImage
+          }}
+        />
       </motion.div>
     );
   }

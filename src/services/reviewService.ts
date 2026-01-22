@@ -764,6 +764,34 @@ export async function getUserBusinessReview(
   return data;
 }
 
+/**
+ * Log a review share
+ */
+export async function logReviewShare(
+  reviewId: string,
+  friendIds: string[] = [],
+  sharedVia: string = 'app'
+): Promise<void> {
+  console.log('🔄 Logging review share:', reviewId);
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return; // Don't log if not authenticated (shouldn't happen for internal share)
+
+  const { error } = await supabase
+    .from('review_shares')
+    .insert({
+      review_id: reviewId,
+      user_id: user.id,
+      shared_via: sharedVia,
+      friend_ids: friendIds
+    });
+
+  if (error) {
+    console.error('❌ Log share error:', error);
+    // Silent fail - don't block UI
+  }
+}
+
 // Export service as default
 export default {
   // Utility functions
@@ -782,6 +810,7 @@ export default {
   // Statistics
   getReviewStats,
   getUserReviewActivity,
+  logReviewShare, // Added export
 
   // Responses
   createResponse,

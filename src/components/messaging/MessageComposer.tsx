@@ -22,6 +22,7 @@ interface MessageComposerProps {
   onCancelReply?: () => void  // Callback to cancel reply (Story 8.10.5)
   editingMessage?: Message | null  // Message being edited (Story 8.5.2 - WhatsApp style)
   onCancelEdit?: () => void  // Callback to cancel edit (Story 8.5.2)
+  initialText?: string // Pre-fill text (Story 11.3.3.4)
 }
 
 /**
@@ -35,8 +36,8 @@ interface MessageComposerProps {
  * - Emoji button inside text field (right side)
  * - Send button appears only when there's text
  */
-export function MessageComposer({ conversationId, onTyping, replyToMessage, onCancelReply, editingMessage, onCancelEdit }: MessageComposerProps) {
-  const [content, setContent] = useState('')
+export function MessageComposer({ conversationId, onTyping, replyToMessage, onCancelReply, editingMessage, onCancelEdit, initialText }: MessageComposerProps) {
+  const [content, setContent] = useState(initialText || '')
   const [showAttachMenu, setShowAttachMenu] = useState(false)
   const [isEditSaving, setIsEditSaving] = useState(false)
   const { sendMessage, isSending } = useSendMessage()
@@ -52,6 +53,13 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
       setTimeout(() => textareaRef.current?.focus(), 100)
     }
   }, [editingMessage])
+
+  // Handle initialText updates (if navigating to same component)
+  useEffect(() => {
+    if (initialText && !editingMessage && !content) {
+      setContent(initialText)
+    }
+  }, [initialText])
 
   // Auto-resize textarea
   useEffect(() => {

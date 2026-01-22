@@ -42,6 +42,7 @@ import { MessageEmojiPicker } from './MessageEmojiPicker'
 import { ReportDialog } from '../reporting/ReportDialog'
 import { ClickableUrl } from './ClickableUrl'
 import { parseMessageContent } from '../../utils/urlUtils'
+import { ReviewLinkPreview } from '../chat/ReviewLinkPreview'
 
 interface MessageBubbleProps {
   message: Message
@@ -367,10 +368,6 @@ export function MessageBubble({
    * but for now we rely on the native hook.
    * 
    * Actually, my useLongPress hook doesn't pass coordinates to onLongPress.
-   * I should update the hook OR jus use the separate onContextMenu event for desktop
-   * and maybe simple center positioning for mobile long press if coords are missing.
-   * 
-   * WAIT: The useLongPress hook we created doesn't return the start coordinates in the callback.
    * That is a limitation. 
    * However, we can track the touch start in the wrapper.
    */
@@ -767,7 +764,17 @@ export function MessageBubble({
                 )
               ) : (
                 <div className="flex flex-col gap-2">
-                  {message.link_previews && message.link_previews.length > 0 && (
+                  {/* Review Preview */}
+                  {message.link_previews &&
+                    message.link_previews.length > 0 &&
+                    message.link_previews[0].metadata?.type === 'review' && (
+                      <div className="mt-2">
+                        <ReviewLinkPreview preview={message.link_previews[0]} />
+                      </div>
+                    )}
+
+                  {/* Standard Link Previews */}
+                  {message.link_previews && message.link_previews.length > 0 && message.link_previews[0].metadata?.type !== 'review' && (
                     <div className="space-y-2 w-full max-w-[75vw]">
                       {message.link_previews.map((preview, index) => (
                         <LinkPreviewCard
@@ -881,43 +888,45 @@ export function MessageBubble({
               isOwnMessage={isOwn}
             />
           </div>
-        </div>
-      </div>
+        </div >
+      </div >
 
       {/* Context Menu - Rendered at document body level to avoid scroll container issues */}
-      {showContextMenu && createPortal(
-        <MessageContextMenu
-          message={message}
-          position={contextMenuPosition}
-          isOwn={isOwn}
-          onClose={() => setShowContextMenu(false)}
-          onReply={() => onReply?.(message)}
-          onForward={() => onForward?.(message)}
-          onCopy={handleCopy}
-          onShare={handleShare}
-          onEdit={() => onEdit?.(message)}
-          canEdit={canEditMessage}
-          editRemainingTime={editRemainingTime}
-          onDeleteForMe={handleDeleteForMe}
-          onDeleteForEveryone={() => handleDeleteForEveryone()}
-          canDeleteForEveryone={canDeleteMessage}
-          deleteRemainingTime={deleteRemainingTime}
-          onReact={toggleReaction}
-          onOpenPicker={() => {
-            setShowContextMenu(false)
-            setShowPicker(true)
-          }}
-          userReactions={userReactions}
-          onPin={() => onPin?.(message.id)}
-          onUnpin={() => onUnpin?.(message.id)}
-          isPinned={isMessagePinned?.(message.id)}
-          onReport={() => {
-            setShowContextMenu(false)
-            setShowReportDialog(true)
-          }}
-        />,
-        document.body
-      )}
+      {
+        showContextMenu && createPortal(
+          <MessageContextMenu
+            message={message}
+            position={contextMenuPosition}
+            isOwn={isOwn}
+            onClose={() => setShowContextMenu(false)}
+            onReply={() => onReply?.(message)}
+            onForward={() => onForward?.(message)}
+            onCopy={handleCopy}
+            onShare={handleShare}
+            onEdit={() => onEdit?.(message)}
+            canEdit={canEditMessage}
+            editRemainingTime={editRemainingTime}
+            onDeleteForMe={handleDeleteForMe}
+            onDeleteForEveryone={() => handleDeleteForEveryone()}
+            canDeleteForEveryone={canDeleteMessage}
+            deleteRemainingTime={deleteRemainingTime}
+            onReact={toggleReaction}
+            onOpenPicker={() => {
+              setShowContextMenu(false)
+              setShowPicker(true)
+            }}
+            userReactions={userReactions}
+            onPin={() => onPin?.(message.id)}
+            onUnpin={() => onUnpin?.(message.id)}
+            isPinned={isMessagePinned?.(message.id)}
+            onReport={() => {
+              setShowContextMenu(false)
+              setShowReportDialog(true)
+            }}
+          />,
+          document.body
+        )
+      }
 
       {/* Report Dialog */}
       <ReportDialog
@@ -959,13 +968,15 @@ export function MessageBubble({
       />
 
       {/* Video Player Modal */}
-      {showVideoPlayer && message.type === 'video' && message.media_urls && message.media_urls.length > 0 && (
-        <VideoPlayer
-          videoUrl={message.media_urls[0]}
-          thumbnailUrl={message.thumbnail_url || message.media_urls[0]}
-          onClose={() => setShowVideoPlayer(false)}
-        />
-      )}
+      {
+        showVideoPlayer && message.type === 'video' && message.media_urls && message.media_urls.length > 0 && (
+          <VideoPlayer
+            videoUrl={message.media_urls[0]}
+            thumbnailUrl={message.thumbnail_url || message.media_urls[0]}
+            onClose={() => setShowVideoPlayer(false)}
+          />
+        )
+      }
 
       {/* Image Lightbox */}
       <ImageLightbox
@@ -976,17 +987,19 @@ export function MessageBubble({
       />
 
       {/* Delete Confirmation Dialog (Story 8.5.3) */}
-      {showDeleteConfirm && createPortal(
-        <DeleteConfirmationDialog
-          isOpen={showDeleteConfirm}
-          onClose={() => setShowDeleteConfirm(false)}
-          onConfirm={handleDeleteForEveryone}
-          remainingTime={deleteRemainingTime}
-          isDeleting={isDeleting}
-          showDeleteForMe={false}
-        />,
-        document.body
-      )}
-    </div>
+      {
+        showDeleteConfirm && createPortal(
+          <DeleteConfirmationDialog
+            isOpen={showDeleteConfirm}
+            onClose={() => setShowDeleteConfirm(false)}
+            onConfirm={handleDeleteForEveryone}
+            remainingTime={deleteRemainingTime}
+            isDeleting={isDeleting}
+            showDeleteForMe={false}
+          />,
+          document.body
+        )
+      }
+    </div >
   )
 }

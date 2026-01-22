@@ -2,6 +2,7 @@ import { Share } from '@capacitor/share'
 import { Capacitor } from '@capacitor/core'
 import { supabase } from '../lib/supabase'
 import toast from 'react-hot-toast'
+import { logReviewShare } from './reviewService'
 
 interface ShareOptions {
   title: string
@@ -229,5 +230,59 @@ class ShareService {
     )
   }
 }
+
+export interface ReviewShareData {
+  reviewId: string
+  businessId: string
+  businessName: string
+  reviewerName: string
+  recommendation: boolean
+  excerpt?: string
+  businessImage?: string
+}
+
+import { messagingService } from './messagingService'
+
+/**
+ * Share a review to friends via chat
+ */
+export async function shareReviewToFriends(
+  reviewId: string,
+  friendIds: string[],
+  reviewData: ReviewShareData
+): Promise<void> {
+  // Create shareable link
+  const shareUrl = `${window.location.origin}/business/${reviewData.businessId}/reviews#review-${reviewId}`
+
+  // Send to each friend
+  for (const friendId of friendIds) {
+    // Get or create conversation
+    const conversationId = await messagingService.createOrGetConversation(friendId)
+
+    await messagingService.sendMessage({
+      conversationId: conversationId,
+      content: `Check out this review of ${reviewData.businessName}`,
+      type: 'text', // We send as text but with link preview
+      linkPreviews: [{
+        url: shareUrl,
+        title: `Review of ${reviewData.businessName} by ${reviewData.reviewerName}`,
+        description: reviewData.excerpt || `Review for ${reviewData.businessName}`,
+        image: reviewData.businessImage,
+        type: 'generic',
+        metadata: {
+          type: 'review',
+          review_id: reviewId,
+          business_id: reviewData.businessId,
+          recommendation: reviewData.recommendation
+        }
+      }]
+    })
+  }
+
+  // Log share for analytics
+  await logReviewShare(reviewId, friendIds)
+}
+
+
 
 export const shareService = new ShareService()

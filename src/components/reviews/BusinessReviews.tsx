@@ -28,6 +28,7 @@ interface BusinessReviewsProps {
   showStats?: boolean;
   showFilters?: boolean;
   isBusinessOwner?: boolean;
+  businessImage?: string;
 }
 
 export default function BusinessReviews({
@@ -38,6 +39,7 @@ export default function BusinessReviews({
   showStats = true,
   showFilters = true,
   isBusinessOwner = false,
+  businessImage,
 }: BusinessReviewsProps) {
   const { user } = useAuthStore();
   const [filters, setFilters] = useState<ReviewFiltersType>({
@@ -207,6 +209,7 @@ export default function BusinessReviews({
                   onDelete={handleDelete}
                   onRespond={handleRespond}
                   isBusinessOwner={isBusinessOwner}
+                  businessImage={businessImage}
                 />
               ))}
             </div>
