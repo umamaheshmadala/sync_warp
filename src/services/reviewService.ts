@@ -311,7 +311,9 @@ export async function getBusinessReviewsPaginated(
       query = query.not('review_text', 'is', null);
     }
     if (filters.has_photo) {
-      query = query.not('photo_url', 'is', null);
+      // Check if photo_urls array is not null and length > 0
+      query = query.not('photo_urls', 'is', null)
+        .neq('photo_urls', '{}'); // Empty array check for Postgres arrays
     }
     if (filters.user_id) {
       query = query.eq('user_id', filters.user_id);
@@ -326,31 +328,21 @@ export async function getBusinessReviewsPaginated(
       case 'oldest':
         query = query.order('created_at', { ascending: true });
         break;
-        query = query.neq('photo_urls', '{}');
+      case 'most-helpful':
+        // Sort by helpful_count DESC, then created_at DESC as tie-breaker
+        query = query.order('helpful_count', { ascending: false, nullsFirst: false })
+          .order('created_at', { ascending: false });
+        break;
+      case 'newest':
+      default:
+        query = query.order('created_at', { ascending: false });
+        break;
     }
-    if (filters.user_id) {
-      query = query.eq('user_id', filters.user_id);
-    }
-    if (filters.tags && filters.tags.length > 0) {
-      query = query.contains('tags', filters.tags);
-    }
+  } else {
+    // Default sort if no filters provided
+    query = query.order('created_at', { ascending: false });
   }
 
-  // Apply sorting
-  const sortBy = filters?.sort_by || 'newest';
-  switch (sortBy) {
-    case 'oldest':
-      query = query.order('created_at', { ascending: true });
-      break;
-    case 'most-helpful':
-      query = query.order('helpful_count', { ascending: false, nullsFirst: false })
-        .order('created_at', { ascending: false });
-      break;
-    case 'newest':
-    default:
-      query = query.order('created_at', { ascending: false });
-      break;
-  }
 
   // Apply pagination
   query = query.range(offset, offset + limit - 1);
@@ -862,6 +854,50 @@ export async function getFeaturedReviews(businessId: string): Promise<BusinessRe
   }));
 }
 
+/**
+ * Get popular tags for a business
+ */
+export async function getPopularTags(businessId: string): Promise<{ tag: string; count: number }[]> {
+  const { data, error } = await supabase
+    .from('business_reviews')
+    .select('tags')
+    .eq('business_id', businessId)
+    .not('tags', 'is', null)
+    .is('deleted_at', null);
+
+  if (error) throw error;
+
+  const tagCounts: Record<string, number> = {};
+  data.forEach((review: any) => {
+    if (Array.isArray(review.tags)) {
+      review.tags.forEach((tag: string) => {
+        tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+      });
+    }
+  });
+
+  return Object.entries(tagCounts)
+    .map(([tag, count]) => ({ tag, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
+}
+
+/**
+ * Get count of reviews with photos
+ */
+export async function getPhotoReviewCount(businessId: string): Promise<number> {
+  const { count, error } = await supabase
+    .from('business_reviews')
+    .select('*', { count: 'exact', head: true })
+    .eq('business_id', businessId)
+    .is('deleted_at', null)
+    .not('photo_urls', 'is', null)
+    .neq('photo_urls', '{}');
+
+  if (error) throw error;
+  return count || 0;
+}
+
 // Export service as default
 export default {
   // Utility functions
@@ -872,6 +908,7 @@ export default {
   // Review CRUD
   createReview,
   getBusinessReviews,
+  getBusinessReviewsPaginated, // Ensure this is exported
   getReview,
   getUserReviews,
   updateReview,
@@ -880,7 +917,7 @@ export default {
   // Statistics
   getReviewStats,
   getUserReviewActivity,
-  logReviewShare, // Added export
+  logReviewShare,
 
   // Responses
   createResponse,
@@ -896,4 +933,8 @@ export default {
   featureReview,
   unfeatureReview,
   getFeaturedReviews,
+
+  // Enhanced Filters
+  getPopularTags,
+  getPhotoReviewCount,
 };

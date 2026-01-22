@@ -8,17 +8,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, AlertCircle, Loader2, CheckCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import InfiniteScroll from 'react-infinite-scroll-component';
+import { useQuery } from '@tanstack/react-query';
 
 import ReviewCard from './ReviewCard';
 import { FeaturedReviews } from './FeaturedReviews';
-import ReviewFilters from './ReviewFilters';
+import { EnhancedReviewFilters } from './EnhancedReviewFilters';
 import ReviewStats from './ReviewStats';
 import ReviewResponseForm from './ReviewResponseForm';
 
 import { useInfiniteReviews } from '../../hooks/useInfiniteReviews';
 import { useReviewStats } from '../../hooks/useReviewStats';
 import { useAuthStore } from '../../store/authStore';
-import { createResponse, updateResponse, deleteReview } from '../../services/reviewService';
+import { createResponse, updateResponse, deleteReview, getPopularTags, getPhotoReviewCount } from '../../services/reviewService';
 import type { ReviewFilters as ReviewFiltersType, CreateResponseInput, UpdateResponseInput } from '../../types/review';
 
 interface BusinessReviewsProps {
@@ -43,8 +44,25 @@ export default function BusinessReviews({
   businessImage,
 }: BusinessReviewsProps) {
   const { user } = useAuthStore();
+
+  // Filter States
   const [filters, setFilters] = useState<ReviewFiltersType>({
     sort_by: 'newest',
+  });
+  const [withPhotosOnly, setWithPhotosOnly] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+
+  // Statistics Data (for filters)
+  const { data: popularTags = [] } = useQuery({
+    queryKey: ['popular-tags', businessId],
+    queryFn: () => getPopularTags(businessId),
+    staleTime: 1000 * 60 * 5 // 5 minutes
+  });
+
+  const { data: photoCount = 0 } = useQuery({
+    queryKey: ['photo-review-count', businessId],
+    queryFn: () => getPhotoReviewCount(businessId),
+    staleTime: 1000 * 60 * 5
   });
 
   // Response modal state
@@ -67,11 +85,13 @@ export default function BusinessReviews({
     businessId,
     filters: {
       sort_by: filters.sort_by,
-      recommendation: filters.recommendation
+      recommendation: filters.recommendation,
+      has_photo: withPhotosOnly,
+      tags: selectedTags.length > 0 ? selectedTags : undefined
     }
   });
 
-  // Load statistics
+  // Load statistics (top summary)
   const {
     stats,
     loading: statsLoading,
@@ -81,12 +101,9 @@ export default function BusinessReviews({
 
   const handleDelete = async (reviewId: string) => {
     try {
-      // Actually delete the review first
       await deleteReview(reviewId);
-      // Then refresh the list
       await refresh();
       onDelete?.(reviewId);
-      // Note: Toast is already shown in ReviewCard after onDelete completes
     } catch (err) {
       console.error('Delete error:', err);
       toast.error('Failed to delete review');
@@ -110,20 +127,17 @@ export default function BusinessReviews({
 
     try {
       if (responseModal.existingResponse) {
-        // Update existing response
         await updateResponse(
           responseModal.existingResponse.id,
           data as UpdateResponseInput
         );
         toast.success('Response updated successfully!');
       } else {
-        // Create new response
         await createResponse(data as CreateResponseInput);
         toast.success('Response posted successfully!');
       }
 
       setResponseModal(null);
-      // Refresh reviews to show the new response
       refresh();
     } catch (error) {
       console.error('Error submitting response:', error);
@@ -133,7 +147,7 @@ export default function BusinessReviews({
     }
   };
 
-  // Initial Loading state (only for first load)
+  // Show generic loading only on initial empty state
   if (loading && reviews.length === 0) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -166,6 +180,17 @@ export default function BusinessReviews({
     );
   }
 
+  // Filter out featured reviews from the main list to avoid duplicates
+  // But ONLY if we are on the default sort/filter view.
+  // If user is filtering/sorting specially, we might want to show everything in that order?
+  // Story says "Featured reviews excluded from main list (no duplicates)" generally.
+  // However, if I filter by "Negative", and a featured review is Negative, it should probably show up in the list if it matches?
+  // Actually, featured reviews are usually pinned at the top. If I sort by "Most Helpful", they might not be at top anymore?
+  // The FeaturedReviews component is ALWAYS displayed at the top.
+  // So we should ALWAYS filter them out of the main list to simulate them being "pinned" at the top.
+  const displayedReviews = reviews.filter(r => !r.is_featured);
+  const reviewsCount = reviews.length; // Approximate total
+
   return (
     <div className="space-y-3">
       {/* Statistics */}
@@ -173,26 +198,35 @@ export default function BusinessReviews({
         <ReviewStats stats={stats} loading={statsLoading} />
       )}
 
-      {/* Filters */}
+      {/* Enhanced Filters */}
       {showFilters && (
-        <ReviewFilters
+        <EnhancedReviewFilters
           filters={filters}
-          onFiltersChange={(newFilters) => {
-            setFilters(newFilters);
-            // useInfiniteReviews watches filters and auto-refreshes
-          }}
-          reviewCount={reviews.length}
+          onFilterChange={setFilters}
+          withPhotosOnly={withPhotosOnly}
+          onWithPhotosChange={setWithPhotosOnly}
+          selectedTags={selectedTags}
+          onTagsChange={setSelectedTags}
+          popularTags={popularTags}
+          photoCount={photoCount}
+          totalCount={stats?.total_reviews || reviewsCount}
         />
       )}
 
       {/* Featured Reviews (Pinned) */}
-      <FeaturedReviews businessId={businessId} isOwner={isBusinessOwner} onRefresh={() => refresh()} />
+      {/* Only show featured reviews if no specific filters that might hide them are applied, 
+          OR always show them? 
+          Usually pinned reviews stay visible. But if I filter for "Negative" and pinned are all "Positive", should they hide?
+          For now, keep them visible as they are important. */}
+      {filters.sort_by === 'newest' && !withPhotosOnly && selectedTags.length === 0 && filters.recommendation === undefined && (
+        <FeaturedReviews businessId={businessId} isOwner={isBusinessOwner} onRefresh={() => refresh()} />
+      )}
 
       {/* Reviews List with Infinite Scroll */}
       <div className="space-y-3">
-        {reviews.filter(r => !r.is_featured).length > 0 ? (
+        {displayedReviews.length > 0 ? (
           <InfiniteScroll
-            dataLength={reviews.filter(r => !r.is_featured).length}
+            dataLength={displayedReviews.length}
             next={loadMore}
             hasMore={hasMore}
             loader={
@@ -201,12 +235,12 @@ export default function BusinessReviews({
                 <span className="text-gray-600">Loading more...</span>
               </div>
             }
-            endMessage={null}
+            endMessage={null} // We handle empty/end state manually or just let it be silent
             scrollThreshold={0.8}
-            style={{ overflow: 'hidden' }} // Fixes scrollbar issues in some containers
+            style={{ overflow: 'hidden' }}
           >
             <div className="space-y-4">
-              {reviews.filter(r => !r.is_featured).map((review) => (
+              {displayedReviews.map((review) => (
                 <ReviewCard
                   key={review.id}
                   review={review}
@@ -215,8 +249,7 @@ export default function BusinessReviews({
                   onRespond={handleRespond}
                   isBusinessOwner={isBusinessOwner}
                   businessImage={businessImage}
-                  isFeatured={review.is_featured || false}
-                  onFeatureToggle={() => refresh()}
+                  isFeatured={false} // Main list items are never "featured" in terms of UI card look (unless we want to highlight them)
                 />
               ))}
             </div>
@@ -230,15 +263,21 @@ export default function BusinessReviews({
           >
             <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-3" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              No Reviews Yet
+              No Reviews Found
             </h3>
             <p className="text-gray-600 text-sm max-w-sm mx-auto">
-              {filters.recommendation !== undefined
-                ? `No ${filters.recommendation ? 'positive' : 'negative'} reviews found.`
-                : businessName
-                  ? `Have you visited ${businessName}? Share your experience!`
-                  : 'Be the first to share your experience!'}
+              No reviews match your current filters. Try adjusting them.
             </p>
+            <button
+              onClick={() => {
+                setFilters({ sort_by: 'newest' });
+                setWithPhotosOnly(false);
+                setSelectedTags([]);
+              }}
+              className="mt-4 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm font-medium"
+            >
+              Clear All Filters
+            </button>
           </motion.div>
         )}
       </div>

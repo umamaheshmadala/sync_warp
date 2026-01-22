@@ -19,6 +19,9 @@ export interface BusinessReview {
   deleted_at: string | null;
   deleted_by: string | null;
   deletion_reason: string | null;
+  is_featured?: boolean;
+  featured_at?: string | null;
+  featured_by?: string | null;
 }
 
 export interface BusinessReviewWithDetails extends BusinessReview {

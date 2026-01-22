@@ -14,6 +14,8 @@ export interface UseInfiniteReviewsOptions {
   filters?: {
     sort_by?: 'newest' | 'oldest' | 'highest_rated' | 'lowest_rated' | 'most-helpful';
     recommendation?: boolean;
+    has_photo?: boolean;
+    tags?: string[];
   };
 }
 
@@ -52,6 +54,8 @@ export function useInfiniteReviews({ businessId, filters }: UseInfiniteReviewsOp
         limit: PAGE_SIZE,
         filters: {
           recommendation: filters?.recommendation,
+          has_photo: filters?.has_photo,
+          tags: filters?.tags,
           sort_by: filters?.sort_by === 'highest_rated' || filters?.sort_by === 'lowest_rated'
             ? 'newest' // Service doesn't support rating sort yet, fallback to newest
             : filters?.sort_by as any
