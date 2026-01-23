@@ -112,9 +112,9 @@ export default function Header() {
     if (value.length >= 2) {
       setSuggestionsLoading(true);
       try {
-        await search.getSuggestions(value);
-        // Get suggestions from search hook (they're stored in search.suggestions)
-        setSuggestions(search.suggestions || []);
+        const results = await search.getSuggestions(value);
+        // Get suggestions directly from the promise result
+        setSuggestions(results || []);
       } catch (error) {
         console.error('Error getting suggestions:', error);
       } finally {

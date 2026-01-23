@@ -31,22 +31,22 @@ class SimpleSearchService {
    */
   async search(query: SimpleSearchQuery): Promise<SimpleSearchResult> {
     const startTime = Date.now();
-    
+
     try {
       console.log('🔍 [simpleSearchService] Starting enhanced search for:', JSON.stringify(query));
-      
+
       // Search coupons and businesses
       let coupons: any[] = [];
       let businesses: any[] = [];
-      
+
       const searchTerm = query.q ? query.q.trim() : '';
       const hasSearchTerm = searchTerm.length > 0;
-      
+
       console.log('🔍 [simpleSearchService] Search mode:', hasSearchTerm ? 'SEARCH' : 'BROWSE', 'term:', searchTerm);
-      
+
       // Either search with term or browse all (if no term provided)
       if (hasSearchTerm || !hasSearchTerm) { // Always proceed
-        
+
         // Build coupon query - either search or browse
         let couponQuery = supabase
           .from('business_coupons')
@@ -54,7 +54,7 @@ class SimpleSearchService {
           .eq('status', 'active')
           .eq('is_public', true)
           .limit(query.limit || 10);
-          
+
         // Add search criteria if we have a search term
         if (hasSearchTerm) {
           couponQuery = couponQuery.or(`title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,type.ilike.%${searchTerm}%`);
@@ -62,42 +62,42 @@ class SimpleSearchService {
         } else {
           console.log('🔍 [simpleSearchService] Browse mode - fetching all public active coupons');
         }
-        
+
         // Add date filter to ensure coupons are still valid
         const now = new Date().toISOString();
         couponQuery = couponQuery.gt('valid_until', now);
         console.log('🔍 [simpleSearchService] Applied date filter - coupons valid after:', now);
-          
+
         const { data: couponData, error: couponError } = await couponQuery;
-          
+
         // Now filter by business status and get real location data
         if (couponData && couponData.length > 0) {
           const businessIds = [...new Set(couponData.map(c => c.business_id))];
           console.log('🔍 [simpleSearchService] Unique business IDs from coupons:', businessIds);
-          
+
           const { data: activeBusinesses, error: businessFilterError } = await supabase
             .from('businesses')
             .select('id, business_name, status, latitude, longitude, address, city, state')
             .in('id', businessIds)
             .eq('status', 'active');
-            
+
           if (businessFilterError) {
             console.error('❌ [simpleSearchService] Business filter error:', businessFilterError);
           }
-            
+
           console.log('🔍 [simpleSearchService] Active businesses found:', activeBusinesses?.length || 0);
           if (activeBusinesses) {
             activeBusinesses.forEach(b => {
               console.log(`   - ${b.business_name} (${b.id.slice(0, 8)}...) - ${b.status} - Coords: ${b.latitude}, ${b.longitude}`);
             });
           }
-          
+
           // Create a business data map for efficient lookup
           const businessMap = new Map();
           activeBusinesses?.forEach(business => {
             businessMap.set(business.id, business);
           });
-            
+
           const activeBusinessIds = new Set(activeBusinesses?.map(b => b.id) || []);
           const filteredCoupons = couponData.filter(coupon => {
             const isIncluded = activeBusinessIds.has(coupon.business_id);
@@ -106,9 +106,9 @@ class SimpleSearchService {
             }
             return isIncluded;
           });
-          
+
           console.log(`🔍 [simpleSearchService] Filtering: ${couponData.length} → ${filteredCoupons.length} coupons`);
-          
+
           // Use real business location data
           coupons = filteredCoupons.map((coupon) => {
             const businessData = businessMap.get(coupon.business_id);
@@ -129,33 +129,33 @@ class SimpleSearchService {
               }
             };
           });
-          
+
           // Apply location-based filtering if location is provided
           if (query.location) {
             console.log('🌍 [simpleSearchService] Applying location filter:', query.location);
             const radiusInMeters = query.location.radius * 1000; // Convert km to meters
-            
+
             coupons = coupons.filter(coupon => {
               if (!coupon.business.latitude || !coupon.business.longitude) {
                 console.log(`⚠️ [simpleSearchService] Coupon "${coupon.title}" has no location data - excluding from location search`);
                 return false;
               }
-              
+
               const distance = calculateDistance(
                 { latitude: query.location.latitude, longitude: query.location.longitude },
                 { latitude: coupon.business.latitude, longitude: coupon.business.longitude }
               );
-              
+
               const isWithinRadius = distance <= radiusInMeters;
               if (!isWithinRadius) {
-                console.log(`📍 [simpleSearchService] Coupon "${coupon.title}" is ${(distance/1000).toFixed(1)}km away - outside ${query.location.radius}km radius`);
+                console.log(`📍 [simpleSearchService] Coupon "${coupon.title}" is ${(distance / 1000).toFixed(1)}km away - outside ${query.location.radius}km radius`);
               } else {
-                console.log(`📍 [simpleSearchService] Coupon "${coupon.title}" is ${(distance/1000).toFixed(1)}km away - within range`);
+                console.log(`📍 [simpleSearchService] Coupon "${coupon.title}" is ${(distance / 1000).toFixed(1)}km away - within range`);
               }
-              
+
               return isWithinRadius;
             });
-            
+
             console.log(`🌍 [simpleSearchService] Location filtering: ${filteredCoupons.length} → ${coupons.length} coupons within ${query.location.radius}km`);
           }
         } else {
@@ -182,14 +182,14 @@ class SimpleSearchService {
           .select('*')
           .eq('status', 'active')
           .limit(query.limit || 10);
-          
+
         // Add search criteria if we have a search term
         if (hasSearchTerm) {
           // Enhanced search that includes coupon-term to business-category matching
           const foodRelatedTerms = ['pizza', 'burger', 'food', 'restaurant', 'cafe', 'coffee', 'dining', 'meal', 'lunch', 'dinner', 'breakfast'];
           const shoppingTerms = ['discount', 'sale', 'shop', 'store', 'buy', 'purchase', 'clothing', 'fashion'];
           const serviceTerms = ['service', 'repair', 'maintenance', 'cleaning', 'beauty', 'salon', 'spa'];
-          
+
           let categoryFilter = '';
           if (foodRelatedTerms.some(term => searchTerm.toLowerCase().includes(term))) {
             categoryFilter = "or(business_type.ilike.%restaurant%,business_type.ilike.%food%,business_type.ilike.%cafe%,business_type.ilike.%dining%)";
@@ -198,7 +198,7 @@ class SimpleSearchService {
           } else if (serviceTerms.some(term => searchTerm.toLowerCase().includes(term))) {
             categoryFilter = "or(business_type.ilike.%service%,business_type.ilike.%beauty%,business_type.ilike.%salon%)";
           }
-          
+
           if (categoryFilter) {
             // First try category matching
             businessQuery = businessQuery.or(`business_name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,${categoryFilter}`);
@@ -210,7 +210,7 @@ class SimpleSearchService {
         } else {
           console.log('🔍 [simpleSearchService] Browse mode - fetching all active businesses');
         }
-        
+
         const { data: businessData, error: businessError } = await businessQuery;
 
         if (businessError) {
@@ -225,7 +225,7 @@ class SimpleSearchService {
               .eq('business_id', business.id)
               .eq('status', 'active')
               .gt('valid_until', new Date().toISOString());
-              
+
             return {
               ...business,
               // Use real coordinates from database (already included in business data)
@@ -236,34 +236,34 @@ class SimpleSearchService {
           businesses.forEach(b => {
             console.log(`   - ${b.business_name} (${b.activeCouponsCount} coupons) - Coords: ${b.latitude}, ${b.longitude}`);
           });
-          
+
           // Apply location-based filtering to businesses if location is provided
           if (query.location) {
             console.log('\ud83c\udf0d [simpleSearchService] Applying location filter to businesses:', query.location);
             const radiusInMeters = query.location.radius * 1000; // Convert km to meters
             const originalBusinessCount = businesses.length;
-            
+
             businesses = businesses.filter(business => {
               if (!business.latitude || !business.longitude) {
                 console.log(`\u26a0\ufe0f [simpleSearchService] Business "${business.business_name}" has no location data - excluding from location search`);
                 return false;
               }
-              
+
               const distance = calculateDistance(
                 { latitude: query.location.latitude, longitude: query.location.longitude },
                 { latitude: business.latitude, longitude: business.longitude }
               );
-              
+
               const isWithinRadius = distance <= radiusInMeters;
               if (!isWithinRadius) {
-                console.log(`\ud83d\udccd [simpleSearchService] Business "${business.business_name}" is ${(distance/1000).toFixed(1)}km away - outside ${query.location.radius}km radius`);
+                console.log(`\ud83d\udccd [simpleSearchService] Business "${business.business_name}" is ${(distance / 1000).toFixed(1)}km away - outside ${query.location.radius}km radius`);
               } else {
-                console.log(`\ud83d\udccd [simpleSearchService] Business "${business.business_name}" is ${(distance/1000).toFixed(1)}km away - within range`);
+                console.log(`\ud83d\udccd [simpleSearchService] Business "${business.business_name}" is ${(distance / 1000).toFixed(1)}km away - within range`);
               }
-              
+
               return isWithinRadius;
             });
-            
+
             console.log(`\ud83c\udf0d [simpleSearchService] Location filtering: ${originalBusinessCount} \u2192 ${businesses.length} businesses within ${query.location.radius}km`);
           }
         }
@@ -295,12 +295,12 @@ class SimpleSearchService {
   /**
    * Get enhanced search suggestions across all fields
    */
-  async getSuggestions(term: string): Promise<string[]> {
+  async getSuggestions(term: string): Promise<{ text: string, type: 'business' | 'coupon' }[]> {
     if (!term || term.length < 2) return [];
 
     try {
       console.log('🔍 [simpleSearchService] Getting suggestions for:', term);
-      
+
       // Get coupon suggestions from multiple fields
       const { data: couponSuggestions } = await supabase
         .from('business_coupons')
@@ -318,40 +318,34 @@ class SimpleSearchService {
         .eq('status', 'active')
         .limit(3);
 
-      const suggestions = [];
-      
-      // Add coupon titles and relevant terms
+      // Add unique suggestions with proper type
+      const suggestionMap = new Map<string, { text: string, type: 'business' | 'coupon' }>();
+
+      // Add coupon titles and relevant terms first
       if (couponSuggestions) {
         couponSuggestions.forEach(coupon => {
           if (coupon.title.toLowerCase().includes(term.toLowerCase())) {
-            suggestions.push(coupon.title);
-          }
-          // Add coupon type as suggestion (e.g., "percentage", "fixed_amount")
-          if (coupon.type && coupon.type.toLowerCase().includes(term.toLowerCase())) {
-            suggestions.push(coupon.type.replace('_', ' '));
-          }
-        });
-      }
-      
-      // Add business names and types
-      if (businessSuggestions) {
-        businessSuggestions.forEach(business => {
-          if (business.business_name.toLowerCase().includes(term.toLowerCase())) {
-            suggestions.push(business.business_name);
-          }
-          if (business.business_type && business.business_type.toLowerCase().includes(term.toLowerCase())) {
-            suggestions.push(business.business_type);
-          }
-          if (business.city && business.city.toLowerCase().includes(term.toLowerCase())) {
-            suggestions.push(business.city);
+            suggestionMap.set(coupon.title, { text: coupon.title, type: 'coupon' });
           }
         });
       }
 
-      // Remove duplicates and return max 5 suggestions
-      const uniqueSuggestions = [...new Set(suggestions)];
+      // Add business names and types
+      if (businessSuggestions) {
+        businessSuggestions.forEach(business => {
+          if (business.business_name.toLowerCase().includes(term.toLowerCase())) {
+            suggestionMap.set(business.business_name, { text: business.business_name, type: 'business' });
+          }
+          if (business.city && business.city.toLowerCase().includes(term.toLowerCase())) {
+            suggestionMap.set(business.city, { text: business.city, type: 'business' });
+          }
+        });
+      }
+
+      // Return max 5 suggestions
+      const uniqueSuggestions = Array.from(suggestionMap.values());
       console.log('✅ [simpleSearchService] Generated suggestions:', uniqueSuggestions);
-      
+
       return uniqueSuggestions.slice(0, 5);
 
     } catch (error) {

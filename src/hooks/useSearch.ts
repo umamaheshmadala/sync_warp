@@ -743,7 +743,7 @@ export const useSearch = (options: UseSearchOptions = {}) => {
 
     try {
       const suggestions = await simpleSearchService.getSuggestions(term);
-      return suggestions.map(text => ({ text, type: 'coupon' as const, count: 1 }));
+      return suggestions.map(item => ({ text: item.text, type: item.type, count: 1 }));
     } catch (error) {
       console.error('Error getting suggestions:', error);
       return [];
