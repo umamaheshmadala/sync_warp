@@ -148,8 +148,8 @@
   "devDependencies": {
     "@capacitor/assets": "^3.0.5",
     "@chromatic-com/storybook": "^4.1.3",
-    "@playwright/experimental-ct-react": "^1.55.1",
-    "@playwright/test": "^1.57.0",
+    "@playwright/experimental-ct-react": "^1.58.0",
+    "@playwright/test": "^1.58.0",
     "@storybook/addon-a11y": "^10.1.2",
     "@storybook/addon-docs": "^10.1.2",
     "@storybook/addon-onboarding": "^10.1.2",
@@ -182,7 +182,6 @@
     "jest-axe": "^10.0.0",
     "jsdom": "^23.0.1",
     "msw": "^2.11.5",
-    "playwright": "^1.55.1",
     "postcss": "^8.4.32",
     "prettier": "^3.1.0",
     "prettier-plugin-tailwindcss": "^0.5.7",

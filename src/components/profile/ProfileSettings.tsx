@@ -234,6 +234,28 @@ export const ProfileSettings: React.FC = () => {
                     </div>
                   )}
 
+                  {/* Specific Types (Reviews) */}
+                  <div className="space-y-3 pt-2">
+                    <h3 className="text-sm font-medium text-gray-900">
+                      Reviews & Responses
+                    </h3>
+                    <div className="pl-0 space-y-3">
+                      <div className="flex items-center justify-between group py-0.5">
+                        <div>
+                          <label className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">
+                            Business Responses
+                          </label>
+                          <p className="text-xs text-gray-500">When a business responds to your review</p>
+                        </div>
+                        <Switch
+                          checked={notifPrefs.review_responses}
+                          onCheckedChange={() => handleNotifToggle('review_responses')}
+                          disabled={!notifPrefs.push_enabled}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Specific Types (Friends) */}
                   <div className="space-y-3 pt-2">
                     <h3 className="text-sm font-medium text-gray-900">

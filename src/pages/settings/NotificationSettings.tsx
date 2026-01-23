@@ -167,6 +167,31 @@ export default function NotificationSettings() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
+                    {/* Business Reviews Section */}
+                    <div className="space-y-4">
+                        <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                            <Share2 className="h-4 w-4" />
+                            Reviews & Responses
+                        </h3>
+
+                        {/* Business Responses */}
+                        <div className="flex items-center justify-between pl-6">
+                            <div className="space-y-0.5">
+                                <label className="text-sm font-medium">Business Responses</label>
+                                <p className="text-xs text-gray-500">
+                                    When a business responds to your review
+                                </p>
+                            </div>
+                            <Switch
+                                checked={preferences.review_responses}
+                                onCheckedChange={() => handlePrefToggle('review_responses')}
+                                disabled={isUpdatingPrefs || !preferences.push_enabled}
+                            />
+                        </div>
+                    </div>
+
+                    <Separator />
+
                     {/* Friends Section */}
                     <div className="space-y-4">
                         <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">

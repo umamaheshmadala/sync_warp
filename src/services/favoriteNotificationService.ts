@@ -4,7 +4,7 @@
 
 import { supabase } from '../lib/supabase';
 
-export type NotificationType = 
+export type NotificationType =
   | 'review_posted'           // Merchant: New review on their business
   | 'review_response'         // User: Business responded to their review
   | 'checkin'                 // Merchant: User checked in at their business
@@ -40,29 +40,34 @@ export interface CreateNotificationInput {
  * Create a notification for a user
  */
 export async function createNotification(input: CreateNotificationInput): Promise<Notification | null> {
+  console.log('🔔 createNotification: Starting insert with:', {
+    user_id: input.user_id,
+    type: input.type,
+    title: input.title,
+  });
   try {
     const { data, error } = await supabase
-      .from('favorite_notifications')
+      .from('notification_log')
       .insert([{
         user_id: input.user_id,
-        type: input.type,
+        notification_type: input.type,
         title: input.title,
-        message: input.message,
+        body: input.message,
         data: input.data || {},
-        expires_at: input.expires_at || null,
-        is_read: false,
+        opened: false,
       }])
       .select()
       .single();
 
     if (error) {
-      console.error('Error creating notification:', error);
+      console.error('❌ createNotification INSERT error:', error);
       throw error;
     }
 
-    return data as Notification;
+    console.log('✅ createNotification: Insert successful, ID:', data?.id);
+    return data as any;
   } catch (error) {
-    console.error('createNotification error:', error);
+    console.error('❌ createNotification CATCH error:', error);
     return null;
   }
 }
@@ -90,7 +95,7 @@ export async function notifyMerchantNewReview(
     }
 
     const sentiment = recommendation ? '👍 recommends' : '👎 doesn\'t recommend';
-    
+
     await createNotification({
       user_id: business.user_id,
       type: 'review_posted',
@@ -114,13 +119,19 @@ export async function notifyMerchantNewReview(
 /**
  * Notify user when business owner responds to their review
  */
+
 export async function notifyUserReviewResponse(
   reviewId: string,
   userId: string,
-  businessName: string
+  businessName: string,
+  businessId: string | undefined,
+  senderId: string
 ): Promise<void> {
+  console.log('🔔 notifyUserReviewResponse called', { reviewId, userId, businessName, businessId, senderId });
   try {
-    await createNotification({
+    // 1. Create In-App Notification
+    console.log('🔔 Creating in-app notification...');
+    const result = await createNotification({
       user_id: userId,
       type: 'review_response',
       title: 'Business Responded to Your Review',
@@ -128,12 +139,70 @@ export async function notifyUserReviewResponse(
       data: {
         review_id: reviewId,
         business_name: businessName,
+        business_id: businessId,
+        sender_id: senderId, // Vital for view to join profiles
+        action_url: businessId ? `/business/${businessId}/reviews#review-${reviewId}` : `/reviews`
       },
     });
 
-    console.log(`✅ Notified user (${userId}) about business response`);
+    console.log('✅ In-app notification created result:', result);
+
+    // 2. Check Preferences for Push
+    console.log('🔔 Fetching user notification preferences...');
+    const { data: profile, error: prefError } = await supabase
+      .from('profiles')
+      .select('notification_preferences')
+      .eq('id', userId)
+      .single();
+
+    console.log('🔔 User preferences fetch result:', { profile, prefError });
+
+    if (prefError) {
+      console.error('❌ Error fetching notification preferences:', prefError);
+      return;
+    }
+
+    const prefs = profile?.notification_preferences as any;
+    console.log('🔔 User preferences:', prefs);
+
+    // Default to true if no record/value (failsafe)
+    // Note: notification_preferences is JSONB
+    const pushEnabled = prefs?.push_enabled !== false;
+    const responseEnabled = prefs?.review_responses !== false;
+
+    console.log(`🔔 Notification checks: pushEnabled=${pushEnabled}, responseEnabled=${responseEnabled}`);
+
+    if (!pushEnabled || !responseEnabled) {
+      console.log(`🔕 Push skipped for user ${userId} (Global: ${pushEnabled}, Response: ${responseEnabled})`);
+      return;
+    }
+
+    // 3. Send Push Notification via Edge Function
+    const actionUrl = businessId ? `/business/${businessId}/reviews#review-${reviewId}` : `/reviews`;
+    console.log('🚀 Invoking send-push-notification Edge Function with actionUrl:', actionUrl);
+
+    const { data: pushData, error: pushError } = await supabase.functions.invoke('send-push-notification', {
+      body: {
+        user_id: userId,
+        title: `${businessName} responded to your review`,
+        body: `Tap to view the response from ${businessName}`,
+        data: {
+          type: 'review_response',
+          review_id: reviewId,
+          business_id: businessId,
+          url: actionUrl
+        }
+      }
+    });
+
+    if (pushError) {
+      console.error('❌ Failed to invoke push edge function:', pushError);
+    } else {
+      console.log(`✅ Push sent to user (${userId})`, pushData);
+    }
+
   } catch (error) {
-    console.error('Error notifying user of review response:', error);
+    console.error('❌ Error in notifyUserReviewResponse:', error);
   }
 }
 
@@ -187,14 +256,14 @@ export async function getUserNotifications(
 ): Promise<Notification[]> {
   try {
     let query = supabase
-      .from('favorite_notifications')
+      .from('in_app_notifications')
       .select('*')
       .eq('user_id', userId)
-      .order('created_at', { ascending: false })
+      .order('sent_at', { ascending: false })
       .limit(limit);
 
     if (unreadOnly) {
-      query = query.eq('is_read', false);
+      query = query.eq('opened', false);
     }
 
     const { data, error } = await query;
@@ -217,8 +286,8 @@ export async function getUserNotifications(
 export async function markNotificationAsRead(notificationId: string): Promise<boolean> {
   try {
     const { error } = await supabase
-      .from('favorite_notifications')
-      .update({ is_read: true })
+      .from('notification_log')
+      .update({ opened: true })
       .eq('id', notificationId);
 
     if (error) {
@@ -239,10 +308,10 @@ export async function markNotificationAsRead(notificationId: string): Promise<bo
 export async function markAllNotificationsAsRead(userId: string): Promise<boolean> {
   try {
     const { error } = await supabase
-      .from('favorite_notifications')
-      .update({ is_read: true })
+      .from('notification_log')
+      .update({ opened: true })
       .eq('user_id', userId)
-      .eq('is_read', false);
+      .eq('opened', false);
 
     if (error) {
       console.error('Error marking all notifications as read:', error);
@@ -262,7 +331,7 @@ export async function markAllNotificationsAsRead(userId: string): Promise<boolea
 export async function deleteNotification(notificationId: string): Promise<boolean> {
   try {
     const { error } = await supabase
-      .from('favorite_notifications')
+      .from('notification_log')
       .delete()
       .eq('id', notificationId);
 
@@ -284,10 +353,10 @@ export async function deleteNotification(notificationId: string): Promise<boolea
 export async function getUnreadNotificationCount(userId: string): Promise<number> {
   try {
     const { count, error } = await supabase
-      .from('favorite_notifications')
+      .from('in_app_notifications')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId)
-      .eq('is_read', false);
+      .eq('opened', false);
 
     if (error) {
       console.error('Error getting unread count:', error);

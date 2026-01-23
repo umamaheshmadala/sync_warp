@@ -105,6 +105,8 @@ class AdvancedSearchService {
     hasMore: boolean;
   }> {
     try {
+      console.log('🔍 [AdvancedSearchService] functionality check - searchBusinesses called with:', JSON.stringify(filters));
+
       let query = supabase
         .from('businesses')
         .select(`
@@ -115,6 +117,7 @@ class AdvancedSearchService {
 
       // Text search
       if (filters.query) {
+        console.log('🔍 [AdvancedSearchService] Applying text filter:', filters.query);
         // Search in name, type, and city (description removed to avoid null issues)
         query = query.or(`business_name.ilike.%${filters.query}%,business_type.ilike.%${filters.query}%,city.ilike.%${filters.query}%`);
       }
@@ -139,7 +142,12 @@ class AdvancedSearchService {
 
       const { data: businesses, error, count } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ [AdvancedSearchService] Query error:', error);
+        throw error;
+      }
+
+      console.log(`✅ [AdvancedSearchService] Query returned ${businesses?.length || 0} businesses. Total count: ${count}`);
 
       if (businesses && businesses.length > 0) {
         // Process results and add computed fields

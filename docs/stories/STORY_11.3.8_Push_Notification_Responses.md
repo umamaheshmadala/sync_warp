@@ -4,7 +4,13 @@
 **Priority:** 🟡 P1 - MEDIUM  
 **Effort:** 1 day  
 **Dependencies:** Existing push notification infrastructure (EPIC 7.4)  
-**Status:** 📋 Ready for Implementation
+**Status:** � Incomplete (Broken)
+
+> [!WARNING]
+> **Critical Issue:** As of 2026-01-23, both in-app and push notifications are confirmed NOT working.
+> - Push notifications are not being received.
+> - In-app notifications are not appearing in the notification center.
+> - This feature requires debugging before it can be considered complete.
 
 ---
 

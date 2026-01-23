@@ -10,6 +10,7 @@ export interface NotificationPreferences {
     friend_accepted: boolean;
     deal_shared: boolean;
     birthday_reminders: boolean;
+    review_responses: boolean;
 }
 
 const DEFAULT_PREFERENCES: NotificationPreferences = {
@@ -19,6 +20,7 @@ const DEFAULT_PREFERENCES: NotificationPreferences = {
     friend_accepted: true,
     deal_shared: true,
     birthday_reminders: false,
+    review_responses: true,
 };
 
 export function useNotificationPreferences() {
