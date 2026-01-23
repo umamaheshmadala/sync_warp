@@ -250,7 +250,8 @@ export const useSearch = (options: UseSearchOptions = {}) => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
-    abortControllerRef.current = new AbortController();
+    const currentController = new AbortController();
+    abortControllerRef.current = currentController;
 
     const queryToUse: SearchQuery = customQuery || {
       q: searchState.query,
@@ -325,6 +326,11 @@ export const useSearch = (options: UseSearchOptions = {}) => {
 
       console.log('🔍 [useSearch] Raw search result:', simpleResult);
 
+      // Check if this search was cancelled (using local controller reference)
+      if (currentController.signal.aborted) {
+        return null;
+      }
+
       // Fetch user's collected coupons if user is logged in
       let userCollectedCouponIds = new Set<string>();
       if (user?.id) {
@@ -366,8 +372,8 @@ export const useSearch = (options: UseSearchOptions = {}) => {
       };
       // const result = await searchService.search(queryToUse, user?.id);
 
-      // Check if this search was cancelled
-      if (abortControllerRef.current?.signal.aborted) {
+      // Check if this search was cancelled (again, before setting state)
+      if (currentController.signal.aborted) {
         return null;
       }
 
@@ -490,14 +496,19 @@ export const useSearch = (options: UseSearchOptions = {}) => {
       }
       return result;
     } catch (error) {
-      if (!abortControllerRef.current?.signal.aborted) {
+      // Only set error if THIS search wasn't aborted
+      if (!currentController.signal.aborted) {
         const errorMessage = error instanceof Error ? error.message : 'Search failed';
         setSearchState(prev => ({ ...prev, error: errorMessage }));
         toast.error(errorMessage);
       }
       return null;
     } finally {
-      setSearchState(prev => ({ ...prev, isSearching: false }));
+      // Vital fix: ONLY set isSearching to false if THIS search was NOT aborted.
+      // If it was aborted, it means a newer search is running/pending, so we should leave isSearching=true
+      if (!currentController.signal.aborted) {
+        setSearchState(prev => ({ ...prev, isSearching: false }));
+      }
     }
   }, [searchState, user?.id, saveToUrl]);
 

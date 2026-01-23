@@ -64,6 +64,10 @@ export interface UserReviewActivity {
   reviews_with_text: number;
   reviews_with_photos: number;
   last_review_date: string | null;
+  // Story 11.3.9: New impact metrics
+  total_helpful_votes: number;
+  responses_received: number;
+  total_views: number;
 }
 
 export interface CreateReviewInput {

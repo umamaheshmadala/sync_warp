@@ -129,6 +129,12 @@ export default function UserReviewsList() {
               {reviews.length} {reviews.length === 1 ? 'review' : 'reviews'} written
             </p>
           </div>
+          <a
+            href="/reviews"
+            className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
+          >
+            View All
+          </a>
         </div>
 
         {/* Reviews List */}

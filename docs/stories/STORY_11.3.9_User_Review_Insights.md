@@ -4,7 +4,7 @@
 **Priority:** 🟢 P2 - LOW  
 **Effort:** 2 days  
 **Dependencies:** Story 11.3.1 (Helpful Votes for impact data)  
-**Status:** 📋 Ready for Implementation
+**Status:** ✅ Complete
 
 ---
 
@@ -563,7 +563,8 @@ describe('MyReviewsPage', () => {
 |------|--------|-------------|
 | `supabase/migrations/xxx_user_review_stats.sql` | CREATE | Stats view |
 | `src/services/userReviewService.ts` | CREATE | Stats and reviews API |
-| `src/pages/profile/MyReviewsPage.tsx` | MODIFY | Enhanced UI |
+| `src/pages/MyReviewsPage.tsx` | CREATE | Enhanced standalone reviews page |
+| `src/components/reviews/UserReviewsList.tsx` | MODIFY | Added "View All" link to /reviews |
 
 ---
 
