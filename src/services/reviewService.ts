@@ -357,13 +357,15 @@ export async function getBusinessReviewsPaginated(
   // Transform data to match interface
   const reviews: BusinessReviewWithDetails[] = (data || []).map((review: any) => ({
     ...review,
-    user_name: review.profiles?.full_name || 'Anonymous',
-    user_avatar: review.profiles?.avatar_url || null,
-    user_city: review.profiles?.city || null,
-    response_id: review.business_review_responses?.[0]?.id || null,
-    response_text: review.business_review_responses?.[0]?.response_text || null,
-    response_created_at: review.business_review_responses?.[0]?.created_at || null,
-    response_updated_at: review.business_review_responses?.[0]?.updated_at || null,
+    user_name: review.profiles?.full_name || review.reviewer_name || 'Anonymous',
+    user_avatar: review.profiles?.avatar_url || review.user_avatar || null,
+    user_city: review.profiles?.city || review.user_city || null,
+    // View returns these fields directly, so we don't need to extract them from a relation
+    // We keep the backup lookup just in case the view changes back to returning relations
+    response_id: review.response_id || review.business_review_responses?.[0]?.id || null,
+    response_text: review.response_text || review.business_review_responses?.[0]?.response_text || null,
+    response_created_at: review.response_created_at || review.business_review_responses?.[0]?.created_at || null,
+    response_updated_at: review.response_updated_at || review.business_review_responses?.[0]?.updated_at || null,
     helpful_count: review.helpful_count || 0
   }));
 
@@ -416,12 +418,10 @@ export async function getUserReviews(userId?: string): Promise<BusinessReviewWit
     .from('business_reviews_with_details')
     .select('*')
     .eq('user_id', targetUserId)
+    .is('deleted_at', null) // Exclude soft-deleted reviews
     .order('created_at', { ascending: false });
 
-  // Note: We might want to see deleted reviews here to show "Deleted" history,
-  // or filter them out.
-  // For now we include them so user can see what they deleted.
-  // If we want to hide them, add .is('deleted_at', null);
+  // Deleted reviews are now filtered out
 
   if (error) {
     console.error('❌ Get user reviews error:', error);
@@ -591,19 +591,32 @@ export async function createResponse(input: CreateResponseInput): Promise<Busine
   console.log('✅ Response created successfully:', data);
 
   // Get review details to notify the reviewer
-  const { data: review } = await supabase
+  console.log('🔔 Fetching review details for notification...');
+  const { data: review, error: reviewFetchError } = await supabase
     .from('business_reviews_with_details')
-    .select('user_id, business_name')
+    .select('user_id, business_name, business_id')
     .eq('id', input.review_id)
     .single();
 
+  console.log('🔔 Review fetch result:', { review, reviewFetchError });
+
   if (review) {
     // Send notification to user (async, don't await)
-    notifyUserReviewResponse(
-      input.review_id,
-      review.user_id,
-      review.business_name
-    ).catch(err => console.error('Failed to send response notification:', err));
+    const { data: { user } } = await supabase.auth.getUser();
+    console.log('🔔 Current user for notification:', user?.id);
+    if (user) {
+      notifyUserReviewResponse(
+        input.review_id,
+        review.user_id,
+        review.business_name,
+        review.business_id,
+        user.id // Pass sender ID (Business Owner)
+      ).catch(err => console.error('❌ Failed to send response notification:', err));
+    } else {
+      console.log('❌ No authenticated user found for notification');
+    }
+  } else {
+    console.log('❌ Review not found, cannot send notification');
   }
 
   return data;

@@ -250,6 +250,7 @@ export default function BusinessReviews({
                   isBusinessOwner={isBusinessOwner}
                   businessImage={businessImage}
                   isFeatured={false} // Main list items are never "featured" in terms of UI card look (unless we want to highlight them)
+                  onRefresh={refresh}
                 />
               ))}
             </div>

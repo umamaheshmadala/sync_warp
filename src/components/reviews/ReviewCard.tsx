@@ -23,8 +23,8 @@ import { toast } from 'react-hot-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import type { BusinessReviewWithDetails } from '../../types/review';
 import { useAuthStore } from '../../store/authStore';
-import { deleteReview, featureReview, unfeatureReview } from '../../services/reviewService';
-import { DeleteReviewDialog } from './DeleteReviewDialog';
+import { deleteReview, featureReview, unfeatureReview, deleteResponse } from '../../services/reviewService';
+import { ConfirmDeleteDialog } from './ConfirmDeleteDialog';
 import { ReviewPhotoGallery } from './ReviewPhotoGallery';
 import ReviewTagDisplay from './ReviewTagDisplay';
 import { HelpfulButton } from './HelpfulButton';
@@ -49,6 +49,7 @@ interface ReviewCardProps {
   isFeatured?: boolean; // New prop
   showFeaturedBadge?: boolean; // New prop
   onFeatureToggle?: () => void; // New prop
+  onRefresh?: () => void; // New prop to trigger parent refresh
 }
 
 const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
@@ -65,6 +66,7 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
       isFeatured = false,
       showFeaturedBadge = false,
       onFeatureToggle,
+      onRefresh,
     },
     ref
   ) => {
@@ -75,6 +77,11 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
     // Delete dialog state
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+
+    // Delete Response state
+    const [showDeleteResponseDialog, setShowDeleteResponseDialog] = useState(false);
+    const [isDeletingResponse, setIsDeletingResponse] = useState(false);
+
     const [showShareModal, setShowShareModal] = useState(false);
 
     const isOwnReview = user?.id === review.user_id;
@@ -127,6 +134,36 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
         toast.error('Could not delete review');
       } finally {
         setIsDeleting(false);
+      }
+    };
+
+    const handleDeleteResponseClick = () => {
+      setShowDeleteResponseDialog(true);
+    };
+
+    const handleConfirmDeleteResponse = async () => {
+      if (!review.response_id) return;
+
+      setIsDeletingResponse(true);
+      try {
+        await deleteResponse(review.response_id);
+        toast.success('Response deleted');
+
+        // Invalidate queries to refresh UI
+        queryClient.invalidateQueries({ queryKey: ['business-reviews', review.business_id] });
+        queryClient.invalidateQueries({ queryKey: ['reviews-list'] });
+        queryClient.invalidateQueries({ queryKey: ['all-reviews'] });
+        queryClient.invalidateQueries({ queryKey: ['user-reviews'] });
+
+        // Trigger manual refresh if parent provided callback (for non-React Query lists)
+        onRefresh?.();
+
+        setShowDeleteResponseDialog(false);
+      } catch (error: any) {
+        console.error('Delete response error:', error);
+        toast.error(error.message || 'Could not delete response');
+      } finally {
+        setIsDeletingResponse(false);
       }
     };
 
@@ -289,11 +326,24 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
           </div>
         </div>
 
-        <DeleteReviewDialog
+        <ConfirmDeleteDialog
           isOpen={showDeleteDialog}
           onClose={() => setShowDeleteDialog(false)}
           onConfirm={handleConfirmDelete}
           isDeleting={isDeleting}
+          title="Delete Review?"
+          description="Are you sure you want to delete this review? This action cannot be undone."
+          confirmLabel="Delete Review"
+        />
+
+        <ConfirmDeleteDialog
+          isOpen={showDeleteResponseDialog}
+          onClose={() => setShowDeleteResponseDialog(false)}
+          onConfirm={handleConfirmDeleteResponse}
+          isDeleting={isDeletingResponse}
+          title="Delete Response?"
+          description="Are you sure you want to delete your response? This action cannot be undone."
+          confirmLabel="Delete Response"
         />
 
         {/* Review Text */}
@@ -346,16 +396,25 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
                       </span>
                     </div>
                     {isBusinessOwner && onRespond && (
-                      <button
-                        onClick={() => onRespond(review.id, review.business_id, {
-                          id: review.response_id!,
-                          response_text: review.response_text!,
-                        })}
-                        className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1"
-                      >
-                        <Edit2 className="w-3 h-3" />
-                        Edit
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => onRespond(review.id, review.business_id, {
+                            id: review.response_id!,
+                            response_text: review.response_text!,
+                          })}
+                          className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                        >
+                          <Edit2 className="w-3 h-3" />
+                          Edit
+                        </button>
+                        <button
+                          onClick={handleDeleteResponseClick}
+                          className="text-xs text-red-600 hover:text-red-700 flex items-center gap-1"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          Delete
+                        </button>
+                      </div>
                     )}
                   </div>
                   <p className="text-sm text-gray-700">{review.response_text}</p>

@@ -60,6 +60,19 @@ Increase the business owner response word limit from 50 words to 150 words, matc
 
 ---
 
+### US-11.2.4.3: Delete Response
+**As a** business owner  
+**I want to** delete my response to a review  
+**So that** I can remove outdated or incorrect replies
+
+**Acceptance Criteria:**
+- [ ] "Delete" option visible next to "Edit" for existing responses
+- [ ] Confirmation dialog before deletion
+- [ ] Database record deleted on confirmation
+- [ ] UI updates immediately after deletion
+- [ ] Only the business owner can delete their own response
+- [ ] Success toast notification shown after deletion
+
 ## Technical Requirements
 
 ### Database Migration
@@ -367,6 +380,12 @@ describe('ReviewResponseForm', () => {
 - [ ] Submit with valid response - saves
 - [ ] Existing responses under 50 words - editable
 - [ ] Edit existing response to 150 words - saves
+- [ ] **Delete Response:** Click delete on existing response
+- [ ] **Delete Response:** Confirmation dialog appears
+- [ ] **Delete Response:** Cancel cancels deletion
+- [ ] **Delete Response:** Confirm deletes response
+- [ ] **Delete Response:** Success toast shows
+- [ ] **Delete Response:** Response removed from UI
 
 ---
 
@@ -376,7 +395,8 @@ describe('ReviewResponseForm', () => {
 |------|--------|-------------|
 | `supabase/migrations/xxx_response_word_limit.sql` | CREATE | Update DB constraint |
 | `src/components/reviews/ReviewResponseForm.tsx` | MODIFY | Update max words |
-| `src/services/reviewService.ts` | MODIFY | Validate 150 words |
+| `src/components/reviews/ReviewCard.tsx` | MODIFY | Add Delete button next to Edit |
+| `src/services/reviewService.ts` | MODIFY | Validate 150 words, add `deleteResponse` call |
 | `src/types/review.ts` | MODIFY | Add constant |
 
 ---
