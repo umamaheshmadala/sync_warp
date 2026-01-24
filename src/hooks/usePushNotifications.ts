@@ -122,6 +122,16 @@ export const usePushNotifications = (userId: string | null) => {
           visibility: 1,
           vibration: true,
         });
+
+        // Create Default Channel (for Business Responses, etc.)
+        await PushNotifications.createChannel({
+          id: 'default',
+          name: 'General Notifications',
+          description: 'General app notifications',
+          importance: 5,
+          visibility: 1,
+          vibration: true,
+        });
       }
 
       // Permissions

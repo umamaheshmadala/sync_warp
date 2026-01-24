@@ -83,10 +83,33 @@ export const notificationService = {
       .eq('opened', false);
 
     if (error) {
-        console.error('Error fetching unread count:', error);
-        return 0;
+      console.error('Error fetching unread count:', error);
+      return 0;
     }
 
     return count || 0;
+  },
+
+  /**
+   * Send a push notification when a business responds to a review.
+   * Invokes the 'send-response-notification' Edge Function.
+   */
+  sendReviewResponseNotification: async (reviewId: string, responseText: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('send-response-notification', {
+        body: {
+          record: {
+            review_id: reviewId,
+            response_text: responseText
+          }
+        }
+      });
+
+      if (error) throw error;
+      console.log('[NotificationService] Push notification sent:', data);
+    } catch (err) {
+      console.error('[NotificationService] Failed to send push notification:', err);
+      // Non-blocking error - we don't want to stop the UI flow if push fails
+    }
   }
 };

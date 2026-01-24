@@ -11,6 +11,7 @@ export type NotificationType =
   | 'friend_accepted'
   | 'deal_shared'
   | 'birthday_reminder'
+  | 'review_response'
 
 export interface NotificationData {
   type: NotificationType
@@ -19,6 +20,7 @@ export interface NotificationData {
   offerId?: string
   userId?: string
   messageId?: string
+  responseId?: string
   // Additional fields for extensibility
   [key: string]: any
 }
@@ -53,6 +55,17 @@ export class NotificationRouter {
           navigate('/')
         }
         break
+
+      case 'review_response':
+        if (data.businessId) {
+          // Route to business page (where reviews are)
+          // If we had a direct review link, we'd use it.
+          // Assuming /business/:id shows reviews or has them accessible
+          navigate(`/business/${data.businessId}`)
+        } else {
+          navigate('/')
+        }
+        break;
 
       case 'offer':
         if (data.businessId && data.offerId) {
@@ -146,6 +159,7 @@ export class NotificationRouter {
   static getTypeLabel(type: NotificationType): string {
     const labels: Record<NotificationType, string> = {
       review: '📝 Review',
+      review_response: '💬 Response',
       offer: '🎁 Offer',
       follower: '👥 Follower',
       business: '🏢 Business',
@@ -168,6 +182,7 @@ export class NotificationRouter {
   static getTypeColor(type: NotificationType): string {
     const colors: Record<NotificationType, string> = {
       review: '#007AFF',
+      review_response: '#34C759',
       offer: '#FF9500',
       follower: '#5856D6',
       business: '#34C759',

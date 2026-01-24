@@ -57,17 +57,17 @@ export async function createNotification(input: CreateNotificationInput): Promis
         body: input.message,
         data: input.data || {},
         opened: false,
-      }])
-      .select()
-      .single();
+      }]);
+    // .select() // Removed to allow inserts for other users (RLS blocks select)
+    // .single();
 
     if (error) {
       console.error('❌ createNotification INSERT error:', error);
       throw error;
     }
 
-    console.log('✅ createNotification: Insert successful, ID:', data?.id);
-    return data as any;
+    console.log('✅ createNotification: Insert successful (no data returned)');
+    return {} as any; // Return empty object since we can't get the ID, but callers expect Non-Null
   } catch (error) {
     console.error('❌ createNotification CATCH error:', error);
     return null;
@@ -131,23 +131,11 @@ export async function notifyUserReviewResponse(
 ): Promise<void> {
   console.log('🔔 notifyUserReviewResponse called', { reviewId, userId, businessName, businessId, senderId });
   try {
-    // 1. Create In-App Notification
-    console.log('🔔 Creating in-app notification...');
-    const result = await createNotification({
-      user_id: userId,
-      type: 'review_response',
-      title: 'Business Responded to Your Review',
-      message: `${businessName} has responded to your review`,
-      data: {
-        review_id: reviewId,
-        business_name: businessName,
-        business_id: businessId,
-        sender_id: senderId, // Vital for view to join profiles
-        action_url: businessId ? `/business/${businessId}/reviews#review-${reviewId}` : `/reviews`
-      },
-    });
+    // 1. Create In-App Notification - REMOVED
+    // Handled by DB Trigger 'notify_review_response' to prevent duplicates and ensure consistency
+    console.log('🔔 In-app notification creation handled by DB Trigger');
 
-    console.log('✅ In-app notification created result:', result);
+    // console.log('✅ In-app notification created result:', result);
 
     // 2. Check Preferences for Push
     console.log('🔔 Fetching user notification preferences...');
@@ -179,29 +167,10 @@ export async function notifyUserReviewResponse(
       return;
     }
 
-    // 3. Send Push Notification via Edge Function
-    const actionUrl = businessId ? `/business/${businessId}/reviews#review-${reviewId}` : `/reviews`;
-    console.log('🚀 Invoking send-push-notification Edge Function with actionUrl:', actionUrl);
-
-    const { data: pushData, error: pushError } = await supabase.functions.invoke('send-push-notification', {
-      body: {
-        user_id: userId,
-        title: `${businessName} responded to your review`,
-        body: `Tap to view the response from ${businessName}`,
-        data: {
-          type: 'review_response',
-          review_id: reviewId,
-          business_id: businessId,
-          url: actionUrl
-        }
-      }
-    });
-
-    if (pushError) {
-      console.error('❌ Failed to invoke push edge function:', pushError);
-    } else {
-      console.log(`✅ Push sent to user (${userId})`, pushData);
-    }
+    // 3. Send Push Notification - REMOVED from Client Side
+    // Handled by Database Webhook -> 'send-response-notification' Edge Function
+    // This allows SQL/Admin inserts to also trigger notifications and prevents duplicates.
+    console.log('✅ Push notification delegation handled by Database Webhook');
 
   } catch (error) {
     console.error('❌ Error in notifyUserReviewResponse:', error);
