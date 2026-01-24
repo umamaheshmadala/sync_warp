@@ -1,0 +1,239 @@
+import { supabase } from '@/lib/supabase';
+
+export interface PendingReview {
+    id: string;
+    business_id: string;
+    user_id: string;
+    recommendation: boolean;
+    text: string | null;
+    tags: Array<{ id: string; label: string; icon: string }>;
+    photo_urls: string[];
+    created_at: string;
+    moderation_status: 'pending';
+    user: {
+        id: string;
+        full_name: string;
+        avatar_url: string | null;
+    };
+    business: {
+        id: string;
+        name: string;
+    };
+}
+
+export interface ModerationAction {
+    reviewId: string;
+    action: 'approve' | 'reject';
+    reason?: string;
+}
+
+/**
+ * Get all pending reviews for admin moderation
+ */
+export async function getPendingReviews(): Promise<PendingReview[]> {
+    // Fetch reviews
+    const { data: reviews, error } = await supabase
+        .from('business_reviews')
+        .select(`
+            *,
+            business:businesses!business_id (id, name)
+        `)
+        .eq('moderation_status', 'pending')
+        .is('deleted_at', null)
+        .order('created_at', { ascending: true }); // Oldest first (FIFO)
+
+    if (error) {
+        console.error('[ModerationService] Error fetching pending reviews:', error);
+        throw new Error('Could not load pending reviews');
+    }
+
+    if (!reviews || reviews.length === 0) return [];
+
+    // Manually fetch user profiles because the foreign key relationship 
+    // between business_reviews and profiles might not be detected by PostgREST
+    const userIds = [...new Set(reviews.map(r => r.user_id))];
+
+    const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name, avatar_url')
+        .in('id', userIds);
+
+    if (profilesError) {
+        console.error('[ModerationService] Error fetching profiles:', profilesError);
+    }
+
+    const profilesMap = new Map(profiles?.map(p => [p.id, p]) || []);
+
+    // Combine data
+    const reviewsWithProfiles = reviews.map(review => ({
+        ...review,
+        user: profilesMap.get(review.user_id) || {
+            id: review.user_id,
+            full_name: 'Unknown User',
+            avatar_url: null
+        }
+    }));
+
+    return reviewsWithProfiles as unknown as PendingReview[];
+}
+
+/**
+ * Get count of pending reviews
+ */
+export async function getPendingReviewCount(): Promise<number> {
+    const { count, error } = await supabase
+        .from('business_reviews')
+        .select('*', { count: 'exact', head: true })
+        .eq('moderation_status', 'pending')
+        .is('deleted_at', null);
+
+    if (error) {
+        console.error('[ModerationService] Error fetching pending count:', error);
+        return 0;
+    }
+
+    return count || 0;
+}
+
+/**
+ * Approve a review
+ */
+export async function approveReview(reviewId: string): Promise<void> {
+    console.log('[ModerationService] Approving review:', reviewId);
+
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) throw new Error('Not authenticated');
+
+    // Verify admin role
+    const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+    if (profileError) {
+        console.error('[ModerationService] Error fetching profile:', profileError);
+        throw new Error('Could not verify admin role');
+    }
+
+    console.log('[ModerationService] User role:', profile?.role);
+
+    if (profile?.role !== 'admin') {
+        throw new Error('Only admins can approve reviews');
+    }
+
+    // Update review status
+    const { data: updateData, error: updateError } = await supabase
+        .from('business_reviews')
+        .update({
+            moderation_status: 'approved',
+            moderated_by: user.id,
+            moderated_at: new Date().toISOString()
+        })
+        .eq('id', reviewId)
+        .select();
+
+    console.log('[ModerationService] Update result:', { updateData, updateError });
+
+    if (updateError) {
+        console.error('[ModerationService] Update error:', updateError);
+        throw new Error(`Could not approve review: ${updateError.message}`);
+    }
+
+    if (!updateData || updateData.length === 0) {
+        console.error('[ModerationService] No rows updated - review may not exist or RLS blocking');
+        throw new Error('Could not approve review - no rows updated');
+    }
+
+    console.log('[ModerationService] Review approved successfully');
+
+    // Log action
+    await supabase.from('review_moderation_log').insert({
+        review_id: reviewId,
+        action: 'approve',
+        performed_by: user.id
+    });
+
+    // Send notification to reviewer
+    await notifyReviewer(reviewId, 'approved');
+}
+
+/**
+ * Reject a review
+ */
+export async function rejectReview(reviewId: string, reason: string): Promise<void> {
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) throw new Error('Not authenticated');
+
+    // Verify admin role
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+    if (profile?.role !== 'admin') {
+        throw new Error('Only admins can reject reviews');
+    }
+
+    if (!reason || !reason.trim()) {
+        throw new Error('Rejection reason is required');
+    }
+
+    // Update review status
+    const { error: updateError } = await supabase
+        .from('business_reviews')
+        .update({
+            moderation_status: 'rejected',
+            moderated_by: user.id,
+            moderated_at: new Date().toISOString(),
+            rejection_reason: reason.trim()
+        })
+        .eq('id', reviewId);
+
+    if (updateError) throw new Error('Could not reject review');
+
+    // Log action
+    await supabase.from('review_moderation_log').insert({
+        review_id: reviewId,
+        action: 'reject',
+        performed_by: user.id,
+        reason: reason.trim()
+    });
+
+    // Send notification to reviewer
+    await notifyReviewer(reviewId, 'rejected', reason);
+}
+
+/**
+ * Notify reviewer of moderation decision
+ */
+async function notifyReviewer(
+    reviewId: string,
+    status: 'approved' | 'rejected',
+    reason?: string
+) {
+    // Get review and user info
+    const { data: review } = await supabase
+        .from('business_reviews')
+        .select('user_id, business:businesses!business_id(name)')
+        .eq('id', reviewId)
+        .single();
+
+    if (!review) return;
+
+    const message = status === 'approved'
+        ? `Your review for "${Array.isArray(review.business) ? review.business[0].name : (review.business as any).name}" has been published!`
+        : `Your review for "${Array.isArray(review.business) ? review.business[0].name : (review.business as any).name}" was not approved. Reason: ${reason}`;
+
+    // Create in-app notification
+    await supabase.from('notifications').insert({
+        user_id: review.user_id,
+        type: 'review_response', // Reusing appropriate type or using 'system'
+        title: status === 'approved' ? 'Review Published' : 'Review Not Approved',
+        message,
+        data: { reviewId, status, type: 'moderation' }
+    });
+}

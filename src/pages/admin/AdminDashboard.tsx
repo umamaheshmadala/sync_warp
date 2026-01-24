@@ -7,6 +7,7 @@ import { RetentionMonitor } from '../../components/admin/RetentionMonitor';
 import { BusinessActivationWidget } from '../../components/admin/BusinessActivationWidget';
 import { AdminSettingsWidget } from '../../components/admin/AdminSettingsWidget';
 import { DriverScoreWidget } from '../../components/admin/DriverScoreWidget';
+import { ReviewModerationWidget } from '../../components/admin/ReviewModerationWidget';
 import { useAuthStore } from '../../store/authStore';
 
 export default function AdminDashboard() {
@@ -78,7 +79,10 @@ export default function AdminDashboard() {
                     <div className="space-y-6">
                         <section>
                             <h2 className="text-lg font-semibold text-gray-700 mb-3">User & Driver Management</h2>
-                            <DriverScoreWidget />
+                            <div className="space-y-6">
+                                <ReviewModerationWidget />
+                                <DriverScoreWidget />
+                            </div>
                         </section>
 
                         <section>

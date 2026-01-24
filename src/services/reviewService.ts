@@ -4,7 +4,7 @@
 
 import { supabase } from '../lib/supabase';
 import type {
-  BusinessReview,
+  Review as BusinessReview,
   BusinessReviewWithDetails,
   BusinessReviewResponse,
   ReviewStats,
@@ -136,14 +136,17 @@ export async function createReview(input: CreateReviewInput): Promise<BusinessRe
       review_text: input.review_text || null,
       photo_urls: input.photo_urls || [],
       tags: input.tags || [],
-      checkin_id: input.checkin_id || null,  // TEMP: Allow null for testing
+      checkin_id: input.checkin_id || null,
+      moderation_status: 'pending',
+      is_edited: false,
+      edit_count: 0
     })
-    .select()
+    .select('*')
     .single();
 
   if (error) {
-    console.error('❌ Create review error:', error);
-    throw new Error(`Failed to create review: ${error.message}`);
+    console.error('Submit review error:', error);
+    throw new Error(error.message);
   }
 
   console.log('✅ Review created successfully:', data);
@@ -228,7 +231,8 @@ export async function getBusinessReviews(
   let query = supabase
     .from('business_reviews_with_details')
     .select('*')
-    .eq('business_id', businessId);
+    .eq('business_id', businessId)
+    .eq('moderation_status', 'approved'); // Only show approved reviews publicly
 
   // Exclude deleted reviews by default
   if (!filters?.includeDeleted) {
@@ -273,8 +277,14 @@ export async function getBusinessReviews(
     throw new Error(`Failed to fetch reviews: ${error.message}`);
   }
 
-  console.log(`✅ Fetched ${data.length} reviews`);
-  return data;
+  // Transform data to match interface
+  const reviews: BusinessReviewWithDetails[] = (data || []).map((review: any) => ({
+    ...review,
+    text: review.review_text // Remap for Review interface
+  }));
+
+  console.log(`✅ Fetched ${reviews.length} reviews`);
+  return reviews;
 }
 
 /**
@@ -301,6 +311,39 @@ export async function getBusinessReviewsPaginated(
   if (!includeDeleted) {
     query = query.is('deleted_at', null);
   }
+
+  // Get current user for context-aware visibility
+  const { data: { user } } = await supabase.auth.getUser();
+  let isAdmin = false;
+
+  if (user) {
+    // Check if user is admin
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+    isAdmin = profile?.role === 'admin';
+  }
+
+  // Visibility logic:
+  // - Admin: Can see ALL reviews (no moderation filter)
+  // - Author: Can see their own reviews (any status)
+  // - Public: Only approved reviews
+  if (!isAdmin) {
+    // For non-admins: Show approved OR own pending reviews
+    if (user) {
+      // Logged-in non-admin: Show approved + own reviews (any status)
+      // This requires an OR condition which isn't directly supported,
+      // so we use a workaround: Fetch separately and merge, or use RPC.
+      // Simpler approach: Use Supabase's .or() filter
+      query = query.or(`moderation_status.eq.approved,user_id.eq.${user.id}`);
+    } else {
+      // Not logged in: Only approved reviews
+      query = query.eq('moderation_status', 'approved');
+    }
+  }
+  // If admin, no moderation filter is added (they see all)
 
   // Apply filters
   if (filters) {
@@ -357,6 +400,7 @@ export async function getBusinessReviewsPaginated(
   // Transform data to match interface
   const reviews: BusinessReviewWithDetails[] = (data || []).map((review: any) => ({
     ...review,
+    text: review.review_text, // Map DB column to interface property
     user_name: review.profiles?.full_name || review.reviewer_name || 'Anonymous',
     user_avatar: review.profiles?.avatar_url || review.user_avatar || null,
     user_city: review.profiles?.city || review.user_city || null,
@@ -428,8 +472,14 @@ export async function getUserReviews(userId?: string): Promise<BusinessReviewWit
     throw new Error(`Failed to fetch user reviews: ${error.message}`);
   }
 
-  console.log(`✅ Fetched ${data.length} user reviews`);
-  return data;
+  // Transform data to match interface
+  const reviews: BusinessReviewWithDetails[] = (data || []).map((review: any) => ({
+    ...review,
+    text: review.review_text
+  }));
+
+  console.log(`✅ Fetched ${reviews.length} user reviews`);
+  return reviews;
 }
 
 /**

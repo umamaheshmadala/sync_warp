@@ -2,29 +2,43 @@
 // Story 5.2: Binary Review System - TypeScript Types
 // =====================================================
 
-export interface BusinessReview {
+export type ModerationStatus = 'pending' | 'approved' | 'rejected';
+
+export interface Review {
   id: string;
   business_id: string;
   user_id: string;
-  recommendation: boolean; // true = Recommend, false = Don't Recommend
-  review_text: string | null;
+  recommendation: boolean;
+  text: string | null;
+  tags: Array<{ id: string; label: string; icon: string }>;
   photo_urls: string[];
-  tags: string[];
-  helpful_count: number;
-  checkin_id: string;
   created_at: string;
-  updated_at: string;
-  is_edited: boolean;
+  updated_at: string | null;
   edit_count: number;
   deleted_at: string | null;
   deleted_by: string | null;
   deletion_reason: string | null;
-  is_featured?: boolean;
-  featured_at?: string | null;
-  featured_by?: string | null;
+  helpful_count: number;
+  // Moderation fields
+  moderation_status: ModerationStatus;
+  moderated_by: string | null;
+  moderated_at: string | null;
+  rejection_reason: string | null;
+  word_count?: number; // Added to match submission but optional on read
+  user?: {
+    id: string;
+    full_name: string;
+    avatar_url: string | null;
+  };
+  business?: {
+    id: string;
+    name: string;
+    avatar_url?: string;
+  };
+  response?: ReviewResponse;
 }
 
-export interface BusinessReviewWithDetails extends BusinessReview {
+export interface BusinessReviewWithDetails extends Review {
   business_name: string | null;
   reviewer_name: string; // Renamed from user_name to break cache
   user_name?: string; // Deprecated
@@ -45,6 +59,8 @@ export interface BusinessReviewResponse {
   created_at: string;
   updated_at: string;
 }
+
+export type ReviewResponse = BusinessReviewResponse;
 
 export interface ReviewStats {
   total_reviews: number;
