@@ -175,11 +175,16 @@ export const useSearch = (options: UseSearchOptions = {}) => {
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
   const lastSearchRef = useRef<string>('');
   const abortControllerRef = useRef<AbortController>();
+  const initialSearchTriggeredRef = useRef(false);
 
   // Reload search state and results when user changes
   useEffect(() => {
     const searchStateKey = user?.id ? `searchState_${user.id}` : 'searchState_guest';
     const searchResultsKey = user?.id ? `searchResults_${user.id}` : 'searchResults_guest';
+
+    // Reset initial search flag so search can re-trigger with new user context
+    // This fixes the fresh login issue where first search returns empty results
+    initialSearchTriggeredRef.current = false;
 
     // Load user-specific search state
     try {
@@ -924,8 +929,7 @@ export const useSearch = (options: UseSearchOptions = {}) => {
   }, [location.search, searchParams, setQuery, searchState.query]);
 
   // Trigger initial search on mount when URL has query but no results yet
-  // This fixes the race condition where state is initialized with query but search never executes
-  const initialSearchTriggeredRef = useRef(false);
+  // Also re-triggers when user?.id changes (e.g., after fresh login) since ref is reset
   useEffect(() => {
     const urlQuery = searchParams.get('q') || '';
     const hasNoResults = results.coupons.length === 0 && results.businesses.length === 0;
@@ -945,7 +949,7 @@ export const useSearch = (options: UseSearchOptions = {}) => {
 
       performSearch(initialQuery, false);
     }
-  }, [searchParams, results.coupons.length, results.businesses.length, searchState.isSearching, searchState.filters, searchState.sort, searchState.pagination.limit, performSearch]);
+  }, [searchParams, results.coupons.length, results.businesses.length, searchState.isSearching, searchState.filters, searchState.sort, searchState.pagination.limit, performSearch, user?.id]);
 
   // Computed values
   const hasResults = results.coupons.length > 0 || results.businesses.length > 0;
