@@ -271,14 +271,14 @@ async function notifyReviewer(
                     ...(reason ? { rejection_reason: reason } : {})
                 },
                 opened: false,
-            }])
-            .select()
-            .single();
+            }]);
+        // .select() // Removed to avoid RLS violation (users can insert but not see other's logs)
+        // .single();
 
         if (notifError) {
             console.error('❌ [notifyReviewer] Failed to create in-app notification:', notifError);
         } else {
-            console.log('✅ [notifyReviewer] In-app notification created:', notifData?.id);
+            console.log('✅ [notifyReviewer] In-app notification created (no ID returned)');
         }
 
         // 2. Check user preferences for push notifications
