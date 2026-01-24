@@ -151,20 +151,35 @@ export async function createReview(input: CreateReviewInput): Promise<BusinessRe
 
   console.log('✅ Review created successfully:', data);
 
-  // Send notification to merchant (async, don't await)
+  // Get reviewer profile and business name for notifications
   const { data: profile } = await supabase
     .from('profiles')
     .select('full_name')
     .eq('id', user.id)
     .single();
 
+  const { data: business } = await supabase
+    .from('businesses')
+    .select('business_name')
+    .eq('id', input.business_id)
+    .single();
+
   const reviewerName = profile?.full_name || 'A customer';
+  const businessName = business?.business_name || 'a business';
+
+  // Send notification to merchant (async, don't await)
   notifyMerchantNewReview(
     input.business_id,
     data.id,
     reviewerName,
     input.recommendation
-  ).catch(err => console.error('Failed to send review notification:', err));
+  ).catch(err => console.error('Failed to send merchant notification:', err));
+
+  // US-11.4.1.5: Notify all admins about new pending review
+  import('../services/moderationService').then(mod => {
+    mod.notifyAdminsNewReview(data.id, reviewerName, businessName)
+      .catch(err => console.error('Failed to send admin notification:', err));
+  });
 
   return data;
 }

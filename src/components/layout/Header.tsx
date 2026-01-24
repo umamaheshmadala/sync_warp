@@ -37,6 +37,7 @@ export default function Header() {
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
   const [hasBusinesses, setHasBusinesses] = useState(false);
+  const [pendingReviewCount, setPendingReviewCount] = useState(0);
 
   // Check if user has registered businesses
   useEffect(() => {
@@ -57,6 +58,44 @@ export default function Header() {
     }
     checkBusinesses();
   }, [user]);
+
+  // US-11.4.1.5: Fetch pending review count for admin users
+  useEffect(() => {
+    async function fetchPendingReviewCount() {
+      if (!profile || (profile?.role !== 'admin' && !(profile as any)?.is_admin)) {
+        setPendingReviewCount(0);
+        return;
+      }
+      try {
+        const { count } = await supabase
+          .from('business_reviews')
+          .select('id', { count: 'exact', head: true })
+          .eq('moderation_status', 'pending')
+          .is('deleted_at', null);
+        setPendingReviewCount(count || 0);
+      } catch (err) {
+        console.error('Error fetching pending review count:', err);
+      }
+    }
+    fetchPendingReviewCount();
+
+    // Set up realtime subscription for pending reviews
+    const channel = supabase
+      .channel('pending-reviews-header')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'business_reviews' },
+        () => {
+          // Refetch count on any change to business_reviews
+          fetchPendingReviewCount();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [profile]);
 
   // Initialize conversations to get unread count
   useConversations();
@@ -271,9 +310,14 @@ export default function Header() {
               size="icon"
               className="hidden md:flex relative text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 h-10 w-10"
               onClick={() => navigate('/admin')}
-              title="Admin Dashboard"
+              title={pendingReviewCount > 0 ? `Admin Dashboard (${pendingReviewCount} pending reviews)` : 'Admin Dashboard'}
             >
               <ShieldAlert className="h-7 w-7" />
+              {pendingReviewCount > 0 && (
+                <span className="absolute top-0 right-0 h-4 w-4 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-bold ring-2 ring-white">
+                  {pendingReviewCount > 9 ? '9+' : pendingReviewCount}
+                </span>
+              )}
             </Button>
           )}
 
