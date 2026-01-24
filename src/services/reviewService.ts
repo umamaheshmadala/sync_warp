@@ -177,7 +177,7 @@ export async function createReview(input: CreateReviewInput): Promise<BusinessRe
 
   // US-11.4.1.5: Notify all admins about new pending review
   import('../services/moderationService').then(mod => {
-    mod.notifyAdminsNewReview(data.id, reviewerName, businessName)
+    mod.notifyAdminsNewReview(data.id, reviewerName, businessName, user.id)
       .catch(err => console.error('Failed to send admin notification:', err));
   });
 

@@ -13,7 +13,9 @@ export type NotificationType =
   | 'reminder'
   | 'share_received'
   | 'share_accepted'
-  | 'item_updated';
+  | 'item_updated'
+  | 'review_moderation'       // User: Review approved/rejected
+  | 'admin_review_pending';   // Admin: New review to moderate
 
 export interface Notification {
   id: string;

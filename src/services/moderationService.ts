@@ -221,7 +221,7 @@ async function notifyReviewer(
     // Get review and user info
     const { data: review, error: reviewError } = await supabase
         .from('business_reviews')
-        .select('user_id, business:businesses!business_id(id, name)')
+        .select('user_id, business:businesses!business_id(id, name, owner_id)')
         .eq('id', reviewId)
         .single();
 
@@ -236,6 +236,9 @@ async function notifyReviewer(
     const businessId = Array.isArray(review.business)
         ? review.business[0]?.id
         : (review.business as any)?.id;
+    const businessOwnerId = Array.isArray(review.business)
+        ? review.business[0]?.owner_id
+        : (review.business as any)?.owner_id;
 
     const title = status === 'approved'
         ? '🎉 Review Published!'
@@ -262,6 +265,7 @@ async function notifyReviewer(
                     status,
                     businessId,
                     businessName,
+                    sender_id: businessOwnerId, // Important: sender_id allows the view to join with profiles
                     type: 'review_moderation',
                     url: actionUrl,
                     ...(reason ? { rejection_reason: reason } : {})
@@ -331,7 +335,8 @@ async function notifyReviewer(
 export async function notifyAdminsNewReview(
     reviewId: string,
     reviewerName: string,
-    businessName: string
+    businessName: string,
+    senderId: string // The reviewer's user ID
 ): Promise<void> {
     console.log('🔔 [notifyAdminsNewReview] Starting admin notifications for new review:', reviewId);
 
@@ -366,6 +371,7 @@ export async function notifyAdminsNewReview(
                         reviewId,
                         reviewerName,
                         businessName,
+                        sender_id: senderId,
                         type: 'admin_review_pending',
                         url: '/admin/moderation'
                     },

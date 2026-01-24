@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { Bell, CheckCircle, MessageSquare, Tag, UserPlus } from 'lucide-react';
+import { Bell, CheckCircle, MessageSquare, Tag, UserPlus, Shield, ClipboardList, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { InAppNotification } from '@/services/notificationService';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -27,6 +27,12 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({ notification
       case 'deal_shared':
       case 'coupon_shared_message':
         return <Tag className="h-4 w-4 text-purple-600" />;
+      case 'review_moderation':
+        return notification.title.toLowerCase().includes('published')
+          ? <CheckCircle className="h-4 w-4 text-green-600" />
+          : <XCircle className="h-4 w-4 text-red-600" />;
+      case 'admin_review_pending':
+        return <ClipboardList className="h-4 w-4 text-orange-600" />;
       default:
         return <Bell className="h-4 w-4 text-gray-600" />;
     }
@@ -44,6 +50,12 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({ notification
       case 'deal_shared':
       case 'coupon_shared_message':
         return 'bg-purple-100';
+      case 'review_moderation':
+        return notification.title.toLowerCase().includes('published')
+          ? 'bg-green-100'
+          : 'bg-red-100';
+      case 'admin_review_pending':
+        return 'bg-orange-100';
       default:
         return 'bg-gray-100';
     }
@@ -59,11 +71,11 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({ notification
     >
       <div className="relative">
         <Avatar className="h-10 w-10 border">
-            <AvatarImage src={notification.sender_avatar || undefined} />
-            <AvatarFallback>{notification.sender_name?.[0] || '?'}</AvatarFallback>
+          <AvatarImage src={notification.sender_avatar || undefined} />
+          <AvatarFallback>{notification.sender_name?.[0] || '?'}</AvatarFallback>
         </Avatar>
         <div className={cn("absolute -bottom-1 -right-1 p-1 rounded-full bg-white shadow-sm ring-1 ring-white", getBgColor())}>
-            {getIcon()}
+          {getIcon()}
         </div>
       </div>
 
