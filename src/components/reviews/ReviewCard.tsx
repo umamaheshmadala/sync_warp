@@ -251,28 +251,12 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
           </div>
 
           <div className="flex items-center gap-1">
-            {isBusinessOwner && (
-              <div className="flex items-center gap-2">
-                <ModerationStatusBadge
-                  status={review.moderation_status}
-                  rejectionReason={review.rejection_reason || undefined}
-                />
-                {/* The instruction had a button here, but it's unclear what it's for.
-                    Assuming it's for a dropdown menu, I'll integrate it into the existing DropdownMenu structure
-                    or remove it if it's redundant with the MoreVertical button.
-                    For now, I'll keep the MoreVertical button as the trigger for the dropdown.
-                    The instruction's button was:
-                    <button
-                      onClick={() => setIsMenuOpen(!isMenuOpen)}
-                      className="p-1 hover:bg-gray-100 rounded-full transition-colors"
-                    >
-                      <MoreVertical size={16} className="text-gray-500" />
-                    </button>
-                    This seems to duplicate the existing MoreVertical button's functionality.
-                    I will assume the user wants the ModerationStatusBadge to appear next to the existing MoreVertical dropdown trigger
-                    if the user is a business owner.
-                */}
-              </div>
+            {/* Show moderation status for user's own reviews */}
+            {isOwnReview && review.moderation_status !== 'approved' && (
+              <ModerationStatusBadge
+                status={review.moderation_status}
+                rejectionReason={review.rejection_reason || undefined}
+              />
             )}
             {/* Share Button */}
             <button
