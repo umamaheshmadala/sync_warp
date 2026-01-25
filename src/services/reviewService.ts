@@ -521,7 +521,7 @@ export async function updateReview(
   // Get current review to check if can edit
   const { data: currentReview, error: fetchError } = await supabase
     .from('business_reviews')
-    .select('created_at, user_id, deleted_at')
+    .select('created_at, user_id, deleted_at, review_text, photo_urls')
     .eq('id', reviewId)
     .single();
 
@@ -546,6 +546,34 @@ export async function updateReview(
   if (input.review_text !== undefined) updateData.review_text = input.review_text;
   if (input.photo_urls !== undefined) updateData.photo_urls = input.photo_urls;
   if (input.tags !== undefined) updateData.tags = input.tags;
+
+  // Story 11.4.1: Helper to check if review content is empty
+  const isReviewContentEmpty = (text: string | null, photos: string[] | null) => {
+    return (!text?.trim() && (!photos || photos.length === 0));
+  };
+
+  // Check if content (text or photos) is being updated
+  // If so, we need to re-evaluate moderation status
+  if (input.review_text !== undefined || input.photo_urls !== undefined) {
+    // Determine the NEW state
+    const newText = input.review_text !== undefined ? input.review_text : currentReview.review_text;
+    const newPhotos = input.photo_urls !== undefined ? input.photo_urls : currentReview.photo_urls;
+
+    // Determine new status
+    const newStatus = isReviewContentEmpty(newText, newPhotos) ? 'approved' : 'pending';
+
+    updateData.moderation_status = newStatus;
+
+    // If going back to pending (from rejected or approved), clear old rejection reason
+    if (newStatus === 'pending') {
+      updateData.rejection_reason = null;
+      // Also clear moderator info since it needs re-review
+      updateData.moderated_by = null;
+      updateData.moderated_at = null;
+    }
+
+    console.log(`📝 Review content updated. Resetting status to: ${newStatus}`);
+  }
 
   // Update the review
   const { data, error } = await supabase

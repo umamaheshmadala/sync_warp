@@ -46,6 +46,7 @@ Implement a pre-moderation system where all newly submitted reviews are held in 
 - [x] Review NOT visible to other users or business owner
 - [x] Reviewer can still edit while pending
 - [ ] **Exception:** Reviews with **no text** AND **no photos** are **auto-approved** (Directly Published)
+- [ ] **Edited Reviews:** If text or photos are modified, status resets to **pending** (unless empty)
 
 ---
 
