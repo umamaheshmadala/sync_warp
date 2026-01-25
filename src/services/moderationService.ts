@@ -68,6 +68,7 @@ export async function getPendingReviews(): Promise<PendingReview[]> {
     // Combine data
     const reviewsWithProfiles = reviews.map(review => ({
         ...review,
+        text: review.review_text, // Map database column to interface property
         user: profilesMap.get(review.user_id) || {
             id: review.user_id,
             full_name: 'Unknown User',
