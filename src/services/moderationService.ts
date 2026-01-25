@@ -171,7 +171,8 @@ export async function approveReview(reviewId: string): Promise<void> {
                 business_id, 
                 recommendation, 
                 user_id,
-                user:profiles!user_id (full_name)
+                user:profiles!user_id (full_name),
+                business:businesses!business_id (name, logo_url)
             `)
             .eq('id', reviewId)
             .single();
@@ -186,6 +187,7 @@ export async function approveReview(reviewId: string): Promise<void> {
             await notifyMerchantNewReview(
                 reviewDetails.business_id,
                 reviewId,
+                reviewDetails.user_id,
                 reviewerName,
                 reviewDetails.recommendation
             );
@@ -258,7 +260,7 @@ async function notifyReviewer(
     // Get review and user info
     const { data: review, error: reviewError } = await supabase
         .from('business_reviews')
-        .select('user_id, business:businesses!business_id(id, name, owner_id)')
+        .select('user_id, business:businesses!business_id(id, name, owner_id, logo_url)')
         .eq('id', reviewId)
         .single();
 
@@ -305,6 +307,7 @@ async function notifyReviewer(
                     sender_id: businessOwnerId, // Important: sender_id allows the view to join with profiles
                     type: 'review_moderation',
                     url: actionUrl,
+                    businessAvatar: Array.isArray(review.business) ? review.business[0]?.logo_url : (review.business as any)?.logo_url,
                     ...(reason ? { rejection_reason: reason } : {})
                 },
                 opened: false,

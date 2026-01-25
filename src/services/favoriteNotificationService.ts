@@ -80,6 +80,7 @@ export async function createNotification(input: CreateNotificationInput): Promis
 export async function notifyMerchantNewReview(
   businessId: string,
   reviewId: string,
+  reviewerId: string,
   reviewerName: string,
   recommendation: boolean
 ): Promise<void> {
@@ -102,13 +103,14 @@ export async function notifyMerchantNewReview(
       user_id: business.user_id,
       type: 'review_posted',
       title: 'New Review Received',
-      message: `${reviewerName} ${sentiment} your business`,
+      message: `${business.business_name} got a new review. Check that out!!!`,
       data: {
         business_id: businessId,
         business_name: business.business_name,
         review_id: reviewId,
         reviewer_name: reviewerName,
         recommendation: recommendation,
+        sender_id: reviewerId,
       },
     });
 
@@ -137,7 +139,7 @@ export async function notifyMerchantNewReview(
         body: {
           userId: business.user_id,
           title: 'New Review Received',
-          body: `${reviewerName} ${sentiment} your business`,
+          body: `${business.business_name} got a new review. Check that out!!!`,
           data: {
             type: 'review_posted',
             reviewId: reviewId,
