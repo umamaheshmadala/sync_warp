@@ -176,7 +176,7 @@ const BusinessProfile: React.FC = () => {
     if (!business?.id) return;
 
     // Perform check-in
-    const result = await checkins.performCheckin(business.id, business);
+    const result = await checkins.performCheckin(business.id);
 
     if (result) {
       setLastCheckinId(result.id);
@@ -679,6 +679,16 @@ const BusinessProfile: React.FC = () => {
   const businessOpenStatus = getBusinessOpenStatus();
 
 
+  // Handle review deletion
+  const handleDeleteReview = async (reviewId: string) => {
+    // If the deleted review is the current user's review, clear it to toggle button state
+    if (userReview && userReview.id === reviewId) {
+      setUserReview(null);
+    }
+    // Refresh stats to update the review counts/stars
+    await refreshStats();
+  };
+
   // Render overview tab
   const renderOverview = () => (
     <div className="space-y-6">
@@ -1093,6 +1103,7 @@ const BusinessProfile: React.FC = () => {
             businessName={business?.business_name || ''}
             isBusinessOwner={isOwner}
             onEdit={handleEditReview}
+            onDelete={handleDeleteReview}
             showFilters={false}
             showStats={false}
             businessImage={business?.logo_url}
@@ -1212,6 +1223,7 @@ const BusinessProfile: React.FC = () => {
         businessName={business?.business_name || ''}
         isBusinessOwner={isOwner}
         onEdit={handleEditReview}
+        onDelete={handleDeleteReview}
         businessImage={business?.logo_url}
       />
     </div>
