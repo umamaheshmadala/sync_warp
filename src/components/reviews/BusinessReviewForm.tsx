@@ -90,7 +90,7 @@ function SortablePhoto({ url, onRemove, id }: { url: string; onRemove: () => voi
           onRemove();
         }}
         onPointerDown={(e) => e.stopPropagation()} // Prevent drag anchor
-        className="absolute -top-2 -right-2 p-1 bg-white rounded-full shadow-md border border-gray-100 text-gray-400 hover:text-red-500 transition-colors z-10"
+        className="absolute -top-2 -right-2 p-1.5 text-gray-400 hover:text-red-500 transition-colors z-10"
       >
         <X size={12} />
       </button>
