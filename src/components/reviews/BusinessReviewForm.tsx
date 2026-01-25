@@ -75,7 +75,7 @@ function SortablePhoto({ url, onRemove, id }: { url: string; onRemove: () => voi
       style={style}
       {...attributes}
       {...listeners}
-      className="relative w-16 h-16 shrink-0 group touch-none select-none mr-3 mt-2"
+      className="relative w-16 h-16 shrink-0 group touch-none select-none mt-2"
     >
       {/* Photo Container */}
       <div className="w-full h-full rounded-lg overflow-hidden border border-gray-200 shadow-sm cursor-move">
@@ -90,9 +90,9 @@ function SortablePhoto({ url, onRemove, id }: { url: string; onRemove: () => voi
           onRemove();
         }}
         onPointerDown={(e) => e.stopPropagation()} // Prevent drag anchor
-        className="absolute -top-3 -right-3 p-1.5 text-gray-400 hover:text-red-500 transition-colors z-10"
+        className="absolute -top-5 -right-5 p-1.5 text-gray-400 hover:text-red-500 transition-colors z-10"
       >
-        <X size={12} />
+        <X size={14} />
       </button>
     </div>
   );
