@@ -45,8 +45,8 @@ Implement a pre-moderation system where all newly submitted reviews are held in 
 - [x] Tooltip explains: "Your review will be visible after admin approval"
 - [x] Review NOT visible to other users or business owner
 - [x] Reviewer can still edit while pending
-- [ ] **Exception:** Reviews with **no text** AND **no photos** are **auto-approved** (Directly Published)
-- [ ] **Edited Reviews:** If text or photos are modified, status resets to **pending** (unless empty)
+- [x] **Exception:** Reviews with **no text** AND **no photos** are **auto-approved** (Directly Published)
+- [x] **Edited Reviews:** If text or photos are modified, status resets to **pending** (unless empty)
 
 ---
 
@@ -693,17 +693,17 @@ describe('Review Visibility', () => {
 
 ### Manual Testing Checklist
 
-- [ ] Submit a new review → Status is "pending"
-- [ ] Reviewer sees "Pending Approval" badge
-- [ ] Review NOT visible to other users
-- [ ] Review NOT counted in business stats
-- [ ] Admin sees review in moderation queue
-- [ ] Admin clicks "Approve" → Review becomes visible
-- [ ] Reviewer receives "Published" notification
-- [ ] Admin clicks "Reject" with reason
-- [ ] Reviewer sees "Not Approved" badge with reason
-- [ ] Existing reviews remain "approved"
-- [ ] Audit log records all actions
+- [x] Submit a new review → Status is "pending"
+- [x] Reviewer sees "Pending Approval" badge
+- [x] Review NOT visible to other users
+- [x] Review NOT counted in business stats
+- [x] Admin sees review in moderation queue
+- [x] Admin clicks "Approve" → Review becomes visible
+- [x] Reviewer receives "Published" notification
+- [x] Admin clicks "Reject" with reason
+- [x] Reviewer sees "Not Approved" badge with reason
+- [x] Existing reviews remain "approved"
+- [x] Audit log records all actions
 
 ---
 
@@ -726,24 +726,24 @@ describe('Review Visibility', () => {
 
 ### 1. Pre-Implementation Codebase Analysis
 Before starting implementation:
-- [ ] Check for existing moderation patterns in codebase
-- [ ] Review RLS policy patterns
-- [ ] Look for existing notification services
-- [ ] Check admin role definitions
-- [ ] Document findings in the implementation plan
+- [x] Check for existing moderation patterns in codebase
+- [x] Review RLS policy patterns
+- [x] Look for existing notification services
+- [x] Check admin role definitions
+- [x] Document findings in the implementation plan
 
 ### 2. Database Migration Execution
-- [ ] Use **Supabase MCP tools** to execute SQL migrations when possible
-- [ ] Use `mcp_supabase-mcp-server_execute_sql` for running scripts
-- [ ] Only request manual SQL execution if MCP lacks required privileges
-- [ ] Verify migration success with follow-up queries
+- [x] Use **Supabase MCP tools** to execute SQL migrations when possible
+- [x] Use `mcp_supabase-mcp-server_execute_sql` for running scripts
+- [x] Only request manual SQL execution if MCP lacks required privileges
+- [x] Verify migration success with follow-up queries
 
 ### 3. Acceptance Criteria Verification
 After implementation is complete:
-- [ ] Go through EACH acceptance criterion one by one
-- [ ] Mark each criterion as verified with evidence (screenshot, test result, or code reference)
-- [ ] Document any deviations or edge cases discovered
-- [ ] Get sign-off before proceeding to user testing
+- [x] Go through EACH acceptance criterion one by one
+- [x] Mark each criterion as verified with evidence (screenshot, test result, or code reference)
+- [x] Document any deviations or edge cases discovered
+- [x] Get sign-off before proceeding to user testing
 
 ### 4. User Testing Plan
 Once acceptance criteria are verified, execute this testing flow:
@@ -786,16 +786,16 @@ Once acceptance criteria are verified, execute this testing flow:
 | Test User 5 | testuser5@gmail.com | Testuser@1 |
 
 **Evidence Collection Requirements:**
-- [ ] **Screenshot each test step** using browser automation
-- [ ] **Record browser session** for key user flows
-- [ ] **Save screenshots** to artifacts folder with descriptive names
-- [ ] **Document actual vs expected** behavior for each test
+- [x] **Screenshot each test step** using browser automation
+- [x] **Record browser session** for key user flows
+- [x] **Save screenshots** to artifacts folder with descriptive names
+- [x] **Document actual vs expected** behavior for each test
 
 **Completion Criteria:**
-- [ ] All browser tests pass with visual evidence
-- [ ] Screenshots/recordings saved as artifacts
-- [ ] Only confirm implementation complete when ALL evidence collected
-- [ ] Any failing tests must be fixed before marking complete
+- [x] All browser tests pass with visual evidence
+- [x] Screenshots/recordings saved as artifacts
+- [x] Only confirm implementation complete when ALL evidence collected
+- [x] Any failing tests must be fixed before marking complete
 
 ---
 
