@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { notifyMerchantNewReview } from './favoriteNotificationService';
+import { resolveReports } from './reportService';
 
 export interface PendingReview {
     id: string;
@@ -10,7 +11,8 @@ export interface PendingReview {
     tags: Array<{ id: string; label: string; icon: string }>;
     photo_urls: string[];
     created_at: string;
-    moderation_status: 'pending';
+    moderation_status: 'pending' | 'approved' | 'rejected';
+    report_count?: number;
     user: {
         id: string;
         full_name: string;
@@ -159,8 +161,15 @@ export async function approveReview(reviewId: string): Promise<void> {
         performed_by: user.id
     });
 
-    // Send notification to reviewer
-    await notifyReviewer(reviewId, 'approved');
+    // Resolve any pending reports for this review
+    try {
+        await resolveReports(reviewId, 'dismissed', 'Review approved by moderator');
+    } catch (e) {
+        console.error('[ModerationService] Failed to resolve reports:', e);
+    }
+
+    // Send notification to reviewer (non-blocking)
+    notifyReviewer(reviewId, 'approved').catch(err => console.error('Notification failed:', err));
 
     // NEW: Notify Merchant that review is live
     try {
@@ -243,8 +252,15 @@ export async function rejectReview(reviewId: string, reason: string): Promise<vo
         reason: reason.trim()
     });
 
-    // Send notification to reviewer
-    await notifyReviewer(reviewId, 'rejected', reason);
+    // Resolve any pending reports for this review
+    try {
+        await resolveReports(reviewId, 'actioned', 'Review rejected: ' + reason.trim());
+    } catch (e) {
+        console.error('[ModerationService] Failed to resolve reports:', e);
+    }
+
+    // Send notification to reviewer (non-blocking)
+    notifyReviewer(reviewId, 'rejected', reason).catch(err => console.error('Notification failed:', err));
 }
 
 /**
@@ -369,7 +385,80 @@ async function notifyReviewer(
 }
 
 /**
+ * Get reviews by IDs (for reported reviews tab)
+ */
+export async function getReviewsByIds(reviewIds: string[]): Promise<PendingReview[]> {
+    if (!reviewIds || reviewIds.length === 0) return [];
+
+    const { data: reviews, error } = await supabase
+        .from('business_reviews')
+        .select(`
+            *,
+            business:businesses!business_id (id, name)
+        `)
+        .in('id', reviewIds)
+        .order('created_at', { ascending: true });
+
+    if (error) {
+        console.error('[ModerationService] Error fetching reviews by IDs:', error);
+        throw new Error('Could not load specific reviews');
+    }
+
+    if (!reviews || reviews.length === 0) return [];
+
+    // Manually fetch user profiles
+    const userIds = [...new Set(reviews.map(r => r.user_id))];
+    const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name, avatar_url')
+        .in('id', userIds);
+
+    const profilesMap = new Map(profiles?.map(p => [p.id, p]) || []);
+
+    return reviews.map(review => ({
+        ...review,
+        text: review.review_text,
+        user: profilesMap.get(review.user_id) || {
+            id: review.user_id,
+            full_name: 'Unknown User',
+            avatar_url: null
+        }
+    })) as unknown as PendingReview[];
+}
+
+/**
+ * Bulk reject reviews
+ */
+export async function bulkRejectReviews(reviewIds: string[], reason: string): Promise<void> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    // 1. Update status
+    const { error } = await supabase
+        .from('business_reviews')
+        .update({
+            moderation_status: 'rejected',
+            moderated_by: user.id,
+            moderated_at: new Date().toISOString(),
+            rejection_reason: reason
+        })
+        .in('id', reviewIds);
+
+    if (error) throw new Error('Failed to reject reviews');
+
+    // 2. Log actions
+    const logs = reviewIds.map(id => ({
+        review_id: id,
+        action: 'reject',
+        performed_by: user.id,
+        reason: reason
+    }));
+    await supabase.from('review_moderation_log').insert(logs);
+}
+
+/**
  * Notify all admins about new pending reviews
+
  * US-11.4.1.5: Admin Queue Notifications
  */
 export async function notifyAdminsNewReview(
@@ -453,5 +542,76 @@ export async function notifyAdminsNewReview(
     } catch (error) {
         console.error('❌ [notifyAdminsNewReview] Unexpected error:', error);
     }
+}
+
+
+export interface ModerationLogEntry {
+    id: string;
+    review_id: string;
+    action: 'approve' | 'reject';
+    performed_by: string;
+    reason: string | null;
+    created_at: string;
+    admin?: {
+        full_name: string;
+    };
+}
+
+/**
+ * Get moderation audit logs
+ */
+export async function getModerationLogs(limit = 100): Promise<ModerationLogEntry[]> {
+    const { data, error } = await supabase
+        .from('review_moderation_log')
+        .select(`
+            *,
+            admin:profiles!performed_by (full_name)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+    if (error) {
+        console.error('[ModerationService] Error fetching logs:', error);
+        throw new Error('Could not load moderation logs');
+    }
+
+    // Map to interface, handling potential array response for relation
+    return (data || []).map(log => ({
+        ...log,
+        admin: Array.isArray(log.admin) ? log.admin[0] : log.admin
+    }));
+}
+
+/**
+ * Get daily moderation stats
+ */
+export async function getDailyModerationStats() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayIso = today.toISOString();
+
+    // Approved count
+    const { count: approvedCount, error: approvedError } = await supabase
+        .from('review_moderation_log')
+        .select('*', { count: 'exact', head: true })
+        .eq('action', 'approve')
+        .gte('created_at', todayIso);
+
+    // Rejected count
+    const { count: rejectedCount, error: rejectedError } = await supabase
+        .from('review_moderation_log')
+        .select('*', { count: 'exact', head: true })
+        .eq('action', 'reject')
+        .gte('created_at', todayIso);
+
+    if (approvedError || rejectedError) {
+        console.error('Error fetching stats:', { approvedError, rejectedError });
+        return { approved: 0, rejected: 0 };
+    }
+
+    return {
+        approved: approvedCount || 0,
+        rejected: rejectedCount || 0
+    };
 }
 

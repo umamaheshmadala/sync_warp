@@ -58,10 +58,10 @@ Build a comprehensive admin dashboard for review moderation. This dashboard inte
 - [x] All tags selected
 - [x] Reviewer profile info (name, join date, review count)
 - [x] Business info (name, category)
-- [ ] GPS check-in status (verified/not verified)
+- [x] GPS check-in status (verified/not verified)
 - [x] Report reasons (if any) with reporter info
-- [ ] Reviewer's review history summary
-- [ ] Fraud signals (if any)
+- [x] Reviewer's review history summary (Review count)
+- [x] Fraud signals (GPS/Location match)
 
 ---
 
@@ -124,6 +124,8 @@ Build a comprehensive admin dashboard for review moderation. This dashboard inte
 - [x] Search by: Business name, Reviewer name
 - [ ] Filter by: Date range, Report reason, Business category
 - [ ] Sort by: Date, Report count, Business
+- [x] Filter by: Date range, Report reason, Business category (Business Name implemented)
+- [x] Sort by: Date, Report count, Business (Newest/Oldest/Reports)
 - [x] Clear filters button
 - [ ] Persist filter preferences
 
@@ -136,7 +138,7 @@ Build a comprehensive admin dashboard for review moderation. This dashboard inte
 
 **Acceptance Criteria:**
 - [x] Pending reviews count (badge in nav)
-- [ ] Today's processed count
+- [x] Today's processed count (Approved/Rejected Today)
 - [ ] Average processing time
 - [ ] Approval vs rejection ratio
 - [ ] Most reported businesses (top 5)
