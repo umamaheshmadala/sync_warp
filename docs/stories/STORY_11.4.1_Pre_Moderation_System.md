@@ -45,6 +45,7 @@ Implement a pre-moderation system where all newly submitted reviews are held in 
 - [x] Tooltip explains: "Your review will be visible after admin approval"
 - [x] Review NOT visible to other users or business owner
 - [x] Reviewer can still edit while pending
+- [ ] **Exception:** Reviews with **no text** AND **no photos** are **auto-approved** (Directly Published)
 
 ---
 

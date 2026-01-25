@@ -137,7 +137,8 @@ export async function createReview(input: CreateReviewInput): Promise<BusinessRe
       photo_urls: input.photo_urls || [],
       tags: input.tags || [],
       checkin_id: input.checkin_id || null,
-      moderation_status: 'pending',
+      // Story 11.4.1 Update: Auto-approve reviews with NO text and NO photos
+      moderation_status: (!input.review_text?.trim() && (!input.photo_urls || input.photo_urls.length === 0)) ? 'approved' : 'pending',
       is_edited: false,
       edit_count: 0
     })
