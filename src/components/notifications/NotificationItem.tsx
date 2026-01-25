@@ -71,8 +71,14 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({ notification
     >
       <div className="relative">
         <Avatar className="h-10 w-10 border">
-          <AvatarImage src={notification.data?.businessAvatar || notification.sender_avatar || undefined} />
-          <AvatarFallback>{notification.sender_name?.[0] || '?'}</AvatarFallback>
+          <AvatarImage src={
+            notification.data?.businessAvatar ||
+            (notification.notification_type === 'review_moderation' ? undefined : notification.sender_avatar) ||
+            undefined
+          } />
+          <AvatarFallback>
+            {(notification.data?.businessName || notification.sender_name)?.[0] || '?'}
+          </AvatarFallback>
         </Avatar>
         <div className={cn("absolute -bottom-1 -right-1 p-1 rounded-full bg-white shadow-sm ring-1 ring-white", getBgColor())}>
           {getIcon()}

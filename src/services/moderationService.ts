@@ -303,8 +303,7 @@ async function notifyReviewer(
                     reviewId,
                     status,
                     businessId,
-                    businessName,
-                    sender_id: businessOwnerId, // Important: sender_id allows the view to join with profiles
+                    businessName, // Explicitly pass business name for fallback
                     type: 'review_moderation',
                     url: actionUrl,
                     businessAvatar: Array.isArray(review.business) ? review.business[0]?.logo_url : (review.business as any)?.logo_url,

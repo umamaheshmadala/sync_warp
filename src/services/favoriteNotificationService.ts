@@ -57,6 +57,7 @@ export async function createNotification(input: CreateNotificationInput): Promis
         body: input.message,
         data: input.data || {},
         opened: false,
+        sender_id: input.data?.sender_id || null, // Ensure sender_id column is populated for avatar join
       }]);
     // .select() // Removed to allow inserts for other users (RLS blocks select)
     // .single();
