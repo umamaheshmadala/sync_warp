@@ -13,6 +13,23 @@ import WordCounter from './WordCounter';
 import { toast } from 'react-hot-toast';
 import { supabase } from '../../lib/supabase';
 import imageCompression from 'browser-image-compression';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  TouchSensor,
+  MouseSensor
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  useSortable,
+  rectSortingStrategy
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface BusinessReviewFormProps {
   businessId: string;
@@ -33,6 +50,53 @@ const COMPRESSION_OPTIONS = {
   fileType: 'image/jpeg' as const,
   initialQuality: 0.8,
 };
+
+// Sortable Photo Component
+function SortablePhoto({ url, onRemove, id }: { url: string; onRemove: () => void; id: string }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 100 : 'auto',
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className="relative w-16 h-16 shrink-0 group touch-none select-none mr-3 mt-2"
+    >
+      {/* Photo Container */}
+      <div className="w-full h-full rounded-lg overflow-hidden border border-gray-200 shadow-sm cursor-move">
+        <img src={url} alt="Uploaded" className="w-full h-full object-cover pointer-events-none" />
+      </div>
+
+      {/* Cancel Button - Outside Top Right */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation(); // Prevent drag start
+          onRemove();
+        }}
+        onPointerDown={(e) => e.stopPropagation()} // Prevent drag anchor
+        className="absolute -top-2 -right-2 p-1 bg-white rounded-full shadow-md border border-gray-100 text-gray-400 hover:text-red-500 transition-colors z-10"
+      >
+        <X size={12} />
+      </button>
+    </div>
+  );
+}
 
 export default function BusinessReviewForm({
   businessId,
@@ -66,6 +130,22 @@ export default function BusinessReviewForm({
   const [showSuccess, setShowSuccess] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // DnD Sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }), // Require 5px movement to start drag
+    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } }) // Delay for touch to distinguish scroll vs drag
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (active.id !== over?.id) {
+      const oldIndex = photoUrls.indexOf(active.id as string);
+      const newIndex = photoUrls.indexOf(over!.id as string);
+      setPhotoUrls(arrayMove(photoUrls, oldIndex, newIndex));
+    }
+  };
 
   // Update word count
   useEffect(() => {
@@ -311,20 +391,25 @@ export default function BusinessReviewForm({
           </div>
         </div>
 
-        {/* Photo List (Horizontal Scroll) */}
+        {/* Photo List (Drag-and-Drop) */}
         {photoUrls.length > 0 && (
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            {photoUrls.map((url, idx) => (
-              <div key={idx} className="relative w-16 h-16 shrink-0 rounded-lg overflow-hidden border group">
-                <img src={url} alt="Uploaded" className="w-full h-full object-cover" />
-                <button
-                  onClick={() => removePhoto(url)}
-                  className="absolute top-0.5 right-0.5 bg-black/50 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <X size={10} />
-                </button>
-              </div>
-            ))}
+          <div className="flex gap-2 overflow-x-auto pb-4 pt-2 px-1 scrollbar-hide">
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext items={photoUrls} strategy={rectSortingStrategy}>
+                {photoUrls.map((url) => (
+                  <SortablePhoto
+                    key={url}
+                    id={url}
+                    url={url}
+                    onRemove={() => removePhoto(url)}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
           </div>
         )}
 
