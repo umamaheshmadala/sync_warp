@@ -136,6 +136,9 @@ export function useInfiniteReviews({ businessId, filters }: UseInfiniteReviewsOp
     refresh,
     page,
     totalLoaded: reviews.length,
+    removeReview: (id: string) => {
+      setReviews(prev => prev.filter(r => r.id !== id));
+    },
   };
 }
 

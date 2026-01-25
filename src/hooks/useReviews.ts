@@ -88,10 +88,10 @@ export function useReviews(options: UseReviewsOptions = {}): UseReviewsReturn {
 
     try {
       await reviewService.createReview(input);
-      
+
       // Reload reviews to show the new one
       await loadReviews();
-      
+
       console.log('✅ Review created successfully');
     } catch (err) {
       console.error('❌ Create review error:', err);
@@ -110,10 +110,10 @@ export function useReviews(options: UseReviewsOptions = {}): UseReviewsReturn {
 
     try {
       await reviewService.updateReview(reviewId, input);
-      
+
       // Reload reviews to show the updated one
       await loadReviews();
-      
+
       console.log('✅ Review updated successfully');
     } catch (err) {
       console.error('❌ Update review error:', err);
@@ -128,22 +128,37 @@ export function useReviews(options: UseReviewsOptions = {}): UseReviewsReturn {
    */
   const deleteReviewHandler = useCallback(async (reviewId: string) => {
     console.log('🗑️ Deleting review:', reviewId);
+    console.log('Current reviews before delete:', reviews.length);
     setError(null);
+
+    // Optimistically update UI
+    const previousReviews = [...reviews];
+    setReviews(current => {
+      const next = current.filter(r => r.id !== reviewId);
+      console.log('Optimistic update: previous', current.length, 'next', next.length);
+      return next;
+    });
 
     try {
       await reviewService.deleteReview(reviewId);
-      
-      // Reload reviews to remove the deleted one
-      await loadReviews();
-      
+
+      // Reload reviews to ensure consistency (optional, but good practice)
+      // await loadReviews(); // Commented out to trust the optimistic update and avoid flash if fetch is stale
+      // Or keep it? If we keep it, and it returns stale data, it will reappear.
+      // Better to rely on the optimistic update for immediate feedback, 
+      // and maybe background refresh if needed. But for delete, it's safer to just remove it.
+
       console.log('✅ Review deleted successfully');
     } catch (err) {
       console.error('❌ Delete review error:', err);
+      // Revert optimistic update
+      setReviews(previousReviews);
+
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete review';
       setError(errorMessage);
       throw err;
     }
-  }, [loadReviews]);
+  }, [reviews]); // Add reviews to dependency since we use it for rollback (though we use functional update for setReviews)
 
   /**
    * Set up real-time subscriptions for review changes
@@ -167,7 +182,7 @@ export function useReviews(options: UseReviewsOptions = {}): UseReviewsReturn {
         },
         (payload) => {
           console.log('🔄 Review changed:', payload);
-          
+
           // Reload reviews when any change occurs
           loadReviews();
         }

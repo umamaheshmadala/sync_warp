@@ -64,7 +64,7 @@ export default function MyReviewsPage() {
       // Apply search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
-        const matchesText = review.review_text?.toLowerCase().includes(query);
+        const matchesText = review.text?.toLowerCase().includes(query);
         const matchesTags = review.tags?.some(tag => tag.toLowerCase().includes(query));
         const matchesBusiness = review.business_name?.toLowerCase().includes(query);
         if (!matchesText && !matchesTags && !matchesBusiness) return false;

@@ -10,7 +10,9 @@ export interface Review {
   user_id: string;
   recommendation: boolean;
   text: string | null;
-  tags: Array<{ id: string; label: string; icon: string }>;
+  tags: string[];
+  checkin_id?: string;
+  is_featured?: boolean;
   photo_urls: string[];
   created_at: string;
   updated_at: string | null;

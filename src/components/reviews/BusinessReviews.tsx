@@ -80,7 +80,8 @@ export default function BusinessReviews({
     error,
     hasMore,
     loadMore,
-    refresh
+    refresh,
+    removeReview // Destructure new method
   } = useInfiniteReviews({
     businessId,
     filters: {
@@ -101,12 +102,20 @@ export default function BusinessReviews({
 
   const handleDelete = async (reviewId: string) => {
     try {
+      // 1. Optimistic Update: Remove immediately from UI
+      removeReview(reviewId);
+
+      // 2. Call API
       await deleteReview(reviewId);
-      await refresh();
+
+      // 3. Notify parent / Success toast
       onDelete?.(reviewId);
+      toast.success('Review deleted');
     } catch (err) {
       console.error('Delete error:', err);
       toast.error('Failed to delete review');
+      // 4. On Error: Refresh to restore state (rollback)
+      refresh();
     }
   };
 

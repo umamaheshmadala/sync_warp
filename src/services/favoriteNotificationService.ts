@@ -112,7 +112,49 @@ export async function notifyMerchantNewReview(
       },
     });
 
-    console.log(`✅ Notified merchant (${business.user_id}) about new review`);
+    console.log(`✅ In-app notification created for merchant (${business.user_id})`);
+
+    // 2. Check Preferences for Push
+    const { data: profile, error: prefError } = await supabase
+      .from('profiles')
+      .select('notification_preferences')
+      .eq('id', business.user_id)
+      .single();
+
+    if (prefError) {
+      console.error('❌ Error fetching merchant preferences:', prefError);
+    }
+
+    const prefs = profile?.notification_preferences as any;
+    const pushEnabled = prefs?.push_enabled !== false;
+    // You could also check a specific 'new_reviews' preference if you have one schema-defined
+
+    if (pushEnabled) {
+      const actionUrl = `/business/${businessId}/reviews#review-${reviewId}`;
+      console.log('🚀 Invoking send-push-notification for merchant');
+
+      const { data: pushData, error: pushError } = await supabase.functions.invoke('send-push-notification', {
+        body: {
+          userId: business.user_id,
+          title: 'New Review Received',
+          body: `${reviewerName} ${sentiment} your business`,
+          data: {
+            type: 'review_posted',
+            reviewId: reviewId,
+            businessId: businessId,
+            action_url: actionUrl
+          }
+        }
+      });
+
+      if (pushError) {
+        console.error('❌ Failed to invoke push edge function for merchant:', pushError);
+      } else {
+        console.log(`✅ Push sent to merchant (${business.user_id})`);
+      }
+    } else {
+      console.log(`🔕 Push skipped for merchant ${business.user_id} (Push Enabled: ${pushEnabled})`);
+    }
   } catch (error) {
     console.error('Error notifying merchant of new review:', error);
   }

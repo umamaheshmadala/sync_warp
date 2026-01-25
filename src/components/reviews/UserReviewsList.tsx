@@ -38,16 +38,15 @@ export default function UserReviewsList() {
 
   // Handle delete review
   const handleDeleteReview = async (reviewId: string) => {
-    if (!window.confirm('Are you sure you want to delete this review? This action cannot be undone.')) {
-      return;
-    }
-
+    // ReviewCard handles the confirmation dialog
     try {
       await deleteReview(reviewId);
-      toast.success('Review deleted successfully');
+      // Toast is handled by ReviewCard or we can move it here if we want consistency, 
+      // but ReviewCard currently has it. To avoid double toast, we remove it here.
     } catch (err) {
       console.error('Delete error:', err);
       toast.error('Failed to delete review');
+      throw err; // Re-throw so ReviewCard knows it failed
     }
   };
 

@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { notifyMerchantNewReview } from './favoriteNotificationService';
 
 export interface PendingReview {
     id: string;
@@ -95,6 +96,8 @@ export async function getPendingReviewCount(): Promise<number> {
     return count || 0;
 }
 
+// ... (existing imports)
+
 /**
  * Approve a review
  */
@@ -157,6 +160,40 @@ export async function approveReview(reviewId: string): Promise<void> {
 
     // Send notification to reviewer
     await notifyReviewer(reviewId, 'approved');
+
+    // NEW: Notify Merchant that review is live
+    try {
+        // Fetch review details including reviewer name and business id
+        // We need: business_id, reviewerName, recommendation
+        const { data: reviewDetails, error: detailsError } = await supabase
+            .from('business_reviews')
+            .select(`
+                business_id, 
+                recommendation, 
+                user_id,
+                user:profiles!user_id (full_name)
+            `)
+            .eq('id', reviewId)
+            .single();
+
+        if (detailsError || !reviewDetails) {
+            console.error('[ModerationService] Error fetching details for merchant notification:', detailsError);
+        } else {
+            const reviewerName = Array.isArray(reviewDetails.user)
+                ? (reviewDetails.user[0] as any)?.full_name
+                : (reviewDetails.user as any)?.full_name || 'A customer';
+
+            await notifyMerchantNewReview(
+                reviewDetails.business_id,
+                reviewId,
+                reviewerName,
+                reviewDetails.recommendation
+            );
+            console.log('✅ [ModerationService] Merchant notified of new approved review');
+        }
+    } catch (notifWarn) {
+        console.warn('[ModerationService] Failed to notify merchant (non-blocking):', notifWarn);
+    }
 }
 
 /**

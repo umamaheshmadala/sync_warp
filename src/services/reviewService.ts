@@ -167,13 +167,8 @@ export async function createReview(input: CreateReviewInput): Promise<BusinessRe
   const reviewerName = profile?.full_name || 'A customer';
   const businessName = business?.business_name || 'a business';
 
-  // Send notification to merchant (async, don't await)
-  notifyMerchantNewReview(
-    input.business_id,
-    data.id,
-    reviewerName,
-    input.recommendation
-  ).catch(err => console.error('Failed to send merchant notification:', err));
+  // Notification to merchant is now handled in moderationService.ts upon approval
+  // notifyMerchantNewReview(...) removed from here
 
   // US-11.4.1.5: Notify all admins about new pending review
   import('../services/moderationService').then(mod => {
@@ -218,19 +213,27 @@ export async function deleteReview(reviewId: string): Promise<void> {
   }
 
   // Perform soft delete
-  const { error: deleteError } = await supabase
+  const { data, error: deleteError } = await supabase
     .from('business_reviews')
     .update({
       deleted_at: new Date().toISOString(),
       deleted_by: user.id
     })
-    .eq('id', reviewId);
+    .eq('id', reviewId)
+    .select();
 
   if (deleteError) {
     console.error('[ReviewService] Soft delete error:', deleteError);
     throw new Error('Could not delete review. Please try again.');
   }
 
+  // STRICT CHECK: Ensure a row was actually updated
+  if (!data || data.length === 0) {
+    console.error('[ReviewService] Soft delete failed: No rows updated. Possible RLS blocking.');
+    throw new Error('Could not delete review. You may not have permission.');
+  }
+
+  // Output success
   console.log(`[ReviewService] Review ${reviewId} soft deleted by ${user.id}`);
 }
 

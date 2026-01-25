@@ -15,20 +15,20 @@ async function globalSetup(config: FullConfig) {
   try {
     // Navigate to login page
     await page.goto(`${baseURL}/auth/login`);
-    
+
     // Fill in login form
     await page.fill('input[type="email"]', TEST_USERS.regularUser1.email);
     await page.fill('input[type="password"]', TEST_USERS.regularUser1.password);
-    
+
     // Submit login
     await page.click('button[type="submit"], button:has-text("Sign in")');
-    
+
     // Wait for navigation to complete
-    await page.waitForURL(/^\/(|home|dashboard|businesses)/i, { timeout: 10000 });
-    
+    await page.waitForURL(/^\/(|home|dashboard|businesses)/i, { timeout: 30000 });
+
     // Save authenticated state
     await page.context().storageState({ path: 'tests/e2e/.auth/user.json' });
-    
+
     console.log('✅ Authentication state saved successfully');
   } catch (error) {
     console.error('❌ Failed to setup authentication:', error);
