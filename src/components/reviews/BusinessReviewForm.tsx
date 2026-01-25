@@ -265,7 +265,7 @@ export default function BusinessReviewForm({
             `}
           >
             <ThumbsDown size={18} className={recommendation === false ? 'fill-current' : ''} />
-            <span className="font-semibold text-sm">Avoid</span>
+            <span className="font-semibold text-sm">Not Recommended</span>
           </button>
         </div>
 
