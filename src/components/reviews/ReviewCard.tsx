@@ -19,8 +19,12 @@ import {
   Share2,
   CheckCircle,
   MessageCircle,
+  Flag,
+  Check,
 } from 'lucide-react';
 import { ModerationStatusBadge } from './ModerationStatusBadge';
+import { ReportReviewModal } from './ReportReviewModal';
+import { hasUserReported } from '../../services/reportService';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'react-hot-toast';
 import { useQueryClient } from '@tanstack/react-query';
@@ -37,6 +41,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { Pin } from 'lucide-react';
 
@@ -87,9 +92,20 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
 
     const [showShareModal, setShowShareModal] = useState(false);
 
+    // Report Review state
+    const [showReportModal, setShowReportModal] = useState(false);
+    const [hasReported, setHasReported] = useState(false);
+
     const isOwnReview = user?.id === review.user_id;
     const canEdit = isOwnReview;
     const timeAgo = formatDistanceToNow(new Date(review.created_at), { addSuffix: true });
+
+    // Check if reported
+    React.useEffect(() => {
+      if (!isOwnReview && user) {
+        hasUserReported(review.id).then(setHasReported);
+      }
+    }, [review.id, isOwnReview, user]);
 
     const handleFeatureClick = async () => {
       try {
@@ -295,7 +311,7 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
             )}
 
             {/* Actions Menu */}
-            {(isOwnReview || isBusinessOwner) && (
+            {(isOwnReview || isBusinessOwner || user) && (
               <div className="relative">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -324,13 +340,37 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
                     {isOwnReview && (
                       <DropdownMenuItem onClick={handleDeleteClick} className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50">
                         <Trash2 className="w-4 h-4 mr-2" />
-                        Delete
                       </DropdownMenuItem>
+                    )}
+
+                    {/* Report Option (for non-owners) */}
+                    {!isOwnReview && user && (
+                      <>
+                        {(isOwnReview || isBusinessOwner) && <DropdownMenuSeparator />}
+                        <DropdownMenuItem
+                          onClick={() => setShowReportModal(true)}
+                          disabled={hasReported}
+                          className={hasReported ? 'text-gray-400' : 'text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer'}
+                        >
+                          {hasReported ? (
+                            <>
+                              <Check className="w-4 h-4 mr-2" />
+                              Reported
+                            </>
+                          ) : (
+                            <>
+                              <Flag className="w-4 h-4 mr-2" />
+                              Report Review
+                            </>
+                          )}
+                        </DropdownMenuItem>
+                      </>
                     )}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
             )}
+
           </div>
         </div>
 
@@ -355,11 +395,13 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
         />
 
         {/* Review Text */}
-        {review.text && (
-          <p className="text-gray-900 text-sm leading-relaxed mb-3 whitespace-pre-wrap break-words">
-            {review.text}
-          </p>
-        )}
+        {
+          review.text && (
+            <p className="text-gray-900 text-sm leading-relaxed mb-3 whitespace-pre-wrap break-words">
+              {review.text}
+            </p>
+          )
+        }
 
         {/* Photo Gallery - Reduced Size */}
         <div className="mb-3">
@@ -367,11 +409,13 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
         </div>
 
         {/* Tags */}
-        {review.tags && review.tags.length > 0 && (
-          <div className="mb-3">
-            <ReviewTagDisplay tagIds={review.tags.map(t => t.id)} maxVisible={5} />
-          </div>
-        )}
+        {
+          review.tags && review.tags.length > 0 && (
+            <div className="mb-3">
+              <ReviewTagDisplay tagIds={review.tags.map(t => t.id)} maxVisible={5} />
+            </div>
+          )
+        }
 
         {/* Helpful Button - Conditional Divider */}
         <div className={`mt-2 pt-2 ${review.text || (review.photo_urls && review.photo_urls.length > 0) ? 'border-t border-gray-50' : ''}`}>
@@ -383,72 +427,74 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
         </div>
 
         {/* Business Owner Response Section */}
-        {(review.response_text || (isBusinessOwner && onRespond)) && (
-          <div className="mt-3 pt-3 border-t border-gray-100">
-            {review.response_text ? (
-              // Display existing response
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-              >
-                <div className="bg-blue-50/50 rounded-lg p-3">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <div className="flex items-center gap-2">
-                      <div className="px-1.5 py-0.5 bg-blue-600 text-white text-[10px] font-bold rounded uppercase tracking-wide">
-                        Owner Connection
-                      </div>
-                      <span className="text-[10px] text-gray-400">
-                        {formatDistanceToNow(new Date(review.response_created_at!), {
-                          addSuffix: true,
-                        })}
-                      </span>
-                    </div>
-                    {isBusinessOwner && onRespond && (
+        {
+          (review.response_text || (isBusinessOwner && onRespond)) && (
+            <div className="mt-3 pt-3 border-t border-gray-100">
+              {review.response_text ? (
+                // Display existing response
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                >
+                  <div className="bg-blue-50/50 rounded-lg p-3">
+                    <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => onRespond(review.id, review.business_id, {
-                            id: review.response_id!,
-                            response_text: review.response_text!,
+                        <div className="px-1.5 py-0.5 bg-blue-600 text-white text-[10px] font-bold rounded uppercase tracking-wide">
+                          Owner Connection
+                        </div>
+                        <span className="text-[10px] text-gray-400">
+                          {formatDistanceToNow(new Date(review.response_created_at!), {
+                            addSuffix: true,
                           })}
-                          className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1"
-                        >
-                          <Edit2 className="w-3 h-3" />
-                          Edit
-                        </button>
-                        <button
-                          onClick={handleDeleteResponseClick}
-                          className="text-xs text-red-600 hover:text-red-700 flex items-center gap-1"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                          Delete
-                        </button>
+                        </span>
                       </div>
-                    )}
+                      {isBusinessOwner && onRespond && (
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => onRespond(review.id, review.business_id, {
+                              id: review.response_id!,
+                              response_text: review.response_text!,
+                            })}
+                            className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                          >
+                            <Edit2 className="w-3 h-3" />
+                            Edit
+                          </button>
+                          <button
+                            onClick={handleDeleteResponseClick}
+                            className="text-xs text-red-600 hover:text-red-700 flex items-center gap-1"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-700">{review.response_text}</p>
                   </div>
-                  <p className="text-sm text-gray-700">{review.response_text}</p>
-                </div>
-              </motion.div>
-            ) : isBusinessOwner && onRespond ? (
-              // Show "Respond" button for business owners
-              <motion.button
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.99 }}
-                onClick={() => onRespond(review.id, review.business_id)}
-                className="
+                </motion.div>
+              ) : isBusinessOwner && onRespond ? (
+                // Show "Respond" button for business owners
+                <motion.button
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
+                  onClick={() => onRespond(review.id, review.business_id)}
+                  className="
                   w-full flex items-center justify-center gap-2 px-4 py-2
                   bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-gray-900
                   border border-gray-200 hover:border-gray-300
                   rounded-lg text-sm font-medium transition-all
                 "
-              >
-                <Reply className="w-3.5 h-3.5" />
-                Respond
-              </motion.button>
-            ) : null}
-          </div>
-        )}
+                >
+                  <Reply className="w-3.5 h-3.5" />
+                  Respond
+                </motion.button>
+              ) : null}
+            </div>
+          )
+        }
 
         <ShareToFriendsModal
           isOpen={showShareModal}
@@ -466,7 +512,13 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
             businessImage: businessImage
           }}
         />
-      </motion.div>
+        <ReportReviewModal
+          isOpen={showReportModal}
+          onClose={() => setShowReportModal(false)}
+          reviewId={review.id}
+          onReported={() => setHasReported(true)}
+        />
+      </motion.div >
     );
   }
 );
