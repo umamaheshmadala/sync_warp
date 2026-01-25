@@ -2,26 +2,37 @@
 // Story 5.2: Binary Review System - Review Form
 // =====================================================
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ThumbsUp, ThumbsDown, X, CheckCircle, AlertCircle } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, X, CheckCircle, AlertCircle, Camera, Loader2, Image as ImageIcon } from 'lucide-react';
 import { countWords, updateReview } from '../../services/reviewService';
 import { REVIEW_TEXT_WORD_LIMIT, REVIEW_TEXT_MIN_WORDS } from '../../types/review';
-import type { CreateReviewInput, UpdateReviewInput } from '../../types/review';
+import type { CreateReviewInput } from '../../types/review';
 import ReviewTagSelector from './ReviewTagSelector';
-import ReviewPhotoUpload from './ReviewPhotoUpload';
 import WordCounter from './WordCounter';
+import { toast } from 'react-hot-toast';
+import { supabase } from '../../lib/supabase';
+import imageCompression from 'browser-image-compression';
 
 interface BusinessReviewFormProps {
   businessId: string;
   businessName: string;
-  checkinId: string | null;  // TEMP: Made optional for desktop testing
+  checkinId: string | null;
   onSubmit: (review: CreateReviewInput) => Promise<void>;
   onCancel: () => void;
   loading?: boolean;
   editMode?: boolean;
   existingReview?: any;
 }
+
+// Compression options
+const COMPRESSION_OPTIONS = {
+  maxSizeMB: 1,
+  maxWidthOrHeight: 1920,
+  useWebWorker: true,
+  fileType: 'image/jpeg' as const,
+  initialQuality: 0.8,
+};
 
 export default function BusinessReviewForm({
   businessId,
@@ -50,10 +61,13 @@ export default function BusinessReviewForm({
   );
   const [wordCount, setWordCount] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // Update word count when text changes
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Update word count
   useEffect(() => {
     setWordCount(countWords(reviewText));
   }, [reviewText]);
@@ -62,71 +76,101 @@ export default function BusinessReviewForm({
   const isValid = recommendation !== null;
   const isOverLimit = wordCount > REVIEW_TEXT_WORD_LIMIT;
 
-  // Handle text change with word limit warning
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newText = e.target.value;
     const newWordCount = countWords(newText);
     setReviewText(newText);
 
-    // Check limits
-    if (newText.trim()) {
-      if (newWordCount < REVIEW_TEXT_MIN_WORDS) {
-        // Don't show error immediately while typing, but clear if fixed
-        // validation happens on submit
-      } else if (newWordCount > REVIEW_TEXT_WORD_LIMIT) {
-        setError(`Review text exceeds ${REVIEW_TEXT_WORD_LIMIT} word limit`);
-      } else {
-        setError(null);
-      }
+    // Only show error on excessive length
+    if (newWordCount > REVIEW_TEXT_WORD_LIMIT) {
+      setError(`Limit exceeded: ${REVIEW_TEXT_WORD_LIMIT} words`);
     } else {
       setError(null);
     }
   };
 
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-  // Handle paste - trim if too long
-  const handlePaste = (e: React.ClipboardEvent) => {
-    const pastedText = e.clipboardData.getData('text');
-    const currentText = reviewText;
-    const newText = currentText + pastedText;
+    if (photoUrls.length + files.length > 5) {
+      toast.error('Max 5 photos allowed');
+      return;
+    }
 
-    // Simple count check
-    const newWordCount = countWords(newText);
+    setIsUploading(true);
+    const newPhotos = [...photoUrls];
+    const errors: string[] = [];
 
-    if (newWordCount > REVIEW_TEXT_WORD_LIMIT) {
-      e.preventDefault();
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (!file.type.startsWith('image/')) continue;
 
-      // Trim to limit
-      // This is a rough approximation, splitting by space
-      const words = newText.trim().split(/\s+/);
-      const trimmedWords = words.slice(0, REVIEW_TEXT_WORD_LIMIT);
-      const trimmedText = trimmedWords.join(' ');
+        let fileToUpload: File = file;
 
-      setReviewText(trimmedText);
-      setWordCount(REVIEW_TEXT_WORD_LIMIT);
-      setError(`Pasted text was trimmed to ${REVIEW_TEXT_WORD_LIMIT} words limit`);
+        // Compress if needed
+        if (file.size > 500 * 1024) {
+          try {
+            fileToUpload = await imageCompression(file, COMPRESSION_OPTIONS);
+          } catch (err) {
+            console.error('Compression failed', err);
+            if (file.size > 1024 * 1024) {
+              errors.push(`File too large: ${file.name}`);
+              continue;
+            }
+          }
+        }
+
+        const fileExt = fileToUpload.name.split('.').pop() || 'jpg';
+        const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const filePath = `review-photos/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('reviews')
+          .upload(filePath, fileToUpload);
+
+        if (uploadError) {
+          console.error('Upload error', uploadError);
+          errors.push('Upload failed');
+          continue;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('reviews')
+          .getPublicUrl(filePath);
+
+        newPhotos.push(publicUrl);
+      }
+      setPhotoUrls(newPhotos);
+      if (errors.length > 0) toast.error(errors.join(', '));
+      else toast.success('Photos added');
+    } catch (err) {
+      console.error(err);
+      toast.error('Error uploading photos');
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
-  // Handle form submission
+  const removePhoto = (urlToRemove: string) => {
+    setPhotoUrls(prev => prev.filter(url => url !== urlToRemove));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate text
     if (reviewText.trim()) {
       const currentWordCount = countWords(reviewText);
-      if (currentWordCount < REVIEW_TEXT_MIN_WORDS) {
-        setError(`Please write at least ${REVIEW_TEXT_MIN_WORDS} word${REVIEW_TEXT_MIN_WORDS > 1 ? 's' : ''}`);
-        return;
-      }
       if (currentWordCount > REVIEW_TEXT_WORD_LIMIT) {
-        setError(`Review text exceeds ${REVIEW_TEXT_WORD_LIMIT} word limit`);
+        setError(`Limit exceeded`);
         return;
       }
     }
 
     if (!isValid) {
-      setError('Please select a recommendation');
+      setError('Recommendation required');
       return;
     }
 
@@ -134,44 +178,27 @@ export default function BusinessReviewForm({
     setError(null);
 
     try {
+      const submissionData = {
+        recommendation: recommendation!,
+        review_text: reviewText.trim() || undefined,
+        photo_urls: photoUrls.length > 0 ? photoUrls : undefined,
+        tags: selectedTags.length > 0 ? selectedTags : undefined,
+        checkin_id: checkinId || undefined,
+      };
+
       if (editMode && existingReview) {
-        // Update existing review
-        await updateReview(existingReview.id, {
-          recommendation: recommendation!,
-          review_text: reviewText.trim() || undefined,
-          photo_urls: photoUrls.length > 0 ? photoUrls : undefined,
-          tags: selectedTags.length > 0 ? selectedTags : undefined,
-        });
-
-        // Show success message
-        setShowSuccess(true);
-
-        // Close form after brief delay
-        setTimeout(() => {
-          onCancel();
-        }, 1500);
+        await updateReview(existingReview.id, submissionData);
       } else {
-        // Create new review
         await onSubmit({
+          ...submissionData,
           business_id: businessId,
-          recommendation: recommendation!,
-          review_text: reviewText.trim() || undefined,
-          photo_urls: photoUrls.length > 0 ? photoUrls : undefined,
-          tags: selectedTags.length > 0 ? selectedTags : undefined,
-          checkin_id: checkinId || undefined,  // TEMP: Allow null for desktop testing
-        });
-
-        // Show success message
-        setShowSuccess(true);
-
-        // Close form after brief delay
-        setTimeout(() => {
-          onCancel();
-        }, 1500);
+        } as CreateReviewInput);
       }
-    } catch (err) {
-      console.error('Submit error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to submit review');
+
+      setShowSuccess(true);
+      setTimeout(onCancel, 1500);
+    } catch (err: any) {
+      setError(err.message || 'Failed to submit');
     } finally {
       setIsSubmitting(false);
     }
@@ -181,252 +208,160 @@ export default function BusinessReviewForm({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      className="bg-white rounded-2xl shadow-xl p-6 max-w-2xl w-full mx-auto max-h-[90vh] overflow-y-auto"
+      exit={{ opacity: 0, y: 20 }}
+      className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-auto overflow-hidden flex flex-col max-h-[90vh]"
     >
       {/* Success Overlay */}
       <AnimatePresence>
         {showSuccess && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            className="absolute inset-0 bg-white rounded-2xl flex items-center justify-center z-50"
-          >
+          <div className="absolute inset-0 bg-white z-50 flex items-center justify-center">
             <div className="text-center">
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-              >
-                <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-              </motion.div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                {editMode ? 'Review Updated!' : 'Review Submitted!'}
-              </h3>
-              <p className="text-gray-600">Thank you for your feedback</p>
+              <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4 animate-bounce" />
+              <h3 className="text-xl font-bold text-gray-900">Submitted!</h3>
             </div>
-          </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      {/* Header - Compact */}
+      <div className="px-4 py-3 border-b flex items-center justify-between bg-gray-50 shrink-0">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">
-            {editMode ? 'Edit Review' : 'Write a Review'}
+          <h2 className="text-base font-bold text-gray-900 leading-tight">
+            {editMode ? 'Edit Review' : 'Write Review'}
           </h2>
-          <p className="text-sm text-gray-600 mt-1">{businessName}</p>
+          <p className="text-xs text-gray-500 truncate max-w-[200px]">{businessName}</p>
         </div>
-        <button
-          onClick={onCancel}
-          className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-          disabled={isSubmitting}
-        >
-          <X className="w-5 h-5 text-gray-500" />
+        <button onClick={onCancel} className="p-1.5 hover:bg-gray-200 rounded-full text-gray-500">
+          <X size={20} />
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Binary Recommendation Choice */}
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-3">
-            Would you recommend this business? *
-          </label>
-          <div className="grid grid-cols-2 gap-4">
-            {/* Recommend Button */}
-            <motion.button
-              type="button"
-              onClick={() => setRecommendation(true)}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className={`
-                relative p-6 rounded-xl border-2 transition-all
-                ${recommendation === true
-                  ? 'border-green-500 bg-green-50'
-                  : 'border-gray-200 hover:border-green-300 bg-white'
-                }
-              `}
-            >
-              <ThumbsUp
-                className={`w-12 h-12 mx-auto mb-3 ${recommendation === true ? 'text-green-500' : 'text-gray-400'
-                  }`}
-              />
-              <div className="text-center">
-                <div className={`font-semibold text-base ${recommendation === true ? 'text-green-700' : 'text-gray-700'
-                  }`}>
-                  Recommend
-                </div>
-                <div className="text-sm text-gray-500 mt-1">
-                  I'd return here
-                </div>
-              </div>
-              {recommendation === true && (
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="absolute top-3 right-3"
-                >
-                  <CheckCircle className="w-6 h-6 text-green-500" />
-                </motion.div>
-              )}
-            </motion.button>
+      <div className="overflow-y-auto p-4 space-y-4 flex-1">
 
-            {/* Don't Recommend Button */}
-            <motion.button
+        {/* Compact Recommendation */}
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => setRecommendation(true)}
+            className={`
+              flex items-center justify-center gap-2 p-3 rounded-lg border transition-all
+              ${recommendation === true
+                ? 'bg-green-50 border-green-500 text-green-700 shadow-sm'
+                : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}
+            `}
+          >
+            <ThumbsUp size={18} className={recommendation === true ? 'fill-current' : ''} />
+            <span className="font-semibold text-sm">Recommend</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setRecommendation(false)}
+            className={`
+              flex items-center justify-center gap-2 p-3 rounded-lg border transition-all
+              ${recommendation === false
+                ? 'bg-red-50 border-red-500 text-red-700 shadow-sm'
+                : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}
+            `}
+          >
+            <ThumbsDown size={18} className={recommendation === false ? 'fill-current' : ''} />
+            <span className="font-semibold text-sm">Avoid</span>
+          </button>
+        </div>
+
+        {/* Text Area with Integrated Photo Trigger */}
+        <div className="relative">
+          <textarea
+            value={reviewText}
+            onChange={handleTextChange}
+            placeholder="Share your experience (optional)..."
+            rows={3}
+            className={`
+              w-full px-4 pt-3 pb-10 border rounded-xl resize-none text-sm
+              focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+              ${isOverLimit ? 'border-red-300' : 'border-gray-300'}
+            `}
+          />
+
+          {/* Bottom Toolbar inside Textarea */}
+          <div className="absolute bottom-2 left-2 right-3 flex justify-between items-center">
+            {/* Photo Trigger */}
+            <button
               type="button"
-              onClick={() => setRecommendation(false)}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className={`
-                relative p-6 rounded-xl border-2 transition-all
-                ${recommendation === false
-                  ? 'border-red-500 bg-red-50'
-                  : 'border-gray-200 hover:border-red-300 bg-white'
-                }
-              `}
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading || photoUrls.length >= 5}
+              className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors disabled:opacity-50"
+              title="Add Photos"
             >
-              <ThumbsDown
-                className={`w-12 h-12 mx-auto mb-3 ${recommendation === false ? 'text-red-500' : 'text-gray-400'
-                  }`}
-              />
-              <div className="text-center">
-                <div className={`font-semibold text-base ${recommendation === false ? 'text-red-700' : 'text-gray-700'
-                  }`}>
-                  Don't Recommend
-                </div>
-                <div className="text-sm text-gray-500 mt-1">
-                  Not my experience
-                </div>
-              </div>
-              {recommendation === false && (
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="absolute top-3 right-3"
-                >
-                  <CheckCircle className="w-6 h-6 text-red-500" />
-                </motion.div>
-              )}
-            </motion.button>
+              {isUploading ? <Loader2 size={18} className="animate-spin text-indigo-600" /> : <Camera size={18} />}
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={handlePhotoUpload}
+            />
+
+            {/* Word Counter */}
+            <div className="text-xs text-gray-400 font-medium">
+              {wordCount}/{REVIEW_TEXT_WORD_LIMIT}
+            </div>
           </div>
         </div>
 
-        {/* Review Text (Optional) */}
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Share your experience (optional)
-          </label>
-          <div className="relative">
-            <textarea
-              value={reviewText}
-              onChange={handleTextChange}
-              onPaste={handlePaste}
-              placeholder="What made your experience great or not so great?"
-              rows={4}
-              className={`
-                w-full px-4 py-3 border rounded-xl resize-none
-                focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-                ${isOverLimit ? 'border-red-300 focus:ring-red-500' : 'border-gray-300'}
-              `}
-            />
-            <WordCounter
-              text={reviewText}
-              maxWords={REVIEW_TEXT_WORD_LIMIT}
-              minWords={REVIEW_TEXT_MIN_WORDS}
-              className="absolute bottom-3 right-3"
-            />
+        {/* Photo List (Horizontal Scroll) */}
+        {photoUrls.length > 0 && (
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            {photoUrls.map((url, idx) => (
+              <div key={idx} className="relative w-16 h-16 shrink-0 rounded-lg overflow-hidden border group">
+                <img src={url} alt="Uploaded" className="w-full h-full object-cover" />
+                <button
+                  onClick={() => removePhoto(url)}
+                  className="absolute top-0.5 right-0.5 bg-black/50 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <X size={10} />
+                </button>
+              </div>
+            ))}
           </div>
-          <p className="text-xs text-gray-500 mt-1">
-            Keep it brief and helpful ({REVIEW_TEXT_WORD_LIMIT} words max)
-          </p>
-        </div>
+        )}
 
-        {/* Photo Upload */}
-        <ReviewPhotoUpload
-          photos={photoUrls}
-          onChange={setPhotoUrls}
-        />
-
-        {/* Tags Selector */}
+        {/* Tags */}
         <ReviewTagSelector
           selectedTags={selectedTags}
           onTagsChange={setSelectedTags}
         />
 
-        {/* Error Message */}
-        <AnimatePresence>
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="flex items-start gap-2 p-4 bg-red-50 border border-red-200 rounded-xl"
-            >
-              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-medium text-red-800">{error}</p>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* TEMP: Testing Mode Notice */}
-        <div className="flex items-start gap-2 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-          <CheckCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-medium text-blue-900">
-              Testing Mode
-            </p>
-            <p className="text-xs text-blue-700 mt-1">
-              Check-in requirement bypassed for desktop testing.
-            </p>
+        {/* Error */}
+        {error && (
+          <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 p-2 rounded-lg">
+            <AlertCircle size={14} />
+            {error}
           </div>
-        </div>
+        )}
+      </div>
 
-        {/* Action Buttons */}
-        <div className="flex gap-3 pt-4">
-          <motion.button
-            type="button"
-            onClick={onCancel}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="
-              flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-xl
-              font-semibold hover:bg-gray-200 transition-colors
-            "
-            disabled={isSubmitting}
-          >
-            Cancel
-          </motion.button>
-          <motion.button
-            type="submit"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className={`
-              flex-1 px-6 py-3 rounded-xl font-semibold transition-all
-              ${isValid && !isOverLimit
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }
-            `}
-            disabled={!isValid || isOverLimit || isSubmitting || loading}
-          >
-            {isSubmitting || loading ? (
-              <span className="flex items-center justify-center gap-2">
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                  className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
-                />
-                Submitting...
-              </span>
-            ) : (
-              editMode ? 'Update Review' : 'Submit Review'
-            )}
-          </motion.button>
-        </div>
-      </form>
+      {/* Footer Actions */}
+      <div className="p-4 border-t bg-white shrink-0 flex gap-3">
+        <button
+          onClick={onCancel}
+          className="flex-1 py-2.5 text-gray-600 font-semibold bg-gray-100 rounded-lg hover:bg-gray-200 text-sm"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleSubmit}
+          disabled={!isValid || isOverLimit || isSubmitting}
+          className={`
+            flex-1 py-2.5 text-white font-semibold rounded-lg shadow-sm text-sm
+            ${isValid && !isOverLimit ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-gray-300 cursor-not-allowed'}
+          `}
+        >
+          {isSubmitting ? 'Sending...' : (editMode ? 'Update' : 'Submit')}
+        </button>
+      </div>
     </motion.div>
   );
 }
