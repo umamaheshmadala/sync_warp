@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Search } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -34,7 +34,19 @@ import { ReviewDetailsModal } from '@/components/admin/ReviewDetailsSheet';
 
 export default function ReviewModerationPage() {
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState('pending');
+    const [searchParams, setSearchParams] = useSearchParams();
+
+    // Get tab from URL or default to 'pending'
+    const tabParam = searchParams.get('tab');
+    const activeTab = tabParam && ['pending', 'reported', 'audit'].includes(tabParam)
+        ? tabParam
+        : 'pending';
+
+    const setActiveTab = (val: string) => {
+        setSearchParams({ tab: val });
+        setSelectedReviews([]);
+    };
+
     const [searchQuery, setSearchQuery] = useState('');
     const [businessFilter, setBusinessFilter] = useState('');
     const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'reports'>('newest');

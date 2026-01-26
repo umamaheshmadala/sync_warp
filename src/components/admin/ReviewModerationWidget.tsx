@@ -1,67 +1,143 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ClipboardList, Clock, ArrowRight, CheckCircle } from 'lucide-react';
-import { getPendingReviewCount } from '../../services/moderationService';
+import { ClipboardList, Clock, ArrowRight, CheckCircle, RefreshCw, AlertCircle, XCircle } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { getPendingReviewCount, getDailyModerationStats } from '../../services/moderationService';
+import { getPendingReports } from '../../services/reportService';
+import { Button } from '@/components/ui/button';
 
 export function ReviewModerationWidget() {
     const navigate = useNavigate();
-    const [pendingCount, setPendingCount] = useState<number>(0);
-    const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        loadStats();
-    }, []);
+    const { data: pendingCount, refetch: refetchPending, isLoading: loadingPending } = useQuery({
+        queryKey: ['pending-review-count'],
+        queryFn: getPendingReviewCount,
+        refetchInterval: 30000
+    });
 
-    const loadStats = async () => {
-        try {
-            const count = await getPendingReviewCount();
-            setPendingCount(count);
-        } catch (error) {
-            console.error('Failed to load pending reviews count:', error);
-        } finally {
-            setLoading(false);
-        }
+    const { data: reportData, refetch: refetchReports, isLoading: loadingReports } = useQuery({
+        queryKey: ['pending-reports'],
+        queryFn: getPendingReports
+    });
+
+    const { data: dailyStats, refetch: refetchDaily, isLoading: loadingDaily } = useQuery({
+        queryKey: ['daily-moderation-stats'],
+        queryFn: getDailyModerationStats
+    });
+
+    const handleRefresh = () => {
+        refetchPending();
+        refetchReports();
+        refetchDaily();
     };
+
+    const isLoading = loadingPending || loadingReports || loadingDaily;
+    const reportCount = reportData?.reportCount || 0;
 
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                    <div className="p-2 bg-yellow-100 rounded-lg text-yellow-600">
-                        <ClipboardList size={24} />
+                    <div className="flex items-center gap-2">
+                        <div className="p-2 bg-indigo-100 rounded-lg text-indigo-600">
+                            <ClipboardList size={24} />
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900">Review Moderation</h3>
                     </div>
-                    {pendingCount > 0 && (
-                        <span className="flex h-3 w-3 relative">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                        </span>
-                    )}
+
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleRefresh}
+                        className="text-gray-400 hover:text-gray-700"
+                        title="Refresh stats"
+                    >
+                        <RefreshCw size={18} className={isLoading ? "animate-spin" : ""} />
+                    </Button>
                 </div>
 
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">Review Moderation</h3>
+                <div className="grid grid-cols-2 gap-4">
+                    {/* Pending Reviews */}
+                    <div
+                        onClick={() => navigate('/admin/moderation?tab=pending')}
+                        className="bg-gray-50 p-4 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors border border-transparent hover:border-gray-200 group"
+                    >
+                        <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm font-medium text-gray-500">Pending</span>
+                            <Clock size={16} className="text-gray-400 group-hover:text-indigo-500" />
+                        </div>
+                        <div className="flex items-baseline gap-1">
+                            {loadingPending ? (
+                                <div className="h-6 w-8 bg-gray-200 animate-pulse rounded"></div>
+                            ) : (
+                                <span className="text-2xl font-bold text-gray-900">{pendingCount || 0}</span>
+                            )}
+                        </div>
+                    </div>
 
-                {loading ? (
-                    <div className="animate-pulse h-8 bg-gray-100 rounded w-16 mb-2"></div>
-                ) : (
-                    <div className="flex items-baseline gap-2 mb-2">
-                        <span className="text-3xl font-bold text-gray-900">{pendingCount}</span>
-                        <span className="text-sm text-gray-500">pending</span>
+                    {/* Reported Reviews */}
+                    <div
+                        onClick={() => navigate('/admin/moderation?tab=reported')}
+                        className="bg-gray-50 p-4 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors border border-transparent hover:border-gray-200 group"
+                    >
+                        <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm font-medium text-gray-500">Reported</span>
+                            <AlertCircle size={16} className="text-gray-400 group-hover:text-amber-500" />
+                        </div>
+                        <div className="flex items-baseline gap-1">
+                            {loadingReports ? (
+                                <div className="h-6 w-8 bg-gray-200 animate-pulse rounded"></div>
+                            ) : (
+                                <span className="text-2xl font-bold text-gray-900">{reportCount}</span>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Approved Today */}
+                    <div
+                        onClick={() => navigate('/admin/moderation?tab=audit')}
+                        className="bg-gray-50 p-4 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors border border-transparent hover:border-gray-200 group"
+                    >
+                        <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm font-medium text-gray-500">Approved</span>
+                            <CheckCircle size={16} className="text-gray-400 group-hover:text-green-500" />
+                        </div>
+                        <div className="flex items-baseline gap-1">
+                            {loadingDaily ? (
+                                <div className="h-6 w-8 bg-gray-200 animate-pulse rounded"></div>
+                            ) : (
+                                <span className="text-2xl font-bold text-green-600">{dailyStats?.approved || 0}</span>
+                            )}
+                            <span className="text-xs text-gray-400">today</span>
+                        </div>
+                    </div>
+
+                    {/* Rejected Today */}
+                    <div
+                        onClick={() => navigate('/admin/moderation?tab=audit')}
+                        className="bg-gray-50 p-4 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors border border-transparent hover:border-gray-200 group"
+                    >
+                        <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm font-medium text-gray-500">Rejected</span>
+                            <XCircle size={16} className="text-gray-400 group-hover:text-red-500" />
+                        </div>
+                        <div className="flex items-baseline gap-1">
+                            {loadingDaily ? (
+                                <div className="h-6 w-8 bg-gray-200 animate-pulse rounded"></div>
+                            ) : (
+                                <span className="text-2xl font-bold text-red-600">{dailyStats?.rejected || 0}</span>
+                            )}
+                            <span className="text-xs text-gray-400">today</span>
+                        </div>
+                    </div>
+                </div>
+
+                {pendingCount === 0 && reportCount === 0 && (
+                    <div className="mt-4 flex items-center justify-center text-sm text-green-600 gap-2 bg-green-50 p-2 rounded-lg">
+                        <CheckCircle size={16} />
+                        <span>All caught up!</span>
                     </div>
                 )}
-
-                <div className="space-y-3">
-                    <div className="flex items-center text-sm text-gray-600 gap-2">
-                        <Clock size={16} className="text-gray-400" />
-                        <span> Requires approval</span>
-                    </div>
-
-                    {pendingCount === 0 && (
-                        <div className="flex items-center text-sm text-green-600 gap-2">
-                            <CheckCircle size={16} />
-                            <span>All caught up!</span>
-                        </div>
-                    )}
-                </div>
             </div>
 
             <div className="bg-gray-50 p-4 border-t border-gray-200">
@@ -69,7 +145,7 @@ export function ReviewModerationWidget() {
                     onClick={() => navigate('/admin/moderation')}
                     className="w-full flex items-center justify-between text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
                 >
-                    View Moderation Queue
+                    View Moderation Dashboard
                     <ArrowRight size={16} />
                 </button>
             </div>
