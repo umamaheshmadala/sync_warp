@@ -93,7 +93,7 @@ Build a comprehensive admin dashboard for review moderation. This dashboard inte
 - [x] Checkbox to select individual reviews
 - [x] "Select All" checkbox for current page
 - [x] "Approve Selected" button
-- [ ] "Reject Selected" button (requires single reason for all)
+- [x] "Reject Selected" button (requires single reason for all)
 - [x] Confirmation: "Approve 5 reviews?"
 - [x] Progress indicator during bulk action
 - [x] Summary after: "5 approved, 0 rejected"
@@ -110,7 +110,7 @@ Build a comprehensive admin dashboard for review moderation. This dashboard inte
 - [x] Shows: Date, Action, Review ID, Admin, Reason
 - [x] Filter by: Admin, Action type, Date range
 - [x] Search by review ID or reviewer name
-- [ ] Export to CSV (optional)
+- [x] Export to CSV (optional)
 - [x] Retention: Keep indefinitely
 
 ---
@@ -122,12 +122,12 @@ Build a comprehensive admin dashboard for review moderation. This dashboard inte
 
 **Acceptance Criteria:**
 - [x] Search by: Business name, Reviewer name
-- [ ] Filter by: Date range, Report reason, Business category
-- [ ] Sort by: Date, Report count, Business
+- [x] Filter by: Date range, Report reason, Business category
+- [x] Sort by: Date, Report count, Business
 - [x] Filter by: Date range, Report reason, Business category (Business Name implemented)
 - [x] Sort by: Date, Report count, Business (Newest/Oldest/Reports)
 - [x] Clear filters button
-- [ ] Persist filter preferences
+- [x] Persist filter preferences
 
 ---
 
@@ -139,10 +139,95 @@ Build a comprehensive admin dashboard for review moderation. This dashboard inte
 **Acceptance Criteria:**
 - [x] Pending reviews count (badge in nav)
 - [x] Today's processed count (Approved/Rejected Today)
-- [ ] Average processing time
-- [ ] Approval vs rejection ratio
-- [ ] Most reported businesses (top 5)
-- [ ] Trend chart (daily reviews over time)
+- [x] Average processing time
+- [x] Approval vs rejection ratio
+- [x] Most reported businesses (top 5)
+- [x] Trend chart (daily reviews over time)
+
+---
+
+### US-11.4.3.8: Real-Time Queue Updates
+**As an** admin  
+**I want to** see the Pending and Reported tabs update in real-time (within 1 second)  
+**So that** I don't miss new reviews requiring attention
+
+**Acceptance Criteria:**
+- [x] When a new review is submitted by a user, the Pending tab updates **immediately** (< 1 second) without manual refresh
+- [x] When a review is reported by a user, the Reported tab updates **immediately** (< 1 second) without manual refresh
+- [x] The count badges (Pending count, Reported count) in the tab headers update in real-time
+- [x] The stats tiles (Pending Reviews, Reported Reviews) update in real-time
+- [x] Both `business_reviews` and `review_reports` tables must be in Supabase Realtime publication
+- [x] Frontend must subscribe to Postgres changes on both tables and refetch queries instantly
+
+**Technical Notes:**
+- Current delay is 5+ minutes, caused by missing/broken Realtime subscriptions
+- React Query invalidation must happen on Realtime event, not polling
+- Ensure `refetchInterval` polling is disabled or set to fallback only
+
+---
+
+### US-11.4.3.9: Admin Notification for Reported Reviews
+**As an** admin  
+**I want to** receive an in-app notification every time a user reports a review  
+**So that** I am immediately aware of potential issues
+
+**Acceptance Criteria:**
+- [x] When ANY user reports a review, ALL admin users receive an in-app notification
+- [x] The notification appears in the Bell icon dropdown (NotificationCenter)
+- [x] The Bell icon badge count increases immediately
+- [x] The Admin Shield icon badge (header) shows reported review count (optional, for parity with pending count)
+- [x] Each report creates a separate notification (even if multiple users report the same review)
+- [x] Notification title: "New Review Reported"
+- [x] Notification body: "A review for {Business Name} was reported by {Reporter Name}"
+- [x] Notification action_url: `/admin/moderation?tab=reported`
+
+**Technical Notes:**
+- Database trigger `notify_admins_reported_review` must fire on `review_reports` INSERT
+- Trigger must insert into `notification_log` for each admin user
+- `is_admin` column in `profiles` table must be populated for all admins
+
+---
+
+### US-11.4.3.10: Moderation Action Clears Queue and Logs
+**As an** admin  
+**I want to** see reviews disappear from their queue tab immediately after I moderate them  
+**So that** I have a clear view of remaining work
+
+**Acceptance Criteria:**
+- [x] When a review is APPROVED from the Pending tab, it immediately disappears from the Pending tab
+- [x] When a review is REJECTED from the Pending tab, it immediately disappears from the Pending tab
+- [x] When a review is APPROVED from the Reported tab, it immediately disappears from the Reported tab
+- [x] When a review is REJECTED from the Reported tab, it immediately disappears from the Reported tab
+- [x] In ALL cases, a log entry is immediately created in `review_moderation_log`
+- [x] The Moderation Log tab updates immediately to show the new action
+- [x] When a reported review is moderated, the associated `review_reports` status changes from `pending` to `actioned` or `dismissed`
+- [x] The Reported tab count and list correctly reflect only **unresolved** reports (status = 'pending')
+
+**Technical Notes:**
+- Current bug: Reported tab does not refresh even after multiple page reloads
+- `resolveReports()` must be called when moderating a reported review
+- React Query must invalidate `['pending-reports']`, `['reported-reviews-details']`, `['moderation-audit-log']` after action
+
+---
+
+### US-11.4.3.11: Re-Submitted Review Flow
+**As an** admin  
+**I want to** clearly identify reviews that were previously rejected and re-edited by the user  
+**So that** I can give them appropriate scrutiny
+
+**Acceptance Criteria:**
+- [x] When a user EDITS a previously **rejected** review, the review's `moderation_status` changes back to `pending`
+- [x] The re-submitted review appears in the Pending tab with a prominent **"Re-submission"** badge/tag
+- [x] The Admin receives a notification: "Re-submitted review requires moderation"
+- [x] The notification body includes: "A previously rejected review for {Business Name} has been edited and re-submitted by {Reviewer Name}"
+- [x] The notification action_url: `/admin/moderation?tab=pending`
+- [x] The review's edit history is preserved (edit_count, previous rejection reason if available)
+- [x] When a user edits an **approved** review, behavior TBD (recommend: stays approved or goes to pending based on business rule)
+
+**Technical Notes:**
+- Requires database trigger or service logic on `business_reviews` UPDATE
+- `is_edited` flag already exists; need new column `is_resubmission` boolean or derive from (`is_edited = true` AND `previous_status = 'rejected'`)
+- Notification trigger must detect this specific scenario
 
 ---
 
@@ -718,16 +803,37 @@ Once acceptance criteria are verified, execute this testing flow:
 
 ## Definition of Done
 
-- [ ] Dashboard page accessible at /admin/moderation
-- [ ] Pending reviews visible with counts
-- [ ] Reported reviews visible with report counts
-- [ ] Individual approve/reject working
-- [ ] Bulk actions working
-- [ ] Audit log capturing all actions
-- [ ] Search and filter working
-- [ ] Stats summary displaying correctly
-- [ ] All tests passing
-- [ ] Code reviewed and approved
+### Core Functionality (Completed)
+- [x] Dashboard page accessible at /admin/moderation
+- [x] Pending reviews visible with counts
+- [x] Reported reviews visible with report counts
+- [x] Individual approve/reject working
+- [x] Bulk actions working
+- [x] Audit log capturing all actions
+- [x] Search and filter working
+- [x] Stats summary displaying correctly
+
+### Real-Time Updates (US-11.4.3.8)
+- [ ] Pending tab updates within 1 second of new review submission
+- [ ] Reported tab updates within 1 second of new report submission
+- [ ] Count badges update in real-time
+- [ ] Stats tiles update in real-time
+- [ ] Supabase Realtime publication includes `business_reviews` and `review_reports`
+
+### Notifications (US-11.4.3.9)
+- [ ] Admin receives in-app notification for every new report
+- [ ] Bell icon badge updates immediately
+- [ ] Notification links to correct tab
+
+### Queue Clearing (US-11.4.3.10)
+- [ ] Moderated reviews disappear from queue immediately
+- [ ] Moderation Log updates immediately
+- [ ] Report status changes to `actioned`/`dismissed` after moderation
+
+### Re-Submission Flow (US-11.4.3.11)
+- [ ] Edited rejected reviews return to pending
+- [ ] Re-submission badge visible in Pending tab
+- [ ] Admin receives re-submission notification
 
 ---
 
