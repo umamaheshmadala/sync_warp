@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Search } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
     getPendingReviews,
     getPendingReviewCount,
@@ -97,10 +97,16 @@ export default function ReviewModerationPage() {
         refetchInterval: 30000
     });
 
+    const queryClient = useQueryClient();
+
     const handleRefresh = () => {
         refetchPending();
         refetchReports();
         refetchReportedDetails();
+        // Invalidate stats and audit log to ensure they update immediately
+        queryClient.invalidateQueries({ queryKey: ['daily-moderation-stats'] });
+        queryClient.invalidateQueries({ queryKey: ['moderation-audit-log'] });
+        queryClient.invalidateQueries({ queryKey: ['pending-review-count'] });
         setSelectedReviews([]);
     };
 
@@ -248,7 +254,7 @@ export default function ReviewModerationPage() {
                                 </Badge>
                             )}
                         </TabsTrigger>
-                        <TabsTrigger value="audit">History</TabsTrigger>
+                        <TabsTrigger value="audit">Moderation Log</TabsTrigger>
                     </TabsList>
 
                     <div className="mt-6">
