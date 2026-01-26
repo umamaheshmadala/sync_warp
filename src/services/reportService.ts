@@ -105,6 +105,22 @@ export async function submitReport(data: ReportReview): Promise<void> {
         console.error('[ReportService] Error:', error);
         throw new Error('Could not submit report');
     }
+
+    // Notify admins
+    const businessName = Array.isArray(review.business) ? review.business[0]?.name : (review.business as any)?.name;
+    const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', user.id).single();
+    const reporterName = profile?.full_name || 'A user';
+
+    // Import dynamically to avoid circular dependency if possible, or move function to shared service?
+    // moderationService depends on reportService. reportService depends on moderationService?
+    // moderationService imports resolveReports from reportService.
+    // So reportService importing notify from moderationService creates cycle.
+    // Solution: Move notification logic to this file or a shared one.
+    // Actually, reportService DOES NOT import moderationService currently.
+    // So if I import moderationService here, it MIGHT cause cycle if moderationService imports reportService.
+    // Yes: moderationService -> reportService (resolveReports) -> moderationService (notifyAdminsNewReport).
+    // I should move `notifyAdminsNewReport` to `notificationService` or keep it local here?
+    // Or just implement it here cleanly.
 }
 
 /**

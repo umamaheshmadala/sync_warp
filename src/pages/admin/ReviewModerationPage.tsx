@@ -76,6 +76,7 @@ export default function ReviewModerationPage() {
         queryKey: ['reported-reviews-details', reportData?.reviewsWithReports],
         queryFn: async () => {
             if (!reportData?.reviewsWithReports?.length) return [];
+
             const ids = reportData.reviewsWithReports.map((r: any) => r.reviewId);
             const reviews = await getReviewsByIds(ids);
 
