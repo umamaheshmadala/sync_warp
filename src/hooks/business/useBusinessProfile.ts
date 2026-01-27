@@ -35,6 +35,9 @@ export interface Business {
     updated_at: string;
     claim_status?: string;
     phone_verified?: boolean;
+    recommendation_badge?: 'recommended' | 'highly_recommended' | 'very_highly_recommended' | null;
+    recommendation_percentage?: number;
+    approved_review_count?: number;
 }
 
 export interface BusinessCategory {

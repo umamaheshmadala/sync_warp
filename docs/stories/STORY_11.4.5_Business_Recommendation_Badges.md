@@ -73,10 +73,10 @@ Implement a 3-tier badge system for businesses based on their recommendation per
 **So that** I can track my reputation
 
 **Acceptance Criteria:**
-- [ ] Current badge shown in business dashboard
-- [ ] "Next tier" progress shown: "You need 2 more thumbs up for Highly Recommended"
-- [ ] Historical badge changes logged
-- [ ] Celebration animation when badge achieved
+- [x] Current badge shown in business dashboard
+- [x] "Next tier" progress shown: "You need 2 more thumbs up for Highly Recommended"
+- [x] Historical badge changes logged
+- [x] Celebration animation when badge achieved
 
 ---
 

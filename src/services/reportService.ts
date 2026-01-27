@@ -17,6 +17,10 @@ export interface ReviewReport {
     is_business_owner: boolean;
     status: 'pending' | 'reviewed' | 'actioned' | 'dismissed';
     created_at: string;
+    reporter?: {
+        id: string;
+        full_name: string;
+    };
 }
 
 export const REPORT_REASONS: Record<ReportReason, { label: string; description: string }> = {
@@ -107,7 +111,7 @@ export async function submitReport(data: ReportReview): Promise<void> {
     }
 
     // Notify admins
-    const businessName = Array.isArray(review.business) ? review.business[0]?.name : (review.business as any)?.name;
+    const businessName = Array.isArray(review.business) ? (review.business[0] as any)?.name : (review.business as any)?.name;
     const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', user.id).single();
     const reporterName = profile?.full_name || 'A user';
 
@@ -174,26 +178,59 @@ export async function getPendingReports(): Promise<{
         firstReportedAt: string;
     }>;
 }> {
+    // Query table directly to avoid potential View permission issues
     const { data, error } = await supabase
-        .from('review_report_counts')
+        .from('review_reports')
         .select('*')
-        .order('report_count', { ascending: false });
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
 
     if (error) {
         console.error('[ReportService] Error:', error);
         throw new Error('Could not load pending reports');
     }
 
-    const totalReports = data?.reduce((sum: number, r: any) => sum + r.report_count, 0) || 0;
+    if (!data || data.length === 0) {
+        return { reportCount: 0, reviewsWithReports: [] };
+    }
+
+    // Aggregate by review_id
+    const reportsByReview = new Map<string, {
+        reviewId: string;
+        count: number;
+        reasons: Set<ReportReason>;
+        firstReportedAt: string;
+    }>();
+
+    data.forEach((report: any) => {
+        if (!reportsByReview.has(report.review_id)) {
+            reportsByReview.set(report.review_id, {
+                reviewId: report.review_id,
+                count: 0,
+                reasons: new Set(),
+                firstReportedAt: report.created_at // Init with this one (sorted desc)
+            });
+        }
+
+        const entry = reportsByReview.get(report.review_id)!;
+        entry.count++;
+        entry.reasons.add(report.reason);
+        // Update firstReportedAt to be the MIN (earliest) timestamp
+        if (new Date(report.created_at) < new Date(entry.firstReportedAt)) {
+            entry.firstReportedAt = report.created_at;
+        }
+    });
+
+    const combined = Array.from(reportsByReview.values()).map(r => ({
+        reviewId: r.reviewId,
+        reportCount: r.count,
+        reasons: Array.from(r.reasons),
+        firstReportedAt: r.firstReportedAt
+    }));
 
     return {
-        reportCount: totalReports,
-        reviewsWithReports: data?.map((r: any) => ({
-            reviewId: r.review_id,
-            reportCount: r.report_count,
-            reasons: r.reasons,
-            firstReportedAt: r.first_reported_at
-        })) || []
+        reportCount: data.length,
+        reviewsWithReports: combined.sort((a, b) => b.reportCount - a.reportCount)
     };
 }
 
@@ -250,4 +287,43 @@ async function notifyReporters(reviewId: string): Promise<void> {
     }));
 
     await supabase.from('notifications').insert(notifications);
+}
+/**
+ * Get latest report details for specific reviews
+ */
+export async function getLatestReportsForReviews(reviewIds: string[]): Promise<Map<string, { reporterName: string; reportedAt: string }>> {
+    if (!reviewIds || reviewIds.length === 0) return new Map();
+
+    const { data, error } = await supabase
+        .from('review_reports')
+        .select(`
+            review_id,
+            created_at,
+            reporter:profiles!reporter_id (full_name)
+        `)
+        .in('review_id', reviewIds)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('[ReportService] Error fetching latest reports:', error);
+        return new Map();
+    }
+
+    const reportMap = new Map();
+    // Since we ordered by desc, the first encounter of a review_id is the latest
+    data?.forEach((report: any) => {
+        if (!reportMap.has(report.review_id)) {
+            const reporterName = Array.isArray(report.reporter)
+                ? report.reporter[0]?.full_name
+                : report.reporter?.full_name || 'Unknown';
+
+            reportMap.set(report.review_id, {
+                reporterName,
+                reportedAt: report.created_at
+            });
+        }
+    });
+
+    return reportMap;
 }

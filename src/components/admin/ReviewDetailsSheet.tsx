@@ -14,12 +14,13 @@ import { formatDistanceToNow } from 'date-fns';
 
 interface ReviewDetailsModalProps {
     review: PendingReview | null;
+    readOnly?: boolean;
     onClose: () => void;
     onApprove: (id: string) => void;
     onReject: (review: PendingReview) => void;
 }
 
-export function ReviewDetailsModal({ review, onClose, onApprove, onReject }: ReviewDetailsModalProps) {
+export function ReviewDetailsModal({ review, readOnly, onClose, onApprove, onReject }: ReviewDetailsModalProps) {
     if (!review) return null;
 
     // Report info logic (mock or derived if available in future)
@@ -35,8 +36,8 @@ export function ReviewDetailsModal({ review, onClose, onApprove, onReject }: Rev
                         <div className="flex items-center gap-2">
                             {review.moderation_status !== 'pending' && (
                                 <span className={`text-xs px-2 py-1 rounded font-medium border ${review.moderation_status === 'approved'
-                                        ? 'bg-green-50 text-green-700 border-green-200'
-                                        : 'bg-red-50 text-red-700 border-red-200'
+                                    ? 'bg-green-50 text-green-700 border-green-200'
+                                    : 'bg-red-50 text-red-700 border-red-200'
                                     }`}>
                                     {review.moderation_status.toUpperCase()}
                                 </span>
@@ -166,13 +167,13 @@ export function ReviewDetailsModal({ review, onClose, onApprove, onReject }: Rev
                     )}
                 </div>
 
-                {isPending && (
+                {(!readOnly && (isPending || isReported)) && (
                     <DialogFooter className="mt-8 pt-6 border-t border-gray-100 flex-col sm:flex-row gap-3">
                         <Button variant="destructive" onClick={() => onReject(review)} className="w-full sm:w-auto">
-                            Reject Review
+                            {isPending ? 'Reject Review' : 'Reject & Remove'}
                         </Button>
                         <Button onClick={() => onApprove(review.id)} className="w-full sm:w-auto bg-green-600 hover:bg-green-700">
-                            Approve & Publish
+                            {isPending ? 'Approve & Publish' : 'Keep & Dismiss Reports'}
                         </Button>
                     </DialogFooter>
                 )}

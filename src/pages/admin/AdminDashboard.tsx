@@ -94,6 +94,16 @@ export default function AdminDashboard() {
                             <h2 className="text-lg font-semibold text-gray-700 mb-3">API & Infrastructure</h2>
                             <ApiUsageWidget />
                         </section>
+                        <section>
+                            <h2 className="text-lg font-semibold text-gray-700 mb-3">Analytics & Insights</h2>
+                            <div className="bg-white rounded-lg border p-6 flex flex-col items-center text-center hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/admin/analytics/reviews')}>
+                                <div className="p-3 bg-indigo-50 text-indigo-600 rounded-full mb-3">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-bar-chart-3"><path d="M3 3v18h18" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" /></svg>
+                                </div>
+                                <h3 className="font-semibold text-gray-900">Review Analytics</h3>
+                                <p className="text-sm text-gray-500 mt-1">Monitor review volume, trends, and moderation stats</p>
+                            </div>
+                        </section>
                     </div>
 
                     {/* Column 2: Settings & Maintenance */}

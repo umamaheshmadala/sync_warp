@@ -40,6 +40,9 @@ export const BusinessCard: React.FC<BusinessCardProps> = ({
     cover_image_url: business.cover_image_url,
     description: business.description,
     highlightedName: business.highlightedName,
+    recommendation_badge: business.recommendation_badge,
+    recommendation_percentage: business.recommendation_percentage,
+    approved_review_count: business.approved_review_count,
   };
 
   // Compact variant for mobile or tight spaces

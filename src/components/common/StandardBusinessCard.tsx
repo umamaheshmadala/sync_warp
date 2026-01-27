@@ -5,6 +5,8 @@
 import React from 'react';
 import { MapPin, Star, Ticket, ChevronRight } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { RecommendationBadge } from '../business/RecommendationBadge';
+import { BadgeTier } from '../../services/badgeService';
 
 export interface StandardBusinessCardData {
   id: string;
@@ -25,6 +27,11 @@ export interface StandardBusinessCardData {
   description?: string;
   // For highlighted search results
   highlightedName?: string;
+
+  // Badge Data
+  recommendation_badge?: BadgeTier;
+  recommendation_percentage?: number;
+  approved_review_count?: number;
 }
 
 interface StandardBusinessCardProps {
@@ -106,6 +113,14 @@ export const StandardBusinessCard: React.FC<StandardBusinessCardProps> = ({
             />
 
             <div className="flex items-center space-x-3 mt-1">
+              {business.recommendation_badge && (
+                <RecommendationBadge
+                  tier={business.recommendation_badge}
+                  showLabel={false}
+                  size="sm"
+                />
+              )}
+
               {businessType && (
                 <span className="text-xs text-gray-500">
                   {getBusinessTypeDisplay()}
@@ -199,6 +214,15 @@ export const StandardBusinessCard: React.FC<StandardBusinessCardProps> = ({
               <p className="text-xs text-gray-500 truncate mt-0.5">
                 {getBusinessTypeDisplay()}
               </p>
+            )}
+
+            {business.recommendation_badge && (
+              <div className="mt-1">
+                <RecommendationBadge
+                  tier={business.recommendation_badge}
+                  size="sm"
+                />
+              </div>
             )}
           </div>
         </div>

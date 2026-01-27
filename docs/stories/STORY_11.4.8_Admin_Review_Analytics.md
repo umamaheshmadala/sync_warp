@@ -4,7 +4,7 @@
 **Priority:** 🟡 P1 - MEDIUM  
 **Effort:** 3 days  
 **Dependencies:** Story 11.4.1 (Pre-Moderation), Story 11.4.4 (Fraud Detection)  
-**Status:** 📋 Ready for Implementation
+**Status:** ✅ Completed
 
 ---
 
@@ -127,11 +127,13 @@ Per the decisions summary, ALL of the following metrics are required:
 **So that** I can measure feature success
 
 **Acceptance Criteria:**
-- [ ] Total helpful votes cast
-- [ ] Reviews shared via chat
-- [ ] Review views (from Story 11.3.9)
-- [ ] Most helpful reviews list
-- [ ] Engagement trends over time
+- [x] Total helpful votes cast (UI Only - Data pending)
+- [x] Reviews shared via chat (UI Only - Data pending)
+- [x] Review views (from Story 11.3.9)
+- [ ] Most helpful reviews list (Deferred)
+- [ ] Engagement trends over time (Deferred)
+
+> **Note**: US-11.4.8.7 is partially complete. UI panels for engagement are implemented, but backend data columns specific to engagement (votes, shares) are scheduled for a future schema update. Placeholders are identifying this in the UI.
 
 ---
 

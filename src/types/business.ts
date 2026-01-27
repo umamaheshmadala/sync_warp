@@ -37,6 +37,11 @@ export interface Business {
   claim_status?: string; // e.g. 'unclaimed', 'claimed_pending', 'claimed_verified'
   phone_verified?: boolean;
 
+  // Recommendation Badge
+  recommendation_badge?: 'recommended' | 'highly_recommended' | 'very_highly_recommended' | null;
+  recommendation_percentage?: number;
+  approved_review_count?: number;
+
   // Joined data
   owner?: {
     id: string;

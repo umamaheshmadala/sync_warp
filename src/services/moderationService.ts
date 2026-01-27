@@ -12,6 +12,9 @@ export interface PendingReview {
     photo_urls: string[];
     created_at: string;
     moderation_status: 'pending' | 'approved' | 'rejected';
+    is_resubmission?: boolean;
+    is_edited?: boolean;
+    edit_count?: number;
     report_count?: number;
     user: {
         id: string;
@@ -21,6 +24,10 @@ export interface PendingReview {
     business: {
         id: string;
         name: string;
+    };
+    latest_report?: {
+        reporterName: string;
+        reportedAt: string;
     };
 }
 
@@ -39,7 +46,7 @@ export async function getPendingReviews(): Promise<PendingReview[]> {
         .from('business_reviews')
         .select(`
             *,
-            business:businesses!business_id (id, name)
+            business:businesses (id, name)
         `)
         .eq('moderation_status', 'pending')
         .is('deleted_at', null)
@@ -454,6 +461,15 @@ export async function bulkRejectReviews(reviewIds: string[], reason: string): Pr
         reason: reason
     }));
     await supabase.from('review_moderation_log').insert(logs);
+
+    // 3. Resolve any pending reports for these reviews
+    for (const reviewId of reviewIds) {
+        try {
+            await resolveReports(reviewId, 'actioned', 'Review rejected: ' + reason);
+        } catch (e) {
+            console.error('[ModerationService] Failed to resolve reports for review:', reviewId, e);
+        }
+    }
 }
 
 /**

@@ -4,7 +4,7 @@
 **Priority:** 🟢 P2 - LOW  
 **Effort:** 0.5 days  
 **Dependencies:** Story 11.1.2 (GPS Check-in Verification)  
-**Status:** 📋 Ready for Implementation
+**Status:** ⏸️ Deferred (Phase II)
 
 ---
 

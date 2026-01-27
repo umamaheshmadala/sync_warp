@@ -40,6 +40,7 @@ const BusinessCheckinsPage = lazy(() => import('../components/checkins/BusinessC
 // Admin Components
 const AdminDashboard = lazy(() => import('../pages/admin/AdminDashboard'))
 const ReviewModerationPage = lazy(() => import('../pages/admin/ReviewModerationPage'))
+const ReviewAnalyticsDashboard = lazy(() => import('../pages/admin/ReviewAnalyticsDashboard').then(m => ({ default: m.ReviewAnalyticsDashboard })))
 
 // Product components
 const ProductDetails = lazy(() => import('../components/products').then(m => ({ default: m.ProductDetails })))
@@ -427,6 +428,16 @@ export const routes: RouteConfig[] = [
     ),
     protected: true,
     title: 'Review Moderation - SynC'
+  },
+  {
+    path: '/admin/analytics/reviews',
+    element: (
+      <RouteLoader>
+        <ReviewAnalyticsDashboard />
+      </RouteLoader>
+    ),
+    protected: true,
+    title: 'Review Analytics - SynC'
   },
   {
     path: '/admin/dashboard',

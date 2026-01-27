@@ -67,6 +67,7 @@ import { useBusinessProfile, useBusinessCategories, type Business, type Business
 import { VerificationBadge } from './VerificationBadge';
 import { ClaimBusinessButton } from './ClaimBusinessButton';
 import ReviewAnalyticsDashboard from '../../pages/business/ReviewAnalyticsDashboard';
+import { RecommendationBadge } from './RecommendationBadge';
 
 
 
@@ -1482,6 +1483,18 @@ const BusinessProfile: React.FC = () => {
                       phoneVerified={business?.phone_verified}
                       className="ml-1"
                     />
+
+                    {/* Recommendation Badge */}
+                    {business?.recommendation_badge && (
+                      <RecommendationBadge
+                        tier={business.recommendation_badge}
+                        percentage={business.recommendation_percentage}
+                        reviewCount={business.approved_review_count}
+                        size="md"
+                        className="ml-2"
+                      />
+                    )}
+
                     {getStatusBadge(business?.status)}
                   </div>
                   {/* Location line */}

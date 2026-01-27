@@ -25,9 +25,9 @@ Implement comprehensive trust and safety measures including pre-moderation, frau
 | 11.4.3 | Admin Moderation Dashboard | 4 days | 🟡 Medium | ✅ Completed |
 | 11.4.4 | Fraud Detection (Velocity, IP) | 3 days | 🟡 Medium | 📋 Pending |
 | 11.4.5 | Business Recommendation Badges (3 Tiers) | 1 day | 🟢 Low | 📋 Pending |
-| 11.4.6 | Verified GPS Badge on Reviews | 0.5 days | 🟢 Low | 📋 Pending |
-| 11.4.7 | Filter by Review Score in Search | 1 day | 🟡 Medium | 📋 Pending |
-| 11.4.8 | Admin Review Analytics Dashboard | 3 days | 🟡 Medium | 📋 Pending |
+| 11.4.6 | Verified GPS Badge on Reviews | 0.5 days | 🟢 Low | ⏸️ Deferred |
+| 11.4.7 | Filter by Review Score in Search | 1 day | 🟡 Medium | ⏸️ Deferred |
+| 11.4.8 | Admin Review Analytics Dashboard | 3 days | 🟡 Medium | ✅ Completed |
 
 **Total: 8 stories, 18.5 days effort**
 

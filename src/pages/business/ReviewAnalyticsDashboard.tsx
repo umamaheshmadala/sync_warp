@@ -7,6 +7,7 @@ import {
 } from 'recharts';
 import { useBusinessReviewAnalytics, useDailyReviewStats, useTagAnalysis, useReviewTimeHeatmap } from '@/hooks/useReviewAnalytics';
 import { Skeleton } from '@/components/ui/skeleton';
+import { BadgeStatusCard } from '@/components/business/BadgeStatusCard';
 
 interface ReviewAnalyticsDashboardProps {
     businessId: string;
@@ -47,6 +48,9 @@ export default function ReviewAnalyticsDashboard({ businessId }: ReviewAnalytics
                     ))}
                 </div>
             </div>
+
+            {/* Badge Status */}
+            <BadgeStatusCard businessId={businessId} />
 
             {/* Overview Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

@@ -3,7 +3,7 @@ import { Check, X, Eye, AlertTriangle } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ReviewDetailsSheet } from './ReviewDetailsSheet';
+
 import { RejectReviewDialog } from './RejectReviewDialog';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'react-hot-toast';
@@ -44,7 +44,7 @@ export function ModerationQueue({
             const q = searchQuery.toLowerCase();
             const matchesSearch =
                 review.user.full_name.toLowerCase().includes(q) ||
-                review.business.name.toLowerCase().includes(q) ||
+                (review.business?.name || '').toLowerCase().includes(q) ||
                 review.text?.toLowerCase().includes(q);
             if (!matchesSearch) return false;
         }
@@ -52,7 +52,7 @@ export function ModerationQueue({
         // 2. Business Filter
         if (businessFilter) {
             const bus = businessFilter.toLowerCase();
-            if (!review.business.name.toLowerCase().includes(bus)) return false;
+            if (!(review.business?.name || '').toLowerCase().includes(bus)) return false;
         }
 
         return true;
@@ -130,8 +130,17 @@ export function ModerationQueue({
                         />
                     </div>
                     <span className="flex-1">Review</span>
-                    <span className="w-32 hidden sm:block">Business</span>
-                    <span className="w-24 hidden sm:block">Submitted</span>
+                    {type === 'reported' ? (
+                        <>
+                            <span className="w-32 hidden sm:block">Reported By</span>
+                            <span className="w-32 hidden sm:block">Reported At</span>
+                        </>
+                    ) : (
+                        <>
+                            <span className="w-32 hidden sm:block">Business</span>
+                            <span className="w-24 hidden sm:block">Submitted</span>
+                        </>
+                    )}
                     <span className="w-28 text-right pr-2">Actions</span>
                 </div>
 
@@ -157,6 +166,13 @@ export function ModerationQueue({
                                         <Badge variant="outline" className={review.recommendation ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}>
                                             {review.recommendation ? 'Recommends' : 'Downvote'}
                                         </Badge>
+
+                                        {/* Show Re-submission badge for edited rejected reviews */}
+                                        {review.is_resubmission && (
+                                            <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">
+                                                ✏️ Re-submission
+                                            </Badge>
+                                        )}
 
                                         {/* Show reports badge if reported */}
                                         {(review.report_count > 0 || reportInfo) && (
@@ -190,13 +206,36 @@ export function ModerationQueue({
                                     </div>
                                 </div>
 
-                                <div className="w-32 text-sm text-gray-700 hidden sm:block pt-1">
-                                    {review.business?.name}
-                                </div>
+                                {type === 'reported' ? (
+                                    <>
+                                        {/* Reported By Column */}
+                                        <div className="w-32 text-sm text-gray-700 hidden sm:block pt-1">
+                                            <div className="font-medium text-gray-900">
+                                                {review.latest_report?.reporterName || '-'}
+                                            </div>
+                                            <div className="text-xs text-gray-500">
+                                                Reported By
+                                            </div>
+                                        </div>
 
-                                <div className="w-24 text-sm text-gray-500 hidden sm:block pt-1">
-                                    {formatDistanceToNow(new Date(review.created_at), { addSuffix: true })}
-                                </div>
+                                        {/* Reported At Column */}
+                                        <div className="w-32 text-sm text-gray-500 hidden sm:block pt-1">
+                                            {review.latest_report?.reportedAt ? (
+                                                formatDistanceToNow(new Date(review.latest_report.reportedAt), { addSuffix: true })
+                                            ) : '-'}
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="w-32 text-sm text-gray-700 hidden sm:block pt-1">
+                                            {review.business?.name || 'Unknown Business'}
+                                        </div>
+
+                                        <div className="w-24 text-sm text-gray-500 hidden sm:block pt-1">
+                                            {formatDistanceToNow(new Date(review.created_at), { addSuffix: true })}
+                                        </div>
+                                    </>
+                                )}
 
                                 <div className="w-28 flex justify-end gap-1">
                                     <Button
@@ -208,26 +247,32 @@ export function ModerationQueue({
                                     >
                                         <Eye className="w-4 h-4" />
                                     </Button>
-                                    <Button
-                                        size="icon"
-                                        variant="ghost"
-                                        onClick={() => handleApprove(review.id)}
-                                        disabled={processingId === review.id}
-                                        title="Approve"
-                                        className="h-8 w-8 text-gray-500 hover:text-green-600 hover:bg-green-50"
-                                    >
-                                        <Check className="w-4 h-4" />
-                                    </Button>
-                                    <Button
-                                        size="icon"
-                                        variant="ghost"
-                                        onClick={() => setRejectingReview(review)}
-                                        disabled={processingId === review.id}
-                                        title="Reject"
-                                        className="h-8 w-8 text-gray-500 hover:text-red-600 hover:bg-red-50"
-                                    >
-                                        <X className="w-4 h-4" />
-                                    </Button>
+
+                                    {/* Only show Approve/Reject here if NOT reported tab. Reported tab requires modal view. */}
+                                    {type !== 'reported' && (
+                                        <>
+                                            <Button
+                                                size="icon"
+                                                variant="ghost"
+                                                onClick={() => handleApprove(review.id)}
+                                                disabled={processingId === review.id}
+                                                title="Approve"
+                                                className="h-8 w-8 text-gray-500 hover:text-green-600 hover:bg-green-50"
+                                            >
+                                                <Check className="w-4 h-4" />
+                                            </Button>
+                                            <Button
+                                                size="icon"
+                                                variant="ghost"
+                                                onClick={() => setRejectingReview(review)}
+                                                disabled={processingId === review.id}
+                                                title="Reject"
+                                                className="h-8 w-8 text-gray-500 hover:text-red-600 hover:bg-red-50"
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </Button>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         );

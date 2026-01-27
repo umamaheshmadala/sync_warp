@@ -11,7 +11,8 @@ import {
     bulkRejectReviews,
     type PendingReview
 } from '../../services/moderationService';
-import { getPendingReports } from '../../services/reportService';
+import { supabase } from '@/lib/supabase';
+import { getPendingReports, getLatestReportsForReviews, getReviewReports } from '../../services/reportService';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -62,7 +63,31 @@ export default function ReviewModerationPage() {
         queryFn: async () => {
             if (!viewingReviewId) return null;
             const results = await getReviewsByIds([viewingReviewId]);
-            return results[0] || null;
+            const review = results[0] || null;
+
+            if (review) {
+                try {
+                    // Fetch report details to ensure modal shows correct actions
+                    const reports = await getReviewReports(viewingReviewId);
+                    review.report_count = reports.length;
+
+                    if (reports.length > 0) {
+                        const latest = reports[0];
+                        const reporterName = Array.isArray(latest.reporter)
+                            ? latest.reporter[0]?.full_name
+                            : (latest.reporter as any)?.full_name || 'Unknown';
+
+                        review.latest_report = {
+                            reporterName,
+                            reportedAt: latest.created_at
+                        };
+                    }
+                } catch (e) {
+                    console.error('Failed to fetch reports for detailed view', e);
+                }
+            }
+
+            return review;
         },
         enabled: !!viewingReviewId
     });
@@ -90,13 +115,17 @@ export default function ReviewModerationPage() {
             if (!reportData?.reviewsWithReports?.length) return [];
 
             const ids = reportData.reviewsWithReports.map((r: any) => r.reviewId);
-            const reviews = await getReviewsByIds(ids);
+            const [reviews, reportDetailsMap] = await Promise.all([
+                getReviewsByIds(ids),
+                getLatestReportsForReviews(ids)
+            ]);
 
-            // Map counts
+            // Map counts and details
             const countMap = new Map(reportData.reviewsWithReports.map((r: any) => [r.reviewId, r.reportCount]));
             return reviews.map(r => ({
                 ...r,
-                report_count: countMap.get(r.id) || 0
+                report_count: countMap.get(r.id) || 0,
+                latest_report: reportDetailsMap.get(r.id)
             }));
         },
         enabled: !!reportData?.reviewsWithReports?.length
@@ -110,6 +139,65 @@ export default function ReviewModerationPage() {
     });
 
     const queryClient = useQueryClient();
+
+    // Realtime Subscriptions for instant updates
+    useEffect(() => {
+        // Channel for business_reviews changes (new reviews, moderation status changes)
+        const reviewsChannel = supabase
+            .channel('moderation-reviews-realtime')
+            .on(
+                'postgres_changes',
+                { event: 'INSERT', schema: 'public', table: 'business_reviews' },
+                () => {
+                    console.log('[Realtime] New review inserted');
+                    queryClient.invalidateQueries({ queryKey: ['pending-reviews'] });
+                    queryClient.invalidateQueries({ queryKey: ['pending-count'] });
+                    queryClient.invalidateQueries({ queryKey: ['pending-review-count'] });
+                }
+            )
+            .on(
+                'postgres_changes',
+                { event: 'UPDATE', schema: 'public', table: 'business_reviews' },
+                () => {
+                    console.log('[Realtime] Review updated (possible moderation action or re-submission)');
+                    queryClient.invalidateQueries({ queryKey: ['pending-reviews'] });
+                    queryClient.invalidateQueries({ queryKey: ['pending-count'] });
+                    queryClient.invalidateQueries({ queryKey: ['pending-review-count'] });
+                    queryClient.invalidateQueries({ queryKey: ['moderation-audit-log'] });
+                    queryClient.invalidateQueries({ queryKey: ['daily-moderation-stats'] });
+                }
+            )
+            .subscribe();
+
+        // Channel for review_reports changes (new reports, resolved reports)
+        const reportsChannel = supabase
+            .channel('moderation-reports-realtime')
+            .on(
+                'postgres_changes',
+                { event: 'INSERT', schema: 'public', table: 'review_reports' },
+                () => {
+                    console.log('[Realtime] New report submitted');
+                    toast('New report received', { icon: '⚠️' });
+                    queryClient.invalidateQueries({ queryKey: ['pending-reports'] });
+                    queryClient.invalidateQueries({ queryKey: ['reported-reviews-details'] });
+                }
+            )
+            .on(
+                'postgres_changes',
+                { event: 'UPDATE', schema: 'public', table: 'review_reports' },
+                () => {
+                    console.log('[Realtime] Report status updated (resolved/dismissed)');
+                    queryClient.invalidateQueries({ queryKey: ['pending-reports'] });
+                    queryClient.invalidateQueries({ queryKey: ['reported-reviews-details'] });
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(reviewsChannel);
+            supabase.removeChannel(reportsChannel);
+        };
+    }, [queryClient]);
 
     const handleRefresh = () => {
         refetchPending();
@@ -125,7 +213,7 @@ export default function ReviewModerationPage() {
     const handleBulkApprove = async () => {
         if (selectedReviews.length === 0) return;
 
-        const confirm = window.confirm(`Approve ${selectedReviews.length} reviews?`);
+        const confirm = window.confirm(`Approve ${selectedReviews.length} reviews ? `);
         if (!confirm) return;
 
         setIsBulkProcessing(true);
@@ -391,6 +479,7 @@ export default function ReviewModerationPage() {
             {/* Global Review Details Modal */}
             <ReviewDetailsModal
                 review={viewingReviewDetails || null}
+                readOnly={activeTab === 'audit'}
                 onClose={() => setViewingReviewId(null)}
                 onApprove={async (id) => {
                     try {
@@ -407,15 +496,6 @@ export default function ReviewModerationPage() {
                     // Set up rejection state
                     setSelectedReviews([review.id]);
                     setIsBulkRejectOpen(true);
-                    // Note: We are reusing the bulk reject dialog for single rejection here for simplicity,
-                    // or we could add back a single reject dialog if preferred.
-                    // A better UX might be to open the single RejectReviewDialog logic.
-                    // But for now, let's reuse the bulk one as it does the same job if we just want a reason.
-                    // actually, ReviewDetailsSheet usually triggers a specific reject flow.
-                    // Let's implement a specific single reject flow if needed or reuse bulk.
-                    // The user previously had RejectReviewDialog. Let's make sure we have that imported if we want to use it.
-                    // Actually, I'll use the bulk dialog logic but adapt it for single if needed,
-                    // OR just use the bulk dialog since it takes a list.
                 }}
             />
         </div>

@@ -133,6 +133,9 @@ export interface SearchBusiness {
   distance?: number;
   relevanceScore: number;
   highlightedName?: string;
+  recommendation_badge?: 'recommended' | 'highly_recommended' | 'very_highly_recommended' | null;
+  recommendation_percentage?: number;
+  approved_review_count?: number;
 }
 
 export interface SearchFacets {
@@ -226,7 +229,7 @@ class SearchService {
           id, business_name, business_type, description, address, 
           latitude, longitude
         )
-      `);
+      `, { count: 'exact' });
 
     // Apply text search
     if (query.q) {
@@ -247,9 +250,7 @@ class SearchService {
       supabaseQuery = this.applyLocationFilter(supabaseQuery, query.location);
     }
 
-    // Count total results
-    const { count: totalCount } = await supabaseQuery
-      .select('*', { count: 'exact', head: true });
+    // Count handled in main query execution
 
     // Apply sorting
     supabaseQuery = this.applyCouponSort(supabaseQuery, query.sort);
@@ -259,7 +260,7 @@ class SearchService {
     supabaseQuery = supabaseQuery
       .range(offset, offset + query.pagination.limit - 1);
 
-    const { data: couponsData, error } = await supabaseQuery;
+    const { data: couponsData, count: totalCount, error } = await supabaseQuery;
 
     if (error) throw error;
 
@@ -289,7 +290,7 @@ class SearchService {
       .select(`
         *,
         business_coupons(status, valid_until)
-      `);
+      `, { count: 'exact' });
 
     // Apply text search
     if (query.q) {
@@ -311,15 +312,13 @@ class SearchService {
       supabaseQuery = this.applyLocationFilter(supabaseQuery, query.location);
     }
 
-    // Count and paginate
-    const { count: totalCount } = await supabaseQuery
-      .select('*', { count: 'exact', head: true });
+    // Count handled in main query execution
 
     const offset = (query.pagination.page - 1) * query.pagination.limit;
     supabaseQuery = supabaseQuery
       .range(offset, offset + query.pagination.limit - 1);
 
-    const { data: businessData, error } = await supabaseQuery;
+    const { data: businessData, count: totalCount, error } = await supabaseQuery;
 
     if (error) throw error;
 
@@ -560,7 +559,7 @@ class SearchService {
 
       const relevanceScore = this.calculateBusinessRelevanceScore(business, query);
 
-      const { highlightedName } = this.highlightSearchTerms(
+      const { highlightedTitle: highlightedName } = this.highlightSearchTerms(
         business.business_name,
         '',
         query.q
@@ -582,7 +581,10 @@ class SearchService {
         activeCouponsCount: activeCoupons.length,
         relevanceScore,
         highlightedName,
-        distance: undefined // Would be calculated if location provided
+        distance: undefined, // Would be calculated if location provided
+        recommendation_badge: business.recommendation_badge,
+        recommendation_percentage: business.recommendation_percentage,
+        approved_review_count: business.approved_review_count
       };
     });
   }
