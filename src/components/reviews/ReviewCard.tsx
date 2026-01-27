@@ -196,7 +196,7 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
         className={`
           bg-white rounded-xl border overflow-hidden
           hover:shadow-md transition-shadow
-          ${compact ? 'p-4' : 'p-6'}
+          ${compact ? 'p-3' : 'p-4'}
           ${isFeatured ? 'border-indigo-200 bg-indigo-50/10' : 'border-gray-200'}
         `}
       >
@@ -338,8 +338,9 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
                       </DropdownMenuItem>
                     )}
                     {isOwnReview && (
-                      <DropdownMenuItem onClick={handleDeleteClick} className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50">
+                      <DropdownMenuItem onClick={handleDeleteClick} className="cursor-pointer text-red-600 focus:text-red-700 focus:bg-red-50">
                         <Trash2 className="w-4 h-4 mr-2" />
+                        Delete
                       </DropdownMenuItem>
                     )}
 
@@ -394,104 +395,96 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
           confirmLabel="Delete Response"
         />
 
-        {/* Review Text */}
+        {/* Review Text - Compact spacing */}
         {
           review.text && (
-            <p className="text-gray-900 text-sm leading-relaxed mb-3 whitespace-pre-wrap break-words">
+            <p className="text-gray-900 text-sm leading-relaxed mb-2 whitespace-pre-wrap break-words">
               {review.text}
             </p>
           )
         }
 
-        {/* Photo Gallery - Reduced Size */}
-        <div className="mb-3">
+        {/* Photo Gallery - Reduced margin */}
+        <div className="mb-2">
           <ReviewPhotoGallery photos={review.photo_urls} compact={true} />
         </div>
 
-        {/* Tags */}
+        {/* Tags - Ensure visibility */}
         {
           review.tags && review.tags.length > 0 && (
-            <div className="mb-3">
-              <ReviewTagDisplay tagIds={review.tags.map(t => t.id)} maxVisible={5} />
+            <div className="mb-2">
+              <ReviewTagDisplay tagIds={review.tags} maxVisible={3} size="sm" />
             </div>
           )
         }
 
-        {/* Helpful Button - Conditional Divider */}
-        <div className={`mt-2 pt-2 ${review.text || (review.photo_urls && review.photo_urls.length > 0) ? 'border-t border-gray-50' : ''}`}>
-          <HelpfulButton
-            reviewId={review.id}
-            reviewAuthorId={review.user_id}
-            initialCount={0} // Fixed to 0 as helpful_count removed from type, or should be added back?
-          />
+        {/* Helpful Button - Compact */}
+        <div className={`mt-1 pt-1 ${review.text || (review.photo_urls && review.photo_urls.length > 0) ? 'border-t border-gray-50' : ''} flex items-center justify-between`}>
+          <div className="flex items-center gap-4">
+            <HelpfulButton
+              reviewId={review.id}
+              reviewAuthorId={review.user_id}
+              initialCount={0}
+            />
+          </div>
+
+          {/* Business Owner Response Button (Icon Only) - Inline */}
+          {isBusinessOwner && onRespond && !review.response_text && (
+            <button
+              onClick={() => onRespond(review.id, review.business_id)}
+              className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+              title="Respond to Review"
+            >
+              <Reply className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
-        {/* Business Owner Response Section */}
+        {/* Business Owner Response Display */}
         {
-          (review.response_text || (isBusinessOwner && onRespond)) && (
-            <div className="mt-3 pt-3 border-t border-gray-100">
-              {review.response_text ? (
-                // Display existing response
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                >
-                  <div className="bg-blue-50/50 rounded-lg p-3">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <div className="flex items-center gap-2">
-                        <div className="px-1.5 py-0.5 bg-blue-600 text-white text-[10px] font-bold rounded uppercase tracking-wide">
-                          Owner Connection
-                        </div>
-                        <span className="text-[10px] text-gray-400">
-                          {formatDistanceToNow(new Date(review.response_created_at!), {
-                            addSuffix: true,
-                          })}
-                        </span>
+          review.response_text && (
+            <div className="mt-2 pt-2 border-t border-gray-100">
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+              >
+                <div className="bg-blue-50/50 rounded-lg p-2.5">
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-1.5">
+                      <div className="px-1 py-0.5 bg-blue-600 text-white text-[10px] font-bold rounded uppercase tracking-wide leading-none">
+                        Owner
                       </div>
-                      {isBusinessOwner && onRespond && (
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => onRespond(review.id, review.business_id, {
-                              id: review.response_id!,
-                              response_text: review.response_text!,
-                            })}
-                            className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1"
-                          >
-                            <Edit2 className="w-3 h-3" />
-                            Edit
-                          </button>
-                          <button
-                            onClick={handleDeleteResponseClick}
-                            className="text-xs text-red-600 hover:text-red-700 flex items-center gap-1"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                            Delete
-                          </button>
-                        </div>
-                      )}
+                      <span className="text-[10px] text-gray-400">
+                        {formatDistanceToNow(new Date(review.response_created_at!), {
+                          addSuffix: true,
+                        })}
+                      </span>
                     </div>
-                    <p className="text-sm text-gray-700">{review.response_text}</p>
+                    {isBusinessOwner && onRespond && (
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => onRespond(review.id, review.business_id, {
+                            id: review.response_id!,
+                            response_text: review.response_text!,
+                          })}
+                          className="p-1 text-blue-600 hover:bg-blue-100 rounded transition-colors"
+                          title="Edit Response"
+                        >
+                          <Edit2 className="w-3 h-3" />
+                        </button>
+                        <button
+                          onClick={handleDeleteResponseClick}
+                          className="p-1 text-red-600 hover:bg-red-100 rounded transition-colors"
+                          title="Delete Response"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
                   </div>
-                </motion.div>
-              ) : isBusinessOwner && onRespond ? (
-                // Show "Respond" button for business owners
-                <motion.button
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.99 }}
-                  onClick={() => onRespond(review.id, review.business_id)}
-                  className="
-                  w-full flex items-center justify-center gap-2 px-4 py-2
-                  bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-gray-900
-                  border border-gray-200 hover:border-gray-300
-                  rounded-lg text-sm font-medium transition-all
-                "
-                >
-                  <Reply className="w-3.5 h-3.5" />
-                  Respond
-                </motion.button>
-              ) : null}
+                  <p className="text-xs text-gray-700 leading-snug">{review.response_text}</p>
+                </div>
+              </motion.div>
             </div>
           )
         }

@@ -69,6 +69,7 @@ const ShareDealDemo = lazy(() => import('../pages/ShareDealDemo'))
 const SharingAnalyticsDemo = lazy(() => import('../pages/SharingAnalyticsDemo'))
 const TestSearchPerformance = lazy(() => import('../pages/TestSearchPerformance').then(m => ({ default: m.TestSearchPerformance })))
 const FollowerTargetingDemo = lazy(() => import('../pages/FollowerTargetingDemo'))
+const TestOfferCardPage = lazy(() => import('../pages/test/TestOfferCardPage'))
 
 // Other lazy-loaded components
 const NotFound = lazy(() => import('../components/NotFound'))
@@ -798,6 +799,16 @@ export const routes: RouteConfig[] = [
       ),
       protected: true,
       title: 'Test Share Deal'
+    },
+    {
+      path: '/test/ticket-offer',
+      element: (
+        <RouteLoader>
+          <TestOfferCardPage />
+        </RouteLoader>
+      ),
+      protected: true,
+      title: 'Test Ticket Offer Card'
     },
     {
       path: '/test/sharing-analytics',

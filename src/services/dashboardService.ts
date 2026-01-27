@@ -27,7 +27,6 @@ export interface HotOffer {
   expiresIn: string;
   imageUrl: string | null;
   validUntil: string;
-  validUntil: string;
   discountValue: number;
   businessId: string;
   businessLogo?: string | null;
@@ -124,21 +123,21 @@ export const dashboardService = {
     }
   },
 
-  async getHotOffers(limit = 6): Promise<HotOffer[]> {
+  async getHotOffers(limit = 6): Promise<any[]> {
     try {
       const { data, error } = await supabase
         .from('offers')
         .select(`
-          id,
-          title,
-          description,
-          valid_until,
-          business_id,
-          status,
-          view_count,
-          share_count,
-          created_at,
-          icon_image_url
+          *,
+          offer_type:offer_types(
+            *,
+            category:offer_categories(*)
+          ),
+          business:businesses(
+            id,
+            business_name:name,
+            business_image:logo_url
+          )
         `)
         .eq('status', 'active')
         .gte('valid_until', new Date().toISOString())
@@ -157,39 +156,12 @@ export const dashboardService = {
         return [];
       }
 
-      // Fetch business names separately since offers might not have foreign key set up for direct join in all generic queries yet
-      // Or if relation exists, we could use it. Assuming relation 'business' exists based on schema.
-      const businessIds = [...new Set(data.map(o => o.business_id))];
-      const { data: businesses } = await supabase
-        .from('businesses')
-        .select('id, name, logo_url')
-        .in('id', businessIds);
+      // Transform to match Offer interface if needed, or return as is since raw join matches closely
+      // We need to ensure Business info is top level or consistently accessed.
+      // The Join 'business' puts it in a property. 'Offer' type usually expects business_id and maybe joined business object.
+      // Let's return as is, it matches the shape expected by OfferCard which uses offer.business?.name
+      return data;
 
-      const businessMap = new Map(businesses?.map(b => [b.id, { name: b.name, logo: b.logo_url }]));
-
-      return data.map(offer => {
-        const validUntil = new Date(offer.valid_until);
-        const now = new Date();
-        const daysLeft = Math.ceil((validUntil.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-        const businessInfo = businessMap.get(offer.business_id);
-        const businessName = businessInfo?.name || 'Business';
-        const businessLogo = businessInfo?.logo || null;
-
-        return {
-          id: offer.id,
-          title: offer.title,
-          businessName: businessName,
-          // Offers might not have numeric discount value stored simply, using description or a specialized parsing if available
-          // For now, assuming title contains the deal or mapped from description
-          discount: 'Offer', // Placeholder, real offers often have discount in title
-          expiresIn: daysLeft > 1 ? `${daysLeft} days` : daysLeft === 1 ? '1 day' : 'Expiring soon',
-          imageUrl: offer.icon_image_url,
-          validUntil: offer.valid_until,
-          discountValue: 0, // Offers table doesn't strictly have discount_value like coupons
-          businessId: offer.business_id,
-          businessLogo: businessLogo
-        };
-      });
     } catch (error) {
       console.error('Error fetching hot offers:', error);
       return [];

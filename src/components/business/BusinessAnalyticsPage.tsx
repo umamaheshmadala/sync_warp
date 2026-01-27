@@ -27,6 +27,8 @@ import { useAuthStore } from '../../store/authStore';
 import BusinessCheckinAnalytics from '../checkins/BusinessCheckinAnalytics';
 import { BusinessShareDashboard } from './BusinessShareDashboard';
 import { toast } from 'react-hot-toast';
+import ReviewStats from '../reviews/ReviewStats';
+import { useReviewStats } from '../../hooks/useReviewStats';
 
 interface Business {
   id: string;
@@ -57,6 +59,12 @@ const BusinessAnalyticsPage: React.FC = () => {
   const [business, setBusiness] = useState<Business | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Review Stats
+  const { stats: reviewStats, loading: statsLoading } = useReviewStats({
+    businessId,
+    enabled: !!businessId,
+  });
 
   // Load business data
   useEffect(() => {
@@ -272,6 +280,11 @@ const BusinessAnalyticsPage: React.FC = () => {
               </div>
             </motion.div>
           ))}
+        </div>
+
+        {/* Review Statistics (Moved from Reviews Tab) */}
+        <div className="mb-8">
+          <ReviewStats stats={reviewStats} loading={statsLoading} />
         </div>
 
         {/* Main Analytics Component */}

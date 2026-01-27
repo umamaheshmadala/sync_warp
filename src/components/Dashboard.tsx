@@ -17,6 +17,7 @@ import AdCarousel from './ads/AdCarousel';
 import { FriendLikedDealsSection } from './deals/FriendLikedDealsSection';
 import { NewBusinesses } from './business';
 import { SpotlightBusiness, HotOffer, TrendingProduct } from '../services/dashboardService';
+import { OfferCard } from './offers/OfferCard';
 
 // Dummy data as fallback - defined outside component for immediate initialization
 const dummySpotlightBusinesses: SpotlightBusiness[] = [
@@ -230,75 +231,19 @@ const Dashboard: React.FC = () => {
               Hot offers are the most viewed offers by the user as of now.
             </p>
 
-            {/* Mobile: 1-column list, Tablet: 2-column, Desktop: 3-column */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+            {/* Mobile: 1-column list, Tablet: 2-column, Desktop: 2-column (since we want them bigger/ticket style) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {hotOffers.length === 0 ? (
-                <div className="col-span-1 md:col-span-2 lg:col-span-3 text-center py-8 text-gray-500">
+                <div className="col-span-1 md:col-span-2 text-center py-8 text-gray-500">
                   <p className="text-lg font-medium">No active offers at the moment</p>
                   <p className="text-sm">Check back soon for exciting deals!</p>
                 </div>
-              ) : hotOffers.map((offer, index) => (
-                <div
-                  key={offer.id}
-                  onClick={() => navigate(`${getBusinessUrl(offer.businessId, offer.businessName)}/offers?offer=${offer.id}`)}
-                  className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer hover:shadow-md transition-all duration-300 hover:border-indigo-100 group"
-                >
-                  <div className="p-3 md:p-4 flex items-start gap-3 md:gap-4">
-                    {/* Left: Business Avatar */}
-                    <div className="flex-shrink-0">
-                      {offer.businessLogo ? (
-                        <img
-                          src={getOptimizedImageUrl(offer.businessLogo, 64)}
-                          alt={offer.businessName}
-                          className="w-12 h-12 rounded-lg object-cover border border-gray-100"
-                        />
-                      ) : (
-                        <div className="w-12 h-12 rounded-lg bg-indigo-50 flex items-center justify-center border border-indigo-100">
-                          <span className="text-lg font-bold text-indigo-600">
-                            {offer.businessName.charAt(0)}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Right: Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-start mb-1">
-                        <div className="min-w-0 pr-2">
-                          <p className="text-xs text-gray-500 font-medium truncate mb-0.5">
-                            {offer.businessName}
-                          </p>
-                          <h3 className="text-sm md:text-base font-bold text-gray-900 leading-tight line-clamp-2 group-hover:text-indigo-600 transition-colors">
-                            {offer.title}
-                          </h3>
-                        </div>
-                        {/* Trending Icon */}
-                        <div className="flex-shrink-0 text-orange-500">
-                          <TrendingUp className="w-4 h-4" />
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between mt-2">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-50 text-red-600">
-                          ⏱ {offer.expiresIn}
-                        </span>
-
-                        <span className="text-xs font-medium text-indigo-600 flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                          View <ChevronRight className="w-3 h-3 ml-0.5" />
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              {/* Empty Slots for Hot Offers */}
-              {[...Array(Math.max(0, 6 - hotOffers.length))].map((_, i) => (
-                <div key={`empty-offer-${i}`} className="bg-gray-50 rounded-xl border border-dashed border-gray-200 flex items-center justify-center p-4 min-h-[100px]">
-                  <div className="flex items-center gap-3 text-gray-400">
-                    <Star className="w-5 h-5" />
-                    <span className="text-sm font-medium">Coming Soon</span>
-                  </div>
+              ) : hotOffers.map((offer: any) => (
+                <div key={offer.id} className="w-full">
+                  <OfferCard
+                    offer={offer}
+                    onViewDetails={(o) => navigate(`${getBusinessUrl(o.business?.id || o.business_id, o.business?.business_name || 'business')}/offers?offer=${o.id}`)}
+                  />
                 </div>
               ))}
             </div>

@@ -31,6 +31,7 @@ interface BusinessReviewsProps {
   showFilters?: boolean;
   isBusinessOwner?: boolean;
   businessImage?: string;
+  userReview?: any;
 }
 
 export default function BusinessReviews({
@@ -42,6 +43,7 @@ export default function BusinessReviews({
   showFilters = true,
   isBusinessOwner = false,
   businessImage,
+  userReview,
 }: BusinessReviewsProps) {
   const { user } = useAuthStore();
 
@@ -202,10 +204,10 @@ export default function BusinessReviews({
 
   return (
     <div className="space-y-3">
-      {/* Statistics */}
-      {showStats && stats && (
+      {/* Statistics - Moved to Analytics Tab */}
+      {/* {showStats && stats && (
         <ReviewStats stats={stats} loading={statsLoading} />
-      )}
+      )} */}
 
       {/* Enhanced Filters */}
       {showFilters && (
@@ -249,19 +251,36 @@ export default function BusinessReviews({
             style={{ overflow: 'hidden' }}
           >
             <div className="space-y-4">
-              {displayedReviews.map((review) => (
+              {/* User Review Pinned to Top */}
+              {userReview && (
                 <ReviewCard
-                  key={review.id}
-                  review={review}
+                  key={userReview.id}
+                  review={userReview}
                   onEdit={onEdit}
-                  onDelete={handleDelete}
-                  onRespond={handleRespond}
+                  onDelete={onDelete}
+                  onRespond={undefined} // User can't respond to their own review in this context usually, or handled elsewhere
                   isBusinessOwner={isBusinessOwner}
                   businessImage={businessImage}
-                  isFeatured={false} // Main list items are never "featured" in terms of UI card look (unless we want to highlight them)
-                  onRefresh={refresh}
+                  isFeatured={false}
+                  onRefresh={() => { }}
                 />
-              ))}
+              )}
+
+              {displayedReviews
+                .filter(r => r.id !== userReview?.id) // Prevent duplicate
+                .map((review) => (
+                  <ReviewCard
+                    key={review.id}
+                    review={review}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                    onRespond={undefined} // Or handleRespond if owner
+                    isBusinessOwner={isBusinessOwner}
+                    businessImage={businessImage}
+                    isFeatured={false}
+                    onRefresh={refresh}
+                  />
+                ))}
             </div>
           </InfiniteScroll>
         ) : (

@@ -29,7 +29,7 @@ export function RecommendationBadge({
     percentage,
     reviewCount,
     size = 'md',
-    showLabel = true,
+    showLabel = false,
     className
 }: RecommendationBadgeProps) {
     if (!tier || !BADGE_CONFIG[tier]) return null;

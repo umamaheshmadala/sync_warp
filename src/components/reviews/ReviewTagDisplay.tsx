@@ -13,20 +13,22 @@ interface ReviewTagDisplayProps {
 
 export default function ReviewTagDisplay({
     tagIds,
-    maxVisible = 5,
+    maxVisible = 3,
     size = 'sm'
 }: ReviewTagDisplayProps) {
+    const [isExpanded, setIsExpanded] = React.useState(false);
+
     if (!tagIds || tagIds.length === 0) return null;
 
-    const visibleTags = tagIds.slice(0, maxVisible);
+    const visibleTags = isExpanded ? tagIds : tagIds.slice(0, maxVisible);
     const hiddenCount = tagIds.length - maxVisible;
 
     const sizeClasses = size === 'sm'
-        ? 'px-2 py-0.5 text-xs'
+        ? 'px-2.5 py-1 text-xs'
         : 'px-3 py-1 text-sm';
 
     return (
-        <div className="flex flex-wrap gap-1.5 mt-2">
+        <div className="flex flex-wrap gap-2 mt-2">
             {visibleTags.map(tagId => {
                 const tag = TAG_LOOKUP_MAP.get(tagId);
 
@@ -35,7 +37,7 @@ export default function ReviewTagDisplay({
                     return (
                         <span
                             key={tagId}
-                            className={`inline-flex items-center gap-1 rounded-full bg-gray-100 text-gray-600 ${sizeClasses}`}
+                            className={`inline-flex items-center gap-1 rounded-full bg-gray-50 text-gray-600 border border-gray-100 ${sizeClasses}`}
                         >
                             {tagId}
                         </span>
@@ -46,26 +48,29 @@ export default function ReviewTagDisplay({
                     <span
                         key={tagId}
                         className={`
-              inline-flex items-center gap-1 rounded-full
+              inline-flex items-center gap-1.5 rounded-full border
               ${sizeClasses}
               ${tag.sentiment === 'negative'
-                                ? 'bg-red-100 text-red-700'
+                                ? 'bg-red-50 text-red-700 border-red-100'
                                 : tag.sentiment === 'positive'
-                                    ? 'bg-green-100 text-green-700'
-                                    : 'bg-gray-100 text-gray-600'
+                                    ? 'bg-green-50 text-green-700 border-green-100'
+                                    : 'bg-gray-50 text-gray-700 border-gray-100'
                             }
             `}
                     >
-                        <span>{tag.icon}</span>
-                        <span>{tag.label}</span>
+                        <span className="opacity-75">{tag.icon}</span>
+                        <span className="font-medium">{tag.label || tagId}</span>
                     </span>
                 );
             })}
 
-            {hiddenCount > 0 && (
-                <span className={`inline-flex items-center rounded-full bg-gray-100 text-gray-500 ${sizeClasses}`}>
+            {!isExpanded && hiddenCount > 0 && (
+                <button
+                    onClick={() => setIsExpanded(true)}
+                    className={`inline-flex items-center rounded-full bg-gray-50 hover:bg-gray-100 text-gray-500 hover:text-gray-700 border border-gray-200 transition-colors ${sizeClasses}`}
+                >
                     +{hiddenCount} more
-                </span>
+                </button>
             )}
         </div>
     );

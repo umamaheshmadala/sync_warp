@@ -11,12 +11,13 @@ import {
   Tag,
   Package
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useFavoritesContext } from '../../contexts/FavoritesContext';
 // Using storefront OfferCard for visual consistency
 import { OfferCard } from '../offers/OfferCard';
 // Replaced FavoriteProductCard with ProductCard for consistency
 import ProductCard from '../business/ProductCard';
+import OfferDetailModal from '../offers/OfferDetailModal';
 import type { Product } from '../../types/product';
 import type { Offer } from '../../types/offers';
 import type { FavoriteOffer, FavoriteProduct } from '../../services/favoritesService';
@@ -83,6 +84,7 @@ const FavoritesPage: React.FC = () => {
   // Local state
   const [activeTab, setActiveTab] = useState<ActiveTab>('offers');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
 
   // Refresh favorites data when page is visited
   React.useEffect(() => {
@@ -299,6 +301,7 @@ const FavoritesPage: React.FC = () => {
                   offer={mapFavoriteToOffer(offer)}
                   showActions={false}
                   showStats={false}
+                  onViewDetails={(o) => setSelectedOffer(o)}
                 />
               ))
               : filteredProducts.map(product => (
@@ -314,6 +317,17 @@ const FavoritesPage: React.FC = () => {
           </motion.div>
         )}
       </div>
+
+      {/* Offer Detail Modal */}
+      <AnimatePresence>
+        {selectedOffer && (
+          <OfferDetailModal
+            offer={selectedOffer}
+            onClose={() => setSelectedOffer(null)}
+            showStats={false}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };

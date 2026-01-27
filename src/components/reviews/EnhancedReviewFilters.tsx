@@ -43,54 +43,18 @@ export function EnhancedReviewFilters({
     const currentSort = filters.sort_by || 'newest';
 
     return (
-        <div className="space-y-4 bg-white p-4 rounded-xl border border-gray-200">
-            {/* Top row: Filters and Sort */}
-            <div className="flex flex-wrap gap-3 items-center justify-between">
-                <div className="flex gap-2">
-                    <Button
-                        variant={filters.recommendation === undefined ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => {
-                            const newFilters = { ...filters };
-                            delete newFilters.recommendation;
-                            onFilterChange(newFilters);
-                        }}
-                        className="rounded-full"
-                    >
-                        All ({totalCount})
-                    </Button>
-                    <Button
-                        variant={filters.recommendation === true ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => updateFilter('recommendation', true)}
-                        className={cn(
-                            "rounded-full gap-1.5",
-                            filters.recommendation === true ? "bg-green-600 hover:bg-green-700" : "text-green-700 border-green-200 hover:bg-green-50"
-                        )}
-                    >
-                        <ThumbsUp className="w-3.5 h-3.5" />
-                        Recommend
-                    </Button>
-                    <Button
-                        variant={filters.recommendation === false ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => updateFilter('recommendation', false)}
-                        className={cn(
-                            "rounded-full gap-1.5",
-                            filters.recommendation === false ? "bg-red-600 hover:bg-red-700" : "text-red-700 border-red-200 hover:bg-red-50"
-                        )}
-                    >
-                        <ThumbsDown className="w-3.5 h-3.5" />
-                        Don't Recommend
-                    </Button>
-                </div>
+        <div className="w-full">
+            {/* Mobile/Desktop Unified Horizontal Scroll Layout */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-4 pt-1 no-scrollbar md:flex-wrap md:overflow-visible md:pb-0 scroll-smooth px-1">
 
+                {/* Sort Dropdown - Primary Action */}
                 <Select
                     value={currentSort}
                     onValueChange={(val: any) => updateFilter('sort_by', val)}
                 >
-                    <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Sort by" />
+                    <SelectTrigger className="w-auto h-9 rounded-full border-gray-200 bg-white px-4 text-xs font-medium md:text-sm shadow-sm hover:bg-gray-50 flex-shrink-0">
+                        <span className="text-gray-500 mr-1">Sort:</span>
+                        <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="newest">Newest First</SelectItem>
@@ -98,57 +62,83 @@ export function EnhancedReviewFilters({
                         <SelectItem value="most-helpful">Most Helpful</SelectItem>
                     </SelectContent>
                 </Select>
-            </div>
 
-            {/* Second row: Photo filter and tags */}
-            <div className="flex flex-wrap gap-2 items-center pt-2 border-t border-gray-100">
-                {/* With Photos toggle */}
+                <div className="h-6 w-px bg-gray-200 mx-1 flex-shrink-0" />
+
+                {/* Filter Pills */}
                 <Button
-                    variant={withPhotosOnly ? 'secondary' : 'outline'}
+                    variant={filters.recommendation === true ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => updateFilter('recommendation', filters.recommendation === true ? undefined : true)}
+                    className={cn(
+                        "rounded-full h-9 px-4 text-xs font-medium md:text-sm border-gray-200 shadow-sm flex-shrink-0 transition-all",
+                        filters.recommendation === true
+                            ? "bg-green-600 hover:bg-green-700 text-white border-transparent ring-2 ring-green-100"
+                            : "bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-300"
+                    )}
+                >
+                    <ThumbsUp className={cn("w-3.5 h-3.5 mr-1.5", filters.recommendation === true ? "text-white" : "text-green-600")} />
+                    Recommended
+                </Button>
+
+                <Button
+                    variant={filters.recommendation === false ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => updateFilter('recommendation', filters.recommendation === false ? undefined : false)}
+                    className={cn(
+                        "rounded-full h-9 px-4 text-xs font-medium md:text-sm border-gray-200 shadow-sm flex-shrink-0 transition-all",
+                        filters.recommendation === false
+                            ? "bg-red-600 hover:bg-red-700 text-white border-transparent ring-2 ring-red-100"
+                            : "bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-300"
+                    )}
+                >
+                    <ThumbsDown className={cn("w-3.5 h-3.5 mr-1.5", filters.recommendation === false ? "text-white" : "text-red-600")} />
+                    Don't Recommend
+                </Button>
+
+                <Button
+                    variant={withPhotosOnly ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => onWithPhotosChange(!withPhotosOnly)}
                     className={cn(
-                        "gap-1.5 rounded-full border-dashed",
-                        withPhotosOnly && "bg-indigo-100 text-indigo-700 border-indigo-200"
+                        "rounded-full h-9 px-4 text-xs font-medium md:text-sm border-gray-200 shadow-sm flex-shrink-0 transition-all",
+                        withPhotosOnly
+                            ? "bg-indigo-600 hover:bg-indigo-700 text-white border-transparent ring-2 ring-indigo-100"
+                            : "bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-300"
                     )}
                 >
-                    <Camera className="w-3.5 h-3.5" />
-                    With Photos <span className="ml-1 text-xs opacity-70">({photoCount})</span>
+                    <Camera className={cn("w-3.5 h-3.5 mr-1.5", withPhotosOnly ? "text-white" : "text-indigo-600")} />
+                    With Photos
                 </Button>
 
-                <div className="h-4 w-px bg-gray-200 mx-1" />
+                {/* Popular Tags */}
+                {popularTags.slice(0, 5).map(({ tag, count }) => {
+                    const isSelected = selectedTags.includes(tag);
+                    return (
+                        <Button
+                            key={tag}
+                            variant={isSelected ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => {
+                                if (isSelected) {
+                                    onTagsChange(selectedTags.filter(t => t !== tag));
+                                } else {
+                                    onTagsChange([...selectedTags, tag]);
+                                }
+                            }}
+                            className={cn(
+                                "rounded-full h-9 px-4 text-xs font-medium md:text-sm border-gray-200 shadow-sm flex-shrink-0 transition-all whitespace-nowrap",
+                                isSelected
+                                    ? "bg-gray-900 text-white hover:bg-gray-800 ring-2 ring-gray-100"
+                                    : "bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                            )}
+                        >
+                            {tag} <span className={cn("ml-1.5 opacity-60 text-[10px]", isSelected ? "text-white" : "text-gray-400")}>{count}</span>
+                        </Button>
+                    );
+                })}
 
-                {/* Popular tags */}
-                <div className="flex flex-wrap gap-2">
-                    {popularTags.slice(0, 5).map(({ tag, count }) => {
-                        const isSelected = selectedTags.includes(tag);
-                        return (
-                            <Button
-                                key={tag}
-                                variant={isSelected ? 'secondary' : 'ghost'}
-                                size="sm"
-                                onClick={() => {
-                                    if (isSelected) {
-                                        onTagsChange(selectedTags.filter(t => t !== tag));
-                                    } else {
-                                        onTagsChange([...selectedTags, tag]);
-                                    }
-                                }}
-                                className={cn(
-                                    "text-xs h-7 rounded-full",
-                                    isSelected
-                                        ? "bg-gray-900 text-white hover:bg-gray-800"
-                                        : "text-gray-600 bg-gray-50 hover:bg-gray-100"
-                                )}
-                            >
-                                {tag} <span className="ml-1 opacity-60">({count})</span>
-                                {isSelected && <X className="ml-1 w-3 h-3" />}
-                            </Button>
-                        );
-                    })}
-                </div>
-
-                {/* Clear filters */}
+                {/* Clear Button - Shows only when filters are active */}
                 {(withPhotosOnly || selectedTags.length > 0 || filters.recommendation !== undefined) && (
                     <Button
                         variant="ghost"
@@ -156,12 +146,12 @@ export function EnhancedReviewFilters({
                         onClick={() => {
                             onWithPhotosChange(false);
                             onTagsChange([]);
-                            const resetFilters = { sort_by: currentSort }; // Keep sort
+                            const resetFilters = { sort_by: currentSort };
                             onFilterChange(resetFilters);
                         }}
-                        className="text-muted-foreground ml-auto text-xs h-7"
+                        className="h-9 px-3 text-xs text-muted-foreground hover:text-gray-900 flex-shrink-0 ml-auto md:ml-0"
                     >
-                        <X className="w-3.5 h-3.5 mr-1" />
+                        <X className="w-4 h-4 mr-1" />
                         Clear
                     </Button>
                 )}

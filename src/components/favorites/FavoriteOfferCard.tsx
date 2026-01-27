@@ -4,11 +4,14 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Tag, TrendingUp, Trash2, ExternalLink } from 'lucide-react';
 import { FavoriteOffer } from '../../services/favoritesService';
 import { useBusinessUrl } from '../../hooks/useBusinessUrl';
-import { FavoriteOfferButton } from './FavoriteOfferButton';
-import { OfferShareButton } from '../Sharing/OfferShareButton';
+import { TicketOfferCard } from '../offers/TicketOfferCard';
+import { getOfferColor } from '../../utils/offerColors';
+import { format } from 'date-fns';
+// Note: FavoriteOffer type might not have nested offer_type object fully populated like Offer type
+// We need to check if FavoriteOffer includes the category name or if we need to fetch it/fallback.
+// Assuming for now it has similar structure or we use fallback color.
 
 interface FavoriteOfferCardProps {
     offer: FavoriteOffer;
@@ -22,105 +25,41 @@ export const FavoriteOfferCard: React.FC<FavoriteOfferCardProps> = ({
     const navigate = useNavigate();
     const { getBusinessUrl } = useBusinessUrl();
 
-    const isExpired = new Date(offer.valid_until) < new Date();
-
     const handleCardClick = () => {
         // Navigate to business storefront with offer modal
         navigate(`${getBusinessUrl(offer.business_id, offer.business_name)}?offer=${offer.id}`);
     };
 
-    const handleRemove = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        onRemove(offer.id);
-    };
+    // FavoriteOffer interface might be different. Let's assume it mimics Offer or has flattened props.
+    // If category is missing, it will default to Gray.
+    // We can try to extract category name if available in the join.
+    const categoryName = (offer as any).offer_type?.category?.name || (offer as any).category_name;
+    const ticketColor = getOfferColor(categoryName);
+    const formattedExpiry = format(new Date(offer.valid_until), 'MMM d, yyyy');
 
     return (
-        <div
-            onClick={handleCardClick}
-            className={`relative border rounded-xl p-4 hover:shadow-md transition-all cursor-pointer group ${isExpired
-                ? 'border-gray-200 bg-gray-50 opacity-75'
-                : 'border-gray-200 hover:border-indigo-300 bg-white'
-                }`}
-        >
-            <div className="absolute top-2 right-2 flex gap-1 z-10">
-                <FavoriteOfferButton offerId={offer.id} className="h-8 w-8 bg-white/50 hover:bg-white [&_span]:hidden px-0" />
-                <OfferShareButton
-                    offerId={offer.id}
-                    offerTitle={offer.title}
-                    offerDescription={offer.description}
-                    validUntil={offer.valid_until}
-                    offerImage={offer.icon_image_url}
-                    businessId={offer.business_id}
-                    businessName={offer.business_name}
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 bg-white/50 hover:bg-white rounded-full"
-                />
-            </div>
+        <div onClick={handleCardClick} className="cursor-pointer relative group">
+            <TicketOfferCard
+                businessName={offer.business_name || 'Sync Business'}
+                offerName={offer.title}
+                offerType={(offer as any).offer_type?.offer_name || 'Special Offer'}
+                offerCode={offer.offer_code || 'CODE123'}
+                validUntil={formattedExpiry}
+                color={ticketColor}
+                className="w-full"
+            />
 
-            <div className="flex items-start gap-4">
-                {/* Icon/Image */}
-                <div className="flex-shrink-0">
-                    {offer.icon_image_url ? (
-                        <img
-                            src={offer.icon_image_url}
-                            alt={offer.title}
-                            className="w-16 h-16 rounded-lg object-cover"
-                        />
-                    ) : (
-                        <div
-                            className={`w-16 h-16 rounded-lg flex items-center justify-center border ${isExpired
-                                ? 'bg-gray-100 border-gray-200'
-                                : 'bg-indigo-50 border-indigo-100'
-                                }`}
-                        >
-                            <Tag className={`w-8 h-8 ${isExpired ? 'text-gray-400' : 'text-indigo-600'}`} />
-                        </div>
-                    )}
-                </div>
-
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                    {/* Header */}
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                        <div className="pr-16"> {/* Padding for absolute buttons */}
-                            <h4
-                                className={`font-semibold text-lg leading-tight line-clamp-1 ${isExpired ? 'text-gray-500' : 'text-gray-900 group-hover:text-indigo-600'
-                                    }`}
-                            >
-                                {offer.title}
-                            </h4>
-                            <p className="text-sm text-gray-600 mt-1 line-clamp-1">{offer.business_name}</p>
-                        </div>
-                    </div>
-
-                    {/* Description */}
-                    {offer.description && (
-                        <p className="text-sm text-gray-600 mb-2 line-clamp-2">{offer.description}</p>
-                    )}
-
-                    {/* Metadata */}
-                    <div className="flex items-center flex-wrap gap-4 text-xs text-gray-500">
-                        <span className="flex items-center">
-                            <Calendar className="w-3.5 h-3.5 mr-1.5" />
-                            {isExpired
-                                ? 'Expired'
-                                : `Valid until ${new Date(offer.valid_until).toLocaleDateString()}`}
-                        </span>
-
-                        <span className="flex items-center">
-                            <TrendingUp className="w-3.5 h-3.5 mr-1.5" />
-                            {offer.view_count} views
-                        </span>
-                    </div>
-
-                    {/* Status Badge */}
-                    <div className="mt-2 text-right">
-                        {/* Original remove button was redundant or misplaced, kept in header usually but here we have absolute buttons now */}
-                    </div>
-                </div>
-            </div>
+            {/* Overlay Remove Button for Favorites context */}
+            <button
+                onClick={(e) => {
+                    e.stopPropagation();
+                    onRemove(offer.id);
+                }}
+                className="absolute top-2 right-2 bg-white/80 hover:bg-white text-red-500 p-1.5 rounded-full shadow-sm z-30 opacity-0 group-hover:opacity-100 transition-opacity"
+                title="Remove from favorites"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
+            </button>
         </div>
     );
 };
-

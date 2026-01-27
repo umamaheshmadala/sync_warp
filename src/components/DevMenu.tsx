@@ -40,6 +40,7 @@ const DevMenu = () => {
     { name: '📱 Contact Sync Test', path: '/test/contact-sync' },
     { name: '🎁 Share Deal (9.7.5)', path: '/test/share-deal' },
     { name: '📊 Sharing Analytics (9.7.6)', path: '/test/sharing-analytics' },
+    { name: '🎟️ Ticket Offer', path: '/test/ticket-offer' },
   ]
 
   // Build/Sync timestamp for identification (IST) - shows when files were synced with Capacitor

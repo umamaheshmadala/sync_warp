@@ -1155,19 +1155,15 @@ const BusinessProfile: React.FC = () => {
   // Render reviews tab
   const renderReviews = () => (
     <div className="space-y-4">
-      {/* Write/Manage Review Button - Only show for non-owners */}
-      {!isOwner && user && (
+      {/* Write/Manage Review Button - Only show for non-owners AND if no review exists */}
+      {!isOwner && user && !userReview && (
         <div className="bg-white rounded-lg shadow-sm border p-4">
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <h3 className="text-lg font-semibold text-gray-900 mb-1">
                 {userReview ? 'Your Review' : 'Share Your Experience'}
               </h3>
-              {userReview ? (
-                <div className="flex items-start space-x-2 text-sm text-gray-600">
-                  <p>You have already reviewed this business.</p>
-                </div>
-              ) : (
+              {userReview ? null : (
                 /* GPS check-in requirement prompt */
                 !isSettingsLoading && requireGpsCheckin ? (
                   !hasCheckin ? (
@@ -1196,11 +1192,11 @@ const BusinessProfile: React.FC = () => {
             {userReview ? (
               <button
                 onClick={() => handleEditReview(userReview)}
-                className="flex items-center px-4 py-2 rounded-lg font-medium transition-colors bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                className="flex items-center px-4 py-2 rounded-lg font-medium transition-colors bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 md:px-4 md:py-2 p-2"
                 title="Manage your review"
               >
-                <Edit3 className="w-4 h-4 mr-2" />
-                Manage Review
+                <Edit3 className="w-5 h-5 md:w-4 md:h-4 md:mr-2" />
+                <span className="hidden md:inline">Manage Review</span>
               </button>
             ) : (
               <button
@@ -1226,6 +1222,7 @@ const BusinessProfile: React.FC = () => {
         onEdit={handleEditReview}
         onDelete={handleDeleteReview}
         businessImage={business?.logo_url}
+        userReview={userReview}
       />
     </div>
   );
