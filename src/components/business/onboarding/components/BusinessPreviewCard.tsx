@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Star, MapPin, Phone, Globe, Image } from 'lucide-react';
+import { Star, MapPin, Phone, Globe, Image, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface BusinessPreviewCardProps {
@@ -90,9 +90,9 @@ export function BusinessPreviewCard({
                         )}
                     </div>
                     {isVerified && (
-                        <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
-                            ✓ Verified
-                        </span>
+                        <div title="Verified Business" className="p-1 bg-green-100 text-green-700 rounded-full">
+                            <ShieldCheck className="w-3 h-3" />
+                        </div>
                     )}
                 </div>
 

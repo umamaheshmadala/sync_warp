@@ -122,6 +122,7 @@ export interface SearchBusiness {
   business_type?: string;
   description?: string;
   address?: string;
+  city?: string;
   latitude?: number;
   longitude?: number;
   rating?: number;
@@ -136,6 +137,8 @@ export interface SearchBusiness {
   recommendation_badge?: 'recommended' | 'highly_recommended' | 'very_highly_recommended' | null;
   recommendation_percentage?: number;
   approved_review_count?: number;
+  claim_status?: string;
+  phone_verified?: boolean;
 }
 
 export interface SearchFacets {
@@ -572,6 +575,7 @@ class SearchService {
         business_type: business.business_type,
         description: business.description,
         address: business.address,
+        city: business.city,
         latitude: business.latitude,
         longitude: business.longitude,
         rating: business.rating,
@@ -585,7 +589,9 @@ class SearchService {
         distance: undefined, // Would be calculated if location provided
         recommendation_badge: business.recommendation_badge,
         recommendation_percentage: business.recommendation_percentage,
-        approved_review_count: business.approved_review_count
+        approved_review_count: business.approved_review_count,
+        claim_status: business.claim_status,
+        phone_verified: business.phone_verified
       };
     });
   }

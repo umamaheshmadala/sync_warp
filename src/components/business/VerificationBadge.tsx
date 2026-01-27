@@ -13,7 +13,7 @@ interface VerificationBadgeProps {
 const statusConfig: Record<string, { icon: any; label: string; color: string; tooltip: string }> = {
     unclaimed: {
         icon: ShieldQuestion,
-        label: 'Unclaimed',
+        label: '',
         color: 'text-gray-400 bg-gray-100',
         tooltip: 'This business has not been claimed by its owner.'
     },
@@ -25,13 +25,13 @@ const statusConfig: Record<string, { icon: any; label: string; color: string; to
     },
     claimed_verified: {
         icon: ShieldCheck,
-        label: 'Verified',
+        label: '',
         color: 'text-green-600 bg-green-100',
         tooltip: 'Business owner verified via phone.'
     },
     claimed_manual: {
         icon: Shield,
-        label: 'Verified',
+        label: '',
         color: 'text-blue-600 bg-blue-100',
         tooltip: 'Business verified by admin review.'
     },
@@ -85,7 +85,7 @@ export function VerificationBadge({
             title={showTooltip ? finalConfig.tooltip : undefined}
         >
             <EffectiveIcon className={iconSizes[size]} />
-            <span className="hidden sm:inline">{finalConfig.label}</span>
+            {finalConfig.label && <span className="hidden sm:inline">{finalConfig.label}</span>}
         </div>
     );
 }

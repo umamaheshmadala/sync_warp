@@ -41,6 +41,7 @@ export interface Business {
   recommendation_badge?: 'recommended' | 'highly_recommended' | 'very_highly_recommended' | null;
   recommendation_percentage?: number;
   approved_review_count?: number;
+  activeCouponsCount?: number;
 
   // Joined data
   owner?: {

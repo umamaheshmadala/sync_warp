@@ -402,7 +402,7 @@ export const useSearch = (options: UseSearchOptions = {}) => {
         })),
         businesses: simpleResult.businesses.map((business: any) => ({
           ...business,
-          activeCouponsCount: 0,
+          activeCouponsCount: simpleResult.coupons.filter((c: any) => c.business.id === business.id).length,
           relevanceScore: 1
         })),
         totalCoupons: simpleResult.coupons.length,

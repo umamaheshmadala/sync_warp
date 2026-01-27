@@ -7,7 +7,9 @@ import { useSearchParams, useNavigate, useLocation } from 'react-router-dom'
 import { Search as SearchIcon, Filter, MapPin, Star, ChevronDown, Grid, List, Plus, Navigation, Loader2, AlertCircle, Store, Tag, Package, TrendingUp } from 'lucide-react'
 import { useSearch } from '../hooks/useSearch'
 import { useSearchTracking } from '../hooks/useSearchAnalytics'
-import { CouponCard, BusinessCard, FilterPanel, FilterButton, SearchSuggestions } from './search/index'
+import { CouponCard, FilterPanel, FilterButton, SearchSuggestions } from './search/index'
+import { SearchBusinessCard } from './search/SearchBusinessCard'
+import { toast } from 'react-hot-toast'
 import { SearchSortField, SearchSuggestion } from '../services/searchService'
 import { useAuthStore } from '../store/authStore'
 import CouponDetailsModal from './modals/CouponDetailsModal'
@@ -429,46 +431,20 @@ export default function Search() {
                         <span>Businesses</span>
                         <span className="ml-2 text-sm font-normal text-gray-500">({businesses.length})</span>
                       </h3>
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => setBusinessesViewMode('grid')}
-                          className={`p-1.5 w-7 h-7 rounded flex items-center justify-center transition-colors ${businessesViewMode === 'grid' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
-                        >
-                          <Grid className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => setBusinessesViewMode('list')}
-                          className={`p-1.5 w-7 h-7 rounded flex items-center justify-center transition-colors ${businessesViewMode === 'list' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
-                        >
-                          <List className="h-4 w-4" />
-                        </button>
-                      </div>
                     </div>
                   )}
 
-                  <div className={businessesViewMode === 'grid'
-                    ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-6'
-                    : 'space-y-3 sm:space-y-4'
-                  }>
+                  <div className="space-y-3 sm:space-y-4">
                     {businesses.map((business) => (
-                      <BusinessCard
+                      <SearchBusinessCard
                         key={business.id}
                         business={business}
-                        variant={businessesViewMode === 'grid' ? 'default' : 'compact'}
-                        onBusinessClick={(businessId) => {
-                          // Track click for analytics
-                          if (search.query) {
-                            trackResultClick({
-                              searchTerm: search.query,
-                              resultId: businessId,
-                              resultType: 'business'
-                            });
-                          }
-                          search.goToBusiness(businessId, business.business_name);
+                        onFollow={() => toast.success(`Followed ${business.business_name}`)}
+                        onShare={() => {
+                          const url = window.location.origin + `/business/${business.id}/${business.business_name}`;
+                          navigator.clipboard.writeText(url);
+                          toast.success('Link copied to clipboard');
                         }}
-                        showDistance={!!(search.location.enabled && search.location.coords)}
-                        showCouponCount={true}
-                        getFormattedDistance={search.getFormattedDistance}
                       />
                     ))}
                   </div>
