@@ -3,19 +3,17 @@
 // Shows popular terms, recent searches, and search suggestions
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Clock, TrendingUp, MapPin, Tag, Users } from 'lucide-react';
+import { Search, Clock, MapPin, Tag } from 'lucide-react';
 import { SearchSuggestion } from '../../services/searchService';
-import { usePopularSearchTerms } from '../../hooks/useSearch';
 
 interface SearchSuggestionsProps {
   searchTerm: string;
   suggestions: SearchSuggestion[];
   isLoading: boolean;
   isVisible: boolean;
-  onSuggestionSelect: (suggestion: string) => void;
+  onSuggestionSelect: (suggestion: string | SearchSuggestion) => void;
   onClose: () => void;
-  popularTerms?: string[];
-  recentSearches?: string[];
+  recentSearches?: any[];
 }
 
 export const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
@@ -27,7 +25,6 @@ export const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
   onClose,
   recentSearches = []
 }) => {
-  const { terms: popularTerms, loading: popularLoading } = usePopularSearchTerms();
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -36,7 +33,7 @@ export const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isVisible) return;
 
-      const totalItems = suggestions.length + popularTerms.length + recentSearches.length;
+      const totalItems = suggestions.length + recentSearches.length;
 
       switch (e.key) {
         case 'ArrowDown':
@@ -50,7 +47,7 @@ export const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
         case 'Enter':
           e.preventDefault();
           if (selectedIndex >= 0) {
-            const allItems = [...suggestions.map(s => s.text), ...popularTerms, ...recentSearches];
+            const allItems = [...suggestions.map(s => s.text), ...recentSearches];
             onSuggestionSelect(allItems[selectedIndex]);
           }
           break;
@@ -62,7 +59,7 @@ export const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isVisible, selectedIndex, suggestions, popularTerms, recentSearches, onSuggestionSelect, onClose]);
+  }, [isVisible, selectedIndex, suggestions, recentSearches, onSuggestionSelect, onClose]);
 
   // Reset selection when suggestions change
   useEffect(() => {
@@ -84,9 +81,8 @@ export const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
   if (!isVisible) return null;
 
   const hasSuggestions = suggestions.length > 0;
-  const hasPopularTerms = popularTerms.length > 0;
   const hasRecentSearches = recentSearches.length > 0;
-  const hasContent = hasSuggestions || hasPopularTerms || hasRecentSearches;
+  const hasContent = hasSuggestions || hasRecentSearches;
 
   if (isLoading) {
     return (
@@ -139,7 +135,7 @@ export const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
             return (
               <button
                 key={`suggestion-${index}`}
-                onClick={() => onSuggestionSelect(suggestion.text)}
+                onClick={() => onSuggestionSelect(suggestion)}
                 className={`w-full flex items-center px-4 py-2 text-left hover:bg-gray-50 transition-colors ${isSelected ? 'bg-indigo-50 text-indigo-700' : 'text-gray-900'
                   }`}
               >
@@ -172,49 +168,35 @@ export const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
           <div className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wide">
             Recent Searches
           </div>
-          {recentSearches.slice(0, 3).map((term, index) => {
+          {recentSearches.slice(0, 3).map((item, index) => {
             const isSelected = currentIndex === selectedIndex;
             currentIndex++;
+
+            // Handle both legacy string format and new object format
+            const text = typeof item === 'string' ? item : item.query;
+            const type = typeof item === 'object' ? item.type : undefined;
 
             return (
               <button
                 key={`recent-${index}`}
-                onClick={() => onSuggestionSelect(term)}
-                className={`w-full flex items-center px-4 py-2 text-left hover:bg-gray-50 transition-colors ${isSelected ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600'
-                  }`}
+                onClick={() => onSuggestionSelect(item)}
+                className={`w-full flex items-center px-4 py-2 text-left hover:bg-gray-50 transition-colors ${isSelected ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600'}`}
               >
-                <Clock className="w-4 h-4 mr-3 text-gray-400 flex-shrink-0" />
-                <span className="text-sm truncate">{term}</span>
+                <div className="flex items-center w-full">
+                  {type === 'business' ? (
+                    <MapPin className="w-4 h-4 mr-3 text-green-500 flex-shrink-0" />
+                  ) : (
+                    <Clock className="w-4 h-4 mr-3 text-gray-400 flex-shrink-0" />
+                  )}
+                  <span className="text-sm truncate">{text}</span>
+                </div>
               </button>
             );
           })}
         </div>
       )}
 
-      {/* Popular Terms */}
-      {hasPopularTerms && !searchTerm.trim() && (
-        <div className="py-2 border-t border-gray-100">
-          <div className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wide">
-            Popular Searches
-          </div>
-          {popularTerms.slice(0, 5).map((term, index) => {
-            const isSelected = currentIndex === selectedIndex;
-            currentIndex++;
 
-            return (
-              <button
-                key={`popular-${index}`}
-                onClick={() => onSuggestionSelect(term)}
-                className={`w-full flex items-center px-4 py-2 text-left hover:bg-gray-50 transition-colors ${isSelected ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600'
-                  }`}
-              >
-                <TrendingUp className="w-4 h-4 mr-3 text-orange-400 flex-shrink-0" />
-                <span className="text-sm truncate">{term}</span>
-              </button>
-            );
-          })}
-        </div>
-      )}
 
       {/* Quick Actions */}
       {searchTerm.trim() && (

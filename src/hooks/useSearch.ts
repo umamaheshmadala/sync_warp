@@ -96,6 +96,9 @@ export const useSearch = (options: UseSearchOptions = {}) => {
     sortByDistance: false
   });
 
+  const instanceId = useRef(Math.random().toString(36).slice(2, 7)).current;
+  console.log(`🔍 [useSearch ${instanceId}] Hook initialized`);
+
   // Search state
   const [searchState, setSearchState] = useState<SearchState>(() => {
     // Try to restore from localStorage first (only if no URL query)
@@ -182,6 +185,12 @@ export const useSearch = (options: UseSearchOptions = {}) => {
     const searchStateKey = user?.id ? `searchState_${user.id}` : 'searchState_guest';
     const searchResultsKey = user?.id ? `searchResults_${user.id}` : 'searchResults_guest';
 
+    // If URL has query, ignore saved state to enforce fresh search
+    // This prevents overwriting the URL query with stale local storage data when user loads
+    if (searchParams.get('q')) {
+      return;
+    }
+
     // Reset initial search flag so search can re-trigger with new user context
     // This fixes the fresh login issue where first search returns empty results
     initialSearchTriggeredRef.current = false;
@@ -253,6 +262,7 @@ export const useSearch = (options: UseSearchOptions = {}) => {
   ): Promise<SearchResult | null> => {
     // Cancel previous search
     if (abortControllerRef.current) {
+      console.log(`🔍 [useSearch ${instanceId}] Aborting previous search controller from new search start`);
       abortControllerRef.current.abort();
     }
     const currentController = new AbortController();
@@ -279,7 +289,7 @@ export const useSearch = (options: UseSearchOptions = {}) => {
     }).length > 0;
 
     // Debug logging
-    console.log('🔍 [useSearch] Search criteria check:', {
+    console.log(`🔍 [useSearch ${instanceId}] Search criteria check:`, {
       hasSearchQuery,
       hasSignificantFilters,
       query: queryToUse.q,
@@ -301,7 +311,7 @@ export const useSearch = (options: UseSearchOptions = {}) => {
 
     try {
       // Debug: Log search parameters
-      console.log('🔍 [useSearch] Executing search with:', {
+      console.log(`🔍 [useSearch ${instanceId}] Executing search with:`, {
         query: queryToUse.q,
         filters: queryToUse.filters,
         pagination: queryToUse.pagination,
@@ -318,8 +328,8 @@ export const useSearch = (options: UseSearchOptions = {}) => {
         locationParam: queryToUse.location
       });
 
-      // Use simple search service with proper location data
-      const simpleResult = await simpleSearchService.search({
+      // Use simple search service with proper location data and timeout
+      const searchPromise = simpleSearchService.search({
         q: queryToUse.q,
         limit: queryToUse.pagination.limit,
         location: queryToUse.location ? {
@@ -329,7 +339,13 @@ export const useSearch = (options: UseSearchOptions = {}) => {
         } : undefined
       });
 
-      console.log('🔍 [useSearch] Raw search result:', simpleResult);
+      const searchTimeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Search service timed out')), 10000)
+      );
+
+      const simpleResult = await Promise.race([searchPromise, searchTimeoutPromise]);
+
+      console.log(`🔍 [useSearch ${instanceId}] Raw search result:`, simpleResult);
 
       // Check if this search was cancelled (using local controller reference)
       if (currentController.signal.aborted) {
@@ -338,21 +354,42 @@ export const useSearch = (options: UseSearchOptions = {}) => {
 
       // Fetch user's collected coupons if user is logged in
       let userCollectedCouponIds = new Set<string>();
+      console.log(`🔍 [useSearch ${instanceId}] User ID check for collections:`, user?.id);
+
       if (user?.id) {
         try {
-          const { data: userCollections } = await supabase
+          console.log('🔍 [useSearch] Starting collections fetch race...');
+
+          const fetchPromise = supabase
             .from('user_coupon_collections')
             .select('coupon_id, status')
             .eq('user_id', user.id)
-            .eq('status', 'active');  // Only fetch active collections
+            .eq('status', 'active');
+
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => {
+              console.log('🔍 [useSearch] Collections fetch timed out callback');
+              reject(new Error('Timeout fetching user collections'));
+            }, 2000)
+          );
+
+          // Use checking for result type to be safe since race returns unknown
+          const result = await Promise.race([fetchPromise, timeoutPromise]) as any;
+          console.log('🔍 [useSearch] Collections fetch race completed. Result:', result?.data ? 'Data present' : 'No data');
+
+          const userCollections = result?.data;
 
           if (userCollections) {
-            userCollectedCouponIds = new Set(userCollections.map(c => c.coupon_id));
+            userCollectedCouponIds = new Set(userCollections.map((c: any) => c.coupon_id));
+            console.log('🔍 [useSearch] Parsed collections count:', userCollectedCouponIds.size);
           }
         } catch (error) {
-          console.error('Error fetching user collections:', error);
+          console.error('Error or timeout fetching user collections:', error);
+          // Proceed without collection status to ensure search results are still shown
         }
       }
+
+      console.log('🔍 [useSearch] Constructing result object...');
 
       // Convert to expected format
       const result: SearchResult = {
@@ -759,7 +796,12 @@ export const useSearch = (options: UseSearchOptions = {}) => {
 
     try {
       const suggestions = await simpleSearchService.getSuggestions(term);
-      return suggestions.map(item => ({ text: item.text, type: item.type, count: 1 }));
+      return suggestions.map(item => ({
+        text: item.text,
+        type: item.type,
+        count: 1,
+        id: item.id
+      }));
     } catch (error) {
       console.error('Error getting suggestions:', error);
       return [];
@@ -770,8 +812,13 @@ export const useSearch = (options: UseSearchOptions = {}) => {
    * Navigate to business profile
    */
   const goToBusiness = useCallback((businessId: string, businessName?: string) => {
-    navigate(getBusinessUrl(businessId, businessName));
-  }, [navigate]);
+    navigate(getBusinessUrl(businessId, businessName), {
+      state: {
+        from: 'search',
+        query: searchState.query
+      }
+    });
+  }, [navigate, searchState.query]);
 
   /**
    * Navigate to coupon details
@@ -905,8 +952,12 @@ export const useSearch = (options: UseSearchOptions = {}) => {
         clearTimeout(searchTimeoutRef.current);
       }
       if (abortControllerRef.current) {
+        console.log(`🔍 [useSearch ${instanceId}] Cleanup: Aborting search controller`);
         abortControllerRef.current.abort();
       }
+      // Reset initial search trigger so if this component is re-mounted (e.g. Strict Mode),
+      // it can try to search again.
+      initialSearchTriggeredRef.current = false;
     };
   }, []);
 
@@ -1026,7 +1077,8 @@ export const useSearch = (options: UseSearchOptions = {}) => {
       isFirstPage: searchState.pagination.page === 1,
       currentPage: searchState.pagination.page,
       pageSize: searchState.pagination.limit
-    }
+    },
+    instanceId // Expose for debugging
   };
 };
 

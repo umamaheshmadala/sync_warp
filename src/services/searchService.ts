@@ -150,6 +150,7 @@ export interface SearchSuggestion {
   text: string;
   type: 'coupon' | 'business' | 'category' | 'location';
   count: number;
+  id?: string;
 }
 
 // Cache management for search
@@ -630,7 +631,8 @@ class SearchService {
         suggestions.push({
           text: suggestion.suggestion_text,
           type: suggestion.suggestion_type === 'business' ? 'business' : 'category',
-          count: suggestion.match_count || 1
+          count: suggestion.match_count || 1,
+          id: suggestion.id
         });
       });
 

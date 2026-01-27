@@ -1249,7 +1249,7 @@ const BusinessProfile: React.FC = () => {
     { id: 'overview', label: 'Overview', count: null, ownerOnly: false, icon: LayoutGrid },
     { id: 'products', label: 'Products', count: null, ownerOnly: false, icon: Package },
     { id: 'offers', label: 'Offers', count: null, ownerOnly: false, icon: Tag },
-    { id: 'reviews', label: 'Reviews', count: reviewStats?.total_reviews || business?.total_reviews || 0, ownerOnly: false, icon: MessageSquare },
+    { id: 'reviews', label: 'Reviews', count: null, ownerOnly: false, icon: MessageSquare },
     { id: 'statistics', label: 'Analytics', count: null, ownerOnly: true, icon: BarChart },
     { id: 'enhanced-profile', label: 'Enhanced Profile', count: null, ownerOnly: true, icon: Sparkles }
   ];
@@ -1406,13 +1406,28 @@ const BusinessProfile: React.FC = () => {
                   Dashboard
                 </button>
                 <ChevronRight className="w-4 h-4 text-gray-300" />
-                <button
-                  onClick={() => navigate('/business/dashboard')}
-                  className="text-gray-500 hover:text-indigo-600 transition-colors"
-                >
-                  Businesses
-                </button>
-                <ChevronRight className="w-4 h-4 text-gray-300" />
+
+                {location.state?.from === 'search' ? (
+                  <>
+                    <button
+                      onClick={() => navigate(`/search?q=${encodeURIComponent(location.state.query || '')}`)}
+                      className="text-gray-500 hover:text-indigo-600 transition-colors"
+                    >
+                      Search Results
+                    </button>
+                    <ChevronRight className="w-4 h-4 text-gray-300" />
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => navigate('/business/dashboard')}
+                      className="text-gray-500 hover:text-indigo-600 transition-colors"
+                    >
+                      Businesses
+                    </button>
+                    <ChevronRight className="w-4 h-4 text-gray-300" />
+                  </>
+                )}
                 <span className="text-gray-900 font-medium">
                   {business?.business_name || 'Business Profile'}
                 </span>

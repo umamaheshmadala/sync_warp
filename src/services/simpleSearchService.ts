@@ -295,7 +295,7 @@ class SimpleSearchService {
   /**
    * Get enhanced search suggestions across all fields
    */
-  async getSuggestions(term: string): Promise<{ text: string, type: 'business' | 'coupon' }[]> {
+  async getSuggestions(term: string): Promise<{ text: string, type: 'business' | 'coupon', id?: string }[]> {
     if (!term || term.length < 2) return [];
 
     try {
@@ -313,13 +313,13 @@ class SimpleSearchService {
       // Get business suggestions from multiple fields
       const { data: businessSuggestions } = await supabase
         .from('businesses')
-        .select('business_name, business_type, city')
+        .select('id, business_name, business_type, city')
         .or(`business_name.ilike.%${term}%,business_type.ilike.%${term}%,city.ilike.%${term}%`)
         .eq('status', 'active')
         .limit(3);
 
       // Add unique suggestions with proper type
-      const suggestionMap = new Map<string, { text: string, type: 'business' | 'coupon' }>();
+      const suggestionMap = new Map<string, { text: string, type: 'business' | 'coupon', id?: string }>();
 
       // Add coupon titles and relevant terms first
       if (couponSuggestions) {
@@ -334,7 +334,11 @@ class SimpleSearchService {
       if (businessSuggestions) {
         businessSuggestions.forEach(business => {
           if (business.business_name.toLowerCase().includes(term.toLowerCase())) {
-            suggestionMap.set(business.business_name, { text: business.business_name, type: 'business' });
+            suggestionMap.set(business.business_name, {
+              text: business.business_name,
+              type: 'business',
+              id: business.id
+            });
           }
           if (business.city && business.city.toLowerCase().includes(term.toLowerCase())) {
             suggestionMap.set(business.city, { text: business.city, type: 'business' });

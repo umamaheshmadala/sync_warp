@@ -10,6 +10,7 @@ import { NotificationCenter } from '../notifications/NotificationCenter';
 import MobileProfileDrawer from '../MobileProfileDrawer';
 import { SearchSuggestions } from '../search/SearchSuggestions';
 import { useSearch } from '../../hooks/useSearch';
+import { SearchSuggestion } from '../../services/searchService';
 import { useConversations } from '../../hooks/useConversations';
 import { useMessagingStore } from '../../store/messagingStore';
 import {
@@ -102,12 +103,18 @@ export default function Header() {
   const totalUnreadCount = useMessagingStore((state) => state.totalUnreadCount);
 
   // Get recent searches from localStorage
-  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [recentSearches, setRecentSearches] = useState<any[]>([]); // Changed type to any for backwards compat/flexibility
   useEffect(() => {
     const stored = localStorage.getItem('recent_searches');
     if (stored) {
       try {
-        setRecentSearches(JSON.parse(stored).map((s: any) => s.query).slice(0, 5));
+        // Parse and ensure we have an array
+        const parsed = JSON.parse(stored);
+        // Handle potential old format (where it might store differently) or new format
+        // We expect: { query, type?, id?, timestamp }
+        if (Array.isArray(parsed)) {
+          setRecentSearches(parsed.slice(0, 5));
+        }
       } catch (e) {
         console.error('Error loading recent searches:', e);
       }
@@ -183,7 +190,7 @@ export default function Header() {
     }
   };
 
-  const performSearch = (query: string) => {
+  const performSearch = (query: string, type?: string, id?: string) => {
     // Save to recent searches
     const stored = localStorage.getItem('recent_searches');
     let recent: any[] = [];
@@ -194,20 +201,93 @@ export default function Header() {
         recent = [];
       }
     }
-    // Add new search, remove duplicates, keep max 10
-    recent = [{ query, timestamp: Date.now() }, ...recent.filter(s => s.query !== query)].slice(0, 10);
-    localStorage.setItem('recent_searches', JSON.stringify(recent));
-    setRecentSearches(recent.map(s => s.query).slice(0, 5));
 
-    // Navigate to search results (keep query visible in search box)
-    navigate(`/search?q=${encodeURIComponent(query)}`);
+    // Create new entry
+    const newEntry = { query, type, id, timestamp: Date.now() };
+
+    // Add new search, remove duplicates (by query AND type if present), keep max 10
+    recent = [
+      newEntry,
+      ...recent.filter(s => {
+        // Filter out identical queries, or identical business navigation
+        if (type === 'business' && id) {
+          // check if existing matches this business logic
+          return !(s.type === 'business' && s.id === id);
+        }
+        return s.query !== query;
+      })
+    ].slice(0, 10);
+
+    localStorage.setItem('recent_searches', JSON.stringify(recent));
+    setRecentSearches(recent.slice(0, 5));
+
+    // Navigate logic
+    if (type === 'business' && id) {
+      navigate(`/business/${id}`, { state: { from: 'search', query } });
+    } else {
+      // Generic search
+      navigate(`/search?q=${encodeURIComponent(query)}`);
+    }
+
     setShowSearchSuggestions(false);
     searchInputRef.current?.blur();
   };
 
-  const handleSuggestionSelect = (suggestion: string) => {
-    setSearchQuery(suggestion);
-    performSearch(suggestion);
+  const handleSuggestionSelect = async (suggestion: string | SearchSuggestion | any) => {
+    if (typeof suggestion === 'string') {
+      // Basic string from e.g. legacy recent search or typing
+      setSearchQuery(suggestion);
+
+      // Try to resolve to a business
+      try {
+        const results = await search.getSuggestions(suggestion);
+        const match = results?.find(
+          s => s.type === 'business' && s.text.toLowerCase() === suggestion.toLowerCase()
+        );
+
+        if (match && match.id) {
+          performSearch(match.text, 'business', match.id);
+        } else {
+          performSearch(suggestion);
+        }
+      } catch (err) {
+        performSearch(suggestion);
+      }
+    } else if (suggestion.query) { // Handle recent search object if passed directly
+      setSearchQuery(suggestion.query);
+      if (suggestion.type === 'business' && suggestion.id) {
+        performSearch(suggestion.query, suggestion.type, suggestion.id);
+      } else {
+        // Fallback check for "legacy" objects that might have just query/timestamp but no ID
+        // (though my previous fix added query/type/id all at once, older storage might be mixed?)
+        // If we have type='business' but NO id, we should try to find it? 
+        // But 'recent' usually comes from 'performSearch' which saves ID if known.
+        // If logic above handles strings, let's also handle "text-only" objects similarly just in case.
+
+        if (!suggestion.id) {
+          try {
+            const results = await search.getSuggestions(suggestion.query);
+            const match = results?.find(
+              s => s.type === 'business' && s.text.toLowerCase() === suggestion.query.toLowerCase()
+            );
+            if (match && match.id) {
+              performSearch(match.text, 'business', match.id);
+              return;
+            }
+          } catch (e) { /* ignore */ }
+        }
+        performSearch(suggestion.query, suggestion.type, suggestion.id);
+      }
+    } else {
+      // It's a SearchSuggestion object from actual suggestions list
+      if (suggestion.type === 'business' && suggestion.id) {
+        // Pass full details to performSearch to save properly and navigate
+        performSearch(suggestion.text, suggestion.type, suggestion.id);
+      } else {
+        setSearchQuery(suggestion.text);
+        performSearch(suggestion.text);
+      }
+    }
   };
 
   return (

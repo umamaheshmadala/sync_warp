@@ -8,7 +8,7 @@ import { Search as SearchIcon, Filter, MapPin, Star, ChevronDown, Grid, List, Pl
 import { useSearch } from '../hooks/useSearch'
 import { useSearchTracking } from '../hooks/useSearchAnalytics'
 import { CouponCard, BusinessCard, FilterPanel, FilterButton, SearchSuggestions } from './search/index'
-import { SearchSortField } from '../services/searchService'
+import { SearchSortField, SearchSuggestion } from '../services/searchService'
 import { useAuthStore } from '../store/authStore'
 import CouponDetailsModal from './modals/CouponDetailsModal'
 
@@ -48,6 +48,15 @@ export default function Search() {
   // Refs
   const searchInputRef = useRef<HTMLInputElement>(null)
   const suggestionsTimeoutRef = useRef<NodeJS.Timeout>()
+
+  useEffect(() => {
+    // @ts-ignore
+    if (search.instanceId) {
+      // @ts-ignore
+      console.log(`🖼️ [Search.tsx] Rendered with useSearch instance: ${search.instanceId}, isSearching: ${search.isSearching}`);
+    }
+    // @ts-ignore
+  }, [search.instanceId, search.isSearching]);
   const locationTooltipRef = useRef<HTMLDivElement>(null)
 
   // Update local query when search query changes
@@ -153,8 +162,17 @@ export default function Search() {
   }
 
   // Handle suggestion selection
-  const handleSuggestionSelect = (suggestion: string) => {
-    performSearch(suggestion)
+  const handleSuggestionSelect = (suggestion: string | SearchSuggestion) => {
+    if (typeof suggestion === 'string') {
+      performSearch(suggestion);
+    } else {
+      if (suggestion.type === 'business' && suggestion.id) {
+        navigate(`/business/${suggestion.id}`, { state: { from: 'search', query: search.query } });
+        // Optional: Close suggestions or update query if needed
+      } else {
+        performSearch(suggestion.text);
+      }
+    }
   }
 
   // Handle coupon click to show modal
