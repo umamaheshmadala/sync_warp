@@ -485,14 +485,57 @@
 
 ---
 
+## Story 4.14: Offer Status Management 📝 NEW
+**What you'll see**: Core offer lifecycle status control with pause, terminate, archive, and delete actions.
+
+**User Experience**:
+- 📝 As a business owner, I want to delete offers (soft/hard based on status)
+- 📝 As a business owner, I want to duplicate successful offers with reset fields
+- 📝 As a business owner, I want to pause/resume offers temporarily
+- 📝 As a business owner, I want to terminate offers permanently
+- 📝 As a business owner, I want expired offers auto-archived
+
+**What will be built**:
+- Database: `deleted_at`, `pause_reason`, `terminate_reason` columns
+- Backend: Status transitions, soft delete logic, auto-archive trigger
+- Frontend: Offer actions menu, status badges, confirmation modals, status filters
+
+**Document**: `docs/stories/STORY_4.14_Offer_Lifecycle_Management.md`
+
+**Time Estimate**: 4-5 days
+
+---
+
+## Story 4.15: Offer Tracking & Display Enhancements 📝 NEW
+**What you'll see**: Enhanced tracking with audit codes, featured offers, and comprehensive logging.
+
+**User Experience**:
+- 📝 As a business owner, I want auto-generated audit codes for tracking
+- 📝 As a user, I want to see a short code on offer cards for identification
+- 📝 As a business owner, I want to save offers as drafts with auto-save
+- 📝 As a business owner, I want to feature top 3 offers on Overview
+- 📝 As a business owner, I want an audit log of all offer actions
+
+**What will be built**:
+- Database: `audit_code`, `custom_reference`, `is_featured`, `featured_priority` columns
+- Database: `offer_audit_log` table
+- Backend: Audit code generation function, logging function
+- Frontend: Short code display, auto-save, draft warnings, featured toggle, audit log viewer
+
+**Document**: `docs/stories/STORY_4.15_Offer_Tracking_Enhancements.md`
+
+**Time Estimate**: 4-5 days
+
+---
+
 ## Epic 4 Summary
 
 
-**Total Stories**: 11 stories (6 core + 4 enhancements + 1 engagement)
-**Status**: 🟢 **64% COMPLETE** - 6 core stories delivered, 1 enhancement complete, 4 stories specified
+**Total Stories**: 13 stories (6 core + 6 enhancements + 1 engagement)
+**Status**: 🟢 **54% COMPLETE** - 7 stories delivered, 6 stories specified
 **Prerequisites**: ✅ Epic 2 (Authentication) and ✅ Epic 3 (Navigation) - All met
 
-**Completed Stories (7/11)** - Core Platform + Enhancements:
+**Completed Stories (7/13)** - Core Platform + Enhancements:
 - ✅ Story 4.1: Business Registration & Profiles
 - ✅ Story 4.2: Product Catalog Management
 - ✅ Story 4.3: Coupon Creation & Management
@@ -501,14 +544,16 @@
 - ✅ Story 4.6: GPS Check-in System
 - ✅ **Story 4.9: Social Sharing Actions** (Jan 18, 2025)
 
-**Specified Stories (4/11)** - Ready for Implementation:
+**Specified Stories (6/13)** - Ready for Implementation:
 - 📝 Story 4.7: Product Display & Detail Pages (3-4 days)
 - 📝 Story 4.8: Review Display Integration (2-3 days)
 - 📝 Story 4.10: Storefront Minor Enhancements (1 day)
-- 📝 **Story 4.11: Follow Business** ✨ NEW (8 days) - **High Priority Engagement Feature**
+- 📝 Story 4.11: Follow Business (8 days) - **High Priority Engagement Feature**
+- 📝 **Story 4.14: Offer Status Management** ✨ NEW (4-5 days) - Delete, Pause, Terminate, Archive, Duplicate
+- 📝 **Story 4.15: Offer Tracking Enhancements** ✨ NEW (4-5 days) - Audit Codes, Featured, Draft Auto-Save, Audit Log
 
 **Completed Timeline**: 8 weeks (core stories) + 1 day (Story 4.9)
-**Remaining Effort**: 14-16 days (3 storefront enhancements + 1 engagement feature)
+**Remaining Effort**: 26-31 days (storefront enhancements + engagement + offer lifecycle)
 **User Impact**: Complete business platform with advanced customer-facing features, social sharing, and user engagement
 
 **🎆 Major Achievements**: 
