@@ -1,7 +1,7 @@
 // src/types/offers.ts
 // TypeScript interfaces for Business Offers system (Story 4.12)
 
-export type OfferStatus = 'draft' | 'active' | 'paused' | 'expired' | 'archived';
+export type OfferStatus = 'draft' | 'active' | 'paused' | 'expired' | 'archived' | 'terminated';
 
 export type ShareChannel = 'whatsapp' | 'facebook' | 'twitter' | 'in_app' | 'other';
 
@@ -13,6 +13,7 @@ export type LifecycleEventType =
   | 'extended'
   | 'duplicated'
   | 'archived'
+  | 'terminated'
   | 'deleted';
 
 export interface Offer {
@@ -21,11 +22,11 @@ export interface Offer {
   title: string;
   description: string | null;
   terms_conditions: string | null;
-  valid_from: string; // ISO date string
-  valid_until: string; // ISO date string
+  valid_from: string | null; // ISO date string (nullable for drafts)
+  valid_until: string | null; // ISO date string (nullable for drafts)
   created_at: string;
 
-  // New fields from Story 4.12
+  // New fields from Story 4.12 & 4.14
   status: OfferStatus;
   offer_code: string;
   icon_image_url: string | null;
@@ -36,6 +37,15 @@ export interface Offer {
   updated_at: string | null;
   activated_at: string | null;
   expired_at: string | null;
+  deleted_at: string | null;
+  pause_reason: string | null;
+  terminate_reason: string | null;
+
+  // New fields from Story 4.14 - 4.19 Enhancements
+  audit_code: string; // Unique tracking code
+  custom_reference: string | null;
+  is_featured: boolean;
+  featured_priority: number;
 
   // Relations (optional, populated with joins)
   business?: {
@@ -127,8 +137,8 @@ export interface OfferFormData {
   description: string;
   terms_conditions: string;
   icon_image_url: string | null;
-  valid_from: string;
-  valid_until: string;
+  valid_from: string | null;
+  valid_until: string | null;
   offer_type_id?: string;
 }
 

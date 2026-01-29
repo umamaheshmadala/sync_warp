@@ -1,5 +1,5 @@
 // src/hooks/useOffers.ts
-// React hook for managing Business Offers (Story 4.12)
+// React hook for managing Business Offers (Story 4.12 & 4.14)
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -30,13 +30,22 @@ interface UseOffersReturn {
 
   // CRUD operations
   createOffer: (data: OfferFormData) => Promise<Offer | null>;
-  updateOffer: (id: string, data: Partial<OfferFormData>) => Promise<Offer | null>;
+  updateOffer: (id: string, data: Partial<OfferFormData> & {
+    status?: OfferStatus;
+    pause_reason?: string | null;
+    terminate_reason?: string | null;
+  }) => Promise<Offer | null>;
   deleteOffer: (id: string) => Promise<boolean>;
 
   // Status management
   activateOffer: (id: string) => Promise<boolean>;
-  pauseOffer: (id: string) => Promise<boolean>;
+  pauseOffer: (id: string, reason?: string) => Promise<boolean>;
+  terminateOffer: (id: string, reason?: string) => Promise<boolean>;
+  resumeOffer: (id: string) => Promise<boolean>;
   archiveOffer: (id: string) => Promise<boolean>;
+  toggleFeatured: (id: string, isFeatured: boolean, priority?: number) => Promise<boolean>;
+
+  // Utilities
   duplicateOffer: (id: string) => Promise<Offer | null>;
   extendExpiry: (id: string, days: number) => Promise<boolean>;
 
@@ -82,6 +91,9 @@ export const useOffers = (options: UseOffersOptions = {}): UseOffersReturn => {
           )
         `, { count: 'exact' });
 
+      // Always filter out soft-deleted offers
+      query = query.is('deleted_at', null);
+
       // Apply business filter
       if (businessId) {
         query = query.eq('business_id', businessId);
@@ -90,7 +102,9 @@ export const useOffers = (options: UseOffersOptions = {}): UseOffersReturn => {
       // Apply additional filters
       if (filters.status) {
         if (Array.isArray(filters.status)) {
-          query = query.in('status', filters.status);
+          if (filters.status.length > 0) {
+            query = query.in('status', filters.status);
+          }
         } else {
           query = query.eq('status', filters.status);
         }
@@ -129,7 +143,7 @@ export const useOffers = (options: UseOffersOptions = {}): UseOffersReturn => {
     } finally {
       setIsLoading(false);
     }
-  }, [businessId, filters, sort, limit]);
+  }, [businessId, JSON.stringify(filters), JSON.stringify(sort), limit]);
 
   // Refresh current page
   const refreshOffers = useCallback(() => fetchOffers(currentPage), [fetchOffers, currentPage]);
@@ -154,6 +168,7 @@ export const useOffers = (options: UseOffersOptions = {}): UseOffersReturn => {
           icon_image_url: data.icon_image_url,
           valid_from: data.valid_from,
           valid_until: data.valid_until,
+          offer_type_id: data.offer_type_id || null,
           status: 'active', // Publish as active immediately
         })
         .select()
@@ -176,49 +191,87 @@ export const useOffers = (options: UseOffersOptions = {}): UseOffersReturn => {
   // Update existing offer
   const updateOffer = useCallback(async (
     id: string,
-    data: Partial<OfferFormData> & { status?: OfferStatus }
+    data: Partial<OfferFormData> & {
+      status?: OfferStatus;
+      pause_reason?: string | null;
+      terminate_reason?: string | null;
+    }
   ): Promise<Offer | null> => {
-    setIsLoading(true);
+    // Don't set global loading to avoid UI flash
     setError(null);
 
     try {
-      const { data: offer, error: updateError } = await supabase
+      const { data: updatedOffer, error: updateError } = await supabase
         .from('offers')
         .update({
           ...data,
           updated_at: new Date().toISOString(),
         })
         .eq('id', id)
-        .select()
+        .select(`
+          *,
+          business:businesses(id, business_name),
+          offer_type:offer_types(
+            *,
+            category:offer_categories(*)
+          )
+        `)
         .single();
 
       if (updateError) throw updateError;
 
-      // Refresh the list to get updated data
-      await refreshOffers();
+      // Update local state immediately
+      setOffers(prev => prev.map(o => o.id === id ? updatedOffer : o));
 
-      return offer;
+      return updatedOffer;
     } catch (err: any) {
       setError(err.message || 'Failed to update offer');
       console.error('Error updating offer:', err);
       return null;
-    } finally {
-      setIsLoading(false);
     }
   }, []);
 
-  // Delete offer
+  // Helper helper to log activity
+  const logActivity = useCallback(async (id: string, action: string, metadata: any = {}) => {
+    try {
+      await supabase.rpc('log_offer_activity', {
+        p_offer_id: id,
+        p_action: action,
+        p_metadata: metadata
+      });
+    } catch (e) {
+      console.warn('Failed to log activity', e);
+    }
+  }, []);
+
+  // Delete offer (Soft Delete)
   const deleteOffer = useCallback(async (id: string): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const { error: deleteError } = await supabase
-        .from('offers')
-        .delete()
-        .eq('id', id);
+      // Check if draft for hard delete
+      const { data: current, error: fetchError } = await supabase.from('offers').select('status').eq('id', id).single();
 
-      if (deleteError) throw deleteError;
+      if (fetchError) throw fetchError;
+
+      const isDraft = current?.status === 'draft';
+
+      if (isDraft) {
+        // Hard Delete (Drafts are permanently removed)
+        const { error: delError } = await supabase.from('offers').delete().eq('id', id);
+        if (delError) throw delError;
+      } else {
+        // Soft Delete (Active/Other offers are marked as deleted)
+        const { error: softError } = await supabase
+          .from('offers')
+          .update({ deleted_at: new Date().toISOString() })
+          .eq('id', id);
+
+        if (softError) throw softError;
+
+        await logActivity(id, 'deleted', { type: 'soft_delete' });
+      }
 
       // Remove from local state
       setOffers(prev => prev.filter(o => o.id !== id));
@@ -227,30 +280,89 @@ export const useOffers = (options: UseOffersOptions = {}): UseOffersReturn => {
       return true;
     } catch (err: any) {
       setError(err.message || 'Failed to delete offer');
-      console.error('Error deleting offer:', err);
+      console.error('Error in deleteOffer:', err);
       return false;
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [logActivity]);
 
   // Activate offer
   const activateOffer = useCallback(async (id: string): Promise<boolean> => {
     const result = await updateOffer(id, { status: 'active' } as any);
+    if (result) await logActivity(id, 'activated');
     return result !== null;
-  }, [updateOffer]);
+  }, [updateOffer, logActivity]);
 
-  // Pause offer
-  const pauseOffer = useCallback(async (id: string): Promise<boolean> => {
-    const result = await updateOffer(id, { status: 'paused' } as any);
+  // Pause offer (Story 4.14)
+  const pauseOffer = useCallback(async (id: string, reason?: string): Promise<boolean> => {
+    const result = await updateOffer(id, {
+      status: 'paused',
+      pause_reason: reason || null
+    } as any);
+
+    if (result) {
+      await logActivity(id, 'paused', { reason });
+    }
     return result !== null;
-  }, [updateOffer]);
+  }, [updateOffer, logActivity]);
+
+  // Terminate offer (Story 4.14)
+  const terminateOffer = useCallback(async (id: string, reason?: string): Promise<boolean> => {
+    const result = await updateOffer(id, {
+      status: 'terminated',
+      terminate_reason: reason || null
+    } as any);
+
+    if (result) {
+      await logActivity(id, 'terminated', { reason });
+    }
+    return result !== null;
+  }, [updateOffer, logActivity]);
+
+  // Resume offer (Story 4.14: Paused -> Active)
+  const resumeOffer = useCallback(async (id: string): Promise<boolean> => {
+    const result = await updateOffer(id, {
+      status: 'active',
+      pause_reason: null // Clear pause reason on resume
+    } as any);
+
+    if (result) await logActivity(id, 'resumed');
+    return result !== null;
+  }, [updateOffer, logActivity]);
 
   // Archive offer
   const archiveOffer = useCallback(async (id: string): Promise<boolean> => {
     const result = await updateOffer(id, { status: 'archived' } as any);
+    if (result) await logActivity(id, 'archived');
     return result !== null;
-  }, [updateOffer]);
+  }, [updateOffer, logActivity]);
+
+  // Toggle Featured (Story 4.18)
+  const toggleFeatured = useCallback(async (id: string, isFeatured: boolean, priority: number = 0): Promise<boolean> => {
+    // No global loading
+    try {
+      const { error } = await supabase
+        .from('offers')
+        .update({
+          is_featured: isFeatured,
+          featured_priority: priority
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      await logActivity(id, isFeatured ? 'featured' : 'unfeatured');
+
+      // Update local state
+      setOffers(prev => prev.map(o => o.id === id ? { ...o, is_featured: isFeatured, featured_priority: priority } : o));
+
+      return true;
+    } catch (err: any) {
+      setError(err.message);
+      return false;
+    }
+  }, [logActivity]);
 
   // Extend offer expiry
   const extendExpiry = useCallback(async (id: string, days: number): Promise<boolean> => {
@@ -266,6 +378,7 @@ export const useOffers = (options: UseOffersOptions = {}): UseOffersReturn => {
 
       if (rpcError) throw rpcError;
 
+      await logActivity(id, 'extended', { days });
       await refreshOffers();
       return true;
     } catch (err: any) {
@@ -275,11 +388,11 @@ export const useOffers = (options: UseOffersOptions = {}): UseOffersReturn => {
     } finally {
       setIsLoading(false);
     }
-  }, [refreshOffers]);
+  }, [refreshOffers, logActivity]);
 
-  // Duplicate offer
+  // Duplicate offer (Story 4.14 Enhanced)
   const duplicateOffer = useCallback(async (id: string): Promise<Offer | null> => {
-    setIsLoading(true);
+    // No global loading
     setError(null);
 
     try {
@@ -292,7 +405,9 @@ export const useOffers = (options: UseOffersOptions = {}): UseOffersReturn => {
 
       if (fetchError) throw fetchError;
 
-      // Create duplicate with modified title and new dates
+      // Req #2 Copied fields: title, description, discount, T&C, type, category, target, icon
+      // Req #3-5 Reset fields: dates (NULL), analytics (0), status (Draft)
+
       const { data: duplicate, error: createError } = await supabase
         .from('offers')
         .insert({
@@ -301,26 +416,43 @@ export const useOffers = (options: UseOffersOptions = {}): UseOffersReturn => {
           description: original.description,
           terms_conditions: original.terms_conditions,
           icon_image_url: original.icon_image_url,
-          valid_from: new Date().toISOString(),
-          valid_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
+          offer_type_id: original.offer_type_id,
+          // Explicitly resetting:
+          valid_from: null,
+          valid_until: null,
           status: 'draft',
+          // Reset new fields
+          audit_code: null, // Let DB trigger generate new one
+          is_featured: false,
+          featured_priority: 0,
+          custom_reference: null // Or copy? Usually reset reference
         })
-        .select()
+        .select(`
+          *,
+          business:businesses(id, business_name),
+          offer_type:offer_types(
+            *,
+            category:offer_categories(*)
+          )
+        `)
         .single();
 
       if (createError) throw createError;
 
-      await refreshOffers();
+      // Log the duplication on the ORIGINAL offer (to show it was copied)
+      await logActivity(id, 'duplicated', { new_offer_id: duplicate.id });
+
+      // Update local state - Prepend or append depending on sort? Default is newest first.
+      setOffers(prev => [duplicate, ...prev]);
+      setTotalCount(prev => prev + 1);
 
       return duplicate;
     } catch (err: any) {
       setError(err.message || 'Failed to duplicate offer');
       console.error('Error duplicating offer:', err);
       return null;
-    } finally {
-      setIsLoading(false);
     }
-  }, [refreshOffers]);
+  }, [logActivity]);
 
   // Auto-fetch on mount if enabled
   useEffect(() => {
@@ -343,7 +475,12 @@ export const useOffers = (options: UseOffersOptions = {}): UseOffersReturn => {
 
     activateOffer,
     pauseOffer,
+    terminateOffer,
+    resumeOffer,
     archiveOffer,
+
+    toggleFeatured,
+
     extendExpiry,
     duplicateOffer,
 

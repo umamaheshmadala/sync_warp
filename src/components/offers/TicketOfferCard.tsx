@@ -8,6 +8,7 @@ interface TicketOfferCardProps {
     offerType: string;
     offerCode: string;
     validUntil?: string;
+    auditCode?: string; // New prop for Story 4.17
     color?: string; // Optional hex or class override, defaults to a trendy blue/purple
     className?: string;
 }
@@ -18,9 +19,25 @@ export function TicketOfferCard({
     offerType,
     offerCode,
     validUntil,
+    auditCode,
     color = "bg-indigo-600",
     className
 }: TicketOfferCardProps) {
+
+    // Helper to extract short code for display: AUDIT-TB1-202601-0042 -> 01-0042
+    const getShortAuditCode = (fullCode?: string) => {
+        if (!fullCode) return null;
+        const parts = fullCode.split('-');
+        if (parts.length < 4) return fullCode; // Fallback
+        // parts[2] = 202601 (YYYYMM), parts[3] = 0042 (SEQ)
+        const datePart = parts[2];
+        const seqPart = parts[3];
+        // Extract MM from YYYYMM (last 2 chars)
+        const month = datePart.slice(-2);
+        return `${month}-${seqPart}`;
+    };
+
+    const shortCode = getShortAuditCode(auditCode);
 
     // Fallback for barcode visual
     const BarcodeStrip = () => (
@@ -36,7 +53,7 @@ export function TicketOfferCard({
     );
 
     return (
-        <div className={cn("relative w-full max-w-lg filter drop-shadow-md transition-transform hover:scale-[1.01]", className)}>
+        <div className={cn("relative w-full max-w-lg filter drop-shadow-md", className)}>
             <div className="flex h-28 w-full overflow-hidden rounded-xl">
 
                 {/* LEFT STUB - Width reduced by ~30% (25% -> 18%) */}
@@ -112,6 +129,16 @@ export function TicketOfferCard({
                         </div>
 
                         <div className="w-full flex flex-col items-center justify-end relative pb-0">
+                            {/* Short Audit Code Display (Story 4.17) */}
+                            {shortCode && (
+                                <div
+                                    className="mb-1 transform -rotate-90 origin-center text-[9px] font-mono text-gray-400 tracking-wider whitespace-nowrap cursor-help z-10"
+                                    title={`Audit ID: ${shortCode}`}
+                                >
+                                    {shortCode}
+                                </div>
+                            )}
+
                             {/* Barcode - Pushed to bottom or hidden if obstructed */}
                             <div className="transform rotate-90 scale-x-125 scale-y-75 opacity-20">
                                 <BarcodeStrip />

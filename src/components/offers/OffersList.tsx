@@ -1,14 +1,17 @@
 // =====================================================
-// Story 4.12: Business Offers Management
-// Component: OffersList - Grid display of offers
+// Story 4.12 & 4.14: Business Offers Management
+// Component: OffersList - Grid display of offers with Lifecycle Management
 // =====================================================
 
 import React, { useState } from 'react';
-import { Filter, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Filter, Plus, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { useOffers } from '../../hooks/useOffers';
-import type { OfferFilters, OfferSortOptions, OfferStatus } from '../../types/offers';
+import { Offer, OfferFilters, OfferSortOptions, OfferStatus } from '../../types/offers';
 import { OfferCard } from './OfferCard';
 import { EmptyOffersState } from './EmptyOffersState';
+import { OfferActionModal, OfferActionMode } from './modals/OfferActionModal';
+import { OfferAuditLogPanel } from './OfferAuditLogPanel';
+import { OfferActionType } from './OfferActionsMenu';
 
 interface OffersListProps {
   businessId: string;
@@ -18,7 +21,7 @@ interface OffersListProps {
   onViewDetails?: (offer: any) => void;
   onViewAnalytics?: (offer: any) => void;
   onExtendExpiry?: (offer: any) => void;
-  onDuplicate?: (offer: any) => void;
+  onDuplicate?: (offer: any) => void; // Optional override, otherwise internal logic
   showActions?: boolean;
 }
 
@@ -38,6 +41,12 @@ export function OffersList({
   const [sort, setSort] = useState<OfferSortOptions>({ field: 'created_at', direction: 'desc' });
   const [showFilters, setShowFilters] = useState(false);
 
+  // Modal State
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<OfferActionMode>('delete');
+  const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+
   // Use offers hook
   const {
     offers,
@@ -46,8 +55,12 @@ export function OffersList({
     fetchOffers,
     activateOffer,
     pauseOffer,
+    resumeOffer,
+    terminateOffer,
     archiveOffer,
     deleteOffer,
+    duplicateOffer: hookDuplicateOffer,
+    toggleFeatured,
     currentPage,
     totalPages,
     hasMore,
@@ -61,12 +74,12 @@ export function OffersList({
 
   // Status filter options
   const statusOptions: { value: OfferStatus | 'all'; label: string }[] = [
-    { value: 'all', label: 'All Offers' },
+    { value: 'all', label: 'All' },
     { value: 'active', label: 'Active' },
-    { value: 'draft', label: 'Draft' },
+    { value: 'draft', label: 'Drafts' },
     { value: 'paused', label: 'Paused' },
-    { value: 'expired', label: 'Expired' },
     { value: 'archived', label: 'Archived' },
+    { value: 'terminated', label: 'Terminated' },
   ];
 
   // Sort options
@@ -81,19 +94,110 @@ export function OffersList({
 
   const handleStatusFilter = (status: OfferStatus | 'all') => {
     if (status === 'all') {
-      setFilters({ business_id: businessId });
+      const { status: _, ...rest } = filters;
+      setFilters({ ...rest });
     } else {
       setFilters({ ...filters, status });
     }
   };
 
-  const handleSortChange = (newSort: OfferSortOptions) => {
-    setSort(newSort);
-  };
-
   const handlePageChange = (page: number) => {
     fetchOffers(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Action Handlers
+  const openActionModal = (offer: Offer, mode: OfferActionMode) => {
+    setSelectedOffer(offer);
+    setModalMode(mode);
+    setModalOpen(true);
+  };
+
+  const handleModalConfirm = async (reason?: string) => {
+    if (!selectedOffer) return;
+    setIsProcessing(true);
+    try {
+      let success = false;
+      switch (modalMode) {
+        case 'pause':
+          success = await pauseOffer(selectedOffer.id, reason);
+          break;
+        case 'terminate':
+          success = await terminateOffer(selectedOffer.id, reason);
+          break;
+        case 'archive':
+          success = await archiveOffer(selectedOffer.id);
+          break;
+        case 'delete':
+          success = await deleteOffer(selectedOffer.id);
+          break;
+      }
+      if (success) {
+        setModalOpen(false);
+        setSelectedOffer(null);
+      }
+    } catch (e) {
+      console.error('Action failed', e);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleDuplicate = async (offer: Offer) => {
+    if (onDuplicate) {
+      onDuplicate(offer);
+    } else {
+      await hookDuplicateOffer(offer.id);
+    }
+  };
+
+  // Featured & History Handlers (Story 4.18 & 4.19)
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyOffer, setHistoryOffer] = useState<Offer | null>(null);
+
+  const handleToggleFeatured = async (offer: Offer) => {
+    await toggleFeatured(offer.id, !offer.is_featured);
+  };
+
+  const handleViewHistory = (offer: Offer) => {
+    setHistoryOffer(offer);
+    setHistoryOpen(true);
+  };
+
+  // Unified Action Handler
+  const handleAction = (action: OfferActionType, offer: Offer) => {
+    switch (action) {
+      case 'edit':
+        if (onEditOffer) onEditOffer(offer.id);
+        break;
+      case 'pause':
+        openActionModal(offer, 'pause');
+        break;
+      case 'resume':
+        resumeOffer(offer.id);
+        break;
+      case 'terminate':
+        openActionModal(offer, 'terminate');
+        break;
+      case 'archive':
+        openActionModal(offer, 'archive');
+        break;
+      case 'delete':
+        openActionModal(offer, 'delete');
+        break;
+      case 'duplicate':
+        handleDuplicate(offer);
+        break;
+      case 'toggle_featured':
+        handleToggleFeatured(offer);
+        break;
+      case 'view_history':
+        handleViewHistory(offer);
+        break;
+      case 'view_details':
+        if (onViewDetails) onViewDetails(offer);
+        break;
+    }
   };
 
   if (error) {
@@ -106,70 +210,60 @@ export function OffersList({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      {/* Header & filters controls */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Offers</h2>
           <p className="text-gray-600 mt-1">
-            {offers.length} {offers.length === 1 ? 'offer' : 'offers'} found
+            Manage your offers lifecycle
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-colors ${showFilters ? 'bg-purple-50 border-purple-200 text-purple-700' : 'border-gray-300 hover:bg-gray-50'}`}
           >
             <Filter className="w-4 h-4" />
             Filters
           </button>
+
+          {onCreateOffer && (
+            <button
+              onClick={onCreateOffer}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors shadow-sm"
+            >
+              <Plus className="w-4 h-4" />
+              Create Offer
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Filters Panel */}
-      {showFilters && (
-        <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
-          {/* Status Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Status
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {statusOptions.map((option) => (
+      {/* Tabs / Filters Panel */}
+      {showFilters || true ? ( // Always show tabs for better UX for now
+        <div className="border-b border-gray-200 overflow-x-auto">
+          <nav className="-mb-px flex space-x-4" aria-label="Tabs">
+            {statusOptions.map((option) => {
+              const isActive = (option.value === 'all' && !filters.status) || filters.status === option.value;
+              return (
                 <button
                   key={option.value}
                   onClick={() => handleStatusFilter(option.value)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    (option.value === 'all' && !filters.status) || filters.status === option.value
-                      ? 'bg-purple-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
+                  className={`
+                                whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors
+                                ${isActive
+                      ? 'border-purple-500 text-purple-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}
+                            `}
                 >
                   {option.label}
                 </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Sort */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Sort By
-            </label>
-            <select
-              value={JSON.stringify(sort)}
-              onChange={(e) => handleSortChange(JSON.parse(e.target.value))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            >
-              {sortOptions.map((option) => (
-                <option key={option.label} value={JSON.stringify(option.value)}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
+              )
+            })}
+          </nav>
         </div>
-      )}
+      ) : null}
 
       {/* Loading State */}
       {isLoading && (
@@ -180,61 +274,79 @@ export function OffersList({
       )}
 
       {/* Empty State */}
-      {!isLoading && offers.length === 0 && <EmptyOffersState />}
+      {!isLoading && offers.length === 0 && (
+        <div className="py-8">
+          <EmptyOffersState
+            onCreate={onCreateOffer}
+            message={filters.status ? `No ${filters.status} offers found` : undefined}
+          />
+        </div>
+      )}
 
       {/* Offers Grid */}
       {!isLoading && offers.length > 0 && (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {offers.map((offer) => (
-              <OfferCard
-                key={offer.id}
-                offer={offer}
-                onShare={onShareOffer ? () => onShareOffer(offer.id) : undefined}
-                onEdit={onEditOffer ? () => onEditOffer(offer.id) : undefined}
-                onActivate={showActions ? () => activateOffer(offer.id) : undefined}
-                onPause={showActions ? () => pauseOffer(offer.id) : undefined}
-                onArchive={showActions ? () => archiveOffer(offer.id) : undefined}
-                onDelete={showActions ? () => deleteOffer(offer.id) : undefined}
-                onViewDetails={onViewDetails ? () => onViewDetails(offer) : undefined}
-                onViewAnalytics={onViewAnalytics ? () => onViewAnalytics(offer) : undefined}
-                onExtendExpiry={onExtendExpiry ? () => onExtendExpiry(offer) : undefined}
-                onDuplicate={onDuplicate ? () => onDuplicate(offer) : undefined}
-                showActions={showActions}
-                showStats={true}
-              />
-            ))}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {offers.map((offer) => (
+            <OfferCard
+              key={offer.id}
+              offer={offer}
+              onAction={showActions ? handleAction : undefined}
+              onViewDetails={onViewDetails ? () => onViewDetails(offer) : undefined}
+              showActions={showActions}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+          <p className="text-sm text-gray-600">
+            Page {currentPage} of {totalPages}
+          </p>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              Previous
+            </button>
+
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={!hasMore}
+              className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Next
+              <ChevronRight className="w-4 h-4" />
+            </button>
           </div>
+        </div>
+      )}
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-gray-600">
-                Page {currentPage} of {totalPages}
-              </p>
+      {/* Confirmation Modal */}
+      {selectedOffer && (
+        <OfferActionModal
+          isOpen={modalOpen}
+          mode={modalMode}
+          offer={selectedOffer}
+          onClose={() => { setModalOpen(false); setSelectedOffer(null); }}
+          onConfirm={handleModalConfirm}
+          isProcessing={isProcessing}
+        />
+      )}
 
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                  Previous
-                </button>
-
-                <button
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={!hasMore}
-                  className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  Next
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          )}
-        </>
+      {/* History Panel */}
+      {historyOffer && (
+        <OfferAuditLogPanel
+          isOpen={historyOpen}
+          onClose={() => { setHistoryOpen(false); setHistoryOffer(null); }}
+          offerId={historyOffer.id}
+          offerTitle={historyOffer.title}
+        />
       )}
     </div>
   );

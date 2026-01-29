@@ -13,7 +13,11 @@ import { useAuthStore } from '@/store/authStore';
 import { getCategoryIcon } from '@/utils/iconMap';
 import { FavoriteOfferButton } from '@/components/favorites/FavoriteOfferButton';
 import { OfferCard } from '@/components/offers/OfferCard';
+import { OfferActionType } from '@/components/offers/OfferActionsMenu';
 import OfferDetailModal from '@/components/offers/OfferDetailModal';
+import { OfferAuditLogPanel } from '@/components/offers/OfferAuditLogPanel';
+import { useOffers } from '@/hooks/useOffers';
+import { DeleteConfirmationModal } from '../common/DeleteConfirmationModal';
 
 
 
@@ -53,6 +57,109 @@ export default function FeaturedOffers({
   const [showCreateForm, setShowCreateForm] = useState(false);
   const { user } = useAuthStore();
   const [searchParams, setSearchParams] = useSearchParams();
+
+  // Audit Log State
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyOffer, setHistoryOffer] = useState<Offer | null>(null);
+
+  // Delete Modal State
+  const [deleteTarget, setDeleteTarget] = useState<Offer | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Use hook for actions
+  const { toggleFeatured, pauseOffer, resumeOffer, terminateOffer, archiveOffer, deleteOffer, duplicateOffer } = useOffers({
+    businessId,
+    autoFetch: false
+  });
+
+  const handleAction = async (action: OfferActionType, offer: Offer) => {
+    switch (action) {
+      case 'edit':
+        setEditingOffer(offer);
+        break;
+      case 'duplicate':
+        const newOffer = await duplicateOffer(offer.id);
+        if (newOffer) {
+          setOffers(prev => [newOffer, ...prev]);
+          toast.success('Offer duplicated successfully');
+        }
+        break;
+      case 'pause':
+        const paused = await pauseOffer(offer.id, 'Paused from Profile');
+        if (paused) {
+          setOffers(prev => prev.map(o => o.id === offer.id ? { ...o, status: 'paused' } : o));
+          toast.success('Offer paused');
+        }
+        break;
+      case 'resume':
+        const resumed = await resumeOffer(offer.id);
+        if (resumed) {
+          setOffers(prev => prev.map(o => o.id === offer.id ? { ...o, status: 'active' } : o));
+          toast.success('Offer resumed');
+        }
+        break;
+      case 'terminate':
+        const terminated = await terminateOffer(offer.id, 'Terminated from Profile');
+        if (terminated) {
+          // If we show terminated offers, update status. If not, maybe filter out? 
+          // Current logic shows active/paused/draft. Terminated might disappear depending on visibility rules.
+          // Owners usually see all? Let's verify visibility logic.
+          // The fetch query filters: in('status', ['active', 'draft', 'paused']) for owners.
+          // So 'terminated' should likely be REMOVED from the list.
+          setOffers(prev => prev.filter(o => o.id !== offer.id));
+          toast.success('Offer terminated');
+        }
+        break;
+      case 'archive':
+        const archived = await archiveOffer(offer.id);
+        if (archived) {
+          // Archived is also not in the 'owner' main query set usually? 
+          // Query: in('status', ['active', 'draft', 'paused'])
+          // So remove it.
+          setOffers(prev => prev.filter(o => o.id !== offer.id));
+          toast.success('Offer archived');
+        }
+        break;
+      case 'delete':
+        setDeleteTarget(offer);
+        break;
+      case 'toggle_featured':
+        const featured = await toggleFeatured(offer.id, !offer.is_featured);
+        if (featured) {
+          setOffers(prev => prev.map(o => o.id === offer.id ? { ...o, is_featured: !offer.is_featured } : o));
+          // toast handled by hook? No, hook logs but maybe no toast. FeaturedOffers usually doesn't toast, but we can.
+        }
+        break;
+      case 'view_history':
+        setHistoryOffer(offer);
+        setHistoryOpen(true);
+        break;
+      case 'view_details':
+        setSelectedOffer(offer);
+        break;
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+
+    setIsDeleting(true);
+    try {
+      const success = await deleteOffer(deleteTarget.id);
+      if (success) {
+        toast.success(deleteTarget.status === 'draft' ? 'Draft deleted successfully' : 'Offer deleted successfully');
+        // Update local state
+        setOffers(prev => prev.filter(o => o.id !== deleteTarget.id));
+        setTotalCount(prev => prev - 1);
+      }
+    } catch (error) {
+      console.error('Delete failed:', error);
+      toast.error('Failed to delete offer');
+    } finally {
+      setIsDeleting(false);
+      setDeleteTarget(null);
+    }
+  };
 
   // Helper to calculate days remaining
   const getDaysRemaining = (dateString: string) => {
@@ -139,7 +246,8 @@ export default function FeaturedOffers({
         .from('offers')
         .select('*', { count: 'exact', head: true })
         .eq('business_id', businessId)
-        .eq('status', 'active');
+        .eq('status', 'active')
+        .is('deleted_at', null);
 
       setTotalCount(count || 0);
 
@@ -155,17 +263,19 @@ export default function FeaturedOffers({
           )
         `)
         .eq('business_id', businessId)
+        .is('deleted_at', null)
         .order('created_at', { ascending: false });
 
       if (isOwner) {
-        // Show Active, Draft, and Paused, but exclude Expired.
-        // Also filter out offers that have passed their validity date
+        // Show Active, Draft, and Paused
+        // Allow valid_until to be future date OR null (no expiry)
         query = query.in('status', ['active', 'draft', 'paused'])
-          .gte('valid_until', new Date().toISOString());
+          .or(`valid_until.gte.${new Date().toISOString()},valid_until.is.null`);
       } else {
         // Consumers see only active, non-expired offers
+        // Allow valid_until to be future date OR null (no expiry)
         query = query.eq('status', 'active')
-          .gte('valid_until', new Date().toISOString());
+          .or(`valid_until.gte.${new Date().toISOString()},valid_until.is.null`);
       }
 
       if (compact) {
@@ -261,10 +371,8 @@ export default function FeaturedOffers({
                 <OfferCard
                   offer={offer}
                   onViewDetails={(o) => setSelectedOffer(o)}
-                  onEdit={(o) => setEditingOffer(o)}
-                  onViewAnalytics={isOwner ? (o) => console.log('View analytics', o.id) : undefined}
+                  onAction={isOwner ? handleAction : undefined}
                   showActions={isOwner}
-                  showStats={isOwner}
                 />
               </div>
             );
@@ -386,6 +494,29 @@ export default function FeaturedOffers({
           </div>
         </div>
         , document.body)}
+
+      {/* Audit History Panel */}
+      {historyOffer && (
+        <OfferAuditLogPanel
+          isOpen={historyOpen}
+          onClose={() => { setHistoryOpen(false); setHistoryOffer(null); }}
+          offerId={historyOffer.id}
+          offerTitle={historyOffer.title}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={!!deleteTarget}
+        onClose={() => !isDeleting && setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+        title={deleteTarget?.status === 'draft' ? 'Delete Draft Offer' : 'Delete Active Offer'}
+        message={deleteTarget?.status === 'draft'
+          ? `Are you sure you want to permanently delete "${deleteTarget.title}"? This action cannot be undone.`
+          : `Are you sure you want to delete "${deleteTarget?.title}"? This will soft-delete the offer and remove it from public view.`}
+        isHardDelete={deleteTarget?.status === 'draft'}
+        isLoading={isDeleting}
+      />
     </div >
   );
 }

@@ -263,7 +263,9 @@ export function CreateOfferForm({
       if (!error) offer = newDraft;
     }
 
-    if (onCancel) {
+    if (onComplete && offer) {
+      onComplete(offer.id);
+    } else if (onCancel) {
       onCancel();
     }
   };

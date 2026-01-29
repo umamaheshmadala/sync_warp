@@ -96,7 +96,7 @@ const AdCarousel: React.FC = () => {
 
       {/* Indicators - Desktop Only, Overlay */}
       {slots.length > 1 && (
-        <div className="absolute bottom-4 left-0 right-0 z-20 hidden md:flex justify-center space-x-2">
+        <div className="absolute bottom-1 left-0 right-0 z-20 hidden md:flex justify-center space-x-2">
           {slots.map((_, index) => (
             <button
               key={index}
@@ -104,12 +104,16 @@ const AdCarousel: React.FC = () => {
                 setAutoplay(false);
                 setCurrentIndex(index);
               }}
-              className={`h-2 rounded-full transition-all shadow-sm ${index === currentIndex
-                ? 'w-8 bg-white'
-                : 'w-2 bg-white/50 hover:bg-white/75'
-                }`}
+              className="py-1 px-2 group focus:outline-none"
               aria-label={`Go to slide ${index + 1}`}
-            />
+            >
+              <div
+                className={`h-[5px] rounded-sm transition-all duration-300 ${index === currentIndex
+                  ? 'w-[25px] bg-white opacity-100'
+                  : 'w-[25px] bg-white/50 group-hover:bg-white/80'
+                  }`}
+              />
+            </button>
           ))}
         </div>
       )}

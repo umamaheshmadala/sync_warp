@@ -13,7 +13,12 @@ import { Gift } from 'lucide-react';
  * - Friendly icon and message
  * - Encourages users to check back later
  */
-export function EmptyOffersState() {
+interface EmptyOffersStateProps {
+  onCreate?: () => void;
+  message?: string;
+}
+
+export function EmptyOffersState({ onCreate, message }: EmptyOffersStateProps) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-12">
       <div className="text-center max-w-md mx-auto">
@@ -26,13 +31,23 @@ export function EmptyOffersState() {
 
         {/* Title */}
         <h3 className="text-xl font-semibold text-gray-900 mb-2">
-          No Offers Available
+          {message || 'No Offers Available'}
         </h3>
 
         {/* Description */}
-        <p className="text-gray-600 leading-relaxed">
+        <p className="text-gray-600 leading-relaxed mb-6">
           This business hasn't posted any offers yet. Check back later for exciting deals and promotions!
         </p>
+
+        {onCreate && (
+          <button
+            onClick={onCreate}
+            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+          >
+            <Gift className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+            Create First Offer
+          </button>
+        )}
       </div>
     </div>
   );
