@@ -17,7 +17,7 @@ import { OfferActionType } from '@/components/offers/OfferActionsMenu';
 import OfferDetailModal from '@/components/offers/OfferDetailModal';
 import { OfferAuditLogPanel } from '@/components/offers/OfferAuditLogPanel';
 import { useOffers } from '@/hooks/useOffers';
-import { DeleteConfirmationModal } from '../common/DeleteConfirmationModal';
+import { OfferActionModal, OfferActionMode } from '@/components/offers/modals/OfferActionModal';
 
 
 
@@ -62,9 +62,11 @@ export default function FeaturedOffers({
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyOffer, setHistoryOffer] = useState<Offer | null>(null);
 
-  // Delete Modal State
-  const [deleteTarget, setDeleteTarget] = useState<Offer | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+  // Action Modal State
+  const [actionModalOpen, setActionModalOpen] = useState(false);
+  const [actionModalMode, setActionModalMode] = useState<OfferActionMode>('delete');
+  const [actionTargetOffer, setActionTargetOffer] = useState<Offer | null>(null);
+  const [isProcessingAction, setIsProcessingAction] = useState(false);
 
   // Use hook for actions
   const { toggleFeatured, pauseOffer, resumeOffer, terminateOffer, archiveOffer, deleteOffer, duplicateOffer } = useOffers({
@@ -85,11 +87,9 @@ export default function FeaturedOffers({
         }
         break;
       case 'pause':
-        const paused = await pauseOffer(offer.id, 'Paused from Profile');
-        if (paused) {
-          setOffers(prev => prev.map(o => o.id === offer.id ? { ...o, status: 'paused' } : o));
-          toast.success('Offer paused');
-        }
+        setActionTargetOffer(offer);
+        setActionModalMode('pause');
+        setActionModalOpen(true);
         break;
       case 'resume':
         const resumed = await resumeOffer(offer.id);
@@ -99,35 +99,24 @@ export default function FeaturedOffers({
         }
         break;
       case 'terminate':
-        const terminated = await terminateOffer(offer.id, 'Terminated from Profile');
-        if (terminated) {
-          // If we show terminated offers, update status. If not, maybe filter out? 
-          // Current logic shows active/paused/draft. Terminated might disappear depending on visibility rules.
-          // Owners usually see all? Let's verify visibility logic.
-          // The fetch query filters: in('status', ['active', 'draft', 'paused']) for owners.
-          // So 'terminated' should likely be REMOVED from the list.
-          setOffers(prev => prev.filter(o => o.id !== offer.id));
-          toast.success('Offer terminated');
-        }
+        setActionTargetOffer(offer);
+        setActionModalMode('terminate');
+        setActionModalOpen(true);
         break;
       case 'archive':
-        const archived = await archiveOffer(offer.id);
-        if (archived) {
-          // Archived is also not in the 'owner' main query set usually? 
-          // Query: in('status', ['active', 'draft', 'paused'])
-          // So remove it.
-          setOffers(prev => prev.filter(o => o.id !== offer.id));
-          toast.success('Offer archived');
-        }
+        setActionTargetOffer(offer);
+        setActionModalMode('archive');
+        setActionModalOpen(true);
         break;
       case 'delete':
-        setDeleteTarget(offer);
+        setActionTargetOffer(offer);
+        setActionModalMode('delete');
+        setActionModalOpen(true);
         break;
       case 'toggle_featured':
         const featured = await toggleFeatured(offer.id, !offer.is_featured);
         if (featured) {
           setOffers(prev => prev.map(o => o.id === offer.id ? { ...o, is_featured: !offer.is_featured } : o));
-          // toast handled by hook? No, hook logs but maybe no toast. FeaturedOffers usually doesn't toast, but we can.
         }
         break;
       case 'view_history':
@@ -140,24 +129,52 @@ export default function FeaturedOffers({
     }
   };
 
-  const handleConfirmDelete = async () => {
-    if (!deleteTarget) return;
+  const handleModalConfirm = async (reason?: string) => {
+    if (!actionTargetOffer) return;
 
-    setIsDeleting(true);
+    setIsProcessingAction(true);
     try {
-      const success = await deleteOffer(deleteTarget.id);
-      if (success) {
-        toast.success(deleteTarget.status === 'draft' ? 'Draft deleted successfully' : 'Offer deleted successfully');
-        // Update local state
-        setOffers(prev => prev.filter(o => o.id !== deleteTarget.id));
-        setTotalCount(prev => prev - 1);
+      let success = false;
+      const offerId = actionTargetOffer.id;
+
+      switch (actionModalMode) {
+        case 'pause':
+          success = await pauseOffer(offerId, reason);
+          if (success) {
+            setOffers(prev => prev.map(o => o.id === offerId ? { ...o, status: 'paused' } : o));
+            toast.success('Offer paused');
+          }
+          break;
+        case 'terminate':
+          success = await terminateOffer(offerId, reason);
+          if (success) {
+            setOffers(prev => prev.filter(o => o.id !== offerId));
+            toast.success('Offer terminated');
+          }
+          break;
+        case 'archive':
+          success = await archiveOffer(offerId);
+          if (success) {
+            setOffers(prev => prev.filter(o => o.id !== offerId));
+            toast.success('Offer archived');
+          }
+          break;
+        case 'delete':
+          success = await deleteOffer(offerId);
+          if (success) {
+            const isDraft = actionTargetOffer.status === 'draft';
+            setOffers(prev => prev.filter(o => o.id !== offerId));
+            setTotalCount(prev => prev - 1);
+            toast.success(isDraft ? 'Draft deleted successfully' : 'Offer deleted successfully');
+          }
+          break;
       }
     } catch (error) {
-      console.error('Delete failed:', error);
-      toast.error('Failed to delete offer');
+      console.error('Action failed:', error);
     } finally {
-      setIsDeleting(false);
-      setDeleteTarget(null);
+      setIsProcessingAction(false);
+      setActionModalOpen(false);
+      setActionTargetOffer(null);
     }
   };
 
@@ -266,13 +283,13 @@ export default function FeaturedOffers({
         .is('deleted_at', null)
         .order('created_at', { ascending: false });
 
-      if (isOwner) {
-        // Show Active, Draft, and Paused
+      if (isOwner && !compact) {
+        // Owner View (Management Tab): Show Active, Draft, and Paused
         // Allow valid_until to be future date OR null (no expiry)
         query = query.in('status', ['active', 'draft', 'paused'])
           .or(`valid_until.gte.${new Date().toISOString()},valid_until.is.null`);
       } else {
-        // Consumers see only active, non-expired offers
+        // Consumer View OR Owner Compact View (Overview): See only ACTIVE, non-expired offers
         // Allow valid_until to be future date OR null (no expiry)
         query = query.eq('status', 'active')
           .or(`valid_until.gte.${new Date().toISOString()},valid_until.is.null`);
@@ -372,7 +389,7 @@ export default function FeaturedOffers({
                   offer={offer}
                   onViewDetails={(o) => setSelectedOffer(o)}
                   onAction={isOwner ? handleAction : undefined}
-                  showActions={isOwner}
+                  showActions={isOwner && !compact}
                 />
               </div>
             );
@@ -505,18 +522,22 @@ export default function FeaturedOffers({
         />
       )}
 
-      {/* Delete Confirmation Modal */}
-      <DeleteConfirmationModal
-        isOpen={!!deleteTarget}
-        onClose={() => !isDeleting && setDeleteTarget(null)}
-        onConfirm={handleConfirmDelete}
-        title={deleteTarget?.status === 'draft' ? 'Delete Draft Offer' : 'Delete Active Offer'}
-        message={deleteTarget?.status === 'draft'
-          ? `Are you sure you want to permanently delete "${deleteTarget.title}"? This action cannot be undone.`
-          : `Are you sure you want to delete "${deleteTarget?.title}"? This will soft-delete the offer and remove it from public view.`}
-        isHardDelete={deleteTarget?.status === 'draft'}
-        isLoading={isDeleting}
-      />
+      {/* Unified Action Modal (Pause, Terminate, Archive, Delete) */}
+      {actionTargetOffer && (
+        <OfferActionModal
+          isOpen={actionModalOpen}
+          mode={actionModalMode}
+          offer={actionTargetOffer}
+          onClose={() => {
+            if (!isProcessingAction) {
+              setActionModalOpen(false);
+              setActionTargetOffer(null);
+            }
+          }}
+          onConfirm={handleModalConfirm}
+          isProcessing={isProcessingAction}
+        />
+      )}
     </div >
   );
 }

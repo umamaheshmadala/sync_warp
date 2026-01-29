@@ -243,6 +243,7 @@ const Dashboard: React.FC = () => {
                   <OfferCard
                     offer={offer}
                     onViewDetails={(o) => navigate(`${getBusinessUrl(o.business?.id || o.business_id, o.business?.business_name || 'business')}/offers?offer=${o.id}`)}
+                    showActions={false}
                   />
                 </div>
               ))}
