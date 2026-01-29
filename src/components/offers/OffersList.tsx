@@ -80,6 +80,7 @@ export function OffersList({
     { value: 'paused', label: 'Paused' },
     { value: 'archived', label: 'Archived' },
     { value: 'terminated', label: 'Terminated' },
+    { value: 'expired', label: 'Expired' },
   ];
 
   // Sort options

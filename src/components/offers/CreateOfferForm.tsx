@@ -89,6 +89,7 @@ export function CreateOfferForm({
     valid_from: '',
     valid_until: '',
     offer_type_id: undefined,
+    is_featured: false,
   });
 
   const { categories, offerTypes, isLoading: isMetadataLoading } = useOfferMetadata();
@@ -98,9 +99,11 @@ export function CreateOfferForm({
   const {
     currentDraft,
     isSaving,
+    lastSavedAt,
     loadDraft,
     createDraft,
     updateDraft,
+    publishDraft,
   } = useOfferDrafts({
     userId,
     businessId,
@@ -128,8 +131,11 @@ export function CreateOfferForm({
             description: offer.description || '',
             terms_conditions: offer.terms_conditions || '',
             icon_image_url: offer.icon_image_url,
-            valid_from: offer.valid_from,
-            valid_until: offer.valid_until,
+            valid_from: offer.valid_from ? new Date(offer.valid_from).toISOString().split('T')[0] : '',
+            valid_until: offer.valid_until ? new Date(offer.valid_until).toISOString().split('T')[0] : '',
+            offer_type_id: offer.offer_type_id,
+            audit_code: offer.audit_code,
+            is_featured: offer.is_featured,
           });
           // Start at step 1 so user can edit all fields
           setCurrentStep(1);
@@ -143,24 +149,49 @@ export function CreateOfferForm({
     loadExistingData();
   }, [offerId]);
 
-  // Sync form data with loaded draft
+  // Auto-select category when offer_type_id is present (e.g. loading existing offer)
   useEffect(() => {
-    if (currentDraft) {
-      setFormData(currentDraft.form_data as Partial<OfferFormData>);
-      // Determine step based on data completeness or draft state
-      // If we have an offer_type_id, we can potentially go to step 2, but let's respect saved step
-      setCurrentStep(currentDraft.step_completed + 1 > 4 ? 4 : currentDraft.step_completed + 1);
-
-      // If offer_type_id exists, try to set selectedCategory
-      if (currentDraft.form_data.offer_type_id && offerTypes.length > 0) {
-        const type = offerTypes.find(t => t.id === currentDraft.form_data.offer_type_id);
-        if (type) setSelectedCategory(type.category_id);
-      } else if (currentDraft.step_completed >= 1) {
-        // If we saved at step 1 or higher but no offer_type_id (maybe mid-selection?), try to restore
-        // For now, if no offer_type_id, we probably restart at step 1 or 2 if we can track category
+    if (formData.offer_type_id && offerTypes.length > 0 && !selectedCategory) {
+      const type = offerTypes.find(t => t.id === formData.offer_type_id);
+      if (type) {
+        setSelectedCategory(type.category_id);
       }
     }
-  }, [currentDraft, offerTypes]);
+  }, [formData.offer_type_id, offerTypes, selectedCategory]);
+
+  const [isDraftLoaded, setIsDraftLoaded] = useState(false);
+
+  // Sync form data with loaded draft (only if NOT editing existing offer ID)
+  useEffect(() => {
+    if (currentDraft && !offerId && !isDraftLoaded) {
+      setFormData({
+        title: currentDraft.title,
+        description: currentDraft.description || '',
+        terms_conditions: currentDraft.terms_conditions || '',
+        icon_image_url: currentDraft.icon_image_url,
+        valid_from: currentDraft.valid_from ? new Date(currentDraft.valid_from).toISOString().split('T')[0] : '',
+        valid_until: currentDraft.valid_until ? new Date(currentDraft.valid_until).toISOString().split('T')[0] : '',
+        offer_type_id: currentDraft.offer_type_id,
+        audit_code: currentDraft.audit_code,
+        is_featured: currentDraft.is_featured,
+      });
+
+      // Mark draft as loaded so we don't overwrite user changes on subsequent auto-saves
+      setIsDraftLoaded(true);
+
+      // Infer step based on data completeness
+      if (currentDraft.offer_type_id) {
+        setCurrentStep(3);
+      } else {
+        setCurrentStep(1);
+      }
+
+      if (currentDraft.offer_type_id && offerTypes.length > 0) {
+        const type = offerTypes.find(t => t.id === currentDraft.offer_type_id);
+        if (type) setSelectedCategory(type.category_id);
+      }
+    }
+  }, [currentDraft, offerTypes, offerId, isDraftLoaded]);
 
   // Auto-save on form data change
   useEffect(() => {
@@ -220,53 +251,53 @@ export function CreateOfferForm({
   const handleSubmit = async () => {
     if (!validateStep(3)) return;
 
-    let offer;
-    if (offerId) {
-      // Update existing offer and set to active
-      const updateData = { ...(formData as OfferFormData), status: 'active' as const };
-      offer = await updateOffer(offerId, updateData);
-    } else {
-      // Create new offer
-      offer = await createOffer(formData as OfferFormData);
+    let offerIdToUse = offerId;
+    if (!offerId && currentDraft) {
+      offerIdToUse = currentDraft.id;
     }
 
-    if (onComplete) {
-      onComplete(offer?.id);
+    if (offerIdToUse) {
+      // Publish the existing draft or update the active offer
+      const success = await publishDraft(offerIdToUse, {
+        ...(formData as OfferFormData),
+        is_featured: formData.is_featured,
+      });
+
+      if (success && onComplete) {
+        onComplete(offerIdToUse);
+      }
+    } else {
+      // Fallback for immediate create (edge case if draft creation failed?)
+      const offer = await createOffer({
+        ...(formData as OfferFormData),
+        status: 'active'
+      } as any);
+      if (onComplete && offer) onComplete(offer.id);
     }
   };
 
   const handleSaveAndExit = async () => {
-    // Save offer - preserve status when editing existing offers
-    let offer;
-    if (offerId) {
-      // Update existing offer - DON'T change status, just save form data
-      offer = await updateOffer(offerId, formData as OfferFormData);
+    // If we have a draft (currentDraft) or existing offer (offerId), we just ensure latest data is saved
+    // Auto-save runs on change, but let's force a final update to be safe if user types and immediately clicks
+
+    if (currentDraft && !offerId) {
+      await updateDraft(formData, currentStep); // Ensure final state is saved
+      if (onComplete) {
+        onComplete(currentDraft.id);
+      } else if (onCancel) {
+        onCancel();
+      }
+    } else if (offerId) {
+      // Editing active offer, save changes but don't change status
+      await updateOffer(offerId, formData as OfferFormData);
+      if (onComplete) {
+        onComplete(offerId);
+      } else if (onCancel) {
+        onCancel();
+      }
     } else {
-      // Create new draft offer
-      const { data: { session } } = await supabase.auth.getSession();
-      const { data: newDraft, error } = await supabase
-        .from('offers')
-        .insert({
-          business_id: businessId,
-          created_by: session?.user?.id || null,
-          title: formData.title || 'Untitled Offer',
-          description: formData.description || null,
-          terms_conditions: formData.terms_conditions || null,
-          icon_image_url: formData.icon_image_url || null,
-          valid_from: formData.valid_from || new Date().toISOString(),
-          valid_until: formData.valid_until || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          status: 'draft',
-        })
-        .select()
-        .single();
-
-      if (!error) offer = newDraft;
-    }
-
-    if (onComplete && offer) {
-      onComplete(offer.id);
-    } else if (onCancel) {
-      onCancel();
+      // Fallback
+      if (onCancel) onCancel();
     }
   };
 
@@ -362,7 +393,12 @@ export function CreateOfferForm({
       {/* Navigation - Sticky Bottom */}
       <div className="sticky bottom-0 z-20 p-4 border-t border-gray-200 bg-gray-50 flex items-center justify-between shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] gap-2">
         {/* Left Side: Cancel & Previous */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          {lastSavedAt && (
+            <span className="hidden md:block text-xs text-gray-400 mr-2">
+              Draft saved {lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
           {onCancel && (
             <button
               onClick={onCancel}
@@ -677,6 +713,35 @@ function CombinedOfferForm({
           </div>
         </div>
       </div>
+
+      <hr className="border-gray-200" />
+
+      {/* Featured Status Section */}
+      <div>
+        <h2 className="text-lg font-bold text-gray-900 mb-4">Visibility</h2>
+        <div className="bg-purple-50 border border-purple-100 rounded-lg p-4">
+          <div className="flex items-start">
+            <div className="flex items-center h-5">
+              <input
+                id="is_featured"
+                type="checkbox"
+                checked={formData.is_featured || false}
+                onChange={(e) => onChange('is_featured', e.target.checked)}
+                className="focus:ring-purple-500 h-4 w-4 text-purple-600 border-gray-300 rounded"
+              />
+            </div>
+            <div className="ml-3 text-sm">
+              <label htmlFor="is_featured" className="font-medium text-gray-900 flex items-center gap-2">
+                <Zap className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                Feature this Offer
+              </label>
+              <p className="text-gray-500">
+                Pinned to the top of your offers list. Max 3 active featured offers allowed.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -692,6 +757,13 @@ function Step4Review({ formData }: { formData: Partial<OfferFormData> }) {
       </div>
 
       <div className="space-y-4">
+        {formData.audit_code && (
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Audit Code</h3>
+            <p className="text-lg font-mono font-bold text-gray-900">{formData.audit_code}</p>
+          </div>
+        )}
+
         <div className="border border-gray-200 rounded-lg p-4">
           <h3 className="text-sm font-semibold text-gray-700 mb-2">Title</h3>
           <p className="text-gray-900">{formData.title}</p>

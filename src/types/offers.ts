@@ -140,6 +140,8 @@ export interface OfferFormData {
   valid_from: string | null;
   valid_until: string | null;
   offer_type_id?: string;
+  audit_code?: string; // Read-only display
+  is_featured?: boolean;
 }
 
 // API response types

@@ -36,9 +36,10 @@ export const CompactOfferCard: React.FC<CompactOfferCardProps> = ({
       <TicketOfferCard
         businessName={offer.business?.business_name || 'Sync Business'}
         offerName={offer.title}
-        offerType={offer.offer_type?.offer_name || 'Special Offer'}
+        offerType={categoryName || offer.offer_type?.offer_name || 'Special Offer'}
         offerCode={offer.offer_code || 'CODE123'}
         validUntil={formattedExpiry}
+        auditCode={offer.audit_code}
         color={ticketColor}
         className="w-full text-xs" // Added text-xs to scale down font sizes slightly if needed, though TicketCard is responsive
       />

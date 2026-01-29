@@ -42,9 +42,10 @@ export const FavoriteOfferCard: React.FC<FavoriteOfferCardProps> = ({
             <TicketOfferCard
                 businessName={offer.business_name || 'Sync Business'}
                 offerName={offer.title}
-                offerType={(offer as any).offer_type?.offer_name || 'Special Offer'}
+                offerType={categoryName || (offer as any).offer_type?.offer_name || 'Special Offer'}
                 offerCode={offer.offer_code || 'CODE123'}
                 validUntil={formattedExpiry}
+                auditCode={offer.audit_code}
                 color={ticketColor}
                 className="w-full"
             />

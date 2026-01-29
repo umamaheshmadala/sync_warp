@@ -417,9 +417,21 @@ export const useOffers = (options: UseOffersOptions = {}): UseOffersReturn => {
           terms_conditions: original.terms_conditions,
           icon_image_url: original.icon_image_url,
           offer_type_id: original.offer_type_id,
-          // Explicitly resetting:
-          valid_from: null,
-          valid_until: null,
+          // Smart Date Copy:
+          // Start Date = Today (Date of duplication)
+          // End Date = Today + Original Duration (or default 30 days)
+          valid_from: new Date().toISOString(),
+          valid_until: (() => {
+            const now = new Date();
+            const originalStart = original.valid_from ? new Date(original.valid_from) : new Date();
+            const originalEnd = original.valid_until ? new Date(original.valid_until) : new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+            // Calculate duration in milliseconds
+            // Math.max to avoid negative duration if original was weird
+            const duration = Math.max(0, originalEnd.getTime() - originalStart.getTime());
+
+            return new Date(now.getTime() + duration).toISOString();
+          })(),
           status: 'draft',
           // Reset new fields
           audit_code: null, // Let DB trigger generate new one

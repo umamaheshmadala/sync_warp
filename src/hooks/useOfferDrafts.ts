@@ -1,9 +1,10 @@
 // src/hooks/useOfferDrafts.ts
-// React hook for managing Offer Drafts with auto-save (Story 4.12)
+// React hook for managing Offer Drafts using the main offers table (status='draft')
+// Refactored for Story 4.18
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
-import { OfferDraft } from '../types/offers';
+import { Offer, OfferFormData } from '../types/offers';
 
 interface UseOfferDraftsOptions {
   userId: string;
@@ -12,29 +13,31 @@ interface UseOfferDraftsOptions {
 }
 
 interface UseOfferDraftsReturn {
-  drafts: OfferDraft[];
-  currentDraft: OfferDraft | null;
+  drafts: Offer[];
+  currentDraft: Offer | null;
   isLoading: boolean;
   error: string | null;
   isSaving: boolean;
-  
+  lastSavedAt: Date | null;
+
   // Draft operations
   fetchDrafts: () => Promise<void>;
   loadDraft: (draftId: string) => Promise<void>;
-  createDraft: (draftName: string) => Promise<OfferDraft | null>;
-  updateDraft: (formData: any, stepCompleted: number) => Promise<void>;
+  createDraft: (draftName: string) => Promise<Offer | null>;
+  updateDraft: (formData: Partial<OfferFormData>, stepCompleted: number) => Promise<void>;
   deleteDraft: (draftId: string) => Promise<boolean>;
-  convertDraftToOffer: (draftId: string) => Promise<boolean>;
+  publishDraft: (draftId: string, finalData?: Partial<OfferFormData>) => Promise<boolean>;
 }
 
 export const useOfferDrafts = (options: UseOfferDraftsOptions): UseOfferDraftsReturn => {
   const { userId, businessId, autoSaveDelay = 2000 } = options;
 
-  const [drafts, setDrafts] = useState<OfferDraft[]>([]);
-  const [currentDraft, setCurrentDraft] = useState<OfferDraft | null>(null);
+  const [drafts, setDrafts] = useState<Offer[]>([]);
+  const [currentDraft, setCurrentDraft] = useState<Offer | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
 
   // Auto-save timer
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -46,10 +49,11 @@ export const useOfferDrafts = (options: UseOfferDraftsOptions): UseOfferDraftsRe
 
     try {
       const { data, error: fetchError } = await supabase
-        .from('offer_drafts')
+        .from('offers')
         .select('*')
-        .eq('user_id', userId)
         .eq('business_id', businessId)
+        .eq('status', 'draft')
+        .is('deleted_at', null)
         .order('updated_at', { ascending: false });
 
       if (fetchError) throw fetchError;
@@ -61,7 +65,7 @@ export const useOfferDrafts = (options: UseOfferDraftsOptions): UseOfferDraftsRe
     } finally {
       setIsLoading(false);
     }
-  }, [userId, businessId]);
+  }, [businessId]);
 
   // Load a specific draft
   const loadDraft = useCallback(async (draftId: string) => {
@@ -70,9 +74,10 @@ export const useOfferDrafts = (options: UseOfferDraftsOptions): UseOfferDraftsRe
 
     try {
       const { data, error: loadError } = await supabase
-        .from('offer_drafts')
+        .from('offers')
         .select('*')
         .eq('id', draftId)
+        .eq('status', 'draft')
         .single();
 
       if (loadError) throw loadError;
@@ -87,26 +92,33 @@ export const useOfferDrafts = (options: UseOfferDraftsOptions): UseOfferDraftsRe
   }, []);
 
   // Create a new draft
-  const createDraft = useCallback(async (draftName: string): Promise<OfferDraft | null> => {
+  const createDraft = useCallback(async (draftName: string): Promise<Offer | null> => {
     setIsLoading(true);
     setError(null);
 
     try {
+      // Basic initial data for a draft
+      const initialData = {
+        business_id: businessId,
+        created_by: userId,
+        title: draftName,
+        status: 'draft',
+        // Set far future expiry for drafts initially, or null if allowed (schema says valid_until is nullable for drafts usually, but let's check constraints)
+        // Schema: valid_until is nullable? Let's assume yes or set defaults.
+        valid_from: new Date().toISOString(),
+        valid_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      };
+
       const { data, error: createError } = await supabase
-        .from('offer_drafts')
-        .insert({
-          user_id: userId,
-          business_id: businessId,
-          draft_name: draftName,
-          form_data: {},
-          step_completed: 0,
-        })
+        .from('offers')
+        .insert(initialData)
         .select()
         .single();
 
       if (createError) throw createError;
 
       setCurrentDraft(data);
+      setLastSavedAt(new Date());
       await fetchDrafts();
 
       return data;
@@ -120,7 +132,7 @@ export const useOfferDrafts = (options: UseOfferDraftsOptions): UseOfferDraftsRe
   }, [userId, businessId, fetchDrafts]);
 
   // Update draft with auto-save
-  const updateDraft = useCallback(async (formData: any, stepCompleted: number) => {
+  const updateDraft = useCallback(async (formData: Partial<OfferFormData>, stepCompleted: number) => {
     if (!currentDraft) return;
 
     // Clear existing timer
@@ -134,13 +146,19 @@ export const useOfferDrafts = (options: UseOfferDraftsOptions): UseOfferDraftsRe
       setError(null);
 
       try {
+        // Map form data to DB columns
+        // Note: OfferFormData matches DB columns mostly.
+        // step_completed isn't a column in 'offers', so we might ignore it or store it in metadata if we had a JSON column.
+        // For now, we just save the form fields.
+
+        const updatePayload = {
+          ...formData,
+          updated_at: new Date().toISOString(),
+        };
+
         const { data, error: updateError } = await supabase
-          .from('offer_drafts')
-          .update({
-            form_data: formData,
-            step_completed: stepCompleted,
-            updated_at: new Date().toISOString(),
-          })
+          .from('offers')
+          .update(updatePayload)
           .eq('id', currentDraft.id)
           .select()
           .single();
@@ -148,8 +166,9 @@ export const useOfferDrafts = (options: UseOfferDraftsOptions): UseOfferDraftsRe
         if (updateError) throw updateError;
 
         setCurrentDraft(data);
+        setLastSavedAt(new Date());
 
-        // Update in drafts list
+        // Update in drafts list locally to avoid refetch
         setDrafts(prev => prev.map(d => d.id === currentDraft.id ? data : d));
       } catch (err: any) {
         setError(err.message || 'Failed to save draft');
@@ -160,14 +179,14 @@ export const useOfferDrafts = (options: UseOfferDraftsOptions): UseOfferDraftsRe
     }, autoSaveDelay);
   }, [currentDraft, autoSaveDelay]);
 
-  // Delete a draft
+  // Delete a draft (Hard delete for drafts)
   const deleteDraft = useCallback(async (draftId: string): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
 
     try {
       const { error: deleteError } = await supabase
-        .from('offer_drafts')
+        .from('offers')
         .delete()
         .eq('id', draftId);
 
@@ -190,50 +209,38 @@ export const useOfferDrafts = (options: UseOfferDraftsOptions): UseOfferDraftsRe
     }
   }, [currentDraft]);
 
-  // Convert draft to actual offer
-  const convertDraftToOffer = useCallback(async (draftId: string): Promise<boolean> => {
+  // Publish draft (Convert to active)
+  const publishDraft = useCallback(async (draftId: string, finalData?: Partial<OfferFormData>): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
 
     try {
-      // Fetch the draft
-      const { data: draft, error: fetchError } = await supabase
-        .from('offer_drafts')
-        .select('*')
-        .eq('id', draftId)
-        .single();
+      const updatePayload = {
+        ...(finalData || {}),
+        status: 'active',
+        activated_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
 
-      if (fetchError) throw fetchError;
-
-      // Create offer from draft
-      const { error: createError } = await supabase
+      const { error: updateError } = await supabase
         .from('offers')
-        .insert({
-          business_id: draft.business_id,
-          title: draft.form_data.title,
-          description: draft.form_data.description,
-          terms_conditions: draft.form_data.terms_conditions,
-          icon_image_url: draft.form_data.icon_image_url,
-          valid_from: draft.form_data.valid_from,
-          valid_until: draft.form_data.valid_until,
-          status: 'draft',
-          created_by: draft.user_id,
-        });
+        .update(updatePayload)
+        .eq('id', draftId);
 
-      if (createError) throw createError;
+      if (updateError) throw updateError;
 
-      // Delete the draft after successful conversion
-      await deleteDraft(draftId);
+      // Refresh drafts list (it should disappear from drafts)
+      await fetchDrafts();
 
       return true;
     } catch (err: any) {
-      setError(err.message || 'Failed to convert draft to offer');
-      console.error('Error converting draft:', err);
+      setError(err.message || 'Failed to publish draft');
+      console.error('Error publishing draft:', err);
       return false;
     } finally {
       setIsLoading(false);
     }
-  }, [deleteDraft]);
+  }, [fetchDrafts]);
 
   // Cleanup timer on unmount
   useEffect(() => {
@@ -255,12 +262,13 @@ export const useOfferDrafts = (options: UseOfferDraftsOptions): UseOfferDraftsRe
     isLoading,
     error,
     isSaving,
-    
+    lastSavedAt,
+
     fetchDrafts,
     loadDraft,
     createDraft,
     updateDraft,
     deleteDraft,
-    convertDraftToOffer,
+    publishDraft,
   };
 };

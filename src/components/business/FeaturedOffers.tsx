@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Tag, ChevronRight, Calendar, TrendingUp, X, Heart, Edit3, CheckCircle, AlertCircle, Plus, Zap } from 'lucide-react';
+import { Tag, ChevronRight, Calendar, TrendingUp, X, Heart, Edit3, CheckCircle, AlertCircle, Plus, Zap, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { supabase } from '@/lib/supabase';
 import type { Offer } from '@/types/offers';
@@ -54,6 +54,11 @@ export default function FeaturedOffers({
   const [totalCount, setTotalCount] = useState(0);
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
   const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
+  // Tab Filter State
+  type FilterType = 'all' | 'active' | 'draft' | 'paused' | 'expired' | 'archived' | 'terminated';
+  const [activeFilter, setActiveFilter] = useState<FilterType>('active');
+
+  // Delete Modal State
   const [showCreateForm, setShowCreateForm] = useState(false);
   const { user } = useAuthStore();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -83,7 +88,9 @@ export default function FeaturedOffers({
         const newOffer = await duplicateOffer(offer.id);
         if (newOffer) {
           setOffers(prev => [newOffer, ...prev]);
-          toast.success('Offer duplicated successfully');
+          toast.success('Offer duplicated! You can now edit the copy.');
+          // Req #8: Opens edit mode
+          setEditingOffer(newOffer);
         }
         break;
       case 'pause':
@@ -274,6 +281,9 @@ export default function FeaturedOffers({
         .from('offers')
         .select(`
           *,
+          is_featured,
+          featured_priority,
+          audit_code,
           offer_type:offer_types(
             *,
             category:offer_categories(*)
@@ -284,10 +294,9 @@ export default function FeaturedOffers({
         .order('created_at', { ascending: false });
 
       if (isOwner && !compact) {
-        // Owner View (Management Tab): Show Active, Draft, and Paused
-        // Allow valid_until to be future date OR null (no expiry)
-        query = query.in('status', ['active', 'draft', 'paused'])
-          .or(`valid_until.gte.${new Date().toISOString()},valid_until.is.null`);
+        // Owner View (Management Tab): Fetch EVERYTHING to allow client-side filtering via tabs
+        // We exclude soft-deleted items via .is('deleted_at', null) which is already applied above
+        // No status filter = get all statuses
       } else {
         // Consumer View OR Owner Compact View (Overview): See only ACTIVE, non-expired offers
         // Allow valid_until to be future date OR null (no expiry)
@@ -328,11 +337,45 @@ export default function FeaturedOffers({
     return new Date(offer.valid_until) < new Date() || offer.status === 'expired';
   };
 
+  // Filter offers based on active tab
+  const filteredOffers = useMemo(() => {
+    return offers.filter(offer => {
+      // If consumer or compact view, we already filtered at DB level, but safe to check 'active'
+      if (!isOwner || compact) return offer.status === 'active';
+
+      switch (activeFilter) {
+        case 'active': return offer.status === 'active';
+        case 'draft': return offer.status === 'draft';
+        case 'paused': return offer.status === 'paused';
+        case 'archived': return offer.status === 'archived';
+        case 'terminated': return offer.status === 'terminated';
+        case 'expired': return isOfferExpired(offer); // Use helper for expired
+        case 'all': default: return true;
+      }
+    });
+  }, [offers, activeFilter, isOwner, compact]);
+
   // Sort offers: Active first (sorted by date desc), then expired (sorted by date desc)
   const sortedOffers = useMemo(() => {
-    return [...offers].sort((a, b) => {
+    return [...filteredOffers].sort((a, b) => {
       const aExpired = isOfferExpired(a);
       const bExpired = isOfferExpired(b);
+
+      // Featured active offers come first (Story 4.18)
+      // Only prioritize featured for Active offers
+      const aFeatured = a.is_featured && !aExpired && a.status === 'active';
+      const bFeatured = b.is_featured && !bExpired && b.status === 'active';
+
+      if (aFeatured !== bFeatured) {
+        return aFeatured ? -1 : 1;
+      }
+
+      // If both featured, sort by priority
+      if (aFeatured && bFeatured) {
+        if (a.featured_priority !== b.featured_priority) {
+          return (b.featured_priority || 0) - (a.featured_priority || 0);
+        }
+      }
 
       // Active offers come first
       if (aExpired !== bExpired) {
@@ -342,7 +385,7 @@ export default function FeaturedOffers({
       // Within same status, sort by created_at (newest first)
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
-  }, [offers]);
+  }, [filteredOffers]);
 
   if (loading) {
     return (
@@ -360,11 +403,13 @@ export default function FeaturedOffers({
 
   // No early return for empty state - handle it in the main render
   const renderContent = () => {
-    if (offers.length === 0) {
+    if (sortedOffers.length === 0) {
       return (
         <p className="text-sm text-gray-500 text-center py-8">
           {isOwner
-            ? 'No active offers yet. Create your first promotional offer!'
+            ? (offers.length === 0 && activeFilter === 'all'
+              ? 'No offers found. Create your first promotional offer!'
+              : `No ${activeFilter} offers found.`)
             : 'No current offers available.'}
         </p>
       );
@@ -379,6 +424,8 @@ export default function FeaturedOffers({
               : 'Check out the latest deals and promotions from this business.'}
           </p>
         )}
+
+        {/* Tabs moved to header */}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {sortedOffers.map((offer) => {
@@ -432,25 +479,64 @@ export default function FeaturedOffers({
   return (
     <div className={className}>
       {(showHeading || (isOwner && showAddButton)) && (
-        <div className={`flex items-center mb-4 ${showHeading ? 'justify-between' : 'justify-end'}`}>
-          {showHeading && (
-            <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-              <Tag className="w-5 h-5 mr-2 text-green-600" />
-              Current Offers {totalCount > 0 && <span className="ml-2 text-sm text-gray-500">({totalCount})</span>}
-            </h3>
-          )}
-          {isOwner && showAddButton && (
-            <button
-              onClick={() => {
-                console.log('[FeaturedOffers] New Offer Button Clicked');
-                setShowCreateForm(true);
-              }}
-              className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              New Offer
-            </button>
-          )}
+
+        <div className="flex flex-col md:flex-row md:items-center mb-4 justify-between gap-4">
+          <div className="flex items-center gap-4">
+            {showHeading && (
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                <Tag className="w-5 h-5 mr-2 text-green-600" />
+                Current Offers {totalCount > 0 && <span className="ml-2 text-sm text-gray-500">({totalCount})</span>}
+              </h3>
+            )}
+
+            {isOwner && showAddButton && (
+              <button
+                onClick={() => {
+                  console.log('[FeaturedOffers] New Offer Button Clicked (Desktop)');
+                  setShowCreateForm(true);
+                }}
+                className="hidden md:flex items-center gap-1 px-3 h-9 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors whitespace-nowrap shadow-sm"
+              >
+                <Plus className="w-4 h-4" />
+                New Offer
+              </button>
+            )}
+          </div>
+
+          {/* Right Group: Filter Dropdown (+ Mobile New Offer Button) */}
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            {isOwner && showAddButton && (
+              <button
+                onClick={() => {
+                  console.log('[FeaturedOffers] New Offer Button Clicked (Mobile)');
+                  setShowCreateForm(true);
+                }}
+                className="flex md:hidden flex-1 items-center justify-center gap-1 px-3 h-9 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors whitespace-nowrap shadow-sm"
+              >
+                <Plus className="w-4 h-4" />
+                New Offer
+              </button>
+            )}
+
+            {isOwner && !compact && (
+              <div className="relative flex-1 md:flex-none">
+                <select
+                  value={activeFilter}
+                  onChange={(e) => setActiveFilter(e.target.value as FilterType)}
+                  className="appearance-none w-full md:w-40 h-9 bg-gray-100 border-none text-gray-700 pl-3 pr-8 rounded-lg text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none cursor-pointer hover:bg-gray-200 transition-colors shadow-sm"
+                >
+                  <option value="active">Active</option>
+                  <option value="paused">Paused</option>
+                  <option value="draft">Drafts</option>
+                  <option value="archived">Archived</option>
+                  <option value="terminated">Terminated</option>
+                  <option value="expired">Expired</option>
+                  <option value="all">All Offers</option>
+                </select>
+                <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+              </div>
+            )}
+          </div>
         </div>
       )}
 

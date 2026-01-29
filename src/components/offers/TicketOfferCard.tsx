@@ -24,6 +24,16 @@ export function TicketOfferCard({
     className
 }: TicketOfferCardProps) {
 
+    // Helper for Title Case (Simple implementation)
+    const toTitleCase = (str: string) => {
+        if (!str) return '';
+        return str.toLowerCase().split(' ').map(word =>
+            word.charAt(0).toUpperCase() + word.slice(1)
+        ).join(' ');
+    };
+
+    const formattedOfferName = toTitleCase(offerName);
+
     // Helper to extract short code for display: AUDIT-TB1-202601-0042 -> 01-0042
     const getShortAuditCode = (fullCode?: string) => {
         if (!fullCode) return null;
@@ -98,8 +108,8 @@ export function TicketOfferCard({
                         </div>
 
                         <div>
-                            <h2 className={cn("text-lg font-black leading-none uppercase tracking-tight", color.replace('bg-', 'text-').replace('600', '800'))}>
-                                {offerName}
+                            <h2 className={cn("text-lg font-medium leading-none tracking-tight", color.replace('bg-', 'text-').replace('600', '800'))}>
+                                {formattedOfferName}
                             </h2>
                         </div>
 
@@ -115,11 +125,11 @@ export function TicketOfferCard({
                     {/* Right Strip (Barcode & Banner) - Enhanced Border & Full Height */}
                     <div className={cn("relative z-10 w-[30%] h-full flex flex-col items-center justify-end py-1 pl-2 border-l-[2px] border-dashed border-gray-300 shadow-[-1px_0_0_0_rgba(255,255,255,0.8),-2px_0_1px_0_rgba(0,0,0,0.05)_inset]")}>
 
-                        {/* Hanging Banner - Elongated (~75% height) */}
-                        <div className={cn("absolute top-0 left-1/2 -translate-x-1/2 w-[60px] shadow-md z-20 flex flex-col items-center justify-center", color)} style={{ height: '75%' }}>
+                        {/* Hanging Banner - Elongated (~60% height) to allow room for audit code */}
+                        <div className={cn("absolute top-0 left-1/2 -translate-x-1/2 w-[60px] shadow-md z-20 flex flex-col items-center justify-center", color)} style={{ height: '60%' }}>
                             {/* Banner Body Content */}
                             <div className="flex-1 flex items-center justify-center px-2 pb-3">
-                                <div className="text-white text-[10px] font-black uppercase leading-tight text-center break-words w-full">
+                                <div className="text-white text-[10px] font-medium uppercase leading-tight text-center break-words w-full">
                                     {offerType || 'OFFER'}
                                 </div>
                             </div>
@@ -128,21 +138,24 @@ export function TicketOfferCard({
                             <div className={cn("absolute bottom-[-10px] left-0 w-full h-[10px]", color)} style={{ clipPath: 'polygon(0 0, 100% 0, 50% 100%)' }}></div>
                         </div>
 
-                        <div className="w-full flex flex-col items-center justify-end relative pb-0">
-                            {/* Short Audit Code Display (Story 4.17) */}
+                        <div className="w-full flex-1 flex flex-col items-center justify-end pb-2 gap-1 overflow-hidden">
+
+                            {/* Barcode Strip - Subtler bg */}
+                            <div className="w-full flex-1 flex items-end justify-center opacity-10 pb-1">
+                                <div className="transform rotate-90 scale-150 origin-bottom">
+                                    <BarcodeStrip />
+                                </div>
+                            </div>
+
+                            {/* Short Audit Code Display (Story 4.17) - Horizontal & Prominent */}
                             {shortCode && (
                                 <div
-                                    className="mb-1 transform -rotate-90 origin-center text-[9px] font-mono text-gray-400 tracking-wider whitespace-nowrap cursor-help z-10"
-                                    title={`Audit ID: ${shortCode}`}
+                                    className="text-[11px] font-mono text-gray-400 font-semibold tracking-widest cursor-help z-30 select-none"
+                                    title={`Audit ID: ${auditCode}`}
                                 >
                                     {shortCode}
                                 </div>
                             )}
-
-                            {/* Barcode - Pushed to bottom or hidden if obstructed */}
-                            <div className="transform rotate-90 scale-x-125 scale-y-75 opacity-20">
-                                <BarcodeStrip />
-                            </div>
                         </div>
                     </div>
 

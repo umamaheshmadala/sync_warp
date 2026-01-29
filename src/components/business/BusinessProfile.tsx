@@ -76,7 +76,7 @@ const BusinessProfile: React.FC = () => {
   const businessIdParam = params.businessId || params.slug;
   const navigate = useNavigate();
   const { getBusinessUrl } = useBusinessUrl();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
   const { user } = useAuthStore();
 
@@ -1075,7 +1075,11 @@ const BusinessProfile: React.FC = () => {
           showHeading={false}
           showAddButton={false}
           onViewAll={() => {
-            setActiveTab('offers');
+            setSearchParams(prev => {
+              const newParams = new URLSearchParams(prev);
+              newParams.set('tab', 'offers');
+              return newParams;
+            });
             // Scroll to top
             window.scrollTo(0, 0);
             document.querySelector('main')?.scrollTo({ top: 0, behavior: 'instant' });
@@ -1819,7 +1823,11 @@ const BusinessProfile: React.FC = () => {
                   return (
                     <button
                       key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
+                      onClick={() => setSearchParams(prev => {
+                        const newParams = new URLSearchParams(prev);
+                        newParams.set('tab', tab.id);
+                        return newParams;
+                      })}
                       className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex-1 flex items-center justify-center ${activeTab === tab.id
                         ? 'border-indigo-500 text-indigo-600'
                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'

@@ -32,9 +32,10 @@ export default function TestOfferCardPage() {
                         <TicketOfferCard
                             businessName="TechGadgets Inc."
                             offerName="60% OFF"
-                            offerType="Big Sale"
+                            offerType="PRODUCT-BASED / BOGO"
                             offerCode="CYBER2026"
                             validUntil="Dec 31, 2026"
+                            auditCode="AUDIT-TEST-202601-5678"
                             color="bg-teal-700"
                         />
                     </div>
