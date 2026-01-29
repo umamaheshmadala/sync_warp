@@ -62,7 +62,7 @@ export async function submitReport(data: ReportReview): Promise<void> {
         .select('id')
         .eq('review_id', data.reviewId)
         .eq('reporter_id', user.id)
-        .single();
+        .maybeSingle();
 
     if (existing) {
         throw new Error('You have already reported this review');
@@ -140,7 +140,7 @@ export async function hasUserReported(reviewId: string): Promise<boolean> {
         .select('id')
         .eq('review_id', reviewId)
         .eq('reporter_id', user.id)
-        .single();
+        .maybeSingle();
 
     return !!data;
 }

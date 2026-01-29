@@ -116,7 +116,8 @@ class FavoritesService {
             if (error) throw error;
 
             return (data || []) as FavoriteOffer[];
-        } catch (error) {
+        } catch (error: any) {
+            if (error.name === 'AbortError' || error.message?.includes('AbortError')) return [];
             console.error('Error fetching favorite offers:', error);
             return [];
         }
@@ -141,7 +142,8 @@ class FavoritesService {
             if (error) throw error;
 
             return (data || []) as FavoriteProduct[];
-        } catch (error) {
+        } catch (error: any) {
+            if (error.name === 'AbortError' || error.message?.includes('AbortError')) return [];
             console.error('Error fetching favorite products:', error);
             return [];
         }
@@ -207,7 +209,8 @@ class FavoritesService {
                 offers: offerCount || 0,
                 products: productCount || 0
             };
-        } catch (error) {
+        } catch (error: any) {
+            if (error.name === 'AbortError' || error.message?.includes('AbortError')) return { offers: 0, products: 0 };
             console.error('Error fetching favorite counts:', error);
             return { offers: 0, products: 0 };
         }

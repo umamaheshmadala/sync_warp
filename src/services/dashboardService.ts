@@ -117,7 +117,8 @@ export const dashboardService = {
         isPromoted: business.verified || false,
         city: business.city,
       }));
-    } catch (error) {
+    } catch (error: any) {
+      if (error.name === 'AbortError' || error.message?.includes('AbortError')) return [];
       console.error('Error fetching spotlight businesses:', error);
       return [];
     }
@@ -162,7 +163,8 @@ export const dashboardService = {
       // Let's return as is, it matches the shape expected by OfferCard which uses offer.business?.name
       return data;
 
-    } catch (error) {
+    } catch (error: any) {
+      if (error.name === 'AbortError' || error.message?.includes('AbortError')) return [];
       console.error('Error fetching hot offers:', error);
       return [];
     }
@@ -227,7 +229,8 @@ export const dashboardService = {
           imageCount: product.image_urls?.length || 0
         };
       });
-    } catch (error) {
+    } catch (error: any) {
+      if (error.name === 'AbortError' || error.message?.includes('AbortError')) return [];
       console.error('Error fetching trending products:', error);
       return [];
     }

@@ -31,6 +31,7 @@ import {
   Shield,
   Zap,
   X,
+  History, // Added for audit log button
 } from 'lucide-react';
 import { useOfferMetadata } from '../../hooks/useOfferMetadata';
 import { useOfferDrafts } from '../../hooks/useOfferDrafts';
@@ -38,6 +39,7 @@ import { useOffers } from '../../hooks/useOffers';
 import type { OfferFormData } from '../../types/offers';
 import { ImageUpload } from './ImageUpload';
 import { supabase } from '@/lib/supabase';
+import { OfferAuditLogPanel } from './OfferAuditLogPanel'; // Added import
 
 interface CreateOfferFormProps {
   businessId: string;
@@ -114,6 +116,9 @@ export function CreateOfferForm({
     autoFetch: false,
   });
 
+  const [isDraftLoaded, setIsDraftLoaded] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false); // Added state for history panel
+
   // Load existing offer if offerId is provided
   useEffect(() => {
     const loadExistingData = async () => {
@@ -158,8 +163,6 @@ export function CreateOfferForm({
       }
     }
   }, [formData.offer_type_id, offerTypes, selectedCategory]);
-
-  const [isDraftLoaded, setIsDraftLoaded] = useState(false);
 
   // Sync form data with loaded draft (only if NOT editing existing offer ID)
   useEffect(() => {
@@ -264,15 +267,29 @@ export function CreateOfferForm({
       });
 
       if (success && onComplete) {
+        // Log action
+        await supabase.rpc('log_offer_action', {
+          p_offer_id: offerIdToUse,
+          p_action: 'created', // Converting draft to active is effectively 'creation' or 'activation'
+          p_metadata: { source: 'draft_publish' }
+        });
         onComplete(offerIdToUse);
       }
     } else {
-      // Fallback for immediate create (edge case if draft creation failed?)
+      // Fallback for immediate create
       const offer = await createOffer({
         ...(formData as OfferFormData),
         status: 'active'
       } as any);
-      if (onComplete && offer) onComplete(offer.id);
+
+      if (offer) {
+        await supabase.rpc('log_offer_action', {
+          p_offer_id: offer.id,
+          p_action: 'created',
+          p_metadata: { source: 'direct_create' }
+        });
+        if (onComplete) onComplete(offer.id);
+      }
     }
   };
 
@@ -290,6 +307,14 @@ export function CreateOfferForm({
     } else if (offerId) {
       // Editing active offer, save changes but don't change status
       await updateOffer(offerId, formData as OfferFormData);
+
+      // Log edit
+      await supabase.rpc('log_offer_action', {
+        p_offer_id: offerId,
+        p_action: 'edited',
+        p_metadata: { changed_fields: Object.keys(formData) } // Simplified tracking
+      });
+
       if (onComplete) {
         onComplete(offerId);
       } else if (onCancel) {
@@ -424,6 +449,19 @@ export function CreateOfferForm({
 
         {/* Right Side: Save & Next */}
         <div className="flex gap-2">
+          {/* View History button (only if editing) */}
+          {offerId && (
+            <button
+              type="button"
+              onClick={() => setIsHistoryOpen(true)}
+              className="flex items-center px-3 md:px-4 py-2 text-sm text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors min-w-[40px] md:min-w-0 justify-center"
+              title="View Offer History"
+            >
+              <History className="w-5 h-5" />
+              <span className="hidden md:inline ml-2">View History</span>
+            </button>
+          )}
+
           {/* Save Draft & Exit button */}
           <button
             onClick={handleSaveAndExit}
@@ -466,6 +504,14 @@ export function CreateOfferForm({
           )}
         </div>
       </div>
+      {/* History Panel */}
+      {offerId && (
+        <OfferAuditLogPanel
+          offerId={offerId}
+          isOpen={isHistoryOpen}
+          onClose={() => setIsHistoryOpen(false)}
+        />
+      )}
     </div>
   );
 }

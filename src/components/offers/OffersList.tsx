@@ -1,10 +1,6 @@
-// =====================================================
-// Story 4.12 & 4.14: Business Offers Management
-// Component: OffersList - Grid display of offers with Lifecycle Management
-// =====================================================
-
 import React, { useState } from 'react';
 import { Filter, Plus, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { supabase } from '../../lib/supabase'; // Correct placement
 import { useOffers } from '../../hooks/useOffers';
 import { Offer, OfferFilters, OfferSortOptions, OfferStatus } from '../../types/offers';
 import { OfferCard } from './OfferCard';
@@ -122,15 +118,41 @@ export function OffersList({
       switch (modalMode) {
         case 'pause':
           success = await pauseOffer(selectedOffer.id, reason);
+          if (success) {
+            await supabase.rpc('log_offer_action', {
+              p_offer_id: selectedOffer.id,
+              p_action: 'paused',
+              p_reason: reason
+            });
+          }
           break;
         case 'terminate':
           success = await terminateOffer(selectedOffer.id, reason);
+          if (success) {
+            await supabase.rpc('log_offer_action', {
+              p_offer_id: selectedOffer.id,
+              p_action: 'terminated',
+              p_reason: reason
+            });
+          }
           break;
         case 'archive':
           success = await archiveOffer(selectedOffer.id);
+          if (success) {
+            await supabase.rpc('log_offer_action', {
+              p_offer_id: selectedOffer.id,
+              p_action: 'archived'
+            });
+          }
           break;
         case 'delete':
           success = await deleteOffer(selectedOffer.id);
+          if (success) {
+            await supabase.rpc('log_offer_action', {
+              p_offer_id: selectedOffer.id,
+              p_action: 'deleted'
+            });
+          }
           break;
       }
       if (success) {
@@ -148,7 +170,13 @@ export function OffersList({
     if (onDuplicate) {
       onDuplicate(offer);
     } else {
-      await hookDuplicateOffer(offer.id);
+      const success = await hookDuplicateOffer(offer.id);
+      if (success) {
+        await supabase.rpc('log_offer_action', {
+          p_offer_id: offer.id,
+          p_action: 'duplicated'
+        });
+      }
     }
   };
 
@@ -157,7 +185,14 @@ export function OffersList({
   const [historyOffer, setHistoryOffer] = useState<Offer | null>(null);
 
   const handleToggleFeatured = async (offer: Offer) => {
-    await toggleFeatured(offer.id, !offer.is_featured);
+    const newFeaturedState = !offer.is_featured;
+    const success = await toggleFeatured(offer.id, newFeaturedState);
+    if (success) {
+      await supabase.rpc('log_offer_action', {
+        p_offer_id: offer.id,
+        p_action: newFeaturedState ? 'featured' : 'unfeatured'
+      });
+    }
   };
 
   const handleViewHistory = (offer: Offer) => {
@@ -346,7 +381,6 @@ export function OffersList({
           isOpen={historyOpen}
           onClose={() => { setHistoryOpen(false); setHistoryOffer(null); }}
           offerId={historyOffer.id}
-          offerTitle={historyOffer.title}
         />
       )}
     </div>

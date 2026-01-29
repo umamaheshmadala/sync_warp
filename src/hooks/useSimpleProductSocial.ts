@@ -33,8 +33,10 @@ const loadGlobalData = async (userId: string) => {
     let favorites: SimpleFavorite[] = [];
     try {
       favorites = await simpleFavoritesService.getFavorites('product');
-    } catch (err) {
-      console.error('Failed to load favorites:', err);
+    } catch (err: any) {
+      if (err?.name !== 'AbortError' && !err?.message?.includes('AbortError')) {
+        console.error('Failed to load favorites:', err);
+      }
     }
 
     // 2. Load Wishlist

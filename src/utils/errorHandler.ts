@@ -49,8 +49,11 @@ export async function withRetry<T>(
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
         try {
             return await fn();
-        } catch (error) {
+        } catch (error: any) {
             lastError = error as Error;
+
+            // Don't retry if request was aborted
+            if (error.name === 'AbortError' || error.message?.includes('AbortError')) throw error;
 
             // Don't retry if this is the last attempt
             if (attempt === maxRetries) break;
@@ -232,6 +235,9 @@ export function getUserFriendlyErrorMessage(error: any): string {
  * Log error with context for debugging
  */
 export function logError(context: string, error: any, additionalData?: any) {
+    // Ignore AbortError (cancelled requests)
+    if (error?.name === 'AbortError' || error?.message?.includes('AbortError')) return;
+
     console.error(`[Error] ${context}:`, {
         message: error?.message,
         code: error?.code,

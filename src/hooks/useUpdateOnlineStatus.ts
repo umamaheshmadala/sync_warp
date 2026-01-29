@@ -25,6 +25,7 @@ export function useUpdateOnlineStatus() {
                 .eq('id', user.id);
 
             if (error) {
+                if (error.message?.includes('AbortError')) return;
                 console.error('Error setting online status:', error);
             } else {
                 console.log('✅ User marked as online');
@@ -42,6 +43,7 @@ export function useUpdateOnlineStatus() {
                 .eq('id', user.id);
 
             if (error) {
+                if (error.message?.includes('AbortError')) return;
                 console.error('Error setting offline status:', error);
             }
         };

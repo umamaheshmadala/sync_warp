@@ -194,3 +194,21 @@ export interface OfferType {
   // Optional join
   category?: OfferCategory;
 }
+export interface OfferAuditLogEntry {
+  id: string;
+  offer_id: string;
+  business_id: string;
+  actor_id: string;
+  action: string;
+  previous_status: string | null;
+  new_status: string | null;
+  changed_fields: Record<string, any> | null;
+  metadata: Record<string, any> | null;
+  created_at: string;
+  // Optional join
+  actor?: {
+    email: string;
+    first_name?: string;
+    last_name?: string;
+  };
+}

@@ -78,7 +78,8 @@ export function useFollowerNotifications(): UseFollowerNotificationsReturn {
 
       console.log('[FollowerNotifications] Loaded', data?.length || 0, 'notifications');
       setNotifications(data as FollowerNotification[] || []);
-    } catch (err) {
+    } catch (err: any) {
+      if (err.name === 'AbortError' || err.message?.includes('AbortError')) return;
       const errorMessage = err instanceof Error ? err.message : 'Failed to load notifications';
       setError(errorMessage);
       console.error('[FollowerNotifications] Error:', err);

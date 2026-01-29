@@ -89,6 +89,12 @@ export default function FeaturedOffers({
         if (newOffer) {
           setOffers(prev => [newOffer, ...prev]);
           toast.success('Offer duplicated! You can now edit the copy.');
+
+          await supabase.rpc('log_offer_action', {
+            p_offer_id: offer.id,
+            p_action: 'duplicated'
+          });
+
           // Req #8: Opens edit mode
           setEditingOffer(newOffer);
         }
@@ -103,6 +109,11 @@ export default function FeaturedOffers({
         if (resumed) {
           setOffers(prev => prev.map(o => o.id === offer.id ? { ...o, status: 'active' } : o));
           toast.success('Offer resumed');
+
+          await supabase.rpc('log_offer_action', {
+            p_offer_id: offer.id,
+            p_action: 'resumed'
+          });
         }
         break;
       case 'terminate':
@@ -121,9 +132,14 @@ export default function FeaturedOffers({
         setActionModalOpen(true);
         break;
       case 'toggle_featured':
-        const featured = await toggleFeatured(offer.id, !offer.is_featured);
+        const newFeaturedState = !offer.is_featured;
+        const featured = await toggleFeatured(offer.id, newFeaturedState);
         if (featured) {
-          setOffers(prev => prev.map(o => o.id === offer.id ? { ...o, is_featured: !offer.is_featured } : o));
+          setOffers(prev => prev.map(o => o.id === offer.id ? { ...o, is_featured: newFeaturedState } : o));
+          await supabase.rpc('log_offer_action', {
+            p_offer_id: offer.id,
+            p_action: newFeaturedState ? 'featured' : 'unfeatured'
+          });
         }
         break;
       case 'view_history':
@@ -150,6 +166,11 @@ export default function FeaturedOffers({
           if (success) {
             setOffers(prev => prev.map(o => o.id === offerId ? { ...o, status: 'paused' } : o));
             toast.success('Offer paused');
+            await supabase.rpc('log_offer_action', {
+              p_offer_id: offerId,
+              p_action: 'paused',
+              p_reason: reason
+            });
           }
           break;
         case 'terminate':
@@ -157,6 +178,11 @@ export default function FeaturedOffers({
           if (success) {
             setOffers(prev => prev.filter(o => o.id !== offerId));
             toast.success('Offer terminated');
+            await supabase.rpc('log_offer_action', {
+              p_offer_id: offerId,
+              p_action: 'terminated',
+              p_reason: reason
+            });
           }
           break;
         case 'archive':
@@ -164,6 +190,10 @@ export default function FeaturedOffers({
           if (success) {
             setOffers(prev => prev.filter(o => o.id !== offerId));
             toast.success('Offer archived');
+            await supabase.rpc('log_offer_action', {
+              p_offer_id: offerId,
+              p_action: 'archived'
+            });
           }
           break;
         case 'delete':
@@ -173,6 +203,10 @@ export default function FeaturedOffers({
             setOffers(prev => prev.filter(o => o.id !== offerId));
             setTotalCount(prev => prev - 1);
             toast.success(isDraft ? 'Draft deleted successfully' : 'Offer deleted successfully');
+            await supabase.rpc('log_offer_action', {
+              p_offer_id: offerId,
+              p_action: 'deleted'
+            });
           }
           break;
       }
@@ -604,7 +638,6 @@ export default function FeaturedOffers({
           isOpen={historyOpen}
           onClose={() => { setHistoryOpen(false); setHistoryOffer(null); }}
           offerId={historyOffer.id}
-          offerTitle={historyOffer.title}
         />
       )}
 
