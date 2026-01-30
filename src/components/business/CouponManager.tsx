@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus,
@@ -27,12 +28,12 @@ import {
   FileText,
   FilePlus
 } from 'lucide-react';
-import { 
-  Coupon, 
-  CouponFilters, 
+import {
+  Coupon,
+  CouponFilters,
   CouponStatus,
   CouponType,
-  CouponAnalytics 
+  CouponAnalytics
 } from '../../types/coupon';
 import { useCoupons } from '../../hooks/useCoupons';
 import { useCouponDrafts } from '../../hooks/useCouponDrafts';
@@ -53,8 +54,25 @@ const CouponManager: React.FC<CouponManagerProps> = ({
 }) => {
   const { coupons, loading, deleteCoupon, toggleCouponStatus, refreshCoupons, fetchCouponAnalytics } = useCoupons(businessId);
   const { drafts, loading: draftsLoading, deleteDraft, loadDraft } = useCouponDrafts(businessId);
-  
-  const [activeTab, setActiveTab] = useState<'coupons' | 'drafts'>(drafts.length > 0 ? 'drafts' : 'coupons');
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = (searchParams.get('tab') as 'coupons' | 'drafts') || 'coupons';
+
+  const handleTabChange = (tab: 'coupons' | 'drafts') => {
+    setSearchParams(prev => {
+      prev.set('tab', tab);
+      return prev;
+    });
+  };
+
+  // Validate activeTab
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab && !['coupons', 'drafts'].includes(tab)) {
+      handleTabChange('coupons');
+    }
+  }, [searchParams, handleTabChange]);
+
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showCreator, setShowCreator] = useState(false);
   const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
@@ -69,20 +87,20 @@ const CouponManager: React.FC<CouponManagerProps> = ({
   // Auto-switch to drafts tab if there are drafts but no published coupons
   useEffect(() => {
     if (drafts.length > 0 && coupons.length === 0 && activeTab === 'coupons') {
-      setActiveTab('drafts');
+      handleTabChange('drafts');
     }
-  }, [drafts.length, coupons.length, activeTab]);
+  }, [drafts.length, coupons.length, activeTab, handleTabChange]);
 
   // Filter coupons based on search and filters
   const filteredCoupons = useMemo(() => {
     if (!coupons?.length) return [];
-    
+
     return coupons.filter(coupon => {
       const titleMatch = !searchQuery || coupon.title.toLowerCase().includes(searchQuery.toLowerCase());
       const descMatch = !searchQuery || coupon.description?.toLowerCase().includes(searchQuery.toLowerCase());
       const statusMatch = !filters.status?.length || filters.status.includes(coupon.status);
       const typeMatch = !filters.type?.length || filters.type.includes(coupon.type);
-      
+
       return (titleMatch || descMatch) && statusMatch && typeMatch;
     });
   }, [coupons, searchQuery, filters]);
@@ -154,7 +172,7 @@ const CouponManager: React.FC<CouponManagerProps> = ({
 
   const handleDeleteDraft = useCallback(async (draftId: string, draftName: string) => {
     if (!window.confirm(`Delete draft "${draftName}"?`)) return;
-    
+
     try {
       await deleteDraft(draftId);
       toast.success('Draft deleted successfully');
@@ -166,7 +184,7 @@ const CouponManager: React.FC<CouponManagerProps> = ({
 
   const handleDeleteCoupon = useCallback(async (couponId: string, couponTitle: string) => {
     if (!window.confirm(`Delete "${couponTitle}"?`)) return;
-    
+
     try {
       await deleteCoupon(couponId);
       toast.success('Deleted');
@@ -208,17 +226,17 @@ const CouponManager: React.FC<CouponManagerProps> = ({
     setVerifyingStats(true);
     try {
       const discrepancies = await couponStatsService.verifyStats(businessId);
-      
+
       if (discrepancies.length === 0) {
         toast.success('✅ All coupon statistics are accurate!');
       } else {
         toast.error(`⚠️ Found ${discrepancies.length} coupon(s) with incorrect stats`, {
           duration: 5000
         });
-        
+
         // Auto-fix the stats
         const result = await couponStatsService.fixStats();
-        
+
         if (result.success && result.fixed_count > 0) {
           toast.success(`✅ Fixed statistics for ${result.fixed_count} coupon(s)`);
           // Refresh coupons to show updated stats
@@ -314,7 +332,7 @@ const CouponManager: React.FC<CouponManagerProps> = ({
                     <MoreVertical className="w-4 h-4" />
                   </button>
                 )}
-                
+
                 {showDropdown && (
                   <div className="absolute right-0 top-8 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
                     <div className="py-1">
@@ -380,7 +398,7 @@ const CouponManager: React.FC<CouponManagerProps> = ({
                 )}
               </div>
             </div>
-            
+
             <div className="text-center">
               <div className="text-2xl font-bold mb-1">{formatDiscountDisplay(coupon)}</div>
               <div className="text-sm opacity-90 mb-2">{coupon.title}</div>
@@ -397,7 +415,7 @@ const CouponManager: React.FC<CouponManagerProps> = ({
                 <StatusIcon className="w-3 h-3 mr-1" />
                 {coupon.status.charAt(0).toUpperCase() + coupon.status.slice(1)}
               </div>
-              
+
               <div className="text-right">
                 <div className="text-xs text-gray-500">Expires</div>
                 <div className="text-xs font-medium text-gray-900">
@@ -598,7 +616,7 @@ const CouponManager: React.FC<CouponManagerProps> = ({
                     <MoreVertical className="w-4 h-4" />
                   </button>
                 )}
-                
+
                 {showDropdown && (
                   <div className="absolute right-0 top-8 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
                     <div className="py-1">
@@ -628,12 +646,12 @@ const CouponManager: React.FC<CouponManagerProps> = ({
                 )}
               </div>
             </div>
-            
+
             <div className="text-center">
               <div className="text-lg font-bold mb-1">{draft.draft_name}</div>
               <div className="text-xs opacity-90 mb-2">Step {draft.step_completed}/6 Complete</div>
               <div className="w-full bg-white bg-opacity-20 rounded-full h-2">
-                <div 
+                <div
                   className={`h-2 rounded-full ${getCompletionColor(draft.step_completed)}`}
                   style={{ width: `${getCompletionPercentage(draft.step_completed)}%` }}
                 ></div>
@@ -820,7 +838,7 @@ const CouponManager: React.FC<CouponManagerProps> = ({
               Create and manage coupons for {businessName}
             </p>
           </div>
-          
+
           {isOwner && (
             <div className="flex gap-2 mt-4 sm:mt-0">
               <motion.button
@@ -883,23 +901,21 @@ const CouponManager: React.FC<CouponManagerProps> = ({
         {/* Tabs */}
         <div className="flex space-x-1 mt-6">
           <button
-            onClick={() => setActiveTab('coupons')}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-              activeTab === 'coupons'
-                ? 'bg-purple-100 text-purple-700 border border-purple-200'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-            }`}
+            onClick={() => handleTabChange('coupons')}
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'coupons'
+              ? 'bg-purple-100 text-purple-700 border border-purple-200'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
           >
             <Target className="w-4 h-4 mr-2 inline" />
             Published Coupons ({coupons.length})
           </button>
           <button
-            onClick={() => setActiveTab('drafts')}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-              activeTab === 'drafts'
-                ? 'bg-orange-100 text-orange-700 border border-orange-200'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-            }`}
+            onClick={() => handleTabChange('drafts')}
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'drafts'
+              ? 'bg-orange-100 text-orange-700 border border-orange-200'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
           >
             <FileText className="w-4 h-4 mr-2 inline" />
             Draft Coupons ({drafts.length})
@@ -909,127 +925,125 @@ const CouponManager: React.FC<CouponManagerProps> = ({
 
       {/* Search and Filters - Only for Coupons tab */}
       {activeTab === 'coupons' && (
-      <div className="mb-6 space-y-4">
-        <div className="flex flex-col sm:flex-row gap-4">
-          {/* Search */}
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
-                type="text"
-                placeholder="Search coupons..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-              />
-            </div>
-          </div>
-
-          {/* View Mode Toggle */}
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={() => setViewMode('grid')}
-              className={`p-2 rounded-md ${
-                viewMode === 'grid' 
-                  ? 'bg-purple-100 text-purple-600' 
-                  : 'text-gray-400 hover:text-gray-600'
-              }`}
-            >
-              <Grid3X3 className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => setViewMode('list')}
-              className={`p-2 rounded-md ${
-                viewMode === 'list' 
-                  ? 'bg-purple-100 text-purple-600' 
-                  : 'text-gray-400 hover:text-gray-600'
-              }`}
-            >
-              <List className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* Filter Toggle */}
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-          >
-            <Filter className="w-4 h-4 mr-2" />
-            Filters
-            {(Object.keys(filters).length > 0 || searchQuery) && (
-              <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                {Object.keys(filters).length + (searchQuery ? 1 : 0)}
-              </span>
-            )}
-          </button>
-        </div>
-
-        {/* Filters Panel */}
-        <AnimatePresence>
-          {showFilters && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="bg-gray-50 rounded-lg p-4 border border-gray-200"
-            >
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Status Filter */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Status
-                  </label>
-                  <select
-                    multiple
-                    value={filters.status || []}
-                    onChange={(e) => setFilters({ 
-                      ...filters, 
-                      status: Array.from(e.target.selectedOptions, option => option.value) as CouponStatus[]
-                    })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  >
-                    <option value="active">Active</option>
-                    <option value="paused">Paused</option>
-                    <option value="expired">Expired</option>
-                    <option value="draft">Draft</option>
-                  </select>
-                </div>
-
-                {/* Type Filter */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Type
-                  </label>
-                  <select
-                    multiple
-                    value={filters.type || []}
-                    onChange={(e) => setFilters({ 
-                      ...filters, 
-                      type: Array.from(e.target.selectedOptions, option => option.value) as CouponType[]
-                    })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  >
-                    <option value="percentage">Percentage Off</option>
-                    <option value="fixed_amount">Fixed Amount</option>
-                    <option value="buy_x_get_y">Buy X Get Y</option>
-                    <option value="free_item">Free Item</option>
-                  </select>
-                </div>
-
-                {/* Clear Filters */}
-                <div className="flex items-end">
-                  <button
-                    onClick={clearFilters}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-                  >
-                    Clear Filters
-                  </button>
-                </div>
+        <div className="mb-6 space-y-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            {/* Search */}
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input
+                  type="text"
+                  placeholder="Search coupons..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                />
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+            </div>
+
+            {/* View Mode Toggle */}
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-2 rounded-md ${viewMode === 'grid'
+                  ? 'bg-purple-100 text-purple-600'
+                  : 'text-gray-400 hover:text-gray-600'
+                  }`}
+              >
+                <Grid3X3 className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-2 rounded-md ${viewMode === 'list'
+                  ? 'bg-purple-100 text-purple-600'
+                  : 'text-gray-400 hover:text-gray-600'
+                  }`}
+              >
+                <List className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Filter Toggle */}
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+            >
+              <Filter className="w-4 h-4 mr-2" />
+              Filters
+              {(Object.keys(filters).length > 0 || searchQuery) && (
+                <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                  {Object.keys(filters).length + (searchQuery ? 1 : 0)}
+                </span>
+              )}
+            </button>
+          </div>
+
+          {/* Filters Panel */}
+          <AnimatePresence>
+            {showFilters && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="bg-gray-50 rounded-lg p-4 border border-gray-200"
+              >
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Status Filter */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Status
+                    </label>
+                    <select
+                      multiple
+                      value={filters.status || []}
+                      onChange={(e) => setFilters({
+                        ...filters,
+                        status: Array.from(e.target.selectedOptions, option => option.value) as CouponStatus[]
+                      })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    >
+                      <option value="active">Active</option>
+                      <option value="paused">Paused</option>
+                      <option value="expired">Expired</option>
+                      <option value="draft">Draft</option>
+                    </select>
+                  </div>
+
+                  {/* Type Filter */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Type
+                    </label>
+                    <select
+                      multiple
+                      value={filters.type || []}
+                      onChange={(e) => setFilters({
+                        ...filters,
+                        type: Array.from(e.target.selectedOptions, option => option.value) as CouponType[]
+                      })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    >
+                      <option value="percentage">Percentage Off</option>
+                      <option value="fixed_amount">Fixed Amount</option>
+                      <option value="buy_x_get_y">Buy X Get Y</option>
+                      <option value="free_item">Free Item</option>
+                    </select>
+                  </div>
+
+                  {/* Clear Filters */}
+                  <div className="flex items-end">
+                    <button
+                      onClick={clearFilters}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                    >
+                      Clear Filters
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       )}
 
       {/* Tab Content */}
@@ -1042,8 +1056,8 @@ const CouponManager: React.FC<CouponManagerProps> = ({
             </div>
             <h3 className="mt-2 text-sm font-medium text-gray-900">No coupons found</h3>
             <p className="mt-1 text-sm text-gray-500">
-              {coupons.length === 0 
-                ? isOwner 
+              {coupons.length === 0
+                ? isOwner
                   ? 'Get started by creating your first coupon.'
                   : 'This business hasn\'t created any coupons yet.'
                 : 'Try adjusting your search or filters.'
@@ -1062,11 +1076,10 @@ const CouponManager: React.FC<CouponManagerProps> = ({
             )}
           </div>
         ) : (
-          <div className={`${
-            viewMode === 'grid' 
-              ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
-              : 'space-y-4'
-          }`}>
+          <div className={`${viewMode === 'grid'
+            ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
+            : 'space-y-4'
+            }`}>
             {filteredCoupons.map((coupon, index) => (
               <motion.div
                 key={coupon.id}
@@ -1088,7 +1101,7 @@ const CouponManager: React.FC<CouponManagerProps> = ({
             </div>
             <h3 className="mt-2 text-sm font-medium text-gray-900">No draft coupons</h3>
             <p className="mt-1 text-sm text-gray-500">
-              {isOwner 
+              {isOwner
                 ? 'Start creating a coupon to see it saved as a draft here.'
                 : 'This business doesn\'t have any coupon drafts.'
               }
@@ -1106,11 +1119,10 @@ const CouponManager: React.FC<CouponManagerProps> = ({
             )}
           </div>
         ) : (
-          <div className={`${
-            viewMode === 'grid' 
-              ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
-              : 'space-y-4'
-          }`}>
+          <div className={`${viewMode === 'grid'
+            ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
+            : 'space-y-4'
+            }`}>
             {drafts.map((draft, index) => (
               <motion.div
                 key={draft.id}

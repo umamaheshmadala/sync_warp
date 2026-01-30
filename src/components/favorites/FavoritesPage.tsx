@@ -3,7 +3,7 @@
 // Features: Tabs for Offers/Products, search, and unfavorite actions
 
 import React, { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Heart,
   Search as SearchIcon,
@@ -90,11 +90,29 @@ const mapFavoriteToOffer = (fav: FavoriteOffer): Offer => {
 const FavoritesPage: React.FC = () => {
   const navigate = useNavigate();
   const favorites = useFavoritesContext();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  // Local state
-  const [activeTab, setActiveTab] = useState<ActiveTab>('offers');
+  // Get active tab from URL or default to 'offers'
+  const activeTab = (searchParams.get('tab') as ActiveTab) || 'offers';
+
+  // Handle tab change by updating URL
+  const handleTabChange = (tab: ActiveTab) => {
+    setSearchParams(prev => {
+      prev.set('tab', tab);
+      return prev;
+    });
+  };
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
+
+  // Validate activeTab is valid
+  React.useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab && tab !== 'offers' && tab !== 'products') {
+      handleTabChange('offers');
+    }
+  }, [searchParams]);
 
   // Refresh favorites data when page is visited
   React.useEffect(() => {
@@ -173,72 +191,46 @@ const FavoritesPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-3">
-              <Heart className="h-8 w-8 text-indigo-600 fill-indigo-600" />
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">My Favorites</h1>
-                <p className="text-sm text-gray-600">
-                  {favorites.totalFavorites} {favorites.totalFavorites === 1 ? 'item' : 'items'} saved
-                </p>
-              </div>
-            </div>
-
-            {/* Refresh button */}
-            <button
-              onClick={() => favorites.refresh()}
-              disabled={favorites.isRefetching}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
-              aria-label="Refresh favorites"
-            >
-              <RefreshCw
-                className={`h-5 w-5 text-gray-600 ${favorites.isRefetching ? 'animate-spin' : ''}`}
-              />
-            </button>
-          </div>
-
-          {/* Tabs */}
-          <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
-            {tabs.map(tab => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 rounded-md text-sm font-medium transition-colors ${activeTab === tab.id
-                    ? 'bg-white text-indigo-600 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        {/* Tabs */}
+        <div className="flex space-x-1 bg-white p-1 rounded-lg shadow-sm mb-4">
+          {tabs.map(tab => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => handleTabChange(tab.id)}
+                className={`flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 rounded-md text-sm font-medium transition-colors ${activeTab === tab.id
+                  ? 'bg-indigo-50 text-indigo-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+              >
+                <Icon className="h-4 w-4" />
+                <span>{tab.label}</span>
+                <span
+                  className={`px-2 py-0.5 rounded-full text-xs ${activeTab === tab.id
+                    ? 'bg-indigo-100 text-indigo-700'
+                    : 'bg-gray-100 text-gray-600'
                     }`}
                 >
-                  <Icon className="h-4 w-4" />
-                  <span>{tab.label}</span>
-                  <span
-                    className={`px-2 py-0.5 rounded-full text-xs ${activeTab === tab.id
-                      ? 'bg-indigo-100 text-indigo-700'
-                      : 'bg-gray-200 text-gray-600'
-                      }`}
-                  >
-                    {tab.count}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+                  {tab.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
 
-          {/* Search */}
-          <div className="mt-4">
-            <div className="relative">
-              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder={`Search ${activeTab}...`}
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              />
-            </div>
+        {/* Search */}
+        <div className="mb-6">
+          <div className="relative">
+            <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder={`Search ${activeTab}...`}
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white shadow-sm"
+            />
           </div>
         </div>
       </div>

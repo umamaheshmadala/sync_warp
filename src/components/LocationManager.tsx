@@ -1,7 +1,8 @@
 // LocationManager.tsx
 // Location management dashboard with saved locations, history, and geocoding interface
 
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   MapPin,
   Navigation,
@@ -54,7 +55,28 @@ const LocationManager: React.FC<LocationManagerProps> = ({
     requestLocationPermission
   } = useAdvancedLocation();
 
-  const [activeTab, setActiveTab] = useState<'current' | 'saved' | 'search' | 'history'>('current');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [localTab, setLocalTab] = useState<'current' | 'saved' | 'search' | 'history'>('current');
+
+  const activeTab = useMemo(() => {
+    if (showAsModal) return localTab;
+    const tab = searchParams.get('tab');
+    if (tab && ['current', 'saved', 'search', 'history'].includes(tab)) {
+      return tab as 'current' | 'saved' | 'search' | 'history';
+    }
+    return 'current';
+  }, [showAsModal, localTab, searchParams]);
+
+  const setActiveTab = (tab: 'current' | 'saved' | 'search' | 'history') => {
+    if (showAsModal) {
+      setLocalTab(tab);
+    } else {
+      setSearchParams(prev => {
+        prev.set('tab', tab);
+        return prev;
+      });
+    }
+  };
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<LocationSearchResult[]>([]);
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -70,7 +92,7 @@ const LocationManager: React.FC<LocationManagerProps> = ({
   // Handle search input changes with debounced suggestions
   const handleSearchChange = useCallback(async (value: string) => {
     setSearchQuery(value);
-    
+
     if (value.length >= 3) {
       try {
         const addressSuggestions = await getAddressSuggestions(value);
@@ -88,10 +110,10 @@ const LocationManager: React.FC<LocationManagerProps> = ({
   // Handle search submission
   const handleSearch = useCallback(async () => {
     if (!searchQuery.trim()) return;
-    
+
     setSearchLoading(true);
     setShowSuggestions(false);
-    
+
     try {
       // First try geocoding the address
       try {
@@ -128,7 +150,7 @@ const LocationManager: React.FC<LocationManagerProps> = ({
   // Save current location
   const handleSaveCurrentLocation = useCallback(async () => {
     if (!currentLocation) return;
-    
+
     setShowAddLocation(true);
     setNewLocationName(currentLocation.address.split(',')[0]);
   }, [currentLocation]);
@@ -221,11 +243,10 @@ const LocationManager: React.FC<LocationManagerProps> = ({
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center space-x-2 px-6 py-4 font-medium transition-colors ${
-                activeTab === tab.id
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
+              className={`flex items-center space-x-2 px-6 py-4 font-medium transition-colors ${activeTab === tab.id
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-500 hover:text-gray-700'
+                }`}
             >
               <tab.icon className="w-4 h-4" />
               <span>{tab.label}</span>
@@ -258,7 +279,7 @@ const LocationManager: React.FC<LocationManagerProps> = ({
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-medium text-gray-900">Your Current Location</h3>
                   <button
-                    onClick={getCurrentLocation}
+                    onClick={() => getCurrentLocation()}
                     disabled={isLoading}
                     className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                   >
@@ -337,14 +358,13 @@ const LocationManager: React.FC<LocationManagerProps> = ({
                     <div key={location.id} className="bg-gray-50 rounded-lg p-4">
                       <div className="flex items-start justify-between">
                         <div className="flex items-start space-x-3 flex-1">
-                          <div className={`p-2 rounded-full ${
-                            location.type === 'home' ? 'bg-green-100 text-green-600' :
+                          <div className={`p-2 rounded-full ${location.type === 'home' ? 'bg-green-100 text-green-600' :
                             location.type === 'work' ? 'bg-blue-100 text-blue-600' :
-                            'bg-red-100 text-red-600'
-                          }`}>
+                              'bg-red-100 text-red-600'
+                            }`}>
                             {getLocationTypeIcon(location.type)}
                           </div>
-                          
+
                           <div className="flex-1">
                             <h4 className="font-medium text-gray-900">{location.name}</h4>
                             <p className="text-gray-600 text-sm mt-1">{location.address}</p>
@@ -355,7 +375,7 @@ const LocationManager: React.FC<LocationManagerProps> = ({
                             )}
                           </div>
                         </div>
-                        
+
                         <div className="flex items-center space-x-2">
                           <button
                             onClick={() => handleLocationSelect(location.coordinates, location.address)}
@@ -463,7 +483,7 @@ const LocationManager: React.FC<LocationManagerProps> = ({
                               </p>
                             )}
                           </div>
-                          
+
                           <div className="flex items-center space-x-2">
                             <button
                               onClick={() => handleLocationSelect(result.coordinates, result.address)}
@@ -533,7 +553,7 @@ const LocationManager: React.FC<LocationManagerProps> = ({
                             {new Date(item.accessed_at).toLocaleTimeString()}
                           </p>
                         </div>
-                        
+
                         <button
                           onClick={() => handleLocationSelect(item.coordinates, item.address)}
                           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -554,7 +574,7 @@ const LocationManager: React.FC<LocationManagerProps> = ({
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
             <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Save Location</h3>
-              
+
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">

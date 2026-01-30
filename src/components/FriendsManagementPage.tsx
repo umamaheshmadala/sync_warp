@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users,
@@ -41,7 +42,24 @@ const FriendsManagementPage: React.FC = () => {
   const totalFriends = friends.length;
   const onlineCount = friends.filter((f: any) => f.friend?.is_online).length;
 
-  const [activeTab, setActiveTab] = useState<TabType>('friends');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = (searchParams.get('tab') as TabType) || 'friends';
+
+  const handleTabChange = (tab: TabType) => {
+    setSearchParams(prev => {
+      prev.set('tab', tab);
+      return prev;
+    });
+  };
+
+  // Validate activeTab is valid
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab && !['friends', 'requests', 'activity'].includes(tab)) {
+      handleTabChange('friends');
+    }
+  }, [searchParams]);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [filterOnline, setFilterOnline] = useState(false);
   const [showShareDeal, setShowShareDeal] = useState<string | null>(null);
@@ -227,7 +245,7 @@ const FriendsManagementPage: React.FC = () => {
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id as TabType)}
+                  onClick={() => handleTabChange(tab.id as TabType)}
                   className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center ${activeTab === tab.id
                     ? 'border-indigo-500 text-indigo-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'

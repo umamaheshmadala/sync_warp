@@ -1,7 +1,8 @@
 // src/components/Profile.tsx
 // User profile management page
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore'
 import { useNavigationPreferences } from '../hooks/useNavigationState'
 import { User, MapPin, Phone, Mail, Edit3, Camera, Settings, Smartphone, MessageSquare, FileText, Share2 } from 'lucide-react'
@@ -14,7 +15,23 @@ export default function Profile() {
   const { user, profile, updateProfile } = useAuthStore()
   const { preferences, updatePreference } = useNavigationPreferences()
   const { cities, loading: citiesLoading } = useCities()
-  const [activeTab, setActiveTab] = useState<'settings' | 'activity'>('settings')
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = (searchParams.get('tab') as 'settings' | 'activity') || 'settings';
+
+  const handleTabChange = (tab: 'settings' | 'activity') => {
+    setSearchParams(prev => {
+      prev.set('tab', tab);
+      return prev;
+    });
+  };
+
+  // Validate activeTab
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab && !['settings', 'activity'].includes(tab)) {
+      handleTabChange('settings');
+    }
+  }, [searchParams]);
 
   // Global edit mode
   const [isEditingProfile, setIsEditingProfile] = useState(false)
@@ -55,7 +72,7 @@ export default function Profile() {
   return (
     <div className="max-w-7xl mx-auto px-4 py-4">
       {/* Profile Completion Wizard */}
-      <ProfileCompletionWizard onStepClick={() => setActiveTab('settings')} />
+      <ProfileCompletionWizard onStepClick={() => handleTabChange('settings')} />
 
       {/* Profile Header */}
       <div className="bg-white text-gray-900 rounded-lg shadow-md border border-gray-200 mb-2 relative mt-16 md:mt-0 overflow-visible md:overflow-hidden">
@@ -215,7 +232,7 @@ export default function Profile() {
             ].map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
+                onClick={() => handleTabChange(tab.id as any)}
                 className={`flex-1 px-6 py-4 text-sm font-medium transition-colors ${activeTab === tab.id
                   ? 'border-b-2 border-blue-600 text-blue-600 dark:text-blue-400'
                   : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'

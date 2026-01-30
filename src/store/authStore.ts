@@ -228,7 +228,7 @@ export const useAuthStore = create<AuthState>()(
             console.log('[Auth] Push token cleaned up')
           }
 
-          const { error } = await supabase.auth.signOut()
+          const { error } = await supabase.auth.signOut({ scope: 'local' })
           if (error) throw error
 
           // Clear persisted state
