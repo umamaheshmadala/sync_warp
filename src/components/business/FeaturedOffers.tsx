@@ -470,7 +470,7 @@ export default function FeaturedOffers({
                   offer={offer}
                   onViewDetails={(o) => setSelectedOffer(o)}
                   onAction={isOwner ? handleAction : undefined}
-                  showActions={isOwner && !compact}
+                  showActions={false} // User requested moving actions to modal only
                 />
               </div>
             );
@@ -588,6 +588,8 @@ export default function FeaturedOffers({
                 setSelectedOffer(null);
               } : undefined}
               showStats={isOwner}
+              isOwner={isOwner}
+              onAction={isOwner ? handleAction : undefined}
             // onShare logic is handled internally by OfferDetailModal's OfferShareButton
             />,
             document.body

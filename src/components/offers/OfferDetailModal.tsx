@@ -19,6 +19,8 @@ import type { Offer } from '../../types/offers';
 import { Button } from '@/components/ui/button';
 import { OfferShareButton } from '../Sharing/OfferShareButton';
 import { getOfferColor } from '../../utils/offerColors';
+import { OfferActionsMenu, OfferActionType } from './OfferActionsMenu';
+import { FavoriteOfferButton } from '../favorites/FavoriteOfferButton';
 
 interface OfferDetailModalProps {
   offer: Offer;
@@ -26,6 +28,8 @@ interface OfferDetailModalProps {
   onShare?: (offer: Offer) => void;
   onEdit?: (offer: Offer) => void;
   showStats?: boolean;
+  isOwner?: boolean;
+  onAction?: (action: OfferActionType, offer: Offer) => void;
 }
 
 export const OfferDetailModal: React.FC<OfferDetailModalProps> = ({
@@ -34,6 +38,8 @@ export const OfferDetailModal: React.FC<OfferDetailModalProps> = ({
   onShare,
   onEdit,
   showStats = false,
+  isOwner = false,
+  onAction,
 }) => {
   const categoryName = offer.offer_type?.category?.name || (offer as any).category_name;
   const ticketColor = React.useMemo(() => {
@@ -85,6 +91,25 @@ export const OfferDetailModal: React.FC<OfferDetailModalProps> = ({
                   <p className="text-xs md:text-sm text-gray-500 mt-1">
                     Code: <span className={`font-mono font-semibold ${ticketColor.replace('bg-', 'text-')}`}>{offer.offer_code}</span>
                   </p>
+                )}
+              </div>
+
+              {/* Top Right Actions */}
+              <div className="flex items-center">
+                {isOwner ? (
+                  <OfferActionsMenu
+                    offer={offer}
+                    onAction={onAction}
+                    className="bg-gray-50 hover:bg-gray-100"
+                  />
+                ) : (
+                  <button
+                    onClick={onClose}
+                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+                    aria-label="Close"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
                 )}
               </div>
             </div>
@@ -147,31 +172,31 @@ export const OfferDetailModal: React.FC<OfferDetailModalProps> = ({
                 </div>
               )}
 
-              {/* Stats (if enabled) */}
+              {/* Stats (if enabled) - Reduced Height */}
               {showStats && (
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-900 mb-3">Statistics</h3>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="bg-blue-50 rounded-lg p-4 text-center">
-                      <div className="flex items-center justify-center gap-2 mb-1">
-                        <Eye className="w-5 h-5 text-blue-600" />
-                        <span className="text-2xl font-bold text-blue-900">{offer.view_count}</span>
+                  <h3 className="text-sm font-semibold text-gray-900 mb-2">Statistics</h3>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="bg-blue-50 rounded-lg p-2 text-center">
+                      <div className="flex items-center justify-center gap-1.5 mb-0.5">
+                        <Eye className="w-4 h-4 text-blue-600" />
+                        <span className="text-lg font-bold text-blue-900">{offer.view_count}</span>
                       </div>
-                      <span className="text-xs text-blue-700 font-medium">Views</span>
+                      <span className="text-[10px] uppercase tracking-wide text-blue-700 font-medium">Views</span>
                     </div>
-                    <div className="bg-purple-50 rounded-lg p-4 text-center">
-                      <div className="flex items-center justify-center gap-2 mb-1">
-                        <Share2 className="w-5 h-5 text-purple-600" />
-                        <span className="text-2xl font-bold text-purple-900">{offer.share_count}</span>
+                    <div className="bg-purple-50 rounded-lg p-2 text-center">
+                      <div className="flex items-center justify-center gap-1.5 mb-0.5">
+                        <Share2 className="w-4 h-4 text-purple-600" />
+                        <span className="text-lg font-bold text-purple-900">{offer.share_count}</span>
                       </div>
-                      <span className="text-xs text-purple-700 font-medium">Shares</span>
+                      <span className="text-[10px] uppercase tracking-wide text-purple-700 font-medium">Shares</span>
                     </div>
-                    <div className="bg-green-50 rounded-lg p-4 text-center">
-                      <div className="flex items-center justify-center gap-2 mb-1">
-                        <MousePointerClick className="w-5 h-5 text-green-600" />
-                        <span className="text-2xl font-bold text-green-900">{offer.click_count}</span>
+                    <div className="bg-green-50 rounded-lg p-2 text-center">
+                      <div className="flex items-center justify-center gap-1.5 mb-0.5">
+                        <MousePointerClick className="w-4 h-4 text-green-600" />
+                        <span className="text-lg font-bold text-green-900">{offer.click_count}</span>
                       </div>
-                      <span className="text-xs text-green-700 font-medium">Clicks</span>
+                      <span className="text-[10px] uppercase tracking-wide text-green-700 font-medium">Clicks</span>
                     </div>
                   </div>
                 </div>
@@ -180,39 +205,47 @@ export const OfferDetailModal: React.FC<OfferDetailModalProps> = ({
 
             {/* Footer */}
             <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/50 flex items-center justify-end gap-3 flex-shrink-0">
-              <Button
-                variant="outline"
-                onClick={onClose}
-                className="min-w-[80px]"
-              >
-                Close
-              </Button>
-
-              {onEdit && (
-                <Button
-                  variant="outline"
-                  onClick={() => onEdit(offer)}
-                  className="min-w-[80px] text-indigo-600 border-indigo-200 hover:bg-indigo-50"
-                >
-                  <Edit3 className="w-4 h-4 mr-2" />
-                  Edit
-                </Button>
+              {isOwner ? (
+                // Owner Buttons: Close, Edit
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={onClose}
+                    className="min-w-[80px]"
+                  >
+                    Close
+                  </Button>
+                  {onEdit && (
+                    <Button
+                      variant="outline"
+                      onClick={() => onEdit(offer)}
+                      className="min-w-[80px] text-indigo-600 border-indigo-200 hover:bg-indigo-50"
+                    >
+                      <Edit3 className="w-4 h-4 mr-2" />
+                      Edit
+                    </Button>
+                  )}
+                </>
+              ) : (
+                // User Buttons: Favorite, Share
+                <>
+                  <FavoriteOfferButton offerId={offer.id} className="min-w-[100px]" />
+                  <OfferShareButton
+                    offerId={offer.id}
+                    offerTitle={offer.title}
+                    offerDescription={offer.description}
+                    validUntil={offer.valid_until}
+                    offerImage={offer.icon_image_url}
+                    businessId={offer.business_id}
+                    businessName={offer.business?.business_name || 'Sync Business'}
+                    variant="default"
+                    size="default"
+                    showLabel={true}
+                    label="Share"
+                    className={`min-w-[100px] text-white ${ticketColor} hover:brightness-90`}
+                  />
+                </>
               )}
-
-              <OfferShareButton
-                offerId={offer.id}
-                offerTitle={offer.title}
-                offerDescription={offer.description}
-                validUntil={offer.valid_until}
-                offerImage={offer.icon_image_url}
-                businessId={offer.business_id}
-                businessName={offer.business?.business_name || 'Sync Business'}
-                variant="default"
-                size="default"
-                showLabel={true}
-                label="Share"
-                className={`min-w-[100px] text-white ${ticketColor} hover:brightness-90`}
-              />
             </div>
           </div>
         </motion.div>

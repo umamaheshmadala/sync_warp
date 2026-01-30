@@ -20,6 +20,8 @@ export interface FavoriteOffer {
     view_count: number;
     share_count: number;
     audit_code?: string;
+    offer_type_name?: string;
+    category_name?: string;
 }
 
 export interface FavoriteProduct {

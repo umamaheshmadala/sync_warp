@@ -73,8 +73,18 @@ const mapFavoriteToOffer = (fav: FavoriteOffer): Offer => {
       id: fav.business_id,
       business_name: fav.business_name,
       business_image: fav.business_logo || null
-    }
-  };
+    },
+    // Story 4.12B: Map offer type and category for consistent styling
+    offer_type: fav.offer_type_name ? {
+      offer_name: fav.offer_type_name,
+      category: fav.category_name ? {
+        name: fav.category_name
+      } : undefined
+    } as any : undefined,
+    // Add raw property for color helper if needed
+    category_name: fav.category_name,
+    audit_code: fav.audit_code // Map audit_code so it displays on the card
+  } as any;
 };
 
 const FavoritesPage: React.FC = () => {
@@ -300,7 +310,6 @@ const FavoritesPage: React.FC = () => {
                   key={offer.id}
                   offer={mapFavoriteToOffer(offer)}
                   showActions={false}
-                  showStats={false}
                   onViewDetails={(o) => setSelectedOffer(o)}
                 />
               ))

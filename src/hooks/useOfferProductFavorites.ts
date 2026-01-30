@@ -4,6 +4,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuthStore } from '../store/authStore';
+import { supabase } from '../lib/supabase';
 import { toast } from 'react-hot-toast';
 import favoritesService, {
     FavoriteOffer,
@@ -71,10 +72,11 @@ export const useOfferProductFavorites = (
 
             try {
                 // Load both concurrently
-                const [offers, products, counts] = await Promise.all([
+                // We derive counts from the actual fetched items to ensure consistency
+                // with what's displayed (filtering out expired/inactive items)
+                const [offers, products] = await Promise.all([
                     favoritesService.getFavoriteOffers(),
-                    favoritesService.getFavoriteProducts(),
-                    favoritesService.getFavoriteCounts()
+                    favoritesService.getFavoriteProducts()
                 ]);
 
                 // Update cache
@@ -90,7 +92,10 @@ export const useOfferProductFavorites = (
                     isLoading: false,
                     isRefetching: false,
                     error: null,
-                    counts
+                    counts: {
+                        offers: offers.length,
+                        products: products.length
+                    }
                 });
             } catch (error) {
                 const errorMessage =
@@ -265,6 +270,34 @@ export const useOfferProductFavorites = (
             };
         }
     }, [user?.id, autoLoad, loadFavorites]);
+
+    // Real-time listener for favorites (Story 4.13)
+    useEffect(() => {
+        if (!user?.id) return;
+
+        const channel = supabase
+            .channel('user_favorites_changes')
+            .on(
+                'postgres_changes',
+                {
+                    event: '*', // Listen for INSERT and DELETE
+                    schema: 'public',
+                    table: 'user_favorites',
+                    filter: `user_id=eq.${user.id}`
+                },
+                (payload) => {
+                    // Refetch favorites to stay in sync
+                    // We rely on loadFavorites to update state and cache efficiently
+                    loadFavorites(false);
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [user?.id, loadFavorites]);
+
 
     return {
         // State
