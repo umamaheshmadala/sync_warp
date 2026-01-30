@@ -43,6 +43,7 @@ import { ReportDialog } from '../reporting/ReportDialog'
 import { ClickableUrl } from './ClickableUrl'
 import { parseMessageContent } from '../../utils/urlUtils'
 import { ReviewLinkPreview } from '../chat/ReviewLinkPreview'
+import { OfferLinkPreview } from '../chat/OfferLinkPreview'
 
 interface MessageBubbleProps {
   message: Message
@@ -773,18 +774,31 @@ export function MessageBubble({
                       </div>
                     )}
 
-                  {/* Standard Link Previews */}
-                  {message.link_previews && message.link_previews.length > 0 && message.link_previews[0].metadata?.type !== 'review' && (
-                    <div className="space-y-2 w-full max-w-[75vw]">
-                      {message.link_previews.map((preview, index) => (
-                        <LinkPreviewCard
-                          key={`${preview.url}-${index}`}
-                          preview={preview}
-                          showRemoveButton={false}
-                        />
-                      ))}
-                    </div>
-                  )}
+                  {/* Offer Preview (Ticket Style) */}
+                  {message.link_previews &&
+                    message.link_previews.length > 0 &&
+                    (message.link_previews[0].type === 'sync-offer' || message.link_previews[0].metadata?.type === 'offer') && (
+                      <div className="mt-2 text-left">
+                        <OfferLinkPreview preview={message.link_previews[0]} />
+                      </div>
+                    )}
+
+                  {/* Standard Link Previews (Exclude review and offer types) */}
+                  {message.link_previews &&
+                    message.link_previews.length > 0 &&
+                    message.link_previews[0].metadata?.type !== 'review' &&
+                    message.link_previews[0].type !== 'sync-offer' &&
+                    message.link_previews[0].metadata?.type !== 'offer' && (
+                      <div className="space-y-2 w-full max-w-[75vw]">
+                        {message.link_previews.map((preview, index) => (
+                          <LinkPreviewCard
+                            key={`${preview.url}-${index}`}
+                            preview={preview}
+                            showRemoveButton={false}
+                          />
+                        ))}
+                      </div>
+                    )}
 
                   {/* Text content with Read More expansion (Story 8.6.7) */}
                   <div className="relative">

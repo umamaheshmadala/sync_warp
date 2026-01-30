@@ -16,7 +16,7 @@ import { useFavoritesContext } from '../../contexts/FavoritesContext';
 // Using storefront OfferCard for visual consistency
 import { OfferCard } from '../offers/OfferCard';
 // Replaced FavoriteProductCard with ProductCard for consistency
-import ProductCard from '../business/ProductCard';
+import { ProductCard } from '../products/ProductCard';
 import OfferDetailModal from '../offers/OfferDetailModal';
 import type { Product } from '../../types/product';
 import type { Offer } from '../../types/offers';
@@ -309,10 +309,8 @@ const FavoritesPage: React.FC = () => {
                 <ProductCard
                   key={product.id}
                   product={mapFavoriteToProduct(product)}
-                  viewMode="grid"
-                  isOwner={false}
-                  onEdit={() => { }}
-                  onDelete={() => { }}
+                  size="medium"
+                  showActions={true}
                 />
               ))}
           </motion.div>

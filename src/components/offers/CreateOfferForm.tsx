@@ -410,8 +410,8 @@ export function CreateOfferForm({
         </div>
       </div>
 
-      {/* Step Content */}
-      <div className="flex-1 p-6">
+      {/* Step Content - Fixed Height for Consistency */}
+      <div className="h-[550px] overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
         {renderStepContent()}
       </div>
 
@@ -652,14 +652,39 @@ function CombinedOfferForm({
   const today = new Date().toISOString().split('T')[0];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
+
+      {/* Featured Status Section - MOVED TO TOP */}
+      <div className="bg-purple-50 border border-purple-100 rounded-lg p-3">
+        <div className="flex items-start">
+          <div className="flex items-center h-5">
+            <input
+              id="is_featured"
+              type="checkbox"
+              checked={formData.is_featured || false}
+              onChange={(e) => onChange('is_featured', e.target.checked)}
+              className="focus:ring-purple-500 h-4 w-4 text-purple-600 border-gray-300 rounded"
+            />
+          </div>
+          <div className="ml-3 text-sm flex-1">
+            <label htmlFor="is_featured" className="font-medium text-gray-900 flex items-center gap-2">
+              <Zap className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+              Feature this Offer
+            </label>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Pinned to the top of your offers list. Max 3 active.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Basic Information Section */}
       <div>
-        <h2 className="text-lg font-bold text-gray-900 mb-4">Basic Information</h2>
+        <h2 className="text-base font-bold text-gray-900 mb-3">Offer Details</h2>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Offer Title <span className="text-red-500">*</span>
             </label>
             <input
@@ -667,38 +692,34 @@ function CombinedOfferForm({
               value={formData.title || ''}
               onChange={(e) => onChange('title', e.target.value)}
               placeholder="e.g., 20% Off All Items"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
               maxLength={100}
             />
-            <p className="text-xs text-gray-500 mt-1">{formData.title?.length || 0}/100 characters</p>
+            <p className="text-[10px] text-gray-500 mt-0.5 text-right">{formData.title?.length || 0}/100</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Description
             </label>
             <textarea
               value={formData.description || ''}
               onChange={(e) => onChange('description', e.target.value)}
-              placeholder="Describe your offer in detail..."
-              rows={3}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
-              maxLength={500}
+              placeholder="Describe your offer..."
+              rows={2}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none text-sm"
+              maxLength={300}
             />
-            <p className="text-xs text-gray-500 mt-1">{formData.description?.length || 0}/500 characters</p>
+            <p className="text-[10px] text-gray-500 mt-0.5 text-right">{formData.description?.length || 0}/300</p>
           </div>
         </div>
       </div>
 
-      <hr className="border-gray-200" />
-
-      {/* Validity Period Section */}
+      {/* Validity Period Section - Grid Layout */}
       <div>
-        <h2 className="text-lg font-bold text-gray-900 mb-4">Validity Period</h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Valid From <span className="text-red-500">*</span>
             </label>
             <input
@@ -706,12 +727,12 @@ function CombinedOfferForm({
               value={formData.valid_from || ''}
               onChange={(e) => onChange('valid_from', e.target.value)}
               min={today}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Valid Until <span className="text-red-500">*</span>
             </label>
             <input
@@ -719,73 +740,31 @@ function CombinedOfferForm({
               value={formData.valid_until || ''}
               onChange={(e) => onChange('valid_until', e.target.value)}
               min={formData.valid_from || today}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
             />
           </div>
         </div>
       </div>
 
-      <hr className="border-gray-200" />
-
       {/* Terms & Conditions Section */}
       <div>
-        <h2 className="text-lg font-bold text-gray-900 mb-4">Terms & Conditions</h2>
-
-        <div className="space-y-4">
+        <div className="space-y-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Terms & Conditions <span className="text-red-500">*</span>
             </label>
             <textarea
               value={formData.terms_conditions || ''}
               onChange={(e) => onChange('terms_conditions', e.target.value)}
               placeholder="e.g., Valid on purchases above $50. Cannot be combined with other offers."
-              rows={4}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none text-sm"
               maxLength={1000}
             />
-            <p className="text-xs text-gray-500 mt-1">{formData.terms_conditions?.length || 0}/1000 characters</p>
+            <p className="text-[10px] text-gray-500 mt-0.5 text-right">{formData.terms_conditions?.length || 0}/1000</p>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Icon Image (Optional)
-            </label>
-            <ImageUpload
-              value={formData.icon_image_url || null}
-              onChange={(url) => onChange('icon_image_url', url)}
-              businessId={businessId}
-            />
-          </div>
-        </div>
-      </div>
-
-      <hr className="border-gray-200" />
-
-      {/* Featured Status Section */}
-      <div>
-        <h2 className="text-lg font-bold text-gray-900 mb-4">Visibility</h2>
-        <div className="bg-purple-50 border border-purple-100 rounded-lg p-4">
-          <div className="flex items-start">
-            <div className="flex items-center h-5">
-              <input
-                id="is_featured"
-                type="checkbox"
-                checked={formData.is_featured || false}
-                onChange={(e) => onChange('is_featured', e.target.checked)}
-                className="focus:ring-purple-500 h-4 w-4 text-purple-600 border-gray-300 rounded"
-              />
-            </div>
-            <div className="ml-3 text-sm">
-              <label htmlFor="is_featured" className="font-medium text-gray-900 flex items-center gap-2">
-                <Zap className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                Feature this Offer
-              </label>
-              <p className="text-gray-500">
-                Pinned to the top of your offers list. Max 3 active featured offers allowed.
-              </p>
-            </div>
-          </div>
+          {/* REMOVED ICON IMAGE UPLOAD AS REQUESTED */}
         </div>
       </div>
     </div>

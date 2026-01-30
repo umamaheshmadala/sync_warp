@@ -17,17 +17,18 @@ interface UseOfferAnalyticsReturn {
   allAnalytics: OfferAnalytics[];
   isLoading: boolean;
   error: string | null;
-  
+
   // Operations
   fetchAnalytics: (offerId: string) => Promise<void>;
   fetchAllAnalytics: (businessId: string) => Promise<void>;
   refreshAnalytics: () => Promise<void>;
-  
+
   // Helper methods
   getViewsOverTime: () => Array<{ date: string; count: number }>;
   getSharesOverTime: () => Array<{ date: string; count: number }>;
   getClicksOverTime: () => Array<{ date: string; count: number }>;
   getShareChannelBreakdown: () => Array<{ channel: string; count: number }>;
+  trackView: (offerId: string) => Promise<void>;
 }
 
 export const useOfferAnalytics = (
@@ -151,6 +152,16 @@ export const useOfferAnalytics = (
     }));
   }, [analytics]);
 
+  // Track view
+  const trackView = useCallback(async (targetOfferId: string) => {
+    try {
+      const { error } = await supabase.rpc('track_offer_view', { p_offer_id: targetOfferId });
+      if (error) console.error('Error tracking view:', error);
+    } catch (err) {
+      console.error('Error tracking view:', err);
+    }
+  }, []);
+
   // Auto-fetch on mount if enabled
   useEffect(() => {
     if (autoFetch) {
@@ -168,14 +179,15 @@ export const useOfferAnalytics = (
     allAnalytics,
     isLoading,
     error,
-    
+
     fetchAnalytics,
     fetchAllAnalytics,
     refreshAnalytics,
-    
+
     getViewsOverTime,
     getSharesOverTime,
     getClicksOverTime,
     getShareChannelBreakdown,
+    trackView,
   };
 };

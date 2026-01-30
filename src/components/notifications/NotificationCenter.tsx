@@ -12,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useInAppNotifications } from '@/hooks/useInAppNotifications';
+import { useNotificationNavigation } from '@/hooks/useNotificationNavigation';
 import { InAppNotification } from '@/services/notificationService';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
@@ -29,6 +30,9 @@ export function NotificationCenter() {
         markAllAsRead
     } = useInAppNotifications();
 
+    // Access the shared hook for navigation
+    const { handleNavigation } = useNotificationNavigation();
+
     // Take top 5 for the dropdown to keep it lightweight
     const recentNotifications = notifications.slice(0, 5);
 
@@ -37,23 +41,7 @@ export function NotificationCenter() {
             markAsRead(notification.id);
         }
 
-        // Navigation Logic (mirrors NotificationsPage)
-        const actionUrl = notification.data?.action_url;
-        if (actionUrl) {
-            navigate(actionUrl);
-        } else {
-            if (notification.notification_type.includes('message')) {
-                navigate(`/messages/${notification.data.conversation_id}`);
-            } else if (notification.notification_type === 'friend_request') {
-                navigate('/friends/requests');
-            } else if (notification.notification_type === 'friend_accepted') {
-                navigate('/friends');
-            } else if (notification.notification_type === 'deal_shared') {
-                if (notification.data?.deal_id) navigate(`/deals/${notification.data.deal_id}`);
-            } else if (notification.notification_type === 'birthday_reminder') {
-                if (notification.data?.friend_id) navigate(`/profile/${notification.data.friend_id}`);
-            }
-        }
+        handleNavigation(notification);
         setIsOpen(false);
     };
 

@@ -68,6 +68,8 @@ import { VerificationBadge } from './VerificationBadge';
 import { ClaimBusinessButton } from './ClaimBusinessButton';
 import ReviewAnalyticsDashboard from '../../pages/business/ReviewAnalyticsDashboard';
 import { RecommendationBadge } from './RecommendationBadge';
+import { FollowerListModal } from './FollowerListModal';
+import { OperatingHoursModal } from './OperatingHoursModal';
 
 
 
@@ -114,6 +116,8 @@ const BusinessProfile: React.FC = () => {
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [showMoreDropdown, setShowMoreDropdown] = useState(false);
+  const [showFollowerModal, setShowFollowerModal] = useState(false);
+  const [showHoursModal, setShowHoursModal] = useState(false);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [editingReview, setEditingReview] = useState<any>(null);
   const [userReview, setUserReview] = useState<any>(null);
@@ -1393,6 +1397,26 @@ const BusinessProfile: React.FC = () => {
         )}
       </AnimatePresence>
 
+      {/* Follower List Modal */}
+      <FollowerListModal
+        businessId={business?.id || ''}
+        businessName={business?.business_name || ''}
+        followerCount={business?.follower_count || 0}
+        isOpen={showFollowerModal}
+        onClose={() => setShowFollowerModal(false)}
+      />
+
+      {/* Operating Hours Modal */}
+      <OperatingHoursModal
+        business={{
+          business_name: business?.business_name || '',
+          operating_hours: business?.operating_hours,
+          timezone: business?.timezone
+        }}
+        isOpen={showHoursModal}
+        onClose={() => setShowHoursModal(false)}
+      />
+
       <div className="min-h-screen bg-gray-50">
         {/* Breadcrumbs Navigation */}
         <div className="hidden md:block bg-white border-b border-gray-100">
@@ -1519,19 +1543,22 @@ const BusinessProfile: React.FC = () => {
                     {business?.city}, {business?.state}
                   </p>
 
-                  {/* Business Hours Status */}
+                  {/* Business Hours Status - Made clickable */}
                   {businessOpenStatus.text && (
-                    <p className="flex items-center text-sm mb-1.5">
-                      <Clock className="w-3.5 h-3.5 mr-1.5 text-gray-400 flex-shrink-0" />
-                      <span className={`font-medium ${businessOpenStatus.color}`}>
+                    <button
+                      onClick={() => setShowHoursModal(true)}
+                      className="flex items-center text-sm mb-1.5 hover:text-indigo-600 transition-colors cursor-pointer group"
+                    >
+                      <Clock className="w-3.5 h-3.5 mr-1.5 text-gray-400 flex-shrink-0 group-hover:text-indigo-500" />
+                      <span className={`font-medium ${businessOpenStatus.color} group-hover:text-indigo-600`}>
                         {businessOpenStatus.text}
                       </span>
                       {businessOpenStatus.todayHours && (
-                        <span className="text-gray-500 ml-1.5">
+                        <span className="text-gray-500 ml-1.5 group-hover:text-indigo-600">
                           · {businessOpenStatus.todayHours}
                         </span>
                       )}
-                    </p>
+                    </button>
                   )}
 
                   {/* Phone + More Info line */}
@@ -1546,6 +1573,26 @@ const BusinessProfile: React.FC = () => {
                     </div>
                   </div>
 
+                  {/* Follower Count - Clickable only for business owners */}
+                  {isOwner ? (
+                    <button
+                      onClick={() => setShowFollowerModal(true)}
+                      className="flex items-center text-sm text-gray-600 mt-1 hover:text-indigo-600 transition-colors cursor-pointer group"
+                    >
+                      <Users className="w-3.5 h-3.5 mr-1.5 text-gray-400 flex-shrink-0 group-hover:text-indigo-500" />
+                      <span className="group-hover:underline">
+                        {business?.follower_count || 0} {(business?.follower_count || 0) === 1 ? 'Follower' : 'Followers'}
+                      </span>
+                    </button>
+                  ) : (
+                    <div className="flex items-center text-sm text-gray-600 mt-1">
+                      <Users className="w-3.5 h-3.5 mr-1.5 text-gray-400 flex-shrink-0" />
+                      <span>
+                        {business?.follower_count || 0} {(business?.follower_count || 0) === 1 ? 'Follower' : 'Followers'}
+                      </span>
+                    </div>
+                  )}
+
                   {/* Action Buttons Row - Desktop Only */}
                   <div className="hidden md:flex flex-wrap items-center gap-2 mt-2 w-full max-w-2xl">
 
@@ -1556,6 +1603,7 @@ const BusinessProfile: React.FC = () => {
                           variant="default"
                           size="default"
                           className="w-full justify-center h-10"
+                          onFollowChange={() => refetchBusiness()}
                         />
                       </div>
                     )}
@@ -1699,6 +1747,7 @@ const BusinessProfile: React.FC = () => {
                       businessId={business.id}
                       businessName={business.business_name}
                       className="w-full justify-center h-10"
+                      onFollowChange={() => refetchBusiness()}
                     />
                   </div>
                 )}

@@ -65,11 +65,10 @@ const TestProfileModal = lazy(() => import('../pages/TestProfileModal'))
 const TestActivityFeed = lazy(() => import('../pages/TestActivityFeed'))
 const TestSearchFilters = lazy(() => import('../pages/TestSearchFilters').then(m => ({ default: m.TestSearchFilters })))
 const TestDealComments = lazy(() => import('../pages/TestDealComments').then(m => ({ default: m.TestDealComments })))
-const ShareDealDemo = lazy(() => import('../pages/ShareDealDemo'))
-const SharingAnalyticsDemo = lazy(() => import('../pages/SharingAnalyticsDemo'))
+
 const TestSearchPerformance = lazy(() => import('../pages/TestSearchPerformance').then(m => ({ default: m.TestSearchPerformance })))
 const FollowerTargetingDemo = lazy(() => import('../pages/FollowerTargetingDemo'))
-const TestOfferCardPage = lazy(() => import('../pages/test/TestOfferCardPage'))
+const StandardDesignsPage = lazy(() => import('../pages/test/StandardDesignsPage'))
 
 // Other lazy-loaded components
 const NotFound = lazy(() => import('../components/NotFound'))
@@ -79,7 +78,6 @@ const SearchAnalyticsDashboard = lazy(() => import('../components/SearchAnalytic
 const LocationManager = lazy(() => import('../components/LocationManager'))
 
 const Wallet = lazy(() => import('../components/Wallet'))
-const Social = lazy(() => import('../components/Social'))
 const WishlistPage = lazy(() => import('../pages/WishlistPage'))
 const AdvancedSearchPage = lazy(() => import('../components/search/AdvancedSearchPage'))
 const BusinessDiscoveryPage = lazy(() => import('../components/discovery/BusinessDiscoveryPage'))
@@ -623,16 +621,7 @@ export const routes: RouteConfig[] = [
     protected: true,
     title: 'Manage Friends - SynC'
   },
-  {
-    path: '/social',
-    element: (
-      <RouteLoader>
-        <Social />
-      </RouteLoader>
-    ),
-    protected: true,
-    title: 'Social - SynC'
-  },
+
   {
     path: '/wishlist',
     element: (
@@ -790,35 +779,16 @@ export const routes: RouteConfig[] = [
       protected: true,
       title: 'Test Deal Comments'
     },
+
     {
-      path: '/test/share-deal',
+      path: '/test/standard-designs',
       element: (
         <RouteLoader>
-          <ShareDealDemo />
+          <StandardDesignsPage />
         </RouteLoader>
       ),
       protected: true,
-      title: 'Test Share Deal'
-    },
-    {
-      path: '/test/ticket-offer',
-      element: (
-        <RouteLoader>
-          <TestOfferCardPage />
-        </RouteLoader>
-      ),
-      protected: true,
-      title: 'Test Ticket Offer Card'
-    },
-    {
-      path: '/test/sharing-analytics',
-      element: (
-        <RouteLoader>
-          <SharingAnalyticsDemo />
-        </RouteLoader>
-      ),
-      protected: true,
-      title: 'Test Sharing Analytics'
+      title: 'Standard Designs'
     },
     {
       path: '/test/search-performance',

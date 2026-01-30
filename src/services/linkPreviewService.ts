@@ -40,7 +40,13 @@ class LinkPreviewService {
       const productMatch = path.match(/\/product\/([^/]+)/)
       if (productMatch) return { type: 'sync-product', id: productMatch[1] }
 
-      // Offer: /business/:slug/offer/:id OR /offers/:id
+      // Offer: /business/:slug/offers?offerId=:id OR /offers/:id
+      // Check for deep link format first
+      const offerDeepLinkMatch = path.match(/\/business\/([^/]+)\/offers\?.*offerId=([^&]+)/)
+      if (offerDeepLinkMatch) {
+        return { type: 'sync-offer', id: offerDeepLinkMatch[2], slug: offerDeepLinkMatch[1] }
+      }
+
       const offerMatch = path.match(/\/offer\/([^/]+)/) || path.match(/^\/offers\/([^/]+)/)
       if (offerMatch) return { type: 'sync-offer', id: offerMatch[1] }
 
@@ -204,23 +210,46 @@ class LinkPreviewService {
   /**
    * Fetch SynC offer preview
    */
-  private async fetchSyncOfferPreview(offerId: string): Promise<LinkPreview | null> {
+  private async fetchSyncOfferPreview(offerId: string, slug?: string): Promise<LinkPreview | null> {
     try {
       const { data, error } = await supabase
         .from('offers')
-        .select('id, title, description, image_url, discount_value, valid_until, brand:brands(name, logo_url)')
+        .select(`
+          id, 
+          title, 
+          description, 
+          image_url, 
+          discount_value, 
+          valid_until, 
+          offer_code,
+          status,
+          audit_code,
+          business:businesses(name, logo_url, slug),
+          offer_type:offer_types(name, category:offer_categories(name))
+        `)
         .eq('id', offerId)
         .single()
 
       if (error || !data) return null
 
-      const brand = (data as any).brand?.[0] || (data as any).brand
+      // Handle relations
+      const business = (data as any).business?.[0] || (data as any).business
+      const offerType = (data as any).offer_type?.[0] || (data as any).offer_type
+      const categoryName = offerType?.category?.name
+
+      // Construct URL pointing to business offers tab with query param
+      // Use provided slug if available, otherwise try to use business slug or fallback
+      const targetSlug = slug || business?.slug;
+
+      const targetUrl = targetSlug
+        ? `${window.location.origin}/business/${targetSlug}/offers?offerId=${data.id}`
+        : `${window.location.origin}/offers/${data.id}`;
 
       return {
-        url: `${window.location.origin}/offers/${data.id}`,
+        url: targetUrl,
         title: data.title,
-        description: `${data.discount_value}% OFF - Expires ${new Date(data.valid_until).toLocaleDateString()}`,
-        image: data.image_url || brand?.logo_url,
+        description: `${data.discount_value}% OFF - Expires ${data.valid_until ? new Date(data.valid_until).toLocaleDateString() : 'soon'}`,
+        image: data.image_url || business?.logo_url,
         type: 'sync-offer',
         metadata: {
           entityType: 'offer',
@@ -228,11 +257,18 @@ class LinkPreviewService {
           offerId: data.id,
           discountValue: data.discount_value,
           validUntil: data.valid_until,
-          businessName: brand?.name
+          businessName: business?.name,
+          // Extra props for TicketOfferCard
+          offerCode: data.offer_code,
+          status: data.status,
+          auditCode: data.audit_code,
+          offerTypeName: offerType?.name,
+          categoryName: categoryName
         }
       }
     } catch { return null }
   }
+
 
   /**
    * Fetch SynC profile preview
@@ -341,7 +377,7 @@ class LinkPreviewService {
       return this.fetchSyncProductPreview(id)
     }
     if (type === 'sync-offer' && id) {
-      return this.fetchSyncOfferPreview(id)
+      return this.fetchSyncOfferPreview(id, slug)
     }
     if (type === 'sync-profile' && id) {
       return this.fetchSyncProfilePreview(id)

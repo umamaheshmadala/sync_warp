@@ -549,13 +549,34 @@ class SearchService {
   }
 
   /**
+   * Get live follower count for a business
+   */
+  private async getBusinessFollowerCount(businessId: string): Promise<number> {
+    try {
+      const { count } = await supabase
+        .from('business_followers')
+        .select('*', { count: 'exact', head: true })
+        .eq('business_id', businessId)
+        .eq('is_active', true);
+      return count || 0;
+    } catch (error) {
+      console.error('Error fetching follower count:', error);
+      return 0;
+    }
+  }
+
+  /**
    * Enhance business results with search-specific data
    */
   private async enhanceBusinessResults(
     businesses: any[],
     query: SearchQuery
   ): Promise<SearchBusiness[]> {
-    return businesses.map(business => {
+    // Fetch follower counts in parallel for all businesses
+    const followerCountPromises = businesses.map(b => this.getBusinessFollowerCount(b.id));
+    const followerCounts = await Promise.all(followerCountPromises);
+
+    return businesses.map((business, index) => {
       // Count active coupons for this business
       const activeCoupons = business.business_coupons?.filter(
         (c: any) => c.status === 'active' && new Date(c.valid_until) > new Date()
@@ -580,7 +601,7 @@ class SearchService {
         longitude: business.longitude,
         rating: business.rating,
         review_count: business.review_count,
-        follower_count: business.follower_count,
+        follower_count: followerCounts[index], // Use live count from business_followers
         logo_url: business.logo_url,
         cover_image_url: business.cover_image_url,
         activeCouponsCount: activeCoupons.length,

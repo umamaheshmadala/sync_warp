@@ -248,9 +248,11 @@ export const StandardBusinessCard: React.FC<StandardBusinessCardProps> = ({
             </div>
           )}
 
-          {business.follower_count !== undefined && business.follower_count > 0 && (
+          {business.follower_count !== undefined && (
             <div className="flex items-center gap-1">
-              <span>{business.follower_count} followers</span>
+              <span>
+                {business.follower_count} {business.follower_count === 1 ? 'follower' : 'followers'}
+              </span>
             </div>
           )}
         </div>

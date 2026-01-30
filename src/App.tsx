@@ -25,6 +25,7 @@ import { realtimeService } from './services/realtimeService'
 import { spamConfigService } from './services/SpamConfigService'
 import { FavoritesProvider } from './contexts/FavoritesContext'
 import { DeepLinkModalProvider } from './components/providers/DeepLinkModalProvider'
+import { ShareClickTracker } from './components/analytics/ShareClickTracker'
 
 // Configure React Query with stale-while-revalidate pattern
 // Shows cached data immediately, then fetches fresh data in background
@@ -128,6 +129,7 @@ function AppContent() {
           <AppRouter />
         </AppLayout>
         <DeepLinkModalProvider />
+        <ShareClickTracker />
       </FavoritesProvider>
       <DevMenu />
       <Toaster

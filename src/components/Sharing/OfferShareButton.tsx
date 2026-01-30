@@ -105,7 +105,7 @@ export function OfferShareButton({
                 title={offerTitle}
                 description={`${discountText ? discountText + ' ' : ''}at ${businessName} - ${daysRemaining === 0 ? 'Expires today!' : `Expires in ${daysRemaining} days`}`}
                 imageUrl={offerImage}
-                url={`/business/${businessSlug || businessId}/offer/${offerId}`}
+                url={`/business/${businessSlug || businessId}/offers?offerId=${offerId}`}
                 onShareSuccess={onShareSuccess}
             />
         </>

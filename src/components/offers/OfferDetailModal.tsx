@@ -21,6 +21,56 @@ import { OfferShareButton } from '../Sharing/OfferShareButton';
 import { getOfferColor } from '../../utils/offerColors';
 import { OfferActionsMenu, OfferActionType } from './OfferActionsMenu';
 import { FavoriteOfferButton } from '../favorites/FavoriteOfferButton';
+import { useOfferAnalytics } from '../../hooks/useOfferAnalytics';
+
+// Helper component for Stats to avoid hook rules in conditional render
+const OfferStatsSection: React.FC<{
+  offerId: string;
+  initialStats: { views: number; shares: number; clicks: number; }
+}> = ({ offerId, initialStats }) => {
+  const { summary, isLoading } = useOfferAnalytics({
+    offerId,
+    autoFetch: true
+  });
+
+  // Use fetched summary if available, otherwise initial/existing stats
+  const stats = summary || initialStats;
+
+  return (
+    <div>
+      <h3 className="text-sm font-semibold text-gray-900 mb-2">Statistics</h3>
+      <div className="grid grid-cols-3 gap-3">
+        <div className="bg-blue-50 rounded-lg p-2 text-center">
+          <div className="flex items-center justify-center gap-1.5 mb-0.5">
+            <Eye className="w-4 h-4 text-blue-600" />
+            <span className="text-lg font-bold text-blue-900">
+              {isLoading ? '...' : stats.views}
+            </span>
+          </div>
+          <span className="text-[10px] uppercase tracking-wide text-blue-700 font-medium">Views</span>
+        </div>
+        <div className="bg-purple-50 rounded-lg p-2 text-center">
+          <div className="flex items-center justify-center gap-1.5 mb-0.5">
+            <Share2 className="w-4 h-4 text-purple-600" />
+            <span className="text-lg font-bold text-purple-900">
+              {isLoading ? '...' : stats.shares}
+            </span>
+          </div>
+          <span className="text-[10px] uppercase tracking-wide text-purple-700 font-medium">Shares</span>
+        </div>
+        <div className="bg-green-50 rounded-lg p-2 text-center">
+          <div className="flex items-center justify-center gap-1.5 mb-0.5">
+            <MousePointerClick className="w-4 h-4 text-green-600" />
+            <span className="text-lg font-bold text-green-900">
+              {isLoading ? '...' : stats.clicks}
+            </span>
+          </div>
+          <span className="text-[10px] uppercase tracking-wide text-green-700 font-medium">Clicks</span>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 interface OfferDetailModalProps {
   offer: Offer;
@@ -45,6 +95,14 @@ export const OfferDetailModal: React.FC<OfferDetailModalProps> = ({
   const ticketColor = React.useMemo(() => {
     return getOfferColor(categoryName);
   }, [categoryName]);
+  // Track view analytics (excluding owners/admins who see stats)
+  const { trackView } = useOfferAnalytics({ offerId: offer.id, autoFetch: false });
+
+  React.useEffect(() => {
+    if (!showStats) {
+      trackView(offer.id);
+    }
+  }, [offer.id, showStats, trackView]);
 
   return (
     <AnimatePresence>
@@ -174,32 +232,11 @@ export const OfferDetailModal: React.FC<OfferDetailModalProps> = ({
 
               {/* Stats (if enabled) - Reduced Height */}
               {showStats && (
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900 mb-2">Statistics</h3>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="bg-blue-50 rounded-lg p-2 text-center">
-                      <div className="flex items-center justify-center gap-1.5 mb-0.5">
-                        <Eye className="w-4 h-4 text-blue-600" />
-                        <span className="text-lg font-bold text-blue-900">{offer.view_count}</span>
-                      </div>
-                      <span className="text-[10px] uppercase tracking-wide text-blue-700 font-medium">Views</span>
-                    </div>
-                    <div className="bg-purple-50 rounded-lg p-2 text-center">
-                      <div className="flex items-center justify-center gap-1.5 mb-0.5">
-                        <Share2 className="w-4 h-4 text-purple-600" />
-                        <span className="text-lg font-bold text-purple-900">{offer.share_count}</span>
-                      </div>
-                      <span className="text-[10px] uppercase tracking-wide text-purple-700 font-medium">Shares</span>
-                    </div>
-                    <div className="bg-green-50 rounded-lg p-2 text-center">
-                      <div className="flex items-center justify-center gap-1.5 mb-0.5">
-                        <MousePointerClick className="w-4 h-4 text-green-600" />
-                        <span className="text-lg font-bold text-green-900">{offer.click_count}</span>
-                      </div>
-                      <span className="text-[10px] uppercase tracking-wide text-green-700 font-medium">Clicks</span>
-                    </div>
-                  </div>
-                </div>
+                <OfferStatsSection offerId={offer.id} initialStats={{
+                  views: offer.view_count,
+                  shares: offer.share_count,
+                  clicks: offer.click_count
+                }} />
               )}
             </div>
 

@@ -38,6 +38,7 @@ export interface Business {
     recommendation_badge?: 'recommended' | 'highly_recommended' | 'very_highly_recommended' | null;
     recommendation_percentage?: number;
     approved_review_count?: number;
+    follower_count?: number;
 }
 
 export interface BusinessCategory {
@@ -106,8 +107,15 @@ export function useBusinessProfile(
                 businessData = data;
             }
 
-            if (!businessData) {
-                throw new Error('Business not found');
+            if (businessData) {
+                // Fetch follower count
+                const { count: followerCount } = await supabase
+                    .from('business_followers')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('business_id', businessData.id)
+                    .eq('is_active', true);
+
+                businessData.follower_count = followerCount || 0;
             }
 
             return businessData;

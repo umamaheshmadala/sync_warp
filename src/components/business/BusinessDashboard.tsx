@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useBusinessUrl } from '../../hooks/useBusinessUrl';
@@ -24,6 +24,8 @@ import {
   Target,
   QrCode,
   UserPlus,
+  MessageSquare,
+  ThumbsUp,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
@@ -31,7 +33,6 @@ import { toast } from 'react-hot-toast';
 import { OnboardingReminderBanner } from './OnboardingReminderBanner'; // Keep if used elsewhere, otherwise remove? 
 // No, I should remove it if unused, but safety first.
 import { ConsolidatedOnboardingBanner } from './ConsolidatedOnboardingBanner';
-import { FollowerMetricsWidget } from './FollowerMetricsWidget';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 // TypeScript interfaces
@@ -61,8 +62,10 @@ interface Business {
   verified_at?: string;
   website_url?: string;
   social_media: Record<string, string>;
-  average_rating: number;
+  follower_count?: number;
+  // average_rating: number; // Removed, now derived from review stats
   total_reviews: number;
+  recommend_count?: number; // Added for cumulative calc
   total_checkins: number;
   created_at: string;
   updated_at: string;
@@ -73,13 +76,14 @@ interface BusinessStats {
   totalBusinesses: number;
   activeBusinesses: number;
   pendingBusinesses: number;
+  totalFollowers: number;
   totalReviews: number;
-  averageRating: number;
+  recommendationPercentage: number; // Changed from averageRating
   totalCheckins: number;
 }
 
 interface StatsCardProps {
-  icon: React.ComponentType<{ className?: string; }>;
+  icon: React.FC<any>;
   title: string;
   value: string | number;
   subtitle?: string;
@@ -90,28 +94,71 @@ interface BusinessCardProps {
   business: Business;
 }
 
-// Fetch function for React Query
+// Fetch businesses for the current user
 async function fetchUserBusinesses(userId: string): Promise<Business[]> {
   const { data, error } = await supabase
     .from('businesses')
     .select('*')
     .eq('user_id', userId)
-    .order('business_name', { ascending: true });
+    .order('created_at', { ascending: false }); // Changed order to created_at
 
-  if (error) throw error;
-  return data || [];
+  if (error) {
+    console.error('Error fetching businesses:', error);
+    throw error;
+  }
+
+  // Fetch accurate counts for each business
+  const businessesWithCounts = await Promise.all((data || []).map(async (b) => {
+    // 1. Get accurate follower count
+    const { count: followers } = await supabase
+      .from('business_followers')
+      .select('*', { count: 'exact', head: true })
+      .eq('business_id', b.id)
+      .eq('entity_type', 'business')
+      .eq('is_active', true);
+
+    // 2. Get accurate review stats via direct count (bypass RPC to ensure accuracy)
+    // Total ACTIVE & APPROVED reviews (matching storefront)
+    const { count: totalReviews } = await supabase
+      .from('business_reviews')
+      .select('*', { count: 'exact', head: true })
+      .eq('business_id', b.id)
+      .eq('moderation_status', 'approved')
+      .is('deleted_at', null);
+
+    // Recommended reviews (Active & Approved only)
+    const { count: recommendedCount } = await supabase
+      .from('business_reviews')
+      .select('*', { count: 'exact', head: true })
+      .eq('business_id', b.id)
+      .eq('recommendation', true)
+      .eq('moderation_status', 'approved')
+      .is('deleted_at', null);
+
+    console.log(`[Dashboard] Business ${b.business_name}: Followers=${followers}, Reviews=${totalReviews}, Recs=${recommendedCount}`);
+
+    return {
+      ...b,
+      follower_count: followers || 0,
+      total_reviews: totalReviews || 0,
+      recommend_count: recommendedCount || 0,
+    };
+  }));
+
+  return businessesWithCounts;
 }
 
 const BusinessDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { getBusinessUrl } = useBusinessUrl();
   const { user } = useAuthStore();
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); // Added useState for modal
 
   const queryClient = useQueryClient();
 
   // Use React Query with SWR pattern - cached data shown immediately
   const { data: businesses = [], isLoading: loading } = useQuery({
-    queryKey: ['businessDashboard', user?.id],
+    queryKey: ['user-businesses', user?.id], // Updated queryKey
     queryFn: async () => {
       const data = await fetchUserBusinesses(user!.id);
       console.log('BusinessDashboard fetched:', data);
@@ -140,7 +187,7 @@ const BusinessDashboard: React.FC = () => {
         },
         () => {
           // Invalidate and refetch when any business data changes
-          queryClient.invalidateQueries({ queryKey: ['businessDashboard', user.id] });
+          queryClient.invalidateQueries({ queryKey: ['user-businesses', user.id] }); // Updated queryKey
           toast.success('Business information updated');
         }
       )
@@ -156,21 +203,26 @@ const BusinessDashboard: React.FC = () => {
     const totalBusinesses = businesses.length;
     const activeBusinesses = businesses.filter(b => b.status === 'active').length;
     const pendingBusinesses = businesses.filter(b => b.status === 'pending').length;
-    const totalReviews = businesses.reduce((sum, b) => sum + (b.total_reviews || 0), 0);
-    const totalCheckins = businesses.reduce((sum, b) => sum + (b.total_checkins || 0), 0);
 
-    // Calculate average rating across all businesses
-    const businessesWithRatings = businesses.filter(b => b.average_rating > 0);
-    const averageRating = businessesWithRatings.length > 0
-      ? businessesWithRatings.reduce((sum, b) => sum + b.average_rating, 0) / businessesWithRatings.length
+    // Summing accurate counts fetched above
+    const totalReviews = businesses.reduce((sum, b) => sum + (b.total_reviews || 0), 0);
+    const totalFollowers = businesses.reduce((sum, b) => sum + (b.follower_count || 0), 0);
+    const totalCheckins = businesses.reduce((sum, b) => sum + (b.total_checkins || 0), 0);
+    const totalRecommended = businesses.reduce((sum, b) => sum + (b.recommend_count || 0), 0);
+
+    // Calculate cumulative recommendation percentage
+    // specific logic: (Total Recommended Reviews / Total Reviews) * 100
+    const recommendationPercentage = totalReviews > 0
+      ? Math.round((totalRecommended / totalReviews) * 100)
       : 0;
 
     return {
       totalBusinesses,
       activeBusinesses,
       pendingBusinesses,
+      totalFollowers,
       totalReviews,
-      averageRating,
+      recommendationPercentage,
       totalCheckins
     };
   }, [businesses]);
@@ -252,21 +304,14 @@ const BusinessDashboard: React.FC = () => {
 
         </div>
 
-        {/* Description */}
-        <p className="text-gray-600 text-xs tracking-tight mb-3 line-clamp-2 h-8">
-          {business.description}
-        </p>
-
         {/* Stats */}
         <div className="grid grid-cols-3 gap-2 mb-3 p-2 bg-gray-50 rounded-lg">
           <div className="text-center">
             <div className="flex items-center justify-center mb-1">
-              <Star className="w-4 h-4 text-yellow-500 mr-1" />
-              <span className="font-semibold text-xs">
-                {business.average_rating ? business.average_rating.toFixed(1) : 'N/A'}
-              </span>
+              <UserPlus className="w-4 h-4 text-purple-500 mr-1" />
+              <span className="font-semibold text-xs">{business.follower_count || 0}</span>
             </div>
-            <p className="text-xs text-gray-500">Rating</p>
+            <p className="text-xs text-gray-500">Followers</p>
           </div>
 
           <div className="text-center">
@@ -286,22 +331,6 @@ const BusinessDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Contact Info */}
-        <div className="space-y-2 mb-4">
-          {business.business_phone && (
-            <div className="flex items-center text-sm text-gray-600">
-              <Phone className="w-4 h-4 mr-2" />
-              {business.business_phone}
-            </div>
-          )}
-          {business.business_email && (
-            <div className="flex items-center text-sm text-gray-600">
-              <Mail className="w-4 h-4 mr-2" />
-              {business.business_email}
-            </div>
-          )}
-        </div>
-
 
       </div>
     </motion.div>
@@ -311,12 +340,12 @@ const BusinessDashboard: React.FC = () => {
   const StatsCard: React.FC<StatsCardProps> = ({ icon: Icon, title, value, subtitle, color = 'indigo' }) => (
     <div className="bg-white rounded-lg shadow-sm border p-3">
       <div className="flex items-center">
-        <div className={`p-2 bg-${color}-100 rounded-lg flex items-center justify-center`}>
+        <div className={`p-2 bg-${color}-100 rounded-lg flex items-center justify-center flex-shrink-0`}>
           <Icon className={`w-4 h-4 text-${color}-600`} />
         </div>
-        <div className="ml-3">
-          <p className="text-xs font-medium text-gray-500 hidden md:block">{title}</p>
-          <p className="text-lg font-semibold text-gray-900">{value}</p>
+        <div className="ml-3 min-w-0 flex-1">
+          <p className="text-xs font-medium text-gray-500 hidden md:block truncate" title={title}>{title}</p>
+          <p className="text-lg font-semibold text-gray-900 truncate">{value}</p>
         </div>
       </div>
     </div>
@@ -378,12 +407,19 @@ const BusinessDashboard: React.FC = () => {
 
         {/* Statistics - grid row */}
         {businesses.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+          <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
             <StatsCard
               icon={TrendingUp}
               title="Total Businesses"
               value={stats.totalBusinesses}
               color="indigo"
+            />
+
+            <StatsCard
+              icon={Users}
+              title="Total Followers"
+              value={stats.totalFollowers}
+              color="pink"
             />
 
             <StatsCard
@@ -401,14 +437,14 @@ const BusinessDashboard: React.FC = () => {
             />
 
             <StatsCard
-              icon={Star}
-              title="Avg Rating"
-              value={stats.averageRating > 0 ? stats.averageRating.toFixed(1) : 'N/A'}
-              color="yellow"
+              icon={ThumbsUp} // Using ThumbsUp for recommendation
+              title="Recommended"
+              value={`${stats.recommendationPercentage}%`}
+              color="green"
             />
 
             <StatsCard
-              icon={Users}
+              icon={MessageSquare}
               title="Total Reviews"
               value={stats.totalReviews}
               color="blue"
@@ -423,12 +459,7 @@ const BusinessDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* Follower Metrics Widget - Show for businesses with active status */}
-        {businesses.length > 0 && businesses.some(b => b.status === 'active') && (
-          <div className="mb-8">
-            <FollowerMetricsWidget businessId={businesses.find(b => b.status === 'active')!.id} />
-          </div>
-        )}
+
 
         {/* Business Grid */}
         {businesses.length > 0 ? (
@@ -473,19 +504,7 @@ const BusinessDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* Recent Activity (Placeholder) */}
-        {businesses.length > 0 && (
-          <div className="mt-12 bg-white rounded-lg shadow-sm border p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
-            <div className="text-center py-8 text-gray-500">
-              <Calendar className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-              <p>Recent activity feed coming soon!</p>
-              <p className="text-sm mt-2">
-                Track customer interactions, reviews, and business updates.
-              </p>
-            </div>
-          </div>
-        )}
+
       </div>
     </div>
   );
