@@ -11,6 +11,9 @@ import { ReviewModerationWidget } from '../../components/admin/ReviewModerationW
 import { useAuthStore } from '../../store/authStore';
 import { useBusinessStats } from '../../hooks/useAdminBusinessList';
 import { BusinessStatsCards } from '../../components/admin/business-management/BusinessStatsCards';
+import { OverviewCards } from '../../components/admin/analytics/OverviewCards';
+import { useQuery } from '@tanstack/react-query';
+import { getOverviewMetrics } from '../../services/adminAnalyticsService';
 
 export default function AdminDashboard() {
     const navigate = useNavigate();
@@ -26,6 +29,24 @@ export default function AdminDashboard() {
     }, [profile]);
 
     const { data: stats } = useBusinessStats({ enabled: isAdmin });
+
+    const { data: analyticsOverview } = useQuery({
+        queryKey: ['admin-analytics-overview'],
+        queryFn: getOverviewMetrics,
+        enabled: isAdmin,
+        staleTime: 5 * 60 * 1000
+    });
+
+    const handleAnalyticsClick = (cardId: string) => {
+        const tabMap: Record<string, string> = {
+            'reviews': 'trends',
+            'moderation': 'moderation',
+            'approval': 'moderation',
+            'fraud': 'fraud'
+        };
+        const tab = tabMap[cardId] || 'trends';
+        navigate(`/admin/analytics/reviews?tab=${tab}`);
+    };
 
     if (loading) {
         return (
@@ -56,8 +77,6 @@ export default function AdminDashboard() {
             </div>
         );
     }
-
-
 
     return (
         <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
@@ -117,18 +136,33 @@ export default function AdminDashboard() {
                         </section>
                         <section>
                             <h2 className="text-lg font-semibold text-gray-700 mb-3">Analytics & Insights</h2>
-                            <div className="bg-white rounded-lg border p-6 flex flex-col items-center text-center hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/admin/analytics/reviews')}>
-                                <div className="p-3 bg-indigo-50 text-indigo-600 rounded-full mb-3">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-bar-chart-3"><path d="M3 3v18h18" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" /></svg>
+                            <div className="bg-white rounded-lg border p-6 hover:shadow-md transition-shadow">
+                                <OverviewCards data={analyticsOverview} onCardClick={handleAnalyticsClick} />
+                                <div className="mt-4 flex justify-end">
+                                    <button
+                                        onClick={() => navigate('/admin/analytics/reviews')}
+                                        className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+                                    >
+                                        View Full Analytics &rarr;
+                                    </button>
                                 </div>
-                                <h3 className="font-semibold text-gray-900">Review Analytics</h3>
-                                <p className="text-sm text-gray-500 mt-1">Monitor review volume, trends, and moderation stats</p>
                             </div>
                         </section>
                     </div>
 
                     {/* Column 2: Settings & Maintenance */}
                     <div className="space-y-6">
+                        <section>
+                            <h2 className="text-lg font-semibold text-gray-700 mb-3">Security & Compliance</h2>
+                            <div className="bg-white rounded-lg border p-6 flex flex-col items-center text-center hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/admin/audit-log')}>
+                                <div className="p-3 bg-orange-50 text-orange-600 rounded-full mb-3">
+                                    <ShieldAlert size={24} />
+                                </div>
+                                <h3 className="font-semibold text-gray-900">Global Audit Log</h3>
+                                <p className="text-sm text-gray-500 mt-1">View comprehensive log of all admin actions</p>
+                            </div>
+                        </section>
+
                         <section>
                             <h2 className="text-lg font-semibold text-gray-700 mb-3">Platform Settings</h2>
                             <AdminSettingsWidget />

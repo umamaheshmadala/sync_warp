@@ -24,8 +24,16 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 
+import { useSearchParams } from 'react-router-dom';
+
 export function ReviewAnalyticsDashboard() {
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const activeTab = searchParams.get('tab') || 'trends';
+
+    const handleTabChange = (value: string) => {
+        setSearchParams({ tab: value });
+    };
 
     const { data: overview, isLoading: overviewLoading } = useQuery({
         queryKey: ['admin-analytics-overview'],
@@ -88,7 +96,7 @@ export function ReviewAnalyticsDashboard() {
             {/* Overview Cards */}
             <OverviewCards data={overview} />
 
-            <Tabs defaultValue="trends" className="space-y-4">
+            <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
                 <TabsList>
                     <TabsTrigger value="trends">Trends</TabsTrigger>
                     <TabsTrigger value="businesses">Top Businesses</TabsTrigger>

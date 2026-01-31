@@ -235,6 +235,9 @@ export async function approveBusiness(businessId: string): Promise<void> {
     });
 
     if (error) throw error;
+
+    // Log action
+    await logAdminAction(businessId, user.id, 'approve', 'Business approved by admin');
 }
 
 // Reject business
@@ -249,8 +252,90 @@ export async function rejectBusiness(businessId: string, reason: string): Promis
     });
 
     if (error) throw error;
+
+    // Log action
+    await logAdminAction(businessId, user.id, 'reject', reason);
 }
 
+// ... helper function to avoid repetition ...
+async function logAdminAction(businessId: string, adminId: string, action: string, reason: string, changes: any = {}) {
+    const { error } = await supabase
+        .from('admin_business_actions')
+        .insert({
+            business_id: businessId,
+            admin_id: adminId,
+            action: action,
+            reason: reason,
+            changes_json: changes
+        });
+    if (error) console.error('Failed to log admin action:', error);
+}
+
+// ...
+
+export async function deleteBusiness(businessId: string, reason: string = 'Deleted by admin'): Promise<void> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const { error } = await supabase.rpc('admin_soft_delete_business', {
+        p_business_id: businessId,
+        p_admin_id: user.id,
+        p_reason: reason
+    });
+
+    if (error) throw error;
+
+    // Log action handled by RPC
+}
+
+export async function restoreBusiness(businessId: string): Promise<void> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const { error } = await supabase.rpc('admin_restore_business', {
+        p_business_id: businessId,
+        p_admin_id: user.id
+    });
+
+    if (error) throw error;
+    // Log action handled by RPC
+}
+
+export async function hardDeleteBusiness(businessId: string, reason: string): Promise<void> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    // Snapshot business details for audit log before deletion
+    const { data: businessSnapshot } = await supabase
+        .from('businesses')
+        .select('business_name, business_email, business_phone, address, city, business_type, owner:user_id(email, full_name, phone_number)')
+        .eq('id', businessId)
+        .single();
+
+    const snapshot = {
+        business_name: businessSnapshot?.business_name || 'Unknown',
+        email: businessSnapshot?.business_email,
+        phone: businessSnapshot?.business_phone,
+        address: businessSnapshot?.address,
+        city: businessSnapshot?.city,
+        type: businessSnapshot?.business_type,
+        owner_name: (businessSnapshot?.owner as any)?.full_name,
+        owner_email: (businessSnapshot?.owner as any)?.email,
+        owner_phone: (businessSnapshot?.owner as any)?.phone_number,
+        hard_deleted_at: new Date().toISOString()
+    };
+
+    const { error } = await supabase.rpc('admin_hard_delete_business', {
+        p_business_id: businessId,
+        p_admin_id: user.id,
+        p_reason: reason
+    });
+
+    if (error) throw error;
+
+    // Log action manually with snapshot (Required as RPC cannot log after deletion and we want to persist data)
+    await logAdminAction(businessId, user.id, 'hard_delete', reason, { snapshot });
+}
 export interface AdminBusinessDetails extends AdminBusinessView {
     updated_at?: string;
     business_description?: string;
@@ -357,16 +442,7 @@ export async function getBusinessAuditHistory(businessId: string) {
     const [actionsResult, statusResult] = await Promise.all([
         supabase
             .from('admin_business_actions')
-            .select(`
-                id,
-            action,
-            reason,
-            created_at,
-            admin: admin_id(
-                full_name,
-                email
-            )
-            `)
+            .select('id, action, reason, created_at, admin_id')
             .eq('business_id', businessId)
             .order('created_at', { ascending: false }),
 
@@ -387,49 +463,34 @@ export async function getBusinessAuditHistory(businessId: string) {
     if (actionsResult.error) throw actionsResult.error;
     if (statusResult.error) throw statusResult.error;
 
+    // Manual join for admin details in actions
+    const logs = actionsResult.data || [];
+    const adminIds = [...new Set(logs.map(l => l.admin_id).filter(Boolean))];
+
+    let adminsMap: Record<string, { full_name: string, email: string }> = {};
+    if (adminIds.length > 0) {
+        const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, full_name, email')
+            .in('id', adminIds);
+
+        profiles?.forEach(p => {
+            adminsMap[p.id] = { full_name: p.full_name, email: p.email };
+        });
+    }
+
+    const enrichedActions = logs.map(log => ({
+        ...log,
+        admin: adminsMap[log.admin_id] || { full_name: 'Unknown Admin', email: '' }
+    }));
+
     return {
-        actions: actionsResult.data,
+        actions: enrichedActions,
         statusHistory: statusResult.data
     };
 }
 
-export async function deleteBusiness(businessId: string, reason: string = 'Deleted by admin'): Promise<void> {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
 
-    const { error } = await supabase.rpc('admin_soft_delete_business', {
-        p_business_id: businessId,
-        p_admin_id: user.id,
-        p_reason: reason
-    });
-
-    if (error) throw error;
-}
-
-export async function restoreBusiness(businessId: string): Promise<void> {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
-
-    const { error } = await supabase.rpc('admin_restore_business', {
-        p_business_id: businessId,
-        p_admin_id: user.id
-    });
-
-    if (error) throw error;
-}
-
-export async function hardDeleteBusiness(businessId: string, reason: string): Promise<void> {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
-
-    const { error } = await supabase.rpc('admin_hard_delete_business', {
-        p_business_id: businessId,
-        p_admin_id: user.id,
-        p_reason: reason
-    });
-
-    if (error) throw error;
-}
 
 export async function updateBusiness(
     businessId: string,
@@ -462,4 +523,168 @@ export async function updateBusiness(
 
         if (logError) console.error('Failed to log admin action:', logError);
     }
+}
+
+// --- Story 6.3.5: Global Audit Log ---
+
+export interface GlobalAuditLogParams {
+    page: number;
+    pageSize: number;
+    dateFrom?: string;
+    dateTo?: string;
+    adminId?: string;
+    action?: string;
+}
+
+export interface AdminAuditLogEntry {
+    id: string;
+    action: string;
+    reason: string;
+    changes_json: any;
+    created_at: string;
+    admin_id: string;
+    business_id: string;
+    admin: {
+        full_name: string;
+        email?: string;
+    };
+    business: {
+        id: string;
+        business_name: string;
+    };
+}
+
+export interface AuditLogResult {
+    logs: AdminAuditLogEntry[];
+    totalCount: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+}
+
+export interface GlobalAuditLogParams {
+    page: number;
+    pageSize: number;
+    dateFrom?: string;
+    dateTo?: string;
+    adminId?: string;
+    action?: string;
+    sortBy?: 'created_at' | 'action';
+    sortOrder?: 'asc' | 'desc';
+}
+
+export async function getGlobalAuditLog(params: GlobalAuditLogParams): Promise<AuditLogResult> {
+    const { page, pageSize, dateFrom, dateTo, adminId, action, sortBy, sortOrder } = params;
+
+    let query = supabase
+        .from('admin_business_actions')
+        .select('id, action, reason, changes_json, created_at, admin_id, business_id', { count: 'exact' });
+
+    // Apply Order
+    const orderKey = sortBy || 'created_at';
+    const orderAsc = sortOrder === 'asc';
+    query = query.order(orderKey, { ascending: orderAsc });
+
+    // Apply filters
+    if (dateFrom) query = query.gte('created_at', dateFrom);
+    if (dateTo) query = query.lte('created_at', dateTo);
+    if (adminId && adminId !== 'all') query = query.eq('admin_id', adminId);
+    if (action && action !== 'all') query = query.eq('action', action);
+
+    // Pagination
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+    query = query.range(from, to);
+
+    const { data: logsData, count, error } = await query;
+
+    if (error) throw error;
+    if (!logsData || logsData.length === 0) {
+        return {
+            logs: [],
+            totalCount: 0,
+            page,
+            pageSize,
+            totalPages: 0
+        };
+    }
+
+    // Manual Join: Fetch Admins
+    const adminIds = [...new Set(logsData.map(l => l.admin_id).filter(Boolean))];
+    let adminsMap: Record<string, { full_name: string, email: string }> = {};
+    if (adminIds.length > 0) {
+        const { data: admins } = await supabase
+            .from('profiles')
+            .select('id, full_name, email')
+            .in('id', adminIds);
+        admins?.forEach(a => {
+            adminsMap[a.id] = { full_name: a.full_name, email: a.email };
+        });
+    }
+
+    // Manual Join: Fetch Businesses
+    const businessIds = [...new Set(logsData.map(l => l.business_id).filter(Boolean))];
+    let businessesMap: Record<string, { id: string, business_name: string }> = {};
+    if (businessIds.length > 0) {
+        const { data: businesses } = await supabase
+            .from('businesses')
+            .select('id, business_name')
+            .in('id', businessIds);
+        businesses?.forEach(b => {
+            businessesMap[b.id] = { id: b.id, business_name: b.business_name };
+        });
+    }
+
+    // Merge Data
+    // Merge Data
+    const logs = logsData.map((item: any) => {
+        let businessName = 'Deleted/Unknown';
+
+        // Try to identify business name
+        if (businessesMap[item.business_id]) {
+            businessName = businessesMap[item.business_id].business_name;
+        } else if (item.changes_json?.snapshot?.business_name) {
+            // Fallback to snapshot if available (for hard deletes)
+            businessName = `${item.changes_json.snapshot.business_name} (Deleted)`;
+        }
+
+        return {
+            ...item,
+            admin: adminsMap[item.admin_id] || { full_name: 'Unknown System', email: '' },
+            business: businessesMap[item.business_id] || { id: item.business_id, business_name: businessName }
+        };
+    });
+
+    return {
+        logs: logs as AdminAuditLogEntry[],
+        totalCount: count || 0,
+        page,
+        pageSize,
+        totalPages: Math.ceil((count || 0) / pageSize)
+    };
+}
+
+export async function getAllAdmins() {
+    // Fetch unique admins who have performed actions
+    const { data, error } = await supabase
+        .from('admin_business_actions')
+        .select('admin_id')
+        .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    // Get unique IDs
+    const adminIds = [...new Set(data?.map(d => d.admin_id))];
+
+    if (adminIds.length === 0) return [];
+
+    // Fetch details
+    const { data: profiles, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .in('id', adminIds);
+
+    if (profileError) throw profileError;
+
+    return profiles || [];
 }
