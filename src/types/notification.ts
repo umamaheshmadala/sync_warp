@@ -16,39 +16,42 @@ export type NotificationType =
   | 'group_invitation'
   | 'group_post'
   | 'system_announcement'
-  | 'new_offer';
+  | 'new_offer'
+  | 'business_approved'
+  | 'business_rejected';
 
 export interface NotificationMetadata {
   // Connection-related
   userId?: string;
   connectionId?: string;
-  
+
   // Message-related
   conversationId?: string;
   messageId?: string;
-  
+
   // Post-related
   postId?: string;
   commentId?: string;
-  
+
   // Event-related
   eventId?: string;
-  
+
   // Business-related
   businessId?: string;
+  businessName?: string;
   reviewId?: string;
-  
+
   // Offer-related
   offer_code?: string;
   offerCode?: string;
-  
+
   // Marketplace-related
   listingId?: string;
   offerId?: string;
-  
+
   // Group-related
   groupId?: string;
-  
+
   // General
   targetUrl?: string;
   additionalData?: Record<string, any>;
@@ -64,7 +67,7 @@ export interface Notification {
   is_read: boolean;
   created_at: string;
   read_at?: string;
-  
+
   // Sender info (joined from profiles)
   sender_id?: string;
   sender_name?: string;

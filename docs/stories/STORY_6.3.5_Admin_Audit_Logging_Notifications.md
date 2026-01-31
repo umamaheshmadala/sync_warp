@@ -12,6 +12,7 @@
 
 Implement comprehensive audit logging UI for viewing admin actions, admin activity reports, and notification system for business owners. This provides accountability, transparency, and communication between admins and business owners.
 
+Make sure to utilize the existing code to your advantage. Few of the features that are in the stories of EPIC 6.3 are fully or partially implemented. Make sure you utilize those codes, modules, or functionalities to your advantage. 
 ---
 
 ## User Stories

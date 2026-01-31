@@ -120,15 +120,7 @@ export const FollowerListModal: React.FC<FollowerListModalProps> = ({
                     )}
                 </div>
 
-                {/* Footer */}
-                <div className="p-4 border-t bg-gray-50">
-                    <button
-                        onClick={onClose}
-                        className="w-full py-2 px-4 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-                    >
-                        Close
-                    </button>
-                </div>
+
             </div>
         </div>
     );

@@ -41,6 +41,7 @@ const BusinessCheckinsPage = lazy(() => import('../components/checkins/BusinessC
 const AdminDashboard = lazy(() => import('../pages/admin/AdminDashboard'))
 const ReviewModerationPage = lazy(() => import('../pages/admin/ReviewModerationPage'))
 const ReviewAnalyticsDashboard = lazy(() => import('../pages/admin/ReviewAnalyticsDashboard').then(m => ({ default: m.ReviewAnalyticsDashboard })))
+const BusinessManagementPage = lazy(() => import('../pages/admin/BusinessManagementPage'))
 
 // Product components
 const ProductDetails = lazy(() => import('../components/products').then(m => ({ default: m.ProductDetails })))
@@ -443,6 +444,16 @@ export const routes: RouteConfig[] = [
     element: <Navigate to="/admin" replace />,
     protected: true,
     title: 'System Admin - SynC'
+  },
+  {
+    path: '/admin/businesses',
+    element: (
+      <RouteLoader>
+        <BusinessManagementPage />
+      </RouteLoader>
+    ),
+    protected: true,
+    title: 'Manage Businesses - SynC'
   },
 
   // Business Tools (Protected)

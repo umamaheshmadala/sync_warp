@@ -12,6 +12,8 @@ export type NotificationType =
   | 'deal_shared'
   | 'birthday_reminder'
   | 'review_response'
+  | 'business_approved'
+  | 'business_rejected'
 
 export interface NotificationData {
   type: NotificationType
@@ -81,13 +83,21 @@ export class NotificationRouter {
         break
 
       case 'business':
-        if (data.businessId) {
+      case 'business_approved':
+        if (data.businessId || data.business_id) {
           // Route to business profile
-          navigate(`/business/${data.businessId}`)
+          const id = data.businessId || data.business_id;
+          // Use slug pattern manually since we don't have getBusinessUrl helper here easily without importing
+          // Ideally we should unify these routers
+          navigate(`/business/${id}`)
         } else {
           console.warn('[NotificationRouter] Business notification missing businessId')
           navigate('/')
         }
+        break
+
+      case 'business_rejected':
+        navigate('/business/dashboard')
         break
 
       case 'follower':
@@ -168,7 +178,9 @@ export class NotificationRouter {
       friend_request: '👋 Friend Request',
       friend_accepted: '✅ Friend Accepted',
       deal_shared: '🎁 Deal Shared',
-      birthday_reminder: '🎉 Birthday'
+      birthday_reminder: '🎉 Birthday',
+      business_approved: '✅ Business Approved',
+      business_rejected: '❌ Business Rejected'
     }
     return labels[type] || '🔔 Notification'
   }
@@ -191,7 +203,9 @@ export class NotificationRouter {
       friend_request: '#5856D6',
       friend_accepted: '#34C759',
       deal_shared: '#FF9500',
-      birthday_reminder: '#FF2D55'
+      birthday_reminder: '#FF2D55',
+      business_approved: '#34C759',
+      business_rejected: '#FF3B30'
     }
     return colors[type] || '#007AFF'
   }
@@ -209,7 +223,8 @@ export class NotificationRouter {
 
     const validTypes: NotificationType[] = [
       'review', 'offer', 'follower', 'business', 'message', 'test',
-      'friend_request', 'friend_accepted', 'deal_shared', 'birthday_reminder'
+      'friend_request', 'friend_accepted', 'deal_shared', 'birthday_reminder',
+      'business_approved', 'business_rejected'
     ]
 
     if (!validTypes.includes(data.type)) {

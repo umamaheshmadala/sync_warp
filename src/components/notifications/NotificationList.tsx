@@ -2,12 +2,12 @@
 import React, { useState } from 'react';
 import { Check, Inbox } from 'lucide-react';
 import { NotificationItem } from './NotificationItem';
-import type { Notification } from '../../types/notification';
+import { InAppNotification } from '../../services/notificationService';
 
 interface NotificationListProps {
-  notifications: Notification[];
+  notifications: InAppNotification[];
   loading: boolean;
-  onNotificationClick: (notification: Notification) => void;
+  onNotificationClick: (notification: InAppNotification) => void;
   onDeleteNotification?: (id: string) => void;
   onMarkAllAsRead?: () => void;
   maxHeight?: string;
@@ -23,7 +23,7 @@ export function NotificationList({
 }: NotificationListProps) {
   const [isMarkingAllRead, setIsMarkingAllRead] = useState(false);
 
-  const unreadCount = notifications.filter(n => !n.is_read).length;
+  const unreadCount = notifications.filter(n => !n.opened).length;
   const hasUnread = unreadCount > 0;
 
   const handleMarkAllAsRead = async () => {
@@ -104,8 +104,6 @@ export function NotificationList({
             key={notification.id}
             notification={notification}
             onClick={() => onNotificationClick(notification)}
-            onDelete={onDeleteNotification}
-            showDelete={!!onDeleteNotification}
           />
         ))}
       </div>

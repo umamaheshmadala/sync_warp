@@ -23,7 +23,7 @@ export function useRoutePreload() {
             '/search': () => import('../components/Search'),
             '/wallet': () => import('../components/Wallet'),
             '/profile': () => import('../components/Profile'),
-            '/social': () => import('../components/Social'),
+            // '/social': () => import('../components/Social'), // Removed: File does not exist
             '/friends': () => import('../pages/Friends').then(m => m.FriendsPage),
             '/messages': () => import('../components/messaging/MessagingLayout').then(m => m.MessagingLayout),
 

@@ -1,6 +1,6 @@
 // src/utils/notificationRouter.ts
 import type { NotificationType, NotificationMetadata, NotificationRouteConfig } from '../types/notification';
-import { getBusinessUrl as buildBusinessUrl } from '../utils/slugUtils';
+import { getBusinessUrl } from '../utils/slugUtils';
 import {
   UserPlus,
   Users,
@@ -18,6 +18,8 @@ import {
   UsersRound,
   FileText,
   Megaphone,
+  CheckCircle,
+  XCircle,
 } from 'lucide-react';
 
 /**
@@ -85,13 +87,13 @@ export const notificationRoutes: Record<NotificationType, NotificationRouteConfi
   },
   business_follow: {
     type: 'business_follow',
-    getRoute: (metadata) => buildBusinessUrl(metadata.businessId || '', metadata.businessName),
+    getRoute: (metadata) => getBusinessUrl(metadata.businessId || '', metadata.businessName),
     getIcon: () => 'Briefcase',
     getColor: () => 'text-cyan-600',
   },
   business_review: {
     type: 'business_review',
-    getRoute: (metadata) => `${buildBusinessUrl(metadata.businessId || '', metadata.businessName)}/reviews${metadata.reviewId ? `#${metadata.reviewId}` : ''}`,
+    getRoute: (metadata) => `${getBusinessUrl(metadata.businessId || '', metadata.businessName)}/reviews${metadata.reviewId ? `#${metadata.reviewId}` : ''}`,
     getIcon: () => 'Star',
     getColor: () => 'text-yellow-600',
   },
@@ -127,9 +129,21 @@ export const notificationRoutes: Record<NotificationType, NotificationRouteConfi
   },
   new_offer: {
     type: 'new_offer',
-    getRoute: (metadata) => `${buildBusinessUrl(metadata.businessId || '', metadata.businessName)}/offers?highlight=${metadata.offer_code || metadata.offerCode || ''}`,
+    getRoute: (metadata) => `${getBusinessUrl(metadata.businessId || '', metadata.businessName)}/offers?highlight=${metadata.offer_code || metadata.offerCode || ''}`,
     getIcon: () => 'Tag',
     getColor: () => 'text-green-600',
+  },
+  business_approved: {
+    type: 'business_approved',
+    getRoute: (metadata) => getBusinessUrl(metadata.businessId || metadata['business_id'] || '', metadata.businessName || metadata['business_name']),
+    getIcon: () => 'CheckCircle',
+    getColor: () => 'text-green-600',
+  },
+  business_rejected: {
+    type: 'business_rejected',
+    getRoute: (metadata) => `/business/dashboard`,
+    getIcon: () => 'XCircle',
+    getColor: () => 'text-red-600',
   },
 };
 
@@ -183,6 +197,8 @@ export function getNotificationTypeLabel(type: NotificationType): string {
     group_post: 'Group Post',
     system_announcement: 'Announcement',
     new_offer: 'New Promotion',
+    business_approved: 'Business Approved',
+    business_rejected: 'Business Rejected',
   };
   return labels[type] || type.replace(/_/g, ' ');
 }
@@ -207,4 +223,6 @@ export const iconComponents = {
   UsersRound,
   FileText,
   Megaphone,
+  CheckCircle,
+  XCircle,
 };

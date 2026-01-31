@@ -33,6 +33,10 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({ notification
           : <XCircle className="h-4 w-4 text-red-600" />;
       case 'admin_review_pending':
         return <ClipboardList className="h-4 w-4 text-orange-600" />;
+      case 'business_approved':
+        return <CheckCircle className="h-4 w-4 text-green-600" />;
+      case 'business_rejected':
+        return <XCircle className="h-4 w-4 text-red-600" />;
       default:
         return <Bell className="h-4 w-4 text-gray-600" />;
     }
@@ -56,6 +60,10 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({ notification
           : 'bg-red-100';
       case 'admin_review_pending':
         return 'bg-orange-100';
+      case 'business_approved':
+        return 'bg-green-100';
+      case 'business_rejected':
+        return 'bg-red-100';
       default:
         return 'bg-gray-100';
     }

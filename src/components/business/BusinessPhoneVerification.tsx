@@ -42,6 +42,10 @@ export const BusinessPhoneVerification: React.FC<Props> = ({
         return digits.length === 10;
     };
 
+    // Test numbers to bypass uniqueness check in dev
+    const TEST_PHONE_NUMBERS = ['9876543210'];
+    const TEST_OTP = '123456';
+
     const handleSendOtp = async () => {
         setError(null);
         if (!validatePhone(phoneNumber)) {
@@ -49,9 +53,25 @@ export const BusinessPhoneVerification: React.FC<Props> = ({
             return;
         }
 
+        const digitsOnly = phoneNumber.replace(/[^0-9]/g, '');
+
+        // --- BYPASS FOR TESTING ---
+        if (TEST_PHONE_NUMBERS.includes(digitsOnly)) {
+            setLoading(true);
+            // Simulate network delay
+            setTimeout(() => {
+                setLoading(false);
+                setStep('otp');
+                setCooldown(60);
+                toast.success('Test OTP sent! Use 123456');
+            }, 1000);
+            return;
+        }
+        // --------------------------
+
         setLoading(true);
         // Format to E.164 (+91 followed by 10 digits)
-        const formattedPhone = `+91${phoneNumber.replace(/[^0-9]/g, '').slice(-10)}`;
+        const formattedPhone = `+91${digitsOnly.slice(-10)}`;
 
         try {
             let error;
@@ -78,7 +98,9 @@ export const BusinessPhoneVerification: React.FC<Props> = ({
             console.error('Error sending OTP:', err);
             setError(err.message || 'Failed to send OTP. Please try again.');
         } finally {
-            setLoading(false);
+            if (!TEST_PHONE_NUMBERS.includes(digitsOnly)) {
+                setLoading(false);
+            }
         }
     };
 
@@ -89,8 +111,26 @@ export const BusinessPhoneVerification: React.FC<Props> = ({
             return;
         }
 
+        const digitsOnly = phoneNumber.replace(/[^0-9]/g, '');
+
+        // --- BYPASS FOR TESTING ---
+        if (TEST_PHONE_NUMBERS.includes(digitsOnly)) {
+            if (otp === TEST_OTP) {
+                setLoading(true);
+                setTimeout(() => {
+                    setLoading(false);
+                    toast.success('Phone verified successfully! (Test Mode)');
+                    onVerified(true);
+                }, 1000);
+            } else {
+                setError('Invalid test OTP. Use 123456');
+            }
+            return;
+        }
+        // --------------------------
+
         setLoading(true);
-        const formattedPhone = `+91${phoneNumber.replace(/[^0-9]/g, '').slice(-10)}`;
+        const formattedPhone = `+91${digitsOnly.slice(-10)}`;
 
         try {
             let data, error;
@@ -114,8 +154,6 @@ export const BusinessPhoneVerification: React.FC<Props> = ({
                 data = res.data;
                 error = res.error;
             }
-
-            if (error) throw error;
 
             if (error) throw error;
 

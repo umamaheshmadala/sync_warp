@@ -9,6 +9,8 @@ import { AdminSettingsWidget } from '../../components/admin/AdminSettingsWidget'
 import { DriverScoreWidget } from '../../components/admin/DriverScoreWidget';
 import { ReviewModerationWidget } from '../../components/admin/ReviewModerationWidget';
 import { useAuthStore } from '../../store/authStore';
+import { useBusinessStats } from '../../hooks/useAdminBusinessList';
+import { BusinessStatsCards } from '../../components/admin/business-management/BusinessStatsCards';
 
 export default function AdminDashboard() {
     const navigate = useNavigate();
@@ -22,6 +24,8 @@ export default function AdminDashboard() {
             setIsAdmin(hasAdminAccess);
         }
     }, [profile]);
+
+    const { data: stats } = useBusinessStats({ enabled: isAdmin });
 
     if (loading) {
         return (
@@ -52,6 +56,8 @@ export default function AdminDashboard() {
             </div>
         );
     }
+
+
 
     return (
         <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
@@ -87,7 +93,22 @@ export default function AdminDashboard() {
 
                         <section>
                             <h2 className="text-lg font-semibold text-gray-700 mb-3">Business Management</h2>
-                            <BusinessActivationWidget />
+                            {/* <BusinessActivationWidget /> */}
+
+                            <BusinessStatsCards
+                                stats={stats}
+                                onCardClick={(status) => navigate(`/admin/businesses?tab=${status}`)}
+                                className="grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3"
+                            />
+
+                            <div className="mt-4 flex justify-end">
+                                <button
+                                    onClick={() => navigate('/admin/businesses')}
+                                    className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+                                >
+                                    View Full List &rarr;
+                                </button>
+                            </div>
                         </section>
 
                         <section>

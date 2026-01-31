@@ -12,6 +12,7 @@
 
 Implement admin capabilities to edit business information and delete businesses (soft-delete by default, hard-delete for spam/fraud).
 
+Make sure to utilize the existing code to your advantage. Few of the features that are in the stories of EPIC 6.3 are fully or partially implemented. Make sure you utilize those codes, modules, or functionalities to your advantage. 
 ---
 
 ## User Stories

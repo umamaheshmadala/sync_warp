@@ -1,22 +1,26 @@
 // src/components/notifications/NotificationBell.tsx
 import React, { useState, useRef, useEffect } from 'react';
 import { Bell } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { NotificationList } from './NotificationList';
-import { useNotifications } from '../../hooks/useNotifications';
+import { useInAppNotifications } from '../../hooks/useInAppNotifications';
+import { getNotificationRoute } from '../../utils/notificationRouter';
+import { NotificationType, NotificationMetadata } from '../../types/notification';
+import { InAppNotification } from '../../services/notificationService';
 
 export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const navigate = useNavigate();
 
   const {
     notifications,
     unreadCount,
-    loading,
-    handleNotificationClick,
-    deleteNotification,
+    isLoading: loading,
+    markAsRead,
     markAllAsRead,
-  } = useNotifications();
+  } = useInAppNotifications();
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -37,10 +41,20 @@ export function NotificationBell() {
     }
   }, [isOpen]);
 
-  // Close dropdown when notification is clicked
-  const handleNotificationItemClick = (notification: any) => {
-    handleNotificationClick(notification);
+  // Close dropdown when notification is clicked and navigate
+  const handleNotificationItemClick = async (notification: InAppNotification) => {
+    if (!notification.opened) {
+      await markAsRead(notification.id);
+    }
     setIsOpen(false);
+
+    // Get route and navigate
+    // Cast data to expected metadata type, assuming structure is compatible or we use optional chaining in router
+    const route = getNotificationRoute(
+      notification.notification_type as NotificationType,
+      (notification.data || {}) as NotificationMetadata
+    );
+    navigate(route);
   };
 
   return (
@@ -58,7 +72,7 @@ export function NotificationBell() {
         aria-expanded={isOpen}
       >
         <Bell className="w-6 h-6" />
-        
+
         {/* Unread badge */}
         {unreadCount > 0 && (
           <span className="
@@ -99,7 +113,6 @@ export function NotificationBell() {
             notifications={notifications}
             loading={loading}
             onNotificationClick={handleNotificationItemClick}
-            onDeleteNotification={deleteNotification}
             onMarkAllAsRead={markAllAsRead}
           />
         </div>

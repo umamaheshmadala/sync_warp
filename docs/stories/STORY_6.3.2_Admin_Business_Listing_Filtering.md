@@ -4,7 +4,7 @@
 **Priority:** 🔴 P0 - CRITICAL  
 **Effort:** 2 days  
 **Dependencies:** Story 6.3.1 (Database Schema)  
-**Status:** ⚪ PLANNED
+**Status:** Completed
 
 ---
 
@@ -12,6 +12,7 @@
 
 Build the admin business management dashboard with a comprehensive listing view, advanced filtering capabilities, real-time search, and tab-based navigation by status. This is the primary interface admins will use to view and manage all businesses on the platform.
 
+Make sure to utilize the existing code to your advantage. Few of the features that are in the stories of EPIC 6.3 are fully or partially implemented. Make sure you utilize those codes, modules, or functionalities to your advantage. 
 ---
 
 ## Problem Statement

@@ -1,6 +1,7 @@
 
 import { useNavigate } from 'react-router-dom';
 import { InAppNotification } from '@/services/notificationService';
+import { getBusinessUrl } from '@/utils/slugUtils';
 
 /**
  * Hook to handle navigation logic for different notification types.
@@ -89,6 +90,19 @@ export const useNotificationNavigation = () => {
             // Events
             case 'birthday_reminder':
                 if (data?.friend_id) navigate(`/profile/${data.friend_id}`);
+                break;
+
+            // Business Approval/Rejection (Added fix)
+            case 'business_approved':
+                const bizId = data?.business_id || data?.businessId;
+                const bizName = data?.business_name || data?.businessName;
+                if (bizId) {
+                    navigate(getBusinessUrl(bizId, bizName));
+                }
+                break;
+
+            case 'business_rejected':
+                navigate('/business/dashboard');
                 break;
 
             // Default fallback

@@ -4,7 +4,7 @@
 **Priority:** 🔴 P0 - CRITICAL  
 **Effort:** 2 days  
 **Dependencies:** Story 6.3.1 (Database), Story 6.3.2 (Listing UI)  
-**Status:** ⚪ PLANNED
+**Status:** Completed
 
 ---
 
@@ -12,6 +12,7 @@
 
 Implement the individual approval and rejection workflow for businesses. This includes the business detail modal, action confirmation dialogs, rejection reason form, and real-time status updates. Each business must be verified individually (NO bulk operations per user requirement).
 
+Make sure to utilize the existing code to your advantage. Few of the features that are in the stories of EPIC 6.3 are fully or partially implemented. Make sure you utilize those codes, modules, or functionalities to your advantage. 
 ---
 
 ## Problem Statement
