@@ -3,15 +3,19 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Check, X, Pencil, Trash2, MapPin, Tag } from 'lucide-react';
+import { Check, X, Pencil, Trash2, MapPin, Tag, RefreshCcw, AlertTriangle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { BusinessDetailsTab } from './BusinessDetailsTab';
 import { BusinessAuditHistoryTab } from './BusinessAuditHistoryTab';
 import { BusinessOwnerInfoTab } from './BusinessOwnerInfoTab';
 import { ApproveBusinessDialog } from './ApproveBusinessDialog';
 import { RejectBusinessDialog } from './RejectBusinessDialog';
+import { EditBusinessModal } from '@/components/admin/business-management/EditBusinessModal';
+import { RestoreBusinessDialog } from '@/components/admin/business-management/RestoreBusinessDialog';
+import { SoftDeleteBusinessDialog } from '@/components/admin/business-management/SoftDeleteBusinessDialog';
+import { HardDeleteDialog } from '@/components/admin/business-management/HardDeleteDialog';
 import { useBusinessDetails, useBusinessAuditHistory } from '@/hooks/useBusinessDetails';
-import { deleteBusiness } from '@/services/adminBusinessService';
+import { deleteBusiness, AdminBusinessView } from '@/services/adminBusinessService';
 
 interface BusinessDetailModalProps {
     businessId: string | null;
@@ -27,37 +31,25 @@ export function BusinessDetailModal({
     const [activeTab, setActiveTab] = useState('details');
     const [showApproveDialog, setShowApproveDialog] = useState(false);
     const [showRejectDialog, setShowRejectDialog] = useState(false);
+    const [showEditDialog, setShowEditDialog] = useState(false);
+    const [showRestoreDialog, setShowRestoreDialog] = useState(false);
+    const [showSoftDeleteDialog, setShowSoftDeleteDialog] = useState(false);
+    const [showHardDeleteDialog, setShowHardDeleteDialog] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
 
     const { data: business, isLoading } = useBusinessDetails(businessId);
     // Prefetch audit history so it's ready when tab is clicked
     const { data: auditData, isLoading: isAuditLoading } = useBusinessAuditHistory(businessId || '');
 
-    const handleDelete = async () => {
-        if (!business) return;
-        if (!window.confirm(`Are you sure you want to delete ${business.business_name}? This action cannot be undone.`)) {
-            return;
-        }
-
-        setIsDeleting(true);
-        try {
-            await deleteBusiness(business.id);
-            toast.success('Business deleted successfully');
-            onActionComplete();
-            onClose();
-        } catch (error) {
-            console.error(error);
-            toast.error('Failed to delete business');
-        } finally {
-            setIsDeleting(false);
-        }
+    const handleDelete = () => {
+        setShowSoftDeleteDialog(true);
     };
 
     if (!businessId) return null;
 
     const canApprove = business?.status === 'pending' || business?.status === 'rejected';
     const canReject = business?.status === 'pending' || business?.status === 'active';
-    const canDelete = business?.status !== 'deleted';
+    const isDeleted = business?.status === 'deleted';
 
     return (
         <>
@@ -133,16 +125,47 @@ export function BusinessDetailModal({
 
                     <DialogFooter className="p-4 px-6 border-t bg-white rounded-b-xl flex justify-between items-center w-full">
                         <div className="flex items-center gap-2">
-                            {business && canDelete && (
-                                <Button
-                                    variant="ghost"
-                                    className="text-gray-500 hover:text-red-600 hover:bg-red-50"
-                                    onClick={handleDelete}
-                                    disabled={isDeleting}
-                                >
-                                    <Trash2 className="w-4 h-4 mr-2" />
-                                    {isDeleting ? 'Deleting...' : 'Delete Business'}
-                                </Button>
+                            {business && !isDeleted && (
+                                <>
+                                    <Button
+                                        variant="outline"
+                                        className="text-gray-700 hover:bg-gray-50 border-gray-300"
+                                        onClick={() => setShowEditDialog(true)}
+                                    >
+                                        <Pencil className="w-4 h-4 mr-2" />
+                                        Edit
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        className="text-gray-500 hover:text-red-600 hover:bg-red-50"
+                                        onClick={handleDelete}
+                                        disabled={isDeleting}
+                                    >
+                                        <Trash2 className="w-4 h-4 mr-2" />
+                                        {isDeleting ? 'Deleting...' : 'Delete'}
+                                    </Button>
+                                </>
+                            )}
+
+                            {business && isDeleted && (
+                                <>
+                                    <Button
+                                        variant="outline"
+                                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200"
+                                        onClick={() => setShowRestoreDialog(true)}
+                                    >
+                                        <RefreshCcw className="w-4 h-4 mr-2" />
+                                        Restore
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                        onClick={() => setShowHardDeleteDialog(true)}
+                                    >
+                                        <AlertTriangle className="w-4 h-4 mr-2" />
+                                        Hard Delete
+                                    </Button>
+                                </>
                             )}
                         </div>
 
@@ -195,6 +218,49 @@ export function BusinessDetailModal({
                         onClose={() => setShowRejectDialog(false)}
                         onSuccess={() => {
                             setShowRejectDialog(false);
+                            onActionComplete();
+                            onClose();
+                        }}
+                    />
+
+                    <EditBusinessModal
+                        business={business}
+                        isOpen={showEditDialog}
+                        onClose={() => setShowEditDialog(false)}
+                        onSuccess={() => {
+                            setShowEditDialog(false);
+                            onActionComplete();
+                        }}
+                    />
+
+                    <SoftDeleteBusinessDialog
+                        business={business}
+                        isOpen={showSoftDeleteDialog}
+                        onClose={() => setShowSoftDeleteDialog(false)}
+                        onSuccess={() => {
+                            setShowSoftDeleteDialog(false);
+                            onActionComplete();
+                            onClose();
+                        }}
+                    />
+
+                    <RestoreBusinessDialog
+                        business={business}
+                        isOpen={showRestoreDialog}
+                        onClose={() => setShowRestoreDialog(false)}
+                        onSuccess={() => {
+                            setShowRestoreDialog(false);
+                            onActionComplete();
+                            onClose();
+                        }}
+                    />
+
+                    <HardDeleteDialog
+                        business={business}
+                        isOpen={showHardDeleteDialog}
+                        onClose={() => setShowHardDeleteDialog(false)}
+                        onSuccess={() => {
+                            setShowHardDeleteDialog(false);
                             onActionComplete();
                             onClose();
                         }}

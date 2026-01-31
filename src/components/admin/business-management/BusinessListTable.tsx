@@ -7,7 +7,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { ArrowUpDown, MoreHorizontal, Eye, CheckCircle, XCircle, Trash2 } from 'lucide-react';
+import { ArrowUpDown, MoreHorizontal, Eye, CheckCircle, XCircle, Trash2, RefreshCcw, AlertTriangle, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -21,6 +21,7 @@ import {
 import { BusinessStatusBadge } from './BusinessStatusBadge';
 import { AdminBusinessView } from '@/services/adminBusinessService';
 import { format } from 'date-fns';
+
 interface BusinessListTableProps {
     businesses: AdminBusinessView[];
     isLoading: boolean;
@@ -31,6 +32,10 @@ interface BusinessListTableProps {
     onView: (id: string) => void;
     onApprove: (business: AdminBusinessView) => void;
     onReject: (business: AdminBusinessView) => void;
+    onEdit: (business: AdminBusinessView) => void;
+    onSoftDelete: (business: AdminBusinessView) => void;
+    onRestore: (business: AdminBusinessView) => void;
+    onHardDelete: (business: AdminBusinessView) => void;
 }
 
 export function BusinessListTable({
@@ -42,7 +47,11 @@ export function BusinessListTable({
     onRefresh,
     onView,
     onApprove,
-    onReject
+    onReject,
+    onEdit,
+    onSoftDelete,
+    onRestore,
+    onHardDelete
 }: BusinessListTableProps) {
 
     const SortIcon = ({ column }: { column: string }) => {
@@ -177,6 +186,13 @@ export function BusinessListTable({
                                             <DropdownMenuItem className="cursor-pointer" onClick={() => onView(business.id)}>
                                                 <Eye className="mr-2 h-4 w-4" /> View Details
                                             </DropdownMenuItem>
+
+                                            {business.status !== 'deleted' && (
+                                                <DropdownMenuItem className="cursor-pointer" onClick={() => onEdit(business)}>
+                                                    <Pencil className="mr-2 h-4 w-4" /> Edit
+                                                </DropdownMenuItem>
+                                            )}
+
                                             <DropdownMenuSeparator />
                                             {business.status === 'pending' && (
                                                 <>
@@ -194,9 +210,30 @@ export function BusinessListTable({
                                                     </DropdownMenuItem>
                                                 </>
                                             )}
-                                            <DropdownMenuItem className="cursor-pointer text-red-600 focus:text-red-700 focus:bg-red-50">
-                                                <Trash2 className="mr-2 h-4 w-4" /> Delete
-                                            </DropdownMenuItem>
+
+                                            {business.status === 'deleted' ? (
+                                                <>
+                                                    <DropdownMenuItem
+                                                        className="cursor-pointer text-blue-600 focus:text-blue-700 focus:bg-blue-50"
+                                                        onClick={() => onRestore(business)}
+                                                    >
+                                                        <RefreshCcw className="mr-2 h-4 w-4" /> Restore
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem
+                                                        className="cursor-pointer text-red-700 focus:text-red-800 focus:bg-red-50"
+                                                        onClick={() => onHardDelete(business)}
+                                                    >
+                                                        <AlertTriangle className="mr-2 h-4 w-4" /> Hard Delete
+                                                    </DropdownMenuItem>
+                                                </>
+                                            ) : (
+                                                <DropdownMenuItem
+                                                    className="cursor-pointer text-red-600 focus:text-red-700 focus:bg-red-50"
+                                                    onClick={() => onSoftDelete(business)}
+                                                >
+                                                    <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                                </DropdownMenuItem>
+                                            )}
                                         </DropdownMenuContent>
                                     </DropdownMenu>
                                 </TableCell>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { BusinessStatsCards } from '@/components/admin/business-management/BusinessStatsCards';
@@ -9,8 +10,14 @@ import { BusinessPagination } from '@/components/admin/business-management/Busin
 import { BusinessDetailModal } from '@/components/admin/business-management/BusinessDetailModal';
 import { ApproveBusinessDialog } from '@/components/admin/business-management/ApproveBusinessDialog';
 import { RejectBusinessDialog } from '@/components/admin/business-management/RejectBusinessDialog';
+import { EditBusinessModal } from '@/components/admin/business-management/EditBusinessModal';
+import { RestoreBusinessDialog } from '@/components/admin/business-management/RestoreBusinessDialog';
+import { SoftDeleteBusinessDialog } from '@/components/admin/business-management/SoftDeleteBusinessDialog';
+import { HardDeleteDialog } from '@/components/admin/business-management/HardDeleteDialog';
 import { useAdminBusinessList, useBusinessStats } from '@/hooks/useAdminBusinessList';
-import { AdminBusinessView } from '@/services/adminBusinessService';
+import { AdminBusinessView, deleteBusiness } from '@/services/adminBusinessService';
+import { toast } from 'react-hot-toast';
+
 // using local useEffect for debounce
 // Since I don't see useDebounce in the list_dir earlier, I'll rely on the requirements "300ms delay" by using a local useEffect or simple timeout.
 // But actually, I'll prefer implementing a simple debounce inside the component to avoid adding deps if not present.
@@ -114,10 +121,23 @@ export default function BusinessManagementPage() {
     const [viewBusinessId, setViewBusinessId] = useState<string | null>(null);
     const [approveBusiness, setApproveBusiness] = useState<AdminBusinessView | null>(null);
     const [rejectBusiness, setRejectBusiness] = useState<AdminBusinessView | null>(null);
+    const [editBusiness, setEditBusiness] = useState<AdminBusinessView | null>(null);
+    const [restoreBusiness, setRestoreBusiness] = useState<AdminBusinessView | null>(null);
+    const [softDeleteBusiness, setSoftDeleteBusiness] = useState<AdminBusinessView | null>(null);
+    const [hardDeleteBusiness, setHardDeleteBusiness] = useState<AdminBusinessView | null>(null);
+
+    const queryClient = useQueryClient();
 
     const handleActionComplete = () => {
-        refetch(); // Refresh list stats also likely auto-refresh via React Query invalidation if configured, but explicit refetch ensures UI update
+        // Invalidate all business list queries to ensure counts and other tabs are updated
+        queryClient.invalidateQueries({ queryKey: ['admin-businesses'] });
+        queryClient.invalidateQueries({ queryKey: ['admin-business-stats'] });
+        // Also invalidate details and audit logs in case the detail modal is open or re-opened
+        queryClient.invalidateQueries({ queryKey: ['admin-business-details'] });
+        queryClient.invalidateQueries({ queryKey: ['admin-business-audit'] });
     };
+
+
 
     return (
         <div className="container py-6 space-y-6 max-w-[1400px]">
@@ -156,6 +176,10 @@ export default function BusinessManagementPage() {
                         onView={setViewBusinessId}
                         onApprove={setApproveBusiness}
                         onReject={setRejectBusiness}
+                        onEdit={setEditBusiness}
+                        onSoftDelete={setSoftDeleteBusiness}
+                        onRestore={setRestoreBusiness}
+                        onHardDelete={setHardDeleteBusiness}
                     />
 
                     {/* Pagination */}
@@ -195,6 +219,46 @@ export default function BusinessManagementPage() {
                 onClose={() => setRejectBusiness(null)}
                 onSuccess={() => {
                     setRejectBusiness(null);
+                    handleActionComplete();
+                }}
+            />
+
+            <EditBusinessModal
+                business={editBusiness as any}
+                isOpen={!!editBusiness}
+                onClose={() => setEditBusiness(null)}
+                onSuccess={() => {
+                    setEditBusiness(null);
+                    handleActionComplete();
+                }}
+            />
+
+            <RestoreBusinessDialog
+                business={restoreBusiness}
+                isOpen={!!restoreBusiness}
+                onClose={() => setRestoreBusiness(null)}
+                onSuccess={() => {
+                    setRestoreBusiness(null);
+                    handleActionComplete();
+                }}
+            />
+
+            <SoftDeleteBusinessDialog
+                business={softDeleteBusiness}
+                isOpen={!!softDeleteBusiness}
+                onClose={() => setSoftDeleteBusiness(null)}
+                onSuccess={() => {
+                    setSoftDeleteBusiness(null);
+                    handleActionComplete();
+                }}
+            />
+
+            <HardDeleteDialog
+                business={hardDeleteBusiness}
+                isOpen={!!hardDeleteBusiness}
+                onClose={() => setHardDeleteBusiness(null)}
+                onSuccess={() => {
+                    setHardDeleteBusiness(null);
                     handleActionComplete();
                 }}
             />

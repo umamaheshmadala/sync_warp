@@ -405,3 +405,61 @@ export async function deleteBusiness(businessId: string, reason: string = 'Delet
 
     if (error) throw error;
 }
+
+export async function restoreBusiness(businessId: string): Promise<void> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const { error } = await supabase.rpc('admin_restore_business', {
+        p_business_id: businessId,
+        p_admin_id: user.id
+    });
+
+    if (error) throw error;
+}
+
+export async function hardDeleteBusiness(businessId: string, reason: string): Promise<void> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const { error } = await supabase.rpc('admin_hard_delete_business', {
+        p_business_id: businessId,
+        p_admin_id: user.id,
+        p_reason: reason
+    });
+
+    if (error) throw error;
+}
+
+export async function updateBusiness(
+    businessId: string,
+    updates: Partial<AdminBusinessView>,
+    changesJson: Record<string, { from: any, to: any }>
+): Promise<void> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    // 1. Update business table
+    const { error } = await supabase
+        .from('businesses')
+        .update(updates)
+        .eq('id', businessId);
+
+    if (error) throw error;
+
+    // 2. Log action manually
+    // We only log if there are meaningful changes
+    if (Object.keys(changesJson).length > 0) {
+        const { error: logError } = await supabase
+            .from('admin_business_actions')
+            .insert({
+                business_id: businessId,
+                admin_id: user.id,
+                action: 'edit',
+                changes_json: changesJson,
+                reason: 'Admin updated business details'
+            });
+
+        if (logError) console.error('Failed to log admin action:', logError);
+    }
+}
