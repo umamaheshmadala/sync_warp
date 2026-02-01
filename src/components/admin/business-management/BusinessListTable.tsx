@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import {
     Table,
     TableBody,
@@ -131,7 +132,25 @@ export function BusinessListTable({
                                 <TableCell className="font-medium">
                                     <div
                                         className="flex flex-col cursor-pointer hover:text-indigo-600 transition-colors"
-                                        onClick={() => onView(business.id)}
+                                        onClick={(e) => {
+                                            if (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) {
+                                                // Let default behavior happen if we wrapped in <a>, but since it's a div, we need to manually open
+                                                // Actually, best practice is to just window.open
+                                                const url = new URL(window.location.href);
+                                                url.searchParams.set('businessId', business.id);
+                                                window.open(url.toString(), '_blank');
+                                            } else {
+                                                onView(business.id);
+                                            }
+                                        }}
+                                        onAuxClick={(e) => {
+                                            // Handle middle click
+                                            if (e.button === 1) {
+                                                const url = new URL(window.location.href);
+                                                url.searchParams.set('businessId', business.id);
+                                                window.open(url.toString(), '_blank');
+                                            }
+                                        }}
                                     >
                                         <span className="text-sm font-semibold text-gray-900 line-clamp-1">
                                             {business.business_name}
@@ -183,7 +202,19 @@ export function BusinessListTable({
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end" className="w-[160px]">
                                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                            <DropdownMenuItem className="cursor-pointer" onClick={() => onView(business.id)}>
+                                            <DropdownMenuItem
+                                                className="cursor-pointer"
+                                                onClick={(e) => {
+                                                    if (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) {
+                                                        e.preventDefault(); // Prevent dropdown from just closing without action if needed, though menu usually closes.
+                                                        const url = new URL(window.location.href);
+                                                        url.searchParams.set('businessId', business.id);
+                                                        window.open(url.toString(), '_blank');
+                                                    } else {
+                                                        onView(business.id);
+                                                    }
+                                                }}
+                                            >
                                                 <Eye className="mr-2 h-4 w-4" /> View Details
                                             </DropdownMenuItem>
 

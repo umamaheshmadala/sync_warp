@@ -16,6 +16,7 @@ export interface Business {
     state: string;
     postal_code?: string;
     country: string;
+    timezone?: string;
     latitude?: number;
     longitude?: number;
     logo_url?: string;

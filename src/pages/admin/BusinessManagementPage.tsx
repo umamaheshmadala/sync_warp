@@ -117,8 +117,36 @@ export default function BusinessManagementPage() {
         }
     };
 
+
     // Modal State
-    const [viewBusinessId, setViewBusinessId] = useState<string | null>(null);
+    const [viewBusinessId, setViewBusinessId] = useState<string | null>(searchParams.get('businessId') || null);
+
+    // Sync URL with modal state
+    useEffect(() => {
+        const currentBusinessId = searchParams.get('businessId');
+        if (viewBusinessId && currentBusinessId !== viewBusinessId) {
+            setSearchParams(prev => {
+                prev.set('businessId', viewBusinessId);
+                return prev;
+            }, { replace: true });
+        } else if (!viewBusinessId && currentBusinessId) {
+            setSearchParams(prev => {
+                prev.delete('businessId');
+                return prev;
+            }, { replace: true });
+        }
+    }, [viewBusinessId, searchParams, setSearchParams]);
+
+    // Also watch for URL changes to open modal if navigated to (e.g. back button or initial load)
+    useEffect(() => {
+        const businessIdFromUrl = searchParams.get('businessId');
+        if (businessIdFromUrl && businessIdFromUrl !== viewBusinessId) {
+            setViewBusinessId(businessIdFromUrl);
+        } else if (!businessIdFromUrl && viewBusinessId) {
+            setViewBusinessId(null);
+        }
+    }, [searchParams]);
+
     const [approveBusiness, setApproveBusiness] = useState<AdminBusinessView | null>(null);
     const [rejectBusiness, setRejectBusiness] = useState<AdminBusinessView | null>(null);
     const [editBusiness, setEditBusiness] = useState<AdminBusinessView | null>(null);

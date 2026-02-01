@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { QuickImageUploader } from './QuickImageUploader';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { parseBusinessIdentifier } from '../../utils/slugUtils';
@@ -421,6 +422,31 @@ const BusinessProfile: React.FC = () => {
       return null;
     } finally {
       setImageUploadLoading(prev => ({ ...prev, [type]: false }));
+    }
+  };
+
+  // Handle quick image updates (direct from profile)
+  const handleQuickImageUpdate = async (url: string, type: 'logo' | 'cover') => {
+    try {
+      const updateField = type === 'cover' ? 'cover_image_url' : `${type}_url`;
+
+      const { error } = await supabase
+        .from('businesses')
+        .update({
+          [updateField]: url,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', business?.id)
+        .eq('user_id', user?.id);
+
+      if (error) throw error;
+
+      // Refetch to get updated data
+      await refetchBusiness();
+      toast.success(`${type === 'cover' ? 'Cover' : type} updated successfully!`);
+    } catch (error: any) {
+      console.error('Error saving image:', error);
+      toast.error(`Failed to update image: ${error.message}`);
     }
   };
 
@@ -1487,11 +1513,26 @@ const BusinessProfile: React.FC = () => {
                     <span className="text-gray-400 font-medium">No cover photo</span>
                   </div>
                 )}
+
+                {/* Quick Edit Cover Button */}
+                {isOwner && (
+                  <div className="absolute bottom-4 right-4 z-20">
+                    <QuickImageUploader
+                      businessId={business?.id!}
+                      bucketName="business-assets"
+                      imagePath={`business_images/${business?.id}_cover.jpg`}
+                      currentImageUrl={business?.cover_image_url}
+                      onUploadComplete={(url) => handleQuickImageUpdate(url, 'cover')}
+                      aspectRatio={16 / 9}
+                      maxSizeMB={0.6}
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Profile Photo (Overlapping - 1/4 on cover, 3/4 below) */}
               <div className="absolute -bottom-24 md:-bottom-[9.75rem] left-4 md:left-8 z-30">
-                <div className="rounded-full border-[4px] border-white bg-white shadow-md overflow-hidden w-32 h-32 md:w-52 md:h-52">
+                <div className="rounded-full border-[4px] border-white bg-white shadow-md overflow-hidden w-32 h-32 md:w-52 md:h-52 relative group">
                   {business?.logo_url ? (
                     <img
                       src={business.logo_url}
@@ -1501,6 +1542,21 @@ const BusinessProfile: React.FC = () => {
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-gray-100">
                       <Camera className="w-8 h-8 md:w-12 md:h-12 text-gray-400" />
+                    </div>
+                  )}
+
+                  {/* Quick Edit Logo Button */}
+                  {isOwner && (
+                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-10 cursor-pointer">
+                      <QuickImageUploader
+                        businessId={business?.id!}
+                        bucketName="business-assets"
+                        imagePath={`business_images/${business?.id}_logo.jpg`}
+                        currentImageUrl={business?.logo_url}
+                        onUploadComplete={(url) => handleQuickImageUpdate(url, 'logo')}
+                        aspectRatio={1}
+                        maxSizeMB={0.4}
+                      />
                     </div>
                   )}
                 </div>

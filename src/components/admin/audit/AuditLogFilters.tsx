@@ -9,6 +9,7 @@ interface AuditLogFiltersProps {
         dateTo: string;
         adminId: string;
         action: string;
+        search: string;
     };
     onFilterChange: (key: string, value: string) => void;
     onReset: () => void;
@@ -18,6 +19,16 @@ interface AuditLogFiltersProps {
 export function AuditLogFilters({ filters, onFilterChange, onReset, admins }: AuditLogFiltersProps) {
     return (
         <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm space-y-4 md:space-y-0 md:flex md:items-end md:gap-4 flex-wrap">
+            {/* Search */}
+            <div className="space-y-1 flex-1 min-w-[200px]">
+                <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Search</label>
+                <Input
+                    placeholder="Search details..."
+                    value={filters.search}
+                    onChange={(e) => onFilterChange('search', e.target.value)}
+                    className="w-full"
+                />
+            </div>
             {/* Date Range */}
             <div className="space-y-1">
                 <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">From Date</label>

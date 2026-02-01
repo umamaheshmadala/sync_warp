@@ -555,6 +555,7 @@
 - 📝 Story 4.8: Review Display Integration (2-3 days)
 - 📝 Story 4.10: Storefront Minor Enhancements (1 day)
 - 📝 Story 4.11: Follow Business (8 days) - **High Priority Engagement Feature**
+- ✅ **Story 4.20: Quick Image Editing & Optimization** (Feb 1, 2026) - **UX Enhancement**
 
 **Completed Timeline**: 8 weeks (core stories) + 2 weeks (Enhancements)
 **Remaining Effort**: 26-31 days (storefront enhancements + engagement + offer lifecycle)

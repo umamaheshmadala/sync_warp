@@ -21,17 +21,27 @@ export default function AdminAuditLogPage() {
     const queryClient = useQueryClient();
     const [page, setPage] = useState(1);
     const [pageSize] = useState(50);
+    const [searchDebounce, setSearchDebounce] = useState('');
     const [searchFilters, setSearchFilters] = useState({
         dateFrom: '',
         dateTo: '',
         adminId: 'all',
-        action: 'all'
+        action: 'all',
+        search: ''
     });
 
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }>({
         key: 'created_at',
         direction: 'desc'
     });
+
+    // Debounce search input
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setSearchDebounce(searchFilters.search);
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchFilters.search]);
 
     // Check access
     useEffect(() => {
@@ -65,18 +75,37 @@ export default function AdminAuditLogPage() {
     }, [queryClient]);
 
     // Fetch Logs
+    // Note: We only pass server-side sort keys to the API
+    const serverSortKey = ['admin', 'business'].includes(sortConfig.key) ? 'created_at' : sortConfig.key;
+
     const { data, isLoading, isError } = useQuery({
-        queryKey: ['admin-audit-log', page, pageSize, searchFilters, sortConfig],
+        queryKey: ['admin-audit-log', page, pageSize, searchFilters.dateFrom, searchFilters.dateTo, searchFilters.adminId, searchFilters.action, searchDebounce, serverSortKey, sortConfig.direction],
         queryFn: () => getGlobalAuditLog({
             page,
             pageSize,
             ...searchFilters,
+            search: searchDebounce,
             adminId: searchFilters.adminId === 'all' ? undefined : searchFilters.adminId,
             action: searchFilters.action === 'all' ? undefined : searchFilters.action,
-            sortBy: sortConfig.key as any,
+            sortBy: serverSortKey as any,
             sortOrder: sortConfig.direction
         }),
         placeholderData: (previousData) => previousData
+    });
+
+    // Client-side sorting for joined columns (admin, business)
+    const sortedLogs = [...(data?.logs || [])].sort((a, b) => {
+        if (sortConfig.key === 'admin') {
+            const nameA = a.admin.full_name.toLowerCase();
+            const nameB = b.admin.full_name.toLowerCase();
+            return sortConfig.direction === 'asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+        }
+        if (sortConfig.key === 'business') {
+            const nameA = a.business.business_name.toLowerCase();
+            const nameB = b.business.business_name.toLowerCase();
+            return sortConfig.direction === 'asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+        }
+        return 0; // Default or already server-sorted
     });
 
     // Fetch Admin List for Filters
@@ -88,15 +117,26 @@ export default function AdminAuditLogPage() {
 
     const handleFilterChange = (key: string, value: string) => {
         setSearchFilters(prev => ({ ...prev, [key]: value }));
-        setPage(1); // Reset to first page on filter change
+        if (key !== 'search') {
+            setPage(1); // Reset to first page on filter change (except typing search, which debounces)
+        } else {
+            // For search, we wait for debounce to trigger usage, but we can reset page when debounce updates
+        }
     };
+
+    // Reset page when actual search term changes
+    useEffect(() => {
+        setPage(1);
+    }, [searchDebounce]);
+
 
     const handleReset = () => {
         setSearchFilters({
             dateFrom: '',
             dateTo: '',
             adminId: 'all',
-            action: 'all'
+            action: 'all',
+            search: ''
         });
         setPage(1);
     };
@@ -145,7 +185,7 @@ export default function AdminAuditLogPage() {
 
                 {/* Table */}
                 <AuditLogTable
-                    logs={data?.logs || []}
+                    logs={sortedLogs}
                     loading={isLoading}
                     sortConfig={sortConfig}
                     onSort={(key) => {

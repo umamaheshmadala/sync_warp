@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { ClipboardList, Clock, ArrowRight, CheckCircle, RefreshCw, AlertCircle, XCircle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { getPendingReviewCount, getDailyModerationStats } from '../../services/moderationService';
@@ -58,9 +58,9 @@ export function ReviewModerationWidget() {
 
                 <div className="grid grid-cols-2 gap-4">
                     {/* Pending Reviews */}
-                    <div
-                        onClick={() => navigate('/admin/moderation?tab=pending')}
-                        className="bg-gray-50 p-4 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors border border-transparent hover:border-gray-200 group"
+                    <Link
+                        to="/admin/moderation?tab=pending"
+                        className="bg-gray-50 p-4 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors border border-transparent hover:border-gray-200 group block"
                     >
                         <div className="flex items-center justify-between mb-1">
                             <span className="text-sm font-medium text-gray-500">Pending</span>
@@ -73,12 +73,12 @@ export function ReviewModerationWidget() {
                                 <span className="text-2xl font-bold text-gray-900">{pendingCount || 0}</span>
                             )}
                         </div>
-                    </div>
+                    </Link>
 
                     {/* Reported Reviews */}
-                    <div
-                        onClick={() => navigate('/admin/moderation?tab=reported')}
-                        className="bg-gray-50 p-4 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors border border-transparent hover:border-gray-200 group"
+                    <Link
+                        to="/admin/moderation?tab=reported"
+                        className="bg-gray-50 p-4 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors border border-transparent hover:border-gray-200 group block"
                     >
                         <div className="flex items-center justify-between mb-1">
                             <span className="text-sm font-medium text-gray-500">Reported</span>
@@ -91,12 +91,12 @@ export function ReviewModerationWidget() {
                                 <span className="text-2xl font-bold text-gray-900">{reportCount}</span>
                             )}
                         </div>
-                    </div>
+                    </Link>
 
                     {/* Approved Today */}
-                    <div
-                        onClick={() => navigate('/admin/moderation?tab=audit')}
-                        className="bg-gray-50 p-4 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors border border-transparent hover:border-gray-200 group"
+                    <Link
+                        to="/admin/moderation?tab=audit"
+                        className="bg-gray-50 p-4 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors border border-transparent hover:border-gray-200 group block"
                     >
                         <div className="flex items-center justify-between mb-1">
                             <span className="text-sm font-medium text-gray-500">Approved</span>
@@ -110,12 +110,12 @@ export function ReviewModerationWidget() {
                             )}
                             <span className="text-xs text-gray-400">today</span>
                         </div>
-                    </div>
+                    </Link>
 
                     {/* Rejected Today */}
-                    <div
-                        onClick={() => navigate('/admin/moderation?tab=audit')}
-                        className="bg-gray-50 p-4 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors border border-transparent hover:border-gray-200 group"
+                    <Link
+                        to="/admin/moderation?tab=audit"
+                        className="bg-gray-50 p-4 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors border border-transparent hover:border-gray-200 group block"
                     >
                         <div className="flex items-center justify-between mb-1">
                             <span className="text-sm font-medium text-gray-500">Rejected</span>
@@ -129,7 +129,7 @@ export function ReviewModerationWidget() {
                             )}
                             <span className="text-xs text-gray-400">today</span>
                         </div>
-                    </div>
+                    </Link>
                 </div>
 
                 {pendingCount === 0 && reportCount === 0 && (
@@ -141,13 +141,13 @@ export function ReviewModerationWidget() {
             </div>
 
             <div className="bg-gray-50 p-4 border-t border-gray-200">
-                <button
-                    onClick={() => navigate('/admin/moderation')}
+                <Link
+                    to="/admin/moderation"
                     className="w-full flex items-center justify-between text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
                 >
                     View Moderation Dashboard
                     <ArrowRight size={16} />
-                </button>
+                </Link>
             </div>
         </div>
     );

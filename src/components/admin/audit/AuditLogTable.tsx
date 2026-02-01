@@ -77,9 +77,9 @@ export function AuditLogTable({ logs, loading, sortConfig, onSort }: AuditLogTab
                 <TableHeader>
                     <TableRow className="bg-gray-50 hover:bg-gray-50">
                         <SortableHead label="Date & Time" sortKey="created_at" className="w-[180px]" />
-                        <SortableHead label="Admin" />
+                        <SortableHead label="Admin" sortKey="admin" />
                         <SortableHead label="Action" sortKey="action" />
-                        <SortableHead label="Business" />
+                        <SortableHead label="Business" sortKey="business" />
                         <TableHead className="w-[30%]">Details / Changes</TableHead>
                     </TableRow>
                 </TableHeader>

@@ -569,16 +569,59 @@ export interface GlobalAuditLogParams {
     dateTo?: string;
     adminId?: string;
     action?: string;
+    search?: string;
     sortBy?: 'created_at' | 'action';
     sortOrder?: 'asc' | 'desc';
 }
 
 export async function getGlobalAuditLog(params: GlobalAuditLogParams): Promise<AuditLogResult> {
-    const { page, pageSize, dateFrom, dateTo, adminId, action, sortBy, sortOrder } = params;
+    const { page, pageSize, dateFrom, dateTo, adminId, action, search, sortBy, sortOrder } = params;
+
+    // Search Pre-lookup
+    let searchFilterString = '';
+
+    if (search && search.trim() !== '') {
+        const term = search.trim();
+        const searchConditions = [];
+
+        // 1. Search in reason (direct column)
+        searchConditions.push(`reason.ilike.%${term}%`);
+
+        // 2. Search in Admin Name/Email (related)
+        const { data: matchingAdmins } = await supabase
+            .from('profiles')
+            .select('id')
+            .or(`full_name.ilike.%${term}%,email.ilike.%${term}%`);
+
+        if (matchingAdmins && matchingAdmins.length > 0) {
+            const adminIds = matchingAdmins.map(a => a.id).join(',');
+            searchConditions.push(`admin_id.in.(${adminIds})`);
+        }
+
+        // 3. Search in Business Name (related)
+        const { data: matchingBusinesses } = await supabase
+            .from('businesses')
+            .select('id')
+            .ilike('business_name', `%${term}%`);
+
+        if (matchingBusinesses && matchingBusinesses.length > 0) {
+            const bizIds = matchingBusinesses.map(b => b.id).join(',');
+            searchConditions.push(`business_id.in.(${bizIds})`);
+        }
+
+        if (searchConditions.length > 0) {
+            searchFilterString = searchConditions.join(',');
+        }
+    }
 
     let query = supabase
         .from('admin_business_actions')
         .select('id, action, reason, changes_json, created_at, admin_id, business_id', { count: 'exact' });
+
+    // Apply Search Filter
+    if (searchFilterString) {
+        query = query.or(searchFilterString);
+    }
 
     // Apply Order
     const orderKey = sortBy || 'created_at';
