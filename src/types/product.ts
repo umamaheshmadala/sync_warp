@@ -62,9 +62,7 @@ export interface ProductUpload {
 
 // Simplified currency options
 export const CURRENCIES = [
-  { value: 'INR', label: '₹ Indian Rupee', symbol: '₹' },
-  { value: 'USD', label: '$ US Dollar', symbol: '$' },
-  { value: 'EUR', label: '€ Euro', symbol: '€' }
+  { value: 'INR', label: '₹ Indian Rupee', symbol: '₹' }
 ] as const;
 
 // Product limits

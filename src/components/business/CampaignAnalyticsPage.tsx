@@ -14,7 +14,7 @@ import {
   TrendingUp,
   Users,
   MousePointer,
-  DollarSign,
+  IndianRupee,
   Calendar,
   Target,
   Eye,
@@ -129,7 +129,7 @@ export default function CampaignAnalyticsPage() {
             <ArrowLeft className="w-4 h-4" />
             Back to Campaigns
           </Link>
-          
+
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">{campaign.name}</h1>
@@ -137,13 +137,12 @@ export default function CampaignAnalyticsPage() {
             </div>
             <Badge
               variant="outline"
-              className={`capitalize ${
-                campaign.status === 'active'
+              className={`capitalize ${campaign.status === 'active'
                   ? 'bg-green-100 text-green-800 border-green-200'
                   : campaign.status === 'paused'
-                  ? 'bg-yellow-100 text-yellow-800 border-yellow-200'
-                  : 'bg-gray-100 text-gray-800 border-gray-200'
-              }`}
+                    ? 'bg-yellow-100 text-yellow-800 border-yellow-200'
+                    : 'bg-gray-100 text-gray-800 border-gray-200'
+                }`}
             >
               {campaign.status}
             </Badge>
@@ -217,7 +216,7 @@ export default function CampaignAnalyticsPage() {
                   </p>
                 </div>
                 <div className="p-3 bg-yellow-100 rounded-lg">
-                  <DollarSign className="w-6 h-6 text-yellow-600" />
+                  <IndianRupee className="w-6 h-6 text-yellow-600" />
                 </div>
               </div>
             </CardContent>
@@ -280,10 +279,10 @@ export default function CampaignAnalyticsPage() {
                   <p className="text-lg font-semibold text-gray-900">
                     {campaign.end_date
                       ? new Date(campaign.end_date).toLocaleDateString('en-IN', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        })
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })
                       : 'Ongoing'}
                   </p>
                 </div>

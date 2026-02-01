@@ -8,7 +8,6 @@ import {
   Target,
   Eye,
   ShoppingCart,
-  DollarSign,
   Calendar,
   Clock,
   Download,
@@ -24,7 +23,7 @@ import {
   UserCheck,
   Gift
 } from 'lucide-react';
-import { 
+import {
   CouponAnalytics as CouponAnalyticsType,
   Coupon,
   DailyAnalytics,
@@ -247,7 +246,7 @@ const CouponAnalytics: React.FC<CouponAnalyticsProps> = ({
     if (!data || data.length === 0) return null;
 
     const maxValue = Math.max(...data.map(d => Math.max(d.collections, d.redemptions)));
-    
+
     return (
       <div className="space-y-3">
         {data.slice(-7).map((day, index) => (
@@ -397,10 +396,9 @@ const CouponAnalytics: React.FC<CouponAnalyticsProps> = ({
                           <metric.icon className="w-5 h-5 text-white" />
                         </div>
                         {metric.trend && (
-                          <div className={`flex items-center text-sm ${
-                            metric.trend === 'up' ? 'text-green-600' : 
-                            metric.trend === 'down' ? 'text-red-600' : 'text-gray-600'
-                          }`}>
+                          <div className={`flex items-center text-sm ${metric.trend === 'up' ? 'text-green-600' :
+                              metric.trend === 'down' ? 'text-red-600' : 'text-gray-600'
+                            }`}>
                             {metric.trend === 'up' ? (
                               <TrendingUp className="w-4 h-4 mr-1" />
                             ) : metric.trend === 'down' ? (
@@ -438,18 +436,16 @@ const CouponAnalytics: React.FC<CouponAnalyticsProps> = ({
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.1 }}
-                        className={`p-4 rounded-lg border-l-4 ${
-                          insight.type === 'success' ? 'bg-green-50 border-green-500' :
-                          insight.type === 'warning' ? 'bg-yellow-50 border-yellow-500' :
-                          'bg-blue-50 border-blue-500'
-                        }`}
+                        className={`p-4 rounded-lg border-l-4 ${insight.type === 'success' ? 'bg-green-50 border-green-500' :
+                            insight.type === 'warning' ? 'bg-yellow-50 border-yellow-500' :
+                              'bg-blue-50 border-blue-500'
+                          }`}
                       >
                         <div className="flex items-start space-x-3">
-                          <insight.icon className={`w-5 h-5 mt-0.5 ${
-                            insight.type === 'success' ? 'text-green-600' :
-                            insight.type === 'warning' ? 'text-yellow-600' :
-                            'text-blue-600'
-                          }`} />
+                          <insight.icon className={`w-5 h-5 mt-0.5 ${insight.type === 'success' ? 'text-green-600' :
+                              insight.type === 'warning' ? 'text-yellow-600' :
+                                'text-blue-600'
+                            }`} />
                           <div>
                             <h4 className="font-medium text-gray-900">{insight.title}</h4>
                             <p className="text-sm text-gray-600 mt-1">{insight.message}</p>
@@ -494,11 +490,10 @@ const CouponAnalytics: React.FC<CouponAnalyticsProps> = ({
                     {analytics.top_collection_sources?.map((source, index) => (
                       <div key={source.source} className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
-                          <div className={`w-3 h-3 rounded-full ${
-                            index === 0 ? 'bg-purple-500' :
-                            index === 1 ? 'bg-blue-500' :
-                            index === 2 ? 'bg-green-500' : 'bg-gray-400'
-                          }`} />
+                          <div className={`w-3 h-3 rounded-full ${index === 0 ? 'bg-purple-500' :
+                              index === 1 ? 'bg-blue-500' :
+                                index === 2 ? 'bg-green-500' : 'bg-gray-400'
+                            }`} />
                           <span className="text-sm font-medium text-gray-700">
                             {formatCollectionSource(source.source)}
                           </span>
@@ -534,11 +529,10 @@ const CouponAnalytics: React.FC<CouponAnalyticsProps> = ({
                             initial={{ width: 0 }}
                             animate={{ width: `${segment.percentage}%` }}
                             transition={{ delay: index * 0.1 }}
-                            className={`h-2 rounded-full ${
-                              index === 0 ? 'bg-orange-500' :
-                              index === 1 ? 'bg-blue-500' :
-                              index === 2 ? 'bg-green-500' : 'bg-gray-400'
-                            }`}
+                            className={`h-2 rounded-full ${index === 0 ? 'bg-orange-500' :
+                                index === 1 ? 'bg-blue-500' :
+                                  index === 2 ? 'bg-green-500' : 'bg-gray-400'
+                              }`}
                           />
                         </div>
                         {segment.avg_redemption_value > 0 && (

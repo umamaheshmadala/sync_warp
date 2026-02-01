@@ -9,7 +9,7 @@ import {
   Send,
   Eye,
   MousePointer,
-  DollarSign,
+  IndianRupee,
   Calendar,
   Settings,
   CheckCircle,
@@ -163,7 +163,7 @@ export default function FollowerTargetingDemo() {
             {
               title: 'Budget Management',
               description: 'Set campaign budgets and track spending automatically',
-              icon: DollarSign,
+              icon: IndianRupee,
             },
           ].map((feature, idx) => (
             <div key={idx} className="flex items-start space-x-3 p-4 bg-gray-50 rounded-lg">
@@ -208,10 +208,10 @@ export default function FollowerTargetingDemo() {
               </div>
               <span
                 className={`px-3 py-1 rounded-full text-sm font-medium ${campaign.status === 'active'
-                    ? 'bg-green-100 text-green-800'
-                    : campaign.status === 'draft'
-                      ? 'bg-gray-100 text-gray-800'
-                      : 'bg-blue-100 text-blue-800'
+                  ? 'bg-green-100 text-green-800'
+                  : campaign.status === 'draft'
+                    ? 'bg-gray-100 text-gray-800'
+                    : 'bg-blue-100 text-blue-800'
                   }`}
               >
                 {campaign.status}
@@ -384,8 +384,8 @@ export default function FollowerTargetingDemo() {
                 key={tab.id}
                 onClick={() => setSelectedTab(tab.id as any)}
                 className={`flex items-center px-6 py-4 font-medium transition whitespace-nowrap ${selectedTab === tab.id
-                    ? 'text-blue-600 border-b-2 border-blue-600'
-                    : 'text-gray-600 hover:text-gray-900'
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-gray-600 hover:text-gray-900'
                   }`}
               >
                 <tab.icon className="w-5 h-5 mr-2" />

@@ -34,6 +34,7 @@ export interface FavoriteProduct {
     business_name: string;
     is_available: boolean;
     is_featured: boolean;
+    currency?: string;
     favorited_at: string;
 }
 

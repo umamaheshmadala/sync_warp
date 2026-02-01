@@ -57,7 +57,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
   // Handle image file selection
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
-    
+
     if (files.length + imageFiles.length + imageUrls.length > 5) {
       toast.error('Maximum 5 images allowed');
       return;
@@ -86,7 +86,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
     if (imageFiles.length === 0) return imageUrls;
 
     setImageUploading(true);
-    const uploadPromises = imageFiles.map(file => 
+    const uploadPromises = imageFiles.map(file =>
       uploadProductImage(file, product?.id || 'temp')
     );
 
@@ -106,7 +106,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
     try {
       // Upload new images first
       const finalImageUrls = await uploadImages();
-      
+
       const productData: ProductFormData = {
         ...data,
         image_urls: finalImageUrls
@@ -246,8 +246,6 @@ const ProductForm: React.FC<ProductFormProps> = ({
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="INR">₹ INR</option>
-                <option value="USD">$ USD</option>
-                <option value="EUR">€ EUR</option>
               </select>
               {errors.currency && (
                 <p className="text-red-500 text-sm mt-1">{errors.currency.message}</p>
@@ -263,7 +261,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
                 type="number"
                 step="0.01"
                 min="0"
-                {...register('price', { 
+                {...register('price', {
                   required: 'Price is required',
                   min: { value: 0, message: 'Price must be 0 or greater' }
                 })}
@@ -332,7 +330,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
                   </button>
                 </div>
               ))}
-              
+
               {/* New preview images */}
               {previewImages.map((url, index) => (
                 <div key={`preview-${index}`} className="relative group">
@@ -380,14 +378,12 @@ const ProductForm: React.FC<ProductFormProps> = ({
                   <button
                     type="button"
                     onClick={() => field.onChange(!field.value)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      field.value ? 'bg-blue-600' : 'bg-gray-200'
-                    }`}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${field.value ? 'bg-blue-600' : 'bg-gray-200'
+                      }`}
                   >
                     <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        field.value ? 'translate-x-6' : 'translate-x-1'
-                      }`}
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${field.value ? 'translate-x-6' : 'translate-x-1'
+                        }`}
                     />
                   </button>
                 )}
@@ -412,14 +408,12 @@ const ProductForm: React.FC<ProductFormProps> = ({
                   <button
                     type="button"
                     onClick={() => field.onChange(!field.value)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      field.value ? 'bg-yellow-500' : 'bg-gray-200'
-                    }`}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${field.value ? 'bg-yellow-500' : 'bg-gray-200'
+                      }`}
                   >
                     <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        field.value ? 'translate-x-6' : 'translate-x-1'
-                      }`}
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${field.value ? 'translate-x-6' : 'translate-x-1'
+                        }`}
                     />
                   </button>
                 )}

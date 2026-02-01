@@ -4,7 +4,6 @@ import {
   Star,
   Package,
   Eye,
-  DollarSign,
   ImageIcon,
   ExternalLink,
   Plus

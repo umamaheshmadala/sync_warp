@@ -20,11 +20,12 @@ interface StatusBadgeProps {
 export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'md' }) => {
   const colors: Record<CampaignStatus, string> = {
     draft: 'bg-gray-100 text-gray-800',
-    scheduled: 'bg-blue-100 text-blue-800',
     active: 'bg-green-100 text-green-800',
     paused: 'bg-yellow-100 text-yellow-800',
     completed: 'bg-purple-100 text-purple-800',
-    cancelled: 'bg-red-100 text-red-800'
+    pending_approval: 'bg-yellow-100 text-yellow-800',
+    approved: 'bg-blue-100 text-blue-800',
+    rejected: 'bg-red-100 text-red-800'
   };
 
   const sizes = {
@@ -70,7 +71,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
       case 'currency':
         return new Intl.NumberFormat('en-US', {
           style: 'currency',
-          currency: 'USD',
+          currency: 'INR',
           minimumFractionDigits: 0,
           maximumFractionDigits: 0
         }).format(val);

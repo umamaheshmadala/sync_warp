@@ -7,7 +7,7 @@ import {
   ArrowLeft,
   Check,
   Percent,
-  DollarSign,
+  IndianRupee,
   Gift,
   Calendar,
   Users,
@@ -18,12 +18,12 @@ import {
   Tag,
   QrCode
 } from 'lucide-react';
-import { 
-  CouponFormData, 
-  CouponType, 
-  DiscountType, 
-  TargetAudience, 
-  COUPON_LIMITS 
+import {
+  CouponFormData,
+  CouponType,
+  DiscountType,
+  TargetAudience,
+  COUPON_LIMITS
 } from '../../types/coupon';
 import { useCoupons } from '../../hooks/useCoupons';
 import useCouponDrafts, { DraftFormData } from '../../hooks/useCouponDrafts';
@@ -65,16 +65,16 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
   const [showDrafts, setShowDrafts] = useState(false);
   const [draftName, setDraftName] = useState('');
   const [showSaveDraftDialog, setShowSaveDraftDialog] = useState(false);
-  
+
   // Determine if editing mode (must be before useRateLimit)
   const isEditing = !!editingCoupon;
-  
+
   // Rate limiting
   const { enforceRateLimit, isRateLimited } = useRateLimit({
     endpoint: isEditing ? 'coupons/update' : 'coupons/create',
     autoCheck: true
   });
-  
+
   // Prevent form reset on tab switch or hot reload
   const formStateKey = `coupon-form-${businessId}-${isEditing ? editingCoupon?.id : 'new'}`;
 
@@ -98,7 +98,7 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
       terms_conditions: editingCoupon?.terms_conditions || '',
       total_limit: editingCoupon?.total_limit || undefined,
       per_user_limit: editingCoupon?.per_user_limit || 1,
-      valid_from: editingCoupon?.valid_from 
+      valid_from: editingCoupon?.valid_from
         ? new Date(editingCoupon.valid_from).toISOString().slice(0, 16)
         : new Date().toISOString().slice(0, 16),
       valid_until: editingCoupon?.valid_until
@@ -112,7 +112,7 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
   const watchedType = watch('type');
   const watchedDiscountValue = watch('discount_value');
   const watchedMinPurchase = watch('min_purchase_amount');
-  
+
   // Form state management functions - memoized to prevent infinite loops
   const saveFormState = useCallback(() => {
     try {
@@ -128,25 +128,25 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
       console.warn('Could not save form state:', error);
     }
   }, [watch, currentStep, previewCode, formStateKey]);
-  
+
   const loadFormState = useCallback(() => {
     try {
       const saved = sessionStorage.getItem(formStateKey);
       if (saved) {
         const { currentStep: savedStep, formData, previewCode: savedCode, timestamp } = JSON.parse(saved);
-        
+
         // Only restore if less than 1 hour old
         if (Date.now() - timestamp < 60 * 60 * 1000) {
           setCurrentStep(savedStep);
           setPreviewCode(savedCode);
-          
+
           // Restore form data
           Object.keys(formData).forEach(key => {
             if (formData[key] !== undefined && formData[key] !== null) {
               setValue(key as any, formData[key]);
             }
           });
-          
+
           return true; // Successfully restored
         }
       }
@@ -155,7 +155,7 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
     }
     return false; // No state restored
   }, [formStateKey, setValue]);
-  
+
   const clearFormState = useCallback(() => {
     try {
       sessionStorage.removeItem(formStateKey);
@@ -167,56 +167,56 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
   // Draft management functions
   const saveToDrafts = useCallback(async () => {
     const formData = watch() as DraftFormData;
-    
+
     // Check if form has meaningful content
     if (!drafts.hasFormContent(formData)) {
       toast.error('Please fill in some form data before saving as draft');
       return;
     }
-    
+
     // Auto-generate name if none provided
     const finalDraftName = draftName.trim() || drafts.generateDraftName(formData);
     setDraftName(finalDraftName);
-    
+
     const draftId = await drafts.saveDraft(
       businessId,
       finalDraftName,
       formData,
       currentStep
     );
-    
+
     if (draftId) {
       setShowSaveDraftDialog(false);
       setDraftName('');
     }
   }, [watch, draftName, drafts, businessId, currentStep]);
-  
+
   const loadFromDraft = useCallback((draftId: string) => {
     const draft = drafts.loadDraft(draftId);
     if (!draft) {
       toast.error('Draft not found');
       return;
     }
-    
+
     // Load form data
     Object.entries(draft.form_data).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
         setValue(key as any, value);
       }
     });
-    
+
     // Restore step if available
     if (draft.step_completed) {
       setCurrentStep(draft.step_completed);
     }
-    
+
     // Update preview code if needed
     const formData = draft.form_data as DraftFormData;
     if (formData.type) {
       const code = generateCouponCode(formData.type);
       setPreviewCode(code);
     }
-    
+
     setShowDrafts(false);
     toast.success(`Loaded draft: ${draft.draft_name}`);
   }, [drafts, setValue, setCurrentStep, generateCouponCode]);
@@ -269,7 +269,7 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
       }
     }
   }, [isOpen, isEditing, loadFormState]);
-  
+
   // Save form state periodically and on changes
   useEffect(() => {
     if (isOpen) {
@@ -283,13 +283,13 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
       return () => clearInterval(interval);
     }
   }, [isOpen, watch, saveFormState]);
-  
+
   // Save on visibility change (tab switch) - with debouncing
   useEffect(() => {
     if (!isOpen) return;
-    
+
     let timeoutId: NodeJS.Timeout;
-    
+
     const handleVisibilityChange = () => {
       if (document.hidden) {
         // Debounce the save operation
@@ -302,18 +302,18 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
         }, 100);
       }
     };
-    
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       clearTimeout(timeoutId);
     };
   }, [isOpen, watch, saveFormState]);
-  
+
   // Save on beforeunload (page refresh/close)
   useEffect(() => {
     if (!isOpen) return;
-    
+
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       const formData = watch();
       if (formData.title || formData.description || formData.type) {
@@ -323,7 +323,7 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
         e.returnValue = '';
       }
     };
-    
+
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isOpen, watch, saveFormState]);
@@ -338,7 +338,7 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
     }
   }, [watchedType, setValue]); // Remove generateCouponCode from dependencies to prevent infinite loop
 
-  const couponTypes: Array<{value: CouponType; label: string; description: string; icon: React.ComponentType<{ className?: string }>}> = [
+  const couponTypes: Array<{ value: CouponType; label: string; description: string; icon: React.ComponentType<{ className?: string }> }> = [
     {
       value: 'percentage',
       label: 'Percentage Off',
@@ -349,7 +349,7 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
       value: 'fixed_amount',
       label: 'Fixed Amount Off',
       description: 'e.g., ₹100 off on orders',
-      icon: DollarSign
+      icon: IndianRupee
     },
     {
       value: 'buy_x_get_y',
@@ -365,7 +365,7 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
     }
   ];
 
-  const targetAudiences: Array<{value: TargetAudience; label: string; description: string}> = [
+  const targetAudiences: Array<{ value: TargetAudience; label: string; description: string }> = [
     {
       value: 'all_users',
       label: 'All Users',
@@ -397,26 +397,26 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
   const validateCurrentStep = () => {
     const formData = watch();
     const errors: string[] = [];
-    
+
     switch (currentStep) {
       case 1: // Basic Details
         if (!formData.title?.trim()) errors.push('Coupon title is required');
         if (!formData.description?.trim()) errors.push('Description is required');
         if (formData.description && formData.description.length < 10) errors.push('Description must be at least 10 characters');
         break;
-        
+
       case 2: // Discount Setup
         if (!formData.type) errors.push('Discount type is required');
         if (!formData.discount_value || formData.discount_value <= 0) errors.push('Discount value must be greater than 0');
         if (formData.type === 'percentage' && formData.discount_value > 100) errors.push('Percentage cannot exceed 100%');
         break;
-        
+
       case 3: // Terms & Conditions
         if (!formData.terms_conditions?.trim()) errors.push('Terms and conditions are required');
         if (formData.terms_conditions && formData.terms_conditions.length < 20) errors.push('Terms must be at least 20 characters');
         if (!formData.per_user_limit || formData.per_user_limit < 1) errors.push('Per user limit must be at least 1');
         break;
-        
+
       case 4: // Validity Period
         if (!formData.valid_from) errors.push('Start date is required');
         if (!formData.valid_until) errors.push('End date is required');
@@ -427,23 +427,23 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
           if (startDate < new Date()) errors.push('Start date cannot be in the past');
         }
         break;
-        
+
       case 5: // Target Audience
         if (!formData.target_audience) errors.push('Target audience is required');
         break;
     }
-    
+
     return errors;
   };
-  
+
   const nextStep = () => {
     const validationErrors = validateCurrentStep();
-    
+
     if (validationErrors.length > 0) {
       toast.error(validationErrors[0]); // Show first error
       return;
     }
-    
+
     if (currentStep < steps.length) {
       setCurrentStep(currentStep + 1);
     }
@@ -471,7 +471,7 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
       // Other errors are logged but don't block submission
       console.warn('Rate limit check failed:', error);
     }
-    
+
     // Final validation before submitting
     const validationErrors = [
       ...(!data.title?.trim() ? ['Coupon title is required'] : []),
@@ -483,33 +483,33 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
       ...(!data.valid_until ? ['End date is required'] : []),
       ...(!data.target_audience ? ['Target audience is required'] : []),
     ];
-    
+
     if (validationErrors.length > 0) {
       toast.error(`Please complete all required fields: ${validationErrors[0]}`);
       return;
     }
-    
+
     // Date validation
     const startDate = new Date(data.valid_from);
     const endDate = new Date(data.valid_until);
-    
+
     if (startDate >= endDate) {
       toast.error('End date must be after start date');
       return;
     }
-    
+
     if (startDate < new Date(Date.now() - 60000)) { // Allow 1 minute tolerance for current time
       toast.error('Start date cannot be in the past');
       return;
     }
-    
+
     try {
       console.log('Attempting to create coupon with data:', data);
       console.log('Business ID:', businessId);
       console.log('User info:', user);
-      
+
       let result;
-      
+
       if (isEditing && editingCoupon) {
         result = await updateCoupon(editingCoupon.id, data);
       } else {
@@ -534,7 +534,7 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
       console.error('Error constructor:', error?.constructor?.name);
       console.error('Error message:', error?.message);
       console.error('Error stack:', error?.stack);
-      
+
       // Log the form data that failed
       console.log('Form data that failed:', data);
       console.log('Business ID:', businessId);
@@ -543,7 +543,7 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
         email: user?.email,
         authenticated: !!user
       });
-      
+
       // Try to extract Supabase error details if available
       if (error && typeof error === 'object') {
         console.error('Error details:', {
@@ -554,11 +554,11 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
           statusCode: error.statusCode
         });
       }
-      
+
       console.groupEnd();
-      
+
       let errorMessage = `Failed to ${isEditing ? 'update' : 'create'} coupon`;
-      
+
       if (error instanceof Error) {
         if (error.message.includes('Invalid business ID')) {
           errorMessage = 'Business not found. Please try refreshing the page.';
@@ -574,9 +574,9 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
           errorMessage = error.message;
         }
       }
-      
+
       toast.error(errorMessage);
-      
+
       // Show suggestion to run debug test
       console.log('💡 To debug this issue, run: runCouponTest() in the browser console');
     }
@@ -591,7 +591,7 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
 
   const formatDiscountPreview = (type: CouponType, value: number, minPurchase?: number) => {
     let discount = '';
-    
+
     switch (type) {
       case 'percentage':
         discount = `${value}% OFF`;
@@ -600,7 +600,7 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
         discount = `₹${value} OFF`;
         break;
       case 'buy_x_get_y':
-        discount = `BUY ${Math.floor(value)} GET ${Math.floor(value/2)} FREE`;
+        discount = `BUY ${Math.floor(value)} GET ${Math.floor(value / 2)} FREE`;
         break;
       case 'free_item':
         discount = 'FREE ITEM';
@@ -627,7 +627,7 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
               </label>
               <input
                 type="text"
-                {...register('title', { 
+                {...register('title', {
                   required: 'Coupon title is required',
                   maxLength: { value: COUPON_LIMITS.MAX_TITLE_LENGTH, message: `Title cannot exceed ${COUPON_LIMITS.MAX_TITLE_LENGTH} characters` }
                 })}
@@ -645,7 +645,7 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
                 Description *
               </label>
               <textarea
-                {...register('description', { 
+                {...register('description', {
                   required: 'Description is required',
                   minLength: { value: 10, message: 'Description must be at least 10 characters' },
                   maxLength: { value: COUPON_LIMITS.MAX_DESCRIPTION_LENGTH, message: `Description cannot exceed ${COUPON_LIMITS.MAX_DESCRIPTION_LENGTH} characters` }
@@ -691,11 +691,10 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
                       control={control}
                       render={({ field }) => (
                         <label
-                          className={`relative border rounded-lg p-4 cursor-pointer transition-all ${
-                            field.value === type.value
+                          className={`relative border rounded-lg p-4 cursor-pointer transition-all ${field.value === type.value
                               ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
                               : 'border-gray-300 hover:border-gray-400'
-                          }`}
+                            }`}
                         >
                           <input
                             type="radio"
@@ -709,9 +708,8 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
                             }}
                           />
                           <div className="flex items-start space-x-3">
-                            <IconComponent className={`w-5 h-5 mt-0.5 ${
-                              field.value === type.value ? 'text-blue-600' : 'text-gray-400'
-                            }`} />
+                            <IconComponent className={`w-5 h-5 mt-0.5 ${field.value === type.value ? 'text-blue-600' : 'text-gray-400'
+                              }`} />
                             <div className="flex-1">
                               <div className="text-sm font-medium text-gray-900">{type.label}</div>
                               <div className="text-sm text-gray-500">{type.description}</div>
@@ -728,17 +726,17 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {watchedType === 'percentage' ? 'Percentage Value *' : 
-                   watchedType === 'fixed_amount' ? 'Discount Amount (₹) *' :
-                   'Quantity *'}
+                  {watchedType === 'percentage' ? 'Percentage Value *' :
+                    watchedType === 'fixed_amount' ? 'Discount Amount (₹) *' :
+                      'Quantity *'}
                 </label>
                 <input
                   type="number"
-                  {...register('discount_value', { 
+                  {...register('discount_value', {
                     required: 'Discount value is required',
                     min: { value: 0.01, message: 'Value must be greater than 0' },
-                    max: { 
-                      value: watchedType === 'percentage' ? 100 : COUPON_LIMITS.MAX_FIXED_DISCOUNT_AMOUNT, 
+                    max: {
+                      value: watchedType === 'percentage' ? 100 : COUPON_LIMITS.MAX_FIXED_DISCOUNT_AMOUNT,
                       message: watchedType === 'percentage' ? 'Percentage cannot exceed 100%' : `Amount cannot exceed ₹${COUPON_LIMITS.MAX_FIXED_DISCOUNT_AMOUNT}`
                     }
                   })}
@@ -802,7 +800,7 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
                 Terms and Conditions *
               </label>
               <textarea
-                {...register('terms_conditions', { 
+                {...register('terms_conditions', {
                   required: 'Terms and conditions are required',
                   minLength: { value: 20, message: 'Terms must be at least 20 characters' },
                   maxLength: { value: COUPON_LIMITS.MAX_TERMS_LENGTH, message: `Terms cannot exceed ${COUPON_LIMITS.MAX_TERMS_LENGTH} characters` }
@@ -838,7 +836,7 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
                 </label>
                 <input
                   type="number"
-                  {...register('per_user_limit', { 
+                  {...register('per_user_limit', {
                     required: 'Per user limit is required',
                     min: { value: 1, message: 'Must allow at least 1 use per user' },
                     max: { value: 100, message: 'Cannot exceed 100 uses per user' }
@@ -921,11 +919,10 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
                     control={control}
                     render={({ field }) => (
                       <label
-                        className={`relative border rounded-lg p-4 cursor-pointer transition-all ${
-                          field.value === audience.value
+                        className={`relative border rounded-lg p-4 cursor-pointer transition-all ${field.value === audience.value
                             ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
                             : 'border-gray-300 hover:border-gray-400'
-                        }`}
+                          }`}
                       >
                         <input
                           type="radio"
@@ -935,9 +932,8 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
                           className="sr-only"
                         />
                         <div className="flex items-start space-x-3">
-                          <Target className={`w-5 h-5 mt-0.5 ${
-                            field.value === audience.value ? 'text-blue-600' : 'text-gray-400'
-                          }`} />
+                          <Target className={`w-5 h-5 mt-0.5 ${field.value === audience.value ? 'text-blue-600' : 'text-gray-400'
+                            }`} />
                           <div className="flex-1">
                             <div className="text-sm font-medium text-gray-900">{audience.label}</div>
                             <div className="text-sm text-gray-500">{audience.description}</div>
@@ -967,14 +963,12 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
                   <button
                     type="button"
                     onClick={() => field.onChange(!field.value)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      field.value ? 'bg-blue-600' : 'bg-gray-200'
-                    }`}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${field.value ? 'bg-blue-600' : 'bg-gray-200'
+                      }`}
                   >
                     <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        field.value ? 'translate-x-6' : 'translate-x-1'
-                      }`}
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${field.value ? 'translate-x-6' : 'translate-x-1'
+                        }`}
                     />
                   </button>
                 )}
@@ -997,7 +991,7 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
           ...(!formData.valid_until ? ['End date is required'] : []),
           ...(!formData.target_audience ? ['Target audience is required'] : []),
         ];
-        
+
         return (
           <div className="space-y-6">
             <div className="text-center">
@@ -1038,7 +1032,7 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
                     <div className="text-sm font-mono">{previewCode}</div>
                   </div>
                 </div>
-                
+
                 <div className="text-center mb-4">
                   <div className="text-3xl font-bold mb-1">
                     {formatDiscountPreview(formData.type, formData.discount_value, formData.min_purchase_amount)}
@@ -1057,21 +1051,21 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
             {finalValidationErrors.length === 0 && (
               <div className="bg-gray-50 rounded-lg p-4 space-y-3">
                 <h4 className="font-medium text-gray-900">Coupon Details</h4>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                   <div>
                     <span className="text-gray-500">Description:</span>
                     <p className="text-gray-900">{formData.description}</p>
                   </div>
-                  
+
                   <div>
                     <span className="text-gray-500">Usage Limits:</span>
                     <p className="text-gray-900">
-                      {formData.total_limit ? `Total: ${formData.total_limit}` : 'Unlimited'} | 
+                      {formData.total_limit ? `Total: ${formData.total_limit}` : 'Unlimited'} |
                       Per user: {formData.per_user_limit}
                     </p>
                   </div>
-                  
+
                   <div className="md:col-span-2">
                     <span className="text-gray-500">Terms:</span>
                     <p className="text-gray-900 whitespace-pre-line">{formData.terms_conditions}</p>
@@ -1120,7 +1114,7 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
               Step {currentStep} of {steps.length}: {steps[currentStep - 1]?.subtitle}
             </p>
           </div>
-          
+
           <div className="flex items-center space-x-3">
             {/* Save to Drafts Button */}
             {!isEditing && (
@@ -1134,7 +1128,7 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
                 Save to Drafts
               </button>
             )}
-            
+
             {/* Load Drafts Button */}
             {!isEditing && drafts.hasDrafts && (
               <button
@@ -1146,7 +1140,7 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
                 Drafts ({drafts.draftCount})
               </button>
             )}
-            
+
             <button
               onClick={handleClose}
               className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -1164,18 +1158,16 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
               return (
                 <div
                   key={step.id}
-                  className={`flex items-center space-x-2 ${
-                    index < steps.length - 1 ? 'flex-1' : ''
-                  }`}
+                  className={`flex items-center space-x-2 ${index < steps.length - 1 ? 'flex-1' : ''
+                    }`}
                 >
                   <div
-                    className={`flex items-center justify-center w-8 h-8 rounded-full border-2 ${
-                      currentStep === step.id
+                    className={`flex items-center justify-center w-8 h-8 rounded-full border-2 ${currentStep === step.id
                         ? 'border-blue-500 bg-blue-500 text-white'
                         : currentStep > step.id
-                        ? 'border-green-500 bg-green-500 text-white'
-                        : 'border-gray-300 bg-white text-gray-500'
-                    }`}
+                          ? 'border-green-500 bg-green-500 text-white'
+                          : 'border-gray-300 bg-white text-gray-500'
+                      }`}
                   >
                     {currentStep > step.id ? (
                       <Check className="w-4 h-4" />
@@ -1185,9 +1177,8 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
                   </div>
                   {index < steps.length - 1 && (
                     <div
-                      className={`flex-1 h-0.5 mx-2 ${
-                        currentStep > step.id ? 'bg-green-500' : 'bg-gray-300'
-                      }`}
+                      className={`flex-1 h-0.5 mx-2 ${currentStep > step.id ? 'bg-green-500' : 'bg-gray-300'
+                        }`}
                     />
                   )}
                 </div>
@@ -1199,7 +1190,7 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
         {/* Rate Limit Banner */}
         {currentStep === steps.length && (
           <div className="px-6 pt-4">
-            <RateLimitBanner 
+            <RateLimitBanner
               endpoint={isEditing ? 'coupons/update' : 'coupons/create'}
               className="mb-0"
             />
@@ -1242,7 +1233,7 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
               >
                 Cancel
               </button>
-              
+
               {currentStep === steps.length ? (
                 (() => {
                   const formData = watch();
@@ -1256,16 +1247,15 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
                     ...(!formData.valid_until ? ['End date is required'] : []),
                     ...(!formData.target_audience ? ['Target audience is required'] : []),
                   ].length > 0;
-                  
+
                   return (
                     <motion.button
                       type="submit"
                       disabled={loading || hasValidationErrors}
                       whileHover={{ scale: (loading || hasValidationErrors) ? 1 : 1.05 }}
                       whileTap={{ scale: (loading || hasValidationErrors) ? 1 : 0.95 }}
-                      className={`inline-flex items-center px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed ${
-                        hasValidationErrors ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
-                      }`}
+                      className={`inline-flex items-center px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed ${hasValidationErrors ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+                        }`}
                     >
                       {loading ? (
                         <div className="flex items-center space-x-2">
@@ -1300,7 +1290,7 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
           </div>
         </form>
       </motion.div>
-      
+
       {/* Save Draft Dialog */}
       {showSaveDraftDialog && (
         <motion.div
@@ -1313,7 +1303,7 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
               Save to Drafts
             </h3>
-            
+
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Draft Name
@@ -1329,7 +1319,7 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
                 Leave empty to use auto-generated name
               </p>
             </div>
-            
+
             <div className="flex space-x-3 justify-end">
               <button
                 type="button"
@@ -1353,7 +1343,7 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
           </div>
         </motion.div>
       )}
-      
+
       {/* Load Drafts Dialog */}
       {showDrafts && (
         <motion.div
@@ -1374,7 +1364,7 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
                 <X className="w-5 h-5" />
               </button>
             </div>
-            
+
             <div className="p-6 overflow-y-auto max-h-[60vh]">
               {drafts.loading ? (
                 <div className="flex justify-center py-8">

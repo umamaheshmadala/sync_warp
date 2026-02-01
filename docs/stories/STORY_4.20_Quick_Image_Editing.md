@@ -7,50 +7,60 @@
 - **Value:** Streamlines business profile management, improves performance via compression.
 - **Dependencies:** Story 4.1 (Profile), Story 4.5 (Storefront)
 
-## User Stories
+## User Stories (Phase 1 - Completed)
 - **As a business owner**, I want to change my logo/cover photo directly from the profile view without entering full edit mode.
 - **As a business owner**, I want to crop my images before uploading to ensure they fit perfectly.
-- **As a business owner**, I want my images to be automatically compressed (Logo < 400KB, Cover < 600KB) to ensure fast loading for customers.
-- [NEW] **As a business owner**, I want to see separate View and Edit buttons (icons only) for both logo and cover images.
-- [NEW] **As a business owner**, I want to be able to "edit" (resize/realign) the *existing* image without re-uploading it from my device.
+- **As a business owner**, I want my images to be automatically compressed (Logo < 400KB, Cover < 600KB).
+- **As a business owner**, I want separate View and Edit buttons (icons only).
+
+## User Stories (Phase 2 - Evolution)
+- **As a business owner**, I want the "Edit Business Information" form to be compact and efficient, using icons instead of labels to save space.
+- **As a business owner**, I want image editing removed from the general "Edit Info" form since it's handled via the profile header.
+- **As a business owner**, I want to be able to **Delete** (soft delete) my logo or cover photo. Maximum of six photos that are deleted will be in the soft delete mode, and anything beyond six photos will be a hard delete. 
+- **As a business owner**, I want to be able to restore previously uploaded images from a history/gallery ("choose in future").
 
 ## Acceptance Criteria
-- [ ] **Dual Buttons**:
-    - [ ] "View" button (Eye icon): Opens full-size image preview.
-    - [ ] "Edit" button (Pencil/Crop icon): Opens cropping modal with CURRENT image loaded.
-- [ ] **Re-Edit Flow**:
-    - [ ] If an image exists, clicking "Edit" loads it into the cropper.
-    - [ ] Allows zooming/panning to realign based on the source image availability (note: if only cropped version exists, zoom out is limited).
-    - [ ] "Change Image" option available within the flow to upload a new one.
-- [ ] **Cropping**:
-    - [ ] Logo: Force 1:1 aspect ratio (or square crop).
-    - [ ] Cover Photo: Force specific aspect ratio (e.g., 16:9 or banner dimensions).
-    - [ ] UI allows zooming and panning within the crop area.
-- [ ] **Compression**:
-    - [ ] Logo compressed to < 400KB.
-    - [ ] Cover photo compressed to < 600KB.
-    - [ ] Compression happens client-side before upload to save bandwidth and storage.
-- [ ] **UI/UX**:
-    - [ ] Modal or overlay for the cropping interface.
-    - [ ] Loading state during compression and upload.
-    - [ ] Success notification upon completion.
-    - [ ] New image reflects immediately without full page reload.
 
-## Technical Requirements
-- **Frontend**:
-    - Use `react-easy-crop` (or similar) for the cropping interface.
-    - Use `browser-image-compression` for client-side compression.
-    - Create `ImageUploader` component that handles: Select -> Crop -> Compress -> Upload.
-- **Storage**:
-    - Existing Supabase Storage buckets (`business-logos`, `business-covers`).
-    - Overwrite or replace existing file (or update DB reference).
+### 1. Form Optimization (Compact Design)
+- [ ] **Remove Redundancy**: Remove "Logo" and "Cover Photo" upload fields from the main `BusinessProfile` edit form.
+- [ ] **Compact Layout**:
+    - Use a multi-column grid layout (e.g., 2 or 3 columns) for fields like Phone, Email, Location.
+    - Reduce whitespace and padding.
+- [ ] **Iconography**:
+    - Replace text labels with clear icons where appropriate (e.g., Phone icon for number, Mail icon for email, MapPin for address).
+    - ensure tooltips or placeholders exist for accessibility since labels are removed/minimized.
 
-## UI/UX Requirements
-- **Overlay**: Quick edit icons should be subtle but visible on hover (desktop) or always visible (mobile).
-- **Crop Modal**: Clean interface with "Cancel" and "Save" buttons.
+### 2. Delete & History (Image Lifecycle)
+- [ ] **Delete Action**:
+    - Add a "Delete" (Trash icon) button in the Image Editor/Viewer.
+    - Action: Sets the database field (`logo_url` or `cover_image_url`) to `NULL`.
+    - Does **NOT** delete the file from storage (Soft Delete).
+    - UI updates immediately to show the placeholder state.
+- [ ] **History / Gallery**:
+    - **Architecture Change**: Stop overwriting `_logo.jpg` and `_cover.jpg`.
+    - **New Naming**: Use `business_images/{businessId}/logo_{timestamp}.jpg`.
+    - **Gallery Selection**:
+        - In the "Edit" modal, add a "History" or "Gallery" tab/option.
+        - Lists previously uploaded images for that slot (Logo vs Cover) from Supabase Storage.
+        - Maximum of six photos that are deleted will be in the soft delete mode, and anything beyond six photos will be a hard delete.
+        - Selecting an image from history updates the profile to point to that existing URL.
+
+## Technical Requirements (Evo)
+- **Storage Strategy**:
+    - Switch from `upsert` (overwrite) to new file creation with unique names.
+    - Implement `listBuckets` or `listFiles` logic to fetch image history.
+- **UI Components**:
+    - `InputWithIcon`: A compact input component.
+    - `ImageHistoryGrid`: A component to display past uploads.
+
+## Logical Gaps & Recommendations
+1.  **Gap**: "Choose in future" requires keeping old files. Currently, we overwrite them.
+    - **Recommendation**: We must change the upload logic to generate unique filenames (e.g., `logo_{timestamp}.jpg`) instead of fixed names. This will increase storage usage over time but allows for the requested "History" feature.
+2.  **Gap**: "Soft Delete" vs "Restore".
+    - **Recommendation**: Deleting just creates a "No Image" state on the profile. The "History" feature is essentially a "Restore" feature.
 
 ## Test Plan
-- **Manual Verification**:
-    - Upload large image (>2MB) -> Verify saved size is < limit.
-    - Test cropping -> Verify saved image is cropped correctly.
-    - Verify owner access only (Guest/Customer cannot see edit icons).
+- **Verification**:
+    - Edit Info: Verify form is compact and has no image inputs.
+    - Delete: Verify image disappears from profile but remains in storage (checked via History).
+    - History: Upload 3 different logos. Verify you can switch between them using the History tab.

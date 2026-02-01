@@ -365,16 +365,19 @@ const BusinessProfile: React.FC = () => {
 
   // Handle operating hours changes
   const handleOperatingHoursChange = (day, field, value) => {
-    setEditForm(prev => ({
-      ...prev,
-      operating_hours: {
-        ...prev.operating_hours,
-        [day]: {
-          ...prev.operating_hours[day],
-          [field]: value
+    setEditForm(prev => {
+      const currentDay = prev.operating_hours?.[day] || { closed: false, open: '09:00', close: '17:00' };
+      return {
+        ...prev,
+        operating_hours: {
+          ...prev.operating_hours,
+          [day]: {
+            ...currentDay,
+            [field]: value
+          }
         }
-      }
-    }));
+      };
+    });
   };
 
   // Handle tag changes
@@ -426,7 +429,7 @@ const BusinessProfile: React.FC = () => {
   };
 
   // Handle quick image updates (direct from profile)
-  const handleQuickImageUpdate = async (url: string, type: 'logo' | 'cover') => {
+  const handleQuickImageUpdate = async (url: string | null, type: 'logo' | 'cover') => {
     try {
       const updateField = type === 'cover' ? 'cover_image_url' : `${type}_url`;
 
@@ -637,7 +640,9 @@ const BusinessProfile: React.FC = () => {
     const now = new Date();
     const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const today = dayNames[now.getDay()];
-    const todayHours = business.operating_hours[today];
+    // Handle potential case differences in keys (e.g. "Sunday" vs "sunday")
+    const todayKey = Object.keys(business.operating_hours).find(k => k.toLowerCase() === today) || today;
+    const todayHours = business.operating_hours[todayKey];
 
     if (!todayHours || todayHours.closed) {
       return {
@@ -721,100 +726,110 @@ const BusinessProfile: React.FC = () => {
   };
 
   // Render overview tab
-  const renderOverview = () => (
-    <div className="space-y-6">
-      {/* Editing Form - Shown only when editing */}
-      {editing && isOwner && (
-        <div className="bg-white rounded-lg shadow-sm border p-6">
-          <div className="flex justify-between items-start mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Edit Business Information</h3>
-          </div>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Business Name</label>
-              <input
-                type="text"
-                value={editForm.business_name || ''}
-                onChange={(e) => handleFormChange('business_name', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              />
+  const renderOverview = () => {
+    return (
+      <div className="space-y-6">
+        {/* Editing Form - Shown only when editing */}
+        {editing && isOwner && (
+          <div className="bg-white rounded-lg shadow-sm border p-6">
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Edit Business Information</h3>
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-              <textarea
-                value={editForm.description || ''}
-                onChange={(e) => handleFormChange('description', e.target.value)}
-                rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Business Email</label>
-                <input
-                  type="email"
-                  value={editForm.business_email || ''}
-                  onChange={(e) => handleFormChange('business_email', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Business Phone</label>
-                <input
-                  type="tel"
-                  value={editForm.business_phone || ''}
-                  onChange={(e) => handleFormChange('business_phone', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-
-            {/* Location Section */}
             <div className="space-y-4">
-              <h4 className="text-sm font-medium text-gray-700">Location Information</h4>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Street Address</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Business Name</label>
                 <input
                   type="text"
-                  value={editForm.address || ''}
-                  onChange={(e) => handleFormChange('address', e.target.value)}
+                  value={editForm.business_name || ''}
+                  onChange={(e) => handleFormChange('business_name', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  placeholder="123 Main Street"
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                <textarea
+                  value={editForm.description || ''}
+                  onChange={(e) => handleFormChange('description', e.target.value)}
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Mail className="h-4 w-4 text-gray-400" />
+                  </div>
+                  <input
+                    type="email"
+                    value={editForm.business_email || ''}
+                    onChange={(e) => handleFormChange('business_email', e.target.value)}
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                    placeholder="Business Email"
+                    title="Business Email"
+                  />
+                </div>
+
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Phone className="h-4 w-4 text-gray-400" />
+                  </div>
+                  <input
+                    type="tel"
+                    value={editForm.business_phone || ''}
+                    onChange={(e) => handleFormChange('business_phone', e.target.value)}
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                    placeholder="Business Phone"
+                    title="Business Phone"
+                  />
+                </div>
+              </div>
+
+              {/* Location Section */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Location Information</h4>
+
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <MapPin className="h-4 w-4 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    value={editForm.address || ''}
+                    onChange={(e) => handleFormChange('address', e.target.value)}
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                    placeholder="Street Address"
+                    title="Street Address"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <input
                     type="text"
                     value={editForm.city || ''}
                     onChange={(e) => handleFormChange('city', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                    placeholder="City"
+                    title="City"
                   />
-                </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
                   <input
                     type="text"
                     value={editForm.state || ''}
                     onChange={(e) => handleFormChange('state', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                    placeholder="State"
+                    title="State"
                   />
-                </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Postal Code</label>
                   <input
                     type="text"
                     value={editForm.postal_code || ''}
                     onChange={(e) => handleFormChange('postal_code', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                    placeholder="Postal Code"
+                    title="Postal Code"
                   />
                 </div>
               </div>
@@ -907,100 +922,7 @@ const BusinessProfile: React.FC = () => {
               </div>
             </div>
 
-            {/* Image Upload Section */}
-            <div className="space-y-4">
-              <h4 className="text-sm font-medium text-gray-700">Business Images</h4>
 
-              {/* Logo Upload */}
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-2">Logo</label>
-                <div className="flex items-center space-x-4">
-                  <div className="flex-shrink-0">
-                    {editForm.logo_url ? (
-                      <img
-                        src={editForm.logo_url}
-                        alt="Business logo"
-                        className="w-16 h-16 rounded-lg object-cover border border-gray-200"
-                      />
-                    ) : (
-                      <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
-                        <Camera className="w-6 h-6 text-gray-400" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleFileSelect(e, 'logo')}
-                      className="hidden"
-                      id="logo-upload"
-                    />
-                    <label
-                      htmlFor="logo-upload"
-                      className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer"
-                    >
-                      {imageUploadLoading.logo ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600 mr-2"></div>
-                          Uploading...
-                        </>
-                      ) : (
-                        <>
-                          <Camera className="w-4 h-4 mr-2" />
-                          {editForm.logo_url ? 'Change Logo' : 'Upload Logo'}
-                        </>
-                      )}
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              {/* Cover Image Upload */}
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-2">Cover Image</label>
-                <div className="flex items-center space-x-4">
-                  <div className="flex-shrink-0">
-                    {editForm.cover_image_url ? (
-                      <img
-                        src={editForm.cover_image_url}
-                        alt="Business cover"
-                        className="w-24 h-16 rounded-lg object-cover border border-gray-200"
-                      />
-                    ) : (
-                      <div className="w-24 h-16 bg-gray-100 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
-                        <Camera className="w-6 h-6 text-gray-400" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleFileSelect(e, 'cover')}
-                      className="hidden"
-                      id="cover-upload"
-                    />
-                    <label
-                      htmlFor="cover-upload"
-                      className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer"
-                    >
-                      {imageUploadLoading.cover ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600 mr-2"></div>
-                          Uploading...
-                        </>
-                      ) : (
-                        <>
-                          <Camera className="w-4 h-4 mr-2" />
-                          {editForm.cover_image_url ? 'Change Cover' : 'Upload Cover'}
-                        </>
-                      )}
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </div>
 
             {/* Operating Hours Editor */}
             <div>
@@ -1074,79 +996,91 @@ const BusinessProfile: React.FC = () => {
               </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {!editing && (
+          <>
 
 
-      {/* Tags */}
-      {business?.tags && business.tags.length > 0 && (
-        <div className="bg-white rounded-lg shadow-sm border p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Tags</h3>
-          <div className="flex flex-wrap gap-2">
-            {business.tags.map((tag, index) => (
-              <span key={index} className="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm">
-                {tag}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
 
-      {/* Featured Offers Section */}
-      {business && (
-        <FeaturedOffers
-          businessId={business.id}
-          businessName={business.business_name}
-          isOwner={isOwner}
-          initialOfferId={searchParams.get('offer') || searchParams.get('offerId')}
-          shareId={searchParams.get('share_id')}
-          compact={true}
-          className=""
-          showHeading={false}
-          showAddButton={false}
-          onViewAll={() => {
-            setSearchParams(prev => {
-              const newParams = new URLSearchParams(prev);
-              newParams.set('tab', 'offers');
-              return newParams;
-            });
-            // Scroll to top
-            window.scrollTo(0, 0);
-            document.querySelector('main')?.scrollTo({ top: 0, behavior: 'instant' });
-          }}
-        />
-      )}
+            {/* Tags */}
+            {
+              business?.tags && business.tags.length > 0 && (
+                <div className="bg-white rounded-lg shadow-sm border p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Tags</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {business.tags.map((tag, index) => (
+                      <span key={index} className="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )
+            }
 
-      {/* Featured Products Section */}
-      {business && (
-        <FeaturedProducts
-          businessId={business.id}
-          businessName={business.business_name}
-          isOwner={isOwner}
-        />
-      )}
+            {/* Featured Offers Section */}
+            {
+              business && (
+                <FeaturedOffers
+                  businessId={business.id}
+                  businessName={business.business_name}
+                  isOwner={isOwner}
+                  initialOfferId={searchParams.get('offer') || searchParams.get('offerId')}
+                  shareId={searchParams.get('share_id')}
+                  compact={true}
+                  className=""
+                  showHeading={false}
+                  showAddButton={false}
+                  onViewAll={() => {
+                    setSearchParams(prev => {
+                      const newParams = new URLSearchParams(prev);
+                      newParams.set('tab', 'offers');
+                      return newParams;
+                    });
+                    // Scroll to top
+                    window.scrollTo(0, 0);
+                    document.querySelector('main')?.scrollTo({ top: 0, behavior: 'instant' });
+                  }}
+                />
+              )
+            }
 
-      {/* Reviews Section (Preview) */}
-      <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-900">Latest Reviews</h3>
-        </div>
-        <div className="p-0">
-          <BusinessReviews
-            key={`overview-${reviewsKey}`}
-            businessId={business?.id!}
-            businessName={business?.business_name || ''}
-            isBusinessOwner={isOwner}
-            onEdit={handleEditReview}
-            onDelete={handleDeleteReview}
-            showFilters={false}
-            showStats={false}
-            businessImage={business?.logo_url}
-          />
-        </div>
+            {/* Featured Products Section */}
+            {
+              business && (
+                <FeaturedProducts
+                  businessId={business.id}
+                  businessName={business.business_name}
+                  isOwner={isOwner}
+                />
+              )
+            }
+
+            {/* Reviews Section (Preview) */}
+            <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-100">
+                <h3 className="text-lg font-semibold text-gray-900">Latest Reviews</h3>
+              </div>
+              <div className="p-0">
+                <BusinessReviews
+                  key={`overview-${reviewsKey}`}
+                  businessId={business?.id!}
+                  businessName={business?.business_name || ''}
+                  isBusinessOwner={isOwner}
+                  onEdit={handleEditReview}
+                  onDelete={handleDeleteReview}
+                  showFilters={false}
+                  showStats={false}
+                  businessImage={business?.logo_url}
+                />
+              </div>
+            </div>
+          </>
+        )}
       </div>
-    </div>
-  );
+    );
+  };
 
   // Render statistics tab - Comprehensive Business Analytics
   const renderStatistics = () => (
@@ -1338,15 +1272,6 @@ const BusinessProfile: React.FC = () => {
               <div className="px-6 py-4 border-b flex justify-between items-center bg-gray-50">
                 <h3 className="font-semibold text-lg text-gray-900">Business Details</h3>
                 <div className="flex items-center gap-2">
-                  {isOwner && (
-                    <button
-                      onClick={() => { setShowInfoModal(false); setEditing(true); }}
-                      className="flex items-center px-3 py-1.5 text-sm text-indigo-600 hover:bg-indigo-50 rounded-lg"
-                    >
-                      <Edit3 className="w-4 h-4 mr-1" />
-                      Edit
-                    </button>
-                  )}
                   <button onClick={() => setShowInfoModal(false)} className="p-1 hover:bg-gray-200 rounded-full">
                     <X className="w-5 h-5 text-gray-500" />
                   </button>
@@ -1419,12 +1344,12 @@ const BusinessProfile: React.FC = () => {
                 </div>
               </div>
             </div>
-          </motion.div>
+          </motion.div >
         )}
-      </AnimatePresence>
+      </AnimatePresence >
 
       {/* Follower List Modal */}
-      <FollowerListModal
+      < FollowerListModal
         businessId={business?.id || ''}
         businessName={business?.business_name || ''}
         followerCount={business?.follower_count || 0}
@@ -1520,9 +1445,11 @@ const BusinessProfile: React.FC = () => {
                     <QuickImageUploader
                       businessId={business?.id!}
                       bucketName="business-assets"
-                      imagePath={`business_images/${business?.id}_cover.jpg`}
+                      imageType="cover"
+                      folderPath={`business_images/${business?.id}`}
                       currentImageUrl={business?.cover_image_url}
                       onUploadComplete={(url) => handleQuickImageUpdate(url, 'cover')}
+                      onDelete={() => handleQuickImageUpdate(null, 'cover')}
                       aspectRatio={16 / 9}
                       maxSizeMB={0.6}
                     />
@@ -1551,9 +1478,11 @@ const BusinessProfile: React.FC = () => {
                       <QuickImageUploader
                         businessId={business?.id!}
                         bucketName="business-assets"
-                        imagePath={`business_images/${business?.id}_logo.jpg`}
+                        imageType="logo"
+                        folderPath={`business_images/${business?.id}`}
                         currentImageUrl={business?.logo_url}
                         onUploadComplete={(url) => handleQuickImageUpdate(url, 'logo')}
+                        onDelete={() => handleQuickImageUpdate(null, 'logo')}
                         aspectRatio={1}
                         maxSizeMB={0.4}
                       />
@@ -1567,8 +1496,8 @@ const BusinessProfile: React.FC = () => {
             <div className="max-w-7xl mx-auto px-[5px] pt-[0.5rem] pb-2">
               <div className="flex flex-col md:flex-row justify-between items-start gap-4">
                 {/* Business Name & Details (Pushed right to clear profile pic) */}
-                <div className="mt-0 pl-[9.5rem] md:pl-[15.5rem] flex flex-col items-start text-left w-full min-h-[5rem] md:min-h-0">
-                  <div className="flex flex-wrap items-center gap-2 mb-1">
+                <div className="mt-0 pl-[9.5rem] md:pl-[15.5rem] flex flex-col items-start text-left w-full min-h-0 space-y-0">
+                  <div className="flex flex-wrap items-center gap-2 mb-0">
                     <h1 className="text-lg md:text-2xl font-bold text-gray-900 leading-tight">
                       {business?.business_name}
                     </h1>
@@ -1594,16 +1523,26 @@ const BusinessProfile: React.FC = () => {
                     {getStatusBadge(business?.status)}
                   </div>
                   {/* Location line */}
-                  <p className="flex items-center text-sm text-gray-600 mb-1">
+                  <button
+                    onClick={() => {
+                      if (business?.latitude && business?.longitude) {
+                        window.open(`https://www.google.com/maps/dir/?api=1&destination=${business.latitude},${business.longitude}`);
+                      } else {
+                        const query = encodeURIComponent(`${business?.address || ''} ${business?.city || ''} ${business?.state || ''}`);
+                        window.open(`https://www.google.com/maps/search/?api=1&query=${query}`);
+                      }
+                    }}
+                    className="flex items-center text-sm text-gray-600 hover:text-indigo-600 transition-colors text-left py-[5px] px-2 -ml-2 rounded-md hover:bg-gray-100 m-0 leading-tight h-auto min-h-0 border-0 w-fit"
+                  >
                     <MapPin className="w-3.5 h-3.5 mr-1.5 text-gray-400 flex-shrink-0" />
                     {business?.city}, {business?.state}
-                  </p>
+                  </button>
 
                   {/* Business Hours Status - Made clickable */}
                   {businessOpenStatus.text && (
                     <button
                       onClick={() => setShowHoursModal(true)}
-                      className="flex items-center text-sm mb-1.5 hover:text-indigo-600 transition-colors cursor-pointer group"
+                      className="flex items-center text-sm hover:text-indigo-600 transition-colors cursor-pointer group py-[5px] px-2 -ml-2 rounded-md hover:bg-gray-100 m-0 leading-tight h-auto min-h-0 border-0 w-fit"
                     >
                       <Clock className="w-3.5 h-3.5 mr-1.5 text-gray-400 flex-shrink-0 group-hover:text-indigo-500" />
                       <span className={`font-medium ${businessOpenStatus.color} group-hover:text-indigo-600`}>
@@ -1618,22 +1557,22 @@ const BusinessProfile: React.FC = () => {
                   )}
 
                   {/* Phone + More Info line */}
-                  <div className="flex items-center justify-between w-full text-sm text-gray-600 mt-1">
-                    <div className="flex items-center">
-                      {business?.business_phone && (
-                        <a href={`tel:${business.business_phone}`} className="flex items-center hover:text-indigo-600">
+                  {business?.business_phone && (
+                    <div className="flex items-center justify-between w-full text-sm text-gray-600">
+                      <div className="flex items-center">
+                        <a href={`tel:${business.business_phone}`} className="flex items-center hover:text-indigo-600 py-[5px] px-2 -ml-2 rounded-md hover:bg-gray-100 transition-colors w-fit">
                           <Phone className="w-3.5 h-3.5 mr-1.5 text-gray-400 flex-shrink-0" />
                           {business.business_phone}
                         </a>
-                      )}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Follower Count - Clickable only for business owners */}
                   {isOwner ? (
                     <button
                       onClick={() => setShowFollowerModal(true)}
-                      className="flex items-center text-sm text-gray-600 mt-1 hover:text-indigo-600 transition-colors cursor-pointer group"
+                      className="flex items-center text-sm text-gray-600 hover:text-indigo-600 transition-colors cursor-pointer group py-[5px] px-2 -ml-2 rounded-md hover:bg-gray-100 m-0 leading-tight h-auto min-h-0 border-0 w-fit"
                     >
                       <Users className="w-3.5 h-3.5 mr-1.5 text-gray-400 flex-shrink-0 group-hover:text-indigo-500" />
                       <span className="group-hover:underline">
@@ -1641,7 +1580,7 @@ const BusinessProfile: React.FC = () => {
                       </span>
                     </button>
                   ) : (
-                    <div className="flex items-center text-sm text-gray-600 mt-1">
+                    <div className="flex items-center text-sm text-gray-600">
                       <Users className="w-3.5 h-3.5 mr-1.5 text-gray-400 flex-shrink-0" />
                       <span>
                         {business?.follower_count || 0} {(business?.follower_count || 0) === 1 ? 'Follower' : 'Followers'}
@@ -1748,6 +1687,7 @@ const BusinessProfile: React.FC = () => {
                               />
                             )}
 
+
                             {isOwner && (
                               <StorefrontShareButton
                                 businessId={business.id}
@@ -1762,6 +1702,19 @@ const BusinessProfile: React.FC = () => {
                                   console.log('Shared');
                                 }}
                               />
+                            )}
+
+                            {isOwner && (
+                              <button
+                                onClick={() => {
+                                  setShowMoreDropdown(false);
+                                  setEditing(true);
+                                }}
+                                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                              >
+                                <Edit3 className="w-4 h-4" />
+                                Edit Profile
+                              </button>
                             )}
 
                             <button
@@ -2016,22 +1969,24 @@ const BusinessProfile: React.FC = () => {
             </AnimatePresence>
           </div>
         </div>
-      </div>
+      </div >
 
       {/* Review Request Modal */}
-      {business && lastCheckinId && (
-        <ReviewRequestModal
-          isOpen={showReviewRequestModal}
-          onClose={() => setShowReviewRequestModal(false)}
-          businessId={business.id}
-          businessName={business.business_name}
-          checkinId={lastCheckinId}
-          onWriteReview={() => {
-            setShowReviewRequestModal(false);
-            handleOpenReviewModal();
-          }}
-        />
-      )}
+      {
+        business && lastCheckinId && (
+          <ReviewRequestModal
+            isOpen={showReviewRequestModal}
+            onClose={() => setShowReviewRequestModal(false)}
+            businessId={business.id}
+            businessName={business.business_name}
+            checkinId={lastCheckinId}
+            onWriteReview={() => {
+              setShowReviewRequestModal(false);
+              handleOpenReviewModal();
+            }}
+          />
+        )
+      }
     </>
   );
 };

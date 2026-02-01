@@ -22,7 +22,7 @@ export function ProductPreview({ preview }: { preview: LinkPreview }) {
                 <div className="flex items-center gap-2 mt-0.5">
                     {metadata?.price !== undefined && (
                         <span className="font-bold text-green-600 text-sm">
-                            {metadata.currency || '$'}{metadata.price}
+                            {metadata.currency || '₹'}{metadata.price}
                         </span>
                     )}
                     {metadata?.businessName && (

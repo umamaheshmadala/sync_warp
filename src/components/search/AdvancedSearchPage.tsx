@@ -9,7 +9,7 @@ import {
   MapPin,
   Star,
   Clock,
-  DollarSign,
+  IndianRupee,
   Grid,
   List,
   SlidersHorizontal,

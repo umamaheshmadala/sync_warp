@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getApiUsageStats, ApiUsageStats } from '../../services/apiUsageService';
-import { AlertCircle, CheckCircle, Database, DollarSign, Activity } from 'lucide-react';
+import { AlertCircle, CheckCircle, Database, IndianRupee, Activity } from 'lucide-react';
 
 export default function ApiUsageWidget() {
     const [stats, setStats] = useState<ApiUsageStats | null>(null);
@@ -64,11 +64,11 @@ export default function ApiUsageWidget() {
 
                 <div className="p-4 bg-gray-50 rounded-lg">
                     <div className="flex items-center gap-2 text-gray-500 mb-1">
-                        <DollarSign size={16} />
+                        <IndianRupee size={16} />
                         <span className="text-xs font-medium uppercase">Est. Cost</span>
                     </div>
                     <div className="text-2xl font-bold text-gray-900">
-                        ${stats.estimatedCost.toFixed(2)}
+                        ₹{stats.estimatedCost.toFixed(2)}
                     </div>
                     <div className="text-xs text-gray-500 mt-1">
                         Based on current pricing
@@ -86,7 +86,7 @@ export default function ApiUsageWidget() {
                 <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
                     <div
                         className={`h-2.5 rounded-full transition-all duration-500 ${stats.percentageUsed > 90 ? 'bg-red-500' :
-                                stats.percentageUsed > 75 ? 'bg-yellow-500' : 'bg-green-500'
+                            stats.percentageUsed > 75 ? 'bg-yellow-500' : 'bg-green-500'
                             }`}
                         style={{ width: `${Math.min(stats.percentageUsed, 100)}%` }}
                     />

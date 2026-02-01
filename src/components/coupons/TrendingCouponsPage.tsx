@@ -21,7 +21,7 @@ import {
   Loader2,
   Gift,
   Percent,
-  DollarSign
+  IndianRupee
 } from 'lucide-react';
 import useAdvancedSearch from '../../hooks/useAdvancedSearch';
 import { useAdvancedLocation } from '../../hooks/useAdvancedLocation';
@@ -76,7 +76,7 @@ const TrendingCouponsPage: React.FC<TrendingCouponsPageProps> = ({ className = '
         const daysUntilExpiry = Math.floor((expiryDate.getTime() - now.getTime()) / (1000 * 3600 * 24));
         return daysUntilExpiry <= 7;
       case 'high-value':
-        return coupon.discount_type === 'percentage' 
+        return coupon.discount_type === 'percentage'
           ? coupon.discount_value >= 20
           : coupon.discount_value >= 100;
       default:
@@ -188,7 +188,7 @@ const TrendingCouponsPage: React.FC<TrendingCouponsPageProps> = ({ className = '
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white p-4 rounded-lg border border-gray-200">
             <div className="flex items-center space-x-2">
               <Clock className="w-5 h-5 text-orange-500" />
@@ -207,7 +207,7 @@ const TrendingCouponsPage: React.FC<TrendingCouponsPageProps> = ({ className = '
               <div>
                 <div className="text-sm text-gray-600">High Value</div>
                 <div className="font-semibold text-gray-900">
-                  {trendingCoupons.filter(c => 
+                  {trendingCoupons.filter(c =>
                     c.discount_type === 'percentage' ? c.discount_value >= 20 : c.discount_value >= 100
                   ).length}
                 </div>
@@ -243,11 +243,10 @@ const TrendingCouponsPage: React.FC<TrendingCouponsPageProps> = ({ className = '
               <button
                 key={filter.id}
                 onClick={() => setFilterBy(filter.id as any)}
-                className={`flex items-center space-x-2 px-4 py-2 text-sm font-medium ${
-                  filterBy === filter.id
+                className={`flex items-center space-x-2 px-4 py-2 text-sm font-medium ${filterBy === filter.id
                     ? 'bg-indigo-600 text-white'
                     : 'bg-white text-gray-700 hover:bg-gray-50'
-                } border-r border-gray-200 last:border-r-0`}
+                  } border-r border-gray-200 last:border-r-0`}
               >
                 {filter.icon}
                 <span>{filter.label}</span>
@@ -278,17 +277,15 @@ const TrendingCouponsPage: React.FC<TrendingCouponsPageProps> = ({ className = '
           <div className="flex border border-gray-200 rounded-lg overflow-hidden">
             <button
               onClick={() => setViewMode('grid')}
-              className={`p-2 ${
-                viewMode === 'grid' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-400 hover:text-gray-600'
-              }`}
+              className={`p-2 ${viewMode === 'grid' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-400 hover:text-gray-600'
+                }`}
             >
               <Grid className="w-4 h-4" />
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`p-2 border-l border-gray-200 ${
-                viewMode === 'list' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-400 hover:text-gray-600'
-              }`}
+              className={`p-2 border-l border-gray-200 ${viewMode === 'list' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-400 hover:text-gray-600'
+                }`}
             >
               <List className="w-4 h-4" />
             </button>
@@ -305,19 +302,18 @@ const TrendingCouponsPage: React.FC<TrendingCouponsPageProps> = ({ className = '
 
       {/* Coupons Grid */}
       {sortedCoupons.length > 0 ? (
-        <div className={viewMode === 'grid' 
+        <div className={viewMode === 'grid'
           ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6'
           : 'space-y-6'
         }>
           {sortedCoupons.map((coupon, index) => {
             const daysLeft = getDaysUntilExpiry(coupon.valid_until);
-            
+
             return (
               <div
                 key={coupon.id}
-                className={`group relative bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 ${
-                  viewMode === 'list' ? 'flex' : ''
-                }`}
+                className={`group relative bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 ${viewMode === 'list' ? 'flex' : ''
+                  }`}
               >
                 {/* Trending Badge */}
                 {index < 3 && (
@@ -369,11 +365,11 @@ const TrendingCouponsPage: React.FC<TrendingCouponsPageProps> = ({ className = '
                   <div className="space-y-2 mb-4">
                     {coupon.minimum_order_value && (
                       <div className="flex items-center text-sm text-gray-600">
-                        <DollarSign className="w-4 h-4 mr-2" />
+                        <IndianRupee className="w-4 h-4 mr-2" />
                         <span>Min. order: ₹{coupon.minimum_order_value}</span>
                       </div>
                     )}
-                    
+
                     <div className="flex items-center text-sm text-gray-600">
                       <Calendar className="w-4 h-4 mr-2" />
                       <span>
@@ -418,10 +414,10 @@ const TrendingCouponsPage: React.FC<TrendingCouponsPageProps> = ({ className = '
                     </button>
                     <button
                       className="px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium"
-                      onClick={() => navigator.share?.({ 
+                      onClick={() => navigator.share?.({
                         title: coupon.title,
                         text: `Check out this deal: ${getDiscountDisplay(coupon)} at ${coupon.business_name}`,
-                        url: window.location.href 
+                        url: window.location.href
                       })}
                     >
                       <Share2 className="w-4 h-4" />
@@ -442,7 +438,7 @@ const TrendingCouponsPage: React.FC<TrendingCouponsPageProps> = ({ className = '
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">No trending coupons found</h3>
           <p className="text-gray-600 mb-6">
-            {filterBy !== 'all' 
+            {filterBy !== 'all'
               ? 'Try adjusting your filters to see more coupons'
               : 'Check back later for new trending deals'
             }

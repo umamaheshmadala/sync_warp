@@ -42,6 +42,7 @@ export interface Business {
   recommendation_percentage?: number;
   approved_review_count?: number;
   activeCouponsCount?: number;
+  activeOffersCount?: number;
 
   // Joined data
   owner?: {

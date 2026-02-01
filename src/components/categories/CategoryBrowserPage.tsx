@@ -14,7 +14,6 @@ import {
   Users,
   Zap,
   Clock,
-  DollarSign,
   ChevronRight,
   Utensils,
   ShoppingBag,

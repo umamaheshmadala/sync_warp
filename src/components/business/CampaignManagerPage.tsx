@@ -14,7 +14,7 @@ import {
   Plus,
   TrendingUp,
   Users,
-  DollarSign,
+  IndianRupee,
   Calendar,
   AlertCircle,
   CheckCircle,
@@ -113,13 +113,13 @@ export default function CampaignManagerPage() {
 
   const handlePause = async (campaignId: string) => {
     if (!confirm('Are you sure you want to pause this campaign?')) return;
-    
+
     try {
       const { error } = await supabase
         .from('campaigns')
         .update({ status: 'paused' })
         .eq('id', campaignId);
-      
+
       if (error) throw error;
       fetchCampaigns(); // Refresh list
     } catch (err: any) {
@@ -134,7 +134,7 @@ export default function CampaignManagerPage() {
         .from('campaigns')
         .update({ status: 'active' })
         .eq('id', campaignId);
-      
+
       if (error) throw error;
       fetchCampaigns(); // Refresh list
     } catch (err: any) {
@@ -145,13 +145,13 @@ export default function CampaignManagerPage() {
 
   const handleDelete = async (campaignId: string, campaignName: string) => {
     if (!confirm(`Are you sure you want to delete "${campaignName}"? This action cannot be undone.`)) return;
-    
+
     try {
       const { error } = await supabase
         .from('campaigns')
         .delete()
         .eq('id', campaignId);
-      
+
       if (error) throw error;
       fetchCampaigns(); // Refresh list
     } catch (err: any) {
@@ -186,7 +186,7 @@ export default function CampaignManagerPage() {
             <ArrowLeft className="w-4 h-4" />
             Back to Dashboard
           </Link>
-          
+
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Campaign Manager</h1>
@@ -265,7 +265,7 @@ export default function CampaignManagerPage() {
                     {/* Budget */}
                     <div>
                       <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
-                        <DollarSign className="w-4 h-4" />
+                        <IndianRupee className="w-4 h-4" />
                         Total Budget
                       </div>
                       <div className="text-2xl font-bold text-gray-900">
@@ -322,16 +322,16 @@ export default function CampaignManagerPage() {
 
                   {/* Actions */}
                   <div className="flex items-center gap-2 pt-4 border-t">
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => handleViewAnalytics(campaign.id)}
                     >
                       <BarChart3 className="w-4 h-4 mr-2" />
                       View Analytics
                     </Button>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => handleEdit(campaign.id, campaign)}
                     >
@@ -339,8 +339,8 @@ export default function CampaignManagerPage() {
                       {campaign.status === 'draft' ? 'Resume' : 'Edit'}
                     </Button>
                     {campaign.status === 'active' && (
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={() => handlePause(campaign.id)}
                       >
@@ -349,8 +349,8 @@ export default function CampaignManagerPage() {
                       </Button>
                     )}
                     {campaign.status === 'paused' && (
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={() => handleResume(campaign.id)}
                       >
@@ -358,9 +358,9 @@ export default function CampaignManagerPage() {
                         Resume
                       </Button>
                     )}
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       className="text-red-600 hover:text-red-700"
                       onClick={() => handleDelete(campaign.id, campaign.name)}
                     >

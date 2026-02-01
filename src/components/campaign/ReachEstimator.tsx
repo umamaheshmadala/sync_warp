@@ -16,10 +16,10 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui
 import { Progress } from '../ui/progress';
 import { Badge } from '../ui/badge';
 import { Skeleton } from '../ui/skeleton';
-import { 
-  Users, 
-  TrendingUp, 
-  DollarSign, 
+import {
+  Users,
+  TrendingUp,
+  IndianRupee,
   Eye,
   AlertCircle,
   CheckCircle,
@@ -46,7 +46,7 @@ export interface ReachEstimatorProps {
   /** Use mock data instead of real API */
   useMockData?: boolean;
   /** Callback when reach data updates */
-  onReachUpdate?: (data: {total: number; demographics: number; location: number; behavior: number}) => void;
+  onReachUpdate?: (data: { total: number; demographics: number; location: number; behavior: number }) => void;
 }
 
 interface ReachEstimate {
@@ -111,11 +111,11 @@ export function ReachEstimator({
         // Convert to ReachEstimate format
         const totalReach = audienceEstimate.total_reach || 0;
         const usersCount = audienceEstimate.drivers_count || totalReach;
-        
+
         const reachEstimate: ReachEstimate = {
           totalUsers: usersCount,
           matchingUsers: totalReach,
-          reachPercentage: usersCount > 0 
+          reachPercentage: usersCount > 0
             ? (totalReach / usersCount) * 100
             : 100,
           estimatedImpressions: totalReach * 15, // 15 impressions per user per month
@@ -129,7 +129,7 @@ export function ReachEstimator({
         };
 
         setEstimate(reachEstimate);
-        
+
         // Notify parent component of reach data
         if (onReachUpdate && audienceEstimate) {
           onReachUpdate({
@@ -142,7 +142,7 @@ export function ReachEstimator({
       } catch (err: any) {
         if (err.name === 'AbortError') return;
         if (!isMounted) return;
-        
+
         console.error('Error fetching reach estimate:', err);
         setError(err.message || 'Failed to estimate reach. Please try again.');
       } finally {
@@ -245,7 +245,7 @@ export function ReachEstimator({
   // ============================================================================
 
   const totalCost = budget || (estimate.estimatedImpressions * estimate.estimatedCostPerImpression);
-  const actualCostPerImpression = budget 
+  const actualCostPerImpression = budget
     ? budget / estimate.estimatedImpressions
     : estimate.estimatedCostPerImpression;
 
@@ -259,7 +259,7 @@ export function ReachEstimator({
               Updated {estimate.lastUpdated.toLocaleTimeString()}
             </CardDescription>
           </div>
-          <Badge 
+          <Badge
             variant="outline"
             className={getConfidenceColor(estimate.confidence)}
           >
@@ -268,7 +268,7 @@ export function ReachEstimator({
           </Badge>
         </div>
       </CardHeader>
-      
+
       <CardContent className="space-y-6">
         {/* Primary Metrics */}
         <div className="grid grid-cols-2 gap-4">
@@ -293,8 +293,8 @@ export function ReachEstimator({
             <div className="text-3xl font-bold">
               {estimate.reachPercentage.toFixed(1)}%
             </div>
-            <Progress 
-              value={estimate.reachPercentage} 
+            <Progress
+              value={estimate.reachPercentage}
               className="h-2"
             />
           </div>
@@ -314,7 +314,7 @@ export function ReachEstimator({
 
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <DollarSign className="w-4 h-4" />
+              <IndianRupee className="w-4 h-4" />
               Est. Total Cost
             </div>
             <div className="text-2xl font-semibold">
@@ -330,7 +330,7 @@ export function ReachEstimator({
         {estimate.breakdown && (
           <div className="space-y-4 pt-4 border-t">
             <h4 className="font-medium text-sm">Audience Breakdown</h4>
-            
+
             {/* By Age */}
             {estimate.breakdown.byAge && (
               <div className="space-y-2">
@@ -372,11 +372,11 @@ export function ReachEstimator({
               <div className="space-y-1">
                 <div className="font-medium text-blue-900">Reach Insights</div>
                 <div className="text-blue-700">
-                  {estimate.reachPercentage > 50 
+                  {estimate.reachPercentage > 50
                     ? 'Your targeting is broad. Consider narrowing criteria to reach more specific audiences.'
                     : estimate.reachPercentage > 20
-                    ? 'Your targeting looks balanced. You\'ll reach a good portion of relevant users.'
-                    : 'Your targeting is very specific. You may want to broaden criteria to increase reach.'}
+                      ? 'Your targeting looks balanced. You\'ll reach a good portion of relevant users.'
+                      : 'Your targeting is very specific. You may want to broaden criteria to increase reach.'}
                 </div>
               </div>
             </div>

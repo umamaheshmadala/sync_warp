@@ -4,7 +4,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Trash2, DollarSign, ImageIcon, Star } from 'lucide-react';
+import { Trash2, IndianRupee, ImageIcon, Star } from 'lucide-react';
 import { FavoriteProduct } from '../../services/favoritesService';
 import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 import { getOptimizedImageUrl } from '../../utils/imageUtils';
@@ -96,8 +96,8 @@ export const FavoriteProductCard: React.FC<FavoriteProductCardProps> = ({
                 <div className="absolute bottom-2 left-2">
                     <span
                         className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${product.is_available
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-red-100 text-red-800'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
                             }`}
                     >
                         {product.is_available ? 'Available' : 'Unavailable'}
@@ -119,7 +119,7 @@ export const FavoriteProductCard: React.FC<FavoriteProductCardProps> = ({
 
                 <div className="flex items-center justify-between mt-2">
                     <span className="flex items-center text-lg font-bold text-gray-900">
-                        <DollarSign className="w-4 h-4 mr-0.5" />
+                        <IndianRupee className="w-4 h-4 mr-0.5" />
                         {formatPrice(product.price, product.currency)}
                     </span>
                 </div>

@@ -7,7 +7,7 @@ import {
   Eye,
   EyeOff,
   MoreVertical,
-  DollarSign,
+  IndianRupee,
   Tag,
   ImageIcon,
   Layers
@@ -129,7 +129,7 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
                       </div>
                     )}
                     <div className="flex items-center space-x-1">
-                      <DollarSign className="w-4 h-4" />
+                      <IndianRupee className="w-4 h-4" />
                       <span className="font-semibold text-gray-900">
                         {formatPrice(product.price, product.currency)}
                       </span>

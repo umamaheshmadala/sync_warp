@@ -1,3 +1,4 @@
+
 import { useLocation } from 'react-router-dom';
 import { useEffect, useState, useCallback } from 'react';
 import { Keyboard, KeyboardResize } from '@capacitor/keyboard';
@@ -23,8 +24,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const { preferences } = useNavigationPreferences();
 
-  // Don't show header/nav on auth pages only (root path is now dashboard)
+  // Don't show header/nav on auth pages and admin pages (admin has its own layout)
   const isAuthPage = location.pathname.startsWith('/auth');
+  const isAdminRoute = location.pathname.startsWith('/admin');
 
   // Check if on messages route (relaxed check to handle IDs and trailing slashes)
   const isMessagesRoute = location.pathname.includes('/messages');
@@ -95,6 +97,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   if (isAuthPage) {
     return <>{children}</>;
+  }
+
+  // Admin pages have their own full-width desktop layout
+  if (isAdminRoute) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        {children}
+      </div>
+    );
   }
 
   // Hide bottom navigation when keyboard is visible anywhere to make space

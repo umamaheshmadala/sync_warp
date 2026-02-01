@@ -2,7 +2,7 @@
 
 **Goal**: Enable businesses to create profiles, manage products, and share coupons with customers.
 
-**Progress**: 🟢 **13/17 stories completed (76%)** - Core platform complete, enhancements delivered
+**Progress**: 🟢 **14/18 stories completed (78%)** - Core platform complete, enhancements delivered
 
 **Core Stories (6/6)**: ✅ Complete | **Enhancement Stories (7/7)**: ✅ Complete | **Engagement Story (0/1)**: 📝 Specified | **Storefront (0/3)**: 📝 Specified
 
@@ -531,8 +531,8 @@
 ## Epic 4 Summary
 
 
-**Total Stories**: 17 stories (6 core + 7 enhancements + 1 engagement + 3 storefront)
-**Status**: 🟢 **93% COMPLETE** - 13 stories delivered, 4 stories specified
+**Total Stories**: 18 stories (6 core + 7 enhancements + 1 engagement + 3 storefront + 1 UX)
+**Status**: 🟢 **94% COMPLETE** - 14 stories delivered, 4 stories specified
 **Prerequisites**: ✅ Epic 2 (Authentication) and ✅ Epic 3 (Navigation) - All met
 
 **Completed Stories (13/17)** - Core Platform + Enhancements:
@@ -549,13 +549,13 @@
 - ✅ **Story 4.17: Audit Codes** (Jan 29, 2025)
 - ✅ **Story 4.18: Drafts & Featured Status** (Jan 29, 2025)
 - ✅ **Story 4.19: Offer Audit Log** (Jan 29, 2025)
+- ✅ **Story 4.20: Quick Image Editing & Optimization** (Feb 1, 2026)
 
-**Specified Stories (1/13)** - Ready for Implementation:
+**Specified Stories (4/14)** - Ready for Implementation:
 - 📝 Story 4.7: Product Display & Detail Pages (3-4 days)
 - 📝 Story 4.8: Review Display Integration (2-3 days)
 - 📝 Story 4.10: Storefront Minor Enhancements (1 day)
 - 📝 Story 4.11: Follow Business (8 days) - **High Priority Engagement Feature**
-- ✅ **Story 4.20: Quick Image Editing & Optimization** (Feb 1, 2026) - **UX Enhancement**
 
 **Completed Timeline**: 8 weeks (core stories) + 2 weeks (Enhancements)
 **Remaining Effort**: 26-31 days (storefront enhancements + engagement + offer lifecycle)

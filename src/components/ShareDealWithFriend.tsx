@@ -33,7 +33,7 @@ const ShareDeal: React.FC<ShareDealProps> = ({ friendId, dealId, isOpen, onClose
   const { triggerHaptic } = useHapticFeedback();
   const { friends } = useFriends();
   // const { deals } = useDealsStore();
-  
+
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
   const [message, setMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -76,10 +76,10 @@ const ShareDeal: React.FC<ShareDealProps> = ({ friendId, dealId, isOpen, onClose
 
   // Find the friend we're sharing with
   const friend = friends.find(f => f.friend_profile.user_id === friendId);
-  
+
   // Get available deals to share
-  const availableDeals = mockDeals.filter(deal => 
-    !searchQuery || 
+  const availableDeals = mockDeals.filter(deal =>
+    !searchQuery ||
     deal.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     deal.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
     deal.category.toLowerCase().includes(searchQuery.toLowerCase())
@@ -102,14 +102,14 @@ const ShareDeal: React.FC<ShareDealProps> = ({ friendId, dealId, isOpen, onClose
 
   const handleShare = async () => {
     if (!selectedDeal || !friend) return;
-    
+
     setIsSharing(true);
     triggerHaptic('light');
 
     try {
       // Mock share activity - replace with actual implementation later
       await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-      
+
       console.log('Sharing deal:', {
         friendId: friend.friend_profile.user_id,
         friendName: friend.friend_profile.full_name,
@@ -120,7 +120,7 @@ const ShareDeal: React.FC<ShareDealProps> = ({ friendId, dealId, isOpen, onClose
 
       setShareSuccess(true);
       triggerHaptic('success');
-      
+
       // Auto-close after success
       setTimeout(() => {
         handleClose();
@@ -146,7 +146,7 @@ const ShareDeal: React.FC<ShareDealProps> = ({ friendId, dealId, isOpen, onClose
   const formatPrice = (price: number): string => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'INR',
       minimumFractionDigits: 0,
       maximumFractionDigits: 2,
     }).format(price);
@@ -220,7 +220,7 @@ const ShareDeal: React.FC<ShareDealProps> = ({ friendId, dealId, isOpen, onClose
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                               Choose a deal to share
                             </label>
-                            
+
                             {/* Search */}
                             <div className="relative mb-3">
                               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />

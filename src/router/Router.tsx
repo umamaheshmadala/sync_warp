@@ -38,11 +38,17 @@ const FollowerList = lazy(() => import('../components/business/FollowerList'))
 const BusinessCheckinsPage = lazy(() => import('../components/checkins/BusinessCheckinsPage'))
 
 // Admin Components
+// Admin Components
+const AdminLayout = lazy(() => import('../components/layout/AdminLayout'))
 const AdminDashboard = lazy(() => import('../pages/admin/AdminDashboard'))
 const ReviewModerationPage = lazy(() => import('../pages/admin/ReviewModerationPage'))
 const ReviewAnalyticsDashboard = lazy(() => import('../pages/admin/ReviewAnalyticsDashboard').then(m => ({ default: m.ReviewAnalyticsDashboard })))
 const AdminAuditLogPage = lazy(() => import('../pages/admin/AdminAuditLogPage'))
 const BusinessManagementPage = lazy(() => import('../pages/admin/BusinessManagementPage'))
+const UserManagementPage = lazy(() => import('../pages/admin/UserManagementPage'))
+const ApiInfrastructurePage = lazy(() => import('../pages/admin/ApiInfrastructurePage'))
+const PlatformSettingsPage = lazy(() => import('../pages/admin/PlatformSettingsPage'))
+const DataRetentionPage = lazy(() => import('../pages/admin/DataRetentionPage'))
 
 // Product components
 const ProductDetails = lazy(() => import('../components/products').then(m => ({ default: m.ProductDetails })))
@@ -135,7 +141,7 @@ const RouteLoader = ({ children }: { children: React.ReactNode }) => (
 
 // Route definitions
 export interface RouteConfig {
-  path: string
+  path?: string
   element: React.ReactElement
   protected?: boolean
   title?: string
@@ -409,62 +415,102 @@ export const routes: RouteConfig[] = [
   },
 
 
-  // Admin Routes (Protected)
+  // Admin Routes (Protected, with Layout)
   {
     path: '/admin',
     element: (
       <RouteLoader>
-        <AdminDashboard />
+        <AdminLayout />
       </RouteLoader>
     ),
     protected: true,
-    title: 'System Admin - SynC'
-  },
-  {
-    path: '/admin/moderation',
-    element: (
-      <RouteLoader>
-        <ReviewModerationPage />
-      </RouteLoader>
-    ),
-    protected: true,
-    title: 'Review Moderation - SynC'
-  },
-  {
-    path: '/admin/audit-log',
-    element: (
-      <RouteLoader>
-        <AdminAuditLogPage />
-      </RouteLoader>
-    ),
-    protected: true,
-    title: 'Audit Log - SynC'
-  },
-  {
-    path: '/admin/analytics/reviews',
-    element: (
-      <RouteLoader>
-        <ReviewAnalyticsDashboard />
-      </RouteLoader>
-    ),
-    protected: true,
-    title: 'Review Analytics - SynC'
-  },
-  {
-    path: '/admin/dashboard',
-    element: <Navigate to="/admin" replace />,
-    protected: true,
-    title: 'System Admin - SynC'
-  },
-  {
-    path: '/admin/businesses',
-    element: (
-      <RouteLoader>
-        <BusinessManagementPage />
-      </RouteLoader>
-    ),
-    protected: true,
-    title: 'Manage Businesses - SynC'
+    children: [
+      {
+        index: true,
+        element: (
+          <RouteLoader>
+            <AdminDashboard />
+          </RouteLoader>
+        ),
+        title: 'System Admin - SynC'
+      },
+      {
+        path: 'users',
+        element: (
+          <RouteLoader>
+            <UserManagementPage />
+          </RouteLoader>
+        ),
+        title: 'User Management - SynC'
+      },
+      {
+        path: 'businesses',
+        element: (
+          <RouteLoader>
+            <BusinessManagementPage />
+          </RouteLoader>
+        ),
+        title: 'Manage Businesses - SynC'
+      },
+      {
+        path: 'moderation',
+        element: (
+          <RouteLoader>
+            <ReviewModerationPage />
+          </RouteLoader>
+        ),
+        title: 'Review Moderation - SynC'
+      },
+      {
+        path: 'audit-log',
+        element: (
+          <RouteLoader>
+            <AdminAuditLogPage />
+          </RouteLoader>
+        ),
+        title: 'Audit Log - SynC'
+      },
+      {
+        path: 'analytics/reviews',
+        element: (
+          <RouteLoader>
+            <ReviewAnalyticsDashboard />
+          </RouteLoader>
+        ),
+        title: 'Review Analytics - SynC'
+      },
+      {
+        path: 'api',
+        element: (
+          <RouteLoader>
+            <ApiInfrastructurePage />
+          </RouteLoader>
+        ),
+        title: 'API Infrastructure - SynC'
+      },
+      {
+        path: 'settings',
+        element: (
+          <RouteLoader>
+            <PlatformSettingsPage />
+          </RouteLoader>
+        ),
+        title: 'Platform Settings - SynC'
+      },
+      {
+        path: 'retention',
+        element: (
+          <RouteLoader>
+            <DataRetentionPage />
+          </RouteLoader>
+        ),
+        title: 'Data Retention - SynC'
+      },
+      {
+        path: 'dashboard',
+        element: <Navigate to="/admin" replace />,
+      }
+    ]
   },
 
   // Business Tools (Protected)
@@ -875,8 +921,10 @@ export default function AppRouter() {
     // Logic to wrap protected/public routes
     let element = route.element
 
+    const path = route.path || '';
+
     if (route.protected) {
-      const requireOnboarding = !['/', '/onboarding', '/auth/login', '/auth/signup'].includes(route.path)
+      const requireOnboarding = !['/', '/onboarding', '/auth/login', '/auth/signup'].includes(path)
       element = (
         <ProtectedRoute
           requireAuth={true}
@@ -886,7 +934,7 @@ export default function AppRouter() {
           {route.element}
         </ProtectedRoute>
       )
-    } else if (route.path.startsWith('/auth/') || route.path === '/') {
+    } else if (path.startsWith('/auth/') || path === '/') {
       element = (
         <ProtectedRoute
           requireAuth={false}

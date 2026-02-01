@@ -11,7 +11,7 @@ const MOCK_PRODUCT: Product = {
     name: 'Luxury Silk Scarf',
     description: '100% Mulberry silk scarf with hand-rolled edges.',
     price: 129.99,
-    currency: 'USD',
+    currency: 'INR',
     category: 'Accessories',
     image_urls: ['https://images.unsplash.com/photo-1520903920248-841c42f7c964?auto=format&fit=crop&q=80&w=800'],
     is_available: true,

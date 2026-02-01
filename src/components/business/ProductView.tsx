@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
   Star,
-  DollarSign,
+  IndianRupee,
   Tag,
   ImageIcon,
   ChevronLeft,
@@ -224,7 +224,7 @@ const ProductView: React.FC<ProductViewProps> = ({
             )}
 
             <div className="flex items-center space-x-2">
-              <DollarSign className="w-6 h-6 text-green-600" />
+              <IndianRupee className="w-6 h-6 text-green-600" />
               <span className="text-2xl font-bold text-gray-900">
                 {formatPrice(product.price, product.currency)}
               </span>

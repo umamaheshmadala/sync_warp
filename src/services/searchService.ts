@@ -138,6 +138,7 @@ export interface SearchBusiness {
   recommendation_percentage?: number;
   approved_review_count?: number;
   claim_status?: string;
+  activeOffersCount?: number;
   phone_verified?: boolean;
 }
 
@@ -566,15 +567,45 @@ class SearchService {
   }
 
   /**
+   * Get active offers count for a business from the 'offers' table
+   */
+  private async getBusinessActiveOffersCount(businessId: string): Promise<number> {
+    try {
+      const now = new Date().toISOString();
+      const { count } = await supabase
+        .from('offers')
+        .select('*', { count: 'exact', head: true })
+        .eq('business_id', businessId)
+        .eq('is_active', true)
+        .lte('start_date', now)
+        .gte('end_date', now);
+      return count || 0;
+    } catch (error) {
+      console.error('Error fetching active offers count:', error);
+      return 0;
+    }
+  }
+
+  /**
+   * Guidance: activeOffersCount is from the new 'offers' table.
+   * activeCouponsCount is from the old 'business_coupons' table.
+   */
+
+  /**
    * Enhance business results with search-specific data
    */
   private async enhanceBusinessResults(
     businesses: any[],
     query: SearchQuery
   ): Promise<SearchBusiness[]> {
-    // Fetch follower counts in parallel for all businesses
+    // Fetch follower counts and active offers counts in parallel
     const followerCountPromises = businesses.map(b => this.getBusinessFollowerCount(b.id));
-    const followerCounts = await Promise.all(followerCountPromises);
+    const activeOffersCountPromises = businesses.map(b => this.getBusinessActiveOffersCount(b.id));
+
+    const [followerCounts, activeOffersCounts] = await Promise.all([
+      Promise.all(followerCountPromises),
+      Promise.all(activeOffersCountPromises)
+    ]);
 
     return businesses.map((business, index) => {
       // Count active coupons for this business
@@ -605,6 +636,7 @@ class SearchService {
         logo_url: business.logo_url,
         cover_image_url: business.cover_image_url,
         activeCouponsCount: activeCoupons.length,
+        activeOffersCount: activeOffersCounts[index],
         relevanceScore,
         highlightedName,
         distance: undefined, // Would be calculated if location provided

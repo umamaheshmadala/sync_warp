@@ -34,6 +34,8 @@ export function SearchBusinessCard({
         ? business.approved_review_count
         : (business.review_count || 0);
 
+    const totalActiveCount = (business.activeCouponsCount || 0) + (business.activeOffersCount || 0);
+
     return (
         <div
             onClick={() => navigate(getBusinessUrl(business.id, business.business_name))}
@@ -84,7 +86,7 @@ export function SearchBusinessCard({
                     {/* Active Offers */}
                     <div className="flex items-center gap-1.5" title="Active Offers">
                         <Ticket className="w-5 h-5 text-indigo-500" />
-                        <span className="font-semibold">{business.activeCouponsCount || 0}</span>
+                        <span className="font-semibold">{totalActiveCount}</span>
                     </div>
 
                     <div className="w-1 h-1 rounded-full bg-gray-300"></div>
