@@ -62,9 +62,10 @@
 - As an admin, I want to **view complete audit history** of all admin actions
 - As an admin, I want **business owners to receive push + in-app notifications** when approved/rejected
 - As an admin, I want to **contact business owners** directly via email/phone
+- As an admin, I want to **review and approve/reject owner edits** to sensitive business fields
 
 **What needs to be built**:
-- [ ] Business management dashboard with tab-based interface (Pending/Approved/Rejected/Deleted/All)
+- [ ] Business management dashboard with tab-based interface (Pending/Approved/Rejected/Deleted/Pending Edits/All)
 - [ ] Advanced filtering system (city, category, date range, year, month - all combinable)
 - [ ] Real-time search by business name, email, phone, owner
 - [ ] Individual approval workflow (NO bulk operations - manual verification required)
@@ -80,12 +81,22 @@
 - [ ] Active filter chips with clear-all functionality
 - [ ] Comprehensive RLS policies for admin-only access
 - [ ] API endpoints: list, approve, reject, delete, edit, audit-log, filter-options
+- [ ] **NEW: Pending Edit Review System** (Story 6.3.6):
+  - [ ] Owner edits to sensitive fields (name, address, categories) require admin approval
+  - [ ] Owner edits to non-sensitive fields (phone, email, hours, images) apply immediately
+  - [ ] "Pending Edits" tab in admin dashboard with queue
+  - [ ] Side-by-side diff view for admin review
+  - [ ] Partial approval/rejection of individual field changes
+  - [ ] Business remains ACTIVE during edit review (approved values stay visible)
+  - [ ] Owner sees "Changes pending approval" banner on their storefront
+  - [ ] Notifications to owner on edit approval/rejection
 
 **Database Changes**:
 - New table: `admin_business_actions` (audit trail)
 - New table: `business_status_history` (status change tracking)
-- Modified: `businesses` table (add rejection_reason, approved_at, approved_by, deleted_at, is_hard_deleted)
-- Indexes: city, status, created_at, business_type, deleted_at
+- **New table: `business_pending_edits`** (queued owner edits for sensitive fields)
+- Modified: `businesses` table (add rejection_reason, approved_at, approved_by, deleted_at, is_hard_deleted, **has_pending_edits**)
+- Indexes: city, status, created_at, business_type, deleted_at, has_pending_edits
 
 **Key Design Decisions**:
 - **NO Bulk Operations**: Each business requires individual verification
@@ -94,12 +105,21 @@
 - **Hard-Delete Option**: For spam/fraud with extra confirmation
 - **Required Rejection Reason**: Mandatory notes for accountability
 - **Tab-Based UI**: Pending tab default for admin workflow
+- **Sensitive Field Moderation**: Name/Address/Categories changes require re-approval
+- **Partial Approval**: Admins can approve some fields while rejecting others
 
-**Detailed Documentation**: See `STORY_6.3_Admin_Business_Management.md`
+**Detailed Documentation**: 
+- See `STORY_6.3.1_Admin_Business_Database_Infrastructure.md`
+- See `STORY_6.3.2_Admin_Business_Listing_Filtering.md`
+- See `STORY_6.3.3_Admin_Business_Approval_Rejection.md`
+- See `STORY_6.3.4_Admin_Business_Editing_Deletion.md`
+- See `STORY_6.3.5_Admin_Audit_Logging_Notifications.md`
+- See `STORY_6.3.6_Business_Edit_Approval_Workflow.md` (**NEW**)
 
-**Time Estimate**: 7-8 days
+**Time Estimate**: 9-10 days (increased from 7-8 days to include pending edits workflow)
 
 ---
+
 
 ## Story 6.4: Platform Analytics & Settings ⚪ PLANNED
 **What you'll see**: Comprehensive platform analytics and configurable settings.
