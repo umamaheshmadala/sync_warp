@@ -5,6 +5,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Offer, OfferFormData } from '../types/offers';
+import { followedBusinessNotificationTrigger } from '../services/followedBusinessNotificationTrigger';
 
 interface UseOfferDraftsOptions {
   userId: string;
@@ -147,12 +148,11 @@ export const useOfferDrafts = (options: UseOfferDraftsOptions): UseOfferDraftsRe
 
       try {
         // Map form data to DB columns
-        // Note: OfferFormData matches DB columns mostly.
-        // step_completed isn't a column in 'offers', so we might ignore it or store it in metadata if we had a JSON column.
-        // For now, we just save the form fields.
+        // Strip audit_code to prevent unique constraint conflicts on update
+        const { audit_code, ...safeFormData } = formData;
 
         const updatePayload = {
-          ...formData,
+          ...safeFormData,
           updated_at: new Date().toISOString(),
         };
 
@@ -215,19 +215,30 @@ export const useOfferDrafts = (options: UseOfferDraftsOptions): UseOfferDraftsRe
     setError(null);
 
     try {
+      // Strip audit_code from finalData if present
+      const { audit_code, ...safeFinalData } = finalData || {};
+
       const updatePayload = {
-        ...(finalData || {}),
+        ...safeFinalData,
         status: 'active',
         activated_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
 
-      const { error: updateError } = await supabase
+      const { data: publishedOffer, error: updateError } = await supabase
         .from('offers')
         .update(updatePayload)
-        .eq('id', draftId);
+        .eq('id', draftId)
+        .select()
+        .single();
 
       if (updateError) throw updateError;
+
+      // 🔔 Notify followers about the new offer (Fire and forget)
+      if (publishedOffer && businessId) {
+        console.log('[useOfferDrafts] Offer published, triggering notifications for business:', businessId);
+        followedBusinessNotificationTrigger.notifyNewOffer(businessId, publishedOffer as Offer).catch(console.error);
+      }
 
       // Refresh drafts list (it should disappear from drafts)
       await fetchDrafts();
@@ -240,7 +251,7 @@ export const useOfferDrafts = (options: UseOfferDraftsOptions): UseOfferDraftsRe
     } finally {
       setIsLoading(false);
     }
-  }, [fetchDrafts]);
+  }, [fetchDrafts, businessId]);
 
   // Cleanup timer on unmount
   useEffect(() => {

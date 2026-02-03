@@ -19,6 +19,7 @@ import {
   CouponStatus,
   CouponType
 } from '../types/coupon';
+import { followedBusinessNotificationTrigger } from './followedBusinessNotificationTrigger';
 import { toast } from 'react-hot-toast';
 
 // Cache management
@@ -211,6 +212,9 @@ class CouponService {
 
       // Notify subscribers
       this.notifySubscribers(`coupons_${businessId}`, data);
+
+      // Notify followers (Fire and forget)
+      followedBusinessNotificationTrigger.notifyNewCoupon(businessId, data).catch(console.error);
 
       return data;
     } catch (error) {

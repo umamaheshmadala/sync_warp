@@ -171,15 +171,6 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
             <Package className="h-12 w-12 mx-auto text-gray-400 mb-3" />
             <h3 className="text-lg font-medium text-gray-900 mb-1">No Featured Products</h3>
             <p className="text-sm">Highlight your best products here!</p>
-            {shouldShowAddButton && (
-              <button
-                onClick={() => setIsAddModalOpen(true)}
-                className="mt-4 flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                Add Products
-              </button>
-            )}
           </div>
         )}
       </div>

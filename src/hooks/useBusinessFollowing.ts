@@ -34,6 +34,7 @@ export interface FollowedBusiness {
     review_count?: number;
     description?: string;
     follower_count?: number;
+    active_coupons_count?: number; // Combined offers + coupons
   };
 }
 
@@ -93,12 +94,41 @@ export function useBusinessFollowing(): UseBusinessFollowingReturn {
     const businessesWithDetails = await Promise.all(
       data.map(async (follow) => {
         try {
-          // Fetch business details
+          // Fetch business details with active counts
+          // Note: We use raw supabase query to filter relations for counts
           const { data: businessData, error: businessError } = await supabase
             .from('businesses')
-            .select('*')
+            .select(`
+              *,
+              active_coupons:business_coupons(count),
+              active_offers:offers(count)
+            `)
             .eq('id', follow.business_id)
             .single();
+
+          // Note: Since Supabase postgrest-js doesn't easily support complex filtering on count relations 
+          // without custom functions or manual join logic (the above simple count gets ALL coupons), 
+          // we will fetch active counts with separate queries or a more complex single query.
+          // However, to fix the immediate "Unknown Business" issue, we MUST remove the top-level filters.
+
+          // To get accurate "active" counts, we can't easily filter the (count) relation in standard syntax 
+          // without side-loading. Let's try side-loading.
+
+          const { count: activeCouponsCount } = await supabase
+            .from('business_coupons')
+            .select('*', { count: 'exact', head: true })
+            .eq('business_id', follow.business_id)
+            .eq('status', 'active')
+            .gte('valid_until', new Date().toISOString())
+            .lte('valid_from', new Date().toISOString());
+
+          const { count: activeOffersCount } = await supabase
+            .from('offers')
+            .select('*', { count: 'exact', head: true })
+            .eq('business_id', follow.business_id)
+            .eq('status', 'active')
+            .gte('valid_until', new Date().toISOString())
+            .lte('valid_from', new Date().toISOString());
 
           if (businessError) {
             console.error(`[BusinessFollowing] Error fetching business ${follow.business_id}:`, businessError);
@@ -116,6 +146,11 @@ export function useBusinessFollowing(): UseBusinessFollowingReturn {
             .eq('entity_type', 'business')
             .eq('is_active', true);
 
+          // Get counts from the relation arrays (supabase returns [{count: N}] or [])
+          // Using separate queries for active counts now to avoid filtering parent business
+          const validCouponsCount = activeCouponsCount || 0;
+          const validOffersCount = activeOffersCount || 0;
+
           return {
             ...follow,
             business: businessData ? {
@@ -128,7 +163,8 @@ export function useBusinessFollowing(): UseBusinessFollowingReturn {
               rating: businessData.rating,
               review_count: businessData.review_count,
               description: businessData.description,
-              follower_count: count || 0
+              follower_count: count || 0,
+              active_coupons_count: activeCouponsCount + activeOffersCount // Combined count for the card
             } : undefined
           };
         } catch (err) {
@@ -170,9 +206,7 @@ export function useBusinessFollowing(): UseBusinessFollowingReturn {
   const followBusiness = useCallback(
     async (businessId: string, businessName?: string): Promise<boolean> => {
       if (!user) {
-        toast.error('Sign in required', {
-          description: 'Please sign in to follow businesses.',
-        });
+        toast.error('Sign in required: Please sign in to follow businesses.');
         return false;
       }
 
@@ -219,20 +253,14 @@ export function useBusinessFollowing(): UseBusinessFollowingReturn {
           throw insertError;
         }
 
-        toast.success('Following!', {
-          description: businessName
-            ? `You're now following ${businessName}`
-            : 'You\'re now following this business',
-        });
+        toast.success(businessName ? `Following ${businessName}!` : 'Following business!');
 
         // Refetch to ensure we have the correct DB ID and consistent state
         queryClient.invalidateQueries({ queryKey });
         return true;
       } catch (err) {
         console.error('[BusinessFollowing] Error following:', err);
-        toast.error('Failed to follow', {
-          description: 'Please try again.',
-        });
+        toast.error('Failed to follow. Please try again.');
         return false;
       }
     },
@@ -266,18 +294,12 @@ export function useBusinessFollowing(): UseBusinessFollowingReturn {
           throw deleteError;
         }
 
-        toast.success('Unfollowed', {
-          description: businessName
-            ? `You unfollowed ${businessName}`
-            : 'You unfollowed this business',
-        });
+        toast.success(businessName ? `Unfollowed ${businessName}` : 'Unfollowed business');
 
         return true;
       } catch (err) {
         console.error('[BusinessFollowing] Error unfollowing:', err);
-        toast.error('Failed to unfollow', {
-          description: 'Please try again.',
-        });
+        toast.error('Failed to unfollow. Please try again.');
         return false;
       }
     },

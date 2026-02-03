@@ -10,6 +10,7 @@ import {
   OfferSortOptions,
   OfferStatus
 } from '../types/offers';
+import { followedBusinessNotificationTrigger } from '../services/followedBusinessNotificationTrigger';
 
 interface UseOffersOptions {
   businessId?: string;
@@ -174,6 +175,11 @@ export const useOffers = (options: UseOffersOptions = {}): UseOffersReturn => {
         .select()
         .single();
       if (createError) throw createError;
+
+      // Notify followers (Fire and forget)
+      if (offer) {
+        followedBusinessNotificationTrigger.notifyNewOffer(businessId, offer as Offer).catch(console.error);
+      }
 
       // Refresh the list
       await refreshOffers();

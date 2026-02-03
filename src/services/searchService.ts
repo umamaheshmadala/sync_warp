@@ -572,13 +572,23 @@ class SearchService {
   private async getBusinessActiveOffersCount(businessId: string): Promise<number> {
     try {
       const now = new Date().toISOString();
-      const { count } = await supabase
+      console.log('🔍 [SearchService] Fetching active offers for business:', businessId);
+
+      // Note: offers table uses valid_from/valid_until columns and status field
+      const { count, error } = await supabase
         .from('offers')
         .select('*', { count: 'exact', head: true })
         .eq('business_id', businessId)
-        .eq('is_active', true)
-        .lte('start_date', now)
-        .gte('end_date', now);
+        .eq('status', 'active')
+        .lte('valid_from', now)
+        .gte('valid_until', now);
+
+      if (error) {
+        console.error('❌ [SearchService] Error fetching active offers:', error);
+        throw error;
+      }
+
+      console.log('✅ [SearchService] Active offers count for', businessId, ':', count);
       return count || 0;
     } catch (error) {
       console.error('Error fetching active offers count:', error);
@@ -646,6 +656,14 @@ class SearchService {
         claim_status: business.claim_status,
         phone_verified: business.phone_verified
       };
+    }).map((result, index) => {
+      console.log('📊 [SearchService] Business result:', {
+        name: result.business_name,
+        activeCouponsCount: result.activeCouponsCount,
+        activeOffersCount: result.activeOffersCount,
+        total: (result.activeCouponsCount || 0) + (result.activeOffersCount || 0)
+      });
+      return result;
     });
   }
 

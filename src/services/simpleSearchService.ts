@@ -216,7 +216,7 @@ class SimpleSearchService {
         if (businessError) {
           console.error('❌ [simpleSearchService] Business search error:', businessError);
         } else {
-          // Use real coordinates and calculate active coupon counts
+          // Use real coordinates and calculate active coupon counts AND active offers counts
           businesses = await Promise.all((businessData || []).map(async (business) => {
             // Get active coupon count for this business
             const { count: activeCouponsCount } = await supabase
@@ -226,15 +226,27 @@ class SimpleSearchService {
               .eq('status', 'active')
               .gt('valid_until', new Date().toISOString());
 
+            // Get active offers count for this business
+            // Note: offers table uses valid_from/valid_until and status field
+            const now = new Date().toISOString();
+            const { count: activeOffersCount } = await supabase
+              .from('offers')
+              .select('id', { count: 'exact', head: true })
+              .eq('business_id', business.id)
+              .eq('status', 'active')
+              .lte('valid_from', now)
+              .gte('valid_until', now);
+
             return {
               ...business,
               // Use real coordinates from database (already included in business data)
               activeCouponsCount: activeCouponsCount || 0,
+              activeOffersCount: activeOffersCount || 0,
             };
           }));
-          console.log('\u2713 [simpleSearchService] Found businesses with real coordinates:', businesses.length);
+          console.log('✓ [simpleSearchService] Found businesses with real coordinates:', businesses.length);
           businesses.forEach(b => {
-            console.log(`   - ${b.business_name} (${b.activeCouponsCount} coupons) - Coords: ${b.latitude}, ${b.longitude}`);
+            console.log(`   - ${b.business_name} (${b.activeCouponsCount} coupons, ${b.activeOffersCount} offers) - Coords: ${b.latitude}, ${b.longitude}`);
           });
 
           // Apply location-based filtering to businesses if location is provided

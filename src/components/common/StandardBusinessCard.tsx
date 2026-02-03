@@ -3,7 +3,7 @@
 // Provides consistent UI with customizable action buttons per context
 
 import React from 'react';
-import { MapPin, Star, Ticket, ChevronRight } from 'lucide-react';
+import { MapPin, Star, Ticket, ChevronRight, Users } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { RecommendationBadge } from '../business/RecommendationBadge';
 import { BadgeTier } from '../../services/badgeService';
@@ -37,7 +37,7 @@ export interface StandardBusinessCardData {
 interface StandardBusinessCardProps {
   business: StandardBusinessCardData;
   onCardClick?: (businessId: string) => void;
-  variant?: 'default' | 'compact';
+  variant?: 'default' | 'compact' | 'search';
   showChevron?: boolean;
   showCouponCount?: boolean;
   actionButton?: React.ReactNode; // Customizable action button (e.g., FollowButton, SaveButton)
@@ -148,6 +148,89 @@ export const StandardBusinessCard: React.FC<StandardBusinessCardProps> = ({
             {showChevron && <ChevronRight className="w-4 h-4 text-gray-400" />}
           </div>
         </div>
+      </div>
+    );
+  }
+
+  // Search variant (Horizontal layout with pop-out avatar) - Matching SearchBusinessCard.tsx
+  if (variant === 'search') {
+    return (
+      <div
+        className={cn(
+          "bg-white rounded-2xl shadow-sm border border-gray-100 p-4 pl-12 flex items-center gap-4 hover:shadow-md transition-all cursor-pointer relative overflow-visible mt-4 ml-4", // ml-4 to account for avatar
+          className
+        )}
+        style={{ minHeight: '100px' }}
+        onClick={handleClick}
+      >
+        {/* Pop-out Avatar */}
+        <div className="absolute -left-8 top-1/2 -translate-y-1/2 w-20 h-20 rounded-full border-4 border-white shadow-lg bg-white overflow-hidden flex-shrink-0 z-20">
+          {business.logo_url ? (
+            <img
+              src={business.logo_url}
+              alt={businessName}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-bold text-2xl">
+              {businessName.charAt(0).toUpperCase()}
+            </div>
+          )}
+        </div>
+
+        {/* Content Section */}
+        <div className="flex-1 min-w-0 flex flex-col justify-center gap-1.5 pl-2">
+          {/* Row 1: Name + Badge */}
+          <div className="flex items-center gap-2">
+            <h3
+              className="font-bold text-gray-900 text-lg truncate leading-tight group-hover:text-indigo-600 transition-colors"
+              dangerouslySetInnerHTML={{ __html: displayName }}
+            />
+
+            {business.recommendation_badge && (
+              <RecommendationBadge
+                tier={business.recommendation_badge}
+                size="sm"
+                showLabel={false}
+              />
+            )}
+          </div>
+
+          {/* Row 2: City | Stats */}
+          <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">
+            <span className="text-gray-500 font-medium truncate max-w-[150px]">
+              {location || 'Location N/A'}
+            </span>
+
+            <div className="w-1 h-1 rounded-full bg-gray-300"></div>
+
+            {/* Active Offers */}
+            <div className="flex items-center gap-1.5" title="Active Offers">
+              <Ticket className="w-5 h-5 text-indigo-500" />
+              <span className="font-semibold">{couponCount}</span>
+            </div>
+
+            <div className="w-1 h-1 rounded-full bg-gray-300"></div>
+
+            {/* Followers */}
+            <div className="flex items-center gap-1.5" title="Followers">
+              <Users className="w-5 h-5 text-teal-500" />
+              <span className="font-semibold">
+                {business.follower_count !== undefined ? business.follower_count : 0}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Action button container - mimicking SearchBusinessCard's right section */}
+        {actionButton && (
+          <div
+            className="flex items-center gap-2 pl-4 border-l border-gray-100 self-stretch"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {actionButton}
+          </div>
+        )}
       </div>
     );
   }

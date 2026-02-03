@@ -20,6 +20,7 @@ export function AdminSidebar() {
 
     const navItems = [
         { id: 'summary', label: 'Summary', icon: LayoutDashboard, path: '/admin' },
+        { id: 'moderation', label: 'Review Moderation', icon: FileText, path: '/admin/moderation' },
         { id: 'user-driver', label: 'User & Driver Management', icon: Users, path: '/admin/users' },
         { id: 'business', label: 'Business Management', icon: Building2, path: '/admin/businesses' },
         { id: 'api', label: 'API & Infrastructure', icon: Server, path: '/admin/api' },
@@ -49,15 +50,15 @@ export function AdminSidebar() {
                             key={item.id}
                             onClick={() => navigate(item.path)}
                             className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all group text-left ${isActive
-                                    ? 'bg-indigo-50 text-indigo-700'
-                                    : 'text-gray-600 hover:bg-gray-50 hover:text-indigo-600'
+                                ? 'bg-indigo-50 text-indigo-700'
+                                : 'text-gray-600 hover:bg-gray-50 hover:text-indigo-600'
                                 }`}
                         >
                             <item.icon
                                 size={18}
                                 className={`transition-colors ${isActive
-                                        ? 'text-indigo-600'
-                                        : 'text-gray-400 group-hover:text-indigo-600'
+                                    ? 'text-indigo-600'
+                                    : 'text-gray-400 group-hover:text-indigo-600'
                                     }`}
                             />
                             {item.label}

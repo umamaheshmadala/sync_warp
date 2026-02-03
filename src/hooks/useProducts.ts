@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import { toast } from 'react-hot-toast';
 import { Product, ProductFormData, ProductFilters, PRODUCT_LIMITS } from '../types/product';
+import { followedBusinessNotificationTrigger } from '../services/followedBusinessNotificationTrigger';
 
 export const useProducts = (businessId?: string) => {
   const { user } = useAuthStore();
@@ -46,19 +47,19 @@ export const useProducts = (businessId?: string) => {
         // Apply sorting
         const sortBy = filters.sortBy || 'created_at';
         const sortOrder = filters.sortOrder || 'desc';
-        
+
         // Special sorting logic for featured products
         if (filters.featured) {
           query = query.order('display_order', { ascending: true })
-                      .order('created_at', { ascending: false });
+            .order('created_at', { ascending: false });
         } else {
           query = query.order(sortBy, { ascending: sortOrder === 'asc' });
         }
       } else {
         // Default sort: featured products first (by display_order), then by newest
         query = query.order('is_featured', { ascending: false })
-                     .order('display_order', { ascending: true })
-                     .order('created_at', { ascending: false });
+          .order('display_order', { ascending: true })
+          .order('created_at', { ascending: false });
       }
 
       const { data, error: fetchError } = await query;
@@ -134,7 +135,7 @@ export const useProducts = (businessId?: string) => {
         .eq('business_id', businessIdToUse);
 
       if (countError) throw countError;
-      
+
       if (existingProducts && existingProducts.length >= PRODUCT_LIMITS.MAX_PRODUCTS_PER_BUSINESS) {
         throw new Error(`Maximum ${PRODUCT_LIMITS.MAX_PRODUCTS_PER_BUSINESS} products allowed per business`);
       }
@@ -153,9 +154,12 @@ export const useProducts = (businessId?: string) => {
 
       if (createError) throw createError;
 
+      // Notify followers (Fire and forget)
+      followedBusinessNotificationTrigger.notifyNewProduct(businessIdToUse, data as Product).catch(console.error);
+
       // Refresh products list
       fetchProducts(businessIdToUse);
-      
+
       toast.success('Product created successfully!');
       return data;
     } catch (err) {
@@ -326,23 +330,23 @@ export const useProducts = (businessId?: string) => {
   // Load products on hook initialization with cleanup and auto-reload prevention
   useEffect(() => {
     let isCancelled = false;
-    
+
     const loadProducts = async () => {
       // Only load if:
       // 1. We have a businessId
       // 2. Request wasn't cancelled
       // 3. Either it's the first load, or businessId changed
-      if (businessId && !isCancelled && 
-          (!initialLoadComplete.current || lastBusinessId.current !== businessId)) {
-        
+      if (businessId && !isCancelled &&
+        (!initialLoadComplete.current || lastBusinessId.current !== businessId)) {
+
         lastBusinessId.current = businessId;
         await fetchProducts(businessId);
         initialLoadComplete.current = true;
       }
     };
-    
+
     loadProducts();
-    
+
     return () => {
       isCancelled = true;
     };

@@ -1708,6 +1708,12 @@ const BusinessProfile: React.FC = () => {
                               <button
                                 onClick={() => {
                                   setShowMoreDropdown(false);
+                                  // Switch to overview tab first, then enable editing
+                                  setSearchParams(prev => {
+                                    const newParams = new URLSearchParams(prev);
+                                    newParams.set('tab', 'overview');
+                                    return newParams;
+                                  });
                                   setEditing(true);
                                 }}
                                 className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"

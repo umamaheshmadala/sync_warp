@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { BusinessStatsCards } from '@/components/admin/business-management/BusinessStatsCards';
 import { BusinessFilterBar } from '@/components/admin/business-management/BusinessFilterBar';
 import { BusinessListTable } from '@/components/admin/business-management/BusinessListTable';
+import { HardDeletedBusinessTable } from '@/components/admin/business-management/HardDeletedBusinessTable';
 import { BusinessPagination } from '@/components/admin/business-management/BusinessPagination';
 import { BusinessDetailModal } from '@/components/admin/business-management/BusinessDetailModal';
 import { ApproveBusinessDialog } from '@/components/admin/business-management/ApproveBusinessDialog';
@@ -14,7 +15,7 @@ import { EditBusinessModal } from '@/components/admin/business-management/EditBu
 import { RestoreBusinessDialog } from '@/components/admin/business-management/RestoreBusinessDialog';
 import { SoftDeleteBusinessDialog } from '@/components/admin/business-management/SoftDeleteBusinessDialog';
 import { HardDeleteDialog } from '@/components/admin/business-management/HardDeleteDialog';
-import { useAdminBusinessList, useBusinessStats } from '@/hooks/useAdminBusinessList';
+import { useAdminBusinessList, useBusinessStats, useHardDeletedBusinesses } from '@/hooks/useAdminBusinessList';
 import { AdminBusinessView, deleteBusiness } from '@/services/adminBusinessService';
 import { toast } from 'react-hot-toast';
 
@@ -23,11 +24,12 @@ import { toast } from 'react-hot-toast';
 // But actually, I'll prefer implementing a simple debounce inside the component to avoid adding deps if not present.
 
 const TABS = [
+    { value: 'all', label: 'All' },
     { value: 'pending', label: 'Pending' },
     { value: 'active', label: 'Approved' },
     { value: 'rejected', label: 'Rejected' },
-    { value: 'deleted', label: 'Deleted' },
-    { value: 'all', label: 'All' },
+    { value: 'deleted', label: 'Deleted (Soft)' },
+    { value: 'hard_deleted', label: 'Deleted (Hard)' },
 ];
 
 export default function BusinessManagementPage() {
@@ -70,6 +72,16 @@ export default function BusinessManagementPage() {
         pageSize,
         sortBy,
         sortOrder,
+    });
+
+    // Hard-deleted businesses query (only fetch when on that tab)
+    const { data: hardDeletedResult, isLoading: isLoadingHardDeleted } = useHardDeletedBusinesses({
+        page,
+        pageSize,
+        search: debouncedSearch,
+        sortBy,
+        sortOrder,
+        enabled: activeTab === 'hard_deleted',
     });
 
     // Update URL when state changes
@@ -187,39 +199,61 @@ export default function BusinessManagementPage() {
                 </TabsList>
 
                 <div className="mt-6 space-y-6">
-                    {/* Filter Bar */}
-                    <BusinessFilterBar
-                        filters={filters}
-                        onFilterChange={handleFilterChange}
-                    />
+                    {/* Filter Bar - only show for non-hard-deleted tabs */}
+                    {activeTab !== 'hard_deleted' && (
+                        <BusinessFilterBar
+                            filters={filters}
+                            onFilterChange={handleFilterChange}
+                        />
+                    )}
 
-                    {/* Business Table */}
-                    <BusinessListTable
-                        businesses={listResult?.businesses || []}
-                        isLoading={isLoading}
-                        sortBy={sortBy}
-                        sortOrder={sortOrder}
-                        onSort={handleSort}
-                        onRefresh={refetch}
-                        onView={setViewBusinessId}
-                        onApprove={setApproveBusiness}
-                        onReject={setRejectBusiness}
-                        onEdit={setEditBusiness}
-                        onSoftDelete={setSoftDeleteBusiness}
-                        onRestore={setRestoreBusiness}
-                        onHardDelete={setHardDeleteBusiness}
-                    />
+                    {/* Business Table - conditionally render based on tab */}
+                    {activeTab === 'hard_deleted' ? (
+                        <HardDeletedBusinessTable
+                            businesses={hardDeletedResult?.businesses || []}
+                            isLoading={isLoadingHardDeleted}
+                        />
+                    ) : (
+                        <BusinessListTable
+                            businesses={listResult?.businesses || []}
+                            isLoading={isLoading}
+                            sortBy={sortBy}
+                            sortOrder={sortOrder}
+                            onSort={handleSort}
+                            onRefresh={refetch}
+                            onView={setViewBusinessId}
+                            onApprove={setApproveBusiness}
+                            onReject={setRejectBusiness}
+                            onEdit={setEditBusiness}
+                            onSoftDelete={setSoftDeleteBusiness}
+                            onRestore={setRestoreBusiness}
+                            onHardDelete={setHardDeleteBusiness}
+                        />
+                    )}
 
                     {/* Pagination */}
-                    {listResult && (
-                        <BusinessPagination
-                            page={page}
-                            pageSize={pageSize}
-                            totalCount={listResult.totalCount}
-                            totalPages={listResult.totalPages}
-                            onPageChange={setPage}
-                            onPageSizeChange={setPageSize}
-                        />
+                    {activeTab === 'hard_deleted' ? (
+                        hardDeletedResult && hardDeletedResult.totalCount > 0 && (
+                            <BusinessPagination
+                                page={page}
+                                pageSize={pageSize}
+                                totalCount={hardDeletedResult.totalCount}
+                                totalPages={hardDeletedResult.totalPages}
+                                onPageChange={setPage}
+                                onPageSizeChange={setPageSize}
+                            />
+                        )
+                    ) : (
+                        listResult && (
+                            <BusinessPagination
+                                page={page}
+                                pageSize={pageSize}
+                                totalCount={listResult.totalCount}
+                                totalPages={listResult.totalPages}
+                                onPageChange={setPage}
+                                onPageSizeChange={setPageSize}
+                            />
+                        )
                     )}
                 </div>
             </Tabs>

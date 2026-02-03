@@ -8,6 +8,7 @@ import { useBusinessFollowing } from '../../hooks/useBusinessFollowing';
 import { FollowButton } from './FollowButton';
 import NotificationPreferencesModal from './NotificationPreferencesModal';
 import { StandardBusinessCard, type StandardBusinessCardData } from '../common';
+import { StorefrontShareButton } from '../Sharing/StorefrontShareButton';
 import {
   Select,
   SelectContent,
@@ -49,14 +50,19 @@ const FollowingPage: React.FC = () => {
     }
 
     // Apply sorting
+    // Apply sorting
     if (sortBy === 'recent') {
       filtered.sort((a, b) => new Date(b.followed_at).getTime() - new Date(a.followed_at).getTime());
     } else if (sortBy === 'alphabetical') {
       filtered.sort((a, b) =>
         (a.business?.business_name || '').localeCompare(b.business?.business_name || '')
       );
+    } else if (sortBy === 'most_active') {
+      // Sort by number of active coupons/offers
+      filtered.sort((a, b) =>
+        (b.business?.active_coupons_count || 0) - (a.business?.active_coupons_count || 0)
+      );
     }
-    // 'most_active' would require additional data from updates
 
     return filtered;
   }, [followedBusinesses, searchQuery, sortBy]);
@@ -100,7 +106,7 @@ const FollowingPage: React.FC = () => {
             <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Search businesses..."
+              placeholder="Search followed businesses..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
@@ -155,17 +161,8 @@ const FollowingPage: React.FC = () => {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="flex flex-col gap-4 px-4">
             {filteredBusinesses.map((follow) => {
-              // Debug: Log business data to verify image URLs
-              console.log('🔍 [FollowingPage] Business data:', {
-                business_id: follow.business_id,
-                business_name: follow.business?.business_name,
-                logo_url: follow.business?.logo_url,
-                cover_image_url: follow.business?.cover_image_url,
-                has_business: !!follow.business
-              });
-
               const businessData: StandardBusinessCardData = {
                 id: follow.business_id,
                 business_name: follow.business?.business_name,
@@ -177,6 +174,7 @@ const FollowingPage: React.FC = () => {
                 logo_url: follow.business?.logo_url,
                 cover_image_url: follow.business?.cover_image_url,
                 description: follow.business?.description,
+                active_coupons_count: follow.business?.active_coupons_count
               };
 
               return (
@@ -185,8 +183,21 @@ const FollowingPage: React.FC = () => {
                   business={businessData}
                   onCardClick={(id) => navigate(getBusinessUrl(id, follow.business?.business_name || 'business'))}
                   showChevron={false}
+                  variant="search"
                   actionButton={
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2">
+                      {/* Share Button */}
+                      <StorefrontShareButton
+                        businessId={follow.business_id}
+                        businessName={follow.business?.business_name || ''}
+                        businessImageUrl={follow.business?.logo_url}
+                        showLabel={false}
+                        showIcon={true}
+                        showModal={true}
+                        className="p-2.5 w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-700 border-none shadow-none"
+                        variant="ghost"
+                      />
+
                       {/* Settings/Notification Preferences Button */}
                       <button
                         onClick={(e) => {
@@ -196,10 +207,10 @@ const FollowingPage: React.FC = () => {
                             name: follow.business?.business_name || 'Business'
                           });
                         }}
-                        className="h-8 w-8 rounded-full bg-white/90 p-0 shadow-md backdrop-blur hover:bg-indigo-50 flex items-center justify-center transition-colors"
+                        className="p-2.5 w-10 h-10 rounded-full bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-800 border-none shadow-none flex items-center justify-center transition-colors"
                         title="Notification preferences"
                       >
-                        <Settings className="h-4 w-4 text-gray-600 hover:text-indigo-600" />
+                        <Settings className="w-5 h-5" />
                       </button>
 
                       {/* Follow Button */}
@@ -209,7 +220,10 @@ const FollowingPage: React.FC = () => {
                         variant="ghost"
                         size="sm"
                         showLabel={false}
-                        className="h-8 w-8 rounded-full bg-white/90 p-0 shadow-md backdrop-blur hover:bg-green-50"
+                        className={cn(
+                          "p-2.5 w-10 h-10 rounded-full border-none shadow-none transition-colors",
+                          "bg-green-100 text-green-700 hover:bg-green-200 hover:text-green-800"
+                        )}
                       />
                     </div>
                   }

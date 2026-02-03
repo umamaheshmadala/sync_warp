@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getBusinessList, getBusinessStats, getFilterOptions, BusinessListParams } from '@/services/adminBusinessService';
+import { getBusinessList, getBusinessStats, getFilterOptions, getHardDeletedBusinesses, BusinessListParams } from '@/services/adminBusinessService';
 
 export function useAdminBusinessList(params: BusinessListParams) {
     return useQuery({
@@ -23,5 +23,22 @@ export function useFilterOptions() {
         queryKey: ['admin-business-filter-options'],
         queryFn: getFilterOptions,
         staleTime: 300000, // 5 minutes
+    });
+}
+
+export function useHardDeletedBusinesses(params: {
+    page: number;
+    pageSize: number;
+    search?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+    enabled?: boolean;
+}) {
+    const { enabled = true, ...queryParams } = params;
+    return useQuery({
+        queryKey: ['admin-hard-deleted-businesses', queryParams],
+        queryFn: () => getHardDeletedBusinesses(queryParams),
+        staleTime: 30000,
+        enabled,
     });
 }

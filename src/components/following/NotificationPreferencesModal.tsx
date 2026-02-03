@@ -2,7 +2,8 @@
 // Modal for users to customize notification preferences for a followed business
 
 import React, { useState, useEffect } from 'react';
-import { X, Bell, Mail, Smartphone, MessageSquare } from 'lucide-react';
+import { X, Bell, Mail, Smartphone, MessageSquare, Check, Loader2 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useBusinessFollowing, NotificationPreferences } from '../../hooks/useBusinessFollowing';
 import { cn } from '../../lib/utils';
@@ -26,7 +27,7 @@ const NotificationPreferencesModal: React.FC<NotificationPreferencesModalProps> 
 }) => {
   const { updateNotificationPreferences } = useBusinessFollowing();
   const [saving, setSaving] = useState(false);
-  
+
   // Local state for preferences
   const [preferences, setPreferences] = useState<NotificationPreferences>({
     new_products: true,
@@ -42,10 +43,17 @@ const NotificationPreferencesModal: React.FC<NotificationPreferencesModalProps> 
     if (currentPreferences) {
       setPreferences(currentPreferences);
     }
-    if (currentChannel) {
-      setChannel(currentChannel);
-    }
+    setChannel(currentChannel);
   }, [currentPreferences, currentChannel]);
+
+  // Platform check
+  const [isAndroid, setIsAndroid] = useState(false);
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Capacitor' in window) {
+      const platform = (window as any).Capacitor?.getPlatform();
+      setIsAndroid(platform === 'android');
+    }
+  }, []);
 
   // Handle preference toggle
   const togglePreference = (key: keyof NotificationPreferences) => {
@@ -216,52 +224,91 @@ const NotificationPreferencesModal: React.FC<NotificationPreferencesModalProps> 
               {/* How to be notified section */}
               <div>
                 <h3 className="text-base font-medium text-gray-900 mb-4">How do you want to be notified?</h3>
-                <div className="space-y-2">
-                  {/* In-app */}
-                  <label className="flex items-center p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
-                    <input
-                      type="radio"
-                      name="channel"
-                      checked={channel === 'in_app'}
-                      onChange={() => setChannel('in_app')}
-                      className="h-4 w-4 text-indigo-600 focus:ring-2 focus:ring-indigo-500"
-                    />
-                    <div className="ml-3 flex items-center space-x-2">
-                      <Bell className="h-5 w-5 text-gray-500" />
-                      <span className="font-medium text-gray-900">In-app only</span>
-                      <span className="text-sm text-gray-500">(Default)</span>
+                <div className="grid grid-cols-1 gap-3">
+                  <button
+                    onClick={() => setChannel('in_app')}
+                    className={cn(
+                      "relative flex items-center p-3 rounded-lg border-2 transition-all w-full",
+                      channel === 'in_app'
+                        ? "border-indigo-600 bg-indigo-50"
+                        : "border-gray-200 hover:border-gray-300 bg-white"
+                    )}
+                  >
+                    <div className={cn(
+                      "h-5 w-5 rounded-full border flex items-center justify-center mr-3 flex-shrink-0",
+                      channel === 'in_app' ? "border-indigo-600 bg-indigo-600" : "border-gray-300"
+                    )}>
+                      {channel === 'in_app' && <Check className="h-3 w-3 text-white" />}
                     </div>
-                  </label>
+                    <div className="flex-1 text-left">
+                      <span className={cn("block text-sm font-medium", channel === 'in_app' ? "text-indigo-900" : "text-gray-900")}>
+                        In-app only
+                      </span>
+                      <span className="block text-xs text-gray-500">
+                        Receive notifications in the Notification Center
+                      </span>
+                    </div>
+                    <Bell className={cn("h-5 w-5", channel === 'in_app' ? "text-indigo-600" : "text-gray-400")} />
+                  </button>
 
-                  {/* Push - Coming soon */}
-                  <label className="flex items-center p-3 rounded-lg bg-gray-50 cursor-not-allowed opacity-60">
-                    <input
-                      type="radio"
-                      name="channel"
-                      disabled
-                      className="h-4 w-4 text-gray-400"
-                    />
-                    <div className="ml-3 flex items-center space-x-2">
-                      <Smartphone className="h-5 w-5 text-gray-400" />
-                      <span className="font-medium text-gray-500">Push notifications</span>
-                      <span className="text-sm text-gray-400">(Coming soon)</span>
-                    </div>
-                  </label>
+                  <button
+                    onClick={() => {
+                      // Check if platform supports push
+                      const isNative = typeof window !== 'undefined' && 'Capacitor' in window && (window as any).Capacitor?.isNative;
+                      const isAndroid = typeof window !== 'undefined' && 'Capacitor' in window && (window as any).Capacitor?.getPlatform() === 'android';
 
-                  {/* Email - Coming soon */}
-                  <label className="flex items-center p-3 rounded-lg bg-gray-50 cursor-not-allowed opacity-60">
-                    <input
-                      type="radio"
-                      name="channel"
-                      disabled
-                      className="h-4 w-4 text-gray-400"
-                    />
-                    <div className="ml-3 flex items-center space-x-2">
-                      <Mail className="h-5 w-5 text-gray-400" />
-                      <span className="font-medium text-gray-500">Email</span>
-                      <span className="text-sm text-gray-400">(Coming soon)</span>
+                      if (isNative && isAndroid) {
+                        setChannel('push');
+                      } else if (!isNative) {
+                        // Web Fallback / iOS Warning
+                        toast.error("Push notifications are currently only available on Android app", {
+                          id: 'push-platform-warning'
+                        });
+                      } else {
+                        // allow but warn? or just allow if native
+                        setChannel('push');
+                      }
+                    }}
+                    className={cn(
+                      "relative flex items-center p-3 rounded-lg border-2 transition-all w-full",
+                      channel === 'push'
+                        ? "border-indigo-600 bg-indigo-50"
+                        : "border-gray-200 hover:border-gray-300 bg-white"
+                    )}
+                  >
+                    <div className={cn(
+                      "h-5 w-5 rounded-full border flex items-center justify-center mr-3 flex-shrink-0",
+                      channel === 'push' ? "border-indigo-600 bg-indigo-600" : "border-gray-300"
+                    )}>
+                      {channel === 'push' && <Check className="h-3 w-3 text-white" />}
                     </div>
-                  </label>
+                    <div className="flex-1 text-left">
+                      <span className={cn("block text-sm font-medium", channel === 'push' ? "text-indigo-900" : "text-gray-900")}>
+                        Push notifications {!isAndroid && <span className="text-xs font-normal text-gray-500 ml-1">(Coming soon to iOS/Web)</span>}
+                      </span>
+                      <span className="block text-xs text-gray-500">
+                        Get notified instantly on your device
+                      </span>
+                    </div>
+                    <Smartphone className={cn("h-5 w-5", channel === 'push' ? "text-indigo-600" : "text-gray-400")} />
+                  </button>
+
+                  {/* Email Placeholder - Disabled */}
+                  <button
+                    disabled
+                    className="relative flex items-center p-3 rounded-lg border-2 border-gray-100 bg-gray-50 opacity-60 w-full cursor-not-allowed"
+                  >
+                    <div className="h-5 w-5 rounded-full border border-gray-300 mr-3 flex-shrink-0" />
+                    <div className="flex-1 text-left">
+                      <span className="block text-sm font-medium text-gray-500">
+                        Email
+                      </span>
+                      <span className="block text-xs text-gray-400">
+                        (Coming soon)
+                      </span>
+                    </div>
+                    <Mail className="h-5 w-5 text-gray-400" />
+                  </button>
                 </div>
               </div>
 

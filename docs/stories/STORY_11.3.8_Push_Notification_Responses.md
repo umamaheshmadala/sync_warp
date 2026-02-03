@@ -4,7 +4,7 @@
 **Priority:** 🟡 P1 - MEDIUM  
 **Effort:** 1 day  
 **Dependencies:** Existing push notification infrastructure (EPIC 7.4)  
-**Status:** ✅ Complete
+**Status:** 🔄 In Progress (75% Complete)
 
 
 ---
@@ -461,15 +461,69 @@ Once acceptance criteria are verified, execute this testing flow:
 
 ---
 
+## Known Issues & Current Status (Updated: 2026-02-02)
+
+### ⚠️ Investigation Findings
+
+During debugging on 2026-02-02, the following issues were identified:
+
+#### 1. Business Owner Not Receiving "New Review" Notifications
+**Root Cause:** Reviews go through moderation before being visible. The `notifyMerchantNewReview()` function is only called **after admin approval** in `moderationService.ts:approveReview()` (line 204), not on initial review submission.
+
+**Current Flow:**
+1. User submits review → `reviewService.ts:createReview()`
+2. Review created with `moderation_status: 'pending'`
+3. **No notification to business owner at this point**
+4. Admin approves review → `moderationService.ts:approveReview()`
+5. **Now** `notifyMerchantNewReview()` is called → creates in-app notification + triggers push
+
+**Exception:** Reviews with NO text AND NO photos are auto-approved and should trigger immediate notification.
+
+#### 2. Review Response Notifications (User → Business Response)
+**Status:** Partially working
+- DB Trigger `notify_review_response` exists and inserts into `notification_log`
+- Push notification delegated to `send-response-notification` Edge Function
+- In-app notification creation in `notifyUserReviewResponse()` is **commented out** (delegated to DB trigger)
+
+#### 3. Missing `sender_id` in Some Notifications
+Some notifications may not display the sender avatar correctly if `sender_id` is not populated in the notification data.
+
+### 📊 Component Status
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| DB Trigger `notify_review_response` | ✅ Deployed | Migration `20260124_notify_review_response.sql` |
+| Edge Function `send-push-notification` | ✅ Deployed | FCM V1 API, Android only |
+| Edge Function `send-response-notification` | ✅ Deployed | Webhook-triggered |
+| `notifyMerchantNewReview()` | ⚠️ Works | Only after admin approval |
+| `notifyUserReviewResponse()` | ⚠️ Partial | In-app via DB trigger, push via webhook |
+| iOS Push Notifications | ❌ Not Implemented | Deferred per EPIC 7.4 |
+| Manual Testing | ❌ Incomplete | Needs end-to-end verification |
+
+### 🔧 Recommended Fixes
+
+1. **Clarify Expected Behavior:** Confirm with product whether business owners should receive notification:
+   - On review submission (before moderation), OR
+   - Only after review is approved (current behavior)
+
+2. **End-to-End Testing Required:**
+   - Submit review as testuser4 → Approve as admin → Verify testuser1 receives notification
+   - As testuser1 respond to review → Verify testuser4 receives notification
+
+3. **Verify Database Webhook Configuration:**
+   - Ensure webhook is configured in Supabase Dashboard for `business_review_responses` INSERT events
+
+---
+
 ## Definition of Done
 
-- [ ] Push notification sent on response
-- [ ] Notification shows business name and preview
-- [ ] Tap opens specific review
-- [ ] In-app notification as fallback
-- [ ] Preference toggle working
-- [ ] Works on both platforms
-- [ ] All tests passing
+- [x] Push notification sent on response (via DB webhook → Edge Function)
+- [x] Notification shows business name and preview
+- [x] Tap opens specific review (NotificationRouter handles `review_response` type)
+- [x] In-app notification as fallback (via DB trigger)
+- [x] Preference toggle working (`review_responses` in preferences)
+- [ ] Works on both platforms (Android only, iOS deferred)
+- [ ] All tests passing (manual testing incomplete)
 - [ ] Code reviewed and approved
 
 ---

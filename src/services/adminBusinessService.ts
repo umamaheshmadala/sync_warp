@@ -731,3 +731,111 @@ export async function getAllAdmins() {
 
     return profiles || [];
 }
+
+// Function to get hard-deleted businesses from audit logs
+export interface HardDeletedBusiness {
+    id: string;
+    business_name: string;
+    business_email: string | null;
+    business_phone: string | null;
+    city: string;
+    business_type: string;
+    owner_name: string;
+    owner_email: string;
+    deleted_at: string;
+    deleted_by: string;
+    reason: string;
+}
+
+export interface HardDeletedBusinessListResult {
+    businesses: HardDeletedBusiness[];
+    totalCount: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+}
+
+export async function getHardDeletedBusinesses(params: {
+    page: number;
+    pageSize: number;
+    search?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+}): Promise<HardDeletedBusinessListResult> {
+    const { page, pageSize, search, sortBy = 'created_at', sortOrder = 'desc' } = params;
+
+    // Query audit logs for hard_delete actions
+    let query = supabase
+        .from('admin_business_actions')
+        .select('id, business_id, admin_id, reason, changes_json, created_at', { count: 'exact' })
+        .eq('action', 'hard_delete')
+        .order(sortBy === 'created_at' ? 'created_at' : 'created_at', { ascending: sortOrder === 'asc' });
+
+    // Pagination
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+    query = query.range(from, to);
+
+    const { data: logsData, count, error } = await query;
+
+    if (error) throw error;
+    if (!logsData || logsData.length === 0) {
+        return {
+            businesses: [],
+            totalCount: 0,
+            page,
+            pageSize,
+            totalPages: 0
+        };
+    }
+
+    // Get admin names for the deletions
+    const adminIds = [...new Set(logsData.map(l => l.admin_id).filter(Boolean))];
+    let adminsMap: Record<string, string> = {};
+    if (adminIds.length > 0) {
+        const { data: admins } = await supabase
+            .from('profiles')
+            .select('id, full_name')
+            .in('id', adminIds);
+        admins?.forEach(a => {
+            adminsMap[a.id] = a.full_name;
+        });
+    }
+
+    // Transform audit logs to business-like objects
+    let businesses: HardDeletedBusiness[] = logsData.map(log => {
+        const snapshot = log.changes_json?.snapshot || {};
+        return {
+            id: log.business_id,
+            business_name: snapshot.business_name || 'Unknown',
+            business_email: snapshot.email || null,
+            business_phone: snapshot.phone || null,
+            city: snapshot.city || '',
+            business_type: snapshot.type || '',
+            owner_name: snapshot.owner_name || '',
+            owner_email: snapshot.owner_email || '',
+            deleted_at: log.created_at,
+            deleted_by: adminsMap[log.admin_id] || 'Unknown',
+            reason: log.reason || ''
+        };
+    });
+
+    // Apply search filter client-side (since data is from snapshots)
+    if (search) {
+        const searchLower = search.toLowerCase();
+        businesses = businesses.filter(b =>
+            b.business_name.toLowerCase().includes(searchLower) ||
+            (b.business_email && b.business_email.toLowerCase().includes(searchLower)) ||
+            (b.city && b.city.toLowerCase().includes(searchLower)) ||
+            (b.owner_name && b.owner_name.toLowerCase().includes(searchLower))
+        );
+    }
+
+    return {
+        businesses,
+        totalCount: count || 0,
+        page,
+        pageSize,
+        totalPages: Math.ceil((count || 0) / pageSize)
+    };
+}
