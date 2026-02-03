@@ -92,6 +92,12 @@ export const StandardBusinessCard: React.FC<StandardBusinessCardProps> = ({
 
   // Handle card click
   const handleClick = () => {
+    // Prevent navigation if user is selecting text
+    const selection = window.getSelection();
+    if (selection && selection.toString().length > 0) {
+      return;
+    }
+
     if (onCardClick) {
       onCardClick(business.id);
     }

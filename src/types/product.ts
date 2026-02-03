@@ -1,26 +1,40 @@
 // Product-related TypeScript interfaces
-// Following the database schema from business_products table
+// Following the database schema from products table (formerly business_products)
 
 export interface Product {
   id: string;
   business_id: string;
   name: string;
   description?: string;
-  category?: string;
+  category?: string; // Legacy?
   price?: number;
   currency: string;
-  is_available: boolean;
-  is_featured: boolean; // Featured products show in storefront
-  display_order: number; // Only used for trending products
-  image_urls: string[];
-  image_url?: string; // Legacy/DB support
-  last_updated_at?: string; // For auto-deletion tracking
+  is_available: boolean; // Legacy? Mapped to status
+  is_featured: boolean; // Legacy? Mapped to tags
+  display_order: number;
+
+  // New Epic 12 fields
+  images?: any[]; // Allow object array from JSONB or strings
+  tags?: string[];
+  status?: string; // 'published', 'draft', 'sold_out', etc.
+  like_count?: number;
+  comment_count?: number;
+  share_count?: number;
+
+  image_urls: string[]; // Legacy
+  image_url?: string; // Legacy
+  last_updated_at?: string;
   created_at: string;
   updated_at: string;
   business?: {
     name: string;
     slug?: string;
   };
+  businesses?: {
+    business_name: string;
+    slug?: string;
+    logo_url?: string;
+  } | { business_name: string; slug?: string }[]; // Handle array or single depending on query
 }
 
 export interface ProductFormData {
@@ -33,6 +47,8 @@ export interface ProductFormData {
   is_featured: boolean; // Featured products show in storefront
   display_order: number; // Only used for trending products
   image_urls?: string[];
+  status?: string;
+  tags?: string[];
 }
 
 export interface ProductCategory {

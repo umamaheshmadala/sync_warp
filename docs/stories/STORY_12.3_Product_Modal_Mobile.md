@@ -1,7 +1,7 @@
 # Story 12.3: Product Modal Redesign (Mobile)
 
 **EPIC**: [EPIC 12 - Instagram-Style Products](../epics/EPIC_12_Instagram_Style_Products.md)  
-**Status**: 📋 Ready for Development  
+**Status**: 🧪 User Testing In Progress  
 **Priority**: P0  
 **Estimate**: 8 points  
 

@@ -173,26 +173,25 @@ export const dashboardService = {
   async getTrendingProducts(limit = 6): Promise<TrendingProduct[]> {
     try {
       const { data, error } = await supabase
-        .from('business_products')
+        .from('products')
         .select(`
           id,
           name,
           price,
           category,
-          is_trending,
-          image_urls,
+          like_count, 
+          share_count,
+          images,
           business_id,
           businesses!inner(name)
         `)
-        .eq('is_available', true)
+        .eq('status', 'published')
         // Trending logic: 
-        // 1. Most Favorited (favorite_count) - strong signal
+        // 1. Most Liked (like_count) - strong signal
         // 2. Most Shared (share_count) - viral signal
-        // 3. System marked 'is_trending'
-        // 4. Freshness
-        .order('favorite_count', { ascending: false })
+        // 3. Freshness
+        .order('like_count', { ascending: false })
         .order('share_count', { ascending: false })
-        .order('is_trending', { ascending: false })
         .order('created_at', { ascending: false })
         .limit(limit);
 
@@ -213,20 +212,27 @@ export const dashboardService = {
         }
 
         // Use first image if available
-        const imageUrl = product.image_urls && Array.isArray(product.image_urls) && product.image_urls.length > 0
-          ? product.image_urls[0]
-          : null;
+        let imageUrl = null;
+        let imageCount = 0;
+
+        if (product.images && Array.isArray(product.images)) {
+          imageCount = product.images.length;
+          if (imageCount > 0) {
+            const firstImg = product.images[0];
+            imageUrl = typeof firstImg === 'string' ? firstImg : firstImg.url;
+          }
+        }
 
         return {
           id: product.id,
           name: product.name,
           business: businessName,
-          businessId: product.business_id, // Ensure this field is selected in query
+          businessId: product.business_id,
           price: `₹${Number(product.price).toFixed(0)}`,
           category: product.category || 'General',
-          isTrending: product.is_trending || false,
+          isTrending: (product.like_count > 10 || product.share_count > 5),
           imageUrl: imageUrl,
-          imageCount: product.image_urls?.length || 0
+          imageCount: imageCount
         };
       });
     } catch (error: any) {

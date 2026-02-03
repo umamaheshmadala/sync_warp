@@ -32,7 +32,7 @@ export default function WishlistPage() {
     const handleWishlistUpdate = () => {
       loadWishlistProducts();
     };
-    
+
     window.addEventListener('wishlistUpdated', handleWishlistUpdate);
     return () => window.removeEventListener('wishlistUpdated', handleWishlistUpdate);
   }, []);
@@ -40,7 +40,7 @@ export default function WishlistPage() {
   const loadWishlistProducts = async () => {
     try {
       setLoading(true);
-      
+
       // Get wishlist product IDs from localStorage
       const stored = localStorage.getItem(`wishlist_${user?.id}`);
       if (!stored) {
@@ -50,7 +50,7 @@ export default function WishlistPage() {
       }
 
       const wishlistIds: string[] = JSON.parse(stored);
-      
+
       if (wishlistIds.length === 0) {
         setProducts([]);
         setLoading(false);
@@ -59,13 +59,28 @@ export default function WishlistPage() {
 
       // Fetch products from database
       const { data, error } = await supabase
-        .from('business_products')
+        .from('products')
         .select('*')
         .in('id', wishlistIds);
 
       if (error) throw error;
 
-      setProducts(data || []);
+      // Transform products to match interface (map images -> image_urls)
+      const transformedProducts = (data || []).map(p => {
+        let imageUrls: string[] = [];
+        if (p.images && Array.isArray(p.images)) {
+          imageUrls = p.images.map((img: any) =>
+            typeof img === 'string' ? img : img.url
+          ).filter(Boolean);
+        }
+        return {
+          ...p,
+          image_urls: imageUrls,
+          is_available: p.status === 'published'
+        };
+      });
+
+      setProducts(transformedProducts as unknown as Product[]);
     } catch (error) {
       console.error('Failed to load wishlist:', error);
     } finally {

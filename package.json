@@ -84,6 +84,7 @@
     "@capacitor/splash-screen": "^7.0.4",
     "@capacitor/status-bar": "^8.0.0",
     "@capacitor/text-zoom": "^7.0.3",
+    "@capawesome/capacitor-file-picker": "^8.0.1",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",

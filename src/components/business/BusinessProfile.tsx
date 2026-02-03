@@ -38,6 +38,7 @@ import { Geolocation } from '@capacitor/geolocation';
 import { useAuthStore } from '../../store/authStore';
 import { toast } from 'react-hot-toast';
 import FeaturedProducts from './FeaturedProducts';
+import { BusinessProductsTab } from '../products/grid/BusinessProductsTab';
 import FeaturedOffers from './FeaturedOffers';
 import GoogleMapsLocationPicker from '../maps/GoogleMapsLocationPicker';
 import BusinessReviews from '../reviews/BusinessReviews';
@@ -1935,14 +1936,10 @@ const BusinessProfile: React.FC = () => {
               >
                 {activeTab === 'overview' && renderOverview()}
                 {activeTab === 'products' && (
-                  <div className="space-y-6">
-                    <FeaturedProducts
-                      businessId={business?.id!}
-                      businessName={business?.business_name!}
-                      isOwner={isOwner}
-                      viewMode="full"
-                    />
-                  </div>
+                  <BusinessProductsTab
+                    businessId={business?.id!}
+                    isOwner={isOwner}
+                  />
                 )}
                 {activeTab === 'offers' && (
                   <div className="space-y-6">

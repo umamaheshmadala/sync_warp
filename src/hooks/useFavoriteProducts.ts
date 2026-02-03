@@ -61,16 +61,16 @@ export function useFavoriteProducts() {
       // Get product details
       const productIds = favoriteData.map(f => f.entity_id);
       const { data, error: productsError } = await supabase
-        .from('business_products')
+        .from('products')
         .select(`
           id,
           name,
           description,
           price,
           currency,
-          image_urls,
+          images,
           category,
-          is_available,
+          status,
           business_id,
           businesses (
             business_name
@@ -87,19 +87,29 @@ export function useFavoriteProducts() {
 
       // Transform data to flat structure and sort by favorited_at
       const transformedProducts: FavoriteProduct[] = (data || [])
-        .map(product => ({
-          id: product.id,
-          name: product.name,
-          description: product.description,
-          price: product.price,
-          currency: product.currency || 'INR',
-          image_urls: product.image_urls || [],
-          category: product.category,
-          is_available: product.is_available ?? true,
-          business_id: product.business_id,
-          business_name: product.businesses?.business_name || 'Unknown Business',
-          favorited_at: favoritedAtMap.get(product.id) || new Date().toISOString(),
-        }))
+        .map(product => {
+          // Extract image URLs form images JSONB
+          let imageUrls: string[] = [];
+          if (product.images && Array.isArray(product.images)) {
+            imageUrls = product.images.map((img: any) =>
+              typeof img === 'string' ? img : img.url
+            ).filter(Boolean);
+          }
+
+          return {
+            id: product.id,
+            name: product.name,
+            description: product.description,
+            price: product.price,
+            currency: product.currency || 'INR',
+            image_urls: imageUrls,
+            category: product.category,
+            is_available: product.status === 'published',
+            business_id: product.business_id,
+            business_name: Array.isArray(product.businesses) ? product.businesses[0]?.business_name : (product.businesses as any)?.business_name || 'Unknown Business',
+            favorited_at: favoritedAtMap.get(product.id) || new Date().toISOString(),
+          };
+        })
         .sort((a, b) => new Date(b.favorited_at).getTime() - new Date(a.favorited_at).getTime());
 
       return transformedProducts;

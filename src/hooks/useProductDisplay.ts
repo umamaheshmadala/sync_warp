@@ -41,10 +41,10 @@ export function useProductDisplay({
         // 2. created_at DESC (newest)
         // 3. LIMIT specified
         const { data, error: fetchError, count } = await supabase
-          .from('business_products')
+          .from('products')
           .select('*', { count: 'exact' })
           .eq('business_id', businessId)
-          .eq('is_available', true) // Only show available products to customers
+          .eq('status', 'published')
           .order('is_featured', { ascending: false })
           .order('created_at', { ascending: false })
           .limit(limit);
@@ -52,7 +52,21 @@ export function useProductDisplay({
         if (fetchError) throw fetchError;
 
         if (!isCancelled) {
-          setProducts(data || []);
+          const mappedData = (data || []).map(p => {
+            // Extract image URLs form images JSONB
+            let imageUrls: string[] = [];
+            if (p.images && Array.isArray(p.images)) {
+              imageUrls = p.images.map((img: any) =>
+                typeof img === 'string' ? img : img.url
+              ).filter(Boolean);
+            }
+            return {
+              ...p,
+              image_urls: imageUrls,
+              is_available: p.status === 'published'
+            }
+          });
+          setProducts(mappedData as unknown as Product[]);
           setHasMore((count || 0) > limit);
         }
       } catch (err: any) {
