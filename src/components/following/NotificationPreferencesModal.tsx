@@ -170,54 +170,6 @@ const NotificationPreferencesModal: React.FC<NotificationPreferencesModalProps> 
                       className="h-5 w-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500"
                     />
                   </label>
-
-                  {/* New Coupons */}
-                  <label className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
-                    <div className="flex items-center space-x-3">
-                      <div className="flex-shrink-0">
-                        <div className={cn(
-                          "w-10 h-10 rounded-full flex items-center justify-center",
-                          preferences.new_coupons ? "bg-yellow-100" : "bg-gray-100"
-                        )}>
-                          <span className="text-xl">🎫</span>
-                        </div>
-                      </div>
-                      <div>
-                        <div className="font-medium text-gray-900">New Coupons</div>
-                        <div className="text-sm text-gray-500">Redeemable coupons and vouchers</div>
-                      </div>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={preferences.new_coupons}
-                      onChange={() => togglePreference('new_coupons')}
-                      className="h-5 w-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500"
-                    />
-                  </label>
-
-                  {/* Announcements */}
-                  <label className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
-                    <div className="flex items-center space-x-3">
-                      <div className="flex-shrink-0">
-                        <div className={cn(
-                          "w-10 h-10 rounded-full flex items-center justify-center",
-                          preferences.announcements ? "bg-purple-100" : "bg-gray-100"
-                        )}>
-                          <span className="text-xl">📢</span>
-                        </div>
-                      </div>
-                      <div>
-                        <div className="font-medium text-gray-900">Important Announcements</div>
-                        <div className="text-sm text-gray-500">Updates and news from the business</div>
-                      </div>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={preferences.announcements}
-                      onChange={() => togglePreference('announcements')}
-                      className="h-5 w-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500"
-                    />
-                  </label>
                 </div>
               </div>
 

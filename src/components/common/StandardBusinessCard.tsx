@@ -15,6 +15,7 @@ export interface StandardBusinessCardData {
   business_type?: string;
   category?: string; // Alternative category field
   address?: string;
+  local_area?: string; // Added for precise filtering
   city?: string;
   state?: string;
   rating?: number;
@@ -53,20 +54,21 @@ export const StandardBusinessCard: React.FC<StandardBusinessCardProps> = ({
   actionButton,
   className,
 }) => {
-  // Debug: Log incoming business data
-  console.log('🎴 [StandardBusinessCard] Rendering with data:', {
-    business_id: business.id,
-    business_name: business.business_name || business.name,
-    logo_url: business.logo_url,
-    cover_image_url: business.cover_image_url,
-    has_logo: !!business.logo_url,
-    has_cover: !!business.cover_image_url
-  });
-
   // Normalize field names
   const businessName = business.business_name || business.name || 'Unknown Business';
   const businessType = business.business_type || business.category || '';
-  const location = business.address || (business.city && business.state ? `${business.city}, ${business.state}` : business.city || '');
+
+  // Custom Address Logic: Prefer "Local Area, City" format
+  let displayLocation = '';
+  if (business.local_area && business.city) {
+    displayLocation = `${business.local_area}, ${business.city}`;
+  } else if (business.city) {
+    displayLocation = business.city;
+  } else {
+    // Fallback: Use standard address but try to keep it short if it looks like a full address
+    displayLocation = business.address || 'Location N/A';
+  }
+
   const couponCount = business.activeCouponsCount ?? business.active_coupons_count ?? 0;
   const displayName = business.highlightedName || businessName;
 
@@ -197,24 +199,29 @@ export const StandardBusinessCard: React.FC<StandardBusinessCardProps> = ({
           </div>
 
           {/* Row 2: City | Stats */}
-          <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">
-            <span className="text-gray-500 font-medium truncate max-w-[150px]">
-              {location || 'Location N/A'}
-            </span>
+          {/* Using grid or fixed widths to alignment if needed, but flex gap usually sufficient if consistent data */}
+          <div className="flex items-center text-sm text-gray-600 gap-4">
+            {/* Address Section - Fixed width or max width to prevent shifting */}
+            <div className="flex items-center gap-1.5 text-gray-400 min-w-0 max-w-[180px]">
+              {/* Dot separator not needed if just text color diff */}
+              <span className="truncate font-medium" title={displayLocation}>
+                {displayLocation}
+              </span>
+            </div>
 
-            <div className="w-1 h-1 rounded-full bg-gray-300"></div>
+            <div className="w-1 h-1 rounded-full bg-gray-300 flex-shrink-0"></div>
 
-            {/* Active Offers */}
-            <div className="flex items-center gap-1.5" title="Active Offers">
-              <Ticket className="w-5 h-5 text-indigo-500" />
+            {/* Active Offers - Fixed min width ensures alignment */}
+            <div className="flex items-center gap-1.5 min-w-[60px]" title="Active Offers">
+              <Ticket className="w-5 h-5 text-indigo-500 flex-shrink-0" />
               <span className="font-semibold">{couponCount}</span>
             </div>
 
-            <div className="w-1 h-1 rounded-full bg-gray-300"></div>
+            <div className="w-1 h-1 rounded-full bg-gray-300 flex-shrink-0"></div>
 
             {/* Followers */}
             <div className="flex items-center gap-1.5" title="Followers">
-              <Users className="w-5 h-5 text-teal-500" />
+              <Users className="w-5 h-5 text-teal-500 flex-shrink-0" />
               <span className="font-semibold">
                 {business.follower_count !== undefined ? business.follower_count : 0}
               </span>
@@ -341,10 +348,10 @@ export const StandardBusinessCard: React.FC<StandardBusinessCardProps> = ({
         </div>
 
         {/* Location */}
-        {location && (
+        {displayLocation && (
           <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-3">
             <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
-            <span className="truncate">{location}</span>
+            <span className="truncate">{displayLocation}</span>
           </div>
         )}
 

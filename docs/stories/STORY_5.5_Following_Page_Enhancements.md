@@ -2,8 +2,8 @@
 
 **Epic**: [EPIC 5 - Social Features](../epics/EPIC_5_Social_Features.md)  
 **Priority**: High  
-**Status**: ✅ Complete  
-**Estimated Effort**: 3-4 days  
+**Status**: 🚧 In Progress  
+**Estimated Effort**: 4-5 days  
 **Sprint**: TBD  
 
 ---
@@ -291,6 +291,42 @@ export async function notifyFollowersOfNewProduct(businessId: string, productNam
 | AC-7.7 | Sort by "Most Active" MUST order by businesses with most recent updates | Functional test |
 | AC-7.8 | Page title MUST show count: "Following (N)" where N = number of followed businesses | Visual inspection |
 | AC-7.9 | Page MUST update in **real-time** when user unfollows from the card | Functional test |
+
+---
+
+### US-5.5.8: Clean Address & Layout Consistency
+
+**As a** user viewing the following list  
+**I want** to see a consistent address format (Local Area, City) on all business cards  
+**So that** the interface looks professional and easy to read
+
+#### Acceptance Criteria
+
+| ID | Criteria | Verification |
+|----|----------|--------------|
+| AC-8.1 | The business card address MUST **strictly follow** the format: `Local Area, City` (e.g., "Labbipet, Vijayawada") | Visual inspection |
+| AC-8.2 | The card MUST NOT display door numbers, street lines, or zip codes in the short address view | Visual inspection |
+| AC-8.3 | If `local_area` is missing, only `city` MUST be shown | Functional test |
+| AC-8.4 | The **Offers** and **Followers** icons/counts MUST act as a fixed anchor and **maintain alignment** across all cards | Visual inspection |
+| AC-8.5 | Long addresses MUST be **truncated** with ellipses (...) to prevent layout shifting of action buttons or counts | Visual inspection |
+| AC-8.6 | The text color for the address should be consistent (muted gray) | Visual inspection |
+
+---
+
+### US-5.5.9: Simplified Notification Preferences
+
+**As a** user setting notification preferences  
+**I want** to only see options for features that are currently supported  
+**So that** I am not confused by options that don't work
+
+#### Acceptance Criteria
+
+| ID | Criteria | Verification |
+|----|----------|--------------|
+| AC-9.1 | The Notification Preferences modal MUST **remove** the "New Coupons" option | Visual inspection |
+| AC-9.2 | The Notification Preferences modal MUST **remove** the "Important Announcements" option | Visual inspection |
+| AC-9.3 | Only "New Products" and "New Offers & Deals" options MUST remain visible | Visual inspection |
+| AC-9.4 | Backend logic relying on these keys MUST handle their absence gracefully (defaulting to false or ignoring) | Code review |
 
 ---
 

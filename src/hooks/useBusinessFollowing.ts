@@ -35,6 +35,8 @@ export interface FollowedBusiness {
     description?: string;
     follower_count?: number;
     active_coupons_count?: number; // Combined offers + coupons
+    local_area?: string;
+    city?: string;
   };
 }
 
@@ -161,10 +163,11 @@ export function useBusinessFollowing(): UseBusinessFollowingReturn {
               cover_image_url: businessData.cover_image_url,
               address: businessData.address,
               rating: businessData.rating,
-              review_count: businessData.review_count,
               description: businessData.description,
               follower_count: count || 0,
-              active_coupons_count: activeCouponsCount + activeOffersCount // Combined count for the card
+              active_coupons_count: activeCouponsCount + activeOffersCount, // Combined count for the card
+              local_area: businessData.local_area, // Mapped for consistent address display
+              city: businessData.city
             } : undefined
           };
         } catch (err) {
