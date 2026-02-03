@@ -60,13 +60,31 @@ export const StandardBusinessCard: React.FC<StandardBusinessCardProps> = ({
 
   // Custom Address Logic: Prefer "Local Area, City" format
   let displayLocation = '';
+
+  // Helper to extract city/area from address if city field is missing
+  const extractCityFromAddress = (addr: string) => {
+    if (!addr) return '';
+    const parts = addr.split(',').map(p => p.trim());
+    // If we have "Door, Area, City", return "Area, City" or just "City"
+    if (parts.length >= 2) {
+      // Return last two parts if available, otherwise just last
+      return parts.slice(-2).join(', ');
+    }
+    return addr;
+  };
+
   if (business.local_area && business.city) {
     displayLocation = `${business.local_area}, ${business.city}`;
   } else if (business.city) {
+    // If specific local_area is missing, try to see if we can get it from address, 
+    // BUT user specifically asked for "Local Area, City" and cited "Labbipet, Vijayawada".
+    // If we only have city "Vijayawada", and address might contain area.
     displayLocation = business.city;
   } else {
-    // Fallback: Use standard address but try to keep it short if it looks like a full address
-    displayLocation = business.address || 'Location N/A';
+    // Fallback: If city is missing, try to extract useful info from address
+    // This handles the case where TU1 has "59-11-9/A" (Door No) in address but might have city data elsewhere or implicitly.
+    // If address looks like a full address, try to show the tail end.
+    displayLocation = extractCityFromAddress(business.address || '') || 'Location N/A';
   }
 
   const couponCount = business.activeCouponsCount ?? business.active_coupons_count ?? 0;
@@ -198,33 +216,30 @@ export const StandardBusinessCard: React.FC<StandardBusinessCardProps> = ({
             )}
           </div>
 
-          {/* Row 2: City | Stats */}
-          {/* Using grid or fixed widths to alignment if needed, but flex gap usually sufficient if consistent data */}
-          <div className="flex items-center text-sm text-gray-600 gap-4">
-            {/* Address Section - Fixed width or max width to prevent shifting */}
-            <div className="flex items-center gap-1.5 text-gray-400 min-w-0 max-w-[180px]">
-              {/* Dot separator not needed if just text color diff */}
+          {/* Row 2: City | Stats - FIXED ALIGNMENT with Grid */}
+          <div className="grid grid-cols-[1fr_auto] gap-4 text-sm text-gray-600 items-center">
+            {/* Address Section */}
+            <div className="flex items-center gap-1.5 text-gray-400 min-w-0">
               <span className="truncate font-medium" title={displayLocation}>
                 {displayLocation}
               </span>
             </div>
 
-            <div className="w-1 h-1 rounded-full bg-gray-300 flex-shrink-0"></div>
+            {/* Stats Group - Grouped to keep them close together */}
+            <div className="flex items-center gap-3">
+              {/* Active Offers */}
+              <div className="flex items-center gap-1.5" title="Active Offers">
+                <Ticket className="w-5 h-5 text-indigo-500 flex-shrink-0" />
+                <span className="font-semibold">{couponCount}</span>
+              </div>
 
-            {/* Active Offers - Fixed min width ensures alignment */}
-            <div className="flex items-center gap-1.5 min-w-[60px]" title="Active Offers">
-              <Ticket className="w-5 h-5 text-indigo-500 flex-shrink-0" />
-              <span className="font-semibold">{couponCount}</span>
-            </div>
-
-            <div className="w-1 h-1 rounded-full bg-gray-300 flex-shrink-0"></div>
-
-            {/* Followers */}
-            <div className="flex items-center gap-1.5" title="Followers">
-              <Users className="w-5 h-5 text-teal-500 flex-shrink-0" />
-              <span className="font-semibold">
-                {business.follower_count !== undefined ? business.follower_count : 0}
-              </span>
+              {/* Followers */}
+              <div className="flex items-center gap-1.5" title="Followers">
+                <Users className="w-5 h-5 text-teal-500 flex-shrink-0" />
+                <span className="font-semibold">
+                  {business.follower_count !== undefined ? business.follower_count : 0}
+                </span>
+              </div>
             </div>
           </div>
         </div>
