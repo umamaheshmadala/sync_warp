@@ -1,315 +1,397 @@
-# Story 12.4: Mobile Two-Step Creation Flow
+# Story 12.4: Instagram-Style Product Creation Wizard
 
 **EPIC**: [EPIC 12 - Instagram-Style Products](../epics/EPIC_12_Instagram_Style_Products.md)  
-**Status**: ✅ Complete  
+**Status**: 📋 Ready for Development  
 **Priority**: P0  
-**Estimate**: 8 points  
+**Estimate**: 13 points  
 
 ---
 
 ## User Story
 
-**As a** business owner on mobile  
-**I want to** create products in a two-step flow (images first, then details)  
-**So that** the experience matches Instagram and feels intuitive  
+**As a** business owner  
+**I want to** create products through a clean, 3-step wizard (like Instagram's post creation)  
+**So that** the experience feels modern, intuitive, and image-first  
 
 ---
 
 ## Scope
 
 ### In Scope
-- Step 1: Image selection, cropping, reordering
-- Step 2: Product name, description, tags
-- Native image picker (Capacitor)
-- Auto-save draft between steps
-- Back navigation preserves data
-- Publish or Save as Draft
+- 3-step wizard modal (replaces old page + modal)
+- Step 1: Media Selection (drag-drop or select from device)
+- Step 2: Edit & Arrange (reorder, crop, rotate)
+- Step 3: Details (name, description, tags, notifications)
+- Mobile: Full-screen wizard with swipe navigation
+- Web: Centered modal (~600px) with step indicator
+- Draft management tab in Products section
+- Resume draft functionality
+- Deprecate old creation page and modal
 
 ### Out of Scope
-- Web creation flow (single form)
-- Resume interrupted uploads (Phase 2)
+- Image filters (Clarendon, Juno, etc.) — Phase 2
+- Brightness/contrast adjustments — Phase 2
+- Video uploads — Phase 2
 
 ---
 
 ## UI/UX Specifications
 
-### Step 1: Image Selection
+### Entry Point
 
 ```
-┌─────────────────────────────────┐
-│  ✕ Cancel           Next →     │
-├─────────────────────────────────┤
-│                                 │
-│  New Product                    │
-│  Select up to 5 images          │
-│                                 │
-├─────────────────────────────────┤
-│                                 │
-│  ┌─────┐  ┌─────┐  ┌─────┐     │
-│  │  1  │  │  2  │  │  3  │     │
-│  │ 📷  │  │ 📷  │  │ 📷  │     │
-│  │[✏️][🗑️]│  │[✏️][🗑️]│  │[✏️][🗑️]│     │
-│  └─────┘  └─────┘  └─────┘     │
-│                                 │
-│  ┌─────┐  ┌─────┐              │
-│  │  +  │  │     │              │
-│  │ Add │  │     │              │
-│  └─────┘  └─────┘              │
-│                                 │
-│  ↔️ Hold and drag to reorder    │
-│                                 │
-├─────────────────────────────────┤
-│  3/5 images selected            │
-└─────────────────────────────────┘
+Products Tab Header
+┌────────────────────────────────────────────────────┐
+│  Products (24)    [Drafts (3)]    [+ Add Product]  │
+└────────────────────────────────────────────────────┘
+                                          ↓
+                            Opens Instagram-style wizard modal
 ```
 
-### Cropping Modal (Native Feel)
+### Step 1: Media Selection
+
+**Web Modal:**
+```
+┌─────────────────────────────────────────────────────┐
+│                                              [✕]    │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│                Create new product                   │
+│                                                     │
+│         ┌─────────────────────────────────┐         │
+│         │                                 │         │
+│         │    🖼️ 🎬                        │         │
+│         │                                 │         │
+│         │  Drag photos and videos here    │         │
+│         │                                 │         │
+│         │  ┌─────────────────────────┐    │         │
+│         │  │  Select from computer   │    │         │
+│         │  └─────────────────────────┘    │         │
+│         │                                 │         │
+│         └─────────────────────────────────┘         │
+│                                                     │
+└─────────────────────────────────────────────────────┘
+```
+
+**Mobile Full-Screen:**
+```
+┌─────────────────────────┐
+│  ✕ Cancel               │
+├─────────────────────────┤
+│                         │
+│    New Product          │
+│    Select up to 5 images│
+│                         │
+│  ┌─────────────────────┐│
+│  │                     ││
+│  │   Tap to select     ││
+│  │   or drag here      ││
+│  │                     ││
+│  └─────────────────────┘│
+│                         │
+│  ┌─────────────────────┐│
+│  │📷 Take Photo        ││
+│  └─────────────────────┘│
+│  ┌─────────────────────┐│
+│  │🖼️ Choose from Gallery││
+│  └─────────────────────┘│
+│                         │
+└─────────────────────────┘
+```
+
+### Step 2: Edit & Arrange
 
 ```
-┌─────────────────────────────────┐
-│  Cancel         Crop    Done   │
-├─────────────────────────────────┤
-│                                 │
-│  ┌─────────────────────────┐   │
-│  │                         │   │
-│  │    ┌───────────────┐    │   │
-│  │    │               │    │   │
-│  │    │  CROP AREA    │    │   │
-│  │    │   (4:5)       │    │   │
-│  │    │               │    │   │
-│  │    │  ┼─────┼─────┼│    │   │
-│  │    │  │     │     ││    │   │
-│  │    │  ┼─────┼─────┼│    │   │
-│  │    │               │    │   │
-│  │    └───────────────┘    │   │
-│  └─────────────────────────┘   │
-│                                 │
-├─────────────────────────────────┤
-│    [🔄 Rotate]    [📐 Grid]    │
-└─────────────────────────────────┘
+┌─────────────────────────────────────────────────────┐
+│  ← Back              Edit              Next →       │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│  ┌─────────────────────────────────────────────┐   │
+│  │                                             │   │
+│  │              MAIN IMAGE PREVIEW             │   │
+│  │              (4:5 aspect ratio)             │   │
+│  │                                             │   │
+│  │                                             │   │
+│  │                    ◀  ▶                     │   │
+│  │                                             │   │
+│  │                  ● ● ○ ○                    │   │
+│  └─────────────────────────────────────────────┘   │
+│                                                     │
+│  ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐          │
+│  │  1  │ │  2  │ │  3  │ │  4  │ │ + │          │
+│  │ 📷  │ │ 📷  │ │ 📷  │ │     │ │Add │          │
+│  └─────┘ └─────┘ └─────┘ └─────┘ └─────┘          │
+│  ↔️ Hold and drag to reorder                       │
+│                                                     │
+├─────────────────────────────────────────────────────┤
+│  [✂️ Crop]  [🔄 Rotate]  [🗑️ Remove]               │
+└─────────────────────────────────────────────────────┘
 ```
 
-### Step 2: Product Details
+### Step 3: Details
 
 ```
-┌─────────────────────────────────┐
-│  ← Back                Publish  │
-├─────────────────────────────────┤
-│                                 │
-│  ┌───┐ ┌───┐ ┌───┐             │
-│  │ 1 │ │ 2 │ │ 3 │  Preview    │
-│  └───┘ └───┘ └───┘             │
-│                                 │
-├─────────────────────────────────┤
-│                                 │
-│  Product Name *                 │
-│  ┌───────────────────────────┐  │
-│  │                           │  │
-│  └───────────────────────────┘  │
-│                           0/100 │
-│                                 │
-│  Description                    │
-│  ┌───────────────────────────┐  │
-│  │                           │  │
-│  │                           │  │
-│  │                           │  │
-│  └───────────────────────────┘  │
-│                           0/300 │
-│                                 │
-├─────────────────────────────────┤
-│                                 │
-│  Status Tags (up to 3)          │
-│                                 │
-│  ╭──────────╮ ╭──────────╮     │
-│  │🟢Available│ │⭐Featured│     │
-│  ╰──────────╯ ╰──────────╯     │
-│  ╭──────────╮ ╭──────────╮     │
-│  │ 🔥 Hot   │ │🆕New Arr.│     │
-│  ╰──────────╯ ╰──────────╯     │
-│  ... (more tags)                │
-│                                 │
-├─────────────────────────────────┤
-│  🔔 Enable notifications  [ON]  │
-├─────────────────────────────────┤
-│                                 │
-│     [Save as Draft]             │
-│                                 │
-└─────────────────────────────────┘
+┌─────────────────────────────────────────────────────┐
+│  ← Back         Create new product         [Share] │
+├───────────────────────────┬─────────────────────────┤
+│                           │  👤 Business Name       │
+│                           │  ─────────────────────  │
+│   IMAGE PREVIEW           │  Product Name *         │
+│   (carousel dots)         │  ┌───────────────────┐  │
+│                           │  │                   │  │
+│   ● ● ○                   │  └───────────────────┘  │
+│                           │                   0/100 │
+│                           │                         │
+│                           │  Description            │
+│                           │  ┌───────────────────┐  │
+│                           │  │                   │  │
+│                           │  │                   │  │
+│                           │  └───────────────────┘  │
+│                           │                   0/300 │
+│                           │                         │
+│                           │  Status Tags (max 3)    │
+│                           │  ╭──────╮ ╭──────╮     │
+│                           │  │🟢Avail│ │⭐Feat│     │
+│                           │  ╰──────╯ ╰──────╯     │
+│                           │                         │
+│                           │  🔔 Notifications [ON]  │
+├───────────────────────────┴─────────────────────────┤
+│              [Save as Draft]                        │
+└─────────────────────────────────────────────────────┘
+```
+
+### Drafts Tab
+
+```
+Products Tab with Drafts Toggle
+┌─────────────────────────────────────────────────────┐
+│  [📦 Products (24)]  [📝 Drafts (3)]  [+ Add]      │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│  When "Drafts" is selected:                         │
+│                                                     │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐          │
+│  │  DRAFT   │  │  DRAFT   │  │  DRAFT   │          │
+│  │  📷 img  │  │  📷 img  │  │  📷 img  │          │
+│  │          │  │          │  │          │          │
+│  ├──────────┤  ├──────────┤  ├──────────┤          │
+│  │ Untitled │  │ Product A│  │ Sneakers │          │
+│  │ 2 images │  │ 3 images │  │ 1 image  │          │
+│  │ Updated: │  │ Updated: │  │ Updated: │          │
+│  │ 2h ago   │  │ Yesterday│  │ 3 days   │          │
+│  └──────────┘  └──────────┘  └──────────┘          │
+│                                                     │
+│  Tap a draft to resume editing                      │
+│                                                     │
+└─────────────────────────────────────────────────────┘
 ```
 
 ---
 
 ## Technical Specifications
 
-### Native Image Picker
+### Component Structure
 
-```typescript
-import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
-
-const pickImages = async () => {
-  // For single image
-  const photo = await Camera.getPhoto({
-    source: CameraSource.Photos,
-    resultType: CameraResultType.Uri,
-    quality: 90
-  });
-  
-  // For multiple images - use different approach
-  // Capacitor doesn't support multi-select natively
-  // Use @capawesome/capacitor-photo-picker plugin
-};
+```
+src/components/products/creation/
+├── ProductCreationWizard.tsx       # Main modal/full-screen container
+├── steps/
+│   ├── MediaSelectionStep.tsx      # Step 1
+│   ├── EditArrangeStep.tsx         # Step 2
+│   └── ProductDetailsStep.tsx      # Step 3
+├── MediaUploadZone.tsx             # Drag-drop / click-to-select
+├── ImageThumbnailStrip.tsx         # Reorderable thumbnail row
+├── ImageEditor.tsx                 # Crop/Rotate interface
+├── DraftPromptModal.tsx            # "Save as Draft?" dialog
+└── hooks/
+    ├── useProductWizard.ts         # Wizard state machine
+    ├── useImagePicker.ts           # Native/web file picker
+    └── useProductDraft.ts          # Draft persistence
+    
+src/components/products/
+├── DraftsTab.tsx                   # Drafts list view
+├── DraftCard.tsx                   # Individual draft card
+└── ProductsTabHeader.tsx           # Toggle: Products | Drafts | +Add
 ```
 
-### Multi-Image Picker
+### Wizard State Machine
 
 ```typescript
-import { PhotoPicker } from '@capawesome/capacitor-photo-picker';
+type WizardStep = 'media' | 'edit' | 'details';
+type WizardAction = 
+  | { type: 'NEXT' }
+  | { type: 'BACK' }
+  | { type: 'ADD_IMAGES'; images: ImageFile[] }
+  | { type: 'REMOVE_IMAGE'; index: number }
+  | { type: 'REORDER_IMAGES'; from: number; to: number }
+  | { type: 'UPDATE_CROP'; index: number; crop: CropData }
+  | { type: 'UPDATE_DETAILS'; name: string; description: string; tags: string[] }
+  | { type: 'SAVE_DRAFT' }
+  | { type: 'PUBLISH' };
 
-const pickMultipleImages = async () => {
-  const result = await PhotoPicker.pickImages({
-    limit: 5 - currentImages.length, // Remaining slots
-  });
-  return result.images; // Array of image URIs
-};
-```
-
-### Draft Auto-Save
-
-```typescript
-const DRAFT_KEY = 'product_draft';
-
-interface ProductDraft {
-  images: { uri: string; cropped: boolean; order: number }[];
+interface WizardState {
+  step: WizardStep;
+  images: ProductImage[];
   name: string;
   description: string;
   tags: string[];
-  notifications_enabled: boolean;
-  updated_at: string;
+  notificationsEnabled: boolean;
+  isDraftSaved: boolean;
+  draftId?: string;
 }
+```
 
-// Save draft on any change
-const saveDraft = async (draft: ProductDraft) => {
-  await Preferences.set({
-    key: DRAFT_KEY,
-    value: JSON.stringify(draft)
-  });
-};
+### Draft Storage (Database)
 
-// Load draft on screen open
-const loadDraft = async (): Promise<ProductDraft | null> => {
-  const { value } = await Preferences.get({ key: DRAFT_KEY });
-  return value ? JSON.parse(value) : null;
-};
+```sql
+-- Products with status='draft' are drafts
+-- No separate table needed; use existing products table
 
-// Clear draft after publish
-const clearDraft = async () => {
-  await Preferences.remove({ key: DRAFT_KEY });
-};
+-- Query for drafts
+SELECT * FROM products 
+WHERE business_id = :business_id 
+  AND status = 'draft' 
+ORDER BY updated_at DESC;
+
+-- Draft fields populated incrementally:
+-- - images: JSONB array (can be partial)
+-- - name: TEXT (can be empty for drafts)
+-- - description: TEXT
+-- - tags: TEXT[]
 ```
 
 ---
 
 ## Acceptance Criteria
 
-### Step 1: Image Selection
-- [ ] "Add" button opens native image picker
-- [ ] Can select multiple images (up to 5 total)
-- [ ] Selected images show thumbnails
-- [ ] ✏️ button opens cropping modal
-- [ ] 🗑️ button removes image (with confirmation)
-- [ ] Long-press + drag reorders images
-- [ ] First image is marked as "Cover"
-- [ ] "Next" disabled if 0 images
-- [ ] Counter shows "X/5 images selected"
+### Step 1: Media Selection
+- [ ] Wizard opens as modal (web) or full-screen (mobile)
+- [ ] Drag-and-drop zone accepts images
+- [ ] "Select from computer/gallery" button works
+- [ ] Mobile: Native image picker via Capacitor
+- [ ] Mobile: Option to take photo with camera
+- [ ] Can select up to 5 images
+- [ ] Shows "X/5 images" counter
+- [ ] "Next" button disabled if 0 images
+- [ ] Unsupported formats show error
+- [ ] Files >10MB show error
 
-### Cropping Modal
-- [ ] Locked to 4:5 aspect ratio
-- [ ] Pinch to zoom works
-- [ ] Drag to reposition
-- [ ] Rotate button rotates 90°
-- [ ] Grid toggle shows/hides overlay
-- [ ] "Done" applies crop
-- [ ] "Cancel" discards changes
+### Step 2: Edit & Arrange
+- [ ] Preview shows first image large
+- [ ] Carousel dots indicate image count
+- [ ] Arrow buttons navigate images
+- [ ] Thumbnail strip shows all images
+- [ ] Long-press + drag reorders thumbnails
+- [ ] First image marked as "Cover"
+- [ ] "Crop" button opens 4:5 cropper
+- [ ] "Rotate" rotates selected image 90°
+- [ ] "Remove" deletes image (with confirmation if only 1 left)
+- [ ] "+" button adds more images (if < 5)
+- [ ] "Back" returns to Step 1 (preserves images)
+- [ ] "Next" proceeds to Step 3
 
-### Step 2: Product Details
-- [ ] Image thumbnails preview at top
-- [ ] Back button returns to Step 1 (preserves data)
-- [ ] Product name required (max 100 chars)
-- [ ] Description optional (max 300 chars)
+### Step 3: Details
+- [ ] Image preview carousel at left (web) or top (mobile)
+- [ ] Product Name field (required, max 100 chars)
+- [ ] Description field (optional, max 300 chars)
 - [ ] Character counters shown
-- [ ] Tag pills selectable (max 3)
-- [ ] Notification toggle defaults to ON
-- [ ] "Publish" creates product with status='published'
-- [ ] "Save as Draft" creates with status='draft'
+- [ ] Tag selector (pill buttons, max 3)
+- [ ] Notification toggle (default: ON)
+- [ ] "Share" button publishes product (status='published')
+- [ ] "Save as Draft" saves with status='draft'
+- [ ] Validation errors shown inline
 
-### Auto-Save Draft
-- [ ] Draft saved on every change
-- [ ] Leaving app and returning restores draft
-- [ ] Back from Step 2 to Step 1 preserves Step 1 data
-- [ ] After publish, draft is cleared
-- [ ] Prompt on cancel if draft exists: "Discard changes?"
+### Close/Exit Behavior
+- [ ] ✕ button prompts: "Save as Draft?" / "Discard"
+- [ ] Back button on Step 1 prompts if images exist
+- [ ] Mobile: App backgrounded → auto-save draft silently
+- [ ] Return to wizard → prompt to resume draft
 
-### Validation
-- [ ] Name required error shown inline
-- [ ] At least 1 image required
-- [ ] Max 5 images enforced
-- [ ] Max 3 tags enforced
+### Drafts Tab
+- [ ] "Drafts (N)" tab visible in Products section (owner only)
+- [ ] Drafts NOT shown in main Products grid
+- [ ] Drafts show: thumbnail, name (or "Untitled"), image count, last updated
+- [ ] Tap draft → opens wizard at appropriate step
+- [ ] Swipe to delete draft (with confirmation)
+- [ ] Empty state: "No drafts yet"
 
-### Navigation
-- [ ] "Cancel" on Step 1 → confirmation if images selected
-- [ ] Back on Step 2 → return to Step 1
-- [ ] Publish → success toast → navigate to product
+### Legacy Deprecation
+- [ ] Old `/business/products/create` page removed
+- [ ] Old AddProductModal component deleted
+- [ ] All "Add Product" buttons now open new wizard
 
 ---
 
-## Component Structure
+## Mobile Specific
 
-```
-src/components/products/creation/
-├── MobileProductCreation.tsx       # Two-step container
-├── ImageSelectionStep.tsx          # Step 1 main component
-├── ImageThumbnail.tsx              # Single image with actions
-├── ImageCropModal.tsx              # Cropping interface
-├── ProductDetailsStep.tsx          # Step 2 main component
-├── ProductNameInput.tsx            # Name with counter
-├── ProductDescriptionInput.tsx     # Description with counter
-├── ProductTagSelector.tsx          # Pill buttons
-├── DraftPromptModal.tsx            # "Discard changes?" dialog
-└── hooks/
-    ├── useProductCreation.ts       # State management
-    ├── useImagePicker.ts           # Native picker logic
-    └── useProductDraft.ts          # Draft persistence
-```
+| Feature | Implementation |
+|---------|----------------|
+| Image Picker | `@capawesome/capacitor-photo-picker` |
+| Camera | `@capacitor/camera` |
+| Draft Persistence | `@capacitor/preferences` + DB sync |
+| Swipe Navigation | React Native Gesture Handler or CSS touch |
+
+---
+
+## Web Specific
+
+| Feature | Implementation |
+|---------|----------------|
+| Modal | React Portal with overlay |
+| Drag-Drop | react-dropzone |
+| Cropping | react-easy-crop |
+| Keyboard | ESC closes (with prompt), Tab navigation |
 
 ---
 
 ## Testing Checklist
 
-- [ ] Open creation flow
+### Wizard Flow
+- [ ] Open wizard from "+ Add" button
 - [ ] Select 1-5 images
-- [ ] Try to select 6th image (blocked)
-- [ ] Crop an image
-- [ ] Rotate during crop
+- [ ] Try selecting 6+ (blocked)
 - [ ] Reorder images via drag
-- [ ] Delete an image
-- [ ] Navigate to Step 2
-- [ ] Fill in product name
-- [ ] Fill in description
-- [ ] Select tags
-- [ ] Navigate back to Step 1 (data preserved)
-- [ ] Background app and return (draft restored)
-- [ ] Publish product
-- [ ] Save as draft
-- [ ] Cancel with confirmation
-- [ ] Validation errors display correctly
+- [ ] Crop an image
+- [ ] Rotate an image
+- [ ] Remove an image
+- [ ] Fill in product details
+- [ ] Publish product → appears in grid
+- [ ] Save as draft → appears in Drafts tab
+
+### Drafts
+- [ ] Save as draft mid-wizard
+- [ ] Close wizard with prompt → save draft
+- [ ] Open Drafts tab
+- [ ] Tap draft to resume
+- [ ] Delete draft via swipe/action
+- [ ] Verify drafts NOT in main Products grid
+
+### Edge Cases
+- [ ] Close wizard at Step 1 with 3 images → prompt
+- [ ] Close wizard at Step 3 with all fields filled → prompt
+- [ ] Mobile: Background app at Step 2 → auto-save
+- [ ] Resume draft with 5 images → cannot add more
+- [ ] Publish with empty name → validation error
 
 ---
 
 ## Dependencies
 
-- [ ] Story 12.1 (Image Upload) for compression/upload
-- [ ] Story 12.9 (Tags) for tag selector
-- [ ] @capacitor/camera plugin
-- [ ] @capawesome/capacitor-photo-picker plugin
-- [ ] @capacitor/preferences for draft storage
-- [ ] React Native Reanimated (for drag-to-reorder)
+- Story 12.1 (Image Upload & Cropping) — for cropper component
+- Story 12.9 (Tags System) — for tag selector
+- @capacitor/camera
+- @capawesome/capacitor-photo-picker
+- @capacitor/preferences
+- react-dropzone (web)
+- react-easy-crop (web)
+- framer-motion or react-beautiful-dnd (reordering)
+
+---
+
+## Files to Delete (Post-Implementation)
+
+```
+src/pages/ProductCreationPage.tsx    # Old separate page
+src/components/products/AddProductModal.tsx  # Old modal (if exists)
+# Remove route: /business/products/create
+```
