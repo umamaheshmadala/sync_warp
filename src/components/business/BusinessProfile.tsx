@@ -39,6 +39,7 @@ import { useAuthStore } from '../../store/authStore';
 import { toast } from 'react-hot-toast';
 import FeaturedProducts from './FeaturedProducts';
 import { BusinessProductsTab } from '../products/grid/BusinessProductsTab';
+import { ProductCreationWizard } from '../products/creation/ProductCreationWizard';
 import FeaturedOffers from './FeaturedOffers';
 import GoogleMapsLocationPicker from '../maps/GoogleMapsLocationPicker';
 import BusinessReviews from '../reviews/BusinessReviews';

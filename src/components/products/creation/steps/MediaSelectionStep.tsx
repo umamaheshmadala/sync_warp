@@ -1,0 +1,104 @@
+import React, { useRef } from 'react';
+import { useProductWizardStore } from '../../../../stores/useProductWizardStore';
+import { useImagePicker } from '../../../../hooks/products/creation/useImagePicker';
+import { Image, Upload, X } from 'lucide-react';
+import { v4 as uuidv4 } from 'uuid';
+import toast from 'react-hot-toast';
+
+export const MediaSelectionStep: React.FC = () => {
+    const { addImages, setStep, closeWizard } = useProductWizardStore();
+    const { pickImages, takePhoto } = useImagePicker();
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleFiles = async (files: File[]) => {
+        const validFiles = files.filter(f => f.type.startsWith('image/'));
+        if (validFiles.length === 0) return;
+
+        if (validFiles.length > 5) {
+            toast.error('Maximum 5 images allowed');
+            return;
+        }
+
+        const newImages = await Promise.all(validFiles.map(async (file) => ({
+            id: uuidv4(),
+            url: URL.createObjectURL(file),
+            file,
+            order: 0 // Will assign proper index in store or effect
+        })));
+
+        addImages(newImages);
+        setStep('edit'); // Auto-advance
+    };
+
+    const handlePickImages = async () => {
+        const picked = await pickImages(5);
+        if (picked.length > 0) {
+            const newImages = picked.map(img => ({
+                id: uuidv4(),
+                url: img.webPath || '',
+                file: undefined, // Native pick might not give file obj immediately
+                order: 0
+            }));
+            addImages(newImages);
+            setStep('edit');
+        }
+    };
+
+    return (
+        <div className="h-full flex flex-col items-center justify-center p-6 bg-gray-50 dark:bg-gray-900">
+            {/* Header for Step 1 */}
+            <div className="absolute top-0 left-0 right-0 h-16 flex items-center justify-center border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 px-4">
+                <h1 className="font-semibold text-lg text-gray-900 dark:text-white">Create new product</h1>
+                <button
+                    onClick={closeWizard}
+                    className="absolute right-4 p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full"
+                >
+                    <X className="w-6 h-6 text-gray-500" />
+                </button>
+            </div>
+
+            <div className="w-full max-w-md flex flex-col items-center space-y-8 mt-12">
+                <div className="w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center animate-pulse-slow">
+                    <Image className="w-10 h-10 text-gray-400" />
+                </div>
+
+                <div className="text-center space-y-2">
+                    <h2 className="text-xl font-medium text-gray-900 dark:text-white">Select Product Images</h2>
+                    <p className="text-gray-500 dark:text-gray-400">Drag and drop photos or videos here</p>
+                </div>
+
+                <div className="flex flex-col gap-3 w-full max-w-xs">
+                    <button
+                        onClick={handlePickImages}
+                        className="btn-primary w-full py-3 flex items-center justify-center gap-2"
+                    >
+                        <Upload className="w-5 h-5" />
+                        Select from Device
+                    </button>
+
+                    {/* Web File Input Fallback */}
+                    <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        className="hidden"
+                        ref={fileInputRef}
+                        onChange={(e) => e.target.files && handleFiles(Array.from(e.target.files))}
+                    />
+                </div>
+            </div>
+
+            <div
+                className="absolute inset-0 z-0 pointer-events-none"
+                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (e.dataTransfer.files) {
+                        handleFiles(Array.from(e.dataTransfer.files));
+                    }
+                }}
+            />
+        </div>
+    );
+};

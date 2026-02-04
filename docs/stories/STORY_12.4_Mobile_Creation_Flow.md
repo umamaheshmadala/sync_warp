@@ -1,7 +1,7 @@
 # Story 12.4: Instagram-Style Product Creation Wizard
 
 **EPIC**: [EPIC 12 - Instagram-Style Products](../epics/EPIC_12_Instagram_Style_Products.md)  
-**Status**: 📋 Ready for Development  
+**Status**: 🧪 User Testing in Progress  
 **Priority**: P0  
 **Estimate**: 13 points  
 

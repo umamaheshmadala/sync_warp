@@ -13,9 +13,14 @@ import {
 } from 'lucide-react';
 import { Product, ProductFilters } from '../../types/product';
 import { useProducts } from '../../hooks/useProducts';
-import ProductForm from './ProductForm';
+// import ProductForm from './ProductForm';
 import ProductCard from './ProductCard';
 import { toast } from 'react-hot-toast';
+
+import { DraftsTab } from '../products/drafts/DraftsTab';
+import { ProductCreationWizard } from '../products/creation/ProductCreationWizard';
+import { useProductWizardStore } from '../../stores/useProductWizardStore';
+import { FileText } from 'lucide-react';
 
 interface ProductManagerProps {
   businessId: string;
@@ -32,6 +37,9 @@ const ProductManager: React.FC<ProductManagerProps> = React.memo(({
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const { openWizard } = useProductWizardStore();
+
+  const [activeTab, setActiveTab] = useState<'products' | 'drafts'>('products');
   const [filters, setFilters] = useState<ProductFilters>({});
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
@@ -39,8 +47,8 @@ const ProductManager: React.FC<ProductManagerProps> = React.memo(({
   // Filter products based on search and filters
   const filteredProducts = products.filter(product => {
     // Search filter
-    if (searchQuery && !product.name.toLowerCase().includes(searchQuery.toLowerCase()) && 
-        !product.description?.toLowerCase().includes(searchQuery.toLowerCase())) {
+    if (searchQuery && !product.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+      !product.description?.toLowerCase().includes(searchQuery.toLowerCase())) {
       return false;
     }
 
@@ -67,11 +75,11 @@ const ProductManager: React.FC<ProductManagerProps> = React.memo(({
   const categories = [...new Set(products.map(p => p.category).filter(Boolean))];
 
   const handleCreateProduct = () => {
-    setEditingProduct(null);
-    setShowForm(true);
+    openWizard(businessId);
   };
 
   const handleEditProduct = (product: Product) => {
+    // Legacy Edit Form
     setEditingProduct(product);
     setShowForm(true);
   };
@@ -151,17 +159,37 @@ const ProductManager: React.FC<ProductManagerProps> = React.memo(({
               Manage products and services for {businessName}
             </p>
           </div>
-          
+
           {isOwner && (
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleCreateProduct}
-              className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Product
-            </motion.button>
+            <div className="mt-4 sm:mt-0 flex gap-2">
+              {/* Tabs (only if owner) */}
+              <div className="flex bg-gray-100 p-1 rounded-lg">
+                <button
+                  onClick={() => setActiveTab('products')}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${activeTab === 'products' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                  <ShoppingBag className="w-4 h-4 inline-block mr-1" />
+                  Products
+                </button>
+                <button
+                  onClick={() => setActiveTab('drafts')}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${activeTab === 'drafts' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                  <FileText className="w-4 h-4 inline-block mr-1" />
+                  Drafts
+                </button>
+              </div>
+
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleCreateProduct}
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Product
+              </motion.button>
+            </div>
           )}
         </div>
 
@@ -210,21 +238,19 @@ const ProductManager: React.FC<ProductManagerProps> = React.memo(({
           <div className="flex items-center space-x-2">
             <button
               onClick={() => setViewMode('grid')}
-              className={`p-2 rounded-md ${
-                viewMode === 'grid' 
-                  ? 'bg-blue-100 text-blue-600' 
-                  : 'text-gray-400 hover:text-gray-600'
-              }`}
+              className={`p-2 rounded-md ${viewMode === 'grid'
+                ? 'bg-blue-100 text-blue-600'
+                : 'text-gray-400 hover:text-gray-600'
+                }`}
             >
               <Grid3X3 className="w-5 h-5" />
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`p-2 rounded-md ${
-                viewMode === 'list' 
-                  ? 'bg-blue-100 text-blue-600' 
-                  : 'text-gray-400 hover:text-gray-600'
-              }`}
+              className={`p-2 rounded-md ${viewMode === 'list'
+                ? 'bg-blue-100 text-blue-600'
+                : 'text-gray-400 hover:text-gray-600'
+                }`}
             >
               <List className="w-5 h-5" />
             </button>
@@ -281,8 +307,8 @@ const ProductManager: React.FC<ProductManagerProps> = React.memo(({
                   </label>
                   <select
                     value={filters.availability === undefined ? '' : filters.availability.toString()}
-                    onChange={(e) => setFilters({ 
-                      ...filters, 
+                    onChange={(e) => setFilters({
+                      ...filters,
                       availability: e.target.value === '' ? undefined : e.target.value === 'true'
                     })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -300,8 +326,8 @@ const ProductManager: React.FC<ProductManagerProps> = React.memo(({
                   </label>
                   <select
                     value={filters.featured === undefined ? '' : filters.featured.toString()}
-                    onChange={(e) => setFilters({ 
-                      ...filters, 
+                    onChange={(e) => setFilters({
+                      ...filters,
                       featured: e.target.value === '' ? undefined : e.target.value === 'true'
                     })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -327,85 +353,72 @@ const ProductManager: React.FC<ProductManagerProps> = React.memo(({
         </AnimatePresence>
       </div>
 
-      {/* Products Display */}
-      {filteredProducts.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="mx-auto h-24 w-24 text-gray-400 mb-4">
-            <Package className="w-full h-full" />
-          </div>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No products found</h3>
-          <p className="mt-1 text-sm text-gray-500">
-            {products.length === 0 
-              ? isOwner 
-                ? 'Get started by adding your first product.'
-                : 'This business hasn\'t added any products yet.'
-              : 'Try adjusting your search or filters.'
-            }
-          </p>
-          {isOwner && products.length === 0 && (
-            <div className="mt-6">
-              <button
-                onClick={handleCreateProduct}
-                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Your First Product
-              </button>
-            </div>
-          )}
-        </div>
+      {/* Products Or Drafts Display */}
+      {activeTab === 'drafts' ? (
+        <DraftsTab businessId={businessId} />
       ) : (
-        <div className={`grid gap-6 ${
-          viewMode === 'grid' 
+        /* Original Product List Logic */
+        filteredProducts.length === 0 ? (
+          <div className="text-center py-12">
+            {/* ... (Empty state content) ... */}
+            <div className="mx-auto h-24 w-24 text-gray-400 mb-4">
+              <Package className="w-full h-full" />
+            </div>
+            <h3 className="mt-2 text-sm font-medium text-gray-900">No products found</h3>
+            <p className="mt-1 text-sm text-gray-500">
+              {products.length === 0
+                ? isOwner
+                  ? 'Get started by adding your first product.'
+                  : 'This business hasn\'t added any products yet.'
+                : 'Try adjusting your search or filters.'
+              }
+            </p>
+            {isOwner && products.length === 0 && (
+              <div className="mt-6">
+                <button
+                  onClick={handleCreateProduct}
+                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Your First Product
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className={`grid gap-6 ${viewMode === 'grid'
             ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
             : 'grid-cols-1'
-        }`}>
-          {filteredProducts.map((product, index) => (
-            <motion.div
-              key={product.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <ProductCard
-                product={product}
-                viewMode={viewMode}
-                isOwner={isOwner}
-                onEdit={() => handleEditProduct(product)}
-                onDelete={() => handleDeleteProduct(product.id, product.name)}
-              />
-            </motion.div>
-          ))}
-        </div>
+            }`}>
+            {filteredProducts.map((product, index) => (
+              <motion.div
+                key={product.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <ProductCard
+                  product={product}
+                  viewMode={viewMode}
+                  isOwner={isOwner}
+                  onEdit={() => handleEditProduct(product)}
+                  onDelete={() => handleDeleteProduct(product.id, product.name)}
+                />
+              </motion.div>
+            ))}
+          </div>
+        )
       )}
 
-      {/* Product Form Modal */}
-      <AnimatePresence>
+      {/* Product Creation Wizard */}
+      <ProductCreationWizard />
+
+      {/* Product Form Modal (Legacy - Removed for Wizard) */}
+      {/* <AnimatePresence>
         {showForm && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-            onClick={handleFormClose}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <ProductForm
-                businessId={businessId}
-                product={editingProduct}
-                onClose={handleFormClose}
-                onSuccess={handleFormSuccess}
-              />
-            </motion.div>
-          </motion.div>
+           // ...
         )}
-      </AnimatePresence>
+      </AnimatePresence> */}
     </div>
   );
 });

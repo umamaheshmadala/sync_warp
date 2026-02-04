@@ -12,6 +12,7 @@ import { Product, CURRENCIES } from '../../types/product';
 import { useProducts } from '../../hooks/useProducts';
 import ProductView from './ProductView';
 import ProductForm from './ProductForm';
+import { useProductWizardStore } from '../../stores/useProductWizardStore'; // Added
 import { useNavigate } from 'react-router-dom';
 import { ProductCard as CustomerProductCard } from '../products/ProductCard';
 import BusinessProductCard from './ProductCard';
@@ -136,7 +137,7 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
       {shouldShowAddButton && (
         <div className="flex justify-end mb-4 px-[5px]">
           <button
-            onClick={() => setIsAddModalOpen(true)}
+            onClick={() => useProductWizardStore.getState().openWizard(businessId)}
             className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
           >
             <Plus className="w-4 h-4" />
@@ -259,32 +260,12 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
       </AnimatePresence>
 
       {/* Add Product Modal */}
-      <AnimatePresence>
+      {/* Add Product Modal - Removed for Wizard */}
+      {/* <AnimatePresence>
         {isAddModalOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-            onClick={() => setIsAddModalOpen(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <ProductForm // Use existing ProductForm
-                businessId={businessId}
-                product={null} // null for new product
-                onClose={() => setIsAddModalOpen(false)}
-                onSuccess={handleAddFormSuccess}
-              />
-            </motion.div>
-          </motion.div>
+           // ...
         )}
-      </AnimatePresence>
+      </AnimatePresence> */}
     </>
   );
 };

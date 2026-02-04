@@ -16,8 +16,9 @@ import { WebProductModal } from '../web/WebProductModal'; // Import Desktop Moda
 import { useMediaQuery } from '../../../hooks/use-media-query';
 
 import { Product } from '../../../types/product';
-import ProductForm from '../../business/ProductForm';
+// import ProductForm from '../../business/ProductForm';
 import { ProductNotificationToggle } from '../controls/ProductNotificationToggle';
+import { useProductWizardStore } from '../../../stores/useProductWizardStore'; // Added import
 
 interface BusinessProductsTabProps {
     businessId: string;
@@ -53,12 +54,14 @@ export const BusinessProductsTab: React.FC<BusinessProductsTabProps> = ({ busine
         status: p.status || (p.is_available === false ? 'sold_out' : 'published') // Map legacy availability
     }));
 
+    const { openWizard } = useProductWizardStore(); // Added hook
+
     const handleProductClick = (product: GridProduct) => {
         setSelectedProductId(product.id);
     };
 
     const handleAddProduct = () => {
-        setIsCreatingProduct(true);
+        openWizard(businessId); // Use Wizard
     };
 
     // Find full product data for modal
@@ -163,7 +166,8 @@ export const BusinessProductsTab: React.FC<BusinessProductsTabProps> = ({ busine
             )}
 
             {/* Product Creation Modal (Simplified Overlay for now) */}
-            {isCreatingProduct && (
+            {/* Product Creation Modal (Simplified Overlay for now) - REMOVED FOR WIZARD */}
+            {/* {isCreatingProduct && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
                     <div className="bg-white dark:bg-gray-900 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-xl">
                         <ProductForm
@@ -176,7 +180,7 @@ export const BusinessProductsTab: React.FC<BusinessProductsTabProps> = ({ busine
                         />
                     </div>
                 </div>
-            )}
+            )} */}
 
             {/* Desktop Modal - Render ONLY on Desktop */}
             {isDesktop && (
