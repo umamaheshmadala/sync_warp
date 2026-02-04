@@ -8,10 +8,13 @@ import { ProductLikeButton } from '../social/ProductLikeButton';
 import { ProductFavoriteButton } from '../actions/ProductFavoriteButton';
 import { ProductLikedBy } from '../social/ProductLikedBy';
 
+import { useUnifiedShare } from '../../../hooks/useUnifiedShare';
+import { toast } from 'react-hot-toast';
+
 interface MobileProductActionsProps {
     product: Product;
     onComment?: () => void;
-    onShare?: () => void;
+    // onShare removed - handled internally
 }
 
 // Utility for formatting counts
@@ -23,9 +26,28 @@ const formatCount = (count: number): string => {
 
 export const MobileProductActions: React.FC<MobileProductActionsProps> = ({
     product,
-    onComment,
-    onShare
+    onComment
 }) => {
+    // Share Logic
+    const { shareNative, isSharing } = useUnifiedShare();
+
+    const handleShare = async () => {
+        try {
+            await shareNative({
+                entityType: 'product',
+                entityId: product.id,
+                entityData: {
+                    title: product.name,
+                    description: product.description?.slice(0, 100),
+                    url: `/product/${product.id}`, // Unified share will construct full URL
+                    imageUrl: product.image_urls?.[0] || product.image_url
+                }
+            });
+        } catch (error) {
+            console.error('Share failed', error);
+            toast.error('Failed to share');
+        }
+    };
     // Like Logic
     const { isLiked, likeCount, likedByFriends, toggleLike, isLoading: isLikeLoading } = useProductLike(product.id, product.like_count || 0);
 
@@ -62,8 +84,9 @@ export const MobileProductActions: React.FC<MobileProductActionsProps> = ({
 
                     {/* Share Button */}
                     <button
-                        onClick={onShare}
-                        className="flex flex-col items-center gap-1 p-1"
+                        onClick={handleShare}
+                        disabled={isSharing}
+                        className="flex flex-col items-center gap-1 p-1 disabled:opacity-50"
                     >
                         <Send size={28} className="text-gray-900 dark:text-white" strokeWidth={1.5} />
                         <span className="text-xs font-medium text-gray-900 dark:text-white">Share</span>

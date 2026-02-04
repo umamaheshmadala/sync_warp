@@ -137,7 +137,6 @@ export const BusinessProductsTab: React.FC<BusinessProductsTabProps> = ({ busine
                                 onComment={() => {
                                     document.getElementById('comment-input')?.focus(); // Focus input
                                 }}
-                                onShare={() => toast.success('Shared (Demo)', { icon: '🔗' })}
                             />
                             <MobileProductDetails product={selectedProduct} />
                             <MobileProductComments

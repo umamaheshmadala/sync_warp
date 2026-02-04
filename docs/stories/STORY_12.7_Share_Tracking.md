@@ -1,7 +1,7 @@
 # Story 12.7: Share & Tracking
 
 **EPIC**: [EPIC 12 - Instagram-Style Products](../epics/EPIC_12_Instagram_Style_Products.md)  
-**Status**: 📋 Ready for Development  
+**Status**: 🧪 User Testing Pending  
 **Priority**: P1  
 **Estimate**: 3 points  
 

@@ -11,6 +11,7 @@ import { ProductLikedBy } from '../social/ProductLikedBy';
 import { ProductCommentItem } from '../social/ProductCommentItem';
 import { ProductCommentInput } from '../social/ProductCommentInput';
 import { ProductFavoriteButton } from '../actions/ProductFavoriteButton';
+import { ProductShareButton } from '../../Sharing/ProductShareButton';
 
 interface WebProductDetailsPanelProps {
     product: Product;
@@ -160,9 +161,19 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                         <button className="group" onClick={() => document.getElementById('web-comment-input')?.focus()}>
                             <MessageCircle className="w-6 h-6 text-gray-900 dark:text-white group-hover:text-blue-500 transition-colors" />
                         </button>
-                        <button onClick={handleShare} className="group">
-                            <Share2 className="w-6 h-6 text-gray-900 dark:text-white group-hover:text-green-500 transition-colors" />
-                        </button>
+                        <ProductShareButton
+                            productId={product.id}
+                            productName={product.name}
+                            productPrice={product.price}
+                            productCurrency={product.currency}
+                            productDescription={product.description}
+                            productImage={product.image_urls?.[0] || product.image_url}
+                            businessId={product.business_id}
+                            businessName={businessName}
+                            businessLogo={businessLogo}
+                            variant="icon"
+                            className="text-gray-900 dark:text-white hover:text-green-500 transition-colors bg-transparent shadow-none"
+                        />
                     </div>
                     {/* Favorite Button */}
                     <ProductFavoriteButton

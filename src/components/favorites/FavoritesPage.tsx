@@ -22,6 +22,17 @@ import OfferDetailModal from '../offers/OfferDetailModal';
 import type { Product } from '../../types/product';
 import type { Offer } from '../../types/offers';
 import type { FavoriteOffer, FavoriteProduct } from '../../services/favoritesService';
+import {
+  MobileProductModal,
+  MobileProductHeader,
+  MobileProductCarousel,
+  MobileProductActions,
+  MobileProductDetails,
+  MobileProductComments
+} from '../products/mobile';
+import { WebProductModal } from '../products/web/WebProductModal';
+import { useMediaQuery } from '../../hooks/use-media-query';
+import toast from 'react-hot-toast';
 
 type ActiveTab = 'offers' | 'products';
 
@@ -50,14 +61,21 @@ const mapFavoriteToProduct = (fav: FavoriteProduct): Product => {
     price: fav.price,
     currency: 'INR', // Default to INR as it's missing in favorite
     image_urls: normalizedImageUrls,
+    images: normalizedImageUrls, // Required for WebProductCarousel
     is_available: fav.is_available,
     is_featured: fav.is_featured,
     display_order: 0,
     created_at: fav.favorited_at,
     updated_at: fav.favorited_at,
     business: {
-      name: fav.business_name
-    }
+      name: fav.business_name,
+      slug: undefined // We don't have slug in favorite product yet
+    },
+    // Required for WebProductDetailsPanel which expects this structure
+    businesses: {
+      business_name: fav.business_name,
+      logo_url: (fav as any).business_logo // Try to get logo if available in response
+    } as any
   };
 };
 
@@ -108,6 +126,7 @@ const FavoritesPage: React.FC = () => {
   const favorites = useFavoritesContext();
   const [searchParams, setSearchParams] = useSearchParams();
   const { getBusinessUrl } = useBusinessUrl();
+  const isDesktop = useMediaQuery('(min-width: 768px)');
 
   // Get active tab from URL or default to 'offers'
   const activeTab = (searchParams.get('tab') as ActiveTab) || 'offers';
@@ -120,14 +139,16 @@ const FavoritesPage: React.FC = () => {
     });
   };
 
-  const handleProductClick = (product: Product) => {
-    // Navigate to business profile products tab with productId param to open modal
-    const businessUrl = getBusinessUrl(product.business_id, product.business?.name);
-    navigate(`${businessUrl}/products?productId=${product.id}`);
-  };
-
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+  const handleProductClick = (product: Product) => {
+    setSelectedProduct(product);
+  };
+
+  // Handlers for modal actions (simplified for Favorites page)
+  const handleCloseModal = () => setSelectedProduct(null);
 
   // Validate activeTab is valid
   React.useEffect(() => {
@@ -351,6 +372,53 @@ const FavoritesPage: React.FC = () => {
           />
         )}
       </AnimatePresence>
+
+      {/* Mobile Product Modal */}
+      {!isDesktop && (
+        <MobileProductModal
+          isOpen={!!selectedProduct}
+          onClose={handleCloseModal}
+        >
+          {selectedProduct && (
+            <>
+              <MobileProductHeader
+                product={selectedProduct}
+                onClose={handleCloseModal}
+                // Favorites page doesn't support edit/delete/archive
+                onEdit={undefined}
+                onDelete={undefined}
+                onArchive={undefined}
+              />
+              <MobileProductCarousel
+                images={selectedProduct.images || []}
+                productName={selectedProduct.name}
+              />
+              <MobileProductActions
+                product={selectedProduct}
+                onComment={() => {
+                  document.getElementById('comment-input')?.focus();
+                }}
+                onShare={() => toast.success('Shared (Demo)', { icon: '🔗' })}
+              />
+              <MobileProductDetails product={selectedProduct} />
+              <MobileProductComments
+                productId={selectedProduct.id}
+                initialCount={selectedProduct.comment_count || 0}
+              />
+            </>
+          )}
+        </MobileProductModal>
+      )}
+
+      {/* Desktop Modal */}
+      {isDesktop && selectedProduct && (
+        <WebProductModal
+          isOpen={!!selectedProduct}
+          onClose={handleCloseModal}
+          product={selectedProduct}
+          isOwner={false} // Favorites viewer is likely not owner
+        />
+      )}
     </div>
   );
 };
