@@ -12,6 +12,7 @@ import {
   Package
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 import { useFavoritesContext } from '../../contexts/FavoritesContext';
 // Using storefront OfferCard for visual consistency
 import { OfferCard } from '../offers/OfferCard';
@@ -26,6 +27,21 @@ type ActiveTab = 'offers' | 'products';
 
 // Helper to map FavoriteProduct to Product for the card component
 const mapFavoriteToProduct = (fav: FavoriteProduct): Product => {
+  // Story 12.8 Fix: Normalize image_urls which might come as objects from DB
+  const normalizeImages = (images: any[]): string[] => {
+    if (!Array.isArray(images)) return [];
+    return images.map(img => {
+      if (typeof img === 'string') return img;
+      if (typeof img === 'object' && img !== null) {
+        // Try common properties
+        return img.url || img.publicUrl || img.href || '';
+      }
+      return '';
+    }).filter(url => typeof url === 'string' && url.length > 0);
+  };
+
+  const normalizedImageUrls = normalizeImages(fav.image_urls);
+
   return {
     id: fav.id,
     business_id: fav.business_id,
@@ -33,7 +49,7 @@ const mapFavoriteToProduct = (fav: FavoriteProduct): Product => {
     description: fav.description,
     price: fav.price,
     currency: 'INR', // Default to INR as it's missing in favorite
-    image_urls: fav.image_urls,
+    image_urls: normalizedImageUrls,
     is_available: fav.is_available,
     is_featured: fav.is_featured,
     display_order: 0,
@@ -91,6 +107,7 @@ const FavoritesPage: React.FC = () => {
   const navigate = useNavigate();
   const favorites = useFavoritesContext();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { getBusinessUrl } = useBusinessUrl();
 
   // Get active tab from URL or default to 'offers'
   const activeTab = (searchParams.get('tab') as ActiveTab) || 'offers';
@@ -101,6 +118,12 @@ const FavoritesPage: React.FC = () => {
       prev.set('tab', tab);
       return prev;
     });
+  };
+
+  const handleProductClick = (product: Product) => {
+    // Navigate to business profile products tab with productId param to open modal
+    const businessUrl = getBusinessUrl(product.business_id, product.business?.name);
+    navigate(`${businessUrl}/products?productId=${product.id}`);
   };
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -311,6 +334,7 @@ const FavoritesPage: React.FC = () => {
                   product={mapFavoriteToProduct(product)}
                   size="medium"
                   showActions={true}
+                  onClick={() => handleProductClick(mapFavoriteToProduct(product))}
                 />
               ))}
           </motion.div>

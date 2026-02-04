@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
-import { MessageCircle, Share2, Bookmark, MoreHorizontal } from 'lucide-react';
+import { MessageCircle, Share2, MoreHorizontal, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Product } from '../../../types/product';
 import { useAuthStore } from '../../../store/authStore';
 import { useProductLike } from '../../../hooks/useProductLike';
+import { useProductComments } from '../../../hooks/useProductComments';
+import { useProductFavorite } from '../../../hooks/useProductFavorite';
 import { ProductLikeButton } from '../social/ProductLikeButton';
 import { ProductLikedBy } from '../social/ProductLikedBy';
+import { ProductCommentItem } from '../social/ProductCommentItem';
+import { ProductCommentInput } from '../social/ProductCommentInput';
+import { ProductFavoriteButton } from '../actions/ProductFavoriteButton';
 
 interface WebProductDetailsPanelProps {
     product: Product;
@@ -18,29 +23,22 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
     isOwner,
     onClose
 }) => {
-    // Hook for Likes Logic
+    // Likes Logic
     const { isLiked, likeCount, likedByFriends, toggleLike } = useProductLike(product.id, product.like_count || 0);
+    // Comments Logic
+    const { comments, loading: commentsLoading, postComment, deleteComment } = useProductComments(product.id);
+    // Favorite Logic
+    const { isFavorite, toggleFavorite, isLoading: isFavLoading } = useProductFavorite(product.id);
 
     const { user } = useAuthStore();
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
-    const [commentText, setCommentText] = useState('');
 
     // Derived Business Info
     const businessName = (product.businesses as any)?.business_name || 'Business Name';
     const businessLogo = (product.businesses as any)?.logo_url;
 
-    // Derived Counts (Mock/Real)
-    // likeCount comes from hook now
-
-    const handleFavorite = () => toast.success('Saved (Demo)', { icon: '⭐' });
     const handleShare = () => toast.success('Shared (Demo)', { icon: '🔗' });
-
-    const handlePostComment = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!commentText.trim()) return;
-        toast.success(`Comment posted: "${commentText}" (Demo)`);
-        setCommentText('');
-    };
+    const handleReport = (id: string) => console.log('Report', id); // Mock
 
     // Description Truncation
     const description = product.description || '';
@@ -48,13 +46,6 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
     const displayDescription = isDescriptionExpanded || !shouldTruncate
         ? description
         : description.slice(0, 120) + '...';
-
-    // Mock Comments
-    const mockComments = [
-        { id: '1', user: 'alex_style', text: 'This looks amazing! 🔥', time: '2h' },
-        { id: '2', user: 'sarah_trends', text: 'Is this available in other colors?', time: '5h' },
-        { id: '3', user: 'mike_active', text: 'Need this for my collection.', time: '1d' },
-    ];
 
     return (
         <div className="flex flex-col h-full bg-white dark:bg-gray-900 border-l border-gray-100 dark:border-gray-800">
@@ -74,7 +65,6 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                         <div className="text-sm font-semibold text-gray-900 dark:text-white hover:underline cursor-pointer">
                             {businessName}
                         </div>
-                        {/* Location or simple subtext could go here */}
                     </div>
                     <button className="text-blue-500 text-xs font-semibold ml-2 hover:text-blue-600">
                         Follow
@@ -87,7 +77,7 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
 
             {/* Scrollable Content (Comments & Description) */}
             <div className="flex-1 overflow-y-auto no-scrollbar p-4 space-y-4">
-                {/* Product Info (Acts like the "caption" in Instagram) */}
+                {/* Product Info */}
                 <div className="space-y-2">
                     <h1 className="text-lg font-bold text-gray-900 dark:text-white">
                         {product.name}
@@ -131,35 +121,29 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                 <div className="h-px bg-gray-100 dark:bg-gray-800 my-2" />
 
                 {/* Comments List */}
-                <div className="space-y-4">
-                    {mockComments.map(comment => (
-                        <div key={comment.id} className="flex gap-3 items-start group">
-                            <div className="w-8 h-8 rounded-full bg-gray-200 flex-shrink-0" />
-                            <div className="flex-1">
-                                <div className="text-sm">
-                                    <span className="font-semibold text-gray-900 dark:text-white mr-2">
-                                        {comment.user}
-                                    </span>
-                                    <span className="text-gray-800 dark:text-gray-200">
-                                        {comment.text}
-                                    </span>
-                                </div>
-                                <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
-                                    <span>{comment.time}</span>
-                                    <button className="font-semibold hover:text-gray-600">Reply</button>
-                                </div>
-                            </div>
-                            {/* Like (Heart) for Comment - Static for now */}
-                            {/* We can keep this static heart for comments or remove/implement later */}
-                            <button className="opacity-0 group-hover:opacity-100 transition-opacity">
-                                <span className="text-xs text-gray-400 hover:text-red-500">♡</span>
-                            </button>
+                <div className="space-y-4 pb-4">
+                    {commentsLoading && comments.length === 0 ? (
+                        <div className="flex justify-center py-8">
+                            <Loader2 className="w-6 h-6 animate-spin text-gray-300" />
                         </div>
-                    ))}
-                    {/* Mock "Load more" */}
-                    <button className="text-xs text-gray-500 font-medium my-4 block mx-auto">
-                        Load more comments
-                    </button>
+                    ) : (
+                        comments.map(comment => (
+                            <ProductCommentItem
+                                key={comment.id}
+                                comment={comment}
+                                onDelete={deleteComment}
+                                onReport={handleReport}
+                            />
+                        ))
+                    )}
+
+                    {comments.length === 0 && !commentsLoading && (
+                        <div className="flex flex-col items-center justify-center py-8 text-center">
+                            <div className="text-4xl mb-2">💭</div>
+                            <h3 className="font-semibold text-gray-900 dark:text-white">No comments yet</h3>
+                            <p className="text-sm text-gray-500">Start the conversation.</p>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -180,12 +164,16 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                             <Share2 className="w-6 h-6 text-gray-900 dark:text-white group-hover:text-green-500 transition-colors" />
                         </button>
                     </div>
-                    <button onClick={handleFavorite} className="group">
-                        <Bookmark className="w-6 h-6 text-gray-900 dark:text-white group-hover:text-yellow-500 transition-colors" />
-                    </button>
+                    {/* Favorite Button */}
+                    <ProductFavoriteButton
+                        isFavorite={isFavorite}
+                        onToggle={toggleFavorite}
+                        isLoading={isFavLoading}
+                        size={24}
+                    />
                 </div>
 
-                {/* Likes Count & Liked By */}
+                {/* Liked By */}
                 <div className="mb-2">
                     <ProductLikedBy
                         friends={likedByFriends}
@@ -199,24 +187,12 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                 </div>
 
                 {/* Comment Input */}
-                <form onSubmit={handlePostComment} className="flex items-center border-t border-gray-100 dark:border-gray-800 pt-3">
-                    <button type="button" className="text-xl mr-3">😊</button>
-                    <input
+                <div className="border-t border-gray-100 dark:border-gray-800 pt-3">
+                    <ProductCommentInput
+                        onPost={postComment}
                         id="web-comment-input"
-                        type="text"
-                        placeholder="Add a comment..."
-                        value={commentText}
-                        onChange={(e) => setCommentText(e.target.value)}
-                        className="flex-1 bg-transparent text-sm focus:outline-none text-gray-900 dark:text-white"
                     />
-                    <button
-                        type="submit"
-                        disabled={!commentText.trim()}
-                        className="text-blue-500 font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:text-blue-600"
-                    >
-                        Post
-                    </button>
-                </form>
+                </div>
             </div>
         </div>
     );

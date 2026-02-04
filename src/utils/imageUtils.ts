@@ -12,6 +12,7 @@ export const getOptimizedImageUrl = (
     format: 'origin' | 'webp' = 'webp'
 ): string => {
     if (!url) return '/placeholder-product.jpg';
+    if (typeof url !== 'string') return '/placeholder-product.jpg';
     if (url.startsWith('/')) return url;
     if (url.includes('placeholder')) return url;
 

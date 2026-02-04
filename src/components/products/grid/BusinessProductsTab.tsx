@@ -3,7 +3,7 @@ import toast from 'react-hot-toast';
 import { useProducts } from '../../../hooks/useProducts';
 import { ProductGrid } from './ProductGrid';
 import { GridProduct } from './ProductCard';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
     MobileProductModal,
     MobileProductHeader,
@@ -25,7 +25,16 @@ export const BusinessProductsTab: React.FC<BusinessProductsTabProps> = ({ busine
     const { products, loading, fetchProducts, deleteProduct, updateProduct } = useProducts(businessId);
     const navigate = useNavigate();
     const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+    const [searchParams, setSearchParams] = useSearchParams();
     const isDesktop = useMediaQuery('(min-width: 768px)');
+
+    // Sync URL param to state (Deep linking)
+    useEffect(() => {
+        const productIdParam = searchParams.get('productId');
+        if (productIdParam && productIdParam !== selectedProductId) {
+            setSelectedProductId(productIdParam);
+        }
+    }, [searchParams]);
 
     useEffect(() => {
         fetchProducts(businessId, { featured: true });
@@ -129,18 +138,11 @@ export const BusinessProductsTab: React.FC<BusinessProductsTabProps> = ({ busine
                                     document.getElementById('comment-input')?.focus(); // Focus input
                                 }}
                                 onShare={() => toast.success('Shared (Demo)', { icon: '🔗' })}
-                                onFavorite={() => toast.success('Favorited (Demo)', { icon: '⭐' })}
                             />
                             <MobileProductDetails product={selectedProduct} />
                             <MobileProductComments
-                                // Mock data for User Testing (Story 12.3 UI Check)
-                                comments={[
-                                    { id: '1', username: 'alex_style', text: 'Love this color! 😍', timeAgo: '2m' },
-                                    { id: '2', username: 'sarah_trends', text: 'Is this available in store?', timeAgo: '15m' }
-                                ]}
-                                totalCount={selectedProduct.comment_count || 5} // Mock count > 0 to show "View all"
-                                onViewAll={() => toast('Comments view coming soon')}
-                                onAddComment={(text) => toast.success(`Comment posted: "${text}" (Demo)`)}
+                                productId={selectedProduct.id}
+                                initialCount={selectedProduct.comment_count || 0}
                             />
                         </>
                     )}

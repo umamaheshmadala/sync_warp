@@ -1,85 +1,76 @@
-import React, { useState } from 'react';
-import { Send } from 'lucide-react';
-
-interface Comment {
-    id: string;
-    username: string;
-    text: string;
-    timeAgo: string;
-}
+import React from 'react';
+import { useProductComments } from '../../../hooks/useProductComments';
+import { ProductCommentItem } from '../social/ProductCommentItem';
+import { ProductCommentInput } from '../social/ProductCommentInput';
+import { Loader2 } from 'lucide-react';
 
 interface MobileProductCommentsProps {
-    comments?: Comment[]; // Optional for now
-    totalCount?: number;
-    onViewAll?: () => void;
-    onAddComment?: (text: string) => void;
+    productId: string;
+    initialCount?: number;
+    focusInput?: boolean;
 }
 
 export const MobileProductComments: React.FC<MobileProductCommentsProps> = ({
-    comments = [],
-    totalCount = 0,
-    onViewAll,
-    onAddComment
+    productId,
+    initialCount = 0,
+    focusInput
 }) => {
-    const [inputValue, setInputValue] = useState('');
+    const { comments, commentCount, loading, hasMore, loadMore, postComment, deleteComment } = useProductComments(productId, initialCount);
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (inputValue.trim()) {
-            if (onAddComment) onAddComment(inputValue);
-            setInputValue('');
-        }
+    const handleReport = (id: string) => {
+        console.log('Report', id); // Mock for now
     };
 
     return (
         <div className="px-4 py-2 border-t border-gray-100 dark:border-gray-800">
-            {/* View All Header */}
-            {totalCount > 0 && (
-                <button
-                    onClick={onViewAll}
-                    className="text-gray-500 dark:text-gray-400 text-sm mb-3 block"
-                >
-                    View all {totalCount} comments
-                </button>
+            {/* Header / Count */}
+            {commentCount > 0 && (
+                <div className="text-gray-500 dark:text-gray-400 text-sm mb-3">
+                    {commentCount} {commentCount === 1 ? 'comment' : 'comments'}
+                </div>
             )}
 
-            {/* Comment Previews */}
-            <div className="space-y-3 mb-4">
-                {comments.slice(0, 2).map((comment) => (
-                    <div key={comment.id} className="text-sm">
-                        <span className="font-semibold text-gray-900 dark:text-gray-100 mr-2">
-                            {comment.username}
-                        </span>
-                        <span className="text-gray-700 dark:text-gray-300">
-                            {comment.text}
-                        </span>
-                        {/* <span className="text-xs text-gray-400 ml-2 block sm:inline">{comment.timeAgo}</span> */}
+            {/* Comments List (Preview - max 3 for mobile modal usually, unless viewing all) */}
+            {/* Story says "View all" logic. For simplicity in this modal, let's show up to 3 and a "View All" button 
+                that expands or loads more. For now, we'll just show the list with "Load More" at bottom if needed. */}
+
+            <div className="space-y-4 mb-4">
+                {loading && comments.length === 0 ? (
+                    <div className="flex justify-center py-4">
+                        <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
                     </div>
-                ))}
+                ) : (
+                    comments.slice(0, 3).map((comment) => (
+                        <ProductCommentItem
+                            key={comment.id}
+                            comment={comment}
+                            onDelete={deleteComment}
+                            onReport={handleReport}
+                        />
+                    ))
+                )}
+
+                {comments.length > 3 && (
+                    <button className="text-gray-500 text-xs font-semibold pl-11">
+                        View all {commentCount} comments
+                    </button>
+                    // Real "View All" would likely open a full-height sheet or navigate.
+                    // For MVP 12.6, showing inline is okay or just a preview.
+                )}
+
+                {comments.length === 0 && !loading && (
+                    <div className="text-gray-400 text-sm italic py-2 text-center">
+                        No comments yet. Be the first to say something!
+                    </div>
+                )}
             </div>
 
-            {/* Input Row */}
-            <form onSubmit={handleSubmit} className="flex items-center gap-3 mt-2">
-                <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex-shrink-0" /> {/* Avatar Placeholder */}
-                <div className="flex-1 relative">
-                    <input
-                        type="text"
-                        placeholder="Add a comment..."
-                        value={inputValue}
-                        id="comment-input"
-                        onChange={(e) => setInputValue(e.target.value)}
-                        className="w-full bg-transparent text-sm text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none py-1"
-                    />
-                </div>
-                {inputValue.trim() && (
-                    <button
-                        type="submit"
-                        className="text-blue-600 dark:text-blue-400 font-semibold text-sm"
-                    >
-                        Post
-                    </button>
-                )}
-            </form>
+            {/* Input */}
+            <ProductCommentInput
+                onPost={postComment}
+                id="mobile-comment-input"
+                autoFocus={focusInput}
+            />
         </div>
     );
 };
