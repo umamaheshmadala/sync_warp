@@ -8,12 +8,14 @@ interface MobileProductCommentsProps {
     productId: string;
     initialCount?: number;
     focusInput?: boolean;
+    isOwner?: boolean;
 }
 
 export const MobileProductComments: React.FC<MobileProductCommentsProps> = ({
     productId,
     initialCount = 0,
-    focusInput
+    focusInput,
+    isOwner
 }) => {
     const { comments, commentCount, loading, hasMore, loadMore, postComment, deleteComment } = useProductComments(productId, initialCount);
 
@@ -40,28 +42,43 @@ export const MobileProductComments: React.FC<MobileProductCommentsProps> = ({
                         <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
                     </div>
                 ) : (
-                    comments.slice(0, 3).map((comment) => (
-                        <ProductCommentItem
-                            key={comment.id}
-                            comment={comment}
-                            onDelete={deleteComment}
-                            onReport={handleReport}
-                        />
-                    ))
-                )}
+                    <>
+                        {/* Show all loaded comments */}
+                        {comments.map((comment) => (
+                            <ProductCommentItem
+                                key={comment.id}
+                                comment={comment}
+                                onDelete={deleteComment}
+                                onReport={handleReport}
+                                isBusinessOwner={isOwner}
+                            />
+                        ))}
 
-                {comments.length > 3 && (
-                    <button className="text-gray-500 text-xs font-semibold pl-11">
-                        View all {commentCount} comments
-                    </button>
-                    // Real "View All" would likely open a full-height sheet or navigate.
-                    // For MVP 12.6, showing inline is okay or just a preview.
-                )}
+                        {/* Load More Button */}
+                        {hasMore && (
+                            <button
+                                onClick={loadMore}
+                                disabled={loading}
+                                className="w-full py-2 text-sm text-blue-600 font-medium hover:bg-blue-50 rounded-lg transition-colors flex items-center justify-center gap-2"
+                            >
+                                {loading ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        Loading...
+                                    </>
+                                ) : (
+                                    'Show older comments'
+                                )}
+                            </button>
+                        )}
 
-                {comments.length === 0 && !loading && (
-                    <div className="text-gray-400 text-sm italic py-2 text-center">
-                        No comments yet. Be the first to say something!
-                    </div>
+                        {/* Empty State */}
+                        {comments.length === 0 && !loading && (
+                            <div className="text-gray-400 text-sm italic py-2 text-center">
+                                No comments yet. Be the first to say something!
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
 

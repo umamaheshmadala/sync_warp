@@ -8,12 +8,13 @@ interface ProductCommentItemProps {
     comment: ProductComment;
     onDelete: (id: string) => void;
     onReport: (id: string) => void;
+    isBusinessOwner?: boolean;
 }
 
-export const ProductCommentItem: React.FC<ProductCommentItemProps> = ({ comment, onDelete, onReport }) => {
+export const ProductCommentItem: React.FC<ProductCommentItemProps> = ({ comment, onDelete, onReport, isBusinessOwner }) => {
     const { user } = useAuthStore();
     const isOwnComment = user?.id === comment.user_id;
-    // const isBusinessOwner = ... // TODO: Pass isOwner prop if needed for moderation
+    const canDelete = isOwnComment || isBusinessOwner;
     const [showMenu, setShowMenu] = useState(false);
 
     const timeAgo = new Date(comment.created_at).toLocaleDateString(undefined, {
@@ -35,6 +36,8 @@ export const ProductCommentItem: React.FC<ProductCommentItemProps> = ({ comment,
         setShowMenu(false);
         toast.success('Comment reported. We will review it.');
     };
+
+    console.log(`ProductCommentItem ${comment.id}: isOwn=${isOwnComment}, isBizOwner=${isBusinessOwner}, canDelete=${canDelete}`);
 
     return (
         <div className="flex gap-3 items-start group relative">
@@ -79,7 +82,7 @@ export const ProductCommentItem: React.FC<ProductCommentItemProps> = ({ comment,
                             <>
                                 <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
                                 <div className="absolute left-0 sm:left-auto sm:right-0 top-6 w-32 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 py-1 z-20 flex flex-col text-sm">
-                                    {isOwnComment ? (
+                                    {canDelete ? (
                                         <button onClick={handleDelete} className="text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 text-red-500 flex items-center gap-2 w-full">
                                             <Trash2 className="w-4 h-4" /> Delete
                                         </button>

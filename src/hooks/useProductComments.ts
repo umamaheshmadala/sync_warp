@@ -91,7 +91,7 @@ export const useProductComments = (productId: string, initialCount: number = 0) 
             // Revert
             setComments(prevComments);
             setCommentCount(prev => prev + 1);
-            toast.error('Failed to delete comment');
+            toast.error(`Failed to delete comment: ${error.message || 'Unknown error'}`);
         } else {
             toast.success('Comment deleted');
         }
