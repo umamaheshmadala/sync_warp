@@ -33,7 +33,7 @@ export const useProducts = (businessId?: string) => {
 
       let query = supabase
         .from('products') // Updated table name
-        .select('*')
+        .select('*, businesses(business_name, logo_url)')
         .eq('business_id', businessIdToUse);
 
       // Simple implementation of filters for the new schema

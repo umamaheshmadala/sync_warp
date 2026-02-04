@@ -274,10 +274,10 @@ ALTER TABLE products
 | Story | Title | Priority | Estimate |
 |-------|-------|----------|----------|
 | 12.1 | Product Image Upload & Cropping | P0 | 8 pts | ✅ Done |
-| 12.2 | Product Modal Redesign (Web) | P0 | 8 pts |
-| 12.3 | Product Modal Redesign (Mobile) | P0 | 8 pts | 🧪 User Testing |
+| 12.2 | Product Modal Redesign (Web) | P0 | 8 pts | ✅ Done |
+| 12.3 | Product Modal Redesign (Mobile) | P0 | 8 pts | ✅ Done |
 | 12.4 | Mobile Two-Step Creation Flow | P0 | 8 pts | ✅ Done |
-| 12.5 | Likes System | P0 | 5 pts |
+| 12.5 | Likes System | P0 | 5 pts | ✅ Done |
 | 12.6 | Comments System | P0 | 8 pts |
 | 12.7 | Share & Tracking | P1 | 3 pts |
 | 12.8 | Favorites Integration | P1 | 3 pts |

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import { useProducts } from '../../../hooks/useProducts';
 import { ProductGrid } from './ProductGrid';
 import { GridProduct } from './ProductCard';
@@ -11,6 +12,8 @@ import {
     MobileProductDetails,
     MobileProductComments
 } from '../mobile';
+import { WebProductModal } from '../web/WebProductModal'; // Import Desktop Modal
+import { useMediaQuery } from '../../../hooks/use-media-query';
 import { Product } from '../../../types/product';
 
 interface BusinessProductsTabProps {
@@ -22,6 +25,7 @@ export const BusinessProductsTab: React.FC<BusinessProductsTabProps> = ({ busine
     const { products, loading, fetchProducts, deleteProduct, updateProduct } = useProducts(businessId);
     const navigate = useNavigate();
     const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+    const isDesktop = useMediaQuery('(min-width: 768px)');
 
     useEffect(() => {
         fetchProducts(businessId, { featured: true });
@@ -80,42 +84,82 @@ export const BusinessProductsTab: React.FC<BusinessProductsTabProps> = ({ busine
                 onAddProduct={handleAddProduct}
             />
 
-            {/* Mobile Product Modal */}
-            <MobileProductModal
-                isOpen={!!selectedProductId}
-                onClose={handleCloseModal}
-            >
-                {selectedProduct && (
-                    <>
-                        <MobileProductHeader
-                            product={selectedProduct}
+            {/* Mobile Product Modal (Visible on sm and below - hidden via CSS media/logic inside components or here) */}
+            {/* Note: WebProductModal uses a portal, MobileProductModal uses a portal. 
+                Ideally we check window width, but simpler to just render both and let CSS hide/show or use a hook.
+                Since both use Portals and fixed positioning, we should render ONLY ONE based on logic to avoid conflicts.
+             */}
+
+            {/* Logic: Using simple CSS hidden utility on specific modal wrapper might be tricky with Portals.
+                Let's use a small helper or just window matchMedia in this component to decide?
+                Or sticking to the plan: Render based on a simple hook.
+             */}
+
+            {/* For now, just render MobileProductModal. We will add the Desktop one below conditionally 
+                or replace it entirely. A custom useMediaQuery hook is best here.
+            */}
+
+            {/* TEMPORARY: Render MobileModal ALWAYS (as it was) + WebModal (Hidden on Mobile via internal check? No, passed prop?) 
+               Let's implement a simple useMediaQuery right here or imported.
+            */}
+
+            {/* Mobile Product Modal - Render ONLY on Mobile */}
+            {!isDesktop && (
+                <MobileProductModal
+                    isOpen={!!selectedProductId}
+                    onClose={handleCloseModal}
+                >
+                    {selectedProduct && (
+                        <>
+                            <MobileProductHeader
+                                product={selectedProduct}
+                                onClose={handleCloseModal}
+                                onEdit={isOwner ? handleEditProduct : undefined}
+                                onDelete={isOwner ? handleDeleteProduct : undefined}
+                                onArchive={isOwner ? handleArchiveProduct : undefined}
+                            />
+                            <MobileProductCarousel
+                                images={selectedProduct.images || []}
+                                productName={selectedProduct.name}
+                            />
+                            <MobileProductActions
+                                product={selectedProduct}
+                                // Handlers to be implemented in future stories
+                                onComment={() => {
+                                    document.getElementById('comment-input')?.focus(); // Focus input
+                                }}
+                                onShare={() => toast.success('Shared (Demo)', { icon: '🔗' })}
+                                onFavorite={() => toast.success('Favorited (Demo)', { icon: '⭐' })}
+                            />
+                            <MobileProductDetails product={selectedProduct} />
+                            <MobileProductComments
+                                // Mock data for User Testing (Story 12.3 UI Check)
+                                comments={[
+                                    { id: '1', username: 'alex_style', text: 'Love this color! 😍', timeAgo: '2m' },
+                                    { id: '2', username: 'sarah_trends', text: 'Is this available in store?', timeAgo: '15m' }
+                                ]}
+                                totalCount={selectedProduct.comment_count || 5} // Mock count > 0 to show "View all"
+                                onViewAll={() => toast('Comments view coming soon')}
+                                onAddComment={(text) => toast.success(`Comment posted: "${text}" (Demo)`)}
+                            />
+                        </>
+                    )}
+                </MobileProductModal>
+            )}
+
+            {/* Desktop Modal - Render ONLY on Desktop */}
+            {isDesktop && (
+                <>
+                    {selectedProduct && (
+                        <WebProductModal
+                            isOpen={!!selectedProductId}
                             onClose={handleCloseModal}
-                            onEdit={isOwner ? handleEditProduct : undefined}
-                            onDelete={isOwner ? handleDeleteProduct : undefined}
-                            onArchive={isOwner ? handleArchiveProduct : undefined}
+                            product={selectedProduct}
+                            isOwner={isOwner}
                         />
-                        <MobileProductCarousel
-                            images={selectedProduct.images || []}
-                            productName={selectedProduct.name}
-                        />
-                        <MobileProductActions
-                            likeCount={selectedProduct.like_count || 0}
-                            commentCount={selectedProduct.comment_count || 0}
-                            // Handlers to be implemented in future stories
-                            onLike={() => console.log('Like clicked')}
-                            onComment={() => console.log('Comment clicked')}
-                            onShare={() => console.log('Share clicked')}
-                            onFavorite={() => console.log('Favorite clicked')}
-                        />
-                        <MobileProductDetails product={selectedProduct} />
-                        <MobileProductComments
-                            totalCount={selectedProduct.comment_count || 0}
-                            onViewAll={() => console.log('View all comments')}
-                            onAddComment={(text) => console.log('Add comment:', text)}
-                        />
-                    </>
-                )}
-            </MobileProductModal>
+                    )}
+                </>
+            )}
         </>
     );
 };

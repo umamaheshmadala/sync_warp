@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useAnimation, PanInfo } from 'framer-motion';
 // import { X } from 'lucide-react'; // Not using X explicitly as we have drag/back button
 // import { Product } from '../../../types/product';
@@ -39,10 +40,10 @@ export const MobileProductModal: React.FC<MobileProductModalProps> = ({ isOpen, 
         }
     };
 
-    return (
+    const modalContent = (
         <AnimatePresence>
             {isOpen && (
-                <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
+                <div className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center">
                     {/* Backdrop */}
                     <motion.div
                         initial={{ opacity: 0 }}
@@ -67,17 +68,14 @@ export const MobileProductModal: React.FC<MobileProductModalProps> = ({ isOpen, 
                         {/* Drag Handle for visual affordance */}
                         <div className="absolute top-2 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-gray-300 rounded-full z-10 sm:hidden pointer-events-none" />
 
-                        {/* Content Container - prevent drag on content unless at top? 
-                            For now simple drag on container works. 
-                            Might need to stop propagation on scrollable area if issues arise.
-                        */}
+                        {/* Content Container */}
                         <div
                             className="h-full overflow-y-auto no-scrollbar bg-white dark:bg-gray-900"
-                            onPointerDown={(e) => e.stopPropagation()} // Optional: test if this blocks drag start on content
-                        // Actually we WANT to drag title/header to close, but maybe not if scrolling mid-content?
-                        // Framer motion drag is smart enough usually.
+                            onPointerDown={(e) => e.stopPropagation()}
                         >
-                            {children}
+                            <div className="pt-14">
+                                {children}
+                            </div>
                         </div>
 
                     </motion.div>
@@ -85,4 +83,6 @@ export const MobileProductModal: React.FC<MobileProductModalProps> = ({ isOpen, 
             )}
         </AnimatePresence>
     );
+
+    return createPortal(modalContent, document.body);
 };

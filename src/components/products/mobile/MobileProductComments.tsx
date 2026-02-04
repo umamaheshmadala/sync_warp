@@ -66,6 +66,7 @@ export const MobileProductComments: React.FC<MobileProductCommentsProps> = ({
                         type="text"
                         placeholder="Add a comment..."
                         value={inputValue}
+                        id="comment-input"
                         onChange={(e) => setInputValue(e.target.value)}
                         className="w-full bg-transparent text-sm text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none py-1"
                     />

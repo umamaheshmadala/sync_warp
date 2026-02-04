@@ -2,13 +2,15 @@
 -- The table 'business_products' does not exist, it should be 'products'.
 
 -- 1. Fix get_user_favorite_products function (from 20260109_user_favorites.sql)
+DROP FUNCTION IF EXISTS get_user_favorite_products(UUID);
+
 CREATE OR REPLACE FUNCTION get_user_favorite_products(p_user_id UUID)
 RETURNS TABLE (
   id UUID,
   name TEXT,
   description TEXT,
   price NUMERIC,
-  image_urls TEXT[],
+  image_urls JSONB, -- Changed from TEXT[] to JSONB to match products.images
   business_id UUID,
   business_name TEXT,
   is_available BOOLEAN,
@@ -22,14 +24,14 @@ BEGIN
     p.name::TEXT,
     p.description::TEXT,
     p.price,
-    p.image_urls,
+    p.images as image_urls, -- Map images JSONB to image_urls alias
     p.business_id,
     b.business_name::TEXT,
-    p.is_available,
+    p.is_active as is_available,
     p.is_featured,
     f.created_at as favorited_at
   FROM user_favorites f
-  JOIN products p ON p.id = f.item_id  -- Changed from 'business_products' to 'products'
+  JOIN products p ON p.id = f.item_id
   JOIN businesses b ON b.id = p.business_id
   WHERE f.user_id = p_user_id 
     AND f.item_type = 'product'
@@ -52,7 +54,7 @@ BEGIN
       SET share_count = share_count + 1
       WHERE id = NEW.entity_id;
     ELSIF (NEW.type = 'product') THEN
-      UPDATE public.products -- Changed from business_products
+      UPDATE public.products
       SET share_count = share_count + 1
       WHERE id = NEW.entity_id;
     END IF;
@@ -67,11 +69,11 @@ CREATE OR REPLACE FUNCTION public.update_favorite_product_counts()
 RETURNS TRIGGER AS $$
 BEGIN
   IF (TG_OP = 'INSERT') THEN
-    UPDATE public.products -- Changed from business_products
+    UPDATE public.products
     SET favorite_count = favorite_count + 1
     WHERE id = NEW.product_id;
   ELSIF (TG_OP = 'DELETE') THEN
-    UPDATE public.products -- Changed from business_products
+    UPDATE public.products
     SET favorite_count = GREATEST(0, favorite_count - 1)
     WHERE id = OLD.product_id;
   END IF;
