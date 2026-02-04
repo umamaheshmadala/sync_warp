@@ -12,6 +12,9 @@ import { ProductCommentItem } from '../social/ProductCommentItem';
 import { ProductCommentInput } from '../social/ProductCommentInput';
 import { ProductFavoriteButton } from '../actions/ProductFavoriteButton';
 import { ProductShareButton } from '../../Sharing/ProductShareButton';
+import { ProductTagDisplay } from '../tags/ProductTagDisplay';
+import { ProductDescription } from '../details/ProductDescription';
+import { ProductNotificationToggle } from '../controls/ProductNotificationToggle';
 
 interface WebProductDetailsPanelProps {
     product: Product;
@@ -87,6 +90,10 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                         <span className="text-lg font-medium text-gray-900 dark:text-white">
                             ${product.price?.toFixed(2)}
                         </span>
+
+                        {/* Tags */}
+                        <ProductTagDisplay product={product} size="sm" />
+
                         {product.status === 'sold_out' && (
                             <span className="px-2 py-0.5 bg-gray-100 text-gray-500 text-xs rounded-full dark:bg-gray-800">
                                 Sold Out
@@ -95,17 +102,11 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                     </div>
 
                     {/* Description */}
-                    <div className="text-sm text-gray-800 dark:text-gray-200 mt-2 whitespace-pre-wrap">
-                        {displayDescription}
-                        {shouldTruncate && (
-                            <button
-                                onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
-                                className="text-gray-500 text-xs ml-1 hover:text-gray-700 dark:hover:text-gray-300"
-                            >
-                                {isDescriptionExpanded ? 'less' : 'more'}
-                            </button>
-                        )}
-                    </div>
+                    <ProductDescription
+                        text={product.description}
+                        maxLength={120}
+                        className="mt-2"
+                    />
 
                     {/* Tags */}
                     {product.tags && product.tags.length > 0 && (
@@ -146,6 +147,17 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                         </div>
                     )}
                 </div>
+
+                {/* Owner Controls */}
+                {isOwner && (
+                    <div className="pb-4">
+                        <ProductNotificationToggle
+                            productId={product.id}
+                            isEnabled={product.notifications_enabled ?? true}
+                            isOwner={isOwner}
+                        />
+                    </div>
+                )}
             </div>
 
             {/* Sticky Bottom Actions & Input */}

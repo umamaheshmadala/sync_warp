@@ -76,6 +76,12 @@ export const useProductComments = (productId: string, initialCount: number = 0) 
         } else if (data) {
             // Replace temp with real
             setComments(prev => prev.map(c => c.id === tempId ? data : c));
+
+            // Trigger notification
+            // We use the LikeService's notification logic as it has the same requirements (notify owner)
+            import('../services/productLikeService').then(({ productLikeService }) => {
+                productLikeService.notifyOwner(productId, user.id, 'comment').catch(console.error);
+            });
         }
     };
 

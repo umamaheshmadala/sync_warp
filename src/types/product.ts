@@ -20,6 +20,8 @@ export interface Product {
   like_count?: number;
   comment_count?: number;
   share_count?: number;
+  new_arrival_expires_at?: string;
+  notifications_enabled?: boolean;
 
   image_urls: string[]; // Legacy
   image_url?: string; // Legacy
@@ -35,6 +37,15 @@ export interface Product {
     slug?: string;
     logo_url?: string;
   } | { business_name: string; slug?: string }[]; // Handle array or single depending on query
+}
+
+export type ProductTagType = 'new_arrival' | 'low_stock' | 'sale' | 'best_seller' | 'featured' | 'custom';
+
+export interface ProductTagConfig {
+  label: string;
+  color: string;
+  bgColor: string;
+  icon?: string;
 }
 
 export interface ProductFormData {

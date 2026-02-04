@@ -187,7 +187,7 @@ export function ProductShareButton({
           title={`Share ${productName}`}
           aria-label={`Share ${productName}`}
         >
-          <Share2 className="w-4 h-4 text-gray-600" />
+          <Share2 className="w-4 h-4" />
         </button>
 
         <ShareModal

@@ -3,7 +3,7 @@ import { List, LogOut, User, Settings, UserPlus, Search, MessageCircle, Store, P
 import { useState, useRef, useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { supabase } from '../../lib/supabase';
-import { useSimpleProductSocial } from '../../hooks/useSimpleProductSocial';
+
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { NotificationCenter } from '../notifications/NotificationCenter';
@@ -29,7 +29,7 @@ export default function Header() {
   const user = useAuthStore((state) => state.user);
   const profile = useAuthStore((state) => state.profile);
   const signOut = useAuthStore((state) => state.signOut);
-  const { wishlistCount } = useSimpleProductSocial();
+
   const [showMobileProfileDrawer, setShowMobileProfileDrawer] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
@@ -417,23 +417,7 @@ export default function Header() {
             )}
           </Button>
 
-          {/* Wishlist - Desktop Only */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="hidden md:flex relative text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 h-10 w-10"
-            onClick={() => navigate('/wishlist')}
-            title="Wishlist"
-          >
-            <List className="h-7 w-7" />
-            {wishlistCount > 0 && (
-              <Badge
-                className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-red-500 hover:bg-red-600"
-              >
-                {wishlistCount}
-              </Badge>
-            )}
-          </Button>
+
 
           {/* Notifications - All screens */}
           <NotificationCenter />

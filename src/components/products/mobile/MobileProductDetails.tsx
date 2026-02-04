@@ -2,6 +2,7 @@ import React from 'react';
 import { Product } from '../../../types/product';
 import { ProductDescription } from '../details/ProductDescription';
 import { useProductTags } from '../../../hooks/useProductTags';
+import { useProductViewTracking } from '../../../hooks/useProductAnalytics';
 
 interface MobileProductDetailsProps {
     product: Product;
@@ -10,6 +11,9 @@ interface MobileProductDetailsProps {
 export const MobileProductDetails: React.FC<MobileProductDetailsProps> = ({ product }) => {
     // Use the hook to get distinct, configured tags (includes New Arrival logic, formatting)
     const { tags } = useProductTags(product);
+
+    // Analytics: Track view
+    useProductViewTracking(product.id);
 
     // Status visual mapping
     const isSoldOut = product.status === 'sold_out';
@@ -37,7 +41,7 @@ export const MobileProductDetails: React.FC<MobileProductDetailsProps> = ({ prod
                         className="px-2.5 py-0.5 rounded-full text-xs font-medium"
                         style={{
                             backgroundColor: tagItem.config.bgColor,
-                            color: tagItem.config.color || tagItem.config.textColor || '#000' // Fallback
+                            color: tagItem.config.color || '#000' // Fallback
                         }}
                     >
                         {tagItem.config.label}

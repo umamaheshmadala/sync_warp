@@ -1,10 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart } from 'lucide-react';
 import { Product } from '../../../types/product';
 
 interface MobileProductCarouselProps {
-    images: { url: string; alt?: string }[];
+    images: (string | { url: string; alt?: string })[];
     productName: string;
     onDoubleTap?: () => void;
 }
@@ -18,8 +18,18 @@ export const MobileProductCarousel: React.FC<MobileProductCarouselProps> = ({
     const scrollRef = useRef<HTMLDivElement>(null);
     const [showHeart, setShowHeart] = useState(false);
 
-    // Filter valid images only
-    const validImages = images.length > 0 ? images : [{ url: 'https://placehold.co/1080x1350?text=No+Image', alt: 'Placeholder' }];
+    // Filter valid images only and normalize to object structure
+    const validImages = useMemo(() => {
+        if (!images || images.length === 0) {
+            return [{ url: 'https://placehold.co/1080x1350?text=No+Image', alt: 'Placeholder' }];
+        }
+        return images.map(img => {
+            if (typeof img === 'string') {
+                return { url: img, alt: productName };
+            }
+            return img;
+        });
+    }, [images, productName]);
 
     const handleScroll = () => {
         if (scrollRef.current) {
@@ -63,6 +73,7 @@ export const MobileProductCarousel: React.FC<MobileProductCarouselProps> = ({
                             alt={img.alt || productName}
                             className="w-full h-full object-cover"
                             draggable={false}
+                            loading={idx === 0 ? "eager" : "lazy"}
                         />
                         {/* Sold out overlay could go here if mapped from props */}
                     </div>
@@ -76,8 +87,8 @@ export const MobileProductCarousel: React.FC<MobileProductCarouselProps> = ({
                         <div
                             key={idx}
                             className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${currentIndex === idx
-                                    ? 'bg-white w-2 h-2 shadow-sm'
-                                    : 'bg-white/50'
+                                ? 'bg-white w-2 h-2 shadow-sm'
+                                : 'bg-white/50'
                                 }`}
                         />
                     ))}

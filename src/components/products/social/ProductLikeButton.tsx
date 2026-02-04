@@ -6,7 +6,7 @@ interface ProductLikeButtonProps {
     isLiked: boolean;
     onToggle: () => void;
     size?: number; // Icon size (default 24)
-    color?: string; // Icon color when not liked
+    color?: string; // Optional override
     className?: string;
 }
 
@@ -14,7 +14,7 @@ export const ProductLikeButton: React.FC<ProductLikeButtonProps> = ({
     isLiked,
     onToggle,
     size = 24,
-    color = "currentColor",
+    color,
     className = ""
 }) => {
     // Just wrap the toggle
@@ -40,7 +40,6 @@ export const ProductLikeButton: React.FC<ProductLikeButtonProps> = ({
                         ? 'fill-red-500 text-red-500'
                         : 'text-gray-900 dark:text-white group-hover:text-gray-600'
                         }`}
-                    // Allow overriding color only if not liked
                     style={{ color: isLiked ? undefined : color }}
                 />
             </motion.div>

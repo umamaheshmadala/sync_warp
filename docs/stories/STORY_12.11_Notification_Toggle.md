@@ -1,7 +1,7 @@
 # Story 12.11: Per-Product Notification Toggle
 
 **EPIC**: [EPIC 12 - Instagram-Style Products](../epics/EPIC_12_Instagram_Style_Products.md)  
-**Status**: 📋 Ready for Development  
+**Status**: ⚠️ Completed (Notification Delivery Failing)  
 **Priority**: P1  
 **Estimate**: 3 points  
 

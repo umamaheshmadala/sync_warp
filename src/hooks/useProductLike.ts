@@ -57,6 +57,8 @@ export const useProductLike = (productId: string, initialLikeCount: number = 0) 
             if (newIsLiked) {
                 const { error } = await productLikeService.likeProduct(productId, user.id);
                 if (error) throw error;
+                // Fire notification logic (check toggle internally)
+                productLikeService.notifyOwner(productId, user.id, 'like').catch(console.error);
             } else {
                 const { error } = await productLikeService.unlikeProduct(productId, user.id);
                 if (error) throw error;

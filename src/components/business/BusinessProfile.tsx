@@ -72,6 +72,7 @@ import ReviewAnalyticsDashboard from '../../pages/business/ReviewAnalyticsDashbo
 import { RecommendationBadge } from './RecommendationBadge';
 import { FollowerListModal } from './FollowerListModal';
 import { OperatingHoursModal } from './OperatingHoursModal';
+import { ProductAnalyticsDashboard } from './dashboard/ProductAnalyticsDashboard';
 
 
 
@@ -1088,6 +1089,9 @@ const BusinessProfile: React.FC = () => {
     <div className="space-y-6">
       {/* Review Analytics Dashboard (Story 11.3.4) */}
       {business?.id && <ReviewAnalyticsDashboard businessId={business.id} />}
+
+      {/* Product Analytics Dashboard (Story 12.14) */}
+      {business?.id && <ProductAnalyticsDashboard businessId={business.id} />}
 
       {/* Follower Analytics Section */}
       <FollowerMetricsWidget businessId={business?.id!} />

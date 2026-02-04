@@ -11,6 +11,8 @@ import {
   Eye
 } from 'lucide-react';
 import { Product, ProductFormData } from '../../types/product';
+import { ProductTagSelector } from '../products/tags/ProductTagSelector';
+import { ProductDescriptionInput } from '../products/creation/ProductDescriptionInput';
 import { useProducts } from '../../hooks/useProducts';
 import { toast } from 'react-hot-toast';
 
@@ -48,7 +50,8 @@ const ProductForm: React.FC<ProductFormProps> = ({
       is_available: product?.is_available ?? true,
       is_featured: product?.is_featured || false,
       display_order: product?.display_order || 0,
-      image_urls: product?.image_urls || []
+      image_urls: product?.image_urls || [],
+      tags: product?.tags || []
     }
   });
 
@@ -190,14 +193,16 @@ const ProductForm: React.FC<ProductFormProps> = ({
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Description
-            </label>
-            <textarea
-              {...register('description')}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Describe your product..."
+            <Controller
+              name="description"
+              control={control}
+              render={({ field }) => (
+                <ProductDescriptionInput
+                  {...field}
+                  error={errors.description?.message}
+                  maxChars={300}
+                />
+              )}
             />
           </div>
 
@@ -437,6 +442,20 @@ const ProductForm: React.FC<ProductFormProps> = ({
               Lower numbers appear first among featured products. Only applies to featured products.
             </p>
           </div>
+        </div>
+
+        {/* Tags */}
+        <div className="space-y-4">
+          <Controller
+            name="tags"
+            control={control}
+            render={({ field }) => (
+              <ProductTagSelector
+                selectedTags={field.value || []}
+                onChange={field.onChange}
+              />
+            )}
+          />
         </div>
 
         {/* Actions */}

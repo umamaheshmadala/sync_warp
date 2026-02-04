@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { getOptimizedImageUrl } from '../../../utils/imageUtils';
 
 interface ProductCardImageProps {
     src: string;
@@ -17,7 +18,7 @@ export const ProductCardImage: React.FC<ProductCardImageProps> = ({ src, alt, is
                 </div>
             ) : (
                 <img
-                    src={src}
+                    src={getOptimizedImageUrl(src, 400)} // Optimize for card width
                     alt={alt}
                     className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
                     onError={() => setHasError(true)}

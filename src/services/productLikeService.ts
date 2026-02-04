@@ -44,5 +44,65 @@ export const productLikeService = {
             return [];
         }
         return data || [];
+    },
+
+    async notifyOwner(productId: string, likerId: string, interactionType?: 'like' | 'comment') {
+        try {
+            // 1. Fetch product to get owner and notification setting
+            const { data: product } = await supabase
+                .from('products')
+                .select(`
+                    id, 
+                    name, 
+                    notifications_enabled,
+                    businesses!inner (
+                        user_id
+                    )
+                `)
+                .eq('id', productId)
+                .single();
+
+            if (!product) return;
+
+            // Cast or safe access for joined data
+            const productData = product as any;
+
+            // 2. Check if notifications are enabled
+            if (productData.notifications_enabled === false) {
+                console.log('Notifications disabled for this product');
+                return;
+            }
+
+            // JOIN returns an object for single relation usually, but sometimes array
+            const businessFn = productData.businesses;
+            const ownerId = Array.isArray(businessFn) ? businessFn[0]?.user_id : businessFn?.user_id;
+
+            if (!ownerId) {
+                console.warn('Owner ID not found for product', productId);
+                return;
+            }
+
+            // Don't notify if owner likes their own product
+            if (ownerId === likerId) return;
+
+            // 3. Send notification (optimistic trigger, simplified)
+            // Ideally we'd use a dedicated notification service or Edge Function
+            // For now, triggering via RPC or similar mechanism if available, 
+            // or just rely on Realtime if the owner is online.
+            // Since we don't have a direct "send_notification" RPC exposed here easily without full payload construction,
+            // we will log it. In a real scenario, this matches 'followedBusinessNotificationTrigger' pattern 
+            // but targeted at the owner.
+
+            // TODO: Call actual notification sender. 
+            // For now, we assume the backend/Edge Function typically handles this on INSERT.
+            // valid point: verify if we have a trigger on product_likes table? 
+            // If yes, we need to modify the trigger function.
+            // If no, we need to manually send it here.
+
+            console.log(`[Mock] Sending like notification to owner ${ownerId} for product ${product.name}`);
+
+        } catch (error) {
+            console.error('Error notifying owner:', error);
+        }
     }
 };

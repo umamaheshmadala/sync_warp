@@ -134,8 +134,17 @@ export const useProducts = (businessId?: string) => {
         alt_text: productData.name
       }));
 
-      const tags = [];
-      if (productData.is_featured) tags.push('featured');
+      // Start with manual tags
+      const tags = [...(productData.tags || [])];
+
+      // Ensure 'featured' tag logic syncs with boolean
+      if (productData.is_featured && !tags.includes('featured')) {
+        tags.push('featured');
+      } else if (!productData.is_featured && tags.includes('featured')) {
+        // If is_featured is false, ensure tag is removed (though UI typically handles this via tag selector, explicit syncing is safer)
+        const idx = tags.indexOf('featured');
+        if (idx > -1) tags.splice(idx, 1);
+      }
 
       const { data, error: createError } = await supabase
         .from('products')
@@ -396,6 +405,32 @@ export const useProducts = (businessId?: string) => {
     }
   };
 
+  // Update product notification settings
+  const updateNotificationSetting = async (productId: string, enabled: boolean) => {
+    try {
+      const { error: updateError } = await supabase
+        .from('products')
+        .update({ notifications_enabled: enabled })
+        .eq('id', productId);
+
+      if (updateError) throw updateError;
+
+      // Update local state
+      setProducts(prev => prev.map(p =>
+        p.id === productId ? { ...p, notifications_enabled: enabled } : p
+      ));
+
+      if (product?.id === productId) {
+        setProduct({ ...product, notifications_enabled: enabled });
+      }
+
+      return true;
+    } catch (err) {
+      console.error('Error updating notification settings:', err);
+      return false;
+    }
+  };
+
   return {
     // State
     products,
@@ -412,6 +447,7 @@ export const useProducts = (businessId?: string) => {
     uploadProductImage,
     updateDisplayOrder,
     refreshProducts,
+    updateNotificationSetting,
 
     // Utilities
     setProducts,

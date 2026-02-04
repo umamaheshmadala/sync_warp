@@ -87,7 +87,7 @@ const SearchAnalyticsDashboard = lazy(() => import('../components/SearchAnalytic
 const LocationManager = lazy(() => import('../components/LocationManager'))
 
 const Wallet = lazy(() => import('../components/Wallet'))
-const WishlistPage = lazy(() => import('../pages/WishlistPage'))
+
 const AdvancedSearchPage = lazy(() => import('../components/search/AdvancedSearchPage'))
 const BusinessDiscoveryPage = lazy(() => import('../components/discovery/BusinessDiscoveryPage'))
 const CategoryBrowserPage = lazy(() => import('../components/categories/CategoryBrowserPage'))
@@ -702,16 +702,7 @@ export const routes: RouteConfig[] = [
     title: 'Manage Friends - SynC'
   },
 
-  {
-    path: '/wishlist',
-    element: (
-      <RouteLoader>
-        <WishlistPage />
-      </RouteLoader>
-    ),
-    protected: true,
-    title: 'Wishlist - SynC'
-  },
+
   {
     path: '/reviews',
     element: (

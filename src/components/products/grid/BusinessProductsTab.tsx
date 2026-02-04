@@ -14,7 +14,10 @@ import {
 } from '../mobile';
 import { WebProductModal } from '../web/WebProductModal'; // Import Desktop Modal
 import { useMediaQuery } from '../../../hooks/use-media-query';
+
 import { Product } from '../../../types/product';
+import ProductForm from '../../business/ProductForm';
+import { ProductNotificationToggle } from '../controls/ProductNotificationToggle';
 
 interface BusinessProductsTabProps {
     businessId: string;
@@ -25,6 +28,7 @@ export const BusinessProductsTab: React.FC<BusinessProductsTabProps> = ({ busine
     const { products, loading, fetchProducts, deleteProduct, updateProduct } = useProducts(businessId);
     const navigate = useNavigate();
     const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+    const [isCreatingProduct, setIsCreatingProduct] = useState(false);
     const [searchParams, setSearchParams] = useSearchParams();
     const isDesktop = useMediaQuery('(min-width: 768px)');
 
@@ -54,7 +58,7 @@ export const BusinessProductsTab: React.FC<BusinessProductsTabProps> = ({ busine
     };
 
     const handleAddProduct = () => {
-        navigate('/business/products/create');
+        setIsCreatingProduct(true);
     };
 
     // Find full product data for modal
@@ -142,10 +146,36 @@ export const BusinessProductsTab: React.FC<BusinessProductsTabProps> = ({ busine
                             <MobileProductComments
                                 productId={selectedProduct.id}
                                 initialCount={selectedProduct.comment_count || 0}
+                                isOwner={isOwner}
                             />
+                            {isOwner && (
+                                <div className="px-4 pb-4">
+                                    <ProductNotificationToggle
+                                        productId={selectedProduct.id}
+                                        isEnabled={selectedProduct.notifications_enabled ?? true}
+                                        isOwner={isOwner}
+                                    />
+                                </div>
+                            )}
                         </>
                     )}
                 </MobileProductModal>
+            )}
+
+            {/* Product Creation Modal (Simplified Overlay for now) */}
+            {isCreatingProduct && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white dark:bg-gray-900 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-xl">
+                        <ProductForm
+                            businessId={businessId}
+                            onClose={() => setIsCreatingProduct(false)}
+                            onSuccess={() => {
+                                setIsCreatingProduct(false);
+                                fetchProducts(businessId); // Refresh list
+                            }}
+                        />
+                    </div>
+                </div>
             )}
 
             {/* Desktop Modal - Render ONLY on Desktop */}

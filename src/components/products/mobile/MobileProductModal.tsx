@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useAnimation, PanInfo } from 'framer-motion';
+import { useProductViewTracking } from '../../../hooks/useProductAnalytics';
 // import { X } from 'lucide-react'; // Not using X explicitly as we have drag/back button
 // import { Product } from '../../../types/product';
 
@@ -11,6 +12,21 @@ interface MobileProductModalProps {
 }
 
 export const MobileProductModal: React.FC<MobileProductModalProps> = ({ isOpen, onClose, children }) => {
+    // Analytics: Track view
+    // Note: 'product.id' is not directly available in props here (children driven), 
+    // but looking at BusinessProductsTab, it renders specific modal for product.
+    // Wait, the interface here is generic 'children'. 
+    // The previous view showed: `children: React.ReactNode;`. 
+    // I need to check how to get ID. It seems MobileProductModal is a WRAPPER.
+    // I should check `BusinessProductsTab` or where `MobileProductDetails` is used.
+    // Let me REVERT this plan and check usage first.
+
+    // Actually, looking at the previous failed attempt's context, I assumed it had 'product' prop.
+    // Step 3979 view shows it only has 'children'.
+    // So generic tracking on this wrapper is hard without ID.
+    // I should move tracking to `MobileProductDetails` or `BusinessProductsTab`.
+
+    // Let's abort this specific edit and re-evaluate placement.
     const controls = useAnimation();
 
     // Reset animation when opening

@@ -5,6 +5,7 @@ import { X } from 'lucide-react';
 import { Product } from '../../../types/product';
 import { WebProductCarousel } from './WebProductCarousel';
 import { WebProductDetailsPanel } from './WebProductDetailsPanel';
+import { useProductViewTracking } from '../../../hooks/useProductAnalytics';
 
 interface WebProductModalProps {
     isOpen: boolean;
@@ -19,6 +20,9 @@ export const WebProductModal: React.FC<WebProductModalProps> = ({
     product,
     isOwner
 }) => {
+    // Analytics: Track view
+    useProductViewTracking(isOpen ? product.id : undefined);
+
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
     // Reset index when product changes

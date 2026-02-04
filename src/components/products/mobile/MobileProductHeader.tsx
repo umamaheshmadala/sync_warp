@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Menu } from '@headlessui/react';
 import { Product } from '../../../types/product';
 import { useAuthStore } from '../../../store/authStore';
+import { ProductTagDisplay } from '../tags/ProductTagDisplay';
 
 interface MobileProductHeaderProps {
     product: Product;
@@ -54,6 +55,9 @@ export const MobileProductHeader: React.FC<MobileProductHeaderProps> = ({
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
                     {displayName}
                 </h3>
+                <div className="flex justify-center mt-1">
+                    <ProductTagDisplay product={product} size="sm" limit={2} />
+                </div>
             </div>
 
             <Menu as="div" className="relative">
