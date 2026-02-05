@@ -298,6 +298,10 @@ ALTER TABLE products
 | 12.12 | Product Card Grid Update | P0 | 3 pts | ✅ Done |
 | 12.13 | Database Migration | P0 | 5 pts | ✅ Done |
 | 12.14 | Analytics Integration | P2 | 3 pts | ✅ Done |
+| 12.15 | Product Edit Wizard | P0 | 5 pts | 📋 To Do |
+| 12.16 | Product Archive & Delete Flows | P0 | 5 pts | 📋 To Do |
+| 12.17 | Product Drafts System | P0 | 5 pts | 📋 To Do |
+| 12.18 | Price Field Deprecation | P0 | 2 pts | 📋 To Do |
 
 **Total Estimate**: ~72 points
 
