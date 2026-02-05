@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "npx vite build",
     "build:check": "tsc && vite build",
     "build:dev": "vite build --mode development",
     "build:staging": "vite build --mode staging",
@@ -195,7 +195,6 @@
     "tailwindcss": "^3.3.6",
     "typedoc": "^0.28.15",
     "typedoc-plugin-markdown": "^4.9.0",
-    "typescript": "^5.2.2",
     "vite-plugin-pwa": "^1.1.0",
     "vitest": "^0.34.6"
   },
