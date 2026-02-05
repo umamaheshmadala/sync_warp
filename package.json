@@ -148,7 +148,8 @@
     "web-vitals": "^5.1.0",
     "workbox-window": "^7.3.0",
     "zod": "^3.22.4",
-    "zustand": "^4.4.7"
+    "zustand": "^4.4.7",
+    "vite": "^5.0.0"
   },
   "devDependencies": {
     "@capacitor/assets": "^3.0.5",
@@ -195,7 +196,6 @@
     "typedoc": "^0.28.15",
     "typedoc-plugin-markdown": "^4.9.0",
     "typescript": "^5.2.2",
-    "vite": "^5.0.0",
     "vite-plugin-pwa": "^1.1.0",
     "vitest": "^0.34.6"
   },
