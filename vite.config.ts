@@ -4,8 +4,9 @@ import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
 
 // https://vitejs.dev/config/
-export default defineConfig({
-  base: './', // Ensure relative paths for Capacitor
+export default defineConfig(({ mode }) => ({
+  // Use absolute paths for web (Netlify), relative for Capacitor mobile builds
+  base: mode === 'capacitor' ? './' : '/',
   define: {
     '__BUILD_TIMESTAMP__': JSON.stringify(new Date().toLocaleString('en-IN', {
       timeZone: 'Asia/Kolkata',
@@ -115,4 +116,4 @@ export default defineConfig({
       }
     }
   }
-})
+}))
