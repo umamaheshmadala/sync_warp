@@ -53,37 +53,54 @@ Address critical performance bottlenecks and architectural deficiencies identifi
 
 ## 📋 **Stories Breakdown**
 
-### **Story 8.11.1: Realtime "Firehose" De-escalation** (3 days)
+| # | Story | Priority | Status | File |
+|---|---|---|---|---|
+| 1 | Realtime "Firehose" De-escalation | 🔴 Critical | 📋 Planned | [STORY_8.11.1](../stories/STORY_8.11.1_Realtime_Firehose_Fix.md) |
+| 2 | Query Waterfall Consolidation | 🟠 High | 📋 Planned | [STORY_8.11.2](../stories/STORY_8.11.2_Query_Waterfall_Consolidation.md) |
+| 3 | Optimistic Message Sending & Retry | 🟡 Medium | 📋 Planned | [STORY_8.11.3](../stories/STORY_8.11.3_Optimistic_Message_Sending.md) |
+| 4 | Background Lifecycle & State Sync | 🟡 Medium | 📋 Planned | [STORY_8.11.4](../stories/STORY_8.11.4_Background_Lifecycle_State_Sync.md) |
+
+### **📌 Recommended Execution Order**
+
+Based on impact-to-effort ratio:
+
+1.  **Story 8.11.1 (Firehose Fix)** – *Highest Impact*. Directly reduces CPU, bandwidth, and fixes the core architectural flaw. Should be done first as all other optimizations depend on a clean realtime layer.
+2.  **Story 8.11.2 (Query Consolidation)** – *High Impact*. Reduces initial load time by eliminating sequential database round-trips. Best done second as it simplifies frontend code that Story 8.11.3 will modify.
+3.  **Story 8.11.3 (Optimistic UI)** – *User-Perceivable Impact*. Makes sending feel instant. Depends on a stable message store, so best after 8.11.1 and 8.11.2.
+4.  **Story 8.11.4 (Background Lifecycle)** – *Edge Case Optimization*. Primarily improves the "app resume" experience on mobile. Can be done last as it's non-blocking for core functionality.
+
+---
+
+### **Story Details**
+
+#### Story 8.11.1: Realtime "Firehose" De-escalation (3 days)
 - **Goal**: Implement granular subscriptions in `realtimeService.ts`.
 - **Changes**: 
     - Modify `subscribeToMessages` to use Supabase filters.
     - Implement fallback logic for filter failures.
     - Optimize message deduplication in `messagingStore.ts`.
-- **File:** `docs/stories/STORY_8.11.1_Realtime_Firehose_Fix.md`
 
-### **Story 8.11.2: Server-Side Context Consolidation** (2 days)
+#### Story 8.11.2: Query Waterfall Consolidation (2 days)
 - **Goal**: Replace frontend waterfalls with optimized RPC/Views.
 - **Changes**: 
-    - Create `get_conversation_bundle` RPC.
+    - Create `get_messages_v2` RPC.
     - Update `messagingService.ts` to use new RPC.
-    - Simplify `useConversation` hook logic.
-- **File:** `docs/stories/STORY_8.11.2_Query_Consolidation.md`
+    - Simplify `useMessages` hook logic.
 
-### **Story 8.11.3: Advanced Optimistic UI & Retry Logic** (3 days)
+#### Story 8.11.3: Optimistic Message Sending & Retry (3 days)
 - **Goal**: Decouple UI updates from server confirmation.
 - **Changes**: 
     - Implement state-based message status (SENDING, SENT, FAILED).
     - Add automated retry logic for failed messages.
-    - Implement "Pull-to-Refresh" force sync for broken states.
-- **File:** `docs/stories/STORY_8.11.3_Optimistic_Messaging.md`
+    - Implement "Tap to Retry" on failed messages.
 
-### **Story 8.11.4: Mobile Battery & Lifecycle Optimization** (2 days)
+#### Story 8.11.4: Background Lifecycle & State Sync (2 days)
 - **Goal**: Reduce background activity and connection churn.
 - **Changes**: 
     - Refine `backgroundDisconnectTimer` logic based on network type.
-    - Implement adaptive polling for low-power modes.
+    - Implement instant "catch-up" fetch on app resume.
     - Optimize presence tracking for battery-conscious delivery.
-- **File:** `docs/stories/STORY_8.11.4_Battery_Optimization.md`
+
 
 ---
 
