@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { useAuthStore } from '../stores/useAuthStore';
+import { useAuthStore } from '../store/authStore';
 import { ProductDraft, ProductImage } from '../types/productWizard';
 import { v4 as uuidv4 } from 'uuid';
 import toast from 'react-hot-toast';

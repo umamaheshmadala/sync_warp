@@ -100,7 +100,10 @@ export const EditArrangeStep: React.FC = () => {
                     <ArrowLeft className="w-6 h-6 text-gray-900 dark:text-white" />
                 </button>
                 <h1 className="font-semibold text-lg text-gray-900 dark:text-white">Edit</h1>
-                <button onClick={() => setStep('details')} className="text-primary font-semibold text-base hover:text-primary-dark">
+                <button
+                    onClick={() => setStep('details')}
+                    className="bg-primary text-white px-4 py-1.5 rounded-full font-medium text-sm hover:bg-primary-dark transition-colors"
+                >
                     Next
                 </button>
             </div>
@@ -121,28 +124,33 @@ export const EditArrangeStep: React.FC = () => {
                         <img
                             src={activeImage.preview || activeImage.url}
                             alt="Preview"
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-contain bg-black"
                         />
-                        {/* Overlay Controls */}
-                        <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex justify-center gap-4">
+                        {/* Overlay Controls - Always visible now */}
+                        <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/80 to-transparent flex justify-center gap-4">
                             <button
                                 onClick={() => setIsCropping(true)}
-                                className="p-2 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/30"
+                                className="p-3 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/30 transition-colors"
+                                title="Crop Image"
                             >
                                 <CropIcon className="w-5 h-5" />
                             </button>
                             <button
                                 onClick={() => {
-                                    if (images.length <= 1) {
-                                        // Confirm? or just go back
+                                    if (images.length === 1) {
+                                        if (confirm('Remove the last image? This will take you back to selection.')) {
+                                            removeImage(activeImage.id);
+                                            setStep('media');
+                                        }
+                                    } else {
+                                        removeImage(activeImage.id);
+                                        // Set next active
+                                        const next = images.find(i => i.id !== activeImage.id);
+                                        if (next) setActiveId(next.id);
                                     }
-                                    removeImage(activeImage.id);
-                                    // Set next active
-                                    const next = images.find(i => i.id !== activeImage.id);
-                                    if (next) setActiveId(next.id);
-                                    else setStep('media');
                                 }}
-                                className="p-2 bg-red-500/80 backdrop-blur-md rounded-full text-white hover:bg-red-600/90"
+                                className="p-3 bg-red-500/80 backdrop-blur-md rounded-full text-white hover:bg-red-600/90 transition-colors"
+                                title="Delete Image"
                             >
                                 <Trash2 className="w-5 h-5" />
                             </button>

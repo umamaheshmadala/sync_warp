@@ -36,7 +36,7 @@ const CampaignAnalyticsPage = lazy(() => import('../components/business/Campaign
 const FollowerAnalyticsDashboard = lazy(() => import('../components/business/FollowerAnalyticsDashboard'))
 const FollowerList = lazy(() => import('../components/business/FollowerList'))
 const BusinessCheckinsPage = lazy(() => import('../components/checkins/BusinessCheckinsPage'))
-const MobileProductCreation = lazy(() => import('../components/products/creation/MobileProductCreation').then(m => ({ default: m.MobileProductCreation })))
+
 
 // Admin Components
 // Admin Components
@@ -546,16 +546,7 @@ export const routes: RouteConfig[] = [
     title: 'Business QR Code - SynC'
   },
 
-  {
-    path: '/business/products/create',
-    element: (
-      <RouteLoader>
-        <MobileProductCreation />
-      </RouteLoader>
-    ),
-    protected: true,
-    title: 'Create Product - SynC'
-  },
+
 
   {
     path: '/business/:businessId/manage/coupons',

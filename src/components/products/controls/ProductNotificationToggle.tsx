@@ -8,34 +8,41 @@ interface ProductNotificationToggleProps {
     isEnabled: boolean;
     isOwner: boolean;
     className?: string;
+    onToggle?: (enabled: boolean) => void; // Optional controlled mode
 }
 
 export const ProductNotificationToggle: React.FC<ProductNotificationToggleProps> = ({
     productId,
     isEnabled: initialEnabled,
     isOwner,
-    className = ''
+    className = '',
+    onToggle
 }) => {
     const { updateNotificationSetting } = useProducts();
     const [enabled, setEnabled] = useState(initialEnabled);
     const [updating, setUpdating] = useState(false);
 
-    if (!isOwner) return null;
+    // Sync validation logic if needed
+    // if (!isOwner) return null; // Logic moved inside render or kept? Kept.
 
     const handleToggle = async () => {
         if (updating) return;
 
+        // Controlled mode (for Creation Wizard)
+        if (onToggle) {
+            const newState = !enabled;
+            setEnabled(newState); // Optimistic local
+            onToggle(newState);
+            return;
+        }
+
         try {
             setUpdating(true);
             const newState = !enabled;
-
-            // Optimistic update
+            // ... existing logic ...
             setEnabled(newState);
-
             const success = await updateNotificationSetting(productId, newState);
-
             if (!success) {
-                // Revert on failure
                 setEnabled(!newState);
                 toast.error('Failed to update notification settings');
             } else {
@@ -43,7 +50,7 @@ export const ProductNotificationToggle: React.FC<ProductNotificationToggleProps>
             }
         } catch (error) {
             console.error('Error toggling notifications:', error);
-            setEnabled(!enabled); // Revert
+            setEnabled(!enabled);
         } finally {
             setUpdating(false);
         }

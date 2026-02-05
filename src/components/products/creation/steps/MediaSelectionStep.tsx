@@ -1,7 +1,8 @@
 import React, { useRef } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { useProductWizardStore } from '../../../../stores/useProductWizardStore';
 import { useImagePicker } from '../../../../hooks/products/creation/useImagePicker';
-import { Image, Upload, X } from 'lucide-react';
+import { Image as ImageIcon, Upload, X } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import toast from 'react-hot-toast';
 
@@ -31,6 +32,12 @@ export const MediaSelectionStep: React.FC = () => {
     };
 
     const handlePickImages = async () => {
+        // On Web, triggering the file input strictly is better for multi-selection
+        if (!Capacitor.isNativePlatform()) {
+            fileInputRef.current?.click();
+            return;
+        }
+
         const picked = await pickImages(5);
         if (picked.length > 0) {
             const newImages = picked.map(img => ({
@@ -57,20 +64,23 @@ export const MediaSelectionStep: React.FC = () => {
                 </button>
             </div>
 
-            <div className="w-full max-w-md flex flex-col items-center space-y-8 mt-12">
+            <div
+                className="w-full max-w-md flex flex-col items-center space-y-8 mt-12 cursor-pointer"
+                onClick={handlePickImages}
+            >
                 <div className="w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center animate-pulse-slow">
-                    <Image className="w-10 h-10 text-gray-400" />
+                    <ImageIcon className="w-10 h-10 text-gray-400" />
                 </div>
 
                 <div className="text-center space-y-2">
                     <h2 className="text-xl font-medium text-gray-900 dark:text-white">Select Product Images</h2>
-                    <p className="text-gray-500 dark:text-gray-400">Drag and drop photos or videos here</p>
+                    <p className="text-gray-500 dark:text-gray-400">Tap anywhere to select photos</p>
                 </div>
 
-                <div className="flex flex-col gap-3 w-full max-w-xs">
+                <div className="flex flex-col gap-3 w-full max-w-xs" onClick={(e) => e.stopPropagation()}>
                     <button
                         onClick={handlePickImages}
-                        className="btn-primary w-full py-3 flex items-center justify-center gap-2"
+                        className="w-full py-3 flex items-center justify-center gap-2 bg-primary text-white rounded-lg font-medium hover:bg-primary-dark transition-colors"
                     >
                         <Upload className="w-5 h-5" />
                         Select from Device

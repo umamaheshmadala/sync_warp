@@ -3,11 +3,12 @@ import { useProductWizardStore } from '../../../../stores/useProductWizardStore'
 import { useProductDraft } from '../../../../hooks/useProductDraft';
 import { useProducts } from '../../../../hooks/useProducts';
 import { ArrowLeft, Share, Save, Loader2, Info } from 'lucide-react';
+import { v4 as uuidv4 } from 'uuid';
 import { ProductDescriptionInput } from '../ProductDescriptionInput';
 import { ProductTagSelector } from '../ProductTagSelector';
 import { ProductNotificationToggle } from '../../controls/ProductNotificationToggle';
 import toast from 'react-hot-toast';
-import { useAuthStore } from '../../../../stores/useAuthStore';
+import { useAuthStore } from '../../../../store/authStore';
 
 // Simple Image Carousel for Preview
 const ImagePreviewCarousel = ({ images }: { images: any[] }) => {
@@ -37,8 +38,8 @@ export const ProductDetailsStep: React.FC = () => {
     } = useProductWizardStore();
 
     const { saveDraft, isLoading: isSavingDraft } = useProductDraft();
-    const { createProduct } = useProducts(); // Check hooking signature
-    const { user } = useAuthStore();
+    const { createProduct, uploadProductImage } = useProducts();
+    const [uploadProgress, setUploadProgress] = useState(0);
     const [isPublishing, setIsPublishing] = useState(false);
 
     // Validation
@@ -54,75 +55,127 @@ export const ProductDetailsStep: React.FC = () => {
         return true;
     };
 
+    const uploadImages = async (): Promise<string[]> => {
+        const uploadedUrls: string[] = [];
+        let completed = 0;
+
+        for (const img of images) {
+            // If it's already a remote URL (from draft/edit), keep it
+            if (img.url.startsWith('http') && !img.url.startsWith('blob:')) {
+                uploadedUrls.push(img.url);
+                completed++;
+                continue;
+            }
+
+            // If it's a blob/file, upload it
+            try {
+                // We need a File object. 
+                // img.file is optional but if we came from picker we might have it.
+                // If not (e.g. from blob URL only), we need to fetch blob.
+                let fileToUpload: File;
+
+                if (img.file) {
+                    fileToUpload = img.file;
+                } else {
+                    const response = await fetch(img.url);
+                    const blob = await response.blob();
+                    fileToUpload = new File([blob], `image-${uuidv4()}.jpg`, { type: blob.type });
+                }
+
+                // Upload
+                const publicUrl = await uploadProductImage(fileToUpload, businessId || undefined);
+                if (publicUrl) {
+                    uploadedUrls.push(publicUrl);
+                } else {
+                    throw new Error('Upload failed');
+                }
+            } catch (e) {
+                console.error('Failed to upload image:', img.id, e);
+                toast.error('Failed to upload one or more images');
+                return []; // Fail hard or partial? Let's fail hard to prevent broken products
+            }
+
+            completed++;
+            setUploadProgress(Math.round((completed / images.length) * 100));
+        }
+
+        return uploadedUrls;
+    };
+
     const handleSaveDraft = async () => {
-        if (!businessId) { // Verify businessId availability
+        if (!businessId) {
             toast.error("Business ID missing");
             return;
         }
 
-        const draft = await saveDraft({
+        // For draft, we ideally upload images too, BUT for speed we might skip or just use what we have?
+        // If we don't upload, the draft is only valid on this device (if using blob logic locally persisted in IndexedDB, but localStorage can't hold blobs).
+        // WE MUST UPLOAD for robust drafts.
+        const uploadedUrls = await uploadImages();
+        if (uploadedUrls.length !== images.length) return; // Upload failed
+
+        // Update images with real URLs
+        const imagesWithUrls = images.map((img, i) => ({
+            ...img,
+            url: uploadedUrls[i],
+            file: undefined // Clear file obj
+        }));
+
+        await saveDraft({
             draftId,
-            images,
+            images: imagesWithUrls, // Use persistent URLs
             name,
             description,
             tags,
             notificationsEnabled,
-            businessId // Now accessible from store
+            businessId
         });
 
-        if (draft) {
-            closeWizard();
-            reset();
-        }
+        closeWizard();
+        reset();
     };
-
-    // We need Business ID! The Wizard should probably know about it.
-    // Maybe pass it in `openWizard`? Or get from URL params `useParams`?
-    // Since we are in `/business/:id`, we can use `useParams`.
 
     const handlePublish = async () => {
         if (!validate()) return;
         setIsPublishing(true);
+        setUploadProgress(0);
+
         try {
-            // Prepare payload
-            // Upload images to persistent storage FIRST?
-            // Yes, duplicate logic from Drafts hook or centralized service.
-            // For MVP, if `createProduct` handles file upload, great.
-            // If not, we need an `uploadImage` helper.
-            // Let's assume `createProduct` takes File objects or we need to upload.
+            // 1. Upload Images
+            const uploadedUrls = await uploadImages();
+            if (uploadedUrls.length !== images.length) {
+                throw new Error("Image upload failed");
+            }
 
-            // Revisit `useProducts` signature.
-
-            // Mock success for now to complete UI flow structure
+            // 2. Create Product
             await createProduct({
                 name,
                 description,
                 tags,
-                is_available: true, // Default to available on create
+                is_available: true,
                 is_featured: false,
-                category: 'Uncategorized', // MVP fallback
-                price: 0, // MVP fallback
-                image_urls: images.map(img => img.url), // Need real upload here, assumes URLs are valid or handled
-                // notifications_enabled: notificationsEnabled // createProduct might not accept this in ProductFormData yet?
-                // Checking useProducts.ts createProduct: it manually inserts keys.
-                // It inserts: business_id, name, ... tags, images.
-                // It does NOT insert notifications_enabled in the initial INSERT.
-                // It does call `updateNotificationSetting` later? No.
-                // We might need to update it separately or updated useProducts. 
-                // For MVP, we'll ignore or add if supported.
-            }, businessId);
+                category: 'Uncategorized',
+                price: 0,
+                currency: 'INR',
+                display_order: 0,
+                image_urls: uploadedUrls,
+            }, businessId!);
 
-            // Post-create update for notifications if needed
-            // if (newProduct && notificationsEnabled) { await updateNotificationSetting(newProduct.id, true); }
-
+            // 3. Success
             toast.success("Product published!");
             closeWizard();
             reset();
+
+            // Force refresh logic is needed here if hooks are disconnected.
+            // Dispatch a window event that BusinessProductsTab listens to.
+            window.dispatchEvent(new CustomEvent('product-created', { detail: { businessId } }));
+
         } catch (error) {
             console.error(error);
-            toast.error("Failed to publish");
+            toast.error("Failed to publish product");
         } finally {
             setIsPublishing(false);
+            setUploadProgress(0);
         }
     };
 
@@ -137,9 +190,14 @@ export const ProductDetailsStep: React.FC = () => {
                 <button
                     onClick={handlePublish}
                     disabled={isPublishing}
-                    className="text-primary font-semibold text-base hover:text-primary-dark disabled:opacity-50 flex items-center gap-2"
+                    className="bg-primary text-white px-4 py-1.5 rounded-full font-medium text-sm hover:bg-primary-dark disabled:opacity-50 flex items-center gap-2 transition-colors"
                 >
-                    {isPublishing ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Share'}
+                    {isPublishing ? (
+                        <div className="flex items-center gap-2">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>{uploadProgress}%</span>
+                        </div>
+                    ) : 'Share'}
                 </button>
             </div>
 
@@ -180,37 +238,34 @@ export const ProductDetailsStep: React.FC = () => {
                         {/* Description */}
                         <ProductDescriptionInput
                             value={description}
-                            onChange={(val) => updateDetails({ description: val })}
+                            onChange={(e) => updateDetails({ description: e.target.value })}
                         />
 
                         {/* Tags */}
                         <ProductTagSelector
                             selectedTags={tags}
-                            onTagsChange={(newTags) => updateDetails({ tags: newTags })}
+                            onChange={(newTags) => updateDetails({ tags: newTags })}
                         />
 
                         {/* Notification Toggle */}
                         <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
                             <ProductNotificationToggle
-                                enabled={notificationsEnabled}
+                                isEnabled={notificationsEnabled}
                                 onToggle={(val) => updateDetails({ notificationsEnabled: val })}
                                 productId="new" // Virtual ID for UI
+                                isOwner={true}
                             />
                         </div>
 
                         {/* Save Draft */}
                         <div className="pt-4 border-t border-gray-100 dark:border-gray-800">
                             <button
-                                onClick={() => {
-                                    // Need business ID from context/params!
-                                    // handleSaveDraft();
-                                    toast("Save Draft Implementation Pending (Needs Business Context)");
-                                }}
-                                disabled={isSavingDraft}
+                                onClick={handleSaveDraft}
+                                disabled={isSavingDraft || isPublishing}
                                 className="w-full py-3 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 font-medium transition-colors flex items-center justify-center gap-2"
                             >
                                 <Save className="w-4 h-4" />
-                                {isSavingDraft ? 'Saving...' : 'Save as Draft'}
+                                {isSavingDraft ? 'Saving Draft...' : 'Save as Draft'}
                             </button>
                         </div>
 

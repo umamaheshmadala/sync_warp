@@ -61,6 +61,7 @@ export const BusinessProductsTab: React.FC<BusinessProductsTabProps> = ({ busine
     };
 
     const handleAddProduct = () => {
+        console.log('[BusinessProductsTab] Clicking Add Product for business:', businessId);
         openWizard(businessId); // Use Wizard
     };
 

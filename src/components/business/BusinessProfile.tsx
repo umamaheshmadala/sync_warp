@@ -1995,6 +1995,7 @@ const BusinessProfile: React.FC = () => {
           />
         )
       }
+      <ProductCreationWizard />
     </>
   );
 };
