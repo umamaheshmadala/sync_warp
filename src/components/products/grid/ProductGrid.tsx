@@ -7,9 +7,12 @@ interface ProductGridProps {
     products: GridProduct[];
     isLoading?: boolean;
     isOwner?: boolean;
-    onProductClick?: (product: GridProduct) => void;
     onAddProduct?: () => void;
     onEditProduct?: (productId: string) => void;
+    showTopAddButton?: boolean;
+    emptyStateTitle?: string;
+    emptyStateDescription?: string;
+    onProductClick?: (product: GridProduct) => void;
 }
 
 export const ProductGrid: React.FC<ProductGridProps> = ({
@@ -18,7 +21,10 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
     isOwner,
     onProductClick,
     onAddProduct,
-    onEditProduct
+    onEditProduct,
+    showTopAddButton = true,
+    emptyStateTitle,
+    emptyStateDescription
 }) => {
     if (isLoading) {
         return (
@@ -34,12 +40,19 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
     }
 
     if (!products || products.length === 0) {
-        return <ProductEmptyState isOwner={isOwner} onAddProduct={onAddProduct} />;
+        return (
+            <ProductEmptyState
+                isOwner={isOwner}
+                onAddProduct={onAddProduct}
+                title={emptyStateTitle}
+                description={emptyStateDescription}
+            />
+        );
     }
 
     return (
         <div className="space-y-4">
-            {isOwner && onAddProduct && (
+            {isOwner && onAddProduct && showTopAddButton && (
                 <div className="flex justify-end px-4 pt-2">
                     <button
                         onClick={onAddProduct}

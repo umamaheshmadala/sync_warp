@@ -8,6 +8,7 @@ import { useAuthStore } from '../store/authStore';
 import { toast } from 'react-hot-toast';
 import { Product, ProductFormData, ProductFilters, PRODUCT_LIMITS } from '../types/product';
 import { followedBusinessNotificationTrigger } from '../services/followedBusinessNotificationTrigger';
+import { productService } from '../services/productService';
 
 export const useProducts = (businessId?: string) => {
   const { user } = useAuthStore();
@@ -27,25 +28,28 @@ export const useProducts = (businessId?: string) => {
       setLoading(true);
       setError(null);
 
-      // Use the logic from productService for consistency with new Epic 12 requirements
-      // Filters are slightly different now (tags based vs columns)
-      // For now, mapping old filters to new structure where possible
-
+      // Use logic from productService if possible, or replicate filtering here
       let query = supabase
-        .from('products') // Updated table name
+        .from('products')
         .select('*, businesses(business_name, logo_url)')
         .eq('business_id', businessIdToUse);
 
-      // Simple implementation of filters for the new schema
-      // Note: 'category' field is hidden/legacy, 'is_available' mapped to status?
-      // For Epic 12.12 we rely on 'status' field primarily.
+      // Apply Status Filter
+      if (filters?.status) {
+        query = query.eq('status', filters.status);
+      } else {
+        // Default: Show published and sold_out (hide archived and draft)
+        // Or if filter is explicitly 'archived', show only archived
+        // If no filter, we typically want public visible stuff (published/sold_out)
+        // Adjusting query to exclude archived/draft unless specified
+        query = query.in('status', ['published', 'sold_out']);
+      }
 
       const { data, error: fetchError } = await query.order('created_at', { ascending: false });
 
       if (fetchError) throw fetchError;
 
-      // Client side sort for featured tags if needed, or rely on productService.getBusinessProducts
-      // Let's implement the sort here to match the grid requirement: Featured first.
+      // Client side sort for featured tags
       const sortedData = (data || []).sort((a: any, b: any) => {
         const aFeatured = a.tags?.includes('featured') ? 1 : 0;
         const bFeatured = b.tags?.includes('featured') ? 1 : 0;
@@ -289,12 +293,7 @@ export const useProducts = (businessId?: string) => {
         throw new Error('You can only delete your own products');
       }
 
-      const { error: deleteError } = await supabase
-        .from('products')
-        .delete()
-        .eq('id', productId);
-
-      if (deleteError) throw deleteError;
+      await productService.deleteProduct(productId, productData.business_id);
 
       // Update local state
       setProducts(prev => prev.filter(p => p.id !== productId));
@@ -308,6 +307,56 @@ export const useProducts = (businessId?: string) => {
       console.error('Error deleting product:', err);
       setError(err.message);
       toast.error(err.message || 'Failed to delete product');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const archiveProduct = async (productId: string) => {
+    try {
+      setLoading(true);
+      await productService.archiveProduct(productId);
+
+      // Update local state - remove from list if we are viewing published only?
+      // Or update status. For now, update status.
+      setProducts(prev => prev.map(p =>
+        p.id === productId ? { ...p, status: 'archived' } : p
+      ));
+
+      if (product?.id === productId) {
+        setProduct({ ...product, status: 'archived' });
+      }
+
+      toast.success('Product archived');
+      return true;
+    } catch (err) {
+      console.error('Error archiving product:', err);
+      toast.error('Failed to archive product');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const unarchiveProduct = async (productId: string) => {
+    try {
+      setLoading(true);
+      await productService.unarchiveProduct(productId);
+
+      setProducts(prev => prev.map(p =>
+        p.id === productId ? { ...p, status: 'published' } : p
+      ));
+
+      if (product?.id === productId) {
+        setProduct({ ...product, status: 'published' });
+      }
+
+      toast.success('Product restored');
+      return true;
+    } catch (err) {
+      console.error('Error unarchiving product:', err);
+      toast.error('Failed to unarchive product');
       return false;
     } finally {
       setLoading(false);
@@ -444,6 +493,8 @@ export const useProducts = (businessId?: string) => {
     createProduct,
     updateProduct,
     deleteProduct,
+    archiveProduct,
+    unarchiveProduct,
     uploadProductImage,
     updateDisplayOrder,
     refreshProducts,

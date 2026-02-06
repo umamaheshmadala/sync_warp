@@ -75,6 +75,10 @@ export const productService = {
      * Get products for a business, sorted: Featured first, then Newest.
      * Only returns 'published' products unless specified.
      */
+    /**
+     * Get products for a business, sorted: Featured first, then Newest.
+     * Only returns 'published' products unless specified.
+     */
     async getBusinessProducts(businessId: string, status: string = 'published') {
         try {
             const { data, error } = await supabase
@@ -99,5 +103,58 @@ export const productService = {
             console.error('Error getting business products:', error);
             throw error;
         }
+    },
+
+    /**
+     * Archive a product
+     */
+    async archiveProduct(productId: string): Promise<void> {
+        const { error } = await supabase
+            .from('products')
+            .update({ status: 'archived' })
+            .eq('id', productId);
+
+        if (error) throw error;
+    },
+
+    /**
+     * Unarchive a product
+     */
+    async unarchiveProduct(productId: string): Promise<void> {
+        const { error } = await supabase
+            .from('products')
+            .update({ status: 'published' })
+            .eq('id', productId);
+
+        if (error) throw error;
+    },
+
+    /**
+     * Permanently delete a product and its associated images
+     */
+    async deleteProduct(productId: string, businessId: string): Promise<void> {
+        // 1. Delete images from storage first (best effort)
+        try {
+            const { data: listData, error: listError } = await supabase.storage
+                .from('product-images')
+                .list(`${businessId}/${productId}`);
+
+            if (!listError && listData && listData.length > 0) {
+                const filesToRemove = listData.map(f => `${businessId}/${productId}/${f.name}`);
+                await supabase.storage
+                    .from('product-images')
+                    .remove(filesToRemove);
+            }
+        } catch (e) {
+            console.error('Error cleaning up product images, continuing with row deletion', e);
+        }
+
+        // 2. Delete the product row (Cascade will handle likes, comments, etc.)
+        const { error } = await supabase
+            .from('products')
+            .delete()
+            .eq('id', productId);
+
+        if (error) throw error;
     }
 };

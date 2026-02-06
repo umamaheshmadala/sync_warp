@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, MoreVertical, Share, Flag, Edit, Trash, EyeOff } from 'lucide-react';
+import { ArrowLeft, MoreVertical, Share, Flag, Edit, Trash, Archive, RotateCcw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Menu } from '@headlessui/react';
 import { Product } from '../../../types/product';
@@ -94,8 +94,17 @@ export const MobileProductHeader: React.FC<MobileProductHeaderProps> = ({
                         <Menu.Item>
                             {({ active }) => (
                                 <button onClick={onArchive} className={`${active ? 'bg-gray-50 dark:bg-gray-700' : ''} flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-200`}>
-                                    <EyeOff className="w-4 h-4 mr-3" />
-                                    Archive
+                                    {product.status === 'archived' ? (
+                                        <>
+                                            <RotateCcw className="w-4 h-4 mr-3" />
+                                            Unarchive
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Archive className="w-4 h-4 mr-3" />
+                                            Archive
+                                        </>
+                                    )}
                                 </button>
                             )}
                         </Menu.Item>

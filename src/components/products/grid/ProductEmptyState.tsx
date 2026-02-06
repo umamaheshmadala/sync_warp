@@ -1,23 +1,32 @@
 import React from 'react';
 import { ShoppingBag, Plus } from 'lucide-react';
 
-interface ProductEmptyStateProps {
+export interface ProductEmptyStateProps {
     isOwner?: boolean;
     onAddProduct?: () => void;
+    title?: string;
+    description?: string;
 }
 
-export const ProductEmptyState: React.FC<ProductEmptyStateProps> = ({ isOwner, onAddProduct }) => {
+export const ProductEmptyState: React.FC<ProductEmptyStateProps> = ({
+    isOwner,
+    onAddProduct,
+    title,
+    description
+}) => {
     return (
         <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
                 <ShoppingBag className="w-8 h-8 text-gray-400" />
             </div>
 
-            <h3 className="text-lg font-medium text-gray-900 mb-1">No products yet</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-1">
+                {title || "No products yet"}
+            </h3>
             <p className="text-sm text-gray-500 max-w-xs mb-6">
-                {isOwner
+                {description || (isOwner
                     ? "Start building your catalog to showcase your items to customers."
-                    : "This business hasn't added any products yet."}
+                    : "This business hasn't added any products yet.")}
             </p>
 
             {isOwner && onAddProduct && (

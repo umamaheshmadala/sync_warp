@@ -1,7 +1,7 @@
 # Story 12.15: Product Edit Wizard
 
 **Epic:** [EPIC 12: Instagram-Style Product Listing](../epics/EPIC_12_Instagram_Style_Products.md)  
-**Status:** 📋 To Do  
+**Status:** ✅ Done  
 **Priority:** P0  
 **Estimate:** 5 pts  
 
@@ -74,6 +74,11 @@
 ### AC-3: Cancel/Discard Behavior
 
 #### AC-3.1: Unsaved Changes Warning
+- **Direct Entry to Edit Step:** When editing an existing product, skip Step 1 (Media Selection) and go directly to Step 2 (Edit/Arrange).
+- **Image Management:** 
+    - Display existing images in the carousel/grid.
+    - "Add Image" button is visible only if total images < 5.
+    - If 5 images exist, user must delete one to add a new one.
 - **GIVEN** I have made changes to any field (images, name, description, tags)
 - **WHEN** I tap "Cancel", "Back" (to exit wizard), or the close button
 - **THEN** a confirmation dialog appears: "Discard changes? Your edits will not be saved."

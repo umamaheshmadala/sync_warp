@@ -12,13 +12,19 @@ interface WebProductModalProps {
     onClose: () => void;
     product: Product;
     isOwner: boolean;
+    onArchive?: (productId: string) => Promise<boolean>;
+    onUnarchive?: (productId: string) => Promise<boolean>;
+    onDelete?: (productId: string) => Promise<boolean>;
 }
 
 export const WebProductModal: React.FC<WebProductModalProps> = ({
     isOpen,
     onClose,
     product,
-    isOwner
+    isOwner,
+    onArchive,
+    onUnarchive,
+    onDelete
 }) => {
     // Analytics: Track view
     useProductViewTracking(isOpen ? product.id : undefined);
@@ -113,6 +119,9 @@ export const WebProductModal: React.FC<WebProductModalProps> = ({
                             product={product}
                             isOwner={isOwner}
                             onClose={onClose}
+                            onArchive={onArchive}
+                            onUnarchive={onUnarchive}
+                            onDelete={onDelete}
                         />
                     </div>
                 </motion.div>
