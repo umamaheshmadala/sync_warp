@@ -14,10 +14,7 @@ export interface ProductShareButtonProps {
   productId: string;
   /** Product name for share text */
   productName: string;
-  /** Product price */
-  productPrice?: number;
-  /** Product currency code */
-  productCurrency?: string;
+
   /** Product description for share text */
   productDescription?: string;
   /** Product image URL */
@@ -55,8 +52,6 @@ export interface ProductShareButtonProps {
  * <ProductShareButton
  *   productId={product.id}
  *   productName={product.name}
- *   productPrice={product.price}
- *   productCurrency={product.currency}
  *   productImage={product.image_urls?.[0]}
  *   businessId={business.id}
  *   businessName={business.name}
@@ -76,8 +71,6 @@ export interface ProductShareButtonProps {
 export function ProductShareButton({
   productId,
   productName,
-  productPrice,
-  productCurrency = 'INR',
   productDescription,
   productImage,
   businessId,
@@ -95,19 +88,7 @@ export function ProductShareButton({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { shareNative, isSharing } = useUnifiedShare();
 
-  // Format price with currency
-  const formattedPrice = useMemo(() => {
-    if (!productPrice || productPrice === 0) return '';
-    try {
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: productCurrency,
-      }).format(productPrice);
-    } catch {
-      // Fallback for unsupported currencies
-      return `${productCurrency} ${productPrice}`;
-    }
-  }, [productPrice, productCurrency]);
+
 
   // Build share URL
   const url = useMemo(() => {
@@ -118,11 +99,9 @@ export function ProductShareButton({
   // Build description with price
   const description = useMemo(() => {
     if (productDescription) return productDescription;
-    if (formattedPrice) {
-      return `${productName} at ${businessName} - ${formattedPrice}`;
-    }
+    if (productDescription) return productDescription;
     return `Check out ${productName} at ${businessName}!`;
-  }, [productDescription, productName, businessName, formattedPrice]);
+  }, [productDescription, productName, businessName]);
 
   // Get image with fallback
   const imageUrl = productImage || businessLogo;
@@ -148,8 +127,6 @@ export function ProductShareButton({
             imageUrl,
             url,
             metadata: {
-              price: productPrice,
-              currency: productCurrency,
               businessName,
               businessId,
             }

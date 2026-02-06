@@ -9,6 +9,7 @@ interface ProductGridProps {
     isOwner?: boolean;
     onAddProduct?: () => void;
     onEditProduct?: (productId: string) => void;
+    onDeleteProduct?: (productId: string) => void;
     showTopAddButton?: boolean;
     emptyStateTitle?: string;
     emptyStateDescription?: string;
@@ -22,6 +23,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
     onProductClick,
     onAddProduct,
     onEditProduct,
+    onDeleteProduct,
     showTopAddButton = true,
     emptyStateTitle,
     emptyStateDescription
@@ -70,7 +72,8 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
                         product={product}
                         onClick={onProductClick}
                         isOwner={isOwner}
-                        onEdit={() => onEditProduct && onEditProduct(product.id)}
+                        onEdit={onEditProduct ? () => onEditProduct(product.id) : undefined}
+                        onDelete={onDeleteProduct ? () => onDeleteProduct(product.id) : undefined}
                     />
                 ))}
             </div>

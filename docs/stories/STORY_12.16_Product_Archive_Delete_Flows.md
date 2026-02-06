@@ -1,7 +1,7 @@
 # Story 12.16: Product Archive & Delete Flows
 
 **Epic:** [EPIC 12: Instagram-Style Product Listing](../epics/EPIC_12_Instagram_Style_Products.md)  
-**Status:** 📋 To Do  
+**Status:** ✅ Done  
 **Priority:** P0  
 **Estimate:** 5 pts  
 

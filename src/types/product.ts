@@ -6,8 +6,6 @@ export interface Product {
   business_id: string;
   name: string;
   description?: string;
-  category?: string; // Legacy?
-  price?: number;
   currency: string;
   is_available: boolean; // Legacy? Mapped to status
   is_featured: boolean; // Legacy? Mapped to tags
@@ -28,6 +26,7 @@ export interface Product {
   last_updated_at?: string;
   created_at: string;
   updated_at: string;
+  last_step?: 'media' | 'edit' | 'details';
   business?: {
     name: string;
     slug?: string;
@@ -51,8 +50,6 @@ export interface ProductTagConfig {
 export interface ProductFormData {
   name: string;
   description?: string;
-  category?: string;
-  price?: number;
   currency: string;
   is_available: boolean;
   is_featured: boolean; // Featured products show in storefront
@@ -75,11 +72,11 @@ export interface ProductCategory {
 }
 
 export interface ProductFilters {
-  category?: string;
   availability?: boolean;
   featured?: boolean; // Filter by featured products
   sortBy?: 'name' | 'created_at' | 'display_order';
   sortOrder?: 'asc' | 'desc';
+  status?: string; // Add this line
 }
 
 export interface ProductUpload {

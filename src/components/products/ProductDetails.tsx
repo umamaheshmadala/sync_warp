@@ -40,10 +40,7 @@ export function ProductDetails() {
     await unifiedFavorites.toggleFavorite(product.id, 'product', {
       name: product.name,
       description: product.description,
-      price: product.price,
-      currency: product.currency,
       image_url: product.image_urls?.[0],
-      category: product.category,
       business_id: product.business_id
     });
   };
@@ -57,13 +54,9 @@ export function ProductDetails() {
 
   useEffect(() => {
     if (product && businessId) {
-      // Fetch related products (same category, excluding current)
-      fetchProducts(businessId, {
-        category: product.category,
-      }).then((products) => {
-        const filtered = products.filter(p => p.id !== product.id).slice(0, 3);
-        setRelatedProducts(filtered);
-      });
+      // Related products logic temporarily removed as category is deprecated
+      // We can implement 'recent' or 'random' related products later if needed
+      setRelatedProducts([]);
     }
   }, [product, businessId]);
 
@@ -93,14 +86,7 @@ export function ProductDetails() {
 
 
 
-  const getCurrencySymbol = (currency: string) => {
-    const symbols: { [key: string]: string } = {
-      INR: '₹',
-      USD: '$',
-      EUR: '€'
-    };
-    return symbols[currency] || currency;
-  };
+
 
   // Loading State
   if (loading) {
@@ -233,10 +219,6 @@ export function ProductDetails() {
           <div>
             <h1 className="text-3xl font-bold">{product.name}</h1>
             <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-primary">
-                {getCurrencySymbol(product.currency)}
-                {product.price?.toLocaleString() || '0'}
-              </span>
               <Badge variant={product.is_available ? 'default' : 'secondary'}>
                 {product.is_available ? 'In Stock' : 'Out of Stock'}
               </Badge>
@@ -244,13 +226,7 @@ export function ProductDetails() {
           </div>
 
           {/* Category */}
-          {product.category && (
-            <div>
-              <span className="text-sm font-medium text-muted-foreground">
-                Category: <span className="text-foreground">{product.category}</span>
-              </span>
-            </div>
-          )}
+
 
           {/* Description */}
           {product.description && (
@@ -286,8 +262,6 @@ export function ProductDetails() {
               productId={product.id}
               productName={product.name}
               productDescription={product.description}
-              productPrice={product.price}
-              productCurrency={product.currency}
               productImage={product.image_urls?.[0]}
               businessId={product.business_id}
               businessName={product.business?.name || ''}

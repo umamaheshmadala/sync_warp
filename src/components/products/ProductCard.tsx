@@ -140,8 +140,6 @@ const ProductCardBase = ({
             <ProductShareButton
               productId={product.id}
               productName={product.name}
-              productPrice={product.price}
-              productCurrency={product.currency || 'INR'}
               productImage={product.image_urls?.[0]}
               businessId={product.business_id}
               businessName={product.business?.name || ''}

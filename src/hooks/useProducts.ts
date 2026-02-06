@@ -368,7 +368,10 @@ export const useProducts = (businessId?: string) => {
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `products/${productId || 'temp'}/${fileName}`;
+      // Use businessId in path for RLS compatibility: {businessId}/products/{productId}/{fileName}
+      // Note: We need businessId from hook scope.
+      if (!businessId) throw new Error('Business ID required for upload');
+      const filePath = `${businessId}/products/${productId || 'temp'}/${fileName}`;
 
       const { data, error } = await supabase.storage
         .from('business-assets')

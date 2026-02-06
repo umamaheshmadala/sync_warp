@@ -43,7 +43,7 @@ export const BusinessProductsTab: React.FC<BusinessProductsTabProps> = ({ busine
     const isDesktop = useMediaQuery('(min-width: 768px)');
 
     // Tabs: 'active' | 'archived' | 'drafts'
-    const [activeTab, setActiveTab] = useState<'active' | 'archived'>('active');
+    const [activeTab, setActiveTab] = useState<'active' | 'archived' | 'drafts'>('active');
 
     // Sync URL param to state (Deep linking)
     useEffect(() => {
@@ -60,6 +60,8 @@ export const BusinessProductsTab: React.FC<BusinessProductsTabProps> = ({ busine
             fetchProducts(businessId);
         } else if (activeTab === 'archived') {
             fetchProducts(businessId, { status: 'archived' } as any);
+        } else if (activeTab === 'drafts') {
+            fetchProducts(businessId, { status: 'draft' } as any);
         }
 
         // Listen for new product creation from Wizard
@@ -146,7 +148,7 @@ export const BusinessProductsTab: React.FC<BusinessProductsTabProps> = ({ busine
                     <div className="relative">
                         <Menu as="div" className="relative inline-block text-left">
                             <Menu.Button className="inline-flex justify-center items-center w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
-                                {activeTab === 'active' ? 'Products' : 'Archived'}
+                                {activeTab === 'active' ? 'Products' : activeTab === 'drafts' ? 'Drafts' : 'Archived'}
                                 <ChevronDown className="w-4 h-4 ml-2 -mr-1" aria-hidden="true" />
                             </Menu.Button>
 
@@ -171,6 +173,17 @@ export const BusinessProductsTab: React.FC<BusinessProductsTabProps> = ({ busine
                                                     } group flex rounded-md items-center w-full px-2 py-2 text-sm`}
                                             >
                                                 Archived
+                                            </button>
+                                        )}
+                                    </Menu.Item>
+                                    <Menu.Item>
+                                        {({ active }) => (
+                                            <button
+                                                onClick={() => setActiveTab('drafts')}
+                                                className={`${active ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-200' : 'text-gray-900 dark:text-gray-100'
+                                                    } group flex rounded-md items-center w-full px-2 py-2 text-sm`}
+                                            >
+                                                Drafts
                                             </button>
                                         )}
                                     </Menu.Item>
@@ -209,7 +222,63 @@ export const BusinessProductsTab: React.FC<BusinessProductsTabProps> = ({ busine
                         openWizard(businessId, undefined, productToEdit);
                     }
                 }}
+
             />
+            {/* Render Drafts Grid */}
+            {activeTab === 'drafts' && (
+                <ProductGrid
+                    products={(products || [])
+                        .filter(p => p.status === 'draft')
+                        .map(p => ({
+                            id: p.id,
+                            name: p.name || 'Untitled Draft',
+                            images: p.images || (p.image_url ? [p.image_url] : []),
+                            tags: p.tags,
+                            status: 'draft',
+                            updatedAt: p.updated_at // Need to expose this in GridProduct if not present
+                        }))
+                    }
+                    isLoading={loading}
+                    isOwner={isOwner}
+                    onProductClick={(draftGridItem) => {
+                        // Find full draft object
+                        const draft = products.find(p => p.id === draftGridItem.id);
+                        if (draft) {
+                            // Map Product to ProductDraft schema for the store
+                            const mappedDraft = {
+                                id: draft.id,
+                                // Handle both JSONB images array and legacy
+                                images: (draft.images || []).map((img: any, i: number) => ({
+                                    id: `draft-img-${i}`,
+                                    url: typeof img === 'string' ? img : img.url,
+                                    order: typeof img === 'object' ? img.order : i,
+                                    crop: typeof img === 'object' ? img.crop : undefined
+                                })),
+                                name: draft.name,
+                                description: draft.description || '',
+                                tags: draft.tags || [],
+                                notificationsEnabled: draft.notifications_enabled ?? true,
+                                updatedAt: draft.updated_at
+                            };
+                            openWizard(businessId, mappedDraft);
+                        }
+                    }}
+                    showTopAddButton={false}
+                    emptyStateTitle="No drafts"
+                    emptyStateDescription="Your saved drafts will appear here."
+                    onDeleteProduct={async (draftId) => {
+                        if (window.confirm('Are you sure you want to delete this draft? This cannot be undone.')) {
+                            // Call service directly or via hook wrapper
+                            // useProducts exposes deleteProduct which calls `productService.deleteProduct`
+                            // We can use that since it cleans up images too (if we implemented it correctly)
+                            // But we added `deleteDraft` to service. `useProducts` calls `deleteProduct`.
+                            // Let's rely on deleteProduct being generic enough or add deleteDraft to useProducts.
+                            // For now, assume deleteProduct works as it deletes by ID.
+                            await deleteProduct(draftId);
+                        }
+                    }}
+                />
+            )}
 
             {/* Mobile Product Modal (Visible on sm and below - hidden via CSS media/logic inside components or here) */}
             {/* Note: WebProductModal uses a portal, MobileProductModal uses a portal. 

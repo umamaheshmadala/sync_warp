@@ -322,39 +322,36 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                             </button>
                         )}
                     </div>
+
                     <div className="flex items-center gap-2">
-                        <span className="text-lg font-medium text-gray-900 dark:text-white">
-                            ${product.price?.toFixed(2)}
-                        </span>
-
-                        {/* Tags */}
                         <ProductTagDisplay product={product} size="sm" />
-
-                        {product.status === 'sold_out' && (
-                            <span className="px-2 py-0.5 bg-gray-100 text-gray-500 text-xs rounded-full dark:bg-gray-800">
-                                Sold Out
-                            </span>
-                        )}
                     </div>
 
-                    {/* Description */}
-                    <ProductDescription
-                        text={product.description}
-                        maxLength={120}
-                        className="mt-2"
-                    />
-
-                    {/* Tags */}
-                    {product.tags && product.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-2">
-                            {product.tags.map(tag => (
-                                <span key={tag} className="text-xs text-blue-600 dark:text-blue-400">
-                                    #{tag}
-                                </span>
-                            ))}
-                        </div>
+                    {product.status === 'sold_out' && (
+                        <span className="px-2 py-0.5 bg-gray-100 text-gray-500 text-xs rounded-full dark:bg-gray-800">
+                            Sold Out
+                        </span>
                     )}
                 </div>
+
+                {/* Description */}
+                <ProductDescription
+                    text={product.description}
+                    maxLength={120}
+                    className="mt-2"
+                />
+
+                {/* Tags */}
+                {product.tags && product.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                        {product.tags.map(tag => (
+                            <span key={tag} className="text-xs text-blue-600 dark:text-blue-400">
+                                #{tag}
+                            </span>
+                        ))}
+                    </div>
+                )}
+
 
                 <div className="h-px bg-gray-100 dark:bg-gray-800 my-2" />
 
@@ -403,8 +400,6 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                         <ProductShareButton
                             productId={product.id}
                             productName={product.name}
-                            productPrice={product.price}
-                            productCurrency={product.currency}
                             productDescription={product.description}
                             productImage={product.image_urls?.[0] || product.image_url}
                             businessId={product.business_id}
@@ -444,6 +439,6 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                     />
                 </div>
             </div>
-        </div>
+        </div >
     );
 };

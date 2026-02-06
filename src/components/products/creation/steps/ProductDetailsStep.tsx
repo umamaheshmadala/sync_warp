@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useProductWizardStore } from '../../../../stores/useProductWizardStore';
-import { useProductDraft } from '../../../../hooks/useProductDraft';
+import { useProductDraft } from '../../../../hooks/products/useProductDraft';
 import { useProducts } from '../../../../hooks/useProducts';
 import { ArrowLeft, Share, Save, Loader2, Info, ChevronLeft, ChevronRight } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
@@ -9,6 +9,7 @@ import { ProductTagSelector } from '../ProductTagSelector';
 import { ProductNotificationToggle } from '../../controls/ProductNotificationToggle';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../../../store/authStore';
+import imageCompression from 'browser-image-compression';
 
 // Simple Image Carousel for Preview
 const ImagePreviewCarousel = ({ images }: { images: any[] }) => {
@@ -83,8 +84,8 @@ export const ProductDetailsStep: React.FC = () => {
         editMode, editingProductId
     } = useProductWizardStore();
 
-    const { saveDraft, isLoading: isSavingDraft } = useProductDraft();
-    const { createProduct, updateProduct, uploadProductImage } = useProducts();
+    const { saveDraft, saving: isSavingDraft } = useProductDraft();
+    const { createProduct, updateProduct, uploadProductImage } = useProducts(businessId);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [isPublishing, setIsPublishing] = useState(false);
 
@@ -120,20 +121,30 @@ export const ProductDetailsStep: React.FC = () => {
             try {
                 let fileToUpload: File;
 
-                // If we have a file object AND we are not using a cropped preview, use the file directly
+                // 1. Get the File object (or blob from URL)
                 if (img.file && !img.preview) {
                     fileToUpload = img.file;
                 } else {
-                    // Otherwise (cropped preview OR no file obj), fetch the blob from the URL
+                    // Fetch blob from URL
                     const response = await fetch(sourceUrl);
                     const blob = await response.blob();
-                    // Create a proper file extension based on type
-                    const ext = blob.type.split('/')[1] || 'jpg';
-                    fileToUpload = new File([blob], `image-${uuidv4()}.${ext}`, { type: blob.type });
+                    fileToUpload = new File([blob], `image-${uuidv4()}.${blob.type.split('/')[1] || 'jpg'}`, { type: blob.type });
                 }
 
+                // 2. Compress/Convert to JPEG (Fixes AVIF and size issues)
+                console.log('Compressing image...', fileToUpload.name);
+                const compressedFile = await imageCompression(fileToUpload, {
+                    maxSizeMB: 1, // 1MB max
+                    maxWidthOrHeight: 1920, // HD
+                    useWebWorker: true,
+                    fileType: 'image/jpeg' // Force JPEG
+                });
+
+                // Rename to .jpg and create new File object
+                const finalFile = new File([compressedFile], fileToUpload.name.replace(/\.[^/.]+$/, "") + ".jpg", { type: 'image/jpeg' });
+
                 // Upload
-                const publicUrl = await uploadProductImage(fileToUpload, businessId || undefined);
+                const publicUrl = await uploadProductImage(finalFile, draftId || undefined);
                 if (publicUrl) {
                     uploadedUrls.push(publicUrl);
                 } else {
@@ -158,9 +169,6 @@ export const ProductDetailsStep: React.FC = () => {
             return;
         }
 
-        // For draft, we ideally upload images too, BUT for speed we might skip or just use what we have?
-        // If we don't upload, the draft is only valid on this device (if using blob logic locally persisted in IndexedDB, but localStorage can't hold blobs).
-        // WE MUST UPLOAD for robust drafts.
         const uploadedUrls = await uploadImages();
         if (uploadedUrls.length !== images.length) return; // Upload failed
 
@@ -172,13 +180,11 @@ export const ProductDetailsStep: React.FC = () => {
         }));
 
         await saveDraft({
-            draftId,
             images: imagesWithUrls, // Use persistent URLs
             name,
             description,
             tags,
-            notificationsEnabled,
-            businessId
+            notificationsEnabled
         });
 
         closeWizard();
@@ -204,22 +210,8 @@ export const ProductDetailsStep: React.FC = () => {
                     description,
                     tags,
                     // Preserve existing values for fields not in wizard if needed, but here we just update what we have
-                    // Status/Price usually separate? Wizard handles core details.
-                    // Assuming wizard is the main edit path.
-                    // Note: updateProduct handles merging with existing provided we send undefined for missing keys.
-                    // But we want to explicitly update these:
-                    is_available: true, // Keep published? Or assume status unchanged? 
-                    // Usually 'Save' keeps status. 
-                    // updateProduct takes Partial<ProductFormData>.
-                    // Let's NOT send is_available unless explicit.
-                    // But wait, createProduct defaults to true.
-                    // For update, let's just update the content fields.
-                    category: 'Uncategorized', // Should we allow category edit? It's not in the UI here.
+                    is_available: true,
                     image_urls: uploadedUrls,
-
-                    // Explicitly passing undefined for things we don't want to touch if the hook merges?
-                    // The hook implementation checks `if (updates.name !== undefined) ...`
-                    // So we are safe passing only what we want to update.
                 });
                 toast.success("Product updated!");
             } else {
@@ -229,8 +221,6 @@ export const ProductDetailsStep: React.FC = () => {
                     tags,
                     is_available: true,
                     is_featured: false,
-                    category: 'Uncategorized',
-                    price: 0,
                     currency: 'INR',
                     display_order: 0,
                     image_urls: uploadedUrls,
@@ -242,10 +232,6 @@ export const ProductDetailsStep: React.FC = () => {
             closeWizard();
             reset();
 
-            // Force refresh logic is needed here if hooks are disconnected.
-            // Dispatch a window event that BusinessProductsTab listens to.
-            // Or useProducts internal refresh handles it (it does).
-            // But we might need to trigger external refresh if multiple lists.
             window.dispatchEvent(new CustomEvent('product-created', { detail: { businessId } }));
 
         } catch (error) {

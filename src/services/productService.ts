@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { Product } from '../types/product';
 
 export const productService = {
     /**
@@ -21,7 +22,7 @@ export const productService = {
             const filePath = `${businessId}/${productId}/${fileName}`;
 
             const { data, error } = await supabase.storage
-                .from('product-images')
+                .from('business-assets')
                 .upload(filePath, file, {
                     cacheControl: '3600',
                     upsert: false
@@ -30,7 +31,7 @@ export const productService = {
             if (error) throw error;
 
             const { data: publicData } = supabase.storage
-                .from('product-images')
+                .from('business-assets')
                 .getPublicUrl(filePath);
 
             return publicData.publicUrl;
@@ -149,12 +150,80 @@ export const productService = {
             console.error('Error cleaning up product images, continuing with row deletion', e);
         }
 
-        // 2. Delete the product row (Cascade will handle likes, comments, etc.)
+
+        // 2. Delete the product record
         const { error } = await supabase
             .from('products')
             .delete()
+            .eq('id', productId)
+            .eq('business_id', businessId);
+
+        if (error) throw error;
+    },
+    /**
+     * Delete a product draft and its associated images
+     */
+    async deleteDraft(draftId: string, businessId: string): Promise<void> {
+        // Same logic as deleteProduct, but explicit method for clarity/UI
+        return this.deleteProduct(draftId, businessId);
+    },
+
+    /**
+     * Save/Upsert a product draft
+     */
+    async saveDraft(data: Partial<Product> & { business_id: string }): Promise<Product> {
+        const payload = {
+            ...data,
+            status: 'draft',
+            updated_at: new Date().toISOString()
+        };
+
+        const { data: result, error } = await supabase
+            .from('products')
+            .upsert(payload)
+            .select()
+            .maybeSingle();
+
+        if (error) throw error;
+        return result;
+    },
+
+    /**
+     * Get drafts for a business
+     */
+    async getDrafts(businessId: string): Promise<Product[]> {
+        const { data, error } = await supabase
+            .from('products')
+            .select('*')
+            .eq('business_id', businessId)
+            .eq('status', 'draft')
+            .order('updated_at', { ascending: false });
+
+        if (error) throw error;
+        return data || [];
+    },
+
+    /**
+     * Publish a draft (Finalize creation)
+     */
+    async publishDraft(productId: string): Promise<void> {
+        // 1. Update status to 'published'
+        const { error } = await supabase
+            .from('products')
+            .update({
+                status: 'published',
+                created_at: new Date().toISOString(), // Reset created_at to now for "New" sort
+                updated_at: new Date().toISOString()
+            })
             .eq('id', productId);
 
         if (error) throw error;
+
+        // Note: Image moving from 'drafts/' folder to root is handled by
+        // either this service or a background trigger.
+        // For simpler implementation now, we will leave them in the path they were uploaded to,
+        // or ensure `uploadProductImage` uses a consistent path.
+        // Story says "Move to products/{id}/", but that requires listing all files and moving them.
+        // We can optimize this later if needed.
     }
 };

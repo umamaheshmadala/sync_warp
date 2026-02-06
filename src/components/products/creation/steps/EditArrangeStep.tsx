@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useProductWizardStore } from '../../../../stores/useProductWizardStore';
-import { useProductDraft } from '../../../../hooks/useProductDraft';
+import { useProductDraft } from '../../../../hooks/products/useProductDraft';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, horizontalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';

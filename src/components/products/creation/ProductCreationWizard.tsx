@@ -6,11 +6,11 @@ import { MediaSelectionStep } from './steps/MediaSelectionStep';
 import { EditArrangeStep } from './steps/EditArrangeStep';
 import { ProductDetailsStep } from './steps/ProductDetailsStep';
 import { X } from 'lucide-react';
-import { useProductDraft } from '../../../hooks/useProductDraft';
+import { useProductDraft } from '../../../hooks/products/useProductDraft';
 
 export const ProductCreationWizard: React.FC = () => {
     const { isOpen, step, closeWizard, images, reset, editMode, isDirty } = useProductWizardStore();
-    const { saveDraft } = useProductDraft(); // We'll use this for "Save Draft" prompt later
+    const { saveDraft, saving, lastSaved } = useProductDraft({ enableAutoSave: false }); // We'll use this for "Save Draft" prompt later
 
     // Prevent scrolling when open
     useEffect(() => {
@@ -48,6 +48,8 @@ export const ProductCreationWizard: React.FC = () => {
                         exit={{ opacity: 0, scale: 0.95 }}
                         className="bg-white dark:bg-gray-900 w-full h-full md:rounded-2xl overflow-hidden flex flex-col shadow-2xl relative"
                     >
+                        <Dialog.Title className="sr-only">Product Creation Wizard</Dialog.Title>
+
                         {/* Mobile Close Button (Absolute) - Visible on Step 1 only? Or header handles it */}
                         {/* We'll let steps handle their own headers for maximum flexibility/Instagram-likeness */}
 
@@ -55,6 +57,20 @@ export const ProductCreationWizard: React.FC = () => {
                             {step === 'media' && <MediaSelectionStep />}
                             {step === 'edit' && <EditArrangeStep />}
                             {step === 'details' && <ProductDetailsStep />}
+
+
+                            {/* Saving Indicator */}
+                            {saving && (
+                                <div className="absolute top-4 right-16 bg-white/80 dark:bg-black/50 backdrop-blur px-3 py-1 rounded-full text-xs font-medium text-gray-600 dark:text-gray-300 pointer-events-none flex items-center gap-2">
+                                    <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+                                    Saving...
+                                </div>
+                            )}
+                            {!saving && lastSaved && (
+                                <div className="absolute top-4 right-16 px-3 py-1 text-xs text-gray-400 pointer-events-none transition-opacity duration-1000 opacity-50">
+                                    Saved
+                                </div>
+                            )}
                         </div>
 
                     </motion.div>

@@ -1,9 +1,19 @@
 # Story 12.17: Product Drafts System
 
 **Epic:** [EPIC 12: Instagram-Style Product Listing](../epics/EPIC_12_Instagram_Style_Products.md)  
-**Status:** 📋 To Do  
+**Status:** 🔴 Extremely Buggy  
 **Priority:** P0  
 **Estimate:** 5 pts  
+
+---
+
+## 🚨 Known Issues (Bug Report - 2026-02-06)
+
+1.  **Comments in Drafts**: Comments section is visible in draft mode, which makes no sense.
+2.  **Writing Comments in Drafts**: Users can actually write comments on drafts. Logic failure.
+3.  **Duplicate Drafts**: Two copies of drafts are being created in the draft stand.
+4.  **Incorrect Button Text**: At the end of creation (new product), it says "Save Changes" (edit mode text) instead of "Publish".
+5.  **Save Blocking**: "Save as Draft" button is disabled/blocked while auto-save is running, causing bad UX. User has to wait for auto-save to finish.
 
 ---
 
