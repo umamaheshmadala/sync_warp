@@ -68,6 +68,7 @@ interface MessagingState {
 
   setMessages: (conversationId: string, messages: Message[]) => void;
   addMessage: (conversationId: string, message: Message) => void;
+  upsertMessages: (messages: Message[]) => void; // Batch upsert for catch-up
   updateMessage: (conversationId: string, messageId: string, updates: Partial<Message>) => void;
   removeMessage: (conversationId: string, messageId: string) => void;
   prependMessages: (conversationId: string, messages: Message[]) => void; // For pagination
@@ -342,10 +343,21 @@ export const useMessagingStore = create<MessagingState>()(
         set((state) => {
           const newMessages = new Map(state.messages);
 
-          // Limit cache on mobile to prevent memory bloat
+          // Preserve optimistic messages when setting new messages
+          const currentMessages = newMessages.get(conversationId) || [];
+          const optimisticMessages = currentMessages.filter(m => m._optimistic);
+
+          // Filter out any optimistic messages that have been confirmed in the new fetch
+          // (Simple check: if we fetched the message, we don't need the optimistic version if it matches content/sender? 
+          //  Actually, we can't easily link them without ID. 
+          //  Safest is to keep optimistic ones at the end until they are explicitly resolved by replaceOptimisticMessage)
+
+          // Limit cache on mobile
+          let allMessages = [...messages, ...optimisticMessages];
+
           const limitedMessages = Capacitor.isNativePlatform()
-            ? messages.slice(-MAX_CACHED_MESSAGES) // Keep last N messages
-            : messages;
+            ? allMessages.slice(-MAX_CACHED_MESSAGES) // Keep last N messages
+            : allMessages;
 
           newMessages.set(conversationId, limitedMessages);
           return { messages: newMessages };
@@ -371,6 +383,48 @@ export const useMessagingStore = create<MessagingState>()(
           newMessages.set(conversationId, finalMessages);
           return { messages: newMessages };
         }, false, 'addMessage'),
+
+      upsertMessages: (messages) =>
+        set((state) => {
+          if (messages.length === 0) return {};
+
+          const newMessages = new Map(state.messages);
+          const messagesByConversation = new Map<string, Message[]>();
+
+          // Group by conversation
+          messages.forEach(msg => {
+            const existing = messagesByConversation.get(msg.conversation_id) || [];
+            messagesByConversation.set(msg.conversation_id, [...existing, msg]);
+          });
+
+          // Process each conversation
+          messagesByConversation.forEach((newMsgs, conversationId) => {
+            const existingMsgs = newMessages.get(conversationId) || [];
+
+            // Create a map of existing messages by ID for O(1) lookup
+            const msgMap = new Map(existingMsgs.map(m => [m.id, m]));
+
+            // Update or add new messages
+            newMsgs.forEach(msg => {
+              msgMap.set(msg.id, msg);
+            });
+
+            // Convert back to array and sort
+            // (Assuming we want chronological order)
+            const sortedMessages = Array.from(msgMap.values()).sort((a, b) =>
+              new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+            );
+
+            // Enforce cache limit on mobile
+            const finalMessages = Capacitor.isNativePlatform()
+              ? sortedMessages.slice(-MAX_CACHED_MESSAGES)
+              : sortedMessages;
+
+            newMessages.set(conversationId, finalMessages);
+          });
+
+          return { messages: newMessages };
+        }, false, 'upsertMessages'),
 
       updateMessage: (conversationId, messageId, updates) =>
         set((state) => {
@@ -420,9 +474,10 @@ export const useMessagingStore = create<MessagingState>()(
           const newMessages = new Map(state.messages);
           const conversationMessages = newMessages.get(conversationId) || [];
 
-          // Add optimistic message with _optimistic flag
+          // Add optimistic message with _optimistic flag and 'sending' status
           const optimisticMessage = {
             ...message,
+            status: 'sending' as const, // Explicitly set status to sending
             _optimistic: true,
             _failed: false
           };
@@ -443,10 +498,20 @@ export const useMessagingStore = create<MessagingState>()(
           const newMessages = new Map(state.messages);
           const conversationMessages = newMessages.get(conversationId) || [];
 
-          // Find and replace optimistic message with real message
-          const updatedMessages = conversationMessages.map(msg =>
-            msg._tempId === tempId ? realMessage : msg
-          );
+          // Check if the real message already exists in the list (e.g. came via Realtime first)
+          const realMessageExists = conversationMessages.some(m => m.id === realMessage.id);
+
+          let updatedMessages;
+          if (realMessageExists) {
+            // Real message already exists, so just remove the optimistic one to avoid duplication
+            updatedMessages = conversationMessages.filter(msg => msg._tempId !== tempId);
+            console.log(`🧹 [Store] Message ${realMessage.id} arrived via Realtime before API. Removed optimistic copy.`);
+          } else {
+            // Normal case: replace optimistic with real
+            updatedMessages = conversationMessages.map(msg =>
+              msg._tempId === tempId ? realMessage : msg
+            );
+          }
 
           newMessages.set(conversationId, updatedMessages);
           return { messages: newMessages };
@@ -460,7 +525,7 @@ export const useMessagingStore = create<MessagingState>()(
           // Mark optimistic message as failed
           const updatedMessages = conversationMessages.map(msg =>
             msg._tempId === tempId
-              ? { ...msg, _optimistic: false, _failed: true }
+              ? { ...msg, status: 'failed' as const, _optimistic: false, _failed: true }
               : msg
           );
 

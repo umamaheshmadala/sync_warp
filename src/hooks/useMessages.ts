@@ -63,18 +63,11 @@ export function useMessages(conversationId: string | null) {
       console.log('🔄 [useMessages] Fetching messages for:', conversationId)
       if (!conversationId) return { messages: [], hasMore: false }
 
-      // Fetch messages and hidden message IDs in parallel
-      const [{ messages: fetchedMessages, hasMore: more }, hiddenIds] = await Promise.all([
-        messagingService.fetchMessages(conversationId, pageSize),
-        messageDeleteService.getHiddenMessageIds()
-      ])
+      // Fetch messages (hidden filtering is now handled server-side by get_messages_v2 RPC)
+      const { messages: fetchedMessages, hasMore: more } = await messagingService.fetchMessages(conversationId, pageSize)
 
-      // Filter out messages hidden by "Delete for me"
-      const hiddenSet = new Set(hiddenIds)
-      const visibleMessages = fetchedMessages.filter(msg => !hiddenSet.has(msg.id))
-
-      console.log('✅ [useMessages] Fetched', visibleMessages.length, 'messages')
-      return { messages: visibleMessages, hasMore: more }
+      console.log('✅ [useMessages] Fetched', fetchedMessages.length, 'messages')
+      return { messages: fetchedMessages, hasMore: more }
     },
     enabled: !!conversationId,
     staleTime: 1000 * 60 * 5, // 5 minutes fresh
@@ -104,19 +97,12 @@ export function useMessages(conversationId: string | null) {
     try {
       isLoadingMore.current = true
 
-      // Fetch messages and hidden IDs in parallel
-      const [{ messages: olderMessages, hasMore: more }, hiddenIds] = await Promise.all([
-        messagingService.fetchMessages(conversationId, pageSize, oldestMessage.id),
-        messageDeleteService.getHiddenMessageIds()
-      ])
-
-      // Filter out hidden messages
-      const hiddenSet = new Set(hiddenIds)
-      const visibleMessages = olderMessages.filter(msg => !hiddenSet.has(msg.id))
+      // Fetch messages (hidden filtering is now handled server-side)
+      const { messages: olderMessages, hasMore: more } = await messagingService.fetchMessages(conversationId, pageSize, oldestMessage.id)
 
       // Update React Query cache by prepending messages
       queryClient.setQueryData(['messages', conversationId], (old: any) => ({
-        messages: [...visibleMessages, ...(old?.messages || [])],
+        messages: [...olderMessages, ...(old?.messages || [])],
         hasMore: more
       }))
 

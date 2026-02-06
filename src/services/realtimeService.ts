@@ -8,6 +8,7 @@ import { App } from '@capacitor/app';
 import { Network } from '@capacitor/network';
 import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import type { Message, Conversation } from '../types/messaging';
+import { queryClient } from '../lib/react-query';
 
 // ============================================================================
 // Type Definitions
@@ -45,6 +46,7 @@ class RealtimeService {
   private previousConnectionType: string | null = null;
   private appStateListener?: any;
   private networkListener?: any;
+  private lastSyncTimestamp?: string;
 
   /**
    * Initialize the realtime service with platform-specific handlers
@@ -56,6 +58,8 @@ class RealtimeService {
       await this.initMobileHandlers();
     }
 
+    // Set initial sync timestamp
+    this.lastSyncTimestamp = new Date().toISOString();
     console.log('✅ RealtimeService initialized');
   }
 
@@ -66,25 +70,40 @@ class RealtimeService {
     console.log('📱 Setting up mobile handlers...');
 
     // Handle app state changes (background/foreground)
-    this.appStateListener = await App.addListener('appStateChange', ({ isActive }) => {
+    this.appStateListener = await App.addListener('appStateChange', async ({ isActive }) => {
       this.isAppActive = isActive;
 
       if (!isActive) {
         console.log('📱 App went to background');
-        // Disconnect after 1 minute in background to save battery
+
+        // Determine timeout based on network type
+        const status = await Network.getStatus();
+        const timeoutDuration = status.connectionType === 'wifi'
+          ? 5 * 60 * 1000  // 5 minutes on WiFi
+          : 60 * 1000;     // 1 minute on Cellular
+
+        console.log(`⏱️ Background disconnect timer set to ${timeoutDuration / 1000}s`);
+
         this.backgroundDisconnectTimer = setTimeout(() => {
           if (!this.isAppActive) {
             console.log('🔌 Disconnecting WebSocket (background timeout)');
             this.disconnectAll();
           }
-        }, 60000); // 1 minute
+        }, timeoutDuration);
       } else {
         console.log('📱 App came to foreground');
         // Clear disconnect timer and reconnect
         if (this.backgroundDisconnectTimer) {
           clearTimeout(this.backgroundDisconnectTimer);
           this.backgroundDisconnectTimer = null;
+          console.log('⚡ Cancelled background disconnect timer');
+        } else {
+          // If timer already fired (socket disconnected), we need to catch up
+          console.log('🔄 Socket was disconnected. Initiating catch-up...');
+          await this.catchUpSync();
         }
+
+        // Always ensure connected (safe to call if already connected)
         this.reconnectAll();
       }
     });
@@ -109,6 +128,39 @@ class RealtimeService {
     const status = await Network.getStatus();
     this.previousConnectionType = status.connectionType;
     console.log('📡 Initial network type:', this.previousConnectionType);
+  }
+
+  /**
+   * Catch up on missed messages
+   */
+  private async catchUpSync(): Promise<void> {
+    if (!this.lastSyncTimestamp) return;
+
+    try {
+      console.log('🎣 Catching up since:', this.lastSyncTimestamp);
+
+      // Need dynamic import to avoid circular dependency since messagingService uses us? 
+      // Or simply import it at the top (messagingService doesn't import realtimeService usually)
+      const { messagingService } = await import('./messagingService');
+      const { useMessagingStore } = await import('../store/messagingStore');
+
+      const missedMessages = await messagingService.fetchMessagesSince(this.lastSyncTimestamp);
+
+      if (missedMessages.length > 0) {
+        console.log(`📥 Upserting ${missedMessages.length} missed messages...`);
+        useMessagingStore.getState().upsertMessages(missedMessages);
+
+        // Story 8.11.4 Fix: Invalidate React Query cache to reflect new messages in UI
+        console.log('🔄 Invalidating text query cache to reflect catch-up...');
+        await queryClient.invalidateQueries({ queryKey: ['messages'] });
+      } else {
+        console.log('✅ No missed messages found');
+      }
+
+      this.lastSyncTimestamp = new Date().toISOString();
+    } catch (error) {
+      console.error('❌ Catch-up sync failed:', error);
+    }
   }
 
   /**
@@ -211,8 +263,8 @@ class RealtimeService {
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'messages'
-          // NO FILTER - we filter client-side for reliability
+          table: 'messages',
+          filter: `conversation_id=eq.${conversationId}` // Granular subscription to reduce "firehose" effect
         },
         (payload: RealtimePostgresChangesPayload<Message>) => {
           const newMessage = payload.new as Message;
@@ -232,8 +284,14 @@ class RealtimeService {
         console.log(`🔔 [RealtimeService] Message subscription status [${channelName}]:`, status);
         if (status === 'SUBSCRIBED') {
           console.log(`✅ [RealtimeService] Successfully subscribed to messages for ${conversationId}`);
-        } else if (status === 'CHANNEL_ERROR') {
-          console.error(`❌ [RealtimeService] Channel error for ${channelName}`);
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.error(`❌ [RealtimeService] Channel error/timeout for ${channelName}: ${status}`);
+          // Story 8.11.1 Fix: Fallback Logic
+          // Try to resubscribe after a short delay
+          setTimeout(() => {
+            console.log(`🔄 Attempting to resubscribe to ${channelName}...`);
+            channel.subscribe();
+          }, 5000);
         }
       });
 
@@ -310,8 +368,8 @@ class RealtimeService {
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'message_read_receipts'
-          // NO FILTER - we filter client-side for reliability
+          table: 'message_read_receipts',
+          filter: `conversation_id=eq.${conversationId}` // Granular subscription
         },
         (payload) => {
           const receipt = payload.new as any;

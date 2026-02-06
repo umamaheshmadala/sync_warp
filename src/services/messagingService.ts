@@ -436,93 +436,124 @@ class MessagingService {
     beforeMessageId?: string
   ): Promise<FetchMessagesResponse> {
     try {
-      console.log('📥 Fetching messages for conversation:', conversationId);
+      console.log('📥 Fetching messages for conversation (v2):', conversationId);
 
-      // Get current user for status derivation
+      // Get current user for status derivation (auth.getUser is cached by Supabase client usually, but safe to call)
       const { data: userData } = await supabase.auth.getUser();
       const currentUserId = userData?.user?.id;
 
+      // ---------------------------------------------------------
+      // SINGLE RPC CALL (Story 8.11.2 - Query Waterfall Consolidation)
+      // ---------------------------------------------------------
+      // Fetches messages + read receipts + reported status + hidden filter in ONE go
+      // Build RPC params dynamically to avoid passing explicit null/undefined which might cause 400s
+      const rpcParams: any = {
+        p_conversation_id: conversationId,
+        p_limit: limit + 1
+      };
+
+      if (beforeMessageId) {
+        rpcParams.p_before_id = beforeMessageId;
+      }
+
+      // Fetches messages + read receipts + reported status + hidden filtering in ONE go
       const { data, error } = await supabase
-        .rpc('get_conversation_messages', {
-          p_conversation_id: conversationId,
-          p_limit: limit + 1, // Fetch one extra to check hasMore
-          p_before_id: beforeMessageId || null
-        });
+        .rpc('get_messages_v2', rpcParams);
 
       if (error) throw error;
 
-      // Get message IDs that the current user sent (for status derivation)
-      const sentMessageIds = (data || [])
-        .filter((msg: any) => msg.sender_id === currentUserId)
-        .map((msg: any) => msg.id);
-
-      // Fetch read receipts for sent messages
-      let readReceiptsByMessageId: Record<string, boolean> = {};
-      if (sentMessageIds.length > 0) {
-        const { data: receipts } = await supabase
-          .from('message_read_receipts')
-          .select('message_id, read_at')
-          .in('message_id', sentMessageIds)
-          .not('read_at', 'is', null);
-
-        // Create a map of message_id -> has been read 
-        readReceiptsByMessageId = (receipts || []).reduce((acc: Record<string, boolean>, receipt: any) => {
-          acc[receipt.message_id] = true;
-          return acc;
-        }, {});
-      }
-
-      // Fetch reported status for the current user
-      let reportedMessageIds: Set<string> = new Set();
-      if (data && data.length > 0) {
-        const messageIds = data.map((m: any) => m.id);
-        const { data: reports } = await supabase
-          .from('message_reports')
-          .select('message_id')
-          .eq('reporter_id', currentUserId)
-          .in('message_id', messageIds);
-
-        if (reports) {
-          reports.forEach((r: any) => reportedMessageIds.add(r.message_id));
-        }
-      }
-
       const messages = (data || []).map((msg: any) => {
-        // Derive status for own messages
+        // Derive status for own messages using the aggregated 'read_by' array
         let status: 'sent' | 'delivered' | 'read' | undefined;
+
         if (msg.sender_id === currentUserId) {
-          // Own message - derive status from read receipts
-          if (readReceiptsByMessageId[msg.id]) {
+          // If read_by array has valid entries (anyone other than sender), it's read
+          if (msg.read_by && msg.read_by.length > 0) {
             status = 'read'; // Double blue check ✓✓
           } else {
             status = 'delivered'; // Double gray check ✓✓ (message exists in DB = delivered)
           }
         }
-        // For received messages, status is not needed (we don't show ticks on received messages)
+        // For received messages, status is not needed in UI (we don't show status ticks on received msgs)
 
         return {
-          ...msg,
-          status,
-          viewer_has_reported: reportedMessageIds.has(msg.id),
-          // Ensure arrays are initialized
+          // Spread raw fields
+          id: msg.id,
+          conversation_id: msg.conversation_id,
+          sender_id: msg.sender_id,
+          content: msg.content,
+          type: msg.type,
           media_urls: msg.media_urls || [],
-          // Ensure timestamps are valid strings
+          thumbnail_url: msg.thumbnail_url || null, // Ensure explicit null if missing
+          link_previews: msg.link_previews || null,
+          shared_coupon_id: msg.shared_coupon_id,
+          shared_deal_id: msg.shared_deal_id,
+          reply_to_id: msg.reply_to_id,
           created_at: msg.created_at,
           updated_at: msg.updated_at,
-          read_at: msg.read_at,
+          is_deleted: msg.is_deleted,
           deleted_at: msg.deleted_at,
-          edited_at: msg.edited_at
+          is_edited: msg.is_edited,
+          edited_at: msg.edited_at,
+
+          // Forwarding
+          is_forwarded: msg.is_forwarded,
+          original_message_id: msg.original_message_id,
+          forward_count: msg.forward_count,
+
+          // Derived / New Fields
+          status,
+          viewer_has_reported: msg.viewer_has_reported, // From RPC
+
+          // Legacy fields normalization
+          // read_at is less relevant now that we have read_by array, but mapping just in case
+          read_at: msg.read_at
         };
       });
 
       const hasMore = messages.length > limit;
-      const finalMessages = (messages.slice(0, limit)).reverse(); // Reverse for chronological order
+      const finalMessages = (messages.slice(0, limit)).reverse(); // Reverse for chronological order (oldest first in list)
 
-      console.log(`✅ Fetched ${finalMessages.length} messages with status derived`);
+      console.log(`✅ Fetched ${finalMessages.length} messages (v2 single query)`);
       return { messages: finalMessages, hasMore };
     } catch (error) {
-      console.error('❌ Error fetching messages:', error);
+      console.error('❌ Error fetching messages (v2):', error);
       throw error;
+    }
+  }
+
+  /**
+   * Fetch messages created after a specific timestamp (for catch-up)
+   * 
+   * @param conversationId - Conversation UUID (optional, if null fetches for all convos?) 
+   * Actually, for catch-up we might need to fetch for ALL conversations if the user was away.
+   * But usually we sync the active conversation first. 
+   * REQUIRED: The story implies syncing "my messages when I return".
+   * Let's implement it to fetch for ALL conversations if conversationId is not provided, 
+   * or specific if provided.
+   * 
+   * WAIT: The `catchUpSync` in the plan invokes `fetchMessagesSince(lastSyncTimestamp)`.
+   * It implies global catch-up.
+   * 
+   * @param since - ISO Timestamp
+   */
+  async fetchMessagesSince(since: string): Promise<Message[]> {
+    try {
+      console.log('🔄 Fetching messages since:', since);
+
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .gt('created_at', since)
+        .order('created_at', { ascending: true }); // Oldest first to replay history
+
+      if (error) throw error;
+
+      console.log(`📥 Catch-up fetched ${data?.length || 0} messages`);
+      return (data || []) as Message[];
+    } catch (error) {
+      console.error('❌ Error fetching catch-up messages:', error);
+      return [];
     }
   }
 
