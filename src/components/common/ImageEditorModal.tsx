@@ -13,6 +13,8 @@ interface ImageEditorModalProps {
     aspectRatio?: number;
     title?: string;
     actions?: React.ReactNode;
+    footerContent?: React.ReactNode;
+    requireInteraction?: boolean;
 }
 
 const getCroppedImg = async (imageSrc: string, pixelCrop: any): Promise<Blob> => {
@@ -67,10 +69,23 @@ export function ImageEditorModal({
     aspectRatio = 1,
     title = 'Edit Image',
     actions,
+    footerContent,
+    requireInteraction = false,
 }: ImageEditorModalProps) {
     const [crop, setCrop] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
     const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+    const [hasInteracted, setHasInteracted] = useState(false);
+
+    // Check if it's a new upload (data URL)
+    const isNewUpload = imageSrc?.startsWith('data:');
+
+    // Enable save if:
+    // 1. It's a new upload (always saveable) OR
+    // 2. We don't require interaction (e.g. restoring a history item that differs from current) OR
+    // 3. User has interacted (cropped/zoomed)
+    // Note: If requireInteraction is true (current image), we strictly wait for interaction.
+    const canSave = isNewUpload || !requireInteraction || hasInteracted;
 
     const onCropComplete = useCallback((croppedArea: any, croppedAreaPixels: any) => {
         setCroppedAreaPixels(croppedAreaPixels);
@@ -93,9 +108,9 @@ export function ImageEditorModal({
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <DialogContent className="sm:max-w-[600px] h-[90vh] sm:h-auto flex flex-col">
-                <DialogHeader className="flex flex-row items-center justify-between">
+                <DialogHeader className="flex flex-row items-center justify-between pr-8">
                     <DialogTitle>{title}</DialogTitle>
-                    {actions && <div className="ml-auto mr-8">{actions}</div>}
+                    {actions && <div className="ml-auto mr-4">{actions}</div>}
                 </DialogHeader>
 
                 <div className="relative w-full h-[300px] sm:h-[400px] bg-black rounded-md overflow-hidden">
@@ -104,9 +119,15 @@ export function ImageEditorModal({
                         crop={crop}
                         zoom={zoom}
                         aspect={aspectRatio}
-                        onCropChange={setCrop}
+                        onCropChange={(c) => {
+                            setCrop(c);
+                        }}
                         onCropComplete={onCropComplete}
-                        onZoomChange={setZoom}
+                        onZoomChange={(z) => {
+                            setZoom(z);
+                            setHasInteracted(true);
+                        }}
+                        onInteractionStart={() => setHasInteracted(true)}
                     />
                 </div>
 
@@ -118,17 +139,21 @@ export function ImageEditorModal({
                             min={1}
                             max={3}
                             step={0.1}
-                            onValueChange={(vals) => setZoom(vals[0])}
+                            onValueChange={(vals) => {
+                                setZoom(vals[0]);
+                                setHasInteracted(true);
+                            }}
                             className="flex-1"
                         />
                     </div>
+                    {footerContent}
                 </div>
 
                 <DialogFooter className="gap-2 sm:gap-0">
                     <Button variant="outline" onClick={onClose}>
                         Cancel
                     </Button>
-                    <Button onClick={handleSave}>
+                    <Button onClick={handleSave} disabled={!canSave}>
                         Save Changes
                     </Button>
                 </DialogFooter>

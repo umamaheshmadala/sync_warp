@@ -6,6 +6,17 @@ import { Button } from '@/components/ui/button';
 import { Edit2, Loader2, Eye, Camera, X, Trash2, History } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { cn } from "@/lib/utils";
 
 interface QuickImageUploaderProps {
     businessId: string;
@@ -39,6 +50,11 @@ export function QuickImageUploader({
     const [historyImages, setHistoryImages] = useState<{ name: string; url: string; created_at: string }[]>([]);
     const [isLoadingHistory, setIsLoadingHistory] = useState(false);
     const [selectedImageSrc, setSelectedImageSrc] = useState<string | null>(null);
+    const [deleteConfirmation, setDeleteConfirmation] = useState<{
+        isOpen: boolean;
+        type: 'current' | 'history';
+        item?: any;
+    }>({ isOpen: false, type: 'current' });
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const fetchHistory = async () => {
@@ -206,6 +222,32 @@ export function QuickImageUploader({
         }
     };
 
+    const performDelete = async () => {
+        if (deleteConfirmation.type === 'current') {
+            if (onDelete) onDelete();
+            setIsEditorOpen(false);
+            setDeleteConfirmation({ isOpen: false, type: 'current' });
+        } else if (deleteConfirmation.type === 'history' && deleteConfirmation.item) {
+            try {
+                const img = deleteConfirmation.item;
+                const path = `${folderPath}/${img.name}`;
+                const { error } = await supabase.storage.from(bucketName).remove([path]);
+
+                if (!error) {
+                    setHistoryImages(prev => prev.filter(i => i.name !== img.name));
+                    toast.success("Image deleted from history");
+                } else {
+                    toast.error("Failed to delete image");
+                }
+            } catch (error) {
+                console.error("Error deleting image:", error);
+                toast.error("Failed to delete image");
+            } finally {
+                setDeleteConfirmation({ isOpen: false, type: 'current' });
+            }
+        }
+    };
+
     // Helper to trigger file input from within modal if user wants to replace image
     const handleReplaceImage = () => {
         fileInputRef.current?.click();
@@ -217,23 +259,12 @@ export function QuickImageUploader({
             {trigger ? (
                 <div onClick={(e) => {
                     handleEditClick(e);
+                    fetchHistory();
                 }}>
                     {trigger}
                 </div>
             ) : (
                 <div className="flex items-center gap-2">
-                    {/* History Button (New) */}
-                    <Button
-                        variant="secondary"
-                        size="icon"
-                        className="h-8 w-8 rounded-full bg-white/90 hover:bg-white shadow-sm"
-                        onClick={handleHistoryClick}
-                        type="button"
-                        title="Image History"
-                    >
-                        <History className="h-4 w-4 text-gray-700" />
-                    </Button>
-
                     {/* View Button */}
                     {currentImageUrl && (
                         <Button
@@ -253,7 +284,10 @@ export function QuickImageUploader({
                         variant="secondary"
                         size="icon"
                         className="h-8 w-8 rounded-full bg-white/90 hover:bg-white shadow-sm"
-                        onClick={handleEditClick}
+                        onClick={(e) => {
+                            handleEditClick(e);
+                            fetchHistory();
+                        }}
                         disabled={isUploading}
                         type="button"
                         title={currentImageUrl ? "Edit / Crop" : "Upload Image"}
@@ -264,20 +298,6 @@ export function QuickImageUploader({
                             <Edit2 className="h-4 w-4 text-gray-700" />
                         )}
                     </Button>
-
-                    {/* Delete Button (New) */}
-                    {currentImageUrl && onDelete && (
-                        <Button
-                            variant="secondary"
-                            size="icon"
-                            className="h-8 w-8 rounded-full bg-white/90 hover:bg-red-50 shadow-sm"
-                            onClick={handleDeleteClick}
-                            type="button"
-                            title="Delete Image"
-                        >
-                            <Trash2 className="h-4 w-4 text-red-600" />
-                        </Button>
-                    )}
                 </div>
             )}
 
@@ -302,11 +322,70 @@ export function QuickImageUploader({
                     imageSrc={selectedImageSrc}
                     aspectRatio={aspectRatio}
                     title={aspectRatio === 1 ? "Crop Logo" : "Crop Cover Photo"}
+                    requireInteraction={selectedImageSrc === currentImageUrl}
                     actions={
-                        <Button variant="outline" size="sm" onClick={handleReplaceImage}>
-                            <Camera className="mr-2 h-4 w-4" />
-                            Replace Image
-                        </Button>
+                        <div className="flex items-center gap-2">
+                            {currentImageUrl && onDelete && (
+                                <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => setDeleteConfirmation({ isOpen: true, type: 'current' })}
+                                >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Delete
+                                </Button>
+                            )}
+                            <Button variant="outline" size="sm" onClick={handleReplaceImage}>
+                                <Camera className="mr-2 h-4 w-4" />
+                                Upload
+                            </Button>
+                        </div>
+                    }
+                    footerContent={
+                        <div className="space-y-2">
+                            <h4 className="text-sm font-medium text-gray-700">History</h4>
+                            <div className="grid grid-cols-6 gap-2 max-h-[120px] overflow-y-auto p-1 bg-gray-50 rounded-lg">
+                                {isLoadingHistory ? (
+                                    <div className="col-span-6 py-4 flex justify-center text-gray-500">
+                                        <Loader2 className="animate-spin h-4 w-4 mr-2" /> Loading...
+                                    </div>
+                                ) : historyImages.length === 0 ? (
+                                    <div className="col-span-6 py-4 text-center text-gray-500 text-xs">
+                                        No history found.
+                                    </div>
+                                ) : (
+                                    historyImages.map((img) => (
+                                        <div
+                                            key={img.name}
+                                            className={`relative aspect-square border-2 rounded-lg overflow-hidden transition-all group ${selectedImageSrc === img.url ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-transparent hover:border-indigo-300'}`}
+                                        >
+                                            <button
+                                                onClick={() => {
+                                                    setSelectedImageSrc(img.url);
+                                                    toast.success("Loaded previous image for cropping.");
+                                                }}
+                                                className="w-full h-full block cursor-pointer"
+                                                title="Click to load/crop this image"
+                                            >
+                                                <img src={img.url} alt="History" className="w-full h-full object-cover" />
+                                            </button>
+
+                                            {/* Delete from History Button */}
+                                            <button
+                                                className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-bl opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-10 hover:bg-red-600"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setDeleteConfirmation({ isOpen: true, type: 'history', item: img });
+                                                }}
+                                                title="Delete from history"
+                                            >
+                                                <X className="w-3 h-3" />
+                                            </button>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
                     }
                 />
             )}
@@ -335,38 +414,22 @@ export function QuickImageUploader({
                 </DialogContent>
             </Dialog>
 
-            {/* History Modal (New) */}
-            <Dialog open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
-                <DialogContent className="sm:max-w-lg">
-                    <DialogTitle>Image History</DialogTitle>
-                    <div className="grid grid-cols-6 gap-2 max-h-[60vh] overflow-y-auto p-1">
-                        {isLoadingHistory ? (
-                            <div className="col-span-3 py-8 flex justify-center text-gray-500">
-                                <Loader2 className="animate-spin h-6 w-6 mr-2" /> Loading...
-                            </div>
-                        ) : historyImages.length === 0 ? (
-                            <div className="col-span-3 py-8 text-center text-gray-500">
-                                No history found.
-                            </div>
-                        ) : (
-                            historyImages.map((img) => (
-                                <button
-                                    key={img.name}
-                                    onClick={() => {
-                                        onUploadComplete(img.url); // Use selected history image
-                                        setIsHistoryOpen(false);
-                                        toast.success("Restored previous image.");
-                                    }}
-                                    className="relative aspect-square border-2 border-transparent hover:border-indigo-500 rounded-lg overflow-hidden transition-all group"
-                                >
-                                    <img src={img.url} alt="History" className="w-full h-full object-cover" />
-                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-                                </button>
-                            ))
-                        )}
-                    </div>
-                </DialogContent>
-            </Dialog>
+            <AlertDialog open={deleteConfirmation.isOpen} onOpenChange={(open) => !open && setDeleteConfirmation(prev => ({ ...prev, isOpen: false }))}>
+                <AlertDialogContent className="z-[200] bg-white">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {deleteConfirmation.type === 'current'
+                                ? "This will remove the current image. This action cannot be undone immediately, but the image may remain in history."
+                                : "This will permanently delete this image from history. This action cannot be undone."}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={performDelete} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </>
     );
 }
