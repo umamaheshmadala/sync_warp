@@ -37,6 +37,7 @@ const ProductView: React.FC<ProductViewProps> = ({
   const navigate = useNavigate();
   const { getBusinessUrl } = useBusinessUrl();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [showMenu, setShowMenu] = useState(false);
 
   // Get currency symbol
   const getCurrencySymbol = (currency: string) => {
@@ -92,26 +93,65 @@ const ProductView: React.FC<ProductViewProps> = ({
 
         <div className="flex items-center space-x-2">
           {isOwner && (
-            <>
+            <div className="relative z-[60]" onClick={(e) => e.stopPropagation()}>
               <button
-                onClick={handleEditProduct}
-                className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-                title="Edit"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowMenu(!showMenu);
+                }}
+                className="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors"
               >
-                <Edit3 className="w-4 h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Edit</span>
+                <MoreVertical className="w-5 h-5" />
               </button>
-              {onDelete && (
-                <button
-                  onClick={onDelete}
-                  className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-red-600 bg-white hover:bg-red-50 transition-colors"
-                  title="Delete"
-                >
-                  <Trash2 className="w-4 h-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Delete</span>
-                </button>
-              )}
-            </>
+
+              <AnimatePresence>
+                {showMenu && (
+                  <>
+                    {/* Backdrop to close - lower z-index than menu but high enough */}
+                    <div
+                      className="fixed inset-0 z-[55] cursor-default"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowMenu(false);
+                      }}
+                    />
+
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                      className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 z-[60] py-1"
+                    >
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowMenu(false);
+                          handleEditProduct();
+                        }}
+                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                        Edit Product
+                      </button>
+
+                      {onDelete && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowMenu(false);
+                            onDelete();
+                          }}
+                          className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Delete Product
+                        </button>
+                      )}
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
           )}
 
           {/* Share Button - Story 10.1.3 */}
@@ -204,7 +244,12 @@ const ProductView: React.FC<ProductViewProps> = ({
 
         {/* Product Details */}
         <div className="space-y-4">
-          <h1 className="text-3xl font-bold text-gray-900">{product.name}</h1>
+          <h1 className="text-3xl font-bold text-gray-900 flex items-baseline gap-2">
+            {product.name}
+            {new Date(product.updated_at).getTime() > new Date(product.created_at).getTime() && (
+              <span className="text-sm font-medium text-gray-500">(edited)</span>
+            )}
+          </h1>
 
           {product.description && (
             <div className="prose max-w-none">

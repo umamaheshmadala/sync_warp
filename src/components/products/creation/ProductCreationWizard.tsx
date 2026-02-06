@@ -9,7 +9,7 @@ import { X } from 'lucide-react';
 import { useProductDraft } from '../../../hooks/useProductDraft';
 
 export const ProductCreationWizard: React.FC = () => {
-    const { isOpen, step, closeWizard, images, reset } = useProductWizardStore();
+    const { isOpen, step, closeWizard, images, reset, editMode, isDirty } = useProductWizardStore();
     const { saveDraft } = useProductDraft(); // We'll use this for "Save Draft" prompt later
 
     // Prevent scrolling when open
@@ -25,9 +25,12 @@ export const ProductCreationWizard: React.FC = () => {
     if (!isOpen) return null;
 
     const handleClose = () => {
-        // TODO: Add "Save Draft?" prompt if images > 0
-        if (images.length > 0) {
-            const confirmClose = window.confirm("Discard changes? You can save as draft.");
+        if (isDirty) {
+            const message = editMode
+                ? "Discard unsaved changes? Your changes will be lost."
+                : "Discard changes? You can save as draft.";
+
+            const confirmClose = window.confirm(message);
             if (!confirmClose) return;
         }
         closeWizard();

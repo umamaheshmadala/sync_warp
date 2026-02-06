@@ -79,9 +79,7 @@ const ProductManager: React.FC<ProductManagerProps> = React.memo(({
   };
 
   const handleEditProduct = (product: Product) => {
-    // Legacy Edit Form
-    setEditingProduct(product);
-    setShowForm(true);
+    openWizard(businessId, undefined, product);
   };
 
   const handleDeleteProduct = async (productId: string, productName: string) => {

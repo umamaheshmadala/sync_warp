@@ -7,7 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 import toast from 'react-hot-toast';
 
 export const MediaSelectionStep: React.FC = () => {
-    const { addImages, setStep, closeWizard } = useProductWizardStore();
+    const { addImages, setStep, closeWizard, editMode } = useProductWizardStore();
     const { pickImages, takePhoto } = useImagePicker();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -55,7 +55,9 @@ export const MediaSelectionStep: React.FC = () => {
         <div className="h-full flex flex-col items-center justify-center p-6 bg-gray-50 dark:bg-gray-900">
             {/* Header for Step 1 */}
             <div className="absolute top-0 left-0 right-0 h-16 flex items-center justify-center border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 px-4">
-                <h1 className="font-semibold text-lg text-gray-900 dark:text-white">Create new product</h1>
+                <h1 className="font-semibold text-lg text-gray-900 dark:text-white">
+                    {editMode ? 'Edit Product' : 'Create new product'}
+                </h1>
                 <button
                     onClick={closeWizard}
                     className="absolute right-4 p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full"

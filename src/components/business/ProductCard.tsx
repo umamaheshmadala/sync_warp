@@ -162,11 +162,8 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
   return (
     <>
       <div
-        className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-200 cursor-pointer hover:scale-[1.03] flex flex-col h-full"
+        className="group bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-200 cursor-pointer hover:scale-[1.03] flex flex-col h-full"
         onClick={handleProductClick}
-        style={{
-          transform: 'translateZ(0)',
-        }}
       >
         {/* Product Image - Aspect Ratio */}
         <div className="relative bg-gray-100 overflow-hidden aspect-[4/5] sm:aspect-[1/1]">
@@ -191,15 +188,31 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
               <Star className="w-5 h-5 text-yellow-400 fill-yellow-400 drop-shadow-lg" />
             </div>
           )}
+          {/* DEBUG: Owner Status */}
+          <div className="absolute top-2 left-8 z-50 bg-red-500 text-white text-xs px-1">
+            {isOwner ? 'OWNER' : 'GUEST'}
+          </div>
 
           {/* Multiple Images Indicator - Top Right */}
-          {product.image_urls && product.image_urls.length > 1 && (
-            <div className="absolute top-2 right-2 z-10">
+          <div className="absolute top-2 right-2 z-20 flex gap-2">
+            {product.image_urls && product.image_urls.length > 1 && (
               <div className="bg-black/50 backdrop-blur-sm rounded-full p-1.5 text-white">
                 <Layers className="w-4 h-4" />
               </div>
-            </div>
-          )}
+            )}
+            {isOwner && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit();
+                }}
+                className="bg-white hover:bg-gray-100 text-gray-700 p-2 rounded-full shadow-md transition-all duration-200"
+                title="Edit Product"
+              >
+                <Edit3 className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Product Details Footer */}

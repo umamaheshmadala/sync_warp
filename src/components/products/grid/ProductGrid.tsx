@@ -9,6 +9,7 @@ interface ProductGridProps {
     isOwner?: boolean;
     onProductClick?: (product: GridProduct) => void;
     onAddProduct?: () => void;
+    onEditProduct?: (productId: string) => void;
 }
 
 export const ProductGrid: React.FC<ProductGridProps> = ({
@@ -16,7 +17,8 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
     isLoading,
     isOwner,
     onProductClick,
-    onAddProduct
+    onAddProduct,
+    onEditProduct
 }) => {
     if (isLoading) {
         return (
@@ -54,6 +56,8 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
                         key={product.id}
                         product={product}
                         onClick={onProductClick}
+                        isOwner={isOwner}
+                        onEdit={() => onEditProduct && onEditProduct(product.id)}
                     />
                 ))}
             </div>

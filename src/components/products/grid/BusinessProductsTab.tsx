@@ -26,7 +26,7 @@ interface BusinessProductsTabProps {
 }
 
 export const BusinessProductsTab: React.FC<BusinessProductsTabProps> = ({ businessId, isOwner }) => {
-    const { products, loading, fetchProducts, deleteProduct, updateProduct } = useProducts(businessId);
+    const { products, loading, fetchProducts, deleteProduct, updateProduct, refreshProducts } = useProducts(businessId);
     const navigate = useNavigate();
     const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
     const [isCreatingProduct, setIsCreatingProduct] = useState(false);
@@ -43,6 +43,19 @@ export const BusinessProductsTab: React.FC<BusinessProductsTabProps> = ({ busine
 
     useEffect(() => {
         fetchProducts(businessId, { featured: true });
+
+        // Listen for new product creation from Wizard
+        const handleProductCreated = (e: CustomEvent) => {
+            if (e.detail?.businessId === businessId) {
+                console.log('[BusinessProductsTab] Product created event received, refreshing...');
+                refreshProducts();
+            }
+        };
+
+        window.addEventListener('product-created', handleProductCreated as EventListener);
+        return () => {
+            window.removeEventListener('product-created', handleProductCreated as EventListener);
+        };
     }, [businessId]);
 
     // Map domain Product to GridProduct
@@ -99,6 +112,12 @@ export const BusinessProductsTab: React.FC<BusinessProductsTabProps> = ({ busine
                 isOwner={isOwner}
                 onProductClick={handleProductClick}
                 onAddProduct={handleAddProduct}
+                onEditProduct={(productId) => {
+                    const productToEdit = products.find(p => p.id === productId);
+                    if (productToEdit) {
+                        openWizard(businessId, undefined, productToEdit);
+                    }
+                }}
             />
 
             {/* Mobile Product Modal (Visible on sm and below - hidden via CSS media/logic inside components or here) */}

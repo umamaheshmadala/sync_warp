@@ -268,14 +268,14 @@ export function QuickImageUploader({
                     {/* Delete Button (New) */}
                     {currentImageUrl && onDelete && (
                         <Button
-                            variant="destructive"
+                            variant="secondary"
                             size="icon"
-                            className="h-8 w-8 rounded-full shadow-sm"
+                            className="h-8 w-8 rounded-full bg-white/90 hover:bg-red-50 shadow-sm"
                             onClick={handleDeleteClick}
                             type="button"
                             title="Delete Image"
                         >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-4 w-4 text-red-600" />
                         </Button>
                     )}
                 </div>

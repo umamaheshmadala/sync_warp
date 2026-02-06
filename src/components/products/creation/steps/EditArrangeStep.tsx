@@ -4,7 +4,7 @@ import { useProductDraft } from '../../../../hooks/useProductDraft';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, horizontalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { ArrowLeft, ArrowRight, Crop as CropIcon, RotateCw, Trash2, Plus } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Crop as CropIcon, RotateCw, Trash2, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ImageCropper } from '../../images/ImageCropper';
 import { useImagePicker } from '../../../../hooks/products/creation/useImagePicker';
 import { v4 as uuidv4 } from 'uuid';
@@ -24,15 +24,15 @@ const SortableImageItem = ({ id, url, isActive, onClick }: any) => {
             {...attributes}
             {...listeners}
             onClick={onClick}
-            className={`relative flex-shrink-0 w-20 h-24 rounded-lg overflow-hidden border-2 cursor-pointer transition-all ${isActive ? 'border-primary ring-2 ring-primary/20' : 'border-gray-200 dark:border-gray-700'}`}
+            className={`relative flex-shrink-0 w-20 h-24 rounded-lg overflow-hidden border-2 cursor-pointer transition-all ${isActive ? 'border-primary ring-2 ring-primary/20' : 'border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800'}`}
         >
-            <img src={url} alt="Thumbnail" className="w-full h-full object-cover" />
+            <img src={url} alt="Thumbnail" className="w-full h-full object-contain" />
         </div>
     );
 };
 
 export const EditArrangeStep: React.FC = () => {
-    const { images, setStep, reorderImages, removeImage, updateImageCrop, addImages } = useProductWizardStore();
+    const { images, setStep, reorderImages, removeImage, updateImageCrop, addImages, name, editMode } = useProductWizardStore();
     const { pickImages } = useImagePicker();
 
     // Local state for active image being previewed/edited
@@ -46,7 +46,11 @@ export const EditArrangeStep: React.FC = () => {
 
     // DND Sensors
     const sensors = useSensors(
-        useSensor(PointerSensor),
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8, // 8px movement required to start drag, allows clicks
+            },
+        }),
         useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
     );
 
@@ -90,6 +94,22 @@ export const EditArrangeStep: React.FC = () => {
         }
     };
 
+    const handlePrevImage = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!activeImage) return;
+        const currentIndex = images.findIndex(img => img.id === activeImage.id);
+        const prevIndex = (currentIndex - 1 + images.length) % images.length;
+        setActiveId(images[prevIndex].id);
+    };
+
+    const handleNextImage = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!activeImage) return;
+        const currentIndex = images.findIndex(img => img.id === activeImage.id);
+        const nextIndex = (currentIndex + 1) % images.length;
+        setActiveId(images[nextIndex].id);
+    };
+
     if (!activeImage) return <div>No image selected</div>;
 
     return (
@@ -99,10 +119,12 @@ export const EditArrangeStep: React.FC = () => {
                 <button onClick={() => setStep('media')} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full">
                     <ArrowLeft className="w-6 h-6 text-gray-900 dark:text-white" />
                 </button>
-                <h1 className="font-semibold text-lg text-gray-900 dark:text-white">Edit</h1>
+                <h1 className="font-semibold text-lg text-gray-900 dark:text-white truncate max-w-[200px]">
+                    {editMode && name ? name : 'Edit Product'}
+                </h1>
                 <button
                     onClick={() => setStep('details')}
-                    className="bg-primary text-white px-4 py-1.5 rounded-full font-medium text-sm hover:bg-primary-dark transition-colors"
+                    className="bg-black dark:bg-white text-white dark:text-black px-4 py-1.5 rounded-full font-medium text-sm hover:opacity-90 transition-opacity"
                 >
                     Next
                 </button>
@@ -127,7 +149,8 @@ export const EditArrangeStep: React.FC = () => {
                             className="w-full h-full object-contain bg-black"
                         />
                         {/* Overlay Controls - Always visible now */}
-                        <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/80 to-transparent flex justify-center gap-4">
+                        {/* Overlay Controls */}
+                        <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/80 to-transparent flex justify-center gap-4 z-20">
                             <button
                                 onClick={() => setIsCropping(true)}
                                 className="p-3 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/30 transition-colors"
@@ -144,7 +167,6 @@ export const EditArrangeStep: React.FC = () => {
                                         }
                                     } else {
                                         removeImage(activeImage.id);
-                                        // Set next active
                                         const next = images.find(i => i.id !== activeImage.id);
                                         if (next) setActiveId(next.id);
                                     }
@@ -155,6 +177,24 @@ export const EditArrangeStep: React.FC = () => {
                                 <Trash2 className="w-5 h-5" />
                             </button>
                         </div>
+
+                        {/* Navigation Arrows Overlay */}
+                        {images.length > 1 && (
+                            <>
+                                <button
+                                    onClick={handlePrevImage}
+                                    className="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/30 text-white hover:bg-black/50 transition-colors z-10"
+                                >
+                                    <ChevronLeft className="w-6 h-6" />
+                                </button>
+                                <button
+                                    onClick={handleNextImage}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/30 text-white hover:bg-black/50 transition-colors z-10"
+                                >
+                                    <ChevronRight className="w-6 h-6" />
+                                </button>
+                            </>
+                        )}
                     </div>
                 )}
             </div>
@@ -163,7 +203,7 @@ export const EditArrangeStep: React.FC = () => {
             <div className="h-40 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 shrink-0 flex flex-col items-center justify-center p-4">
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                     <SortableContext items={images.map(i => i.id)} strategy={horizontalListSortingStrategy}>
-                        <div className="flex gap-3 overflow-x-auto pb-2 w-full max-w-2xl px-2">
+                        <div className="flex gap-3 overflow-x-auto pb-2 w-full max-w-2xl px-2 justify-center">
                             {images.map(img => (
                                 <SortableImageItem
                                     key={img.id}

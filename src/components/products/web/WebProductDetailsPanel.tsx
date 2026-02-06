@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { MessageCircle, Share2, MoreHorizontal, Loader2 } from 'lucide-react';
+import { MessageCircle, Share2, MoreHorizontal, Loader2, Bell, BellOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Product } from '../../../types/product';
 import { useAuthStore } from '../../../store/authStore';
 import { useProductLike } from '../../../hooks/useProductLike';
 import { useProductComments } from '../../../hooks/useProductComments';
 import { useProductFavorite } from '../../../hooks/useProductFavorite';
+import { useProducts } from '../../../hooks/useProducts';
 import { ProductLikeButton } from '../social/ProductLikeButton';
 import { ProductLikedBy } from '../social/ProductLikedBy';
 import { ProductCommentItem } from '../social/ProductCommentItem';
@@ -15,6 +16,9 @@ import { ProductShareButton } from '../../Sharing/ProductShareButton';
 import { ProductTagDisplay } from '../tags/ProductTagDisplay';
 import { ProductDescription } from '../details/ProductDescription';
 import { ProductNotificationToggle } from '../controls/ProductNotificationToggle';
+
+import { useProductWizardStore } from '../../../stores/useProductWizardStore';
+import { Edit3, Trash2 } from 'lucide-react';
 
 interface WebProductDetailsPanelProps {
     product: Product;
@@ -34,6 +38,15 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
     // Favorite Logic
     const { isFavorite, toggleFavorite, isLoading: isFavLoading } = useProductFavorite(product.id);
 
+    // Edit Logic
+    const { openWizard } = useProductWizardStore();
+    const [showMenu, setShowMenu] = useState(false);
+
+    // Notification state
+    const { updateNotificationSetting } = useProducts();
+    const [notificationsEnabled, setNotificationsEnabled] = useState(product.notifications_enabled ?? true);
+    const [updatingNotification, setUpdatingNotification] = useState(false);
+
     const { user } = useAuthStore();
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
@@ -51,10 +64,36 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
         ? description
         : description.slice(0, 120) + '...';
 
+    const handleEditProduct = () => {
+        onClose(); // Close modal first
+        openWizard(product.business_id, undefined, product);
+    };
+
+    const handleNotificationToggle = async () => {
+        if (updatingNotification) return;
+        setUpdatingNotification(true);
+        const newState = !notificationsEnabled;
+        setNotificationsEnabled(newState); // Optimistic
+        try {
+            const success = await updateNotificationSetting(product.id, newState);
+            if (!success) {
+                setNotificationsEnabled(!newState); // Revert
+            }
+        } catch {
+            setNotificationsEnabled(!newState); // Revert
+        } finally {
+            setUpdatingNotification(false);
+        }
+    };
+
+    // Check if product was edited (updated_at > created_at + 1 minute)
+    const isEdited = product.updated_at && product.created_at &&
+        new Date(product.updated_at).getTime() > new Date(product.created_at).getTime() + 60000;
+
     return (
-        <div className="flex flex-col h-full bg-white dark:bg-gray-900 border-l border-gray-100 dark:border-gray-800">
+        <div className="flex flex-col h-full bg-white dark:bg-gray-900 border-l border-gray-100 dark:border-gray-800" onClick={() => setShowMenu(false)}>
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800 relative">
                 <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden">
                         {businessLogo ? (
@@ -74,18 +113,78 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                         Follow
                     </button>
                 </div>
-                <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full">
-                    <MoreHorizontal className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                </button>
+
+                {/* Menu Action */}
+                {isOwner && (
+                    <div className="relative">
+                        <button
+                            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setShowMenu(!showMenu);
+                            }}
+                        >
+                            <MoreHorizontal className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                        </button>
+
+                        {/* Dropdown Menu */}
+                        {showMenu && (
+                            <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 z-50 overflow-hidden">
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleEditProduct();
+                                    }}
+                                    className="w-full px-4 py-2.5 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 transition-colors"
+                                >
+                                    <Edit3 className="w-4 h-4" />
+                                    Edit Product
+                                </button>
+                                {/* Future: Add Delete Option here */}
+                            </div>
+                        )}
+                    </div>
+                )}
+                {!isOwner && (
+                    <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full">
+                        <MoreHorizontal className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                    </button>
+                )}
             </div>
 
             {/* Scrollable Content (Comments & Description) */}
             <div className="flex-1 overflow-y-auto no-scrollbar p-4 space-y-4">
                 {/* Product Info */}
                 <div className="space-y-2">
-                    <h1 className="text-lg font-bold text-gray-900 dark:text-white">
-                        {product.name}
-                    </h1>
+                    <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                            <h1 className="text-lg font-bold text-gray-900 dark:text-white">
+                                {product.name}
+                            </h1>
+                            {isEdited && (
+                                <span className="text-xs text-gray-400 italic">(edited)</span>
+                            )}
+                        </div>
+                        {/* Notification Bell for Owners */}
+                        {isOwner && (
+                            <button
+                                onClick={handleNotificationToggle}
+                                disabled={updatingNotification}
+                                className={`p-1.5 rounded-full transition-colors ${notificationsEnabled
+                                    ? 'text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20'
+                                    : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+                                title={notificationsEnabled ? 'Notifications enabled' : 'Notifications disabled'}
+                            >
+                                {updatingNotification ? (
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                ) : notificationsEnabled ? (
+                                    <Bell className="w-5 h-5" />
+                                ) : (
+                                    <BellOff className="w-5 h-5" />
+                                )}
+                            </button>
+                        )}
+                    </div>
                     <div className="flex items-center gap-2">
                         <span className="text-lg font-medium text-gray-900 dark:text-white">
                             ${product.price?.toFixed(2)}
@@ -148,16 +247,7 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                     )}
                 </div>
 
-                {/* Owner Controls */}
-                {isOwner && (
-                    <div className="pb-4">
-                        <ProductNotificationToggle
-                            productId={product.id}
-                            isEnabled={product.notifications_enabled ?? true}
-                            isOwner={isOwner}
-                        />
-                    </div>
-                )}
+                {/* Owner Controls - Notification Toggle moved to header bell icon */}
             </div>
 
             {/* Sticky Bottom Actions & Input */}
@@ -204,9 +294,9 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                     />
                 </div>
 
-                {/* Time Stamp */}
+                {/* Time Stamp - (edited) indicator moved to product name area */}
                 <div className="text-[10px] uppercase text-gray-400 mb-3 tracking-wide">
-                    {new Date(product.created_at).toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}
+                    <span>{new Date(product.created_at).toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}</span>
                 </div>
 
                 {/* Comment Input */}

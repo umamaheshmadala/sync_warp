@@ -2,6 +2,7 @@ import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { FilePicker } from '@capawesome/capacitor-file-picker';
 import { Capacitor } from '@capacitor/core';
 import toast from 'react-hot-toast';
+import { imageCompressionService } from '../../../services/imageCompressionService';
 
 export interface PickedImage {
     webPath?: string; // For web/webview display
@@ -47,14 +48,32 @@ export const useImagePicker = () => {
                     source: CameraSource.Photos,
                     quality: 90,
                     webUseInput: true, // Uses file input
-                    // Allow multiple? Capacitor Camera doesn't support multiple on web easily via this API call
-                    // It opens a standard input.
                 });
 
+                // Fetch original blob
+                const response = await fetch(photo.webPath!);
+                const blob = await response.blob();
+
+                // Convert to File for compression
+                const file = new File([blob], `picked.${photo.format}`, { type: `image/${photo.format}` });
+
+                // Compress
+                let compressedFile = file;
+                try {
+                    compressedFile = await imageCompressionService.compressImage(file, {
+                        maxWidthOrHeight: 1500, // Reasonable max for product images
+                        maxSizeMB: 0.8 // Target sub-MB size
+                    });
+                } catch (e) {
+                    console.warn("Compression failed, using original", e);
+                }
+
                 return [{
-                    webPath: photo.webPath,
+                    webPath: photo.webPath, // Keep original path for immediate display? Or create new obj URL?
+                    // Better to use new obj URL from compressed file to see actual quality
+                    // But Camera returns a path. Let's use the compressed blob.
                     format: photo.format,
-                    blob: await fetch(photo.webPath!).then(r => r.blob())
+                    blob: compressedFile
                 }];
             }
         } catch (error: any) {

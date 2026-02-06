@@ -32,9 +32,12 @@ export interface WizardState {
     tags: string[];
     notificationsEnabled: boolean;
     businessId: string | null;
+    editMode: boolean;
+    editingProductId: string | null;
+    isDirty: boolean;
 
     // Actions
-    openWizard: (businessId: string, draft?: ProductDraft) => void;
+    openWizard: (businessId: string, draft?: ProductDraft, productToEdit?: any) => void;
     closeWizard: () => void;
     setStep: (step: WizardStep) => void;
 
