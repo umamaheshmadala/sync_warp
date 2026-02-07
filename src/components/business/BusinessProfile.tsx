@@ -130,6 +130,7 @@ const BusinessProfile: React.FC = () => {
   // Scroll to top on mount
   useEffect(() => {
     window.scrollTo(0, 0);
+    document.querySelector('main')?.scrollTo({ top: 0, behavior: 'instant' });
   }, []);
 
   const [reviewsKey, setReviewsKey] = useState(0);

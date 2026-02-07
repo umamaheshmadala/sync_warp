@@ -58,7 +58,7 @@ const mapFavoriteToProduct = (fav: FavoriteProduct): Product => {
     business_id: fav.business_id,
     name: fav.name,
     description: fav.description,
-    price: fav.price,
+
     currency: 'INR', // Default to INR as it's missing in favorite
     image_urls: normalizedImageUrls,
     images: normalizedImageUrls, // Required for WebProductCarousel
@@ -319,14 +319,7 @@ const FavoritesPage: React.FC = () => {
                 ? `No ${activeTab} match your search "${searchQuery}"`
                 : `Start favoriting ${activeTab} to see them here`}
             </p>
-            {!searchQuery.trim() && (
-              <button
-                onClick={() => navigate('/')}
-                className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-              >
-                Browse {activeTab === 'offers' ? 'Offers' : 'Products'}
-              </button>
-            )}
+
           </motion.div>
         ) : (
           // Grid of items
@@ -398,7 +391,7 @@ const FavoritesPage: React.FC = () => {
                 onComment={() => {
                   document.getElementById('comment-input')?.focus();
                 }}
-                onShare={() => toast.success('Shared (Demo)', { icon: '🔗' })}
+
               />
               <MobileProductDetails product={selectedProduct} />
               <MobileProductComments

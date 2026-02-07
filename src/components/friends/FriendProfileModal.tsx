@@ -43,9 +43,9 @@ export function FriendProfileModal({ friendId, isOpen, onClose }: FriendProfileM
     const blockUserMutation = useBlockUser();
     const unblockUserMutation = useUnblockUser();
 
-    // Check friendship status - if the profile is loaded and we have mutual friends data, they're likely friends
-    // For now, we'll use the presence of the profile in the friends context as an indicator
-    const [isFriend, setIsFriend] = useState(true); // Default to true since this modal is for friend profiles
+    // Use status from profile data
+    const friendshipStatus = data?.profile?.friendship_status || 'none';
+    const isFriend = friendshipStatus === 'active';
 
     const [showUnfriendDialog, setShowUnfriendDialog] = useState(false);
     const [showBlockDialog, setShowBlockDialog] = useState(false);
@@ -73,14 +73,18 @@ export function FriendProfileModal({ friendId, isOpen, onClose }: FriendProfileM
     const handleToggleFriend = () => {
         if (isFriend) {
             setShowUnfriendDialog(true);
-        } else {
+        } else if (friendshipStatus === 'none') {
             setShowAddFriendDialog(true);
+        } else if (friendshipStatus === 'pending_received') {
+            // For now, maybe just redirect to friends page or show toast
+            toast.error('This user has already sent you a request. Check your friend requests.');
+        } else if (friendshipStatus === 'pending_sent') {
+            toast.error('Friend request already sent.');
         }
     };
 
     const handleUnfriend = () => {
         unfriend.mutate(friendId);
-        setIsFriend(false);
         setShowUnfriendDialog(false);
     };
 
@@ -118,6 +122,7 @@ export function FriendProfileModal({ friendId, isOpen, onClose }: FriendProfileM
         onToggleBlock: handleToggleBlock,
         handleShare,
         isFriend,
+        friendshipStatus,
         isBlocked,
     };
 
@@ -125,14 +130,14 @@ export function FriendProfileModal({ friendId, isOpen, onClose }: FriendProfileM
         <>
             {isDesktop ? (
                 <Dialog open={isOpen} onOpenChange={onClose}>
-                    <DialogContent className="fixed left-0 right-0 mx-auto translate-x-0 max-w-sm p-4 rounded-2xl bg-white dark:bg-gray-900" aria-describedby="friend-profile-description">
+                    <DialogContent className="fixed left-0 right-0 mx-auto translate-x-0 max-w-sm p-4 rounded-2xl bg-white shadow-xl border border-gray-100" aria-describedby="friend-profile-description">
                         <span id="friend-profile-description" className="sr-only">Friend profile information and actions</span>
                         <FriendProfileContent {...contentProps} />
                     </DialogContent>
                 </Dialog>
             ) : (
                 <Drawer open={isOpen} onOpenChange={onClose}>
-                    <DrawerContent className="p-6 pt-0 max-h-[90vh] bg-white dark:bg-gray-900" aria-describedby="friend-profile-description-drawer">
+                    <DrawerContent className="p-6 pt-0 max-h-[90vh] bg-white rounded-t-xl" aria-describedby="friend-profile-description-drawer">
                         <span id="friend-profile-description-drawer" className="sr-only">Friend profile information and actions</span>
                         <FriendProfileContent {...contentProps} />
                     </DrawerContent>
@@ -141,7 +146,7 @@ export function FriendProfileModal({ friendId, isOpen, onClose }: FriendProfileM
 
             {/* Unfriend Confirmation */}
             <AlertDialog open={showUnfriendDialog} onOpenChange={setShowUnfriendDialog}>
-                <AlertDialogContent>
+                <AlertDialogContent className="bg-white">
                     <AlertDialogHeader>
                         <AlertDialogTitle>Unfriend {data?.profile.full_name}?</AlertDialogTitle>
                         <AlertDialogDescription>
@@ -159,7 +164,7 @@ export function FriendProfileModal({ friendId, isOpen, onClose }: FriendProfileM
 
             {/* Add Friend Confirmation */}
             <AlertDialog open={showAddFriendDialog} onOpenChange={setShowAddFriendDialog}>
-                <AlertDialogContent>
+                <AlertDialogContent className="bg-white">
                     <AlertDialogHeader>
                         <AlertDialogTitle>Add {data?.profile.full_name} as friend?</AlertDialogTitle>
                         <AlertDialogDescription>
@@ -177,7 +182,7 @@ export function FriendProfileModal({ friendId, isOpen, onClose }: FriendProfileM
 
             {/* Block/Unblock Confirmation */}
             <AlertDialog open={showBlockDialog} onOpenChange={setShowBlockDialog}>
-                <AlertDialogContent>
+                <AlertDialogContent className="bg-white">
                     <AlertDialogHeader>
                         <AlertDialogTitle>{isBlocked ? 'Unblock' : 'Block'} {data?.profile.full_name}?</AlertDialogTitle>
                         <AlertDialogDescription>

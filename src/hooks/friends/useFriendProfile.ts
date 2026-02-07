@@ -14,6 +14,7 @@ export interface FriendProfile {
   is_following: boolean;
   is_activity_public: boolean;
   read_receipts_enabled?: boolean;
+  friendship_status: 'active' | 'pending_sent' | 'pending_received' | 'none';
 }
 
 export interface MutualFriend {
@@ -26,20 +27,20 @@ export function useFriendProfile(friendId: string) {
   const user = useAuthStore((state) => state.user);
 
   return useQuery({
-    queryKey: ['friend-profile', friendId, 'v4'], // Bump version to force re-fetch (cache invalidation)
+    queryKey: ['friend-profile', friendId, 'v5'], // Bump version
     queryFn: async () => {
       if (!user) throw new Error('User not authenticated');
 
       // 1. Fetch Profile Data
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('id, full_name, avatar_url, location, bio, is_online, last_active')
+        .select('id, full_name, username, avatar_url, location, bio, is_online, last_active')
         .eq('id', friendId)
         .single();
 
       if (profileError) throw profileError;
 
-      // 2. Fetch Mutual Friends - handle if RPC doesn't exist
+      // 2. Fetch Mutual Friends
       let mutualFriends: MutualFriend[] = [];
       try {
         const { data: mutualFriendsData, error: mutualError } = await supabase
@@ -49,11 +50,10 @@ export function useFriendProfile(friendId: string) {
           mutualFriends = mutualFriendsData;
         }
       } catch (error) {
-        // RPC doesn't exist yet, use empty array
         console.warn('get_mutual_friends RPC not found, using empty array');
       }
 
-      // 3. Check if following - handle if table doesn't exist
+      // 3. Check if following
       let isFollowing = false;
       try {
         const { count: followingCount } = await supabase
@@ -64,24 +64,47 @@ export function useFriendProfile(friendId: string) {
 
         isFollowing = followingCount ? followingCount > 0 : false;
       } catch (error) {
-        // following table doesn't exist yet, default to false
         console.warn('following table not found, defaulting to false');
       }
 
-      // 4. Fetch Privacy Settings (for Read Receipts)
-      let readReceiptsEnabled = true; // Default to true if fetch fails or restricted
+      // 4. Determine Friendship Status
+      let friendshipStatus: FriendProfile['friendship_status'] = 'none';
+
+      // Check active friendship
+      const { data: friendship } = await supabase
+        .from('friendships')
+        .select('status')
+        .eq('user_id', user.id)
+        .eq('friend_id', friendId)
+        .maybeSingle();
+
+      if (friendship?.status === 'active') {
+        friendshipStatus = 'active';
+      } else {
+        // Check pending requests
+        const { data: request } = await supabase
+          .from('friend_requests')
+          .select('sender_id, status')
+          .or(`and(sender_id.eq.${user.id},receiver_id.eq.${friendId}),and(sender_id.eq.${friendId},receiver_id.eq.${user.id})`)
+          .eq('status', 'pending')
+          .maybeSingle();
+
+        if (request) {
+          friendshipStatus = request.sender_id === user.id ? 'pending_sent' : 'pending_received';
+        }
+      }
+
+      // 5. Fetch Privacy Settings
+      let readReceiptsEnabled = true;
       try {
-        const { data: profileData, error: profileError } = await supabase
+        const { data: profilePrivacy, error: privacyError } = await supabase
           .from('profiles')
           .select('privacy_settings')
           .eq('id', friendId)
           .maybeSingle();
 
-        if (!profileError && profileData?.privacy_settings) {
-          // Check if the setting exists in the JSONB object
-          // The type of privacy_settings is generic object in DB types usually, so we cast or check safely
-          const settings = profileData.privacy_settings as any;
-
+        if (!privacyError && profilePrivacy?.privacy_settings) {
+          const settings = profilePrivacy.privacy_settings as any;
           if (settings.read_receipts_enabled !== undefined) {
             readReceiptsEnabled = settings.read_receipts_enabled;
           }
@@ -95,9 +118,10 @@ export function useFriendProfile(friendId: string) {
           ...profileData,
           is_following: isFollowing,
           is_activity_public: true,
-          read_receipts_enabled: readReceiptsEnabled
+          read_receipts_enabled: readReceiptsEnabled,
+          friendship_status: friendshipStatus,
         } as FriendProfile,
-        mutualFriends: mutualFriends.slice(0, 5), // Top 5
+        mutualFriends: mutualFriends.slice(0, 5),
         mutualFriendsCount: mutualFriends.length,
       };
     },

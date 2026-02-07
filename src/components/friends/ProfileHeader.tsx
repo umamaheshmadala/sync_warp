@@ -21,7 +21,7 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
             </div>
 
             <div className="flex-1 min-w-0 pt-1">
-                <h2 className="text-2xl font-bold truncate">{profile.full_name}</h2>
+                <h2 className="text-2xl font-bold truncate text-gray-900">{profile.full_name}</h2>
                 <p className="text-gray-500">@{profile.username}</p>
                 <p className="text-xs text-gray-400 mt-0.5">ID: ...{profile.id.split('-').pop()}</p>
 

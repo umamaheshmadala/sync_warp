@@ -220,12 +220,7 @@ const Dashboard: React.FC = () => {
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">Hot Offers 🔥</h2>
               </div>
-              <button
-                onClick={() => navigate('/wallet')}
-                className="text-sm text-indigo-600 hover:text-indigo-800 font-medium bg-indigo-50 px-4 py-2 rounded-full hover:bg-indigo-100 transition-colors"
-              >
-                My Wallet
-              </button>
+
             </div>
             <p className="text-xs text-gray-500 mb-3 -mt-3 italic">
               Hot offers are the most viewed offers by the user as of now.
@@ -280,7 +275,7 @@ const Dashboard: React.FC = () => {
                   key={product.id}
                   onClick={() => {
                     const businessUrl = getBusinessUrl(product.businessId, product.business);
-                    navigate(`${businessUrl}?tab=products`);
+                    navigate(`${businessUrl}?tab=products&productId=${product.id}`);
                   }}
                   className="bg-white rounded-xl md:rounded-2xl overflow-hidden shadow-sm md:shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer flex flex-col h-full group"
                 >

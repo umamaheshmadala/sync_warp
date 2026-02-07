@@ -13,6 +13,7 @@ interface FriendActionsMenuProps {
     onToggleBlock: () => void;
     onShare: () => void;
     isFriend: boolean;
+    friendshipStatus?: 'active' | 'pending_sent' | 'pending_received' | 'none';
     isBlocked: boolean;
 }
 
@@ -22,6 +23,7 @@ export function FriendActionsMenu({
     onToggleBlock,
     onShare,
     isFriend,
+    friendshipStatus,
     isBlocked,
 }: FriendActionsMenuProps) {
     return (
@@ -40,6 +42,16 @@ export function FriendActionsMenu({
                     <>
                         <UserMinus className="w-4 h-4 mr-2" />
                         Unfriend
+                    </>
+                ) : friendshipStatus === 'pending_sent' ? (
+                    <>
+                        <UserCheck className="w-4 h-4 mr-2" />
+                        Sent
+                    </>
+                ) : friendshipStatus === 'pending_received' ? (
+                    <>
+                        <UserPlus className="w-4 h-4 mr-2" />
+                        Accept
                     </>
                 ) : (
                     <>

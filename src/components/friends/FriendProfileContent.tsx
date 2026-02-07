@@ -54,6 +54,7 @@ export function FriendProfileContent({
 
             <FriendActionsMenu
                 isFriend={isFriend}
+                friendshipStatus={(data?.profile as any)?.friendship_status}
                 isBlocked={isBlocked}
                 onMessage={() => sendMessage(friendId)}
                 onToggleFriend={onToggleFriend}

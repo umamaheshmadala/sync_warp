@@ -108,12 +108,7 @@ export function NewBusinesses({
             </div>
           </div>
 
-          <button
-            onClick={handleViewAll}
-            className="text-sm text-indigo-600 hover:text-indigo-800 font-medium bg-indigo-50 px-4 py-2 rounded-full hover:bg-indigo-100 transition-colors"
-          >
-            View All
-          </button>
+
         </div>
 
         {/* Business Grid - 2 cols mobile, responsive desktop */}
