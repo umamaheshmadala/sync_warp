@@ -60,7 +60,7 @@ export const ProductFavoriteButton: React.FC<ProductFavoriteButtonProps> = ({
                     >
                         <Heart
                             size={size}
-                            className={`text-gray-900 dark:text-white ${iconClassName}`}
+                            className={`text-gray-900 ${iconClassName}`}
                             strokeWidth={1.5}
                         />
                     </motion.div>

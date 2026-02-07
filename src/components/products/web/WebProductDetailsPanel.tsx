@@ -132,16 +132,16 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
     const canDelete = !hasInteractions || deleteInput === 'DELETE';
 
     return (
-        <div className="flex flex-col h-full bg-white dark:bg-gray-900 border-l border-gray-100 dark:border-gray-800 relative" onClick={() => setShowMenu(false)}>
+        <div className="flex flex-col h-full bg-white border-l border-gray-100 relative" onClick={() => setShowMenu(false)}>
             {/* Delete Confirmation Overlay */}
             {showDeleteConfirm && (
                 <div className="absolute inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
                     <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-sm w-full p-6 border border-gray-200 dark:border-gray-700" onClick={e => e.stopPropagation()}>
                         <div className="flex flex-col items-center text-center">
-                            <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-4">
-                                <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-500" />
+                            <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-4">
+                                <AlertTriangle className="w-6 h-6 text-red-600" />
                             </div>
-                            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Delete Product?</h3>
+                            <h3 className="text-lg font-bold text-gray-900 mb-2">Delete Product?</h3>
 
                             {hasInteractions ? (
                                 <>
@@ -160,7 +160,7 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                                     />
                                 </>
                             ) : (
-                                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                                <p className="text-sm text-gray-500 mb-6">
                                     Are you sure you want to delete this product? This action cannot be undone.
                                 </p>
                             )}
@@ -168,7 +168,7 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                             <div className="flex gap-3 w-full">
                                 <button
                                     onClick={() => { setShowDeleteConfirm(false); setDeleteInput(''); }}
-                                    className="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-md font-medium hover:bg-gray-200 transition-colors"
+                                    className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-md font-medium hover:bg-gray-200 transition-colors"
                                 >
                                     Cancel
                                 </button>
@@ -187,7 +187,7 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
             )}
 
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800 relative">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 relative">
                 <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden">
                         {businessLogo ? (
@@ -199,7 +199,7 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                         )}
                     </div>
                     <div>
-                        <div className="text-sm font-semibold text-gray-900 dark:text-white hover:underline cursor-pointer">
+                        <div className="text-sm font-semibold text-gray-900 hover:underline cursor-pointer">
                             {businessName}
                         </div>
                     </div>
@@ -223,7 +223,7 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
 
                         {/* Dropdown Menu */}
                         {showMenu && (
-                            <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 z-50 overflow-hidden py-1">
+                            <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-100 z-50 overflow-hidden py-1">
                                 <button
                                     onClick={(e) => {
                                         e.stopPropagation();
@@ -267,7 +267,7 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                                         setShowMenu(false);
                                         setShowDeleteConfirm(true);
                                     }}
-                                    className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2 transition-colors"
+                                    className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors"
                                 >
                                     <Trash2 className="w-4 h-4" />
                                     Delete Product
@@ -276,9 +276,9 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                         )}
                     </div>
                 )}
-                {!isOwner && (
-                    <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full">
-                        <MoreHorizontal className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                {!isOwner && product.status !== 'draft' && (
+                    <button className="p-2 hover:bg-gray-100 rounded-full">
+                        <MoreHorizontal className="w-5 h-5 text-gray-600" />
                     </button>
                 )}
             </div>
@@ -289,7 +289,7 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                 <div className="space-y-2">
                     <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
-                            <h1 className="text-lg font-bold text-gray-900 dark:text-white">
+                            <h1 className="text-lg font-bold text-gray-900">
                                 {product.name}
                             </h1>
                             {isEdited && (
@@ -297,7 +297,7 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                             )}
                             {/* Archived Badge */}
                             {product.status === 'archived' && (
-                                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full font-medium dark:bg-gray-800 dark:text-gray-300">
+                                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full font-medium">
                                     Archived
                                 </span>
                             )}
@@ -345,7 +345,7 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                 {product.tags && product.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-2">
                         {product.tags.map(tag => (
-                            <span key={tag} className="text-xs text-blue-600 dark:text-blue-400">
+                            <span key={tag} className="text-xs text-blue-600">
                                 #{tag}
                             </span>
                         ))}
@@ -353,92 +353,96 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                 )}
 
 
-                <div className="h-px bg-gray-100 dark:bg-gray-800 my-2" />
+                <div className="h-px bg-gray-100 my-2" />
 
-                {/* Comments List */}
-                <div className="space-y-4 pb-4">
-                    {commentsLoading && comments.length === 0 ? (
-                        <div className="flex justify-center py-8">
-                            <Loader2 className="w-6 h-6 animate-spin text-gray-300" />
-                        </div>
-                    ) : (
-                        comments.map(comment => (
-                            <ProductCommentItem
-                                key={comment.id}
-                                comment={comment}
-                                onDelete={deleteComment}
-                                onReport={handleReport}
-                            />
-                        ))
-                    )}
+                {/* Comments List - Hidden for Drafts */}
+                {product.status !== 'draft' && (
+                    <div className="space-y-4 pb-4">
+                        {commentsLoading && comments.length === 0 ? (
+                            <div className="flex justify-center py-8">
+                                <Loader2 className="w-6 h-6 animate-spin text-gray-300" />
+                            </div>
+                        ) : (
+                            comments.map(comment => (
+                                <ProductCommentItem
+                                    key={comment.id}
+                                    comment={comment}
+                                    onDelete={deleteComment}
+                                    onReport={handleReport}
+                                />
+                            ))
+                        )}
 
-                    {comments.length === 0 && !commentsLoading && (
-                        <div className="flex flex-col items-center justify-center py-8 text-center">
-                            <div className="text-4xl mb-2">💭</div>
-                            <h3 className="font-semibold text-gray-900 dark:text-white">No comments yet</h3>
-                            <p className="text-sm text-gray-500">Start the conversation.</p>
-                        </div>
-                    )}
-                </div>
+                        {comments.length === 0 && !commentsLoading && (
+                            <div className="flex flex-col items-center justify-center py-8 text-center">
+                                <div className="text-4xl mb-2">💭</div>
+                                <h3 className="font-semibold text-gray-900">No comments yet</h3>
+                                <p className="text-sm text-gray-500">Start the conversation.</p>
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* Owner Controls - Notification Toggle moved to header bell icon */}
             </div>
 
-            {/* Sticky Bottom Actions & Input - Disabled if Archived? */}
-            <div className={`border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 pb-3 ${product.status === 'archived' ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
-                {/* Actions Row */}
-                <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-4">
-                        <ProductLikeButton
-                            isLiked={isLiked}
-                            onToggle={toggleLike}
+            {/* Sticky Bottom Actions & Input - Disabled if Archived, Hidden if Draft */}
+            {product.status !== 'draft' && (
+                <div className={`border-t border-gray-100 bg-white p-4 pb-3 ${product.status === 'archived' ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
+                    {/* Actions Row */}
+                    <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-4">
+                            <ProductLikeButton
+                                isLiked={isLiked}
+                                onToggle={toggleLike}
+                                size={24}
+                            />
+                            <button className="group" onClick={() => document.getElementById('web-comment-input')?.focus()}>
+                                <MessageCircle className="w-6 h-6 text-gray-900 group-hover:text-blue-500 transition-colors" />
+                            </button>
+                            <ProductShareButton
+                                productId={product.id}
+                                productName={product.name}
+                                productDescription={product.description}
+                                productImage={product.image_urls?.[0] || product.image_url}
+                                businessId={product.business_id}
+                                businessName={businessName}
+                                businessLogo={businessLogo}
+                                variant="icon"
+                                className="text-gray-900 hover:text-green-500 transition-colors bg-transparent shadow-none"
+                            />
+                        </div>
+                        {/* Favorite Button */}
+                        <ProductFavoriteButton
+                            isFavorite={isFavorite}
+                            onToggle={toggleFavorite}
+                            isLoading={isFavLoading}
                             size={24}
                         />
-                        <button className="group" onClick={() => document.getElementById('web-comment-input')?.focus()}>
-                            <MessageCircle className="w-6 h-6 text-gray-900 dark:text-white group-hover:text-blue-500 transition-colors" />
-                        </button>
-                        <ProductShareButton
-                            productId={product.id}
-                            productName={product.name}
-                            productDescription={product.description}
-                            productImage={product.image_urls?.[0] || product.image_url}
-                            businessId={product.business_id}
-                            businessName={businessName}
-                            businessLogo={businessLogo}
-                            variant="icon"
-                            className="text-gray-900 dark:text-white hover:text-green-500 transition-colors bg-transparent shadow-none"
+                    </div>
+
+                    {/* Liked By */}
+                    <div className="mb-2">
+                        <ProductLikedBy
+                            friends={likedByFriends}
+                            totalLikes={likeCount}
                         />
                     </div>
-                    {/* Favorite Button */}
-                    <ProductFavoriteButton
-                        isFavorite={isFavorite}
-                        onToggle={toggleFavorite}
-                        isLoading={isFavLoading}
-                        size={24}
-                    />
-                </div>
 
-                {/* Liked By */}
-                <div className="mb-2">
-                    <ProductLikedBy
-                        friends={likedByFriends}
-                        totalLikes={likeCount}
-                    />
-                </div>
+                    {/* Time Stamp - (edited) indicator moved to product name area */}
+                    <div className="text-[10px] uppercase text-gray-400 mb-3 tracking-wide">
+                        <span>{new Date(product.created_at).toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}</span>
+                    </div>
 
-                {/* Time Stamp - (edited) indicator moved to product name area */}
-                <div className="text-[10px] uppercase text-gray-400 mb-3 tracking-wide">
-                    <span>{new Date(product.created_at).toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}</span>
+                    {/* Comment Input */}
+                    <div className="border-t border-gray-100 pt-3">
+                        <ProductCommentInput
+                            onPost={postComment}
+                            id="web-comment-input"
+                        />
+                    </div>
                 </div>
-
-                {/* Comment Input */}
-                <div className="border-t border-gray-100 dark:border-gray-800 pt-3">
-                    <ProductCommentInput
-                        onPost={postComment}
-                        id="web-comment-input"
-                    />
-                </div>
-            </div>
+            )}
         </div >
     );
 };

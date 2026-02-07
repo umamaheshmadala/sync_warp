@@ -6,10 +6,13 @@ import { Image as ImageIcon, Upload, X } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import toast from 'react-hot-toast';
 
+import { DiscardDialog } from '../DiscardDialog';
+
 export const MediaSelectionStep: React.FC = () => {
-    const { addImages, setStep, closeWizard, editMode } = useProductWizardStore();
+    const { addImages, setStep, closeWizard, reset, editMode } = useProductWizardStore();
     const { pickImages, takePhoto } = useImagePicker();
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [showDiscardDialog, setShowDiscardDialog] = React.useState(false);
 
     const handleFiles = async (files: File[]) => {
         const validFiles = files.filter(f => f.type.startsWith('image/'));
@@ -52,31 +55,42 @@ export const MediaSelectionStep: React.FC = () => {
     };
 
     return (
-        <div className="h-full flex flex-col items-center justify-center p-6 bg-gray-50 dark:bg-gray-900">
+        <div className="h-full flex flex-col items-center justify-center p-6 bg-gray-50">
             {/* Header for Step 1 */}
-            <div className="absolute top-0 left-0 right-0 h-16 flex items-center justify-center border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 px-4">
-                <h1 className="font-semibold text-lg text-gray-900 dark:text-white">
+            <div className="absolute top-0 left-0 right-0 h-16 flex items-center justify-center border-b border-gray-100 bg-white px-4">
+                <h1 className="font-semibold text-lg text-gray-900">
                     {editMode ? 'Edit Product' : 'Create new product'}
                 </h1>
                 <button
-                    onClick={closeWizard}
-                    className="absolute right-4 p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full"
+                    onClick={() => setShowDiscardDialog(true)}
+                    className="absolute right-4 p-2 hover:bg-gray-100 rounded-full"
                 >
                     <X className="w-6 h-6 text-gray-500" />
                 </button>
             </div>
 
+            <DiscardDialog
+                open={showDiscardDialog}
+                onOpenChange={setShowDiscardDialog}
+                onConfirm={() => {
+                    closeWizard();
+                    reset();
+                }}
+                title={editMode ? "Discard unsaved changes?" : "Discard product creation?"}
+                description={editMode ? "All unsaved changes will be lost." : "Are you sure you want to stop creating this product? All progress will be lost."}
+            />
+
             <div
                 className="w-full max-w-md flex flex-col items-center space-y-8 mt-12 cursor-pointer"
                 onClick={handlePickImages}
             >
-                <div className="w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center animate-pulse-slow">
+                <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center animate-pulse-slow">
                     <ImageIcon className="w-10 h-10 text-gray-400" />
                 </div>
 
                 <div className="text-center space-y-2">
-                    <h2 className="text-xl font-medium text-gray-900 dark:text-white">Select Product Images</h2>
-                    <p className="text-gray-500 dark:text-gray-400">Tap anywhere to select photos</p>
+                    <h2 className="text-xl font-medium text-gray-900">Select Product Images</h2>
+                    <p className="text-gray-500">Tap anywhere to select photos</p>
                 </div>
 
                 <div className="flex flex-col gap-3 w-full max-w-xs" onClick={(e) => e.stopPropagation()}>

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useProductWizardStore } from '../../../../stores/useProductWizardStore';
 import { useProductDraft } from '../../../../hooks/products/useProductDraft';
 import { useProducts } from '../../../../hooks/useProducts';
-import { ArrowLeft, Share, Save, Loader2, Info, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Share, Save, Loader2, Info, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { ProductDescriptionInput } from '../ProductDescriptionInput';
 import { ProductTagSelector } from '../ProductTagSelector';
@@ -37,7 +37,7 @@ const ImagePreviewCarousel = ({ images }: { images: any[] }) => {
     }, [activeIndex]);
 
     return (
-        <div className="w-full aspect-[4/5] bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden relative group">
+        <div className="w-full aspect-[4/5] bg-gray-100 rounded-lg overflow-hidden relative group">
             <div id="preview-carousel-container" className="flex overflow-x-hidden h-full scrollbar-hide snap-x snap-mandatory">
                 {images.map((img, idx) => (
                     <div key={img.id} className="min-w-full h-full snap-center flex items-center justify-center bg-black">
@@ -77,12 +77,16 @@ const ImagePreviewCarousel = ({ images }: { images: any[] }) => {
     );
 };
 
+import { DiscardDialog } from '../DiscardDialog';
+
 export const ProductDetailsStep: React.FC = () => {
     const {
         setStep, images, name, description, tags, notificationsEnabled,
         updateDetails, draftId, closeWizard, reset, businessId,
         editMode, editingProductId
     } = useProductWizardStore();
+
+    const [showDiscardDialog, setShowDiscardDialog] = useState(false);
 
     const { saveDraft, saving: isSavingDraft } = useProductDraft();
     const { createProduct, updateProduct, uploadProductImage } = useProducts(businessId);
@@ -169,23 +173,8 @@ export const ProductDetailsStep: React.FC = () => {
             return;
         }
 
-        const uploadedUrls = await uploadImages();
-        if (uploadedUrls.length !== images.length) return; // Upload failed
-
-        // Update images with real URLs
-        const imagesWithUrls = images.map((img, i) => ({
-            ...img,
-            url: uploadedUrls[i],
-            file: undefined // Clear file obj
-        }));
-
-        await saveDraft({
-            images: imagesWithUrls, // Use persistent URLs
-            name,
-            description,
-            tags,
-            notificationsEnabled
-        });
+        // Use the hook's save capability which handles everything
+        await saveDraft();
 
         closeWizard();
         reset();
@@ -244,37 +233,67 @@ export const ProductDetailsStep: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
+        <div className="flex flex-col h-full bg-gray-50">
             {/* Header */}
-            <div className="h-16 flex items-center justify-between border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 shrink-0">
-                <button onClick={() => setStep('edit')} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full">
-                    <ArrowLeft className="w-6 h-6 text-gray-900 dark:text-white" />
-                </button>
-                <h1 className="font-semibold text-lg text-gray-900 dark:text-white truncate max-w-[200px]">
+            <div className="h-16 flex items-center justify-between border-b border-gray-100 bg-white px-4 shrink-0">
+                <div className="flex items-center gap-2">
+                    <button onClick={() => setStep('edit')} className="p-2 hover:bg-gray-100 rounded-full">
+                        <ArrowLeft className="w-6 h-6 text-gray-900" />
+                    </button>
+                    <button
+                        onClick={() => setShowDiscardDialog(true)}
+                        className="text-sm font-medium text-gray-500 hover:text-red-600 px-2 transition-colors hidden sm:block"
+                    >
+                        Discard
+                    </button>
+                    <DiscardDialog
+                        open={showDiscardDialog}
+                        onOpenChange={setShowDiscardDialog}
+                        onConfirm={() => {
+                            closeWizard();
+                            reset();
+                        }}
+                        title={editMode ? "Discard unsaved changes?" : "Discard product creation?"}
+                        description={editMode ? "All unsaved changes will be lost." : "Are you sure you want to stop creating this product? All progress will be lost."}
+                    />
+                </div>
+
+                <h1 className="font-semibold text-lg text-gray-900 truncate max-w-[200px]">
                     {editMode && name ? name : 'New Product'}
                 </h1>
-                <button
-                    onClick={handlePublish}
-                    disabled={isPublishing}
-                    className="bg-black dark:bg-white text-white dark:text-black px-4 py-1.5 rounded-full font-medium text-sm hover:opacity-90 disabled:opacity-50 flex items-center gap-2 transition-opacity"
-                >
-                    {isPublishing ? (
-                        <div className="flex items-center gap-2">
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            <span>{uploadProgress}%</span>
-                        </div>
-                    ) : (editMode ? 'Save Changes' : 'Share')}
-                </button>
+
+                <div className="flex items-center gap-2">
+                    {/* Mobile Cancel Icon */}
+                    <button
+                        onClick={() => setShowDiscardDialog(true)}
+                        className="sm:hidden p-2 hover:bg-gray-100 rounded-full text-gray-500"
+                    >
+                        <X className="w-6 h-6" />
+                    </button>
+
+                    <button
+                        onClick={handlePublish}
+                        disabled={isPublishing}
+                        className="bg-black text-white px-4 py-1.5 rounded-full font-medium text-sm hover:opacity-90 disabled:opacity-50 flex items-center gap-2 transition-opacity"
+                    >
+                        {isPublishing ? (
+                            <div className="flex items-center gap-2">
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                <span>{uploadProgress}%</span>
+                            </div>
+                        ) : (editMode ? 'Save Changes' : 'Publish')}
+                    </button>
+                </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
+            <div className="flex-1 overflow-y-auto bg-gray-50">
                 <div className="max-w-4xl mx-auto w-full min-h-full p-4 md:p-8 flex flex-col md:flex-row gap-8 items-start">
 
                     {/* Preview Section (Mobile: Top, Web: Left) */}
                     <div className="w-full md:w-1/2 max-w-sm mx-auto md:mx-0">
                         <ImagePreviewCarousel images={images} />
                         <div className="mt-4 flex justify-center">
-                            <button onClick={() => setStep('edit')} className="text-sm text-gray-500 hover:text-gray-900 dark:hover:text-white underline">
+                            <button onClick={() => setStep('edit')} className="text-sm text-gray-500 hover:text-gray-900 underline">
                                 Edit images
                             </button>
                         </div>
@@ -285,7 +304,7 @@ export const ProductDetailsStep: React.FC = () => {
 
                         {/* Name */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Product Name <span className="text-red-500">*</span>
                             </label>
                             <input
@@ -294,7 +313,7 @@ export const ProductDetailsStep: React.FC = () => {
                                 onChange={(e) => updateDetails({ name: e.target.value })}
                                 maxLength={100}
                                 placeholder="e.g., Summer Floral Dress"
-                                className="w-full px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                                className="w-full px-4 py-2 rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
                             />
                             <div className="flex justify-end mt-1">
                                 <span className="text-xs text-gray-400">{name.length}/100</span>
@@ -314,7 +333,7 @@ export const ProductDetailsStep: React.FC = () => {
                         />
 
                         {/* Notification Toggle */}
-                        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
+                        <div className="bg-white p-4 rounded-lg border border-gray-100">
                             <ProductNotificationToggle
                                 isEnabled={notificationsEnabled}
                                 onToggle={(val) => updateDetails({ notificationsEnabled: val })}
@@ -325,11 +344,11 @@ export const ProductDetailsStep: React.FC = () => {
 
                         {/* Save Draft - Only for new products */}
                         {!editMode && (
-                            <div className="pt-4 border-t border-gray-100 dark:border-gray-800">
+                            <div className="pt-4 border-t border-gray-100">
                                 <button
                                     onClick={handleSaveDraft}
-                                    disabled={isSavingDraft || isPublishing}
-                                    className="w-full py-3 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 font-medium transition-colors flex items-center justify-center gap-2"
+                                    disabled={isPublishing}
+                                    className="w-full py-3 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 font-medium transition-colors flex items-center justify-center gap-2"
                                 >
                                     <Save className="w-4 h-4" />
                                     {isSavingDraft ? 'Saving Draft...' : 'Save as Draft'}

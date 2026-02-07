@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { useProductDraft } from '../../../hooks/useProductDraft';
+import { useProductDraft } from '../../../hooks/products/useProductDraft';
 import { useProductWizardStore } from '../../../stores/useProductWizardStore';
 import { DraftCard } from './DraftCard';
 import { Loader2 } from 'lucide-react';
 import { ProductDraft } from '../../../types/productWizard';
+import { ConfirmDialog } from '../ConfirmDialog';
 
 interface DraftsTabProps {
     businessId: string;
@@ -26,12 +27,22 @@ export const DraftsTab: React.FC<DraftsTabProps> = ({ businessId }) => {
         loadDrafts();
     }, [businessId]);
 
-    const handleDelete = async (id: string, e: React.MouseEvent) => {
+    const [confirmDialog, setConfirmDialog] = useState<{
+        isOpen: boolean;
+        draftId: string | null;
+    }>({ isOpen: false, draftId: null });
+
+    const handleDelete = (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
-        if (window.confirm("Delete this draft?")) {
-            await deleteDraft(id);
-            loadDrafts(); // Refresh
+        setConfirmDialog({ isOpen: true, draftId: id });
+    };
+
+    const confirmDelete = async () => {
+        if (confirmDialog.draftId) {
+            await deleteDraft(confirmDialog.draftId, businessId);
+            loadDrafts();
         }
+        setConfirmDialog({ isOpen: false, draftId: null });
     };
 
     if (isLoading) {
@@ -49,11 +60,20 @@ export const DraftsTab: React.FC<DraftsTabProps> = ({ businessId }) => {
 
     return (
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 p-4">
+            <ConfirmDialog
+                open={confirmDialog.isOpen}
+                onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, isOpen: open }))}
+                onConfirm={confirmDelete}
+                title="Delete Draft?"
+                description="Are you sure you want to delete this draft? This action cannot be undone."
+                confirmLabel="Delete"
+                variant="destructive"
+            />
             {drafts.map(draft => (
                 <DraftCard
                     key={draft.id}
                     draft={draft}
-                    onResume={() => openWizard(draft)}
+                    onResume={() => openWizard(businessId, draft)}
                     onDelete={(e) => handleDelete(draft.id!, e)}
                 />
             ))}

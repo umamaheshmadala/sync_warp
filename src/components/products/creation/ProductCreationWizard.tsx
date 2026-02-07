@@ -7,10 +7,12 @@ import { EditArrangeStep } from './steps/EditArrangeStep';
 import { ProductDetailsStep } from './steps/ProductDetailsStep';
 import { X } from 'lucide-react';
 import { useProductDraft } from '../../../hooks/products/useProductDraft';
+import { DiscardDialog } from './DiscardDialog';
 
 export const ProductCreationWizard: React.FC = () => {
     const { isOpen, step, closeWizard, images, reset, editMode, isDirty } = useProductWizardStore();
     const { saveDraft, saving, lastSaved } = useProductDraft({ enableAutoSave: false }); // We'll use this for "Save Draft" prompt later
+    const [showDiscardDialog, setShowDiscardDialog] = React.useState(false);
 
     // Prevent scrolling when open
     useEffect(() => {
@@ -24,15 +26,19 @@ export const ProductCreationWizard: React.FC = () => {
 
     if (!isOpen) return null;
 
+    if (!isOpen) return null;
+
     const handleClose = () => {
         if (isDirty) {
-            const message = editMode
-                ? "Discard unsaved changes? Your changes will be lost."
-                : "Discard changes? You can save as draft.";
-
-            const confirmClose = window.confirm(message);
-            if (!confirmClose) return;
+            setShowDiscardDialog(true);
+            return;
         }
+        closeWizard();
+        reset();
+    };
+
+    const handleConfirmDiscard = () => {
+        setShowDiscardDialog(false);
         closeWizard();
         reset();
     };
@@ -46,7 +52,7 @@ export const ProductCreationWizard: React.FC = () => {
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.95 }}
-                        className="bg-white dark:bg-gray-900 w-full h-full md:rounded-2xl overflow-hidden flex flex-col shadow-2xl relative"
+                        className="bg-white w-full h-full md:rounded-2xl overflow-hidden flex flex-col shadow-2xl relative"
                     >
                         <Dialog.Title className="sr-only">Product Creation Wizard</Dialog.Title>
 
@@ -74,6 +80,14 @@ export const ProductCreationWizard: React.FC = () => {
                         </div>
 
                     </motion.div>
+
+                    <DiscardDialog
+                        open={showDiscardDialog}
+                        onOpenChange={setShowDiscardDialog}
+                        onConfirm={handleConfirmDiscard}
+                        title={editMode ? "Discard unsaved changes?" : "Discard changes?"}
+                        description={editMode ? "Your changes will be lost." : "You can save as draft before discarding."}
+                    />
                 </Dialog.Content>
             </Dialog.Portal>
         </Dialog.Root>

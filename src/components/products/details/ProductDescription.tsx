@@ -30,7 +30,7 @@ export const ProductDescription: React.FC<ProductDescriptionProps> = ({
     // Current approach: Simple slice. If it breaks a URL, user clicks 'Read more' to see full.
 
     return (
-        <div className={cn("text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap", className)}>
+        <div className={cn("text-sm text-gray-800 whitespace-pre-wrap", className)}>
             {linkifyText(displayText)}
             {!isExpanded && shouldTruncate && <span>... </span>}
 

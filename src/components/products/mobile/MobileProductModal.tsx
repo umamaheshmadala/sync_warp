@@ -79,14 +79,14 @@ export const MobileProductModal: React.FC<MobileProductModalProps> = ({ isOpen, 
                         animate={controls}
                         exit={{ y: '100%' }}
                         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                        className="relative w-full h-full sm:h-[90vh] sm:max-w-md sm:rounded-xl bg-white dark:bg-gray-900 overflow-hidden shadow-2xl touch-none"
+                        className="relative w-full h-full sm:h-[90vh] sm:max-w-md sm:rounded-xl bg-white overflow-hidden shadow-2xl touch-none"
                     >
                         {/* Drag Handle for visual affordance */}
                         <div className="absolute top-2 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-gray-300 rounded-full z-10 sm:hidden pointer-events-none" />
 
                         {/* Content Container */}
                         <div
-                            className="h-full overflow-y-auto no-scrollbar bg-white dark:bg-gray-900"
+                            className="h-full overflow-y-auto no-scrollbar bg-white"
                             onPointerDown={(e) => e.stopPropagation()}
                         >
                             <div className="pt-14">

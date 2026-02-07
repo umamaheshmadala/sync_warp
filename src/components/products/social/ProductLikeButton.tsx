@@ -38,7 +38,7 @@ export const ProductLikeButton: React.FC<ProductLikeButtonProps> = ({
                     size={size}
                     className={`transition-colors ${isLiked
                         ? 'fill-red-500 text-red-500'
-                        : 'text-gray-900 dark:text-white group-hover:text-gray-600'
+                        : 'text-gray-900 group-hover:text-gray-600'
                         }`}
                     style={{ color: isLiked ? undefined : color }}
                 />

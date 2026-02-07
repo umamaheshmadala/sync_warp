@@ -41,7 +41,7 @@ export const ProductDescriptionInput: React.FC<ProductDescriptionInputProps> = (
                     className={cn(
                         "w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[100px] resize-y",
                         error ? "border-red-500 focus:ring-red-500" : "border-gray-300 dark:border-gray-700",
-                        "bg-white dark:bg-gray-800 text-gray-900 dark:text-white",
+                        "bg-white text-gray-900",
                         className
                     )}
                     {...props}

@@ -42,17 +42,17 @@ export const MobileProductHeader: React.FC<MobileProductHeaderProps> = ({
     const displayName = businessNameStr;
 
     return (
-        <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-3 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-b border-gray-100 dark:border-gray-800">
+        <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-3 bg-white/95 backdrop-blur-md border-b border-gray-100">
             <button
                 onClick={onClose}
-                className="p-2 -ml-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors"
                 aria-label="Back"
             >
-                <ArrowLeft className="w-6 h-6 text-gray-900 dark:text-white" />
+                <ArrowLeft className="w-6 h-6 text-gray-900" />
             </button>
 
             <div className="flex-1 px-3 text-center">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                <h3 className="text-sm font-semibold text-gray-900 truncate">
                     {displayName}
                 </h3>
                 <div className="flex justify-center mt-1">
@@ -62,16 +62,16 @@ export const MobileProductHeader: React.FC<MobileProductHeaderProps> = ({
 
             <Menu as="div" className="relative">
                 <Menu.Button
-                    className="p-2 -mr-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    className="p-2 -mr-2 rounded-full hover:bg-gray-100 transition-colors"
                     aria-label="Options"
                 >
-                    <MoreVertical className="w-6 h-6 text-gray-900 dark:text-white" />
+                    <MoreVertical className="w-6 h-6 text-gray-900" />
                 </Menu.Button>
 
-                <Menu.Items className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 focus:outline-none overflow-hidden">
+                <Menu.Items className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-100 focus:outline-none overflow-hidden">
                     <Menu.Item>
                         {({ active }) => (
-                            <button className={`${active ? 'bg-gray-50 dark:bg-gray-700' : ''} flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-200`}>
+                            <button className={`${active ? 'bg-gray-50' : ''} flex items-center w-full px-4 py-3 text-sm text-gray-700`}>
                                 <Share className="w-4 h-4 mr-3" />
                                 Share
                             </button>
@@ -82,7 +82,7 @@ export const MobileProductHeader: React.FC<MobileProductHeaderProps> = ({
                     {onEdit && (
                         <Menu.Item>
                             {({ active }) => (
-                                <button onClick={onEdit} className={`${active ? 'bg-gray-50 dark:bg-gray-700' : ''} flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-200`}>
+                                <button onClick={onEdit} className={`${active ? 'bg-gray-50' : ''} flex items-center w-full px-4 py-3 text-sm text-gray-700`}>
                                     <Edit className="w-4 h-4 mr-3" />
                                     Edit Product
                                 </button>
@@ -93,7 +93,7 @@ export const MobileProductHeader: React.FC<MobileProductHeaderProps> = ({
                     {onArchive && (
                         <Menu.Item>
                             {({ active }) => (
-                                <button onClick={onArchive} className={`${active ? 'bg-gray-50 dark:bg-gray-700' : ''} flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-200`}>
+                                <button onClick={onArchive} className={`${active ? 'bg-gray-50' : ''} flex items-center w-full px-4 py-3 text-sm text-gray-700`}>
                                     {product.status === 'archived' ? (
                                         <>
                                             <RotateCcw className="w-4 h-4 mr-3" />
@@ -113,7 +113,7 @@ export const MobileProductHeader: React.FC<MobileProductHeaderProps> = ({
                     {onDelete && (
                         <Menu.Item>
                             {({ active }) => (
-                                <button onClick={onDelete} className={`${active ? 'bg-red-50 dark:bg-red-900/20' : ''} flex items-center w-full px-4 py-3 text-sm text-red-600 dark:text-red-400`}>
+                                <button onClick={onDelete} className={`${active ? 'bg-red-50' : ''} flex items-center w-full px-4 py-3 text-sm text-red-600`}>
                                     <Trash className="w-4 h-4 mr-3" />
                                     Delete
                                 </button>
@@ -125,7 +125,7 @@ export const MobileProductHeader: React.FC<MobileProductHeaderProps> = ({
                     {!onEdit && (
                         <Menu.Item>
                             {({ active }) => (
-                                <button className={`${active ? 'bg-gray-50 dark:bg-gray-700' : ''} flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-200`}>
+                                <button className={`${active ? 'bg-gray-50' : ''} flex items-center w-full px-4 py-3 text-sm text-gray-700`}>
                                     <Flag className="w-4 h-4 mr-3" />
                                     Report
                                 </button>

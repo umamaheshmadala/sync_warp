@@ -21,6 +21,7 @@ import { Product } from '../../../types/product';
 // import ProductForm from '../../business/ProductForm';
 import { ProductNotificationToggle } from '../controls/ProductNotificationToggle';
 import { useProductWizardStore } from '../../../stores/useProductWizardStore'; // Added import
+import { ConfirmDialog } from '../ConfirmDialog';
 
 interface BusinessProductsTabProps {
     businessId: string;
@@ -44,6 +45,14 @@ export const BusinessProductsTab: React.FC<BusinessProductsTabProps> = ({ busine
 
     // Tabs: 'active' | 'archived' | 'drafts'
     const [activeTab, setActiveTab] = useState<'active' | 'archived' | 'drafts'>('active');
+
+    // Confirm Dialog state
+    const [confirmDialog, setConfirmDialog] = useState<{
+        isOpen: boolean;
+        title: string;
+        description: string;
+        onConfirm: () => void;
+    }>({ isOpen: false, title: '', description: '', onConfirm: () => { } });
 
     // Sync URL param to state (Deep linking)
     useEffect(() => {
@@ -119,12 +128,18 @@ export const BusinessProductsTab: React.FC<BusinessProductsTabProps> = ({ busine
         navigate(`/business/products/edit/${selectedProductId}`);
     };
 
-    const handleDeleteProduct = async () => {
+    const handleDeleteProduct = () => {
         if (!selectedProductId) return;
-        if (window.confirm('Are you sure you want to delete this product?')) {
-            await deleteProduct(selectedProductId);
-            handleCloseModal();
-        }
+        setConfirmDialog({
+            isOpen: true,
+            title: 'Delete Product?',
+            description: 'Are you sure you want to delete this product? This action cannot be undone.',
+            onConfirm: async () => {
+                await deleteProduct(selectedProductId);
+                handleCloseModal();
+                setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+            }
+        });
     };
 
     const handleArchiveProduct = async () => {
@@ -141,24 +156,33 @@ export const BusinessProductsTab: React.FC<BusinessProductsTabProps> = ({ busine
 
     return (
         <div className="flex flex-col h-full">
+            <ConfirmDialog
+                open={confirmDialog.isOpen}
+                onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, isOpen: open }))}
+                onConfirm={confirmDialog.onConfirm}
+                title={confirmDialog.title}
+                description={confirmDialog.description}
+                confirmLabel="Delete"
+                variant="destructive"
+            />
             {/* Header: Dropdown Filter + Add Product Button */}
             {isOwner ? (
                 <div className="flex justify-between items-center px-4 mb-4 mt-2">
                     {/* View Filter Dropdown */}
                     <div className="relative">
                         <Menu as="div" className="relative inline-block text-left">
-                            <Menu.Button className="inline-flex justify-center items-center w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
+                            <Menu.Button className="inline-flex justify-center items-center w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
                                 {activeTab === 'active' ? 'Products' : activeTab === 'drafts' ? 'Drafts' : 'Archived'}
                                 <ChevronDown className="w-4 h-4 ml-2 -mr-1" aria-hidden="true" />
                             </Menu.Button>
 
-                            <Menu.Items className="absolute left-0 mt-2 w-40 origin-top-left bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-20 border border-gray-100 dark:border-gray-700">
+                            <Menu.Items className="absolute left-0 mt-2 w-40 origin-top-left bg-white divide-y divide-gray-100 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-20 border border-gray-100">
                                 <div className="px-1 py-1">
                                     <Menu.Item>
                                         {({ active }) => (
                                             <button
                                                 onClick={() => setActiveTab('active')}
-                                                className={`${active ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-200' : 'text-gray-900 dark:text-gray-100'
+                                                className={`${active ? 'bg-indigo-50 text-indigo-700' : 'text-gray-900'
                                                     } group flex rounded-md items-center w-full px-2 py-2 text-sm`}
                                             >
                                                 Products
@@ -169,7 +193,7 @@ export const BusinessProductsTab: React.FC<BusinessProductsTabProps> = ({ busine
                                         {({ active }) => (
                                             <button
                                                 onClick={() => setActiveTab('archived')}
-                                                className={`${active ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-200' : 'text-gray-900 dark:text-gray-100'
+                                                className={`${active ? 'bg-indigo-50 text-indigo-700' : 'text-gray-900'
                                                     } group flex rounded-md items-center w-full px-2 py-2 text-sm`}
                                             >
                                                 Archived
@@ -180,7 +204,7 @@ export const BusinessProductsTab: React.FC<BusinessProductsTabProps> = ({ busine
                                         {({ active }) => (
                                             <button
                                                 onClick={() => setActiveTab('drafts')}
-                                                className={`${active ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-200' : 'text-gray-900 dark:text-gray-100'
+                                                className={`${active ? 'bg-indigo-50 text-indigo-700' : 'text-gray-900'
                                                     } group flex rounded-md items-center w-full px-2 py-2 text-sm`}
                                             >
                                                 Drafts
@@ -206,25 +230,44 @@ export const BusinessProductsTab: React.FC<BusinessProductsTabProps> = ({ busine
                 </div>
             ) : null}
 
-            <ProductGrid
-                products={gridProducts}
-                isLoading={loading}
-                isOwner={isOwner}
-                onProductClick={handleProductClick}
-                onAddProduct={activeTab === 'active' ? handleAddProduct : undefined}
-                // Hide the internal add button since we render it in the header
-                showTopAddButton={false}
-                emptyStateTitle={activeTab === 'archived' ? 'No archived products' : undefined}
-                emptyStateDescription={activeTab === 'archived' ? 'Archived products will appear here.' : undefined}
-                onEditProduct={(productId) => {
-                    const productToEdit = products.find(p => p.id === productId);
-                    if (productToEdit) {
-                        openWizard(businessId, undefined, productToEdit);
-                    }
-                }}
+            {/* Active Products Grid */}
+            {activeTab === 'active' && (
+                <ProductGrid
+                    products={gridProducts}
+                    isLoading={loading}
+                    isOwner={isOwner}
+                    onProductClick={handleProductClick}
+                    onAddProduct={handleAddProduct}
+                    showTopAddButton={false}
+                    onEditProduct={(productId) => {
+                        const productToEdit = products.find(p => p.id === productId);
+                        if (productToEdit) {
+                            openWizard(businessId, undefined, productToEdit);
+                        }
+                    }}
+                />
+            )}
 
-            />
-            {/* Render Drafts Grid */}
+            {/* Archived Products Grid */}
+            {activeTab === 'archived' && (
+                <ProductGrid
+                    products={gridProducts}
+                    isLoading={loading}
+                    isOwner={isOwner}
+                    onProductClick={handleProductClick}
+                    showTopAddButton={false}
+                    emptyStateTitle="No archived products"
+                    emptyStateDescription="Archived products will appear here."
+                    onEditProduct={(productId) => {
+                        const productToEdit = products.find(p => p.id === productId);
+                        if (productToEdit) {
+                            openWizard(businessId, undefined, productToEdit);
+                        }
+                    }}
+                />
+            )}
+
+            {/* Requests / Drafts Grid */}
             {activeTab === 'drafts' && (
                 <ProductGrid
                     products={(products || [])
@@ -235,19 +278,16 @@ export const BusinessProductsTab: React.FC<BusinessProductsTabProps> = ({ busine
                             images: p.images || (p.image_url ? [p.image_url] : []),
                             tags: p.tags,
                             status: 'draft',
-                            updatedAt: p.updated_at // Need to expose this in GridProduct if not present
+                            updatedAt: p.updated_at
                         }))
                     }
                     isLoading={loading}
                     isOwner={isOwner}
                     onProductClick={(draftGridItem) => {
-                        // Find full draft object
                         const draft = products.find(p => p.id === draftGridItem.id);
                         if (draft) {
-                            // Map Product to ProductDraft schema for the store
                             const mappedDraft = {
                                 id: draft.id,
-                                // Handle both JSONB images array and legacy
                                 images: (draft.images || []).map((img: any, i: number) => ({
                                     id: `draft-img-${i}`,
                                     url: typeof img === 'string' ? img : img.url,
@@ -266,16 +306,16 @@ export const BusinessProductsTab: React.FC<BusinessProductsTabProps> = ({ busine
                     showTopAddButton={false}
                     emptyStateTitle="No drafts"
                     emptyStateDescription="Your saved drafts will appear here."
-                    onDeleteProduct={async (draftId) => {
-                        if (window.confirm('Are you sure you want to delete this draft? This cannot be undone.')) {
-                            // Call service directly or via hook wrapper
-                            // useProducts exposes deleteProduct which calls `productService.deleteProduct`
-                            // We can use that since it cleans up images too (if we implemented it correctly)
-                            // But we added `deleteDraft` to service. `useProducts` calls `deleteProduct`.
-                            // Let's rely on deleteProduct being generic enough or add deleteDraft to useProducts.
-                            // For now, assume deleteProduct works as it deletes by ID.
-                            await deleteProduct(draftId);
-                        }
+                    onDeleteProduct={(draftId) => {
+                        setConfirmDialog({
+                            isOpen: true,
+                            title: 'Delete Draft?',
+                            description: 'Are you sure you want to delete this draft? This action cannot be undone.',
+                            onConfirm: async () => {
+                                await deleteProduct(draftId);
+                                setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+                            }
+                        });
                     }}
                 />
             )}
@@ -331,15 +371,7 @@ export const BusinessProductsTab: React.FC<BusinessProductsTabProps> = ({ busine
                                 initialCount={selectedProduct.comment_count || 0}
                                 isOwner={isOwner}
                             />
-                            {isOwner && (
-                                <div className="px-4 pb-4">
-                                    <ProductNotificationToggle
-                                        productId={selectedProduct.id}
-                                        isEnabled={selectedProduct.notifications_enabled ?? true}
-                                        isOwner={isOwner}
-                                    />
-                                </div>
-                            )}
+                            {/* Notification toggle moved to header */}
                         </>
                     )}
                 </MobileProductModal>

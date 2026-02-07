@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useProductWizardStore } from '../../stores/useProductWizardStore';
+import { WizardState, ProductDraft, ProductImage } from '../../types/productWizard';
 import { productService } from '../../services/productService';
 import { useDebounce } from '../useDebounce'; // Assuming we have this or I'll implement a simple one locally
 import toast from 'react-hot-toast';
@@ -234,6 +235,26 @@ export const useProductDraft = (options: { enableAutoSave?: boolean } = { enable
     return {
         saving,
         lastSaved,
-        saveDraft: saveDraftNow
+        saveDraft: saveDraftNow,
+        getDrafts: async (businessId: string): Promise<ProductDraft[]> => {
+            const products = await productService.getDrafts(businessId);
+            return products.map(p => ({
+                id: p.id,
+                name: p.name,
+                description: p.description || '',
+                tags: p.tags || [],
+                notificationsEnabled: p.notifications_enabled ?? true,
+                updatedAt: p.updated_at,
+                // Map legacy images or new images to ProductImage[]
+                images: (p.images || []).map((img: any, i: number) => ({
+                    id: img.id || `img-${i}`,
+                    url: img.url || (typeof img === 'string' ? img : ''),
+                    order: img.order ?? i,
+                    crop: img.crop,
+                    preview: undefined
+                }))
+            }));
+        },
+        deleteDraft: productService.deleteDraft
     };
 };

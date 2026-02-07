@@ -11,7 +11,7 @@
 
 1.  **Comments in Drafts**: Comments section is visible in draft mode, which makes no sense.
 2.  **Writing Comments in Drafts**: Users can actually write comments on drafts. Logic failure.
-3.  **Duplicate Drafts**: Two copies of drafts are being created in the draft stand.
+3.  **Duplicate Drafts**: Two copies of drafts are being created in the drafts tab.
 4.  **Incorrect Button Text**: At the end of creation (new product), it says "Save Changes" (edit mode text) instead of "Publish".
 5.  **Save Blocking**: "Save as Draft" button is disabled/blocked while auto-save is running, causing bad UX. User has to wait for auto-save to finish.
 

@@ -101,7 +101,7 @@ export const WebProductModal: React.FC<WebProductModalProps> = ({
                     exit={{ opacity: 0, scale: 0.95, y: 20 }}
                     transition={{ duration: 0.2, ease: "easeOut" }}
                     onClick={(e) => e.stopPropagation()} // Prevent closing when clicking modal content
-                    className="relative w-full max-w-6xl h-[85vh] bg-white dark:bg-gray-900 rounded-lg overflow-hidden shadow-2xl flex flex-row"
+                    className="relative w-full max-w-6xl h-[85vh] bg-white rounded-lg overflow-hidden shadow-2xl flex flex-row"
                 >
                     {/* Left: Image Carousel (65% width) */}
                     <div className="w-[60%] lg:w-[65%] h-full bg-black relative group">

@@ -55,7 +55,7 @@ export const MobileProductActions: React.FC<MobileProductActionsProps> = ({
     const { isFavorite, toggleFavorite, isLoading: isFavLoading } = useProductFavorite(product.id);
 
     return (
-        <div className="flex flex-col px-4 py-3 gap-2">
+        <div className="flex flex-col px-4 py-2">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-6">
                     {/* Like Button */}
@@ -66,7 +66,7 @@ export const MobileProductActions: React.FC<MobileProductActionsProps> = ({
                             size={28}
                             className="p-1"
                         />
-                        <span className="text-xs font-medium text-gray-900 dark:text-white">
+                        <span className="text-xs font-medium text-gray-900">
                             {likeCount > 0 ? formatCount(likeCount) : 'Like'}
                         </span>
                     </div>
@@ -76,8 +76,8 @@ export const MobileProductActions: React.FC<MobileProductActionsProps> = ({
                         onClick={onComment}
                         className="flex flex-col items-center gap-1 p-1"
                     >
-                        <MessageCircle size={28} className="text-gray-900 dark:text-white" strokeWidth={1.5} />
-                        <span className="text-xs font-medium text-gray-900 dark:text-white">
+                        <MessageCircle size={28} className="text-gray-900" strokeWidth={1.5} />
+                        <span className="text-xs font-medium text-gray-900">
                             {product.comment_count > 0 ? formatCount(product.comment_count) : 'Comment'}
                         </span>
                     </button>
@@ -88,8 +88,8 @@ export const MobileProductActions: React.FC<MobileProductActionsProps> = ({
                         disabled={isSharing}
                         className="flex flex-col items-center gap-1 p-1 disabled:opacity-50"
                     >
-                        <Send size={28} className="text-gray-900 dark:text-white" strokeWidth={1.5} />
-                        <span className="text-xs font-medium text-gray-900 dark:text-white">Share</span>
+                        <Send size={28} className="text-gray-900" strokeWidth={1.5} />
+                        <span className="text-xs font-medium text-gray-900">Share</span>
                     </button>
                 </div>
 
@@ -102,7 +102,7 @@ export const MobileProductActions: React.FC<MobileProductActionsProps> = ({
                         size={28}
                         className="p-1"
                     />
-                    <span className="text-xs font-medium text-gray-900 dark:text-white">Save</span>
+                    <span className="text-xs font-medium text-gray-900">Save</span>
                 </div>
             </div>
 

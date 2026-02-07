@@ -3,6 +3,7 @@ import { MoreHorizontal, Trash2, Flag } from 'lucide-react';
 import { ProductComment } from '../../../services/productCommentService';
 import { useAuthStore } from '../../../store/authStore';
 import toast from 'react-hot-toast';
+import { ConfirmDialog } from '../ConfirmDialog';
 
 interface ProductCommentItemProps {
     comment: ProductComment;
@@ -16,6 +17,7 @@ export const ProductCommentItem: React.FC<ProductCommentItemProps> = ({ comment,
     const isOwnComment = user?.id === comment.user_id;
     const canDelete = isOwnComment || isBusinessOwner;
     const [showMenu, setShowMenu] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     const timeAgo = new Date(comment.created_at).toLocaleDateString(undefined, {
         month: 'short',
@@ -25,10 +27,13 @@ export const ProductCommentItem: React.FC<ProductCommentItemProps> = ({ comment,
     });
 
     const handleDelete = () => {
-        if (window.confirm('Delete this comment?')) {
-            onDelete(comment.id);
-        }
         setShowMenu(false);
+        setShowDeleteConfirm(true);
+    };
+
+    const confirmDelete = () => {
+        onDelete(comment.id);
+        setShowDeleteConfirm(false);
     };
 
     const handleReport = () => {
@@ -42,7 +47,7 @@ export const ProductCommentItem: React.FC<ProductCommentItemProps> = ({ comment,
     return (
         <div className="flex gap-3 items-start group relative">
             {/* Avatar */}
-            <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex-shrink-0 overflow-hidden">
+            <div className="w-8 h-8 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden">
                 {comment.user?.avatar_url ? (
                     <img src={comment.user.avatar_url} alt={comment.user.full_name} className="w-full h-full object-cover" />
                 ) : (
@@ -55,10 +60,10 @@ export const ProductCommentItem: React.FC<ProductCommentItemProps> = ({ comment,
             {/* Content */}
             <div className="flex-1 min-w-0">
                 <div className="text-sm">
-                    <span className="font-semibold text-gray-900 dark:text-white mr-2 hover:underline cursor-pointer">
+                    <span className="font-semibold text-gray-900 mr-2 hover:underline cursor-pointer">
                         {comment.user?.full_name || 'Unknown User'}
                     </span>
-                    <span className="text-gray-800 dark:text-gray-200 break-words whitespace-pre-wrap">
+                    <span className="text-gray-800 break-words whitespace-pre-wrap">
                         {comment.content}
                     </span>
                 </div>
@@ -81,13 +86,13 @@ export const ProductCommentItem: React.FC<ProductCommentItemProps> = ({ comment,
                         {showMenu && (
                             <>
                                 <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
-                                <div className="absolute left-0 sm:left-auto sm:right-0 top-6 w-32 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 py-1 z-20 flex flex-col text-sm">
+                                <div className="absolute left-0 sm:left-auto sm:right-0 top-6 w-32 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-20 flex flex-col text-sm">
                                     {canDelete ? (
-                                        <button onClick={handleDelete} className="text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 text-red-500 flex items-center gap-2 w-full">
+                                        <button onClick={handleDelete} className="text-left px-4 py-2 hover:bg-gray-50 text-red-500 flex items-center gap-2 w-full">
                                             <Trash2 className="w-4 h-4" /> Delete
                                         </button>
                                     ) : (
-                                        <button onClick={handleReport} className="text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 text-orange-500 flex items-center gap-2 w-full">
+                                        <button onClick={handleReport} className="text-left px-4 py-2 hover:bg-gray-50 text-orange-500 flex items-center gap-2 w-full">
                                             <Flag className="w-4 h-4" /> Report
                                         </button>
                                     )}
@@ -102,6 +107,16 @@ export const ProductCommentItem: React.FC<ProductCommentItemProps> = ({ comment,
             <button className="pt-1 opacity-50 hover:opacity-100 transition-opacity">
                 {/* <Heart className="w-3 h-3 text-gray-400 hover:text-red-500" /> */}
             </button>
+
+            <ConfirmDialog
+                open={showDeleteConfirm}
+                onOpenChange={setShowDeleteConfirm}
+                onConfirm={confirmDelete}
+                title="Delete Comment?"
+                description="Are you sure you want to delete this comment?"
+                confirmLabel="Delete"
+                variant="destructive"
+            />
         </div>
     );
 };

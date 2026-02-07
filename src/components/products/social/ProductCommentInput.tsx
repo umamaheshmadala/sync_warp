@@ -32,7 +32,7 @@ export const ProductCommentInput: React.FC<ProductCommentInputProps> = ({
     return (
         <form onSubmit={handleSubmit} className="flex items-start gap-3 w-full">
             {/* User Avatar */}
-            <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex-shrink-0 mt-1 overflow-hidden">
+            <div className="w-8 h-8 rounded-full bg-gray-200 flex-shrink-0 mt-1 overflow-hidden">
                 {user?.user_metadata?.avatar_url ? (
                     <img src={user.user_metadata.avatar_url} alt="Me" className="w-full h-full object-cover" />
                 ) : (
@@ -45,8 +45,8 @@ export const ProductCommentInput: React.FC<ProductCommentInputProps> = ({
             {/* Input Wrapper */}
             <div className="flex-1 relative">
                 <div className={`
-                    border rounded-3xl px-4 py-2 flex items-center bg-gray-50 dark:bg-gray-800
-                    ${isFocused ? 'border-gray-400 dark:border-gray-600' : 'border-transparent'}
+                    border rounded-3xl px-4 py-2 flex items-center bg-gray-50
+                    ${isFocused ? 'border-gray-400' : 'border-transparent'}
                     transition-colors
                 `}>
                     <input
@@ -58,7 +58,7 @@ export const ProductCommentInput: React.FC<ProductCommentInputProps> = ({
                         onBlur={() => setIsFocused(false)}
                         placeholder={placeholder}
                         autoFocus={autoFocus}
-                        className="flex-1 bg-transparent text-sm text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none"
+                        className="flex-1 bg-transparent text-sm text-gray-900 placeholder-gray-500 focus:outline-none"
                     />
 
                     {/* Post Button (only if text exists) */}

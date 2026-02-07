@@ -30,7 +30,7 @@ export const ProductTagSelector: React.FC<ProductTagSelectorProps> = ({
 
     return (
         <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="text-sm font-medium text-gray-700">
                 Status Tags (max 3)
             </label>
             <div className="flex flex-wrap gap-2">
@@ -46,8 +46,8 @@ export const ProductTagSelector: React.FC<ProductTagSelectorProps> = ({
                             className={`
                 px-3 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center gap-1.5
                 ${isSelected
-                                    ? 'bg-blue-100 text-blue-700 border-blue-200 border dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800'
-                                    : 'bg-gray-100 text-gray-600 border-transparent border hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'}
+                                    ? 'bg-blue-100 text-blue-700 border-blue-200 border'
+                                    : 'bg-gray-100 text-gray-600 border-transparent border hover:bg-gray-200'}
                 ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}
               `}
                         >

@@ -1,5 +1,5 @@
 import React from 'react';
-import { LikedByFriend } from '../../services/productLikeService';
+import { LikedByFriend } from '../../../services/productLikeService';
 
 interface ProductLikedByProps {
     friends: LikedByFriend[];
@@ -9,13 +9,13 @@ interface ProductLikedByProps {
 
 export const ProductLikedBy: React.FC<ProductLikedByProps> = ({ friends, totalLikes, onClick }) => {
     if (totalLikes === 0) return (
-        <div className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
+        <div className="text-sm font-semibold text-gray-900">
             Be the first to like this
         </div>
     );
 
     if (friends.length === 0) return (
-        <div className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
+        <div className="text-sm font-semibold text-gray-900">
             {totalLikes} {totalLikes === 1 ? 'like' : 'likes'}
         </div>
     );
@@ -24,7 +24,7 @@ export const ProductLikedBy: React.FC<ProductLikedByProps> = ({ friends, totalLi
     const remaining = Math.max(0, totalLikes - friends.length);
 
     return (
-        <div className="text-sm text-gray-900 dark:text-white mb-2 cursor-pointer" onClick={onClick}>
+        <div className="text-sm text-gray-900 cursor-pointer" onClick={onClick}>
             Liked by{' '}
             {friends.map((friend, idx) => (
                 <span key={friend.user_id}>
