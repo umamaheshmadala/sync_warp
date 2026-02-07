@@ -48,7 +48,7 @@
 
 ---
 
-## Story 6.3: Admin Business Management & Moderation ⚪ PLANNED
+## Story 6.3: Admin Business Management & Moderation 🟡 IN PROGRESS (6.3.1-6.3.5 COMPLETE)
 **What you'll see**: Comprehensive business listing management with advanced filtering, individual approval workflow, and audit logging.
 
 **User Experience**:
@@ -109,12 +109,15 @@
 - **Partial Approval**: Admins can approve some fields while rejecting others
 
 **Detailed Documentation**: 
-- See `STORY_6.3.1_Admin_Business_Database_Infrastructure.md`
-- See `STORY_6.3.2_Admin_Business_Listing_Filtering.md`
-- See `STORY_6.3.3_Admin_Business_Approval_Rejection.md`
-- See `STORY_6.3.4_Admin_Business_Editing_Deletion.md`
-- See `STORY_6.3.5_Admin_Audit_Logging_Notifications.md`
-- See `STORY_6.3.6_Business_Edit_Approval_Workflow.md` (**NEW**)
+- See `STORY_6.3.1_Admin_Business_Database_Infrastructure.md` 🟢 COMPLETE
+- See `STORY_6.3.2_Admin_Business_Listing_Filtering.md` 🟢 COMPLETE
+- See `STORY_6.3.3a_Admin_Business_Detail_Modal.md` 🟢 COMPLETE
+- See `STORY_6.3.3b_Admin_Business_Approve_Reject_Actions.md` 🟢 COMPLETE
+- See `STORY_6.3.4_Admin_Business_Editing_Deletion.md` 🟢 COMPLETE
+- See `STORY_6.3.5_Admin_Audit_Logging_Notifications.md` 🟢 COMPLETE
+- See `STORY_6.3.6_Pending_Edits_Infrastructure.md` ⚪ PLANNED
+- See `STORY_6.3.7_Owner_Pending_Edits_Experience.md` ⚪ PLANNED
+- See `STORY_6.3.8_Admin_Pending_Edits_Review.md` ⚪ PLANNED
 
 **Time Estimate**: 9-10 days (increased from 7-8 days to include pending edits workflow)
 

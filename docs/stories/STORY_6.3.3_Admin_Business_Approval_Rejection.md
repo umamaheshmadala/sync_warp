@@ -4,7 +4,12 @@
 **Priority:** 🔴 P0 - CRITICAL  
 **Effort:** 2 days  
 **Dependencies:** Story 6.3.1 (Database), Story 6.3.2 (Listing UI)  
-**Status:** Completed
+**Status:** ⚠️ ARCHIVED - Split into sub-stories
+
+> [!IMPORTANT]
+> **This story has been split into smaller stories for better implementation:**
+> - [STORY 6.3.3a - Detail Modal](./STORY_6.3.3a_Admin_Business_Detail_Modal.md)
+> - [STORY 6.3.3b - Approve & Reject Actions](./STORY_6.3.3b_Admin_Business_Approve_Reject_Actions.md)
 
 ---
 
