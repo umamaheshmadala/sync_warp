@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { sendBusinessApprovalNotification, sendBusinessRejectionNotification } from './adminNotificationService';
 
 export interface BusinessListFilters {
     status?: string;
@@ -238,6 +239,14 @@ export async function approveBusiness(businessId: string): Promise<void> {
 
     // Log action
     await logAdminAction(businessId, user.id, 'approve', 'Business approved by admin');
+
+    // Send notification to business owner
+    try {
+        await sendBusinessApprovalNotification(businessId);
+    } catch (notifyError) {
+        console.error('Failed to send approval notification:', notifyError);
+        // Don't throw - notification failure shouldn't block the operation
+    }
 }
 
 // Reject business
@@ -255,6 +264,14 @@ export async function rejectBusiness(businessId: string, reason: string): Promis
 
     // Log action
     await logAdminAction(businessId, user.id, 'reject', reason);
+
+    // Send notification to business owner
+    try {
+        await sendBusinessRejectionNotification(businessId, reason);
+    } catch (notifyError) {
+        console.error('Failed to send rejection notification:', notifyError);
+        // Don't throw - notification failure shouldn't block the operation
+    }
 }
 
 // ... helper function to avoid repetition ...

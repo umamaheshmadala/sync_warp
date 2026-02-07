@@ -10,7 +10,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { toast } from 'react-hot-toast';
 import { approveBusiness, AdminBusinessDetails, AdminBusinessView } from '@/services/adminBusinessService';
-import { sendBusinessApprovalNotification as sendNotification } from '@/services/adminNotificationService';
 
 interface ApproveBusinessDialogProps {
     business: AdminBusinessDetails | AdminBusinessView | null;
@@ -32,16 +31,8 @@ export function ApproveBusinessDialog({
 
         setIsLoading(true);
         try {
+            // Service layer handles notification sending
             await approveBusiness(business.id);
-
-            // Send notification
-            try {
-                await sendNotification(business.id);
-            } catch (notifyError) {
-                console.error("Failed to send notification", notifyError);
-                // Don't block success UI on notification failure, but maybe log it
-            }
-
             toast.success(`${business.business_name} is now active and visible to users.`);
             onSuccess();
         } catch (error) {

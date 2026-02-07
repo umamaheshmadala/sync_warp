@@ -19,7 +19,6 @@ import {
 import { Label } from '@/components/ui/label';
 import { toast } from 'react-hot-toast';
 import { rejectBusiness, AdminBusinessDetails, AdminBusinessView } from '@/services/adminBusinessService';
-import { sendBusinessRejectionNotification } from '@/services/adminNotificationService';
 
 interface RejectBusinessDialogProps {
     business: AdminBusinessDetails | AdminBusinessView | null;
@@ -59,15 +58,8 @@ export function RejectBusinessDialog({
 
         setIsLoading(true);
         try {
+            // Service layer handles notification sending
             await rejectBusiness(business.id, finalReason);
-
-            // Send notification
-            try {
-                await sendBusinessRejectionNotification(business.id, finalReason);
-            } catch (notifyError) {
-                console.error("Failed to send notification", notifyError);
-            }
-
             toast.success(`${business.business_name} has been rejected.`);
             onSuccess();
         } catch (error) {

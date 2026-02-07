@@ -14,6 +14,8 @@ Implement the individual approval and rejection workflow for businesses. This in
 
 > **Note:** Make sure to utilize existing code. The notification service (`adminNotificationService.ts`) is already implemented and should be reused.
 
+> **✅ IMPLEMENTATION NOTE (Feb 2026):** Notifications are now integrated in the **service layer** (`adminBusinessService.ts`), not in UI components. This ensures notifications are always sent regardless of which UI calls the service.
+
 ---
 
 ## User Stories
