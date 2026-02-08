@@ -1,0 +1,371 @@
+src/components/admin/RetentionMonitor.tsx(53,59): error TS2339: Property 'is_admin' does not exist on type 'Profile'.
+src/components/business/BusinessAnalyticsPage.tsx(66,5): error TS2353: Object literal may only specify known properties, and 'enabled' does not exist in type 'UseReviewStatsOptions'.
+src/components/business/CampaignWizard.tsx(68,7): error TS2353: Object literal may only specify known properties, and 'demographics' does not exist in type 'TargetingRules'.
+src/components/business/CampaignWizard.tsx(155,32): error TS2339: Property 'behavior' does not exist on type 'TargetingRules'.
+src/components/business/CampaignWizard.tsx(445,64): error TS2339: Property 'follower' does not exist on type 'TargetingRules'.
+src/components/business/CampaignWizard.tsx(446,58): error TS2339: Property 'follower' does not exist on type 'TargetingRules'.
+src/components/business/CampaignWizard.tsx(447,60): error TS2339: Property 'follower' does not exist on type 'TargetingRules'.
+src/components/business/CampaignWizard.tsx(448,67): error TS2339: Property 'follower' does not exist on type 'TargetingRules'.
+src/components/business/CampaignWizard.tsx(453,19): error TS2353: Object literal may only specify known properties, and 'follower' does not exist in type 'TargetingRules'.
+src/components/business/CouponCreator.tsx(337,33): error TS2345: Argument of type 'CouponType' is not assignable to parameter of type 'DiscountType'.
+  Type '"free_shipping"' is not assignable to type 'DiscountType'.
+src/components/business/EnhancedProfileTab.tsx(4,31): error TS2307: Cannot find module '../../types/supabase' or its corresponding type declarations.
+src/components/business/FollowerAnalyticsDashboard.tsx(221,62): error TS2362: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+src/components/business/onboarding/steps/Step1_PhoneVerify.tsx(90,21): error TS2322: Type '{ phoneNumber: string; onPhoneChange: (phone: string) => void; onVerified: () => void; isVerified: boolean; }' is not assignable to type 'IntrinsicAttributes & Props'.
+  Property 'phoneNumber' does not exist on type 'IntrinsicAttributes & Props'.
+src/components/business/ProductCard.tsx(125,30): error TS2339: Property 'category' does not exist on type 'Product'.
+src/components/business/ProductCard.tsx(128,40): error TS2339: Property 'category' does not exist on type 'Product'.
+src/components/business/ProductCard.tsx(134,46): error TS2339: Property 'price' does not exist on type 'Product'.
+src/components/business/ProductCard.tsx(229,24): error TS2339: Property 'category' does not exist on type 'Product'.
+src/components/business/ProductCard.tsx(232,68): error TS2339: Property 'category' does not exist on type 'Product'.
+src/components/business/ProductCard.tsx(246,38): error TS2339: Property 'price' does not exist on type 'Product'.
+src/components/business/ProductForm.tsx(47,7): error TS2353: Object literal may only specify known properties, and 'category' does not exist in type 'AsyncDefaultValues<ProductFormData> | { name?: string; description?: string; currency?: string; is_available?: boolean; is_featured?: boolean; display_order?: number; image_urls?: string[]; status?: string; tags?: string[]; }'.
+src/components/business/ProductForm.tsx(47,26): error TS2339: Property 'category' does not exist on type 'Product'.
+src/components/business/ProductForm.tsx(48,23): error TS2339: Property 'price' does not exist on type 'Product'.
+src/components/business/ProductForm.tsx(170,36): error TS2345: Argument of type '(data: ProductFormData) => Promise<void>' is not assignable to parameter of type 'SubmitHandler<TFieldValues>'.
+  Types of parameters 'data' and 'data' are incompatible.
+    Type 'TFieldValues' is not assignable to type 'ProductFormData'.
+      Type 'FieldValues' is missing the following properties from type 'ProductFormData': name, currency, is_available, is_featured, display_order
+src/components/business/ProductForm.tsx(215,15): error TS2322: Type '"category"' is not assignable to type '"name" | "status" | "description" | "display_order" | "tags" | "currency" | "is_available" | "is_featured" | "image_urls" | `tags.${number}` | `image_urls.${number}`'.
+src/components/business/ProductForm.tsx(219,20): error TS2322: Type '{ children: (Element | Element[])[]; className: string; onChange: (...event: any[]) => void; onBlur: Noop; value: string | number | boolean | string[]; disabled?: boolean; name: "name" | ... 9 more ... | `image_urls.${number}`; ref: RefCallBack; }' is not assignable to type 'DetailedHTMLProps<SelectHTMLAttributes<HTMLSelectElement>, HTMLSelectElement>'.
+  Type '{ children: (Element | Element[])[]; className: string; onChange: (...event: any[]) => void; onBlur: Noop; value: string | number | boolean | string[]; disabled?: boolean; name: "name" | ... 9 more ... | `image_urls.${number}`; ref: RefCallBack; }' is not assignable to type 'SelectHTMLAttributes<HTMLSelectElement>'.
+    Types of property 'value' are incompatible.
+      Type 'string | number | boolean | string[]' is not assignable to type 'string | number | readonly string[]'.
+        Type 'boolean' is not assignable to type 'string | number | readonly string[]'.
+src/components/business/ProductForm.tsx(233,21): error TS2322: Type 'string | number | true | string[]' is not assignable to type 'string | number | readonly string[]'.
+  Type 'boolean' is not assignable to type 'string | number | readonly string[]'.
+src/components/business/ProductForm.tsx(269,30): error TS2345: Argument of type '"price"' is not assignable to parameter of type '"name" | "status" | "description" | "display_order" | "tags" | "currency" | "is_available" | "is_featured" | "image_urls" | `tags.${number}` | `image_urls.${number}`'.
+src/components/business/ProductForm.tsx(276,23): error TS2339: Property 'price' does not exist on type 'FieldErrors<ProductFormData>'.
+src/components/business/ProductForm.tsx(277,66): error TS2339: Property 'price' does not exist on type 'FieldErrors<ProductFormData>'.
+src/components/business/ProductManager.tsx(56,17): error TS2339: Property 'category' does not exist on type 'ProductFilters'.
+src/components/business/ProductManager.tsx(56,37): error TS2339: Property 'category' does not exist on type 'Product'.
+src/components/business/ProductManager.tsx(56,58): error TS2339: Property 'category' does not exist on type 'ProductFilters'.
+src/components/business/ProductManager.tsx(75,54): error TS2339: Property 'category' does not exist on type 'Product'.
+src/components/business/ProductManager.tsx(288,36): error TS2339: Property 'category' does not exist on type 'ProductFilters'.
+src/components/business/ProductManager.tsx(289,63): error TS2353: Object literal may only specify known properties, and 'category' does not exist in type 'SetStateAction<ProductFilters>'.
+src/components/business/ProductView.tsx(104,18): error TS2304: Cannot find name 'MoreVertical'.
+src/components/business/ProductView.tsx(162,15): error TS2322: Type '{ productId: string; productName: string; productPrice: any; productCurrency: string; productImage: string; businessId: string; businessName: string; businessSlug: string; variant: "outline"; size: "sm"; }' is not assignable to type 'IntrinsicAttributes & ProductShareButtonProps'.
+  Property 'productPrice' does not exist on type 'IntrinsicAttributes & ProductShareButtonProps'.
+src/components/business/ProductView.tsx(162,37): error TS2339: Property 'price' does not exist on type 'Product'.
+src/components/business/ProductView.tsx(262,22): error TS2339: Property 'category' does not exist on type 'Product'.
+src/components/business/ProductView.tsx(266,28): error TS2339: Property 'category' does not exist on type 'Product'.
+src/components/business/ProductView.tsx(274,38): error TS2339: Property 'price' does not exist on type 'Product'.
+src/components/campaign/CampaignTargetingForm.tsx(8,41): error TS2307: Cannot find module './FollowerSegmentSelector' or its corresponding type declarations.
+src/components/campaign/index.ts(4,41): error TS2307: Cannot find module './FollowerSegmentSelector' or its corresponding type declarations.
+src/components/campaign/index.ts(8,73): error TS2307: Cannot find module './FollowerSegmentSelector' or its corresponding type declarations.
+src/components/campaign/index.ts(9,15): error TS2724: '"./CampaignTargetingForm"' has no exported member named 'CampaignTargetingFormProps'. Did you mean 'CampaignTargetingForm'?
+src/components/campaign/index.ts(10,15): error TS2724: '"./CampaignAnalyticsDashboard"' has no exported member named 'CampaignAnalyticsDashboardProps'. Did you mean 'CampaignAnalyticsDashboard'?
+src/components/campaign/ReachSummaryCard.tsx(62,36): error TS2339: Property 'min_purchases' does not exist on type 'TargetingRules'.
+src/components/campaign/RecommendationCard.tsx(186,13): error TS2554: Expected 1 arguments, but got 2.
+src/components/campaign/TargetingEditor.tsx(135,14): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingEditor.tsx(135,30): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingEditor.tsx(149,15): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingEditor.tsx(149,31): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(350,30): error TS2339: Property 'demographics' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(351,26): error TS2339: Property 'location' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(352,26): error TS2339: Property 'behavior' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(353,25): error TS2339: Property 'vehicle' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(366,13): error TS2339: Property 'demographics' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(368,15): error TS2339: Property 'demographics' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(368,44): error TS2339: Property 'demographics' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(369,17): error TS2339: Property 'demographics' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(369,45): error TS2339: Property 'demographics' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(375,42): error TS2339: Property 'demographics' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(375,108): error TS2339: Property 'demographics' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(377,24): error TS2339: Property 'demographics' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(377,52): error TS2339: Property 'demographics' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(389,15): error TS2339: Property 'demographics' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(390,17): error TS2339: Property 'demographics' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(402,15): error TS2339: Property 'demographics' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(402,46): error TS2339: Property 'demographics' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(414,13): error TS2339: Property 'location' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(415,15): error TS2339: Property 'location' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(415,40): error TS2339: Property 'location' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(425,15): error TS2339: Property 'location' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(425,40): error TS2339: Property 'location' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(436,15): error TS2339: Property 'location' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(436,48): error TS2339: Property 'location' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(448,13): error TS2339: Property 'behavior' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(449,15): error TS2339: Property 'behavior' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(449,49): error TS2339: Property 'behavior' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(459,15): error TS2339: Property 'behavior' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(459,43): error TS2339: Property 'behavior' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(471,13): error TS2339: Property 'vehicle' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(472,15): error TS2339: Property 'vehicle' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(482,15): error TS2339: Property 'vehicle' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(482,40): error TS2339: Property 'vehicle' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(495,11): error TS2339: Property 'demographics' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(496,11): error TS2339: Property 'demographics' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(497,11): error TS2339: Property 'demographics' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(498,11): error TS2339: Property 'location' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(498,37): error TS2339: Property 'location' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(499,11): error TS2339: Property 'location' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(500,11): error TS2339: Property 'behavior' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(501,11): error TS2339: Property 'vehicle' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(501,35): error TS2339: Property 'vehicle' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(502,11): error TS2339: Property 'vehicle' does not exist on type 'TargetingRules'.
+src/components/categories/CategoryBrowserPage.tsx(225,19): error TS2739: Type 'BusinessSearchResult' is missing the following properties from type 'SearchBusiness': business_name, activeCouponsCount, relevanceScore
+src/components/categories/CategoryBrowserPage.tsx(226,97): error TS2339: Property 'business_name' does not exist on type 'BusinessSearchResult'.
+src/components/categories/CategoryBrowserPage.tsx(235,64): error TS2339: Property 'business_name' does not exist on type 'BusinessSearchResult'.
+src/components/categories/CategoryBrowserPage.tsx(236,68): error TS2339: Property 'business_type' does not exist on type 'BusinessSearchResult'.
+src/components/contacts/ContactMatchesList.tsx(53,42): error TS2345: Argument of type 'string' is not assignable to parameter of type '{ receiverId: string; message?: string; }'.
+src/components/ContactsSidebar.tsx(13,33): error TS2307: Cannot find module '../services/friendService' or its corresponding type declarations.
+src/components/ContactsSidebar.tsx(48,55): error TS2339: Property 'friend_profile' does not exist on type 'Friendship'.
+src/components/ContactsSidebar.tsx(54,11): error TS2339: Property 'friend_profile' does not exist on type 'Friendship'.
+src/components/ContactsSidebar.tsx(55,12): error TS2339: Property 'friend_profile' does not exist on type 'Friendship'.
+src/components/ContactsSidebar.tsx(55,37): error TS2339: Property 'friend_profile' does not exist on type 'Friendship'.
+src/components/ContactsSidebar.tsx(264,41): error TS2339: Property 'avatar_url' does not exist on type 'Friendship'.
+src/components/ContactsSidebar.tsx(267,49): error TS2339: Property 'avatar_url' does not exist on type 'Friendship'.
+src/components/ContactsSidebar.tsx(268,49): error TS2339: Property 'full_name' does not exist on type 'Friendship'.
+src/components/ContactsSidebar.tsx(275,41): error TS2339: Property 'is_online' does not exist on type 'Friendship'.
+src/components/ContactsSidebar.tsx(281,43): error TS2339: Property 'full_name' does not exist on type 'Friendship'.
+src/components/ContactsSidebar.tsx(284,43): error TS2339: Property 'is_online' does not exist on type 'Friendship'.
+src/components/ContactsSidebar.tsx(284,83): error TS2339: Property 'last_active' does not exist on type 'Friendship'.
+src/components/ContactsSidebarEnhanced.tsx(368,11): error TS2322: Type '{ friendId: string; isOpen: boolean; onClose: () => void; }' is not assignable to type 'IntrinsicAttributes & ShareDealProps'.
+  Property 'friendId' does not exist on type 'IntrinsicAttributes & ShareDealProps'.
+src/components/discovery/BusinessDiscoveryPage.tsx(124,39): error TS2339: Property 'latitude' does not exist on type 'Coordinates'.
+src/components/discovery/BusinessDiscoveryPage.tsx(125,39): error TS2339: Property 'longitude' does not exist on type 'Coordinates'.
+src/components/discovery/BusinessDiscoveryPage.tsx(206,43): error TS2339: Property 'message' does not exist on type 'string'.
+src/components/discovery/BusinessDiscoveryPage.tsx(293,17): error TS2322: Type '{ center: Coordinates; zoom: number; businesses: BusinessSearchResult[]; onBusinessClick: (business: any) => void; }' is not assignable to type 'IntrinsicAttributes & SimpleMapProps'.
+  Property 'businesses' does not exist on type 'IntrinsicAttributes & SimpleMapProps'.
+src/components/discovery/BusinessDiscoveryPage.tsx(418,99): error TS2339: Property 'latitude' does not exist on type 'Coordinates'.
+src/components/discovery/BusinessDiscoveryPage.tsx(418,140): error TS2339: Property 'longitude' does not exist on type 'Coordinates'.
+src/components/discovery/BusinessDiscoveryPage.tsx(454,19): error TS2322: Type '{ business: any; onClick: () => void; showDistance: boolean; showFavoriteButton: boolean; }' is not assignable to type 'IntrinsicAttributes & BusinessCardProps'.
+  Property 'onClick' does not exist on type 'IntrinsicAttributes & BusinessCardProps'.
+src/components/discovery/BusinessDiscoveryPage.tsx(511,21): error TS2739: Type 'BusinessSearchResult' is missing the following properties from type 'SearchBusiness': business_name, activeCouponsCount, relevanceScore
+src/components/discovery/BusinessDiscoveryPage.tsx(512,99): error TS2339: Property 'business_name' does not exist on type 'BusinessSearchResult'.
+src/components/discovery/BusinessDiscoveryPage.tsx(521,66): error TS2339: Property 'business_name' does not exist on type 'BusinessSearchResult'.
+src/components/discovery/BusinessDiscoveryPage.tsx(522,70): error TS2339: Property 'business_type' does not exist on type 'BusinessSearchResult'.
+src/components/drivers/DriverProfileCard.tsx(62,57): error TS2339: Property 'verification_status' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(81,23): error TS2339: Property 'driver_name' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(88,95): error TS2339: Property 'driver_score' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(89,19): error TS2339: Property 'driver_score' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(98,17): error TS2339: Property 'driver_tier' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(99,107): error TS2339: Property 'driver_tier' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(100,21): error TS2339: Property 'driver_tier' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(103,17): error TS2339: Property 'activity_level' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(105,21): error TS2339: Property 'activity_level' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(113,19): error TS2339: Property 'total_trips' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(116,67): error TS2339: Property 'total_trips' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(119,19): error TS2339: Property 'avg_rating' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(123,25): error TS2339: Property 'avg_rating' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(127,19): error TS2339: Property 'completion_rate' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(130,67): error TS2339: Property 'completion_rate' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(133,19): error TS2339: Property 'acceptance_rate' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(136,67): error TS2339: Property 'acceptance_rate' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(139,19): error TS2339: Property 'on_time_rate' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(142,67): error TS2339: Property 'on_time_rate' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(145,19): error TS2339: Property 'cancellation_rate' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(148,67): error TS2339: Property 'cancellation_rate' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(155,30): error TS2339: Property 'score_components' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(159,36): error TS2339: Property 'score_components' does not exist on type 'DriverProfile'.
+src/components/EnhancedFavoritesPage.tsx(204,55): error TS2339: Property 'favorite' does not exist on type 'FavoriteShare'.
+src/components/EnhancedFavoritesPage.tsx(204,73): error TS2339: Property 'favorite' does not exist on type 'FavoriteShare'.
+src/components/FollowButton.tsx(3,25): error TS2307: Cannot find module '../contexts/AuthContext' or its corresponding type declarations.
+src/components/following/FollowerFeed.tsx(36,36): error TS2304: Cannot find name 'FollowerUpdate'.
+src/components/following/FollowerFeed.tsx(118,36): error TS2339: Property 'action_url' does not exist on type 'FollowerNotification'.
+src/components/following/FollowerFeed.tsx(159,25): error TS2339: Property 'message' does not exist on type 'FollowerNotification'.
+src/components/following/FollowerFeed.tsx(160,82): error TS2339: Property 'message' does not exist on type 'FollowerNotification'.
+src/components/following/FollowerFeed.tsx(164,25): error TS2339: Property 'metadata' does not exist on type 'FollowerNotification'.
+src/components/following/FollowerFeed.tsx(166,29): error TS2339: Property 'metadata' does not exist on type 'FollowerNotification'.
+src/components/following/FollowerFeed.tsx(167,62): error TS2339: Property 'metadata' does not exist on type 'FollowerNotification'.
+src/components/following/FollowerFeed.tsx(169,29): error TS2339: Property 'metadata' does not exist on type 'FollowerNotification'.
+src/components/following/FollowerFeed.tsx(171,33): error TS2339: Property 'metadata' does not exist on type 'FollowerNotification'.
+src/components/FriendActivityFeed.tsx(21,37): error TS2307: Cannot find module '../services/friendService' or its corresponding type declarations.
+src/components/FriendActivityFeed.tsx(36,11): error TS2339: Property 'friendActivities' does not exist on type 'UseFriendsReturn'.
+src/components/FriendActivityFeed.tsx(36,47): error TS2339: Property 'refreshActivities' does not exist on type 'UseFriendsReturn'.
+src/components/FriendActivityFeed.tsx(93,40): error TS2339: Property 'friend_profile' does not exist on type 'Friendship'.
+src/components/FriendActivityFeed.tsx(94,32): error TS2339: Property 'friend_profile' does not exist on type 'Friendship'.
+src/components/FriendActivityFeed.tsx(239,52): error TS2339: Property 'friend_profile' does not exist on type 'Friendship'.
+src/components/FriendActivityFeed.tsx(254,32): error TS2339: Property 'friend_profile' does not exist on type 'Friendship'.
+src/components/FriendActivityFeed.tsx(256,39): error TS2339: Property 'friend_profile' does not exist on type 'Friendship'.
+src/components/FriendActivityFeed.tsx(257,39): error TS2339: Property 'friend_profile' does not exist on type 'Friendship'.
+src/components/FriendActivityFeed.tsx(263,38): error TS2339: Property 'friend_profile' does not exist on type 'Friendship'.
+src/components/FriendIntegration.tsx(115,16): error TS2552: Cannot find name 'FriendManagement'. Did you mean 'showFriendManagement'?
+src/components/FriendRequestCard.tsx(7,36): error TS2307: Cannot find module '../services/friendRequestService' or its corresponding type declarations.
+src/components/friends/FriendCard.stories.tsx(28,3): error TS2353: Object literal may only specify known properties, and 'mutual_friends_count' does not exist in type 'Friend'.
+src/components/friends/FriendRequestCard.stories.tsx(24,3): error TS2353: Object literal may only specify known properties, and 'sender' does not exist in type 'FriendRequest'.
+src/components/friends/FriendRequestCard.stories.tsx(35,5): error TS2739: Type 'FriendRequest' is missing the following properties from type '{ id: string; sender: { id: string; full_name: string; email: string; avatar_url?: string; }; receiver: { id: string; full_name: string; email: string; avatar_url?: string; }; message?: string; created_at: string; mutual_friends_count?: number; }': sender, receiver
+src/components/friends/FriendRequestCard.stories.tsx(42,5): error TS2739: Type 'FriendRequest' is missing the following properties from type '{ id: string; sender: { id: string; full_name: string; email: string; avatar_url?: string; }; receiver: { id: string; full_name: string; email: string; avatar_url?: string; }; message?: string; created_at: string; mutual_friends_count?: number; }': sender, receiver
+src/components/friends/FriendRequestCard.stories.tsx(49,5): error TS2739: Type 'FriendRequest' is missing the following properties from type '{ id: string; sender: { id: string; full_name: string; email: string; avatar_url?: string; }; receiver: { id: string; full_name: string; email: string; avatar_url?: string; }; message?: string; created_at: string; mutual_friends_count?: number; }': sender, receiver
+src/components/friends/FriendRequestCard.stories.tsx(57,5): error TS2741: Property 'receiver' is missing in type '{ sender: any; id: string; sender_id: string; receiver_id: string; message?: string | null; status: "pending" | "accepted" | "rejected"; created_at: string; updated_at?: string; }' but required in type '{ id: string; sender: { id: string; full_name: string; email: string; avatar_url?: string; }; receiver: { id: string; full_name: string; email: string; avatar_url?: string; }; message?: string; created_at: string; mutual_friends_count?: number; }'.
+src/components/friends/FriendRequestCard.stories.tsx(60,24): error TS2339: Property 'sender' does not exist on type 'FriendRequest'.
+src/components/friends/FriendSearchResults.tsx(8,36): error TS2307: Cannot find module '@/services/friendSearchService' or its corresponding type declarations.
+src/components/friends/FriendsList.stories.tsx(30,5): error TS2353: Object literal may only specify known properties, and 'friends' does not exist in type 'Partial<FriendsListProps>'.
+src/components/friends/FriendsList.stories.tsx(37,5): error TS2353: Object literal may only specify known properties, and 'friends' does not exist in type 'Partial<FriendsListProps>'.
+src/components/friends/FriendsList.stories.tsx(44,5): error TS2353: Object literal may only specify known properties, and 'friends' does not exist in type 'Partial<FriendsListProps>'.
+src/components/friends/FriendsList.stories.tsx(51,5): error TS2353: Object literal may only specify known properties, and 'friends' does not exist in type 'Partial<FriendsListProps>'.
+src/components/friends/FriendsList.stories.tsx(53,16): error TS2351: This expression is not constructable.
+  Type 'BaseAnnotations<ReactRenderer, FriendsListProps> & { name?: string; storyName?: string; play?: PlayFunction<ReactRenderer, FriendsListProps>; globals?: Globals; story?: Omit<...>; } & { ...; }' has no construct signatures.
+src/components/friends/FriendsList.stories.tsx(53,16): error TS2448: Block-scoped variable 'Error' used before its declaration.
+src/components/friends/privacy/FriendRequestPrivacy.tsx(7,23): error TS2339: Property 'updateSetting' does not exist on type '{ settings: PrivacySettings; isLoading: boolean; error: Error; updateSettings: UseMutateAsyncFunction<any[], any, Partial<PrivacySettings>, { previousSettings: PrivacySettings; }>; isUpdating: boolean; }'.
+src/components/friends/privacy/OnlineStatusVisibility.tsx(7,23): error TS2339: Property 'updateSetting' does not exist on type '{ settings: PrivacySettings; isLoading: boolean; error: Error; updateSettings: UseMutateAsyncFunction<any[], any, Partial<PrivacySettings>, { previousSettings: PrivacySettings; }>; isUpdating: boolean; }'.
+src/components/friends/privacy/ProfileVisibilitySettings.tsx(8,23): error TS2339: Property 'updateSetting' does not exist on type '{ settings: PrivacySettings; isLoading: boolean; error: Error; updateSettings: UseMutateAsyncFunction<any[], any, Partial<PrivacySettings>, { previousSettings: PrivacySettings; }>; isUpdating: boolean; }'.
+src/components/friends/privacy/ProfileVisibilitySettings.tsx(93,25): error TS2322: Type '{ id: string; checked: boolean; onCheckedChange: (checked: boolean) => any; disabled: boolean; }' is not assignable to type 'IntrinsicAttributes & SwitchProps & RefAttributes<HTMLButtonElement>'.
+  Property 'id' does not exist on type 'IntrinsicAttributes & SwitchProps & RefAttributes<HTMLButtonElement>'.
+src/components/maps/GoogleMapsLocationPicker.tsx(286,14): error TS2769: No overload matches this call.
+  Overload 2 of 2, '(props: MarkerProps, context: any): Marker', gave the following error.
+    Type 'Size | { width: number; height: number; }' is not assignable to type 'Size'.
+      Property 'equals' is missing in type '{ width: number; height: number; }' but required in type 'Size'.
+  Overload 2 of 2, '(props: MarkerProps, context: any): Marker', gave the following error.
+    Type 'Point | { x: number; y: number; }' is not assignable to type '((name: string) => string) | Point'.
+      Type '{ x: number; y: number; }' is not assignable to type '((name: string) => string) | Point'.
+        Property 'equals' is missing in type '{ x: number; y: number; }' but required in type 'Point'.
+src/components/messaging/ConversationActionButtons.tsx(31,11): error TS2353: Object literal may only specify known properties, and 'action' does not exist in type 'Partial<Pick<Toast, "style" | "id" | "icon" | "className" | "position" | "duration" | "ariaProps" | "iconTheme" | "toasterId" | "removeDelay">>'.
+src/components/messaging/ConversationActionButtons.tsx(61,11): error TS2353: Object literal may only specify known properties, and 'action' does not exist in type 'Partial<Pick<Toast, "style" | "id" | "icon" | "className" | "position" | "duration" | "ariaProps" | "iconTheme" | "toasterId" | "removeDelay">>'.
+src/components/messaging/ConversationListBulkActions.tsx(34,9): error TS2353: Object literal may only specify known properties, and 'action' does not exist in type 'Partial<Pick<Toast, "style" | "id" | "icon" | "className" | "position" | "duration" | "ariaProps" | "iconTheme" | "toasterId" | "removeDelay">>'.
+src/components/messaging/ConversationListBulkActions.tsx(69,9): error TS2353: Object literal may only specify known properties, and 'action' does not exist in type 'Partial<Pick<Toast, "style" | "id" | "icon" | "className" | "position" | "duration" | "ariaProps" | "iconTheme" | "toasterId" | "removeDelay">>'.
+src/components/messaging/MessageUserButton.tsx(13,23): error TS2307: Cannot find module 'react-toastify' or its corresponding type declarations.
+src/components/messaging/OfflineIndicatorEnhanced.tsx(244,29): error TS2367: This comparison appears to be unintentional because the types '"error" | "idle"' and '"syncing"' have no overlap.
+src/components/modals/CouponDetailsModal.tsx(496,42): error TS2304: Cannot find name 'businessName'.
+src/components/offers/modals/OfferActionModal.tsx(3,23): error TS2307: Cannot find module '../../types/offers' or its corresponding type declarations.
+src/components/products/AllProducts.tsx(71,72): error TS2339: Property 'category' does not exist on type 'Product'.
+src/components/products/AllProducts.tsx(90,17): error TS2339: Property 'category' does not exist on type 'Product'.
+src/components/products/AllProducts.tsx(96,53): error TS2339: Property 'category' does not exist on type 'Product'.
+src/components/products/AllProducts.tsx(105,21): error TS2339: Property 'price' does not exist on type 'Product'.
+src/components/products/AllProducts.tsx(105,38): error TS2339: Property 'price' does not exist on type 'Product'.
+src/components/products/AllProducts.tsx(107,21): error TS2339: Property 'price' does not exist on type 'Product'.
+src/components/products/AllProducts.tsx(107,38): error TS2339: Property 'price' does not exist on type 'Product'.
+src/components/products/drafts/DraftCard.tsx(2,30): error TS2307: Cannot find module '../../types/productWizard' or its corresponding type declarations.
+src/components/search/AdvancedSearchPage.tsx(120,47): error TS2339: Property 'latitude' does not exist on type 'Coordinates'.
+src/components/search/AdvancedSearchPage.tsx(121,48): error TS2339: Property 'longitude' does not exist on type 'Coordinates'.
+src/components/settings/ContactSyncSettings.tsx(13,10): error TS2305: Module '"../../services/contactSyncService"' has no exported member 'getLastSyncTime'.
+src/components/ShareDealSimple.tsx(48,5): error TS2339: Property 'permissionCheck' does not exist on type 'UseSharingLimitsReturn'.
+src/components/ShareDealSimple.tsx(49,5): error TS2339: Property 'isLoading' does not exist on type 'UseSharingLimitsReturn'.
+src/components/ShareDealSimple.tsx(50,5): error TS2339: Property 'checkPermission' does not exist on type 'UseSharingLimitsReturn'.
+src/components/ShareDealSimple.tsx(51,5): error TS2339: Property 'logShare' does not exist on type 'UseSharingLimitsReturn'.
+src/components/Sharing/LimitExceededModal.tsx(12,45): error TS2307: Cannot find module '../types/sharingLimits' or its corresponding type declarations.
+src/components/Sharing/ShareCouponModal.tsx(240,37): error TS2339: Property 'expires_at' does not exist on type 'Coupon'.
+src/components/Sharing/ShareCouponModal.tsx(246,37): error TS2339: Property 'minimum_purchase' does not exist on type 'Coupon'.
+src/components/Sharing/SharingStatsCard.tsx(11,35): error TS2307: Cannot find module '../types/sharingLimits' or its corresponding type declarations.
+src/components/user/CouponBrowser.tsx(76,11): error TS2339: Property 'collectCoupon' does not exist on type '{ coupons: Coupon[]; coupon: Coupon; loading: boolean; error: string; fetchCoupons: (targetBusinessId?: string, filters?: CouponFilters) => Promise<any[]>; ... 13 more ...; generateCouponCode: (type?: string) => string; }'.
+src/components/user/CouponBrowser.tsx(76,26): error TS2339: Property 'getUserCollectedCoupons' does not exist on type '{ coupons: Coupon[]; coupon: Coupon; loading: boolean; error: string; fetchCoupons: (targetBusinessId?: string, filters?: CouponFilters) => Promise<any[]>; ... 13 more ...; generateCouponCode: (type?: string) => string; }'.
+src/components/user/CouponBrowser.tsx(108,13): error TS2339: Property 'info' does not exist on type '{ (message: Message, opts?: Partial<Pick<Toast, "style" | "id" | "icon" | "className" | "position" | "duration" | "ariaProps" | "iconTheme" | "toasterId" | "removeDelay">>): string; ... 8 more ...; promise<T>(promise: Promise<...> | (() => Promise<...>), msgs: { ...; }, opts?: DefaultToastOptions): Promise<...>; }'.
+src/components/user/CouponBrowser.tsx(154,57): error TS2339: Property 'expires_at' does not exist on type 'Coupon'.
+src/components/user/CouponBrowser.tsx(190,48): error TS2339: Property 'expires_at' does not exist on type 'Coupon'.
+src/components/user/CouponBrowser.tsx(191,48): error TS2339: Property 'expires_at' does not exist on type 'Coupon'.
+src/components/user/CouponBrowser.tsx(199,51): error TS2339: Property 'business_latitude' does not exist on type 'Coupon'.
+src/components/user/CouponBrowser.tsx(199,77): error TS2339: Property 'business_longitude' does not exist on type 'Coupon'.
+src/components/user/CouponBrowser.tsx(200,51): error TS2339: Property 'business_latitude' does not exist on type 'Coupon'.
+src/components/user/CouponBrowser.tsx(200,77): error TS2339: Property 'business_longitude' does not exist on type 'Coupon'.
+src/components/user/CouponBrowser.tsx(258,53): error TS2339: Property 'expires_at' does not exist on type 'Coupon'.
+src/components/user/CouponBrowser.tsx(266,24): error TS2339: Property 'business' does not exist on type 'Coupon'.
+src/components/user/CouponBrowser.tsx(284,54): error TS2339: Property 'expires_at' does not exist on type 'Coupon'.
+src/components/user/CouponBrowser.tsx(285,59): error TS2339: Property 'business' does not exist on type 'Coupon'.
+src/components/user/CouponBrowser.tsx(286,30): error TS2339: Property 'business' does not exist on type 'Coupon'.
+src/components/user/CouponBrowser.tsx(527,28): error TS2339: Property 'business_latitude' does not exist on type 'Coupon'.
+src/components/user/CouponBrowser.tsx(528,28): error TS2339: Property 'business_longitude' does not exist on type 'Coupon'.
+src/components/user/CouponRedemption.tsx(99,32): error TS2339: Property 'business_id' does not exist on type 'UserCouponCollection'.
+src/components/user/CouponRedemption.tsx(130,16): error TS2339: Property 'expires_at' does not exist on type 'Coupon'.
+src/components/user/CouponRedemption.tsx(133,44): error TS2339: Property 'expires_at' does not exist on type 'Coupon'.
+src/components/user/CouponRedemption.tsx(175,9): error TS2554: Expected 2 arguments, but got 3.
+src/components/user/CouponRedemption.tsx(234,48): error TS2339: Property 'minimum_purchase' does not exist on type 'Coupon'.
+src/components/user/CouponRedemption.tsx(236,17): error TS2339: Property 'value' does not exist on type 'Coupon'.
+src/components/user/CouponRedemption.tsx(236,39): error TS2339: Property 'minimum_purchase' does not exist on type 'Coupon'.
+src/components/user/CouponRedemption.tsx(237,16): error TS2339: Property 'maximum_discount' does not exist on type 'Coupon'.
+src/components/user/CouponRedemption.tsx(241,28): error TS2339: Property 'value' does not exist on type 'Coupon'.
+src/components/user/CouponRedemption.tsx(247,24): error TS2339: Property 'value' does not exist on type 'Coupon'.
+src/components/user/CouponRedemption.tsx(249,23): error TS2339: Property 'value' does not exist on type 'Coupon'.
+src/components/user/CouponRedemption.tsx(310,23): error TS2339: Property 'business_address' does not exist on type 'Coupon'.
+src/components/user/CouponRedemption.tsx(313,33): error TS2339: Property 'business_address' does not exist on type 'Coupon'.
+src/components/user/CouponRedemption.tsx(404,25): error TS2339: Property 'minimum_purchase' does not exist on type 'Coupon'.
+src/components/user/CouponRedemption.tsx(407,54): error TS2339: Property 'minimum_purchase' does not exist on type 'Coupon'.
+src/components/user/CouponRedemption.tsx(410,25): error TS2339: Property 'maximum_discount' does not exist on type 'Coupon'.
+src/components/user/CouponRedemption.tsx(413,54): error TS2339: Property 'maximum_discount' does not exist on type 'Coupon'.
+src/hooks/index.ts(28,3): error TS2614: Module '"./useDrivers"' has no exported member 'DriverServiceError'. Did you mean to use 'import DriverServiceError from "./useDrivers"' instead?
+src/hooks/index.ts(31,8): error TS2614: Module '"./useDrivers"' has no exported member 'DriverListOptions'. Did you mean to use 'import DriverListOptions from "./useDrivers"' instead?
+src/hooks/index.ts(32,8): error TS2614: Module '"./useDrivers"' has no exported member 'DriverFilters'. Did you mean to use 'import DriverFilters from "./useDrivers"' instead?
+src/hooks/useAdvancedSearch.ts(127,49): error TS2339: Property 'latitude' does not exist on type 'Coordinates'.
+src/hooks/useAdvancedSearch.ts(128,50): error TS2339: Property 'longitude' does not exist on type 'Coordinates'.
+src/hooks/useAdvancedSearch.ts(200,47): error TS2339: Property 'latitude' does not exist on type 'Coordinates'.
+src/hooks/useAdvancedSearch.ts(201,48): error TS2339: Property 'longitude' does not exist on type 'Coordinates'.
+src/hooks/useAdvancedSearch.ts(296,47): error TS2339: Property 'latitude' does not exist on type 'Coordinates'.
+src/hooks/useAdvancedSearch.ts(297,48): error TS2339: Property 'longitude' does not exist on type 'Coordinates'.
+src/hooks/useCampaigns.ts(17,3): error TS2305: Module '"../types/campaigns"' has no exported member 'AdFormat'.
+src/hooks/useConversationKeyboardShortcuts.ts(31,15): error TS2353: Object literal may only specify known properties, and 'action' does not exist in type 'Partial<Pick<Toast, "style" | "id" | "icon" | "className" | "position" | "duration" | "ariaProps" | "iconTheme" | "toasterId" | "removeDelay">>'.
+src/hooks/useConversationKeyboardShortcuts.ts(52,15): error TS2353: Object literal may only specify known properties, and 'action' does not exist in type 'Partial<Pick<Toast, "style" | "id" | "icon" | "className" | "position" | "duration" | "ariaProps" | "iconTheme" | "toasterId" | "removeDelay">>'.
+src/hooks/useFollow.ts(5,3): error TS2614: Module '"../services/followService"' has no exported member 'followUser'. Did you mean to use 'import followUser from "../services/followService"' instead?
+src/hooks/useFollow.ts(6,3): error TS2614: Module '"../services/followService"' has no exported member 'unfollowUser'. Did you mean to use 'import unfollowUser from "../services/followService"' instead?
+src/hooks/useFollow.ts(7,3): error TS2614: Module '"../services/followService"' has no exported member 'isFollowing'. Did you mean to use 'import isFollowing from "../services/followService"' instead?
+src/hooks/useFollow.ts(8,3): error TS2614: Module '"../services/followService"' has no exported member 'getFollowers'. Did you mean to use 'import getFollowers from "../services/followService"' instead?
+src/hooks/useFollow.ts(9,3): error TS2614: Module '"../services/followService"' has no exported member 'getFollowing'. Did you mean to use 'import getFollowing from "../services/followService"' instead?
+src/hooks/useFollow.ts(10,3): error TS2614: Module '"../services/followService"' has no exported member 'getFollowerCount'. Did you mean to use 'import getFollowerCount from "../services/followService"' instead?
+src/hooks/useFollow.ts(11,3): error TS2614: Module '"../services/followService"' has no exported member 'getFollowingCount'. Did you mean to use 'import getFollowingCount from "../services/followService"' instead?
+src/hooks/useFollow.ts(12,3): error TS2614: Module '"../services/followService"' has no exported member 'getMutualFollowers'. Did you mean to use 'import getMutualFollowers from "../services/followService"' instead?
+src/hooks/useFollow.ts(13,3): error TS2614: Module '"../services/followService"' has no exported member 'subscribeToFollowChanges'. Did you mean to use 'import subscribeToFollowChanges from "../services/followService"' instead?
+src/hooks/useFollow.ts(15,25): error TS2307: Cannot find module '../contexts/AuthContext' or its corresponding type declarations.
+src/hooks/useFriendsList.ts(4,31): error TS2307: Cannot find module '../services/friendService' or its corresponding type declarations.
+src/hooks/useFriendsList.ts(6,33): error TS2307: Cannot find module '../services/friendService' or its corresponding type declarations.
+src/hooks/useProducts.ts(159,30): error TS2339: Property 'price' does not exist on type 'ProductFormData'.
+src/hooks/useProducts.ts(160,33): error TS2339: Property 'category' does not exist on type 'ProductFormData'.
+src/hooks/useProducts.ts(218,19): error TS2339: Property 'price' does not exist on type 'Partial<ProductFormData>'.
+src/hooks/useProducts.ts(218,70): error TS2339: Property 'price' does not exist on type 'Partial<ProductFormData>'.
+src/hooks/useProducts.ts(219,19): error TS2339: Property 'category' does not exist on type 'Partial<ProductFormData>'.
+src/hooks/useProducts.ts(219,76): error TS2339: Property 'category' does not exist on type 'Partial<ProductFormData>'.
+src/hooks/useProductSocial.ts(115,26): error TS2339: Property 'price' does not exist on type 'Product'.
+src/hooks/useProductSocial.ts(162,26): error TS2339: Property 'price' does not exist on type 'Product'.
+src/hooks/useProductSocial.ts(200,15): error TS2339: Property 'info' does not exist on type '{ (message: Message, opts?: Partial<Pick<Toast, "style" | "id" | "icon" | "className" | "position" | "duration" | "ariaProps" | "iconTheme" | "toasterId" | "removeDelay">>): string; ... 8 more ...; promise<T>(promise: Promise<...> | (() => Promise<...>), msgs: { ...; }, opts?: DefaultToastOptions): Promise<...>; }'.
+src/hooks/useProductSocial.ts(216,15): error TS2339: Property 'info' does not exist on type '{ (message: Message, opts?: Partial<Pick<Toast, "style" | "id" | "icon" | "className" | "position" | "duration" | "ariaProps" | "iconTheme" | "toasterId" | "removeDelay">>): string; ... 8 more ...; promise<T>(promise: Promise<...> | (() => Promise<...>), msgs: { ...; }, opts?: DefaultToastOptions): Promise<...>; }'.
+src/hooks/usePYMK.ts(8,32): error TS2307: Cannot find module '../services/friendService' or its corresponding type declarations.
+src/hooks/useReactions.ts(48,27): error TS2872: This kind of expression is always truthy.
+src/hooks/useSimpleFavorites.ts(230,15): error TS2339: Property 'info' does not exist on type '{ (message: Message, opts?: Partial<Pick<Toast, "style" | "id" | "icon" | "className" | "position" | "duration" | "ariaProps" | "iconTheme" | "toasterId" | "removeDelay">>): string; ... 8 more ...; promise<T>(promise: Promise<...> | (() => Promise<...>), msgs: { ...; }, opts?: DefaultToastOptions): Promise<...>; }'.
+src/pages/TempFriendRequests.tsx(147,35): error TS2339: Property 'avatar_url' does not exist on type '{ id: any; full_name: any; email: any; avatar_url: any; } | { id: any; full_name: string; email: string; }'.
+  Property 'avatar_url' does not exist on type '{ id: any; full_name: string; email: string; }'.
+src/pages/TempFriendRequests.tsx(149,43): error TS2339: Property 'avatar_url' does not exist on type '{ id: any; full_name: any; email: any; avatar_url: any; } | { id: any; full_name: string; email: string; }'.
+  Property 'avatar_url' does not exist on type '{ id: any; full_name: string; email: string; }'.
+src/pages/test/StandardDesignsPage.tsx(13,5): error TS2353: Object literal may only specify known properties, and 'price' does not exist in type 'Product'.
+src/pages/TestSearchFilters.tsx(14,49): error TS2339: Property 'removeFilter' does not exist on type '{ filters: FriendSearchFilters; updateFilters: (newFilters: Partial<FriendSearchFilters>) => void; clearFilters: () => void; hasActiveFilters: boolean; activeFilterCount: number; }'.
+src/pages/TestSearchFilters.tsx(14,63): error TS2339: Property 'filterCount' does not exist on type '{ filters: FriendSearchFilters; updateFilters: (newFilters: Partial<FriendSearchFilters>) => void; clearFilters: () => void; hasActiveFilters: boolean; activeFilterCount: number; }'.
+src/services/index.ts(8,3): error TS2300: Duplicate identifier 'driverService'.
+src/services/index.ts(27,3): error TS2300: Duplicate identifier 'targetingService'.
+src/services/index.ts(38,21): error TS2300: Duplicate identifier 'driverService'.
+src/services/index.ts(39,21): error TS2300: Duplicate identifier 'targetingService'.
+src/services/mockTargetingService.ts(28,31): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/services/mockTargetingService.ts(28,47): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/services/mockTargetingService.ts(55,11): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/services/mockTargetingService.ts(120,23): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/services/mockTargetingService.ts(120,49): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/services/mockTargetingService.ts(137,23): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/services/mockTargetingService.ts(137,49): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/services/mockTargetingService.ts(138,21): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/services/offlineQueueService.ts(389,13): error TS2561: Object literal may only specify known properties, but 'linkPreview' does not exist in type 'SendMessageParams'. Did you mean to write 'linkPreviews'?
+src/services/presenceService.ts(63,44): error TS2445: Property 'supabaseUrl' is protected and only accessible within class 'SupabaseClient<Database, SchemaNameOrClientOptions, SchemaName, Schema, ClientOptions>' and its subclasses.
+src/services/targetingService.ts(72,13): error TS2339: Property 'min_purchases' does not exist on type 'TargetingRules'.
+src/services/targetingService.ts(73,35): error TS2339: Property 'min_purchases' does not exist on type 'TargetingRules'.
+src/services/targetingService.ts(193,22): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/services/targetingService.ts(193,38): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/services/targetingService.ts(194,41): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/services/targetingService.ts(235,22): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/services/targetingService.ts(235,38): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/services/targetingService.ts(236,41): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/services/targetingService.ts(333,12): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/services/targetingService.ts(333,28): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/services/targetingService.ts(349,11): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/services/targetingService.ts(426,23): error TS2339: Property 'cities' does not exist on type 'Partial<TargetingRules>'.
+src/services/targetingService.ts(513,12): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/types/campaigns.ts(700,13): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/types/campaigns.ts(700,29): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/types/campaigns.ts(701,25): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/types/index.ts(13,1): error TS2308: Module './campaigns' has already exported a member named 'AGE_RANGES'. Consider explicitly re-exporting to resolve the ambiguity.
+src/types/index.ts(13,1): error TS2308: Module './campaigns' has already exported a member named 'AgeRange'. Consider explicitly re-exporting to resolve the ambiguity.
+src/types/index.ts(13,1): error TS2308: Module './campaigns' has already exported a member named 'CAMPAIGN_TYPES'. Consider explicitly re-exporting to resolve the ambiguity.
+src/types/index.ts(13,1): error TS2308: Module './campaigns' has already exported a member named 'CampaignType'. Consider explicitly re-exporting to resolve the ambiguity.
+src/types/index.ts(13,1): error TS2308: Module './campaigns' has already exported a member named 'DAYS_OF_WEEK'. Consider explicitly re-exporting to resolve the ambiguity.
+src/types/index.ts(13,1): error TS2308: Module './campaigns' has already exported a member named 'DayOfWeek'. Consider explicitly re-exporting to resolve the ambiguity.
+src/types/index.ts(13,1): error TS2308: Module './campaigns' has already exported a member named 'INCOME_LEVELS'. Consider explicitly re-exporting to resolve the ambiguity.
+src/types/index.ts(13,1): error TS2308: Module './campaigns' has already exported a member named 'INTEREST_CATEGORIES'. Consider explicitly re-exporting to resolve the ambiguity.
+src/types/index.ts(13,1): error TS2308: Module './campaigns' has already exported a member named 'IncomeLevel'. Consider explicitly re-exporting to resolve the ambiguity.
+src/types/index.ts(13,1): error TS2308: Module './campaigns' has already exported a member named 'InterestCategory'. Consider explicitly re-exporting to resolve the ambiguity.
+src/types/sharingLimits.ts(120,3): error TS2484: Export declaration conflicts with exported declaration of 'SharingLimitConfig'.
+src/types/sharingLimits.ts(121,3): error TS2484: Export declaration conflicts with exported declaration of 'SharingLimits'.
+src/types/sharingLimits.ts(122,3): error TS2484: Export declaration conflicts with exported declaration of 'CanShareResult'.
+src/types/sharingLimits.ts(123,3): error TS2484: Export declaration conflicts with exported declaration of 'SharingStatsToday'.
+src/types/sharingLimits.ts(124,3): error TS2484: Export declaration conflicts with exported declaration of 'FriendShareCount'.
+src/types/sharingLimits.ts(125,3): error TS2484: Export declaration conflicts with exported declaration of 'CouponSharingLogEntry'.
+src/types/sharingLimits.ts(126,3): error TS2484: Export declaration conflicts with exported declaration of 'LogCouponShareInput'.
+src/types/sharingLimits.ts(127,3): error TS2484: Export declaration conflicts with exported declaration of 'SharingAnalytics'.
+src/types/sharingLimits.ts(128,3): error TS2484: Export declaration conflicts with exported declaration of 'LimitExceededModalProps'.
+src/types/sharingLimits.ts(129,3): error TS2484: Export declaration conflicts with exported declaration of 'SharingStatsCardProps'.
+src/utils/performanceMonitoring.ts(1,17): error TS2305: Module '"web-vitals"' has no exported member 'onFID'.
+src/utils/registerServiceWorker.ts(1,28): error TS2307: Cannot find module 'virtual:pwa-register' or its corresponding type declarations.
+src/utils/test/checkinTestUtils.ts(209,11): error TS2741: Property 'toJSON' is missing in type '{ latitude: number; longitude: number; accuracy: number; altitude: null; altitudeAccuracy: null; heading: null; speed: null; }' but required in type 'GeolocationCoordinates'.

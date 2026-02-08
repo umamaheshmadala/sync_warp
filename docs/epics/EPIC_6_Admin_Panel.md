@@ -115,8 +115,8 @@
 - See `STORY_6.3.3b_Admin_Business_Approve_Reject_Actions.md` 🟢 COMPLETE
 - See `STORY_6.3.4_Admin_Business_Editing_Deletion.md` 🟢 COMPLETE
 - See `STORY_6.3.5_Admin_Audit_Logging_Notifications.md` 🟢 COMPLETE
-- See `STORY_6.3.6_Pending_Edits_Infrastructure.md` ⚪ PLANNED
-- See `STORY_6.3.7_Owner_Pending_Edits_Experience.md` ⚪ PLANNED
+- See `STORY_6.3.6_Pending_Edits_Infrastructure.md` 🟢 COMPLETE
+- See `STORY_6.3.7_Owner_Pending_Edits_Experience.md` 🟢 COMPLETE
 - See `STORY_6.3.8_Admin_Pending_Edits_Review.md` ⚪ PLANNED
 
 **Time Estimate**: 9-10 days (increased from 7-8 days to include pending edits workflow)

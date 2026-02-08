@@ -40,6 +40,7 @@ export interface Business {
     recommendation_percentage?: number;
     approved_review_count?: number;
     follower_count?: number;
+    has_pending_edits?: boolean;
 }
 
 export interface BusinessCategory {

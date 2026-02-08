@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { QuickImageUploader } from './QuickImageUploader';
+import { PendingChangesWarning } from './PendingChangesWarning';
+import { submitPendingEdits, applyInstantUpdates, isSensitiveField } from '../../services/businessEditService';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { parseBusinessIdentifier } from '../../utils/slugUtils';
@@ -509,37 +511,62 @@ const BusinessProfile: React.FC = () => {
 
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from('businesses')
-        .update({
-          business_name: editForm.business_name,
-          business_type: editForm.business_type,
-          description: editForm.description,
-          business_email: editForm.business_email,
-          business_phone: editForm.business_phone,
-          address: editForm.address,
-          city: editForm.city,
-          state: editForm.state,
-          postal_code: editForm.postal_code,
-          latitude: editForm.latitude,
-          longitude: editForm.longitude,
-          website_url: editForm.website_url,
-          social_media: editForm.social_media,
-          operating_hours: editForm.operating_hours,
-          tags: editForm.tags,
-          logo_url: editForm.logo_url,
-          cover_image_url: editForm.cover_image_url,
-          gallery_images: editForm.gallery_images,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', business?.id);
+      const sensitiveChanges: Record<string, any> = {};
+      const instantChanges: Record<string, any> = {};
+      let hasChanges = false;
 
-      if (error) throw error;
+      // Fields to check for changes
+      const fieldsToCheck = [
+        'business_name', 'business_type', 'description', 'business_email',
+        'business_phone', 'address', 'city', 'state', 'postal_code',
+        'latitude', 'longitude', 'website_url', 'social_media',
+        'operating_hours', 'tags', 'logo_url', 'cover_image_url', 'gallery_images'
+      ];
+
+      fieldsToCheck.forEach(field => {
+        // Simple equality check (works for primitives, need JSON.stringify for objects/arrays)
+        const oldValue = business?.[field];
+        const newValue = editForm[field];
+
+        const isDifferent = typeof oldValue === 'object'
+          ? JSON.stringify(oldValue) !== JSON.stringify(newValue)
+          : oldValue !== newValue;
+
+        if (isDifferent) {
+          hasChanges = true;
+          if (isSensitiveField(field)) {
+            sensitiveChanges[field] = newValue;
+          } else {
+            instantChanges[field] = newValue;
+          }
+        }
+      });
+
+      if (!hasChanges) {
+        setEditing(false);
+        return;
+      }
+
+      // Submit sensitive changes
+      if (Object.keys(sensitiveChanges).length > 0) {
+        await submitPendingEdits(business!.id, sensitiveChanges);
+        toast.success('Core business details submitted for admin review.');
+      }
+
+      // Apply instant updates
+      if (Object.keys(instantChanges).length > 0) {
+        // Always update updated_at if making instant changes
+        instantChanges['updated_at'] = new Date().toISOString();
+        await applyInstantUpdates(business!.id, instantChanges);
+        if (Object.keys(sensitiveChanges).length === 0) {
+          toast.success('Business profile updated successfully!');
+        }
+      }
 
       // Refetch to sync cache with database
       await refetchBusiness();
       setEditing(false);
-      toast.success('Business profile updated successfully!');
+
     } catch (error) {
       console.error('Error updating business:', error);
       toast.error('Failed to update business profile');
@@ -1414,6 +1441,17 @@ const BusinessProfile: React.FC = () => {
                 <span className="text-gray-900 font-medium">
                   {business?.business_name || 'Business Profile'}
                 </span>
+                {/* Pending Edits Warning */}
+                {isOwner && business?.has_pending_edits && (
+                  <div className="mt-4">
+                    <PendingChangesWarning
+                      businessId={business.id}
+                      onDismiss={() => {
+                        // Optional: could implement session dismiss logic here
+                      }}
+                    />
+                  </div>
+                )}
               </nav>
             </div>
           </div>
