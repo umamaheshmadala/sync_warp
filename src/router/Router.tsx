@@ -76,9 +76,7 @@ const TestActivityFeed = lazy(() => import('../pages/TestActivityFeed'))
 const TestSearchFilters = lazy(() => import('../pages/TestSearchFilters').then(m => ({ default: m.TestSearchFilters })))
 const TestDealComments = lazy(() => import('../pages/TestDealComments').then(m => ({ default: m.TestDealComments })))
 
-const TestSearchPerformance = lazy(() => import('../pages/TestSearchPerformance').then(m => ({ default: m.TestSearchPerformance })))
-const FollowerTargetingDemo = lazy(() => import('../pages/FollowerTargetingDemo'))
-const StandardDesignsPage = lazy(() => import('../pages/test/StandardDesignsPage'))
+
 
 // Other lazy-loaded components
 const NotFound = lazy(() => import('../components/NotFound'))
@@ -101,7 +99,7 @@ const MyReviewsPage = lazy(() => import('../pages/MyReviewsPage'))
 
 const NotificationsPage = lazy(() => import('../pages/NotificationsPage'))
 const StorageTest = lazy(() => import('../pages/test/StorageTest'))
-const ContactSyncTestPage = lazy(() => import('../pages/ContactSyncTestPage'))
+
 
 // Development mode flag
 const isDevelopment = import.meta.env.MODE === 'development'
@@ -852,26 +850,8 @@ export const routes: RouteConfig[] = [
       title: 'Test Deal Comments'
     },
 
-    {
-      path: '/test/standard-designs',
-      element: (
-        <RouteLoader>
-          <StandardDesignsPage />
-        </RouteLoader>
-      ),
-      protected: true,
-      title: 'Standard Designs'
-    },
-    {
-      path: '/test/search-performance',
-      element: (
-        <RouteLoader>
-          <TestSearchPerformance />
-        </RouteLoader>
-      ),
-      protected: true,
-      title: 'Test Search Performance'
-    },
+
+
     {
       path: '/test/search-analytics',
       element: (
@@ -882,16 +862,7 @@ export const routes: RouteConfig[] = [
       protected: true,
       title: 'Test Search Analytics'
     },
-    {
-      path: '/test/follower-targeting',
-      element: (
-        <RouteLoader>
-          <FollowerTargetingDemo />
-        </RouteLoader>
-      ),
-      protected: true,
-      title: 'Test Follower Targeting'
-    },
+
     {
       path: '/test/storage',
       element: (
@@ -902,16 +873,7 @@ export const routes: RouteConfig[] = [
       protected: true,
       title: 'Test Storage'
     },
-    {
-      path: '/test/contact-sync',
-      element: (
-        <RouteLoader>
-          <ContactSyncTestPage />
-        </RouteLoader>
-      ),
-      protected: true,
-      title: 'Test Contact Sync'
-    }
+
   ] : []),
 
   // ... (other routes)

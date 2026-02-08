@@ -8,32 +8,26 @@ import {
 } from '@/services/helpfulVoteService';
 import { toast } from 'sonner';
 
-export function useHelpfulVote(reviewId: string, reviewAuthorId: string) {
+export function useHelpfulVote(reviewId: string, reviewAuthorId: string, initialCount = 0, initialHasVoted = false) {
     const user = useAuthStore(state => state.user);
-    const [count, setCount] = useState(0);
-    const [hasVoted, setHasVoted] = useState(false);
+    const [count, setCount] = useState(initialCount);
+    const [hasVoted, setHasVoted] = useState(initialHasVoted);
     const [isVoting, setIsVoting] = useState(false);
 
     const isOwnReview = user?.id === reviewAuthorId;
     const canVote = !!user && !isOwnReview;
 
-    // Fetch initial state
-    useEffect(() => {
-        const fetchState = async () => {
-            try {
-                const [voteCount, voted] = await Promise.all([
-                    getHelpfulCount(reviewId),
-                    user ? hasUserVoted(reviewId) : false
-                ]);
-                setCount(voteCount);
-                setHasVoted(voted);
-            } catch (error) {
-                console.error('Error fetching vote state:', error);
-            }
-        };
+    // Fetch initial state only if not provided or if we want to ensure freshness (optional)
+    // To solve performance issue, we SKIP fetch if we believe initial values are good.
+    // However, if initial values are defaults (0/false), we might still want to fetch?
+    // But ReviewCard passes fetched values. If they are genuinely 0/false, we shouldn't re-fetch.
+    // So we can remove the initial fetch effect entirely and rely on props + subscription.
 
-        fetchState();
-    }, [reviewId, user]);
+    // Update state if props change (e.g. parent revalidates)
+    useEffect(() => {
+        setCount(initialCount);
+        setHasVoted(initialHasVoted);
+    }, [initialCount, initialHasVoted]);
 
     // Subscribe to real-time updates
     useEffect(() => {

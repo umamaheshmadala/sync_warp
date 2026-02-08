@@ -108,7 +108,7 @@ export function TicketOfferCard({
                         </div>
 
                         <div>
-                            <h2 className={cn("text-lg font-medium leading-none tracking-tight", color.replace('bg-', 'text-').replace('600', '800'))}>
+                            <h2 className={cn("text-lg font-mono font-bold leading-snug tracking-tight", color.replace('bg-', 'text-').replace('600', '800'))}>
                                 {formattedOfferName}
                             </h2>
                         </div>
@@ -128,8 +128,8 @@ export function TicketOfferCard({
                         {/* Hanging Banner - Elongated (~60% height) to allow room for audit code */}
                         <div className={cn("absolute top-0 left-1/2 -translate-x-1/2 w-[60px] shadow-md z-20 flex flex-col items-center justify-center", color)} style={{ height: '60%' }}>
                             {/* Banner Body Content */}
-                            <div className="flex-1 flex items-center justify-center px-2 pb-3">
-                                <div className="text-white text-[10px] font-medium uppercase leading-tight text-center break-words w-full">
+                            <div className="flex-1 flex items-center justify-center px-0.5 pb-3">
+                                <div className="text-white text-[10px] font-mono font-medium uppercase leading-tight text-center break-all w-full whitespace-normal px-0.5">
                                     {offerType || 'OFFER'}
                                 </div>
                             </div>

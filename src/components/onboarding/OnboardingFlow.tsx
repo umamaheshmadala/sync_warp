@@ -1,18 +1,15 @@
-// src/components/onboarding/OnboardingFlow.tsx
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import ProgressIndicator from './ProgressIndicator'
-import Step1BasicInfo from './Step1BasicInfo'
+// import Step1BasicInfo from './Step1BasicInfo' // Removed
 import Step2Location from './Step2Location'
 import Step3Interests from './Step3Interests'
 import CompletionScreen from './CompletionScreen'
 
 export interface OnboardingData {
-  phone: string
   city: string
   interests: string[]
-  date_of_birth?: string
   notificationPreferences: {
     email: boolean
     push: boolean
@@ -20,7 +17,8 @@ export interface OnboardingData {
   }
 }
 
-const TOTAL_STEPS = 3
+const TOTAL_STEPS = 2
+
 
 export default function OnboardingFlow() {
   const navigate = useNavigate()
@@ -29,10 +27,9 @@ export default function OnboardingFlow() {
   const [isCompleting, setIsCompleting] = useState(false)
   const [showCompletion, setShowCompletion] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  
+
   // Form data state
   const [onboardingData, setOnboardingData] = useState<OnboardingData>({
-    phone: '',
     city: '',
     interests: [],
     notificationPreferences: {
@@ -84,24 +81,20 @@ export default function OnboardingFlow() {
     setError(null)
 
     try {
-      // Validate required fields
-      if (!onboardingData.city || onboardingData.city.trim() === '') {
-        throw new Error('City is required')
-      }
-      
+      // City is now optional, but we trim it if present
+      const cityToSave = onboardingData.city?.trim() || ''
+
       // Update user profile with onboarding data
       await updateProfile({
-        phone: onboardingData.phone || undefined,
-        city: onboardingData.city.trim(),
+        city: cityToSave,
         interests: onboardingData.interests || [],
-        date_of_birth: onboardingData.date_of_birth || undefined,
         // Store notification preferences in user metadata if needed
         updated_at: new Date().toISOString()
       })
 
       // Show completion screen
       setShowCompletion(true)
-      
+
       // After a delay, redirect to dashboard
       setTimeout(() => {
         navigate('/dashboard')
@@ -109,10 +102,10 @@ export default function OnboardingFlow() {
 
     } catch (error: any) {
       console.error('Onboarding completion error:', error)
-      
+
       // Provide user-friendly error messages
       let errorMessage = 'Failed to complete onboarding. Please try again.'
-      
+
       if (error.message?.includes('Failed to create profile')) {
         errorMessage = 'Unable to save your profile. Please check your connection and try again.'
       } else if (error.message?.includes('Failed to update profile')) {
@@ -122,7 +115,7 @@ export default function OnboardingFlow() {
       } else if (error.message) {
         errorMessage = error.message
       }
-      
+
       setError(errorMessage)
     } finally {
       setIsCompleting(false)
@@ -153,23 +146,15 @@ export default function OnboardingFlow() {
     switch (currentStep) {
       case 1:
         return (
-          <Step1BasicInfo
-            data={onboardingData}
-            onUpdate={updateOnboardingData}
-            onNext={goToNextStep}
-            onSkip={handleSkip}
-          />
-        )
-      case 2:
-        return (
           <Step2Location
             data={onboardingData}
             onUpdate={updateOnboardingData}
             onNext={goToNextStep}
-            onBack={goToPreviousStep}
+            onBack={goToPreviousStep} // Back button might need to be hidden if step 1
+            isFirstStep={true}
           />
         )
-      case 3:
+      case 2:
         return (
           <Step3Interests
             data={onboardingData}

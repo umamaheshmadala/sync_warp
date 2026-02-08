@@ -424,7 +424,8 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
             <HelpfulButton
               reviewId={review.id}
               reviewAuthorId={review.user_id}
-              initialCount={0}
+              initialCount={review.helpful_count}
+              initialHasVoted={review.is_helpful_by_user}
             />
           </div>
 

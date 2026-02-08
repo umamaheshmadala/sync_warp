@@ -35,9 +35,26 @@ const ProductCardBase = ({
   // Actions are handled in ProductView modal only
 
   // Get the first image or fallback
-  const rawImage = product.image_urls && product.image_urls.length > 0
-    ? product.image_urls[0]
-    : '/placeholder-product.jpg';
+  // Handle both new 'images' JSONB format and legacy 'image_urls' array
+  const getPrimaryImage = () => {
+    // 1. Try new 'images' array (JSONB with objects)
+    if (product.images && product.images.length > 0) {
+      // Check if it's an array of objects with url property
+      const firstImg = product.images[0];
+      if (typeof firstImg === 'object' && firstImg.url) return firstImg.url;
+      if (typeof firstImg === 'string') return firstImg; // Fallback if somehow just strings
+    }
+
+    // 2. Try legacy 'image_urls' (string array)
+    if (product.image_urls && product.image_urls.length > 0) {
+      return product.image_urls[0];
+    }
+
+    // 3. Fallback
+    return '/placeholder-product.jpg';
+  };
+
+  const rawImage = getPrimaryImage();
 
   // Optimize image size based on card size
   const targetWidth = size === 'small' ? 200 : size === 'medium' ? 300 : 400;
@@ -68,6 +85,9 @@ const ProductCardBase = ({
     medium: 'h-56',
     large: 'h-72'
   };
+
+  // Check for multiple images count from either source
+  const imageCount = (product.images?.length || 0) || (product.image_urls?.length || 0);
 
   return (
     <Card
@@ -115,7 +135,7 @@ const ProductCardBase = ({
           )}
 
           {/* Multiple Images Indicator - Top Right */}
-          {product.image_urls && product.image_urls.length > 1 && (
+          {imageCount > 1 && (
             <div className="absolute right-2 top-2">
               <div className="rounded-md p-1 bg-black/40">
                 <svg width="25" height="25" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -130,23 +150,28 @@ const ProductCardBase = ({
             </div>
           )}
 
-          {/* Favorite Button - Bottom Right - Story 4.13 */}
-          <div className="absolute bottom-2 right-2" onClick={(e) => e.stopPropagation()}>
-            <FavoriteProductButton productId={product.id} iconOnly={true} />
-          </div>
+          {/* Actions Overlay - Only show if showActions is true */}
+          {showActions && (
+            <>
+              {/* Favorite Button - Bottom Right - Story 4.13 */}
+              <div className="absolute bottom-2 right-2" onClick={(e) => e.stopPropagation()}>
+                <FavoriteProductButton productId={product.id} iconOnly={true} />
+              </div>
 
-          {/* Share Button - Bottom Left - Story 10.1.3 */}
-          <div className="absolute bottom-2 left-2" onClick={(e) => e.stopPropagation()}>
-            <ProductShareButton
-              productId={product.id}
-              productName={product.name}
-              productImage={product.image_urls?.[0]}
-              businessId={product.business_id}
-              businessName={product.business?.name || ''}
-              businessSlug={(product.business as any)?.slug || product.business_id}
-              variant="icon"
-            />
-          </div>
+              {/* Share Button - Bottom Left - Story 10.1.3 */}
+              <div className="absolute bottom-2 left-2" onClick={(e) => e.stopPropagation()}>
+                <ProductShareButton
+                  productId={product.id}
+                  productName={product.name}
+                  productImage={product.image_urls?.[0]}
+                  businessId={product.business_id}
+                  businessName={product.business?.name || ''}
+                  businessSlug={(product.business as any)?.slug || product.business_id}
+                  variant="icon"
+                />
+              </div>
+            </>
+          )}
         </div>
       </CardContent>
     </Card>

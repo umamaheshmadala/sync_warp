@@ -9,9 +9,10 @@ interface Step2LocationProps {
   onUpdate: (updates: Partial<OnboardingData>) => void
   onNext: () => void
   onBack: () => void
+  isFirstStep?: boolean
 }
 
-export default function Step2Location({ data, onUpdate, onNext, onBack }: Step2LocationProps) {
+export default function Step2Location({ data, onUpdate, onNext, onBack, isFirstStep = false }: Step2LocationProps) {
   const [city, setCity] = useState(data.city || '')
   const [citySuggestions, setCitySuggestions] = useState<CitySearchResult[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
@@ -57,7 +58,7 @@ export default function Step2Location({ data, onUpdate, onNext, onBack }: Step2L
         console.error('Error loading popular cities:', error)
       }
     }
-    
+
     loadPopularCities()
   }, [])
 
@@ -104,10 +105,10 @@ export default function Step2Location({ data, onUpdate, onNext, onBack }: Step2L
       async (position) => {
         try {
           const { latitude, longitude } = position.coords
-          
+
           // Try to find nearest city from database
           const nearestCity = await CityService.findNearestCity(latitude, longitude)
-          
+
           if (nearestCity) {
             const cityDisplayName = `${nearestCity.name}, ${nearestCity.state}`
             setCity(cityDisplayName)
@@ -132,14 +133,7 @@ export default function Step2Location({ data, onUpdate, onNext, onBack }: Step2L
   }
 
   const validateCity = async () => {
-    if (!city.trim()) {
-      setCityError('Please enter your city or select from suggestions')
-      return false
-    }
-    
-    // For now, accept any non-empty city name
-    // In future, could validate against database
-    setCityError('')
+    // City is now optional, so empty is valid
     return true
   }
 
@@ -147,6 +141,11 @@ export default function Step2Location({ data, onUpdate, onNext, onBack }: Step2L
     if (await validateCity()) {
       onNext()
     }
+  }
+
+  const handleSkip = () => {
+    onUpdate({ city: '' })
+    onNext()
   }
 
   return (
@@ -165,7 +164,7 @@ export default function Step2Location({ data, onUpdate, onNext, onBack }: Step2L
         {/* Location Input */}
         <div className="relative" data-city-search>
           <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-1">
-            City <span className="text-red-500">*</span>
+            City <span className="text-gray-400 font-normal">(Optional)</span>
           </label>
           <div className="relative">
             <input
@@ -187,7 +186,7 @@ export default function Step2Location({ data, onUpdate, onNext, onBack }: Step2L
             />
             <MapPin className="h-5 w-5 text-gray-400 absolute left-4 top-3.5" />
           </div>
-          
+
           {/* City Suggestions */}
           {(showSuggestions && (citySuggestions.length > 0 || isLoadingCities)) && (
             <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-64 overflow-y-auto">
@@ -213,11 +212,10 @@ export default function Step2Location({ data, onUpdate, onNext, onBack }: Step2L
                         <span className="text-gray-500 text-sm ml-2">{suggestedCity.state}</span>
                       </div>
                     </div>
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      suggestedCity.tier === 'Tier 1' ? 'bg-green-100 text-green-800' :
-                      suggestedCity.tier === 'Tier 2' ? 'bg-blue-100 text-blue-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
+                    <span className={`text-xs px-2 py-1 rounded-full ${suggestedCity.tier === 'Tier 1' ? 'bg-green-100 text-green-800' :
+                        suggestedCity.tier === 'Tier 2' ? 'bg-blue-100 text-blue-800' :
+                          'bg-gray-100 text-gray-800'
+                      }`}>
                       {suggestedCity.tier}
                     </span>
                   </div>
@@ -230,7 +228,7 @@ export default function Step2Location({ data, onUpdate, onNext, onBack }: Step2L
               )}
             </div>
           )}
-          
+
           {cityError && (
             <p className="mt-1 text-sm text-red-600">{cityError}</p>
           )}
@@ -256,19 +254,30 @@ export default function Step2Location({ data, onUpdate, onNext, onBack }: Step2L
 
       {/* Action Buttons */}
       <div className="mt-8 flex flex-col sm:flex-row gap-3">
-        <button
-          onClick={onBack}
-          className="flex items-center justify-center px-6 py-3 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
-        </button>
+        {!isFirstStep && (
+          <button
+            onClick={onBack}
+            className="flex items-center justify-center px-6 py-3 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+          </button>
+        )}
+
+        {isFirstStep && (
+          <button
+            onClick={handleSkip}
+            className="flex items-center justify-center px-6 py-3 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out"
+          >
+            Skip for now
+          </button>
+        )}
 
         <button
           onClick={handleNext}
           className="flex-1 flex items-center justify-center px-6 py-3 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out"
         >
-          Continue
+          {city ? 'Continue' : 'Skip & Continue'}
           <ArrowRight className="ml-2 h-4 w-4" />
         </button>
       </div>

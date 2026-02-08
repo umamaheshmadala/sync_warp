@@ -417,7 +417,7 @@ export async function getBusinessReviewsPaginated(
   }
 
   // Transform data to match interface
-  const reviews: BusinessReviewWithDetails[] = (data || []).map((review: any) => ({
+  let reviews: BusinessReviewWithDetails[] = (data || []).map((review: any) => ({
     ...review,
     text: review.review_text, // Map DB column to interface property
     user_name: review.profiles?.full_name || review.reviewer_name || 'Anonymous',
@@ -429,8 +429,27 @@ export async function getBusinessReviewsPaginated(
     response_text: review.response_text || review.business_review_responses?.[0]?.response_text || null,
     response_created_at: review.response_created_at || review.business_review_responses?.[0]?.created_at || null,
     response_updated_at: review.response_updated_at || review.business_review_responses?.[0]?.updated_at || null,
-    helpful_count: review.helpful_count || 0
+    helpful_count: review.helpful_count || 0,
+    is_helpful_by_user: false // Default to false
   }));
+
+  // Batch fetch user's helpful votes if logged in
+  if (user && reviews.length > 0) {
+    const reviewIds = reviews.map(r => r.id);
+    const { data: userVotes } = await supabase
+      .from('review_helpful_votes')
+      .select('review_id')
+      .eq('user_id', user.id)
+      .in('review_id', reviewIds);
+
+    if (userVotes && userVotes.length > 0) {
+      const votedReviewIds = new Set(userVotes.map(v => v.review_id));
+      reviews = reviews.map(r => ({
+        ...r,
+        is_helpful_by_user: votedReviewIds.has(r.id)
+      }));
+    }
+  }
 
   return reviews;
 }

@@ -368,6 +368,10 @@ export default function AdminBusinessEditsPage() {
                                                                     log.metadata?.action === 'unarchived' ? 'Unarchived' :
                                                                         'Updated'} product: <span className="font-semibold text-gray-900">{log.metadata?.name || 'Product'}</span>
                                                             </span>
+                                                        ) : log.action_type === 'product_deleted' ? (
+                                                            <span>
+                                                                Deleted product: <span className="font-semibold text-gray-900">{log.metadata?.name || 'Product'}</span>
+                                                            </span>
                                                         ) : (
                                                             display.label
                                                         )}

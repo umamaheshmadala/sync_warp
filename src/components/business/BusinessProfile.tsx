@@ -1637,7 +1637,7 @@ const BusinessProfile: React.FC = () => {
                   )}
 
                   {/* Action Buttons Row - Desktop Only */}
-                  <div className="hidden md:flex flex-wrap items-center gap-2 mt-2 w-full max-w-2xl">
+                  <div className="hidden md:flex flex-wrap items-center gap-2 mt-2 mb-2 w-full max-w-2xl">
 
                     {!isOwner && user && (
                       <div className="flex-1">

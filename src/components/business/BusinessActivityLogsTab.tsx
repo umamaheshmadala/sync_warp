@@ -41,28 +41,34 @@ export function BusinessActivityLogsTab({ businessId }: BusinessActivityLogsTabP
     const { data: logs, isLoading, error, refetch } = useQuery({
         queryKey: ['business-activity-logs', businessId],
         queryFn: () => getBusinessActivityLogs(businessId, 100),
-        enabled: !!businessId
+        enabled: !!businessId,
+        refetchInterval: 5000 // Poll every 5 seconds to ensure freshness
     });
 
     // Realtime subscription for auto-updates
     React.useEffect(() => {
         if (!businessId) return;
 
+        console.log('Setting up activity log subscription for:', businessId);
+
         const channel = supabase
             .channel(`activity-logs-${businessId}`)
             .on(
                 'postgres_changes',
                 {
-                    event: 'INSERT',
+                    event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
                     schema: 'public',
                     table: 'business_activity_log',
                     filter: `business_id=eq.${businessId}`
                 },
-                () => {
+                (payload) => {
+                    console.log('Realtime activity log update:', payload);
                     refetch();
                 }
             )
-            .subscribe();
+            .subscribe((status) => {
+                console.log('Activity log subscription status:', status);
+            });
 
         return () => {
             supabase.removeChannel(channel);
@@ -124,6 +130,14 @@ export function BusinessActivityLogsTab({ businessId }: BusinessActivityLogsTabP
             return (
                 <span>
                     Updated product <span className="font-semibold text-gray-900">{productName}</span>
+                </span>
+            );
+        }
+
+        if (log.action_type === 'product_deleted') {
+            return (
+                <span>
+                    Deleted product <span className="font-semibold text-gray-900">{log.metadata?.name || 'Product'}</span>
                 </span>
             );
         }

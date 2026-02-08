@@ -50,12 +50,12 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
     if (products.length > 0) {
       if (viewMode === 'full') {
         // Products tab: show ALL products, featured first
-        const featured = products.filter(p => p.is_featured && p.is_available);
-        const nonFeatured = products.filter(p => !p.is_featured && p.is_available);
+        const featured = products.filter(p => p.tags?.includes('featured') && p.status === 'published');
+        const nonFeatured = products.filter(p => !p.tags?.includes('featured') && p.status === 'published');
         setFeaturedProducts([...featured, ...nonFeatured]);
       } else {
-        // Overview tab: show only first 4 featured
-        const featured = products.filter(p => p.is_featured && p.is_available).slice(0, 4);
+        // Overview tab: show only first 6 featured (updated from 4)
+        const featured = products.filter(p => p.tags?.includes('featured') && p.status === 'published').slice(0, 6);
         setFeaturedProducts(featured);
       }
     }
@@ -118,8 +118,8 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
       <div className="bg-white rounded-lg shadow-sm border p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Featured Products</h3>
         <div className="animate-pulse space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => (
+          <div className="grid grid-cols-3 gap-4">
+            {[...Array(3)].map((_, i) => (
               <div key={i} className="space-y-2">
                 <div className="h-32 bg-gray-200 rounded-lg"></div>
                 <div className="h-4 bg-gray-200 rounded w-3/4"></div>
@@ -151,7 +151,7 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
 
 
         {featuredProducts.length > 0 ? (
-          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-1.5">
+          <div className={`grid gap-1.5 ${viewMode === 'full' ? 'grid-cols-3 sm:grid-cols-4 lg:grid-cols-6' : 'grid-cols-3'}`}>
             {featuredProducts.map((product) => (
               <div key={product.id}>
                 <LazyRender
@@ -160,7 +160,7 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
                   <CustomerProductCard
                     product={product}
                     size="medium"
-                    showActions={true}
+                    showActions={viewMode === 'full'}
                     onClick={() => handleProductClick(product)}
                   />
                 </LazyRender>

@@ -16,10 +16,11 @@ interface HelpfulButtonProps {
     reviewId: string;
     reviewAuthorId: string;
     initialCount?: number;
+    initialHasVoted?: boolean;
 }
 
-export function HelpfulButton({ reviewId, reviewAuthorId, initialCount = 0 }: HelpfulButtonProps) {
-    const { count, hasVoted, isVoting, toggleVote, canVote, isOwnReview } = useHelpfulVote(reviewId, reviewAuthorId);
+export function HelpfulButton({ reviewId, reviewAuthorId, initialCount = 0, initialHasVoted = false }: HelpfulButtonProps) {
+    const { count, hasVoted, isVoting, toggleVote, canVote, isOwnReview } = useHelpfulVote(reviewId, reviewAuthorId, initialCount, initialHasVoted);
     const [voters, setVoters] = useState<Voter[]>([]);
     const [votersLoading, setVotersLoading] = useState(false);
 
