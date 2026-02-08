@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { Product } from '../types/product';
+import { logActivity } from './businessActivityLogService';
 
 export const productService = {
     /**
@@ -109,31 +110,78 @@ export const productService = {
     /**
      * Archive a product
      */
-    async archiveProduct(productId: string): Promise<void> {
+    async archiveProduct(productId: string, businessId: string): Promise<void> {
+        const { data: product } = await supabase
+            .from('products')
+            .select('name')
+            .eq('id', productId)
+            .single();
+
         const { error } = await supabase
             .from('products')
             .update({ status: 'archived' })
             .eq('id', productId);
 
         if (error) throw error;
+
+        // Log activity
+        const { data: { user } } = await supabase.auth.getUser();
+        logActivity({
+            businessId,
+            actionType: 'product_updated',
+            actorId: user?.id || null,
+            actorType: 'owner',
+            metadata: {
+                product_id: productId,
+                name: product?.name,
+                action: 'archived'
+            }
+        });
     },
 
     /**
      * Unarchive a product
      */
-    async unarchiveProduct(productId: string): Promise<void> {
+    async unarchiveProduct(productId: string, businessId: string): Promise<void> {
+        const { data: product } = await supabase
+            .from('products')
+            .select('name')
+            .eq('id', productId)
+            .single();
+
         const { error } = await supabase
             .from('products')
             .update({ status: 'published' })
             .eq('id', productId);
 
         if (error) throw error;
+
+        // Log activity
+        const { data: { user } } = await supabase.auth.getUser();
+        logActivity({
+            businessId,
+            actionType: 'product_updated',
+            actorId: user?.id || null,
+            actorType: 'owner',
+            metadata: {
+                product_id: productId,
+                name: product?.name,
+                action: 'unarchived'
+            }
+        });
     },
 
     /**
      * Permanently delete a product and its associated images
      */
     async deleteProduct(productId: string, businessId: string): Promise<void> {
+        // Get name before deletion
+        const { data: product } = await supabase
+            .from('products')
+            .select('name')
+            .eq('id', productId)
+            .single();
+
         // 1. Delete images from storage first (best effort)
         try {
             const { data: listData, error: listError } = await supabase.storage
@@ -150,7 +198,6 @@ export const productService = {
             console.error('Error cleaning up product images, continuing with row deletion', e);
         }
 
-
         // 2. Delete the product record
         const { error } = await supabase
             .from('products')
@@ -159,7 +206,21 @@ export const productService = {
             .eq('business_id', businessId);
 
         if (error) throw error;
+
+        // 3. Log activity
+        const { data: { user } } = await supabase.auth.getUser();
+        logActivity({
+            businessId,
+            actionType: 'product_deleted',
+            actorId: user?.id || null,
+            actorType: 'owner',
+            metadata: {
+                product_id: productId,
+                name: product?.name
+            }
+        });
     },
+
     /**
      * Delete a product draft and its associated images
      */
@@ -206,7 +267,13 @@ export const productService = {
     /**
      * Publish a draft (Finalize creation)
      */
-    async publishDraft(productId: string): Promise<void> {
+    async publishDraft(productId: string, businessId: string): Promise<void> {
+        const { data: product } = await supabase
+            .from('products')
+            .select('name')
+            .eq('id', productId)
+            .single();
+
         // 1. Update status to 'published'
         const { error } = await supabase
             .from('products')
@@ -219,11 +286,17 @@ export const productService = {
 
         if (error) throw error;
 
-        // Note: Image moving from 'drafts/' folder to root is handled by
-        // either this service or a background trigger.
-        // For simpler implementation now, we will leave them in the path they were uploaded to,
-        // or ensure `uploadProductImage` uses a consistent path.
-        // Story says "Move to products/{id}/", but that requires listing all files and moving them.
-        // We can optimize this later if needed.
+        // 2. Log activity - product created
+        const { data: { user } } = await supabase.auth.getUser();
+        logActivity({
+            businessId,
+            actionType: 'product_created',
+            actorId: user?.id || null,
+            actorType: 'owner',
+            metadata: {
+                product_id: productId,
+                name: product?.name
+            }
+        });
     }
 };

@@ -123,7 +123,8 @@ export function useBusinessProfile(
             return businessData;
         },
         enabled: enabled && !!parsedBusinessId,
-        // Use global defaults from queryClient (staleTime: 30min, gcTime: 24hr)
+        // Always fetch fresh data for business profiles to ensure owners see approved edits immediately
+        staleTime: 0,
     });
 }
 

@@ -2,10 +2,12 @@ import { useQuery } from '@tanstack/react-query';
 import { getBusinessList, getBusinessStats, getFilterOptions, getHardDeletedBusinesses, BusinessListParams } from '@/services/adminBusinessService';
 
 export function useAdminBusinessList(params: BusinessListParams) {
+    const { enabled = true, ...queryParams } = params;
     return useQuery({
-        queryKey: ['admin-businesses', params],
-        queryFn: () => getBusinessList(params),
+        queryKey: ['admin-businesses', queryParams],
+        queryFn: () => getBusinessList(queryParams),
         staleTime: 30000, // 30 seconds
+        enabled,
     });
 }
 

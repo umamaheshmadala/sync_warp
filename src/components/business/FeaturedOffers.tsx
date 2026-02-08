@@ -644,7 +644,7 @@ export default function FeaturedOffers({
       )}
 
       {/* Unified Action Modal (Pause, Terminate, Archive, Delete) */}
-      {actionTargetOffer && (
+      {actionTargetOffer && createPortal(
         <OfferActionModal
           isOpen={actionModalOpen}
           mode={actionModalMode}
@@ -657,7 +657,8 @@ export default function FeaturedOffers({
           }}
           onConfirm={handleModalConfirm}
           isProcessing={isProcessingAction}
-        />
+        />,
+        document.body
       )}
     </div >
   );

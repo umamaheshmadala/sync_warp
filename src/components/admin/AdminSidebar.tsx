@@ -1,10 +1,10 @@
-
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard,
     Users,
     Building2,
+    PenSquare,
     Server,
     BarChart3,
     ShieldAlert,
@@ -23,6 +23,7 @@ export function AdminSidebar() {
         { id: 'moderation', label: 'Review Moderation', icon: FileText, path: '/admin/moderation' },
         { id: 'user-driver', label: 'User & Driver Management', icon: Users, path: '/admin/users' },
         { id: 'business', label: 'Business Management', icon: Building2, path: '/admin/businesses' },
+        { id: 'business-edits', label: 'Business Edits', icon: PenSquare, path: '/admin/business-edits' },
         { id: 'api', label: 'API & Infrastructure', icon: Server, path: '/admin/api' },
         { id: 'analytics', label: 'Analytics & Insights', icon: BarChart3, path: '/admin/analytics/reviews' },
         { id: 'security', label: 'Security & Compliance', icon: ShieldAlert, path: '/admin/audit-log' },

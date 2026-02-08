@@ -9,6 +9,7 @@ import { toast } from 'react-hot-toast';
 import { Product, ProductFormData, ProductFilters, PRODUCT_LIMITS } from '../types/product';
 import { followedBusinessNotificationTrigger } from '../services/followedBusinessNotificationTrigger';
 import { productService } from '../services/productService';
+import { logActivity } from '../services/businessActivityLogService';
 
 export const useProducts = (businessId?: string) => {
   const { user } = useAuthStore();
@@ -172,6 +173,19 @@ export const useProducts = (businessId?: string) => {
       // Notify followers (Fire and forget)
       followedBusinessNotificationTrigger.notifyNewProduct(businessIdToUse, data as Product).catch(console.error);
 
+      // Log activity
+      logActivity({
+        businessId: businessIdToUse,
+        actionType: 'product_created',
+        actorId: user?.id || null,
+        actorType: 'owner',
+        metadata: { product_id: data.id, name: data.name },
+        fieldChanges: {
+          name: { new: data.name, old: null },
+          description: { new: data.description, old: null }
+        }
+      });
+
       // Refresh products list
       fetchProducts(businessIdToUse);
 
@@ -260,6 +274,19 @@ export const useProducts = (businessId?: string) => {
         setProduct(data);
       }
 
+      // Log activity
+      await logActivity({
+        businessId: productData.business_id,
+        actionType: 'product_updated',
+        actorId: user?.id || null,
+        actorType: 'owner',
+        metadata: {
+          product_id: productId,
+          name: productData.name,
+          updates: Object.keys(updates)
+        }
+      });
+
       toast.success('Product updated successfully!');
       return data;
     } catch (err) {
@@ -316,7 +343,15 @@ export const useProducts = (businessId?: string) => {
   const archiveProduct = async (productId: string) => {
     try {
       setLoading(true);
-      await productService.archiveProduct(productId);
+
+      // Fetch product to get businessId for logging
+      const { data: productData } = await supabase
+        .from('products')
+        .select('business_id')
+        .eq('id', productId)
+        .single();
+
+      await productService.archiveProduct(productId, productData?.business_id || businessId || '');
 
       // Update local state - remove from list if we are viewing published only?
       // Or update status. For now, update status.
@@ -342,7 +377,15 @@ export const useProducts = (businessId?: string) => {
   const unarchiveProduct = async (productId: string) => {
     try {
       setLoading(true);
-      await productService.unarchiveProduct(productId);
+
+      // Fetch product to get businessId for logging
+      const { data: productData } = await supabase
+        .from('products')
+        .select('business_id')
+        .eq('id', productId)
+        .single();
+
+      await productService.unarchiveProduct(productId, productData?.business_id || businessId || '');
 
       setProducts(prev => prev.map(p =>
         p.id === productId ? { ...p, status: 'published' } : p

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AlertTriangle, Trash2, PauseCircle, Archive, XOctagon } from 'lucide-react';
-import { Offer } from '../../types/offers';
+import { Offer } from '../../../types/offers';
 
 export type OfferActionMode = 'pause' | 'terminate' | 'archive' | 'delete';
 
@@ -110,7 +110,7 @@ export const OfferActionModal: React.FC<OfferActionModalProps> = ({
     const content = getModalContent();
 
     return (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
+        <div className="fixed inset-0 z-[60] overflow-y-auto">
             <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
                 <div className="fixed inset-0 transition-opacity" aria-hidden="true" onClick={onClose}>
                     <div className="absolute inset-0 bg-gray-500 opacity-75"></div>

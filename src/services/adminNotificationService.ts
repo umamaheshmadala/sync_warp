@@ -67,3 +67,61 @@ export async function sendBusinessRejectionNotification(
         console.error('Error sending rejection notification:', error);
     }
 }
+
+export async function notifyOwnerOfEditDecision(
+    businessId: string,
+    decision: 'approved' | 'rejected' | 'partial',
+    details?: { reason?: string; approvedFields?: string[]; rejectedFields?: string[] }
+): Promise<void> {
+    const { data: business } = await supabase
+        .from('businesses')
+        .select('business_name, user_id')
+        .eq('id', businessId)
+        .single();
+
+    if (!business) return;
+
+    const { data: { user } } = await supabase.auth.getUser();
+
+    let title = '';
+    let body = '';
+    let type = 'business_edit_decision';
+
+    switch (decision) {
+        case 'approved':
+            title = 'Your business updates have been approved! 🎉';
+            body = `The changes you submitted for ${business.business_name} are now live.`;
+            break;
+        case 'rejected':
+            title = 'Update request for your business was not approved';
+            body = `Your changes for ${business.business_name} could not be approved. Reason: ${details?.reason || 'No reason provided'}`;
+            break;
+        case 'partial':
+            const approved = details?.approvedFields?.length || 0;
+            const rejected = details?.rejectedFields?.length || 0;
+            title = 'Update request partially approved';
+            body = `We approved ${approved} change(s) for ${business.business_name}, but ${rejected} change(s) were not accepted. Check the app for details.`;
+            break;
+    }
+
+    const { error } = await supabase.from('notification_log').insert({
+        user_id: business.user_id,
+        notification_type: type,
+        title: title,
+        body: body,
+        data: {
+            business_id: businessId,
+            business_name: business.business_name,
+            decision: decision,
+            ...details,
+            sender_id: user?.id
+        },
+        opened: false,
+        platform: 'web',
+        sender_id: user?.id
+    });
+
+    if (error) {
+        console.error('Error sending edit decision notification:', error);
+    }
+}

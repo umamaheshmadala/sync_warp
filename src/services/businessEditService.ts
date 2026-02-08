@@ -1,5 +1,6 @@
 
 import { supabase } from '../lib/supabase';
+import { logEditSubmission, logAutoApproval, FieldChange } from './businessActivityLogService';
 
 export const SENSITIVE_FIELDS = ['business_name', 'address', 'city', 'state', 'postal_code', 'categories'] as const;
 export const INSTANT_UPDATE_FIELDS = ['business_phone', 'business_email', 'operating_hours', 'description', 'logo_url', 'cover_image_url', 'website_url', 'social_media'] as const;
@@ -49,9 +50,12 @@ export async function submitPendingEdits(businessId: string, changes: Record<str
         .eq('id', businessId);
 
     if (updateError) throw updateError;
+
+    // 5. Log the edit submission for activity tracking
+    await logEditSubmission(businessId, user.id, changes);
 }
 
-export async function applyInstantUpdates(businessId: string, changes: Record<string, any>): Promise<void> {
+export async function applyInstantUpdates(businessId: string, changes: Record<string, any>, currentValues?: Record<string, any>): Promise<void> {
     // 1. Filter for instant update fields
     const updateData: Record<string, any> = {};
 
@@ -65,11 +69,26 @@ export async function applyInstantUpdates(businessId: string, changes: Record<st
         return;
     }
 
-    // 2. Direct update
+    // 2. Get current user ID for logging
+    const { data: { user } } = await supabase.auth.getUser();
+
+    // 3. Direct update
     const { error } = await supabase
         .from('businesses')
         .update(updateData)
         .eq('id', businessId);
 
     if (error) throw error;
+
+    // 4. Log the auto-approval for activity tracking
+    if (user) {
+        const fieldChanges: Record<string, FieldChange> = {};
+        for (const [key, value] of Object.entries(updateData)) {
+            fieldChanges[key] = {
+                old: currentValues?.[key] ?? null,
+                new: value
+            };
+        }
+        await logAutoApproval(businessId, user.id, fieldChanges);
+    }
 }

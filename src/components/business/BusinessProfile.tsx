@@ -33,7 +33,8 @@ import {
   Share2,
   LayoutGrid,
   BarChart,
-  Sparkles
+  Sparkles,
+  History
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Geolocation } from '@capacitor/geolocation';
@@ -47,6 +48,7 @@ import GoogleMapsLocationPicker from '../maps/GoogleMapsLocationPicker';
 import BusinessReviews from '../reviews/BusinessReviews';
 import BusinessReviewForm from '../reviews/BusinessReviewForm';
 import EnhancedProfileTab from './EnhancedProfileTab';
+import { BusinessActivityLogsTab } from './BusinessActivityLogsTab';
 import { useUserCheckin } from '../../hooks/useUserCheckin';
 import { useCheckins } from '../../hooks/useCheckins';
 import ReviewRequestModal from '../reviews/ReviewRequestModal';
@@ -260,7 +262,7 @@ const BusinessProfile: React.FC = () => {
       setActiveTab('products');
     } else if (isCouponsRoute) {
       setActiveTab('coupons');
-    } else if (tabParam && ['overview', 'reviews', 'statistics', 'enhanced-profile', 'offers'].includes(tabParam)) {
+    } else if (tabParam && ['overview', 'reviews', 'statistics', 'enhanced-profile', 'offers', 'activity'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
     // Note: When clicking tabs manually, the URL won't have these paths, so activeTab won't be overridden
@@ -1250,7 +1252,8 @@ const BusinessProfile: React.FC = () => {
     { id: 'offers', label: 'Offers', count: null, ownerOnly: false, icon: Tag },
     { id: 'reviews', label: 'Reviews', count: null, ownerOnly: false, icon: MessageSquare },
     { id: 'statistics', label: 'Analytics', count: null, ownerOnly: true, icon: BarChart },
-    { id: 'enhanced-profile', label: 'Enhanced Profile', count: null, ownerOnly: true, icon: Sparkles }
+    { id: 'enhanced-profile', label: 'Enhanced Profile', count: null, ownerOnly: true, icon: Sparkles },
+    { id: 'activity', label: 'Activity', count: null, ownerOnly: true, icon: History }
   ];
 
   // Filter tabs: non-owners only see Overview and Reviews
@@ -1932,11 +1935,23 @@ const BusinessProfile: React.FC = () => {
                   return (
                     <button
                       key={tab.id}
-                      onClick={() => setSearchParams(prev => {
-                        const newParams = new URLSearchParams(prev);
-                        newParams.set('tab', tab.id);
-                        return newParams;
-                      })}
+                      onClick={() => {
+                        // Fix for bug where navigating from sub-routes (like /offers) locks the tab
+                        // If we are on a sub-route, we must navigate to the root profile URL with the tab param
+                        const isSubRoute = location.pathname.endsWith('/offers') ||
+                          location.pathname.endsWith('/products') ||
+                          location.pathname.endsWith('/coupons');
+
+                        if (isSubRoute) {
+                          navigate(`${getBusinessUrl(business?.id || businessIdParam, business?.business_name)}?tab=${tab.id}`);
+                        } else {
+                          setSearchParams(prev => {
+                            const newParams = new URLSearchParams(prev);
+                            newParams.set('tab', tab.id);
+                            return newParams;
+                          });
+                        }
+                      }}
                       className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex-1 flex items-center justify-center ${activeTab === tab.id
                         ? 'border-indigo-500 text-indigo-600'
                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -2011,6 +2026,9 @@ const BusinessProfile: React.FC = () => {
                       await refetchBusiness();
                     }}
                   />
+                )}
+                {activeTab === 'activity' && (
+                  <BusinessActivityLogsTab businessId={business?.id!} />
                 )}
               </motion.div>
             </AnimatePresence>

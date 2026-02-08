@@ -18,6 +18,7 @@ export interface BusinessListParams {
     pageSize: number;
     sortBy: string;
     sortOrder: 'asc' | 'desc';
+    enabled?: boolean;
 }
 
 export interface AdminBusinessView {
@@ -778,6 +779,7 @@ export async function getHardDeletedBusinesses(params: {
     search?: string;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
+    enabled?: boolean;
 }): Promise<HardDeletedBusinessListResult> {
     const { page, pageSize, search, sortBy = 'created_at', sortOrder = 'desc' } = params;
 

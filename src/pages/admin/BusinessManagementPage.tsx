@@ -16,6 +16,9 @@ import { RestoreBusinessDialog } from '@/components/admin/business-management/Re
 import { SoftDeleteBusinessDialog } from '@/components/admin/business-management/SoftDeleteBusinessDialog';
 import { HardDeleteDialog } from '@/components/admin/business-management/HardDeleteDialog';
 import { useAdminBusinessList, useBusinessStats, useHardDeletedBusinesses } from '@/hooks/useAdminBusinessList';
+import { adminPendingEditsService } from '@/services/adminPendingEditsService';
+import { PendingEditsTab } from '@/components/admin/business-management/PendingEditsTab';
+import { useQuery } from '@tanstack/react-query';
 import { AdminBusinessView, deleteBusiness } from '@/services/adminBusinessService';
 import { toast } from 'react-hot-toast';
 
@@ -25,7 +28,12 @@ import { toast } from 'react-hot-toast';
 
 const TABS = [
     { value: 'all', label: 'All' },
-    { value: 'pending', label: 'Pending' },
+    { value: 'pending_approvals', label: 'New Approvals' }, // Renamed from 'pending' to avoid confusion, but keeping value 'pending' implies legacy. 
+    // Wait, if I change value 'pending' -> 'pending_approvals', I break existing URLs. 
+    // The requirement says "New tab: Pending Edits". The existing "Pending" tab is for business status 'pending'.
+    // Let's keep 'pending' value but rename label to 'New Approvals' or 'Pending Listings' to distinguish.
+    { value: 'pending', label: 'New Listings' },
+    { value: 'pending_edits', label: 'Pending Edits' },
     { value: 'active', label: 'Approved' },
     { value: 'rejected', label: 'Rejected' },
     { value: 'deleted', label: 'Deleted (Soft)' },
@@ -72,6 +80,7 @@ export default function BusinessManagementPage() {
         pageSize,
         sortBy,
         sortOrder,
+        enabled: activeTab !== 'hard_deleted' && activeTab !== 'pending_edits',
     });
 
     // Hard-deleted businesses query (only fetch when on that tab)
@@ -83,6 +92,15 @@ export default function BusinessManagementPage() {
         sortOrder,
         enabled: activeTab === 'hard_deleted',
     });
+
+    // Pending Edits Count Query for Badge
+    const { data: pendingEditsList } = useQuery({
+        queryKey: ['admin-pending-edits-count'],
+        queryFn: adminPendingEditsService.getPendingEditsList,
+        // Refresh every minute roughly
+        staleTime: 60 * 1000
+    });
+    const pendingEditsCount = pendingEditsList?.length || 0;
 
     // Update URL when state changes
     useEffect(() => {
@@ -192,8 +210,18 @@ export default function BusinessManagementPage() {
             <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
                 <TabsList className="w-full justify-start overflow-x-auto h-auto p-1 bg-gray-100/50">
                     {TABS.map(tab => (
-                        <TabsTrigger key={tab.value} value={tab.value} className="gap-2 px-4 py-2">
+                        <TabsTrigger key={tab.value} value={tab.value} className="gap-2 px-4 py-2 relative">
                             {tab.label}
+                            {tab.value === 'pending_edits' && pendingEditsCount > 0 && (
+                                <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200 ml-2 h-5 flex items-center justify-center px-1.5 min-w-[1.25rem]">
+                                    {pendingEditsCount}
+                                </Badge>
+                            )}
+                            {tab.value === 'pending' && stats?.pending > 0 && (
+                                <Badge variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-200 ml-2 h-5 flex items-center justify-center px-1.5 min-w-[1.25rem]">
+                                    {stats.pending}
+                                </Badge>
+                            )}
                         </TabsTrigger>
                     ))}
                 </TabsList>
@@ -213,6 +241,8 @@ export default function BusinessManagementPage() {
                             businesses={hardDeletedResult?.businesses || []}
                             isLoading={isLoadingHardDeleted}
                         />
+                    ) : activeTab === 'pending_edits' ? (
+                        <PendingEditsTab />
                     ) : (
                         <BusinessListTable
                             businesses={listResult?.businesses || []}

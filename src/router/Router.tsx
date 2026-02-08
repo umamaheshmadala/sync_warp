@@ -50,6 +50,7 @@ const UserManagementPage = lazy(() => import('../pages/admin/UserManagementPage'
 const ApiInfrastructurePage = lazy(() => import('../pages/admin/ApiInfrastructurePage'))
 const PlatformSettingsPage = lazy(() => import('../pages/admin/PlatformSettingsPage'))
 const DataRetentionPage = lazy(() => import('../pages/admin/DataRetentionPage'))
+const AdminBusinessEditsPage = lazy(() => import('../pages/admin/AdminBusinessEditsPage'))
 
 // Product components
 const ProductDetails = lazy(() => import('../components/products').then(m => ({ default: m.ProductDetails })))
@@ -452,6 +453,15 @@ export const routes: RouteConfig[] = [
           </RouteLoader>
         ),
         title: 'Manage Businesses - SynC'
+      },
+      {
+        path: 'business-edits',
+        element: (
+          <RouteLoader>
+            <AdminBusinessEditsPage />
+          </RouteLoader>
+        ),
+        title: 'Business Edits - SynC'
       },
       {
         path: 'moderation',
