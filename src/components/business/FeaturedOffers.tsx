@@ -497,15 +497,7 @@ export default function FeaturedOffers({
           </button>
         )}
 
-        {/* Manage Offers Button - show if owner and NOT compact */}
-        {!compact && isOwner && showAddButton && (
-          <button
-            onClick={() => navigate(`${getBusinessUrl(businessId, businessName)}/offers`)}
-            className="mt-4 w-full py-2 text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors"
-          >
-            Manage Offers
-          </button>
-        )}
+
       </div>
     );
   };

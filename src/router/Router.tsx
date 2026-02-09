@@ -29,7 +29,7 @@ const BusinessAnalyticsPage = lazy(() => import('../components/business/Business
 const BusinessQRCodePage = lazy(() => import('../components/business/BusinessQRCodePage'))
 
 const CouponManagerPage = lazy(() => import('../components/business/CouponManagerPage'))
-const OfferManagerPage = lazy(() => import('../components/business/OfferManagerPage'))
+
 const CampaignManagerPage = lazy(() => import('../components/business/CampaignManagerPage'))
 const CampaignWizard = lazy(() => import('../components/business/CampaignWizard'))
 const CampaignAnalyticsPage = lazy(() => import('../components/business/CampaignAnalyticsPage'))
@@ -566,16 +566,7 @@ export const routes: RouteConfig[] = [
     protected: true,
     title: 'Coupon Manager - SynC'
   },
-  {
-    path: '/business/:businessId/manage/offers',
-    element: (
-      <RouteLoader>
-        <OfferManagerPage />
-      </RouteLoader>
-    ),
-    protected: true,
-    title: 'Offer Manager - SynC'
-  },
+
   {
     path: '/business/:businessId/manage/campaigns',
     element: (

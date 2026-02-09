@@ -390,9 +390,8 @@ export function QuickImageUploader({
                 />
             )}
 
-            {/* View Modal (Lightbox) */}
             <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
-                <DialogContent className="max-w-[90vw] max-h-[90vh] p-0 border-none bg-transparent shadow-none flex items-center justify-center" aria-describedby={undefined}>
+                <DialogContent className="max-w-[90vw] max-h-[90vh] p-0 border-none bg-transparent shadow-none flex items-center justify-center" aria-describedby={undefined} hideClose={true}>
                     <DialogTitle className="sr-only">Image Preview</DialogTitle>
                     <div className="relative">
                         <Button

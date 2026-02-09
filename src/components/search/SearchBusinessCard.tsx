@@ -34,7 +34,7 @@ export function SearchBusinessCard({
         ? business.approved_review_count
         : (business.review_count || 0);
 
-    const totalActiveCount = (business.activeCouponsCount || 0) + (business.activeOffersCount || 0);
+    const totalActiveCount = (business.activeOffersCount || 0);
 
     return (
         <div
