@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import React from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
 
@@ -105,8 +106,53 @@ export function useSentFriendRequests() {
   });
 }
 
+/**
+ * Hook to subscribe to friend request changes
+ */
+export function useFriendRequestSubscription() {
+  const queryClient = useQueryClient();
+  const user = useAuthStore(state => state.user);
+
+  React.useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('friend-request-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'friend_requests',
+          filter: `sender_id=eq.${user.id}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['friendRequests', 'sent'] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'friend_requests',
+          filter: `receiver_id=eq.${user.id}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['friendRequests', 'received'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, queryClient]);
+}
+
 // Wrapper hook to match component expectations
 export function useFriendRequests(type: 'received' | 'sent') {
+  useFriendRequestSubscription();
   const receivedHook = useReceivedFriendRequests();
   const sentHook = useSentFriendRequests();
 

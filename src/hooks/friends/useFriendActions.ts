@@ -66,10 +66,7 @@ export function useFriendActions() {
     mutationFn: (receiverId: string) => friendsService.sendFriendRequest(receiverId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['friendRequests'] });
-      toast.success('Friend request sent!');
-    },
-    onError: () => {
-      toast.error('Failed to send friend request');
+      queryClient.invalidateQueries({ queryKey: ['pymk'] });
     },
   });
 
@@ -144,6 +141,7 @@ export function useFriendActions() {
       friendsService.blockUser(userId, reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['friends', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['pymk'] });
       toast.success('User blocked');
     },
     onError: () => {

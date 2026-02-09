@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { UserPlus, UserCheck, Clock, UserMinus, MessageCircle } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import { useFriendActions } from '../../hooks/friends/useFriendActions';
 import { useFriends } from '../../hooks/friends/useFriends';
 import { useFriendRequests } from '../../hooks/friends/useFriendRequests';
@@ -51,7 +52,10 @@ export const AddFriendButton: React.FC<AddFriendButtonProps> = ({
         e.preventDefault();
 
         if (status === 'none') {
-            sendRequest.mutate(friendId);
+            sendRequest.mutate(friendId, {
+                onSuccess: () => toast.success('Friend request sent!'),
+                onError: () => toast.error('Failed to send friend request')
+            });
         } else if (status === 'friend') {
             // If already friend, maybe navigate to chat or profile?
             // For now, let's just do nothing or maybe open profile logic (handled by card click usually)
@@ -112,8 +116,8 @@ export const AddFriendButton: React.FC<AddFriendButtonProps> = ({
             onClick={handleAction}
             disabled={sendRequest.isPending}
             className={`flex items-center justify-center transition-colors ${compact
-                    ? 'p-1 hover:bg-blue-50 rounded-full text-blue-600'
-                    : 'px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium'
+                ? 'p-1 hover:bg-blue-50 rounded-full text-blue-600'
+                : 'px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium'
                 } ${className} ${sendRequest.isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
             title="Add Friend"
         >

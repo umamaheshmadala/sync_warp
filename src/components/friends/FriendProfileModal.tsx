@@ -89,9 +89,16 @@ export function FriendProfileModal({ friendId, isOpen, onClose }: FriendProfileM
     };
 
     const handleAddFriend = () => {
-        sendRequest.mutate(friendId);
-        setShowAddFriendDialog(false);
-        toast.success('Friend request sent!');
+        sendRequest.mutate(friendId, {
+            onSuccess: () => {
+                toast.success('Friend request sent!');
+                setShowAddFriendDialog(false);
+            },
+            onError: () => {
+                toast.error('Failed to send friend request');
+                setShowAddFriendDialog(false);
+            }
+        });
     };
 
     const handleToggleBlock = () => {
