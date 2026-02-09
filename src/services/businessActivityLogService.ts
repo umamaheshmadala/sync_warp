@@ -407,3 +407,46 @@ export function getActionTypeDisplay(actionType: ActivityActionType): {
 
     return displays[actionType] || { label: actionType, icon: 'Circle', color: 'gray' };
 }
+
+/**
+ * Log offer activity (Wrapper for Offer hooks)
+ */
+export async function logOfferActivity(
+    businessId: string,
+    actionType: ActivityActionType,
+    offerId: string,
+    offerTitle: string,
+    actorId: string | null = null,
+    metadata: Record<string, any> = {}
+): Promise<void> {
+    let auditCode = metadata.audit_code;
+
+    // If audit_code is not provided, try to fetch it
+    if (!auditCode) {
+        try {
+            const { data } = await supabase
+                .from('offers')
+                .select('audit_code')
+                .eq('id', offerId)
+                .single();
+            if (data) {
+                auditCode = data.audit_code;
+            }
+        } catch (e) {
+            console.warn('Failed to fetch audit code for log:', e);
+        }
+    }
+
+    await logActivity({
+        businessId,
+        actionType,
+        actorId: actorId || (await supabase.auth.getUser()).data.user?.id || null,
+        actorType: 'owner', // Default to owner for now, offers are mostly owner managed
+        metadata: {
+            ...metadata,
+            offer_id: offerId,
+            name: offerTitle, // Use 'name' to align with product logs for generic display if needed
+            audit_code: auditCode
+        }
+    });
+}

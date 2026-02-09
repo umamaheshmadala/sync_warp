@@ -274,7 +274,59 @@ export const useProducts = (businessId?: string) => {
         setProduct(data);
       }
 
-      // Log activity
+      // Log activity - only log fields that actually changed
+      // Map form fields to database fields for proper comparison
+      const changedFields = Object.keys(updates).filter(key => {
+        const updateValue = updates[key as keyof ProductFormData];
+
+        // Skip undefined values
+        if (updateValue === undefined) {
+          // console.log(`🔍 ${key}: skipped (undefined)`);
+          return false;
+        }
+
+        // Map form field names to database field names for comparison
+        let currentValue;
+        let fieldChanged = false;
+
+        switch (key) {
+          case 'is_available':
+            // Form uses is_available (boolean), DB uses status (string)
+            currentValue = productData.status === 'published';
+            fieldChanged = updateValue !== currentValue;
+            console.log(`🔍 ${key}: ${updateValue} vs ${currentValue} (from status: ${productData.status}) → ${fieldChanged ? 'CHANGED' : 'SAME'}`);
+            break;
+
+          case 'image_urls':
+            // Form uses image_urls (string[]), DB uses images (object[])
+            currentValue = productData.images?.map((img: any) => img.url) || [];
+            fieldChanged = JSON.stringify(updateValue) !== JSON.stringify(currentValue);
+            console.log(`🔍 ${key}: ${(updateValue as any)?.length} images vs ${currentValue.length} images → ${fieldChanged ? 'CHANGED' : 'SAME'}`);
+            break;
+
+          case 'is_featured':
+            // Form uses is_featured (boolean), DB uses tags array
+            currentValue = productData.tags?.includes('featured') || false;
+            fieldChanged = updateValue !== currentValue;
+            console.log(`🔍 ${key}: ${updateValue} vs ${currentValue} → ${fieldChanged ? 'CHANGED' : 'SAME'}`);
+            break;
+
+          default:
+            // For other fields, direct comparison
+            currentValue = productData[key];
+            if (typeof updateValue === 'object' && typeof currentValue === 'object') {
+              fieldChanged = JSON.stringify(updateValue) !== JSON.stringify(currentValue);
+            } else {
+              fieldChanged = updateValue !== currentValue;
+            }
+            console.log(`🔍 ${key}: ${fieldChanged ? 'CHANGED' : 'SAME'}`);
+        }
+
+        return fieldChanged;
+      });
+
+      console.log('📊 Changed fields:', changedFields);
+
       await logActivity({
         businessId: productData.business_id,
         actionType: 'product_updated',
@@ -283,7 +335,7 @@ export const useProducts = (businessId?: string) => {
         metadata: {
           product_id: productId,
           name: productData.name,
-          updates: Object.keys(updates)
+          updates: changedFields
         }
       });
 

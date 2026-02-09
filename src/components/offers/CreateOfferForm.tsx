@@ -40,6 +40,7 @@ import type { OfferFormData } from '../../types/offers';
 import { ImageUpload } from './ImageUpload';
 import { supabase } from '@/lib/supabase';
 import { OfferAuditLogPanel } from './OfferAuditLogPanel'; // Added import
+import { logOfferActivity as logToBusinessActivity } from '../../services/businessActivityLogService';
 
 interface CreateOfferFormProps {
   businessId: string;
@@ -273,6 +274,23 @@ export function CreateOfferForm({
           p_action: 'created', // Converting draft to active is effectively 'creation' or 'activation'
           p_metadata: { source: 'draft_publish' }
         });
+
+        // Log to Activity Log
+        // Determine action based on whether we are editing an existing valid offer (prop) or publishing a new draft
+        const actionType = offerId ? 'offer_updated' : 'offer_created';
+
+        await logToBusinessActivity(
+          businessId,
+          actionType,
+          offerIdToUse,
+          formData.title || (offerId ? 'Offer' : 'New Offer'),
+          userId,
+          {
+            source: 'draft_publish',
+            audit_code: formData.audit_code
+          }
+        );
+
         onComplete(offerIdToUse);
       }
     } else {
@@ -288,6 +306,20 @@ export function CreateOfferForm({
           p_action: 'created',
           p_metadata: { source: 'direct_create' }
         });
+
+        // Log to Activity Log
+        await logToBusinessActivity(
+          businessId,
+          'offer_created',
+          offer.id,
+          offer.title,
+          userId,
+          {
+            source: 'direct_create',
+            audit_code: offer.audit_code
+          }
+        );
+
         if (onComplete) onComplete(offer.id);
       }
     }
@@ -314,6 +346,19 @@ export function CreateOfferForm({
         p_action: 'edited',
         p_metadata: { changed_fields: Object.keys(formData) } // Simplified tracking
       });
+
+      // Log to Activity Log
+      await logToBusinessActivity(
+        businessId,
+        'offer_updated',
+        offerId,
+        formData.title || 'Modified Offer',
+        userId,
+        {
+          changed_fields: Object.keys(formData),
+          audit_code: formData.audit_code
+        }
+      );
 
       if (onComplete) {
         onComplete(offerId);

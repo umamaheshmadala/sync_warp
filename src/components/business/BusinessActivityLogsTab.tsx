@@ -111,6 +111,17 @@ export function BusinessActivityLogsTab({ businessId }: BusinessActivityLogsTabP
             );
         }
 
+        if (log.action_type.startsWith('offer_')) {
+            const offerTitle = log.metadata?.name || 'Offer';
+            const auditCode = log.metadata?.audit_code;
+
+            return (
+                <span>
+                    {display.label} <span className="font-semibold text-gray-900">{offerTitle}</span>
+                    {auditCode && <span className="text-gray-500 font-normal ml-1">(Audit: {auditCode})</span>}
+                </span>
+            );
+        }
         if (log.action_type === 'product_updated') {
             const productName = log.metadata?.name || 'Product';
             if (log.metadata?.action === 'archived') {

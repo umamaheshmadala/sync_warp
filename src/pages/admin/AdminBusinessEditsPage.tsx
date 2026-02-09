@@ -372,6 +372,15 @@ export default function AdminBusinessEditsPage() {
                                                             <span>
                                                                 Deleted product: <span className="font-semibold text-gray-900">{log.metadata?.name || 'Product'}</span>
                                                             </span>
+                                                        ) : log.action_type.startsWith('offer_') ? (
+                                                            <span>
+                                                                {display.label}: <span className="font-semibold text-gray-900">{log.metadata?.name || 'Offer'}</span>
+                                                                {log.metadata?.audit_code && (
+                                                                    <span className="text-gray-500 font-normal ml-1">
+                                                                        (Audit: {log.metadata.audit_code})
+                                                                    </span>
+                                                                )}
+                                                            </span>
                                                         ) : (
                                                             display.label
                                                         )}

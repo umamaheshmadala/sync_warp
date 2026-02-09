@@ -11,6 +11,7 @@ import {
   OfferStatus
 } from '../types/offers';
 import { followedBusinessNotificationTrigger } from '../services/followedBusinessNotificationTrigger';
+import { logOfferActivity as logToBusinessActivity, ActivityActionType } from '../services/businessActivityLogService';
 
 interface UseOffersOptions {
   businessId?: string;
@@ -240,15 +241,63 @@ export const useOffers = (options: UseOffersOptions = {}): UseOffersReturn => {
   // Helper helper to log activity
   const logActivity = useCallback(async (id: string, action: string, metadata: any = {}) => {
     try {
+      // 1. Log to detailed Offer Audit Log (for specific offer history)
       await supabase.rpc('log_offer_activity', {
         p_offer_id: id,
         p_action: action,
         p_metadata: metadata
       });
+
+      // 2. Log to Business Activity Log (for general activity feed)
+      // Map offer actions to ActivityActionType
+      let activityAction: ActivityActionType | null = null;
+      switch (action) {
+        case 'created': activityAction = 'offer_created'; break;
+        case 'updated': activityAction = 'offer_updated'; break;
+        case 'activated': activityAction = 'offer_activated'; break;
+        case 'paused': activityAction = 'offer_paused'; break;
+        case 'terminated': activityAction = 'offer_terminated'; break;
+        case 'resumed': activityAction = 'offer_activated'; break; // Resumed = Active
+        // soft_delete or archived could map to offer_terminated or just not show in main feed if undesired
+        case 'deleted':
+          if (metadata?.type === 'soft_delete') activityAction = 'offer_terminated';
+          break;
+        case 'archived': activityAction = 'offer_terminated'; break;
+        case 'featured': activityAction = 'offer_updated'; break; // Featured is an update
+        case 'unfeatured': activityAction = 'offer_updated'; break;
+      }
+
+      if (activityAction && businessId) {
+        // Need offer title and audit code for the log
+        let offer = offers.find(o => o.id === id);
+        let title = offer?.title;
+        let auditCode = offer?.audit_code;
+
+        // If we don't have the offer locally (e.g. running in headless mode like in FeaturedOffers), fetch it
+        if (!title) {
+          const { data } = await supabase.from('offers').select('title, audit_code').eq('id', id).single();
+          if (data) {
+            title = data.title;
+            auditCode = data.audit_code;
+          }
+        }
+
+        if (title) {
+          await logToBusinessActivity(
+            businessId,
+            activityAction,
+            id,
+            title,
+            null, // Actor ID (will default to owner in service if null, or we can pass session user)
+            { ...metadata, audit_code: auditCode } // Pass audit_code in metadata
+          );
+        }
+      }
+
     } catch (e) {
       console.warn('Failed to log activity', e);
     }
-  }, []);
+  }, [businessId, offers]);
 
   // Delete offer (Soft Delete)
   const deleteOffer = useCallback(async (id: string): Promise<boolean> => {
