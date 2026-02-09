@@ -227,15 +227,25 @@ class SimpleSearchService {
               .gt('valid_until', new Date().toISOString());
 
             // Get active offers count for this business
-            // Note: offers table uses valid_from/valid_until and status field
+            // Note: Must match FeaturedOffers.tsx logic - status='active', deleted_at IS NULL
+            // Allow valid_until to be future date OR null (no expiry) to match display
             const now = new Date().toISOString();
-            const { count: activeOffersCount } = await supabase
+            console.log(`🔍 [simpleSearchService] Counting offers for ${business.business_name} (${business.id})`);
+            console.log(`   Current time: ${now}`);
+
+            const { count: activeOffersCount, error: offersError } = await supabase
               .from('offers')
               .select('id', { count: 'exact', head: true })
               .eq('business_id', business.id)
               .eq('status', 'active')
-              .lte('valid_from', now)
-              .gte('valid_until', now);
+              .is('deleted_at', null)
+              .or(`valid_until.gte.${now},valid_until.is.null`);
+
+            if (offersError) {
+              console.error(`   ❌ Error counting offers:`, offersError);
+            } else {
+              console.log(`   ✅ Active offers count: ${activeOffersCount}`);
+            }
 
             return {
               ...business,

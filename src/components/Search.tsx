@@ -294,18 +294,8 @@ export default function Search() {
           {search.hasSearched && (
             <div className="flex border border-gray-200 rounded-lg overflow-hidden">
               <button
-                onClick={() => setActiveTab(activeTab === 'coupons' ? 'all' : 'coupons')}
-                className={`px-2 py-1.5 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'coupons'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
-                  }`}
-              >
-                <Tag className="h-4 w-4 sm:hidden inline" />
-                <span className="hidden sm:inline">Coupons ({search.totalCoupons})</span>
-              </button>
-              <button
                 onClick={() => setActiveTab(activeTab === 'businesses' ? 'all' : 'businesses')}
-                className={`px-2 py-1.5 text-sm font-medium border-l border-gray-200 transition-colors whitespace-nowrap ${activeTab === 'businesses'
+                className={`px-2 py-1.5 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'businesses'
                   ? 'bg-indigo-600 text-white'
                   : 'bg-white text-gray-700 hover:bg-gray-50'
                   }`}
