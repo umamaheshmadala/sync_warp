@@ -28,7 +28,7 @@ import { Step0_SmartSearch, BusinessPrefillData } from './onboarding/steps/Step0
 import { Step1_PhoneVerify } from './onboarding/steps/Step1_PhoneVerify';
 import { Step2_BasicDetails } from './onboarding/steps/Step2_BasicDetails';
 import { Step4_OperatingHours } from './onboarding/steps/Step4_OperatingHours';
-import { parseOpeningHours } from '@/services/businessSearchService';
+import { parseOpeningHours, parseWeekdayTextToHours } from '@/services/businessSearchService';
 import { useQueryClient } from '@tanstack/react-query';
 
 // TypeScript interfaces
@@ -65,6 +65,13 @@ interface BusinessFormData {
   phone_verified?: boolean;
   claim_status?: 'verified' | 'unclaimed' | 'pending' | 'manual';
   phone_verified_at?: string;
+  // Enhanced Google Places fields
+  googleRating?: number;
+  googleUserRatingsTotal?: number;
+  googlePriceLevel?: number;
+  googleMapsUrl?: string;
+  googleBusinessStatus?: string;
+  googlePhotoReference?: string;
 }
 
 interface BusinessCategory {
@@ -400,7 +407,15 @@ const BusinessRegistration: React.FC = () => {
 
         phone_verified: isOtpVerified,
         claim_status: isOtpVerified ? 'verified' : 'unclaimed',
-        status: 'pending' // Will need admin approval
+        status: 'pending', // Will need admin approval
+
+        // Enhanced Google Places fields
+        google_rating: formData.googleRating || null,
+        google_user_ratings_total: formData.googleUserRatingsTotal || null,
+        google_price_level: formData.googlePriceLevel ?? null,
+        google_maps_url: formData.googleMapsUrl || null,
+        google_business_status: formData.googleBusinessStatus || null,
+        google_photo_reference: formData.googlePhotoReference || null
       };
 
       const { data: newBusiness, error } = await supabase
@@ -796,6 +811,26 @@ const BusinessRegistration: React.FC = () => {
 
     setPrefilledFields(newPrefilledFields);
 
+    // Parse opening hours from Google if available
+    let parsedHours: Record<string, OperatingHours> | undefined;
+    if (business.openingPeriods && business.openingPeriods.length > 0) {
+      // Use actual periods data from Google Places API
+      const googleHours = parseOpeningHours({
+        weekday_text: business.openingHours || [],
+        periods: business.openingPeriods
+      });
+      if (googleHours) {
+        parsedHours = googleHours;
+        newPrefilledFields.push('operatingHours');
+      }
+    } else if (business.openingHours && business.openingHours.length > 0) {
+      // Fallback: parse weekday_text strings like "Monday: 8:00 AM – 10:00 PM"
+      parsedHours = parseWeekdayTextToHours(business.openingHours);
+      if (parsedHours) {
+        newPrefilledFields.push('operatingHours');
+      }
+    }
+
     // Pre-fill form with Google Places data
     setFormData(prev => ({
       ...prev,
@@ -809,15 +844,17 @@ const BusinessRegistration: React.FC = () => {
       latitude: business.latitude,
       longitude: business.longitude,
       googlePlaceId: business.googlePlaceId,
-      category: business.category || prev.category
+      category: business.category || prev.category,
+      // Enhanced Google Places fields
+      googleRating: business.rating,
+      googleUserRatingsTotal: business.userRatingsTotal,
+      googlePriceLevel: business.priceLevel,
+      googleMapsUrl: business.googleMapsUrl,
+      googleBusinessStatus: business.businessStatus,
+      googlePhotoReference: business.photoReference,
+      // Operating hours pre-fill
+      ...(parsedHours ? { operatingHours: parsedHours } : {})
     }));
-
-    // Operating hours pre-fill will be handled in a later story
-    /* 
-    if (business.openingHours) {
-      // Future implementation
-    }
-    */
 
     toast.success(`Found "${business.name}"! Details pre-filled.`);
     setCurrentStep(1); // Move to Step 1 (Basic Info)

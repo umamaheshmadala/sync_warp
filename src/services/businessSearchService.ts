@@ -43,6 +43,17 @@ export interface PlaceDetails {
         short_name: string;
         types: string[];
     }>;
+    // Enhanced fields (fetched at no extra cost with session token)
+    rating?: number;
+    user_ratings_total?: number;
+    price_level?: number; // 0=Free, 1=Inexpensive, 2=Moderate, 3=Expensive, 4=Very Expensive
+    url?: string; // Google Maps URL
+    business_status?: string; // OPERATIONAL, CLOSED_TEMPORARILY, CLOSED_PERMANENTLY
+    photos?: Array<{
+        photo_reference: string;
+        height: number;
+        width: number;
+    }>;
 }
 
 export interface ParsedAddress {
@@ -64,8 +75,19 @@ export interface BusinessSearchResult {
     latitude: number;
     longitude: number;
     openingHours?: string[];
+    openingPeriods?: Array<{
+        open: { day: number; time: string };
+        close: { day: number; time: string };
+    }>;
     googlePlaceId: string;
     category?: string;
+    // Enhanced Google Places fields
+    rating?: number;
+    userRatingsTotal?: number;
+    priceLevel?: number;
+    googleMapsUrl?: string;
+    businessStatus?: string;
+    photoReference?: string;
 }
 
 // API Configuration
@@ -131,7 +153,14 @@ const MOCK_DETAILS: Record<string, PlaceDetails> = {
             { long_name: 'Delhi', short_name: 'DL', types: ['administrative_area_level_1'] },
             { long_name: '110001', short_name: '110001', types: ['postal_code'] },
             { long_name: 'India', short_name: 'IN', types: ['country'] }
-        ]
+        ],
+        // Enhanced fields
+        rating: 4.3,
+        user_ratings_total: 1247,
+        price_level: 2,
+        url: 'https://maps.google.com/?cid=mock_starbucks',
+        business_status: 'OPERATIONAL',
+        photos: [{ photo_reference: 'mock_photo_starbucks_001', height: 400, width: 600 }]
     },
     'mock_place_pizzahut': {
         name: 'Pizza Hut',
@@ -145,7 +174,13 @@ const MOCK_DETAILS: Record<string, PlaceDetails> = {
             { long_name: 'Bengaluru', short_name: 'Bengaluru', types: ['locality'] },
             { long_name: 'Karnataka', short_name: 'KA', types: ['administrative_area_level_1'] },
             { long_name: '560038', short_name: '560038', types: ['postal_code'] }
-        ]
+        ],
+        rating: 3.9,
+        user_ratings_total: 832,
+        price_level: 2,
+        url: 'https://maps.google.com/?cid=mock_pizzahut',
+        business_status: 'OPERATIONAL',
+        photos: [{ photo_reference: 'mock_photo_pizzahut_001', height: 400, width: 600 }]
     }
 };
 
@@ -301,6 +336,7 @@ export async function getPlaceDetails(placeId: string): Promise<PlaceDetails | n
             {
                 placeId: placeId,
                 fields: [
+                    // Basic tier (free with session token)
                     'name',
                     'formatted_address',
                     'formatted_phone_number',
@@ -309,7 +345,15 @@ export async function getPlaceDetails(placeId: string): Promise<PlaceDetails | n
                     'opening_hours',
                     'geometry',
                     'types',
-                    'address_components'
+                    'address_components',
+                    // Enhanced fields (bundled with session token — no extra cost)
+                    'business_status',
+                    'url',
+                    'photos',
+                    // Atmosphere tier (bundled with details call)
+                    'rating',
+                    'user_ratings_total',
+                    'price_level'
                 ],
                 sessionToken: getSessionToken()
             },
@@ -350,6 +394,17 @@ export async function getPlaceDetails(placeId: string): Promise<PlaceDetails | n
                         long_name: c.long_name || '',
                         short_name: c.short_name || '',
                         types: c.types || []
+                    })),
+                    // Enhanced fields
+                    rating: (place as any).rating,
+                    user_ratings_total: (place as any).user_ratings_total,
+                    price_level: (place as any).price_level,
+                    url: (place as any).url,
+                    business_status: (place as any).business_status,
+                    photos: (place as any).photos?.map((p: any) => ({
+                        photo_reference: p.photo_reference || '',
+                        height: p.height || 0,
+                        width: p.width || 0
                     }))
                 };
 
@@ -387,33 +442,41 @@ export function parseAddressComponents(
  * Map Google business types to SynC categories
  */
 export function mapGoogleCategoryToSynC(types: string[]): string | null {
+    // Maps Google Place types to business_categories.name values in our DB
+    // DB values: restaurant, retail, services, healthcare, beauty, automotive, education, entertainment, fitness, technology
     const categoryMap: Record<string, string> = {
-        // Food & Dining
-        restaurant: 'food_dining',
-        cafe: 'food_dining',
-        bakery: 'food_dining',
-        bar: 'food_dining',
-        meal_delivery: 'food_dining',
-        meal_takeaway: 'food_dining',
+        // Food & Dining → restaurant
+        restaurant: 'restaurant',
+        cafe: 'restaurant',
+        bakery: 'restaurant',
+        bar: 'restaurant',
+        meal_delivery: 'restaurant',
+        meal_takeaway: 'restaurant',
+        food: 'restaurant',
 
-        // Retail & Shopping
+        // Retail & Shopping → retail
         store: 'retail',
         shopping_mall: 'retail',
         clothing_store: 'retail',
-        electronics_store: 'retail',
         furniture_store: 'retail',
         jewelry_store: 'retail',
         shoe_store: 'retail',
         supermarket: 'retail',
         convenience_store: 'retail',
+        book_store: 'retail',
+        hardware_store: 'retail',
+        pet_store: 'retail',
 
-        // Health & Beauty
-        beauty_salon: 'health_beauty',
-        spa: 'health_beauty',
-        gym: 'health_beauty',
-        hair_care: 'health_beauty',
+        // Beauty & Wellness → beauty
+        beauty_salon: 'beauty',
+        spa: 'beauty',
+        hair_care: 'beauty',
 
-        // Healthcare
+        // Fitness & Sports → fitness
+        gym: 'fitness',
+        stadium: 'fitness',
+
+        // Healthcare → healthcare
         doctor: 'healthcare',
         hospital: 'healthcare',
         pharmacy: 'healthcare',
@@ -421,42 +484,45 @@ export function mapGoogleCategoryToSynC(types: string[]): string | null {
         physiotherapist: 'healthcare',
         veterinary_care: 'healthcare',
 
-        // Education
+        // Education → education
         school: 'education',
         university: 'education',
         library: 'education',
 
-        // Hospitality & Travel
-        hotel: 'hospitality',
-        lodging: 'hospitality',
-        travel_agency: 'hospitality',
-
-        // Automotive
+        // Automotive → automotive
         car_repair: 'automotive',
         car_dealer: 'automotive',
         car_wash: 'automotive',
         gas_station: 'automotive',
 
-        // Professional Services
-        lawyer: 'professional_services',
-        accounting: 'professional_services',
-        insurance_agency: 'professional_services',
-
-        // Real Estate
-        real_estate_agency: 'real_estate',
-
-        // Entertainment
+        // Entertainment → entertainment
         movie_theater: 'entertainment',
         amusement_park: 'entertainment',
         night_club: 'entertainment',
+        bowling_alley: 'entertainment',
+        casino: 'entertainment',
 
-        // Home Services
-        electrician: 'home_services',
-        plumber: 'home_services',
-        locksmith: 'home_services',
-        painter: 'home_services',
-        roofing_contractor: 'home_services',
-        moving_company: 'home_services'
+        // Services (catch-all for professional/home/hospitality)
+        lawyer: 'services',
+        accounting: 'services',
+        insurance_agency: 'services',
+        real_estate_agency: 'services',
+        travel_agency: 'services',
+        hotel: 'services',
+        lodging: 'services',
+        electrician: 'services',
+        plumber: 'services',
+        locksmith: 'services',
+        painter: 'services',
+        roofing_contractor: 'services',
+        moving_company: 'services',
+        bank: 'services',
+        atm: 'services',
+        post_office: 'services',
+        laundry: 'services',
+
+        // Technology → technology
+        electronics_store: 'technology'
     };
 
     for (const type of types) {
@@ -500,6 +566,73 @@ export function parseOpeningHours(
 }
 
 /**
+ * Fallback: Parse weekday_text strings directly when periods data is unavailable.
+ * Handles strings like "Monday: 8:00 AM – 10:00 PM", "Sunday: Closed", "Monday: Open 24 hours"
+ */
+export function parseWeekdayTextToHours(
+    weekdayText: string[]
+): Record<string, { open: string; close: string; closed: boolean }> | null {
+    if (!weekdayText || weekdayText.length === 0) return null;
+
+    const dayMap: Record<string, string> = {
+        'Monday': 'monday', 'Tuesday': 'tuesday', 'Wednesday': 'wednesday',
+        'Thursday': 'thursday', 'Friday': 'friday', 'Saturday': 'saturday', 'Sunday': 'sunday'
+    };
+
+    const result: Record<string, { open: string; close: string; closed: boolean }> = {
+        monday: { open: '09:00', close: '18:00', closed: true },
+        tuesday: { open: '09:00', close: '18:00', closed: true },
+        wednesday: { open: '09:00', close: '18:00', closed: true },
+        thursday: { open: '09:00', close: '18:00', closed: true },
+        friday: { open: '09:00', close: '18:00', closed: true },
+        saturday: { open: '09:00', close: '18:00', closed: true },
+        sunday: { open: '09:00', close: '18:00', closed: true }
+    };
+
+    let parsed = false;
+
+    for (const text of weekdayText) {
+        // Match "DayName: ..." pattern
+        const match = text.match(/^(\w+):\s*(.+)$/);
+        if (!match) continue;
+
+        const dayName = dayMap[match[1]];
+        const timeStr = match[2].trim();
+        if (!dayName) continue;
+
+        if (timeStr.toLowerCase() === 'closed') {
+            result[dayName] = { open: '09:00', close: '18:00', closed: true };
+            parsed = true;
+        } else if (timeStr.toLowerCase().includes('open 24 hours')) {
+            result[dayName] = { open: '00:00', close: '23:59', closed: false };
+            parsed = true;
+        } else {
+            // Parse "8:00 AM – 10:00 PM" or "8:00 AM - 10:00 PM"
+            const timeMatch = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)\s*[–\-]\s*(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+            if (timeMatch) {
+                const openHour = convertTo24Hour(parseInt(timeMatch[1]), timeMatch[3].toUpperCase());
+                const openMin = timeMatch[2];
+                const closeHour = convertTo24Hour(parseInt(timeMatch[4]), timeMatch[6].toUpperCase());
+                const closeMin = timeMatch[5];
+                result[dayName] = {
+                    open: `${openHour.toString().padStart(2, '0')}:${openMin}`,
+                    close: `${closeHour.toString().padStart(2, '0')}:${closeMin}`,
+                    closed: false
+                };
+                parsed = true;
+            }
+        }
+    }
+
+    return parsed ? result : null;
+}
+
+function convertTo24Hour(hour: number, period: string): number {
+    if (period === 'AM') return hour === 12 ? 0 : hour;
+    return hour === 12 ? 12 : hour + 12;
+}
+
+/**
  * Complete flow: Search and get full business details
  */
 export async function getBusinessSearchResult(
@@ -525,8 +658,16 @@ export async function getBusinessSearchResult(
         latitude: details.geometry.location.lat,
         longitude: details.geometry.location.lng,
         openingHours: details.opening_hours?.weekday_text,
+        openingPeriods: details.opening_hours?.periods,
         googlePlaceId: placeId,
-        category: category || undefined
+        category: category || undefined,
+        // Enhanced Google Places fields
+        rating: details.rating,
+        userRatingsTotal: details.user_ratings_total,
+        priceLevel: details.price_level,
+        googleMapsUrl: details.url,
+        businessStatus: details.business_status,
+        photoReference: details.photos?.[0]?.photo_reference
     };
 }
 

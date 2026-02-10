@@ -21,6 +21,18 @@ export interface BusinessPrefillData {
     longitude: number;
     googlePlaceId: string;
     category?: string;
+    // Enhanced Google Places fields
+    openingHours?: string[];
+    openingPeriods?: Array<{
+        open: { day: number; time: string };
+        close: { day: number; time: string };
+    }>;
+    rating?: number;
+    userRatingsTotal?: number;
+    priceLevel?: number;
+    googleMapsUrl?: string;
+    businessStatus?: string;
+    photoReference?: string;
 }
 
 interface Step0_SmartSearchProps {
@@ -111,7 +123,16 @@ export function Step0_SmartSearch({
                     latitude: details.latitude,
                     longitude: details.longitude,
                     googlePlaceId: details.googlePlaceId,
-                    category: details.category
+                    category: details.category,
+                    // Enhanced Google Places fields
+                    openingHours: details.openingHours,
+                    openingPeriods: details.openingPeriods,
+                    rating: details.rating,
+                    userRatingsTotal: details.userRatingsTotal,
+                    priceLevel: details.priceLevel,
+                    googleMapsUrl: details.googleMapsUrl,
+                    businessStatus: details.businessStatus,
+                    photoReference: details.photoReference
                 });
             }
         } catch (err) {

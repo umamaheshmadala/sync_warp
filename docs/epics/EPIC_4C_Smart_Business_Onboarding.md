@@ -319,11 +319,15 @@ ON api_usage_logs(api, created_at);
 
 ## 💰 Cost Analysis
 
-### Google Places API
-| Tier | Free Requests/Month | Cost After |
-|------|---------------------|------------|
-| Essentials (Autocomplete) | 10,000 | $2.83/1K |
-| Pro (Place Details) | 5,000 | $17/1K |
+### Google Places API — Field Tiers
+| Tier | Fields Fetched | Free Requests/Month | Cost After |
+|------|---------------|---------------------|------------|
+| Essentials (Autocomplete) | Search suggestions | 10,000 | $2.83/1K |
+| Basic (Place Details) | name, address, phone, website, hours, geometry, types, address_components, **business_status**, **url**, **photos** | Bundled with session | $0 extra |
+| Atmosphere (Place Details) | **rating**, **user_ratings_total**, **price_level** | Bundled with session | $0 extra |
+| Pro (Place Details) | paymentOptions, parkingOptions, editorialSummary | 5,000 | $17/1K |
+
+> **Note:** Enhanced fields (Basic + Atmosphere) are fetched in the same Place Details call that's already made after autocomplete selection, so they add **zero extra cost** when using session tokens. Pro-tier fields are deferred to future stories.
 
 ### Expected Usage (MVP)
 ```
@@ -331,6 +335,7 @@ Monthly businesses: 500
 Requests per business: ~4 (3 autocomplete + 1 details)
 Total requests: 2,000/month
 Cost: $0 (within free tier)
+Enhanced fields: $0 extra (bundled with existing details call)
 ```
 
 ### Break-even Analysis
@@ -423,7 +428,8 @@ src/
 
 supabase/
 └── migrations/
-    └── 20260111_smart_onboarding.sql  [NEW] Story 4C.2
+    ├── 20260111_smart_onboarding.sql  [NEW] Story 4C.2
+    └── 20260210_add_google_places_enhanced_fields.sql  [NEW] Story 4C.1 (enhanced fields)
 
 .env.local
 └── VITE_GOOGLE_PLACES_API_KEY        [NEW] Story 4C.1

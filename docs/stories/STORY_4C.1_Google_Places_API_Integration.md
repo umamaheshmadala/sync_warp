@@ -87,9 +87,16 @@ VITE_GOOGLE_PLACES_API_KEY=AIza...your_key_here
 /**
  * Google Places API integration for business search
  * 
+ * 
  * Free Tier (after March 2025):
  * - Essentials (Autocomplete): 10,000 requests/month
  * - Pro (Place Details): 5,000 requests/month
+ *
+ * **Cost Optimization Strategy:**
+ * - **Step 1 (Onboarding):** Fetch only Basic + Contact + Atmosphere fields (~$0.017/call).
+ *   - Includes: Name, Address, Phone, Website, Hours, Rating, Price Level.
+ *   - **Excludes:** Expensive "Pro/Premium" fields (Payment Options, Parking, Editorial Summary) to minimize costs.
+ * - **Step 2 (Future/On-Demand):** Fetch expensive fields only if explicitly requested by the user.
  * 
  * @see https://developers.google.com/maps/documentation/places/web-service
  */
@@ -127,6 +134,13 @@ export interface PlaceDetails {
     short_name: string;
     types: string[];
   }>;
+  // Enhanced fields (fetched at no extra cost with session token)
+  rating?: number;
+  user_ratings_total?: number;
+  price_level?: number; // 0-4
+  url?: string; // Google Maps URL
+  business_status?: string; // OPERATIONAL, CLOSED_TEMPORARILY, CLOSED_PERMANENTLY
+  photos?: Array<{ photo_reference: string; height: number; width: number }>;
 }
 
 export interface ParsedAddress {
@@ -150,6 +164,13 @@ export interface BusinessSearchResult {
   openingHours?: string[];
   googlePlaceId: string;
   category?: string;
+  // Enhanced Google Places fields
+  rating?: number;
+  userRatingsTotal?: number;
+  priceLevel?: number;
+  googleMapsUrl?: string;
+  businessStatus?: string;
+  photoReference?: string;
 }
 
 // API Configuration
@@ -237,6 +258,7 @@ export async function getPlaceDetails(placeId: string): Promise<PlaceDetails | n
   
   // Request only needed fields to minimize cost
   const fields = [
+    // Basic tier (free with session token)
     'name',
     'formatted_address',
     'formatted_phone_number',
@@ -245,7 +267,15 @@ export async function getPlaceDetails(placeId: string): Promise<PlaceDetails | n
     'opening_hours',
     'geometry',
     'types',
-    'address_components'
+    'address_components',
+    // Enhanced fields (bundled with session token)
+    'business_status',
+    'url',
+    'photos',
+    // Atmosphere tier (bundled with details call)
+    'rating',
+    'user_ratings_total',
+    'price_level'
   ].join(',');
 
   const params = new URLSearchParams({
@@ -458,7 +488,14 @@ export async function getBusinessSearchResult(
     longitude: details.geometry.location.lng,
     openingHours: details.opening_hours?.weekday_text,
     googlePlaceId: placeId,
-    category: category || undefined
+    category: category || undefined,
+    // Enhanced Google Places fields
+    rating: details.rating,
+    userRatingsTotal: details.user_ratings_total,
+    priceLevel: details.price_level,
+    googleMapsUrl: details.url,
+    businessStatus: details.business_status,
+    photoReference: details.photos?.[0]?.photo_reference
   };
 }
 
