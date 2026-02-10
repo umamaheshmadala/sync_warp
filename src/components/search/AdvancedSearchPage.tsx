@@ -549,8 +549,8 @@ const AdvancedSearchPage: React.FC<AdvancedSearchPageProps> = ({ className = '' 
         <div>
           {/* Results Grid/List */}
           <div className={viewMode === 'grid'
-            ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8'
-            : 'space-y-6 mb-8'
+            ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-8'
+            : 'space-y-[10px] mb-8'
           }>
             {businesses.map(business => (
               <div key={business.id} className="relative">

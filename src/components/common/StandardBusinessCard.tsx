@@ -183,7 +183,7 @@ export const StandardBusinessCard: React.FC<StandardBusinessCardProps> = ({
     return (
       <div
         className={cn(
-          "bg-white rounded-2xl shadow-sm border border-gray-100 p-4 pl-12 flex items-center gap-4 hover:shadow-md transition-all cursor-pointer relative overflow-visible mt-4 ml-4", // ml-4 to account for avatar
+          "bg-white rounded-2xl shadow-sm border border-gray-100 p-4 pl-12 flex items-center gap-4 hover:shadow-md transition-all cursor-pointer relative overflow-visible ml-4", // ml-4 to account for avatar
           className
         )}
         style={{ minHeight: '100px' }}

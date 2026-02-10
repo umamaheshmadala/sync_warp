@@ -424,7 +424,7 @@ export default function Search() {
                     </div>
                   )}
 
-                  <div className="space-y-3 sm:space-y-4">
+                  <div className="space-y-[10px]">
                     {businesses.map((business) => (
                       <SearchBusinessCard
                         key={business.id}

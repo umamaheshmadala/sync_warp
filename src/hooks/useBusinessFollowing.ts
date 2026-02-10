@@ -116,19 +116,14 @@ export function useBusinessFollowing(): UseBusinessFollowingReturn {
           // To get accurate "active" counts, we can't easily filter the (count) relation in standard syntax 
           // without side-loading. Let's try side-loading.
 
-          const { count: activeCouponsCount } = await supabase
-            .from('business_coupons')
-            .select('*', { count: 'exact', head: true })
-            .eq('business_id', follow.business_id)
-            .eq('status', 'active')
-            .gte('valid_until', new Date().toISOString())
-            .lte('valid_from', new Date().toISOString());
-
+          // Fetch only active OFFERS count (new system), ignoring legacy coupons
+          // This matches the logic used in SearchService and SearchBusinessCard
           const { count: activeOffersCount } = await supabase
             .from('offers')
             .select('*', { count: 'exact', head: true })
             .eq('business_id', follow.business_id)
             .eq('status', 'active')
+            .is('deleted_at', null)
             .gte('valid_until', new Date().toISOString())
             .lte('valid_from', new Date().toISOString());
 
@@ -148,11 +143,6 @@ export function useBusinessFollowing(): UseBusinessFollowingReturn {
             .eq('entity_type', 'business')
             .eq('is_active', true);
 
-          // Get counts from the relation arrays (supabase returns [{count: N}] or [])
-          // Using separate queries for active counts now to avoid filtering parent business
-          const validCouponsCount = activeCouponsCount || 0;
-          const validOffersCount = activeOffersCount || 0;
-
           return {
             ...follow,
             business: businessData ? {
@@ -165,8 +155,8 @@ export function useBusinessFollowing(): UseBusinessFollowingReturn {
               rating: businessData.rating,
               description: businessData.description,
               follower_count: count || 0,
-              active_coupons_count: activeCouponsCount + activeOffersCount, // Combined count for the card
-              local_area: businessData.local_area, // Mapped for consistent address display
+              active_coupons_count: activeOffersCount || 0, // Explicitly use activeOffersCount or 0
+              local_area: businessData.local_area,
               city: businessData.city
             } : undefined
           };

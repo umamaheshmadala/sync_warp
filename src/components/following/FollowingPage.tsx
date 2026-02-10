@@ -161,7 +161,7 @@ const FollowingPage: React.FC = () => {
             )}
           </div>
         ) : (
-          <div className="flex flex-col gap-4 px-4">
+          <div className="flex flex-col gap-[10px] px-4">
             {filteredBusinesses.map((follow) => {
               const businessData: StandardBusinessCardData = {
                 id: follow.business_id,
