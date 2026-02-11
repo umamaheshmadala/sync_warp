@@ -33,6 +33,7 @@ export interface BusinessPrefillData {
     googleMapsUrl?: string;
     businessStatus?: string;
     photoReference?: string;
+    description?: string;
 }
 
 interface Step0_SmartSearchProps {
@@ -132,7 +133,8 @@ export function Step0_SmartSearch({
                     priceLevel: details.priceLevel,
                     googleMapsUrl: details.googleMapsUrl,
                     businessStatus: details.businessStatus,
-                    photoReference: details.photoReference
+                    photoReference: details.photoReference,
+                    description: details.description
                 });
             }
         } catch (err) {

@@ -7,6 +7,7 @@ import { supabase } from '../../lib/supabase'
 import { ArrowLeft, MoreVertical, Video, Phone, Trash, Archive, Pin, MessageSquare, CheckCircle, ArchiveX, PinOff, AlertCircle, BellOff, Bell, Search, Ban, ShieldOff } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 import { Button } from '../ui/button'
+import { Link } from 'react-router-dom'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -155,10 +156,12 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigate('/messages')}
+              asChild
               className="text-gray-600 hover:text-gray-900 flex-shrink-0"
             >
-              <ArrowLeft className="h-5 w-5" />
+              <Link to="/messages">
+                <ArrowLeft className="h-5 w-5" />
+              </Link>
             </Button>
             <div className="flex items-center gap-2">
               <div className="h-8 w-8 rounded-full bg-gray-200 animate-pulse" />
@@ -374,10 +377,12 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate('/messages')}
+            asChild
             className="text-gray-600 hover:text-gray-900 flex-shrink-0"
           >
-            <ArrowLeft className="h-5 w-5" />
+            <Link to="/messages">
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
           </Button>
 
           {/* Avatar + Name */}

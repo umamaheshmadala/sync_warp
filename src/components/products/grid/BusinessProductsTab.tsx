@@ -351,6 +351,7 @@ export const BusinessProductsTab: React.FC<BusinessProductsTabProps> = ({ busine
                                 product={selectedProduct}
                                 onClose={handleCloseModal}
                                 onEdit={isOwner ? handleEditProduct : undefined}
+                                editUrl={isOwner && selectedProduct ? `/business/products/edit/${selectedProduct.id}` : undefined}
                                 onDelete={isOwner ? handleDeleteProduct : undefined}
                                 onArchive={isOwner ? handleArchiveProduct : undefined}
                             />

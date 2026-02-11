@@ -1,12 +1,11 @@
 
 import React, { useEffect, useState } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, Link } from 'react-router-dom';
 import { AdminSidebar } from '../admin/AdminSidebar';
 import { useAuthStore } from '../../store/authStore';
 import { ShieldAlert } from 'lucide-react';
 
 export default function AdminLayout() {
-    const navigate = useNavigate();
     const { profile, loading } = useAuthStore();
     const [isAdmin, setIsAdmin] = useState(false);
 
@@ -37,12 +36,12 @@ export default function AdminLayout() {
                     <p className="text-gray-600 mb-6">
                         You do not have permission to access the System Administration dashboard.
                     </p>
-                    <button
-                        onClick={() => navigate('/dashboard')}
-                        className="w-full bg-gray-900 text-white py-2 px-4 rounded-lg hover:bg-gray-800 transition-colors"
+                    <Link
+                        to="/dashboard"
+                        className="w-full block text-center bg-gray-900 text-white py-2 px-4 rounded-lg hover:bg-gray-800 transition-colors"
                     >
                         Return to Dashboard
-                    </button>
+                    </Link>
                 </div>
             </div>
         );

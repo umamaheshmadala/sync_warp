@@ -1,6 +1,6 @@
 import React from 'react';
 import { ArrowLeft, MoreVertical, Share, Flag, Edit, Trash, Archive, RotateCcw } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Menu } from '@headlessui/react';
 import { Product } from '../../../types/product';
 import { useAuthStore } from '../../../store/authStore';
@@ -13,6 +13,7 @@ interface MobileProductHeaderProps {
     onEdit?: () => void;
     onDelete?: () => void;
     onArchive?: () => void;
+    editUrl?: string; // Optional URL for navigation-based editing
 }
 
 export const MobileProductHeader: React.FC<MobileProductHeaderProps> = ({
@@ -21,7 +22,8 @@ export const MobileProductHeader: React.FC<MobileProductHeaderProps> = ({
     businessName,
     onEdit,
     onDelete,
-    onArchive
+    onArchive,
+    editUrl
 }) => {
     const { user } = useAuthStore();
     // Assuming product.business_id availability or we check ownership via props parent passes
@@ -79,13 +81,23 @@ export const MobileProductHeader: React.FC<MobileProductHeaderProps> = ({
                     </Menu.Item>
 
                     {/* Owner Options */}
-                    {onEdit && (
+                    {(onEdit || editUrl) && (
                         <Menu.Item>
                             {({ active }) => (
-                                <button onClick={onEdit} className={`${active ? 'bg-gray-50' : ''} flex items-center w-full px-4 py-3 text-sm text-gray-700`}>
-                                    <Edit className="w-4 h-4 mr-3" />
-                                    Edit Product
-                                </button>
+                                editUrl ? (
+                                    <Link
+                                        to={editUrl}
+                                        className={`${active ? 'bg-gray-50' : ''} flex items-center w-full px-4 py-3 text-sm text-gray-700`}
+                                    >
+                                        <Edit className="w-4 h-4 mr-3" />
+                                        Edit Product
+                                    </Link>
+                                ) : (
+                                    <button onClick={onEdit} className={`${active ? 'bg-gray-50' : ''} flex items-center w-full px-4 py-3 text-sm text-gray-700`}>
+                                        <Edit className="w-4 h-4 mr-3" />
+                                        Edit Product
+                                    </button>
+                                )
                             )}
                         </Menu.Item>
                     )}
@@ -122,7 +134,7 @@ export const MobileProductHeader: React.FC<MobileProductHeaderProps> = ({
                     )}
 
                     {/* Report for non-owners */}
-                    {!onEdit && (
+                    {(!onEdit && !editUrl) && (
                         <Menu.Item>
                             {({ active }) => (
                                 <button className={`${active ? 'bg-gray-50' : ''} flex items-center w-full px-4 py-3 text-sm text-gray-700`}>

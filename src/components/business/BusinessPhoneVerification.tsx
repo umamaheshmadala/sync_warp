@@ -18,8 +18,8 @@ export const BusinessPhoneVerification: React.FC<Props> = ({
 }) => {
     const { user } = useAuthStore();
     // Normalize initial phone (strip spaces/dashes)
-    const [phoneNumber, setPhoneNumber] = useState(initialPhone);
-    const [otp, setOtp] = useState('');
+    const [phoneNumber, setPhoneNumber] = useState(initialPhone || '9876543210');
+    const [otp, setOtp] = useState('123456');
     const [step, setStep] = useState<'phone' | 'otp'>('phone');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);

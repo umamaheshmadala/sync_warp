@@ -5,13 +5,13 @@
  */
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { 
-  CheckCircle, 
-  Target, 
-  TrendingUp, 
-  Users, 
+import {
+  CheckCircle,
+  Target,
+  TrendingUp,
+  Users,
   Clock,
   ArrowRight,
   Calendar
@@ -26,15 +26,7 @@ export const RegistrationCompleteScreen: React.FC<RegistrationCompleteScreenProp
   businessId,
   businessName
 }) => {
-  const navigate = useNavigate();
 
-  const handleContinueToOnboarding = () => {
-    navigate(`/business/onboarding?businessId=${businessId}`);
-  };
-
-  const handleSkipToDashboard = () => {
-    navigate('/business/dashboard');
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
@@ -54,7 +46,7 @@ export const RegistrationCompleteScreen: React.FC<RegistrationCompleteScreenProp
           >
             <CheckCircle className="w-12 h-12 text-green-600" />
           </motion.div>
-          
+
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -63,7 +55,7 @@ export const RegistrationCompleteScreen: React.FC<RegistrationCompleteScreenProp
           >
             🎉 Registration Successful!
           </motion.h1>
-          
+
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -106,7 +98,7 @@ export const RegistrationCompleteScreen: React.FC<RegistrationCompleteScreenProp
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
                 Why complete your profile now?
               </h3>
-              
+
               <div className="space-y-3">
                 <div className="flex items-start">
                   <div className="flex-shrink-0">
@@ -163,21 +155,21 @@ export const RegistrationCompleteScreen: React.FC<RegistrationCompleteScreenProp
 
             {/* Action Buttons */}
             <div className="space-y-3">
-              <button
-                onClick={handleContinueToOnboarding}
+              <Link
+                to={`/business/onboarding?businessId=${businessId}`}
                 className="w-full flex items-center justify-center px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
               >
                 <span>Complete Your Profile Now</span>
                 <ArrowRight className="w-5 h-5 ml-2" />
-              </button>
+              </Link>
 
-              <button
-                onClick={handleSkipToDashboard}
+              <Link
+                to="/business/dashboard"
                 className="w-full flex items-center justify-center px-6 py-3 bg-white border-2 border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-colors"
               >
                 <Calendar className="w-4 h-4 mr-2" />
                 <span>I'll Do This Later</span>
-              </button>
+              </Link>
             </div>
 
             {/* Reassurance Text */}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {
     LayoutDashboard,
     Users,
@@ -15,7 +15,6 @@ import {
 } from 'lucide-react';
 
 export function AdminSidebar() {
-    const navigate = useNavigate();
     const location = useLocation();
 
     const navItems = [
@@ -47,9 +46,9 @@ export function AdminSidebar() {
                 {navItems.map((item) => {
                     const isActive = location.pathname === item.path || (item.path !== '/admin' && location.pathname.startsWith(item.path));
                     return (
-                        <button
+                        <Link
                             key={item.id}
-                            onClick={() => navigate(item.path)}
+                            to={item.path}
                             className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all group text-left ${isActive
                                 ? 'bg-indigo-50 text-indigo-700'
                                 : 'text-gray-600 hover:bg-gray-50 hover:text-indigo-600'
@@ -63,19 +62,19 @@ export function AdminSidebar() {
                                     }`}
                             />
                             {item.label}
-                        </button>
+                        </Link>
                     );
                 })}
             </nav>
 
             <div className="p-4 border-t border-gray-100">
-                <button
-                    onClick={() => navigate('/dashboard')}
+                <Link
+                    to="/dashboard"
                     className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-500 hover:text-gray-900 transition-colors"
                 >
                     <ArrowLeft size={16} />
                     Back to App
-                </button>
+                </Link>
             </div>
         </aside>
     );

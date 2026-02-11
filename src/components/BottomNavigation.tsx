@@ -1,6 +1,6 @@
 // src/components/BottomNavigation.tsx
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Home, Heart, UserCheck, Wallet, Users } from 'lucide-react';
 import NavigationBadge from './NavigationBadge';
@@ -106,7 +106,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentRoute }) => 
 
     // Navigate with smooth animation
     setIsAnimating(true);
-    navigate(route);
+    // navigate(route); // Handled by Link
 
     // Reset animation state
     setTimeout(() => setIsAnimating(false), 300);
@@ -127,16 +127,13 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentRoute }) => 
             const active = isActive(item.route);
 
             return (
-              <motion.button
+              <Link
                 key={item.id}
+                to={item.route}
                 onClick={() => handleNavClick(item.route, item.id)}
                 className="flex flex-col items-center justify-center p-0.5 rounded-lg relative min-w-0 flex-1 group overflow-hidden active:bg-gray-50 transition-colors focus:outline-none focus:bg-transparent"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
-                whileTap={{ scale: 0.95 }}
-                transition={{ type: "spring", stiffness: 400, damping: 25 }}
               >
-
-
                 {/* Icon with enhanced animations */}
                 <motion.div
                   className="relative z-10"
@@ -184,7 +181,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentRoute }) => 
                   } : {}}
                   transition={{ duration: 0.3 }}
                 />
-              </motion.button>
+              </Link>
             );
           })}
         </div>

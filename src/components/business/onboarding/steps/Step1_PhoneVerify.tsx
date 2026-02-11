@@ -64,21 +64,7 @@ export function Step1_PhoneVerify({
             </motion.div>
 
             {/* Pre-fill Indicator */}
-            {isPrefilledFromGoogle && phoneNumber && (
-                <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                    className="mb-6 bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3"
-                >
-                    <Info className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
-                    <div>
-                        <p className="text-sm text-blue-800">
-                            We found this phone number from Google for your business. Please verify it's correct.
-                        </p>
-                    </div>
-                </motion.div>
-            )}
+
 
             {/* Phone Verification Component */}
             <motion.div
@@ -197,24 +183,7 @@ export function Step1_PhoneVerify({
                 </motion.div>
             )}
 
-            {/* Why Verify Info */}
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.6 }}
-                className="mt-8 bg-gray-50 rounded-xl p-4"
-            >
-                <h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
-                    <Shield className="w-4 h-4 text-indigo-600" />
-                    Why verify your business?
-                </h4>
-                <ul className="text-sm text-gray-600 space-y-1">
-                    <li>• Builds trust with potential customers</li>
-                    <li>• Prevents unauthorized changes to your listing</li>
-                    <li>• Unlocks premium features and promotions</li>
-                    <li>• Verified badge displayed on your profile</li>
-                </ul>
-            </motion.div>
+
         </div>
     );
 }

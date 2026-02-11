@@ -1,0 +1,460 @@
+{
+  "src\\components\\admin\\AdminSidebar.tsx": [
+    {
+      "file": "src\\components\\admin\\AdminSidebar.tsx",
+      "line": 52,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate(item.path)"
+    },
+    {
+      "file": "src\\components\\admin\\AdminSidebar.tsx",
+      "line": 73,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate('/dashboard')"
+    }
+  ],
+  "src\\components\\business\\BusinessCard.tsx": [
+    {
+      "file": "src\\components\\business\\BusinessCard.tsx",
+      "line": 31,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate(getBusinessUrl(business.id, business.name))"
+    }
+  ],
+  "src\\components\\business\\BusinessDashboard.tsx": [
+    {
+      "file": "src\\components\\business\\BusinessDashboard.tsx",
+      "line": 257,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate(getBusinessUrl(business.id, business.business_name))"
+    }
+  ],
+  "src\\components\\business\\BusinessProfile.tsx": [
+    {
+      "file": "src\\components\\business\\BusinessProfile.tsx",
+      "line": 1415,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate('/dashboard')"
+    },
+    {
+      "file": "src\\components\\business\\BusinessProfile.tsx",
+      "line": 1426,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate(/search?q=${encodeURIComponent(location.state.query \\"
+    },
+    {
+      "file": "src\\components\\business\\BusinessProfile.tsx",
+      "line": 1436,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate('/business/dashboard')"
+    },
+    {
+      "file": "src\\components\\business\\BusinessProfile.tsx",
+      "line": 1471,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate(-1)"
+    },
+    {
+      "file": "src\\components\\business\\BusinessProfile.tsx",
+      "line": 1687,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate(/business/${business?.id"
+    },
+    {
+      "file": "src\\components\\business\\BusinessProfile.tsx",
+      "line": 1695,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate(/business/${business?.id"
+    },
+    {
+      "file": "src\\components\\business\\BusinessProfile.tsx",
+      "line": 1850,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate(/business/${business?.id"
+    },
+    {
+      "file": "src\\components\\business\\BusinessProfile.tsx",
+      "line": 1858,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate(/business/${business?.id"
+    }
+  ],
+  "src\\components\\business\\CampaignManagerPage.tsx": [
+    {
+      "file": "src\\components\\business\\CampaignManagerPage.tsx",
+      "line": 198,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate(${getBusinessUrl(businessId!)"
+    },
+    {
+      "file": "src\\components\\business\\CampaignManagerPage.tsx",
+      "line": 231,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate(${getBusinessUrl(businessId!)"
+    }
+  ],
+  "src\\components\\business\\FollowerAnalyticsDashboard.tsx": [
+    {
+      "file": "src\\components\\business\\FollowerAnalyticsDashboard.tsx",
+      "line": 97,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate(${getBusinessUrl(businessId!)"
+    },
+    {
+      "file": "src\\components\\business\\FollowerAnalyticsDashboard.tsx",
+      "line": 307,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate(${getBusinessUrl(businessId!)"
+    },
+    {
+      "file": "src\\components\\business\\FollowerAnalyticsDashboard.tsx",
+      "line": 313,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate(${getBusinessUrl(businessId!)"
+    }
+  ],
+  "src\\components\\business\\FollowerMetricsWidget.tsx": [
+    {
+      "file": "src\\components\\business\\FollowerMetricsWidget.tsx",
+      "line": 124,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate(${getBusinessUrl(businessId, businessName)"
+    }
+  ],
+  "src\\components\\business\\NewBusinesses.tsx": [
+    {
+      "file": "src\\components\\business\\NewBusinesses.tsx",
+      "line": 85,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate('/businesses')"
+    }
+  ],
+  "src\\components\\business\\onboarding\\EnhancedOnboardingWizard.tsx": [
+    {
+      "file": "src\\components\\business\\onboarding\\EnhancedOnboardingWizard.tsx",
+      "line": 101,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate('/business/dashboard')"
+    }
+  ],
+  "src\\components\\business\\StorefrontErrorState.tsx": [
+    {
+      "file": "src\\components\\business\\StorefrontErrorState.tsx",
+      "line": 85,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate(-1)"
+    }
+  ],
+  "src\\components\\categories\\CategoryBrowserPage.tsx": [
+    {
+      "file": "src\\components\\categories\\CategoryBrowserPage.tsx",
+      "line": 226,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate(getBusinessUrl(business.id, business.name \\"
+    },
+    {
+      "file": "src\\components\\categories\\CategoryBrowserPage.tsx",
+      "line": 470,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate('/search/advanced')"
+    }
+  ],
+  "src\\components\\checkins\\BusinessCheckinsPage.tsx": [
+    {
+      "file": "src\\components\\checkins\\BusinessCheckinsPage.tsx",
+      "line": 42,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate('/business/dashboard', { replace: true "
+    }
+  ],
+  "src\\components\\contacts\\ContactMatchesList.tsx": [
+    {
+      "file": "src\\components\\contacts\\ContactMatchesList.tsx",
+      "line": 37,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate(/profile/${match.user_id"
+    }
+  ],
+  "src\\components\\coupons\\TrendingCouponsPage.tsx": [
+    {
+      "file": "src\\components\\coupons\\TrendingCouponsPage.tsx",
+      "line": 454,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate('/discovery')"
+    },
+    {
+      "file": "src\\components\\coupons\\TrendingCouponsPage.tsx",
+      "line": 479,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate('/discovery')"
+    },
+    {
+      "file": "src\\components\\coupons\\TrendingCouponsPage.tsx",
+      "line": 485,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate('/favorites')"
+    }
+  ],
+  "src\\components\\Dashboard.tsx": [
+    {
+      "file": "src\\components\\Dashboard.tsx",
+      "line": 137,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate('/search')"
+    },
+    {
+      "file": "src\\components\\Dashboard.tsx",
+      "line": 165,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate(getBusinessUrl(business.id, business.name))"
+    }
+  ],
+  "src\\components\\discovery\\BusinessDiscoveryPage.tsx": [
+    {
+      "file": "src\\components\\discovery\\BusinessDiscoveryPage.tsx",
+      "line": 390,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate(getBusinessUrl(business.id, business.name))"
+    },
+    {
+      "file": "src\\components\\discovery\\BusinessDiscoveryPage.tsx",
+      "line": 418,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate(/search/advanced?location=${currentLocation?.coordinates.latitude"
+    },
+    {
+      "file": "src\\components\\discovery\\BusinessDiscoveryPage.tsx",
+      "line": 442,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate('/search/advanced?recommended=true')"
+    },
+    {
+      "file": "src\\components\\discovery\\BusinessDiscoveryPage.tsx",
+      "line": 454,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate(getBusinessUrl(business.id, business.name \\"
+    },
+    {
+      "file": "src\\components\\discovery\\BusinessDiscoveryPage.tsx",
+      "line": 498,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate(/search/advanced?section=${section.type"
+    },
+    {
+      "file": "src\\components\\discovery\\BusinessDiscoveryPage.tsx",
+      "line": 512,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate(getBusinessUrl(business.id, business.name \\"
+    },
+    {
+      "file": "src\\components\\discovery\\BusinessDiscoveryPage.tsx",
+      "line": 578,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate(/coupon/${coupon.id"
+    },
+    {
+      "file": "src\\components\\discovery\\BusinessDiscoveryPage.tsx",
+      "line": 584,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate(getBusinessUrl(coupon.business_id, coupon.business_name))"
+    },
+    {
+      "file": "src\\components\\discovery\\BusinessDiscoveryPage.tsx",
+      "line": 632,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate('/search')"
+    },
+    {
+      "file": "src\\components\\discovery\\BusinessDiscoveryPage.tsx",
+      "line": 638,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate('/coupons/trending')"
+    },
+    {
+      "file": "src\\components\\discovery\\BusinessDiscoveryPage.tsx",
+      "line": 656,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate('/categories')"
+    },
+    {
+      "file": "src\\components\\discovery\\BusinessDiscoveryPage.tsx",
+      "line": 684,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate('/search/advanced')"
+    }
+  ],
+  "src\\components\\favorites\\FavoritesPage.tsx": [
+    {
+      "file": "src\\components\\favorites\\FavoritesPage.tsx",
+      "line": 175,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate('/auth/login')"
+    }
+  ],
+  "src\\components\\favorites\\UnifiedFavoritesPage.tsx": [
+    {
+      "file": "src\\components\\favorites\\UnifiedFavoritesPage.tsx",
+      "line": 39,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate('/auth/login')"
+    },
+    {
+      "file": "src\\components\\favorites\\UnifiedFavoritesPage.tsx",
+      "line": 184,
+      "type": "<Unknown>",
+      "action": "Handler: () => searchQuery ? setSearchQuery('') : navigate('/search')"
+    },
+    {
+      "file": "src\\components\\favorites\\UnifiedFavoritesPage.tsx",
+      "line": 198,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate(${getBusinessUrl(product.business_id, product.business_name)"
+    }
+  ],
+  "src\\components\\following\\FollowerFeed.tsx": [
+    {
+      "file": "src\\components\\following\\FollowerFeed.tsx",
+      "line": 281,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate('/following')"
+    }
+  ],
+  "src\\components\\following\\FollowingPage.tsx": [
+    {
+      "file": "src\\components\\following\\FollowingPage.tsx",
+      "line": 156,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate('/search')"
+    }
+  ],
+  "src\\components\\friends\\EmptyState.tsx": [
+    {
+      "file": "src\\components\\friends\\EmptyState.tsx",
+      "line": 25,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate('/friends/search')"
+    }
+  ],
+  "src\\components\\friends\\FriendLeaderboard.tsx": [
+    {
+      "file": "src\\components\\friends\\FriendLeaderboard.tsx",
+      "line": 112,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate(/profile/${friend.user_id"
+    }
+  ],
+  "src\\components\\friends\\FriendSearchResults.tsx": [
+    {
+      "file": "src\\components\\friends\\FriendSearchResults.tsx",
+      "line": 122,
+      "type": "<Unknown>",
+      "action": "Handler: () => onUserClick ? onUserClick(result.user_id) : navigate(/profile/${result.user_id"
+    }
+  ],
+  "src\\components\\layout\\AdminLayout.tsx": [
+    {
+      "file": "src\\components\\layout\\AdminLayout.tsx",
+      "line": 41,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate('/dashboard')"
+    }
+  ],
+  "src\\components\\search\\SearchBusinessCard.tsx": [
+    {
+      "file": "src\\components\\search\\SearchBusinessCard.tsx",
+      "line": 41,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate(getBusinessUrl(business.id, business.business_name))"
+    }
+  ],
+  "src\\pages\\admin\\AdminAuditLogPage.tsx": [
+    {
+      "file": "src\\pages\\admin\\AdminAuditLogPage.tsx",
+      "line": 159,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate('/admin')"
+    }
+  ],
+  "src\\pages\\admin\\AdminDashboard.tsx": [
+    {
+      "file": "src\\pages\\admin\\AdminDashboard.tsx",
+      "line": 51,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate('/admin/analytics/reviews')"
+    },
+    {
+      "file": "src\\pages\\admin\\AdminDashboard.tsx",
+      "line": 79,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate('/admin/businesses')"
+    },
+    {
+      "file": "src\\pages\\admin\\AdminDashboard.tsx",
+      "line": 89,
+      "type": "<div>",
+      "action": "Handler: () => navigate('/admin/audit-log')"
+    }
+  ],
+  "src\\pages\\admin\\ReviewAnalyticsDashboard.tsx": [
+    {
+      "file": "src\\pages\\admin\\ReviewAnalyticsDashboard.tsx",
+      "line": 85,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate('/admin')"
+    }
+  ],
+  "src\\pages\\admin\\ReviewModerationPage.tsx": [
+    {
+      "file": "src\\pages\\admin\\ReviewModerationPage.tsx",
+      "line": 273,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate('/admin')"
+    }
+  ],
+  "src\\pages\\examples\\CreateCampaignExample.tsx": [
+    {
+      "file": "src\\pages\\examples\\CreateCampaignExample.tsx",
+      "line": 99,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate(-1)"
+    },
+    {
+      "file": "src\\pages\\examples\\CreateCampaignExample.tsx",
+      "line": 208,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate(-1)"
+    }
+  ],
+  "src\\pages\\FriendSearchPage.tsx": [
+    {
+      "file": "src\\pages\\FriendSearchPage.tsx",
+      "line": 40,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate(-1)"
+    }
+  ],
+  "src\\pages\\MyReviewsPage.tsx": [
+    {
+      "file": "src\\pages\\MyReviewsPage.tsx",
+      "line": 115,
+      "type": "<Unknown>",
+      "action": "Handler: () => navigate(-1)"
+    }
+  ],
+  "src\\pages\\NotificationsPage.tsx": [
+    {
+      "file": "src\\pages\\NotificationsPage.tsx",
+      "line": 49,
+      "type": "<Button>",
+      "action": "Handler: () => navigate(-1)"
+    }
+  ],
+  "src\\pages\\settings\\FriendsPrivacySettings.tsx": [
+    {
+      "file": "src\\pages\\settings\\FriendsPrivacySettings.tsx",
+      "line": 113,
+      "type": "<Button>",
+      "action": "Handler: () => navigate(-1)"
+    }
+  ]
+}

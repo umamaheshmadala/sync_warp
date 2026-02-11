@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ShieldAlert } from 'lucide-react';
 import { ReviewModerationWidget } from '../../components/admin/ReviewModerationWidget';
 import { useBusinessStats } from '../../hooks/useAdminBusinessList';
@@ -21,7 +21,7 @@ export default function AdminDashboard() {
         staleTime: 5 * 60 * 1000
     });
 
-    const handleAnalyticsClick = (cardId: string) => {
+    const getAnalyticsUrl = (cardId: string) => {
         const tabMap: Record<string, string> = {
             'reviews': 'trends',
             'moderation': 'moderation',
@@ -29,7 +29,11 @@ export default function AdminDashboard() {
             'fraud': 'fraud'
         };
         const tab = tabMap[cardId] || 'trends';
-        navigate(`/admin/analytics/reviews?tab=${tab}`);
+        return `/admin/analytics/reviews?tab=${tab}`;
+    };
+
+    const handleAnalyticsClick = (cardId: string) => {
+        navigate(getAnalyticsUrl(cardId));
     };
 
     return (
@@ -45,14 +49,18 @@ export default function AdminDashboard() {
                     <section>
                         <h2 className="text-lg font-semibold text-gray-700 mb-4">Analytics & Insights</h2>
                         <div className="bg-white rounded-lg border p-6 hover:shadow-md transition-shadow">
-                            <OverviewCards data={analyticsOverview} onCardClick={handleAnalyticsClick} />
+                            <OverviewCards
+                                data={analyticsOverview}
+                                onCardClick={handleAnalyticsClick}
+                                getCardUrl={getAnalyticsUrl}
+                            />
                             <div className="mt-4 flex justify-end">
-                                <button
-                                    onClick={() => navigate('/admin/analytics/reviews')}
+                                <Link
+                                    to="/admin/analytics/reviews"
                                     className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
                                 >
                                     View Full Analytics &rarr;
-                                </button>
+                                </Link>
                             </div>
                         </div>
                     </section>
@@ -72,27 +80,31 @@ export default function AdminDashboard() {
                         <BusinessStatsCards
                             stats={stats}
                             onCardClick={(status) => navigate(`/admin/businesses?tab=${status}`)}
+                            getCardUrl={(status) => `/admin/businesses?tab=${status}`}
                             className="grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3"
                         />
                         <div className="mt-4 flex justify-end">
-                            <button
-                                onClick={() => navigate('/admin/businesses')}
+                            <Link
+                                to="/admin/businesses"
                                 className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
                             >
                                 View Full List &rarr;
-                            </button>
+                            </Link>
                         </div>
                     </section>
 
                     <section>
                         <h2 className="text-lg font-semibold text-gray-700 mb-4">Quick Access</h2>
-                        <div className="bg-white rounded-lg border p-6 flex flex-col items-center text-center hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/admin/audit-log')}>
-                            <div className="p-3 bg-orange-50 text-orange-600 rounded-full mb-3">
+                        <Link
+                            to="/admin/audit-log"
+                            className="bg-white rounded-lg border p-6 flex flex-col items-center text-center hover:shadow-md transition-shadow cursor-pointer block"
+                        >
+                            <div className="p-3 bg-orange-50 text-orange-600 rounded-full mb-3 inline-flex">
                                 <ShieldAlert size={24} />
                             </div>
                             <h3 className="font-semibold text-gray-900">Global Audit Log</h3>
                             <p className="text-sm text-gray-500 mt-1">View comprehensive log of all admin actions</p>
-                        </div>
+                        </Link>
                     </section>
                 </div>
             </div>

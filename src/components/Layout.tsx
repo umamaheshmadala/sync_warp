@@ -2,7 +2,7 @@
 // Main layout wrapper for the application with responsive design
 
 import { useEffect, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { routes } from '../router/Router'
 import PageTransition from './PageTransition'
@@ -148,13 +148,13 @@ export default function Layout({ children }: LayoutProps) {
                 )}
 
                 {/* Contacts Sidebar Toggle - Navigates to Friends Page - Desktop Only */}
-                <button
-                  onClick={() => navigate('/friends')}
+                <Link
+                  to="/friends"
                   className="hidden md:block p-2.5 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all duration-300"
                   title="Friends & Contacts"
                 >
                   <Users className="w-5 h-5" />
-                </button>
+                </Link>
 
                 {/* Notifications */}
                 <FollowerNotificationBell />
@@ -163,15 +163,15 @@ export default function Layout({ children }: LayoutProps) {
                 {user && (
                   <div className="hidden md:flex items-center space-x-2">
                     {/* Profile Avatar Button - Desktop only */}
-                    <button
-                      onClick={() => navigate('/profile')}
-                      className="w-9 h-9 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-xl flex items-center justify-center hover:from-indigo-200 hover:to-purple-200 transition-all duration-300"
+                    <Link
+                      to="/profile"
+                      className="w-9 h-9 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-xl flex items-center justify-center hover:from-indigo-200 hover:to-purple-200 transition-all duration-300 hidden md:flex"
                       title="View Profile"
                     >
                       <span className="text-indigo-600 font-medium text-sm">
                         {(profile?.full_name?.[0] || user.user_metadata?.full_name?.[0] || user.email?.[0])?.toUpperCase()}
                       </span>
-                    </button>
+                    </Link>
 
                     {/* Logout Button - Desktop only */}
                     <button

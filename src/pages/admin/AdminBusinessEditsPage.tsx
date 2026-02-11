@@ -26,7 +26,7 @@ import {
     RefreshCw,
     ExternalLink
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { adminPendingEditsService, PendingEditSummary } from '../../services/adminPendingEditsService';
 import {
     getActivityLogs,
@@ -58,7 +58,6 @@ const ACTION_TYPE_OPTIONS: { value: ActivityActionType; label: string }[] = [
 ];
 
 export default function AdminBusinessEditsPage() {
-    const navigate = useNavigate();
     const [selectedEdit, setSelectedEdit] = useState<PendingEditSummary | null>(null);
     const [showFilters, setShowFilters] = useState(false);
     const [expandedLog, setExpandedLog] = useState<string | null>(null);
@@ -347,15 +346,13 @@ export default function AdminBusinessEditsPage() {
                                                         <span className="font-medium text-gray-900 truncate">
                                                             {log.business?.business_name || 'Unknown Business'}
                                                         </span>
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                navigate(`/admin/businesses?id=${log.business_id}`);
-                                                            }}
+                                                        <Link
+                                                            to={`/admin/businesses?id=${log.business_id}`}
+                                                            onClick={(e) => e.stopPropagation()}
                                                             className="text-gray-400 hover:text-indigo-600"
                                                         >
                                                             <ExternalLink size={12} />
-                                                        </button>
+                                                        </Link>
                                                     </div>
                                                     <div className="text-sm text-gray-500">
                                                         {log.action_type === 'product_created' ? (

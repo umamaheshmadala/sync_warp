@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
 import { EnhancedOnboardingWizard } from './onboarding/EnhancedOnboardingWizard';
@@ -37,7 +37,7 @@ export default function BusinessOnboardingPage() {
 
       // Check if businessId is provided in URL params
       const businessIdParam = searchParams.get('businessId');
-      
+
       if (businessIdParam) {
         // Verify user owns this business
         const { data: business, error: businessError } = await supabase
@@ -117,12 +117,12 @@ export default function BusinessOnboardingPage() {
           <p className="text-gray-600 mb-6">
             {error}
           </p>
-          <button
-            onClick={() => navigate('/business/dashboard')}
-            className="w-full bg-blue-600 text-white px-6 py-3 rounded-md font-medium hover:bg-blue-700 transition-colors"
+          <Link
+            to="/business/dashboard"
+            className="block w-full bg-blue-600 text-white px-6 py-3 rounded-md font-medium hover:bg-blue-700 transition-colors"
           >
             Go to Dashboard
-          </button>
+          </Link>
         </div>
       </div>
     );
@@ -143,19 +143,19 @@ export default function BusinessOnboardingPage() {
           <p className="text-gray-600 mb-6">
             Please register a business before starting the onboarding process.
           </p>
-          <button
-            onClick={() => navigate('/business/register')}
-            className="w-full bg-blue-600 text-white px-6 py-3 rounded-md font-medium hover:bg-blue-700 transition-colors"
+          <Link
+            to="/business/register"
+            className="block w-full bg-blue-600 text-white px-6 py-3 rounded-md font-medium hover:bg-blue-700 transition-colors"
           >
             Register Business
-          </button>
+          </Link>
         </div>
       </div>
     );
   }
 
   return (
-    <EnhancedOnboardingWizard 
+    <EnhancedOnboardingWizard
       businessId={businessId}
       onComplete={handleOnboardingComplete}
     />

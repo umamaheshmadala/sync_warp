@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Search } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -269,12 +269,12 @@ export default function ReviewModerationPage() {
                 <div className="flex flex-col gap-4">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div className="flex items-center gap-4">
-                            <button
-                                onClick={() => navigate('/admin')}
+                            <Link
+                                to="/admin"
                                 className="p-2 hover:bg-white rounded-full transition-colors"
                             >
                                 <ArrowLeft size={24} className="text-gray-600" />
-                            </button>
+                            </Link>
                             <div>
                                 <h1 className="text-2xl font-bold text-gray-900">Review Moderation</h1>
                                 <p className="text-gray-500 text-sm">

@@ -1,4 +1,4 @@
-import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams, Link } from 'react-router-dom';
 import { List, LogOut, User, Settings, UserPlus, Search, MessageCircle, Store, PlusCircle, ShieldAlert } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
@@ -320,9 +320,9 @@ export default function Header() {
           )}
 
           {/* Logo - Desktop Only */}
-          <div
+          <Link
+            to="/dashboard"
             className="hidden md:flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
-            onClick={() => navigate('/dashboard')}
           >
             {/* Logo with text for desktop */}
             <img
@@ -330,7 +330,7 @@ export default function Header() {
               alt="Sync"
               className="h-[40px]"
             />
-          </div>
+          </Link>
         </div>
 
         {/* Search Bar - Center */}
@@ -376,10 +376,11 @@ export default function Header() {
               variant="ghost"
               size="icon"
               className="hidden md:flex relative text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 h-10 w-10"
-              onClick={() => navigate('/business/dashboard')}
-              title="My Businesses"
+              asChild
             >
-              <Store className="h-7 w-7" />
+              <Link to="/business/dashboard" title="My Businesses">
+                <Store className="h-7 w-7" />
+              </Link>
             </Button>
           )}
 
@@ -389,15 +390,16 @@ export default function Header() {
               variant="ghost"
               size="icon"
               className="hidden md:flex relative text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 h-10 w-10"
-              onClick={() => navigate('/admin')}
-              title={pendingReviewCount > 0 ? `Admin Dashboard (${pendingReviewCount} pending reviews)` : 'Admin Dashboard'}
+              asChild
             >
-              <ShieldAlert className="h-7 w-7" />
-              {pendingReviewCount > 0 && (
-                <span className="absolute top-0 right-0 h-4 w-4 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-bold ring-2 ring-white">
-                  {pendingReviewCount > 9 ? '9+' : pendingReviewCount}
-                </span>
-              )}
+              <Link to="/admin" title={pendingReviewCount > 0 ? `Admin Dashboard (${pendingReviewCount} pending reviews)` : 'Admin Dashboard'}>
+                <ShieldAlert className="h-7 w-7" />
+                {pendingReviewCount > 0 && (
+                  <span className="absolute top-0 right-0 h-4 w-4 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-bold ring-2 ring-white">
+                    {pendingReviewCount > 9 ? '9+' : pendingReviewCount}
+                  </span>
+                )}
+              </Link>
             </Button>
           )}
 
@@ -406,15 +408,16 @@ export default function Header() {
             variant="ghost"
             size="icon"
             className="hidden md:flex relative text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 h-10 w-10"
-            onClick={() => navigate('/messages')}
-            title="Messages"
+            asChild
           >
-            <MessageCircle className="h-7 w-7" />
-            {totalUnreadCount > 0 && (
-              <span className="absolute top-0 right-0 h-4 w-4 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-bold ring-2 ring-white">
-                {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
-              </span>
-            )}
+            <Link to="/messages" title="Messages">
+              <MessageCircle className="h-7 w-7" />
+              {totalUnreadCount > 0 && (
+                <span className="absolute top-0 right-0 h-4 w-4 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-bold ring-2 ring-white">
+                  {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
+                </span>
+              )}
+            </Link>
           </Button>
 
 
@@ -427,15 +430,16 @@ export default function Header() {
             variant="ghost"
             size="icon"
             className="md:hidden text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 relative h-12 w-12"
-            onClick={() => navigate('/messages')}
-            title="Messages"
+            asChild
           >
-            <MessageCircle className="h-9 w-9" />
-            {totalUnreadCount > 0 && (
-              <span className="absolute top-1 right-1 h-5 w-5 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-bold ring-2 ring-white">
-                {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
-              </span>
-            )}
+            <Link to="/messages" title="Messages">
+              <MessageCircle className="h-9 w-9" />
+              {totalUnreadCount > 0 && (
+                <span className="absolute top-1 right-1 h-5 w-5 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-bold ring-2 ring-white">
+                  {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
+                </span>
+              )}
+            </Link>
           </Button>
 
 
@@ -469,13 +473,17 @@ export default function Header() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate('/business/register')}>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  <span>Register Business</span>
+                <DropdownMenuItem asChild>
+                  <Link to="/business/register" className="w-full cursor-pointer">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    <span>Register Business</span>
+                  </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/profile')}>
-                  <User className="mr-2 h-4 w-4" />
-                  <span>View Profile</span>
+                <DropdownMenuItem asChild>
+                  <Link to="/profile" className="w-full cursor-pointer">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>View Profile</span>
+                  </Link>
                 </DropdownMenuItem>
 
                 <DropdownMenuSeparator />

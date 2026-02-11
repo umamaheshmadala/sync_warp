@@ -11,6 +11,7 @@ interface ImageCropperProps {
     isOpen: boolean;
     onClose: () => void;
     onCropComplete: (croppedAreaPixels: Area, rotation: number) => void;
+    aspect?: number; // Optional aspect ratio
 }
 
 export const ImageCropper: React.FC<ImageCropperProps> = ({
@@ -18,6 +19,7 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
     isOpen,
     onClose,
     onCropComplete,
+    aspect = 4 / 5, // Default to 4:5
 }) => {
     const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
@@ -64,7 +66,7 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
                         crop={crop}
                         zoom={zoom}
                         rotation={rotation}
-                        aspect={4 / 5}
+                        aspect={aspect}
                         onCropChange={onCropChange}
                         onCropComplete={handleCropComplete}
                         onZoomChange={onZoomChange}

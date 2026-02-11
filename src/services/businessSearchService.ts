@@ -54,6 +54,9 @@ export interface PlaceDetails {
         height: number;
         width: number;
     }>;
+    editorial_summary?: {
+        overview: string;
+    };
 }
 
 export interface ParsedAddress {
@@ -88,6 +91,7 @@ export interface BusinessSearchResult {
     googleMapsUrl?: string;
     businessStatus?: string;
     photoReference?: string;
+    description?: string;
 }
 
 // API Configuration
@@ -350,6 +354,7 @@ export async function getPlaceDetails(placeId: string): Promise<PlaceDetails | n
                     'business_status',
                     'url',
                     'photos',
+                    'editorial_summary',
                     // Atmosphere tier (bundled with details call)
                     'rating',
                     'user_ratings_total',
@@ -405,7 +410,8 @@ export async function getPlaceDetails(placeId: string): Promise<PlaceDetails | n
                         photo_reference: p.photo_reference || '',
                         height: p.height || 0,
                         width: p.width || 0
-                    }))
+                    })),
+                    editorial_summary: (place as any).editorial_summary
                 };
 
                 resolve(details);
@@ -667,7 +673,8 @@ export async function getBusinessSearchResult(
         priceLevel: details.price_level,
         googleMapsUrl: details.url,
         businessStatus: details.business_status,
-        photoReference: details.photos?.[0]?.photo_reference
+        photoReference: details.photos?.[0]?.photo_reference,
+        description: details.editorial_summary?.overview
     };
 }
 

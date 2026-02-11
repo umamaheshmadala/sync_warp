@@ -1,23 +1,40 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { OverviewMetrics } from '@/services/adminAnalyticsService';
 import { TrendingUp, MessageSquare, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface OverviewCardsProps {
     data?: OverviewMetrics;
     onCardClick?: (cardId: string) => void;
+    getCardUrl?: (cardId: string) => string;
 }
 
-export function OverviewCards({ data, onCardClick }: OverviewCardsProps) {
+export function OverviewCards({ data, onCardClick, getCardUrl }: OverviewCardsProps) {
     if (!data) return <div className="grid grid-cols-1 md:grid-cols-4 gap-4 animate-pulse h-32 bg-gray-100 rounded-lg"></div>;
 
-    const cardClass = onCardClick
-        ? "cursor-pointer hover:shadow-md transition-shadow"
+    const Wrapper = ({ id, children, className }: { id: string, children: React.ReactNode, className?: string }) => {
+        if (getCardUrl) {
+            return (
+                <Link to={getCardUrl(id)} className={className}>
+                    {children}
+                </Link>
+            );
+        }
+        return (
+            <div onClick={() => onCardClick?.(id)} className={className}>
+                {children}
+            </div>
+        );
+    };
+
+    const cardClass = (onCardClick || getCardUrl)
+        ? "cursor-pointer hover:shadow-md transition-shadow block"
         : "";
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Total Reviews Card */}
-            <div onClick={() => onCardClick?.('reviews')} className={cardClass}>
+            <Wrapper id="reviews" className={cardClass}>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Total Reviews</CardTitle>
@@ -31,10 +48,10 @@ export function OverviewCards({ data, onCardClick }: OverviewCardsProps) {
                         </p>
                     </CardContent>
                 </Card>
-            </div>
+            </Wrapper>
 
             {/* Pending Moderation Card */}
-            <div onClick={() => onCardClick?.('moderation')} className={cardClass}>
+            <Wrapper id="moderation" className={cardClass}>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Pending Moderation</CardTitle>
@@ -47,10 +64,10 @@ export function OverviewCards({ data, onCardClick }: OverviewCardsProps) {
                         </p>
                     </CardContent>
                 </Card>
-            </div>
+            </Wrapper>
 
             {/* Approval Rate Card */}
-            <div onClick={() => onCardClick?.('approval')} className={cardClass}>
+            <Wrapper id="approval" className={cardClass}>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Approval Rate</CardTitle>
@@ -63,10 +80,10 @@ export function OverviewCards({ data, onCardClick }: OverviewCardsProps) {
                         </p>
                     </CardContent>
                 </Card>
-            </div>
+            </Wrapper>
 
             {/* Fraud Alerts Card */}
-            <div onClick={() => onCardClick?.('fraud')} className={cardClass}>
+            <Wrapper id="fraud" className={cardClass}>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Active Fraud Alerts</CardTitle>
@@ -79,7 +96,7 @@ export function OverviewCards({ data, onCardClick }: OverviewCardsProps) {
                         </p>
                     </CardContent>
                 </Card>
-            </div>
+            </Wrapper>
         </div>
     );
 }

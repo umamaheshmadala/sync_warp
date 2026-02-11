@@ -21,7 +21,7 @@ import {
     getEngagementMetrics
 } from '@/services/adminAnalyticsService';
 
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 
 import { useSearchParams } from 'react-router-dom';
@@ -81,12 +81,12 @@ export function ReviewAnalyticsDashboard() {
     return (
         <div className="container py-8 space-y-6 max-w-7xl mx-auto">
             <div className="flex items-center gap-4">
-                <button
-                    onClick={() => navigate('/admin')}
-                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                <Link
+                    to="/admin"
+                    className="p-2 hover:bg-gray-100 rounded-full transition-colors inline-block"
                 >
                     <ArrowLeft className="w-6 h-6 text-gray-600" />
-                </button>
+                </Link>
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight">Review Analytics</h1>
                     <span className="text-sm text-gray-500">Live Platform Data</span>

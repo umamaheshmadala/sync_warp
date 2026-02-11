@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Download, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -153,14 +153,12 @@ export default function AdminAuditLogPage() {
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => navigate('/admin')}
-                            className="hover:bg-white rounded-full"
+                        <Link
+                            to="/admin"
+                            className="hover:bg-white rounded-full p-2 inline-flex items-center justify-center transition-colors"
                         >
                             <ArrowLeft className="text-gray-600" />
-                        </Button>
+                        </Link>
                         <div>
                             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
                                 <ShieldAlert className="text-indigo-600" />

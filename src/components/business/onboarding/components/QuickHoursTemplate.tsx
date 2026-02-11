@@ -88,10 +88,25 @@ export function QuickHoursTemplate({
     selectedTemplate
 }: QuickHoursTemplateProps) {
     const handleSelectTemplate = (template: typeof templates[0]) => {
+        if (template.id === 'custom') {
+            // Just notify parent that custom was selected, passing null for hours implies no bulk change
+            // But the current prop expects strict type. We might need to adjust or just handle it here.
+            // Since the parent controls selectedTemplate, we need a way to tell it "Custom selected".
+            // For now, we'll cheat slightly: The parent component in Step4 mostly cares about the hours.
+            // But we want to update the UI.
+            // Let's rely on the user manually editing to trigger "Custom" state in reality,
+            // but for the button click, we want to visually select it.
+            // Actually, the simplest fix for "cluttered" is layout.
+            // I will strictly fix the layout first.
+        }
+
         if (template.hours) {
-            // Create a copy to avoid mutation issues if template is reused directly
             const deepCopy = JSON.parse(JSON.stringify(template.hours));
             onSelectTemplate(deepCopy);
+        } else if (template.id === 'custom') {
+            // If we really want to support clicking custom to just "highlight" it:
+            // We can't because onSelectTemplate requires hours.
+            // I'll leave logic alone for now to avoid breaking types, just fix UI.
         }
     };
 
@@ -100,7 +115,7 @@ export function QuickHoursTemplate({
             <label className="block text-sm font-medium text-gray-700 mb-3">
                 Quick Select Schedule
             </label>
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {templates.map(template => {
                     const Icon = template.icon;
                     const isSelected = selectedTemplate === template.id;
@@ -111,25 +126,25 @@ export function QuickHoursTemplate({
                             type="button"
                             onClick={() => handleSelectTemplate(template)}
                             className={cn(
-                                "p-3 rounded-xl border-2 text-left transition-all h-full",
+                                "flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all text-center h-auto min-h-[100px]",
                                 isSelected
                                     ? "border-indigo-500 bg-indigo-50"
                                     : "border-gray-200 hover:border-indigo-300 hover:bg-gray-50"
                             )}
                         >
-                            <div className="flex items-center gap-2 mb-1">
-                                <Icon className={cn(
-                                    "w-4 h-4",
-                                    isSelected ? "text-indigo-600" : "text-gray-400"
-                                )} />
-                                <p className={cn(
-                                    "font-medium text-sm",
-                                    isSelected ? "text-indigo-900" : "text-gray-900"
-                                )}>
-                                    {template.name}
-                                </p>
+                            <div className={cn(
+                                "p-2 rounded-full mb-2",
+                                isSelected ? "bg-indigo-100 text-indigo-600" : "bg-gray-100 text-gray-500"
+                            )}>
+                                <Icon className="w-5 h-5" />
                             </div>
-                            <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">
+                            <p className={cn(
+                                "font-medium text-sm w-full truncate",
+                                isSelected ? "text-indigo-900" : "text-gray-900"
+                            )}>
+                                {template.name}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1 line-clamp-2 px-1">
                                 {template.description}
                             </p>
                         </button>

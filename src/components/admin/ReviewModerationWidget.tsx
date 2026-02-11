@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { ClipboardList, Clock, ArrowRight, CheckCircle, RefreshCw, AlertCircle, XCircle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { getPendingReviewCount, getDailyModerationStats } from '../../services/moderationService';
@@ -7,7 +7,6 @@ import { getPendingReports } from '../../services/reportService';
 import { Button } from '@/components/ui/button';
 
 export function ReviewModerationWidget() {
-    const navigate = useNavigate();
 
     const { data: pendingCount, refetch: refetchPending, isLoading: loadingPending } = useQuery({
         queryKey: ['pending-review-count'],
