@@ -79,6 +79,7 @@ android/app/build
 # Credentials
 android/app/google-services.json
 ios/App/GoogleService-Info.plist
+client_secret.json
 
 # Storybook
 storybook-static/
