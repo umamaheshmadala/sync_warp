@@ -1,5 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react'
-import { Send, Plus, Image, Video, Paperclip, Smile, X, Pencil } from 'lucide-react'
+import React, { useState, useRef, useEffect, Suspense } from 'react'
+import { Send, Plus, Image, Video, Smile, X, Pencil } from 'lucide-react'
+import { cn } from '../../lib/utils'
 import { Textarea } from '../ui/textarea'
 import { Button } from '../ui/button'
 import { ImageUploadButton } from './ImageUploadButton'
@@ -14,6 +15,9 @@ import { Capacitor } from '@capacitor/core'
 import { Haptics, NotificationType } from '@capacitor/haptics'
 import type { Message } from '../../types/messaging'
 import { toast } from 'react-hot-toast'
+
+// Lazy load emoji picker to allow code splitting
+const EmojiPicker = React.lazy(() => import('emoji-picker-react'))
 
 interface MessageComposerProps {
   conversationId: string
@@ -39,11 +43,13 @@ interface MessageComposerProps {
 export function MessageComposer({ conversationId, onTyping, replyToMessage, onCancelReply, editingMessage, onCancelEdit, initialText }: MessageComposerProps) {
   const [content, setContent] = useState(initialText || '')
   const [showAttachMenu, setShowAttachMenu] = useState(false)
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [isEditSaving, setIsEditSaving] = useState(false)
   const { sendMessage, isSending } = useSendMessage()
   const { previews, removePreview, reset: resetPreviews } = useLinkPreview(content)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const attachMenuRef = useRef<HTMLDivElement>(null)
+  const emojiPickerRef = useRef<HTMLDivElement>(null)
 
   // Populate content when editing message (WhatsApp-style)
   useEffect(() => {
@@ -75,12 +81,15 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
       if (attachMenuRef.current && !attachMenuRef.current.contains(e.target as Node)) {
         setShowAttachMenu(false)
       }
+      if (emojiPickerRef.current && !emojiPickerRef.current.contains(e.target as Node)) {
+        setShowEmojiPicker(false)
+      }
     }
-    if (showAttachMenu) {
+    if (showAttachMenu || showEmojiPicker) {
       document.addEventListener('mousedown', handleClickOutside)
     }
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [showAttachMenu])
+  }, [showAttachMenu, showEmojiPicker])
 
   const handleSend = async () => {
     if (!content.trim() || isSending || isEditSaving) return
@@ -300,20 +309,14 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
                   variant="menu"
                 />
 
-                {/* Document/File (placeholder for future) */}
-                <button className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-gray-50 transition-colors">
-                  <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
-                    <Paperclip className="h-4 w-4 text-purple-600" />
-                  </div>
-                  <span className="text-sm font-medium text-gray-700">Document</span>
-                </button>
+
               </div>
             </div>
           )}
         </div>
 
         {/* Text Input Container - Takes Maximum Width */}
-        <div className="flex-1 flex items-end bg-gray-100 rounded-3xl border border-gray-200 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all overflow-hidden">
+        <div className="flex-1 flex items-end bg-gray-100 rounded-3xl border border-gray-200 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
           <Textarea
             ref={textareaRef}
             value={content}
@@ -327,13 +330,41 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
           />
 
           {/* Emoji Button - Inside text field */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-10 w-10 text-gray-400 hover:text-gray-600 hover:bg-transparent flex-shrink-0 mr-1"
-          >
-            <Smile className="h-5 w-5" />
-          </Button>
+          <div className="relative flex-shrink-0" ref={emojiPickerRef}>
+            {showEmojiPicker && (
+              <div className="absolute bottom-12 right-0 z-50 shadow-xl rounded-xl border border-gray-200 bg-white" onClick={(e) => e.stopPropagation()}>
+                <Suspense fallback={<div className="w-[300px] h-[400px] flex items-center justify-center"><div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div></div>}>
+                  <EmojiPicker
+                    onEmojiClick={(emojiData) => {
+                      setContent(prev => prev + emojiData.emoji)
+                    }}
+                    width={300}
+                    height={400}
+                    previewConfig={{ showPreview: false }}
+                    searchDisabled={false}
+                    skinTonesDisabled
+                  />
+                </Suspense>
+              </div>
+            )}
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault(); // Prevent any form submission or other default behavior
+                console.log('😊 Emoji button clicked, toggling picker. Current state:', showEmojiPicker);
+                setShowEmojiPicker(prev => !prev);
+              }}
+              className={cn(
+                "h-10 w-10 flex-shrink-0 mr-1 transition-colors",
+                showEmojiPicker ? "text-blue-500 bg-blue-50" : "text-gray-400 hover:text-gray-600 hover:bg-transparent"
+              )}
+            >
+              <Smile className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
 
         {/* Send Button - Only shows when there's text */}

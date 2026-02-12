@@ -3,6 +3,8 @@ import { supabase } from '../lib/supabase'
 import imageCompression from 'browser-image-compression'
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera'
 import { Capacitor } from '@capacitor/core'
+import { VideoEditor } from '@whiteguru/capacitor-plugin-video-editor'
+import { FilePicker } from '@capawesome/capacitor-file-picker'
 
 interface UploadProgress {
   loaded: number
@@ -12,7 +14,7 @@ interface UploadProgress {
 
 class MediaUploadService {
   private uploadCallbacks: Map<string, (progress: UploadProgress) => void> = new Map()
-  private readonly MAX_VIDEO_SIZE = 25 * 1024 * 1024 // 25MB
+  private readonly MAX_VIDEO_SIZE = 16 * 1024 * 1024 // 16MB (WhatsApp limit)
 
   /**
    * 📱 Platform-conditional image picker
@@ -31,17 +33,17 @@ class MediaUploadService {
           width: 1920,
           height: 1920
         })
-        
+
         // Convert URI to File
         return await this.uriToFile(photo.webPath!, photo.format, 'image')
       } catch (error: any) {
         console.error('❌ Camera access failed:', error)
-        
+
         // Check for permission errors
         if (error.message?.includes('permission')) {
           throw new Error('Camera permission required. Please enable in Settings.')
         }
-        
+
         return null
       }
     } else {
@@ -49,7 +51,35 @@ class MediaUploadService {
       return null
     }
   }
-  
+
+  /**
+   * 📱 Platform-conditional video picker
+   * Mobile: Returns path and duration
+   */
+  async pickVideo(): Promise<{ file?: File, path?: string, duration?: number } | null> {
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const result = await FilePicker.pickVideos({
+          limit: 1,
+          readData: false
+        })
+
+        if (!result.files.length) return null
+
+        const file = result.files[0]
+        return {
+          path: file.path,
+          duration: file.duration
+        }
+      } catch (error) {
+        console.error('❌ File picker failed:', error)
+        return null
+      }
+    }
+    return null
+  }
+
+
   /**
    * 📱 MOBILE ONLY: Convert native file URI to File object
    */
@@ -69,18 +99,18 @@ class MediaUploadService {
     console.log('🔄 Compressing image:', file.name, 'Original size:', file.size)
 
     const options = {
-      maxSizeMB: 1, // Target 1MB max
-      maxWidthOrHeight: 1920, // Max dimension
+      maxSizeMB: 0.5, // Target 500KB max (Standard Quality)
+      maxWidthOrHeight: 1280, // Max dimension (WhatsApp standard)
       useWebWorker: !Capacitor.isNativePlatform(), // Disable web worker on mobile
       fileType: file.type, // Maintain original format
-      initialQuality: 0.8 // Start with 80% quality
+      initialQuality: 0.7 // Start with 70% quality
     }
 
     try {
       const compressed = await imageCompression(file, options)
       const reduction = ((file.size - compressed.size) / file.size * 100).toFixed(1)
       console.log('✅ Compressed:', compressed.size, `(${reduction}% reduction)`)
-      
+
       return compressed
     } catch (error) {
       console.error('❌ Compression failed:', error)
@@ -115,7 +145,7 @@ class MediaUploadService {
    * Upload image to Supabase Storage
    */
   async uploadImage(
-    file: File, 
+    file: File,
     conversationId: string,
     onProgress?: (progress: UploadProgress) => void,
     abortSignal?: AbortSignal
@@ -149,18 +179,18 @@ class MediaUploadService {
       const timestamp = Date.now()
       const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
       const basePath = `${user.id}/${conversationId}/${timestamp}-${sanitizedFileName}`
-      
+
       // Simulate upload progress: 30-85% for main image upload
       const uploadStartTime = Date.now()
       const estimatedUploadTime = Math.max(1000, compressed.size / 200000) // ~200KB/s estimate
-      
+
       const progressInterval = setInterval(() => {
         const elapsed = Date.now() - uploadStartTime
         const progress = Math.min(85, 30 + (elapsed / estimatedUploadTime) * 55)
-        onProgress?.({ 
-          loaded: Math.round(compressed.size * (progress / 100)), 
-          total: file.size, 
-          percentage: Math.round(progress) 
+        onProgress?.({
+          loaded: Math.round(compressed.size * (progress / 100)),
+          total: file.size,
+          percentage: Math.round(progress)
         })
       }, 100)
 
@@ -189,16 +219,16 @@ class MediaUploadService {
         // 85-95% for thumbnail upload
         onProgress?.({ loaded: compressed.size * 0.9, total: file.size, percentage: 90 })
 
-      // Upload thumbnail
-      const thumbnailPath = `${user.id}/${conversationId}/${timestamp}-thumb.jpg`
-      const { error: thumbError } = await supabase.storage
-        .from('message-attachments')
-        .upload(thumbnailPath, thumbnail, {
-          cacheControl: '3600',
-          upsert: false
-        })
+        // Upload thumbnail
+        const thumbnailPath = `${user.id}/${conversationId}/${timestamp}-thumb.jpg`
+        const { error: thumbError } = await supabase.storage
+          .from('message-attachments')
+          .upload(thumbnailPath, thumbnail, {
+            cacheControl: '3600',
+            upsert: false
+          })
 
-      if (thumbError) console.warn('Thumbnail upload failed:', thumbError)
+        if (thumbError) console.warn('Thumbnail upload failed:', thumbError)
 
         // Final check
         if (abortSignal?.aborted) {
@@ -348,18 +378,61 @@ class MediaUploadService {
   }
 
   /**
+   * 📱 MOBILE ONLY: Compress video using hardware acceleration
+   */
+  async compressVideo(path: string): Promise<string> {
+    console.log('🔄 Compressing video native:', path)
+
+    try {
+      // Transcode to 720p (1280x720)
+      const result = await VideoEditor.edit({
+        path: path,
+        transcode: {
+          width: 1280,
+          height: 720,
+          keepAspectRatio: true,
+        }
+      })
+
+      console.log('✅ Video compressed natively:', result)
+      return result.file.path
+    } catch (error) {
+      console.error('❌ Native compression failed:', error)
+      throw error
+    }
+  }
+
+  /**
    * Upload video to Supabase Storage
    */
   async uploadVideo(
-    file: File,
+    file: File | null, // File for web
+    nativePath: string | null, // Path for mobile
     conversationId: string,
     onProgress?: (progress: number) => void,
     abortSignal?: AbortSignal
   ): Promise<{ url: string; thumbnailUrl: string; duration: number }> {
     try {
-      // Validate file size
-      if (file.size > this.MAX_VIDEO_SIZE) {
-        throw new Error(`Video size must be less than ${this.MAX_VIDEO_SIZE / 1024 / 1024}MB`)
+      let fileToUpload: File | Blob = file as File
+
+      // 📱 MOBILE: Compress before upload
+      if (Capacitor.isNativePlatform() && nativePath) {
+        onProgress?.(5)
+        const compressedPath = await this.compressVideo(nativePath)
+
+        // Convert compressed path to Blob/File for upload
+        const response = await fetch(Capacitor.convertFileSrc(compressedPath))
+        const blob = await response.blob()
+        fileToUpload = blob
+
+        // Cleanup: We should probably delete the temp compressed file, but VideoEditor might handle it or OS cleans cache
+      } else if (file) {
+        // 💻 WEB: Validate file size
+        if (file.size > 64 * 1024 * 1024) { // 64MB limit for web
+          throw new Error('Web upload limit is 64MB. Use mobile app for larger videos.')
+        }
+      } else {
+        throw new Error('No video file provided')
       }
 
       // Get current user
@@ -369,31 +442,32 @@ class MediaUploadService {
       // Check abort signal
       if (abortSignal?.aborted) throw new Error('Upload cancelled')
 
-      console.log('🔄 Uploading video:', file.size, 'bytes')
+      console.log('🔄 Uploading video:', fileToUpload.size, 'bytes')
 
       // Simulate progress: 0-10% for thumbnail generation
       onProgress?.(5)
 
       // Generate thumbnail
-      const thumbnail = await this.generateVideoThumbnail(file)
+      const thumbnail = await this.generateVideoThumbnail(fileToUpload as File)
       onProgress?.(10)
 
       // Check abort signal after thumbnail generation
       if (abortSignal?.aborted) throw new Error('Upload cancelled')
 
       // 10-15% for duration detection
-      const duration = await this.getVideoDuration(file)
+      const duration = await this.getVideoDuration(fileToUpload as File)
       onProgress?.(15)
 
       // Generate unique file path
       const timestamp = Date.now()
-      const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
+      const name = (fileToUpload as File).name || `video_${Date.now()}.mp4`
+      const sanitizedFileName = name.replace(/[^a-zA-Z0-9.-]/g, '_')
       const basePath = `${user.id}/${conversationId}/${timestamp}-${sanitizedFileName}`
 
       // Simulate upload progress: 15-85% for main video upload
       const uploadStartTime = Date.now()
       const estimatedUploadTime = Math.max(2000, file.size / 100000) // ~100KB/s estimate
-      
+
       const progressInterval = setInterval(() => {
         const elapsed = Date.now() - uploadStartTime
         const progress = Math.min(85, 15 + (elapsed / estimatedUploadTime) * 70)
@@ -404,7 +478,7 @@ class MediaUploadService {
         // Upload video
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('message-attachments')
-          .upload(basePath, file, {
+          .upload(basePath, fileToUpload, {
             cacheControl: '3600',
             upsert: false
           })
@@ -425,16 +499,16 @@ class MediaUploadService {
         // 85-95% for thumbnail upload
         onProgress?.(90)
 
-      // Upload thumbnail
-      const thumbnailPath = `${user.id}/${conversationId}/${timestamp}-thumb.jpg`
-      const { error: thumbError } = await supabase.storage
-        .from('message-attachments')
-        .upload(thumbnailPath, thumbnail, {
-          cacheControl: '3600',
-          upsert: false
-        })
+        // Upload thumbnail
+        const thumbnailPath = `${user.id}/${conversationId}/${timestamp}-thumb.jpg`
+        const { error: thumbError } = await supabase.storage
+          .from('message-attachments')
+          .upload(thumbnailPath, thumbnail, {
+            cacheControl: '3600',
+            upsert: false
+          })
 
-      if (thumbError) console.warn('Thumbnail upload failed:', thumbError)
+        if (thumbError) console.warn('Thumbnail upload failed:', thumbError)
 
         // Final check
         if (abortSignal?.aborted) {

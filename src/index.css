@@ -190,3 +190,8 @@ body,
   overflow-y: auto;
   overflow-x: hidden;
 }
+
+/* Hide Emoji Picker Category Navigation to reduce clutter */
+.epr-category-nav {
+  display: none !important;
+}

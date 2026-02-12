@@ -1,10 +1,14 @@
 // src/components/business/NewBusinesses.tsx
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, TrendingUp, ChevronRight, RefreshCw, Store } from 'lucide-react';
-import { BusinessCard } from './BusinessCard';
+import { TrendingUp, ChevronRight, RefreshCw, Store } from 'lucide-react';
+import { StandardBusinessCard, type StandardBusinessCardData } from '../common';
 import { useNewBusinesses } from '../../hooks/useNewBusinesses';
+import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 import type { NewBusinessesProps } from '../../types/business';
+import { StorefrontShareButton } from '../Sharing/StorefrontShareButton';
+import { FollowButton } from '../following/FollowButton';
+import { cn } from '../../lib/utils'; // Make sure cn is imported if used, though strict style prop usage might avoid it. Based on prev file content it wasn't there, but it's good practice. Wait, I see I didn't see it in imports, but I'll add it if needed. Actually I'll stick to the plan.
 
 export function NewBusinesses({
   limit = 12,
@@ -12,6 +16,7 @@ export function NewBusinesses({
   showLoadMore = true,
 }: NewBusinessesProps) {
   const navigate = useNavigate();
+  const { getBusinessUrl } = useBusinessUrl();
 
   const {
     businesses,
@@ -20,12 +25,7 @@ export function NewBusinesses({
     hasMore,
     loadMore,
     fetchNewBusinesses,
-    totalCount,
   } = useNewBusinesses({ limit, daysThreshold });
-
-  const handleViewAll = () => {
-    navigate('/businesses?filter=new');
-  };
 
   if (loading && businesses.length === 0) {
     return (
@@ -38,9 +38,9 @@ export function NewBusinesses({
           </div>
 
           {/* Grid skeleton */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 gap-6">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="bg-gray-100 rounded-lg h-80 animate-pulse" />
+              <div key={i} className="bg-gray-100 rounded-lg h-40 animate-pulse" />
             ))}
           </div>
         </div>
@@ -107,20 +107,63 @@ export function NewBusinesses({
               </h2>
             </div>
           </div>
-
-
         </div>
 
-        {/* Business Grid - 2 cols mobile, responsive desktop */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6 mb-8">
-          {businesses.map(business => (
-            <BusinessCard
-              key={business.id}
-              business={business}
-              showOwner={true}
-              showAge={true}
-            />
-          ))}
+        {/* Business Grid - Single column on all devices for horizontal cards */}
+        <div className="grid grid-cols-1 gap-3 md:gap-4 mb-8">
+          {businesses.map(business => {
+            // Map to StandardBusinessCardData
+            const businessData: StandardBusinessCardData = {
+              id: business.id,
+              business_name: business.business_name || business.name,
+              business_type: business.business_type || business.category,
+              address: business.address,
+              city: business.city,
+              state: business.state,
+              rating: business.average_rating || business.rating,
+              review_count: business.total_reviews || business.review_count,
+              follower_count: business.follower_count,
+              logo_url: business.logo_url,
+              cover_image_url: business.cover_image_url,
+              description: business.description,
+              activeCouponsCount: business.activeCouponsCount || business.activeOffersCount,
+              recommendation_badge: business.recommendation_badge,
+              recommendation_percentage: business.recommendation_percentage,
+              approved_review_count: business.approved_review_count,
+            };
+
+            return (
+              <StandardBusinessCard
+                key={business.id}
+                business={businessData}
+                onCardClick={(id) => navigate(getBusinessUrl(id, businessData.business_name || 'business'))}
+                variant="search"
+                showChevron={false}
+                actionButton={
+                  <div className="flex items-center gap-2">
+                    <StorefrontShareButton
+                      businessId={business.id}
+                      businessName={businessData.business_name || ''}
+                      businessImageUrl={businessData.logo_url}
+                      showLabel={false}
+                      showIcon={true}
+                      showModal={true}
+                      className="p-2.5 w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-700 border-none shadow-none"
+                      variant="ghost"
+                    />
+                    <FollowButton
+                      businessId={business.id}
+                      businessName={businessData.business_name}
+                      variant="ghost"
+                      size="sm"
+                      showLabel={false}
+                      className="p-2.5 w-10 h-10 rounded-full bg-green-100 text-green-700 hover:bg-green-200 hover:text-green-800 border-none shadow-none"
+                    />
+                  </div>
+                }
+              />
+            );
+          })}
         </div>
 
         {/* Load More Button */}

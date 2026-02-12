@@ -44,6 +44,7 @@ import { ClickableUrl } from './ClickableUrl'
 import { parseMessageContent } from '../../utils/urlUtils'
 import { ReviewLinkPreview } from '../chat/ReviewLinkPreview'
 import { OfferLinkPreview } from '../chat/OfferLinkPreview'
+import { ExpandableText } from './ExpandableText'
 
 interface MessageBubbleProps {
   message: Message
@@ -710,7 +711,14 @@ export function MessageBubble({
                           setLightboxOpen(true)
                         }}
                       />
-                      {content && <p className="whitespace-pre-wrap mt-2">{content}</p>}
+                      {content && (
+                        <ExpandableText
+                          content={content}
+                          limit={40}
+                          className="mt-2 text-sm"
+                          isOwn={isOwn}
+                        />
+                      )}
                     </div>
                   )
                 ) : (
@@ -718,7 +726,14 @@ export function MessageBubble({
                   <div className="p-4 bg-gray-100 rounded-lg border border-gray-200 text-center min-w-[200px]">
                     <p className="text-sm text-gray-500 italic">Image unavailable</p>
                     <p className="text-xs text-gray-400 mt-1">Media URL missing</p>
-                    {content && <p className="whitespace-pre-wrap mt-2 text-left">{content}</p>}
+                    {content && (
+                      <ExpandableText
+                        content={content}
+                        limit={40}
+                        className="mt-2 text-sm text-left"
+                        isOwn={isOwn}
+                      />
+                    )}
                   </div>
                 )
               ) : message.type === 'video' ? (
@@ -752,7 +767,14 @@ export function MessageBubble({
                         thumbnailUrl={message.thumbnail_url}
                         duration={undefined}
                       />
-                      {content && <p className="whitespace-pre-wrap mt-2">{content}</p>}
+                      {content && (
+                        <ExpandableText
+                          content={content}
+                          limit={40}
+                          className="mt-2 text-sm"
+                          isOwn={isOwn}
+                        />
+                      )}
                     </div>
                   )
                 ) : (
@@ -760,7 +782,14 @@ export function MessageBubble({
                   <div className="p-4 bg-gray-100 rounded-lg border border-gray-200 text-center min-w-[200px]">
                     <p className="text-sm text-gray-500 italic">Video unavailable</p>
                     <p className="text-xs text-gray-400 mt-1">Media URL missing</p>
-                    {content && <p className="whitespace-pre-wrap mt-2 text-left">{content}</p>}
+                    {content && (
+                      <ExpandableText
+                        content={content}
+                        limit={40}
+                        className="mt-2 text-sm text-left"
+                        isOwn={isOwn}
+                      />
+                    )}
                   </div>
                 )
               ) : (
