@@ -92,7 +92,9 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
   }, [showAttachMenu, showEmojiPicker])
 
   const handleSend = async () => {
-    if (!content.trim() || isSending || isEditSaving) return
+    // Only block if empty or currently SAVING an edit (which needs to be synchronous)
+    // We do NOT block normal sending even if a previous send is in progress (isSending is for overall hook state)
+    if (!content.trim() || isEditSaving) return
 
     // Handle edit mode (Story 8.5.2 - WhatsApp style)
     if (editingMessage) {
@@ -122,68 +124,71 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
       return
     }
 
-    // Normal send flow
+    // Normal send flow - OPTIMIZED for speed
+
+    // 1. Capture content and reset UI immediately
+    const messageContent = content.trim();
+    const currentPreviews = previews.length > 0 ? [...previews] : undefined;
+    const replyToId = replyToMessage?.id;
+
+    // Clear input and context immediately
+    setContent('')
+    resetPreviews()
+    onCancelReply?.()
+
+    // Keep focus (or re-focus)
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.focus();
+    }
+
     try {
       if (Capacitor.isNativePlatform()) {
-        try {
-          await Haptics.notification({ type: NotificationType.Success })
-        } catch (error) {
-          console.warn('Haptic feedback not available:', error)
-        }
+        Haptics.notification({ type: NotificationType.Success }).catch(() => { });
       }
 
-      await sendMessage({
+      // 2. Fire and forget (mostly) - let the hook handle the optimistic update and server call
+      // We don't await this because we want the UI to be responsive immediately.
+      // The hook handles errors internally via toast/state.
+      sendMessage({
         conversationId,
-        content: content.trim(),
+        content: messageContent,
         type: 'text',
-        linkPreviews: previews.length > 0 ? previews : undefined,
-        replyToId: replyToMessage?.id  // Include reply_to_id if replying
-      })
-
-      // Track shares for coupon/deal link previews (Story 8.3.4)
-      if (previews.length > 0) {
-        for (const preview of previews) {
-          if (preview.type === 'sync-coupon' && preview.metadata?.couponId) {
-            await shareTrackingService.trackShare({
-              shareableType: 'coupon',
-              shareableId: preview.metadata.couponId,
-              conversationId,
-              shareMethod: 'message',
-              metadata: {
-                title: preview.title,
-                via: 'message_composer'
-              }
-            })
-          } else if (preview.type === 'sync-deal' && preview.metadata?.offerId) {
-            await shareTrackingService.trackShare({
-              shareableType: 'offer',
-              shareableId: preview.metadata.offerId,
-              conversationId,
-              shareMethod: 'message',
-              metadata: {
-                title: preview.title,
-                via: 'message_composer'
-              }
-            })
+        linkPreviews: currentPreviews,
+        replyToId: replyToId
+      }).then(async () => {
+        // Track shares asynchronously after send is initiated
+        if (currentPreviews && currentPreviews.length > 0) {
+          for (const preview of currentPreviews) {
+            if (preview.type === 'sync-coupon' && preview.metadata?.couponId) {
+              shareTrackingService.trackShare({
+                shareableType: 'coupon',
+                shareableId: preview.metadata.couponId,
+                conversationId,
+                shareMethod: 'message',
+                metadata: { title: preview.title, via: 'message_composer' }
+              }).catch(console.error);
+            } else if (preview.type === 'sync-deal' && preview.metadata?.offerId) {
+              shareTrackingService.trackShare({
+                shareableType: 'offer',
+                shareableId: preview.metadata.offerId,
+                conversationId,
+                shareMethod: 'message',
+                metadata: { title: preview.title, via: 'message_composer' }
+              }).catch(console.error);
+            }
           }
         }
-      }
+      }).catch(err => {
+        console.error('Background send failed:', err);
+        // The hook manages the failed state in the store, so the message will show as failed in the list.
+        // We might want to show a global toast if strictly necessary, but per-message failure UI is better.
+      });
 
-      setContent('')
-      resetPreviews()  // Clear link previews after sending
-      onCancelReply?.()  // Clear reply context after sending
-
-      if (textareaRef.current) {
-        textareaRef.current.style.height = 'auto'
-        const inputToFocus = textareaRef.current;
-        // Robust focus attempt for mobile/web
-        requestAnimationFrame(() => {
-          inputToFocus.focus();
-          setTimeout(() => inputToFocus.focus(), 100);
-        });
-      }
     } catch (error) {
-      console.error('Failed to send message:', error)
+      console.error('Failed to initiate send:', error)
+      // Restore content if immediate failure? 
+      // Nah, better to rely on the "failed message" in the list which allows retry.
     }
   }
 
@@ -328,7 +333,7 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
             data-testid="message-input"
             className="flex-1 min-h-[40px] max-h-[120px] resize-none border-none bg-transparent px-4 py-2.5 focus-visible:ring-0 placeholder:text-gray-400 text-sm leading-5"
             rows={1}
-            disabled={isSending}
+            disabled={isEditSaving}
           />
 
           {/* Emoji Button - Inside text field */}
@@ -372,7 +377,7 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
         {/* Send Button - Only shows when there's text */}
         <Button
           onClick={handleSend}
-          disabled={!hasText || isSending}
+          disabled={!hasText || isEditSaving}
           size="icon"
           data-testid="send-message-btn"
           className={`h-10 w-10 rounded-full flex-shrink-0 transition-all ${hasText

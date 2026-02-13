@@ -67,6 +67,9 @@ class MessagingService {
         console.warn('⚠️ Network monitoring unavailable:', error);
       }
     }
+
+    // Initialize spam detection (prefetch rules)
+    spamDetectionService.init().catch(err => console.error('Failed to init spam detection:', err));
   }
 
   /**
@@ -224,12 +227,12 @@ class MessagingService {
       // SPAM DETECTION: Client-side pre-flight checks
       // ============================================================
 
-      // 1. Rate limit check (prevent unnecessary network calls)
-      const rateLimitCheck = await spamDetectionService.checkRateLimits(params.conversationId)
-      if (!rateLimitCheck.allowed) {
-        console.warn('[SpamDetection] Rate limit check failed:', rateLimitCheck.reason)
-        throw new Error(rateLimitCheck.reason || 'Rate limit exceeded')
-      }
+      // 1. Rate limit check (OPTIMIZED: Rely on server-side limits to save 2 DB round-trips)
+      // const rateLimitCheck = await spamDetectionService.checkRateLimits(params.conversationId)
+      // if (!rateLimitCheck.allowed) {
+      //   console.warn('[SpamDetection] Rate limit check failed:', rateLimitCheck.reason)
+      //   throw new Error(rateLimitCheck.reason || 'Rate limit exceeded')
+      // }
 
       // 2. Spam content check
       const spamCheck = await spamDetectionService.isSpam(params.content, user.id)
