@@ -556,7 +556,7 @@ class MediaUploadService {
         clearInterval(progressInterval)
       }
     } catch (error) {
-      console.error('❌ Video upload failed:', error)
+      console.warn('⚠️ Video upload failed (non-critical if retry works):', error)
       throw error
     }
   }

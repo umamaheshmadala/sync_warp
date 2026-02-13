@@ -23,20 +23,9 @@ export function VideoPreviewModal({ file, videoPath, onClose, onSend }: VideoPre
             url = URL.createObjectURL(file)
             setVideoUrl(url)
         } else if (videoPath) {
-            // For native, we might need a special handler, but for now assuming typical URL
-            setVideoUrl(videoPath)
-        }
-
-        return () => {
-            if (url) URL.revokeObjectURL(url)
-        }
-    }, [file, videoPath])
-
-    // Effect for native path handling
-    useEffect(() => {
-        const loadNativeVideo = async () => {
-            if (!file && videoPath) {
-                // Dynamic import to avoid SSR issues if any (though this is SPA)
+            // Check if it's a native path that needs conversion
+            const loadNativeVideo = async () => {
+                // Dynamic import to avoid SSR issues if any
                 const { Capacitor } = await import('@capacitor/core')
                 if (Capacitor.isNativePlatform()) {
                     const src = Capacitor.convertFileSrc(videoPath)
@@ -45,8 +34,12 @@ export function VideoPreviewModal({ file, videoPath, onClose, onSend }: VideoPre
                     setVideoUrl(videoPath)
                 }
             }
+            loadNativeVideo()
         }
-        loadNativeVideo()
+
+        return () => {
+            if (url) URL.revokeObjectURL(url)
+        }
     }, [file, videoPath])
 
     const togglePlay = () => {
