@@ -70,7 +70,7 @@ export function VideoUploadButton({
     }
   }
 
-  const handleSendFromPreview = async (caption: string) => {
+  const handleSendFromPreview = async (caption: string, thumbnailBlob?: Blob) => {
     setShowPreview(false)
 
     const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
@@ -82,14 +82,24 @@ export function VideoUploadButton({
 
     try {
       // 1. Generate Optimistic Preview
+      if (thumbnailBlob) {
+        thumbnailBlobUrl = URL.createObjectURL(thumbnailBlob)
+      }
+
       if (selectedFile) {
         blobUrl = URL.createObjectURL(selectedFile)
-        const thumbnailBlob = await mediaUploadService.generateVideoThumbnail(selectedFile)
-        thumbnailBlobUrl = URL.createObjectURL(thumbnailBlob)
+        // Only generate if we didn't get one from preview (e.g. if capture failed)
+        if (!thumbnailBlobUrl) {
+          const generatedThumb = await mediaUploadService.generateVideoThumbnail(selectedFile)
+          thumbnailBlobUrl = URL.createObjectURL(generatedThumb)
+        }
       } else {
-        // Native path - complicated to get blob without reading
-        // For now, we might just show a placeholder or try to read it if possible
-        // But let's assume valid flow
+        // Native path - use converted src for preview
+        if (nativePath) {
+          // We need to import Capacitor dynamically or just use the global one if available, 
+          // but we already imported it at the top of the file
+          blobUrl = Capacitor.convertFileSrc(nativePath)
+        }
       }
 
       // 2. Create Optimistic Message

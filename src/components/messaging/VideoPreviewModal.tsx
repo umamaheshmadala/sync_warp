@@ -8,7 +8,7 @@ interface VideoPreviewModalProps {
     file: File | null
     videoPath?: string // For native mobile path
     onClose: () => void
-    onSend: (caption: string) => void
+    onSend: (caption: string, thumbnail?: Blob) => void
 }
 
 export function VideoPreviewModal({ file, videoPath, onClose, onSend }: VideoPreviewModalProps) {
@@ -32,6 +32,23 @@ export function VideoPreviewModal({ file, videoPath, onClose, onSend }: VideoPre
         }
     }, [file, videoPath])
 
+    // Effect for native path handling
+    useEffect(() => {
+        const loadNativeVideo = async () => {
+            if (!file && videoPath) {
+                // Dynamic import to avoid SSR issues if any (though this is SPA)
+                const { Capacitor } = await import('@capacitor/core')
+                if (Capacitor.isNativePlatform()) {
+                    const src = Capacitor.convertFileSrc(videoPath)
+                    setVideoUrl(src)
+                } else {
+                    setVideoUrl(videoPath)
+                }
+            }
+        }
+        loadNativeVideo()
+    }, [file, videoPath])
+
     const togglePlay = () => {
         if (videoRef.current) {
             if (isPlaying) {
@@ -43,8 +60,32 @@ export function VideoPreviewModal({ file, videoPath, onClose, onSend }: VideoPre
         }
     }
 
-    const handleSend = () => {
-        onSend(caption)
+    const handleSend = async () => {
+        try {
+            let thumbnailBlob: Blob | undefined
+
+            // Try to capture thumbnail from video element
+            if (videoRef.current) {
+                const video = videoRef.current
+                const canvas = document.createElement('canvas')
+                // Scale down logic (similar to mediaUploadService)
+                const scale = Math.min(300 / video.videoWidth, 300 / video.videoHeight)
+                canvas.width = video.videoWidth * scale
+                canvas.height = video.videoHeight * scale
+
+                const ctx = canvas.getContext('2d')
+                ctx?.drawImage(video, 0, 0, canvas.width, canvas.height)
+
+                thumbnailBlob = await new Promise<Blob | undefined>(resolve =>
+                    canvas.toBlob(b => resolve(b || undefined), 'image/jpeg', 0.8)
+                )
+            }
+            // cast to any to avoid strict type error if we didn't update prop type yet
+            onSend(caption, thumbnailBlob as any)
+        } catch (e) {
+            console.error('Failed to capture thumbnail:', e)
+            onSend(caption)
+        }
     }
 
     return (
@@ -77,6 +118,10 @@ export function VideoPreviewModal({ file, videoPath, onClose, onSend }: VideoPre
                             onPause={() => setIsPlaying(false)}
                             playsInline
                             controls={false}
+                            crossOrigin="anonymous"
+                            onLoadedMetadata={(e) => {
+                                e.currentTarget.currentTime = 0.1
+                            }}
                         />
 
                         {/* Play/Pause Center Button Overlay */}

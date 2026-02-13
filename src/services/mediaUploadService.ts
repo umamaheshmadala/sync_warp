@@ -420,13 +420,35 @@ class MediaUploadService {
 
       // 📱 MOBILE: Compress before upload
       if (Capacitor.isNativePlatform() && nativePath) {
+        console.log('📱 Native upload path:', nativePath)
         onProgress?.(5)
-        const compressedPath = await this.compressVideo(nativePath)
 
-        // Convert compressed path to Blob/File for upload
-        const response = await fetch(Capacitor.convertFileSrc(compressedPath))
-        const blob = await response.blob()
-        fileToUpload = blob
+        try {
+          // Try compression first
+          const compressedPath = await this.compressVideo(nativePath)
+          const response = await fetch(Capacitor.convertFileSrc(compressedPath))
+          const blob = await response.blob()
+          fileToUpload = blob
+        } catch (compressionError) {
+          console.warn('⚠️ Video compression failed, falling back to original:', compressionError)
+
+          // Fallback: Try to upload original file
+          try {
+            // Handle content URIs or file paths
+            const validPath = nativePath.startsWith('file://') ? nativePath : `file://${nativePath}`
+            const fetchPath = Capacitor.convertFileSrc(nativePath) // convertFileSrc handles content:// too usually or at least standard paths
+            console.log('Using fallback path:', fetchPath)
+
+            const response = await fetch(fetchPath)
+            const blob = await response.blob()
+            // Force valid mime type if missing or generic
+            const mimeType = blob.type === 'application/octet-stream' || !blob.type ? 'video/mp4' : blob.type
+            fileToUpload = new File([blob], `video_${Date.now()}.mp4`, { type: mimeType })
+          } catch (fallbackError) {
+            console.error('❌ Failed to read original video file:', fallbackError)
+            throw new Error('Could not read video file. Please try a different video.')
+          }
+        }
 
         // Cleanup: We should probably delete the temp compressed file, but VideoEditor might handle it or OS cleans cache
       } else if (file) {
@@ -469,7 +491,7 @@ class MediaUploadService {
 
       // Simulate upload progress: 15-85% for main video upload
       const uploadStartTime = Date.now()
-      const estimatedUploadTime = Math.max(2000, file.size / 100000) // ~100KB/s estimate
+      const estimatedUploadTime = Math.max(2000, fileToUpload.size / 100000) // ~100KB/s estimate
 
       const progressInterval = setInterval(() => {
         const elapsed = Date.now() - uploadStartTime
@@ -482,6 +504,7 @@ class MediaUploadService {
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('message-attachments')
           .upload(basePath, fileToUpload, {
+            contentType: fileToUpload.type || 'video/mp4', // Explicitly set content type
             cacheControl: '3600',
             upsert: false
           })

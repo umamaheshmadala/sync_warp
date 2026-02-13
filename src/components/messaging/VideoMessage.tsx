@@ -219,7 +219,7 @@ export function VideoMessage({ videoUrl, thumbnailUrl, duration, onFullscreen }:
             {/* Play/Pause Button */}
             <button
               onClick={togglePlay}
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-4 bg-black/50 hover:bg-black/70 rounded-full transition-colors"
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-4 bg-black/50 hover:bg-black/70 rounded-full transition-colors z-20"
               aria-label={isPlaying ? 'Pause' : 'Play'}
             >
               {isPlaying ? (
@@ -230,7 +230,7 @@ export function VideoMessage({ videoUrl, thumbnailUrl, duration, onFullscreen }:
             </button>
 
             {/* Bottom Controls */}
-            <div className="absolute bottom-0 left-0 right-0 p-3 space-y-2">
+            <div className="absolute bottom-0 left-0 right-0 p-3 space-y-2 z-10">
               {/* Progress Bar */}
               <input
                 type="range"
