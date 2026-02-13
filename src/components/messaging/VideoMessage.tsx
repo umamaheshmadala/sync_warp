@@ -9,6 +9,7 @@ interface VideoMessageProps {
   videoUrl: string
   thumbnailUrl?: string
   duration?: number
+  onFullscreen?: () => void
 }
 
 /**
@@ -32,7 +33,7 @@ interface VideoMessageProps {
  * />
  * ```
  */
-export function VideoMessage({ videoUrl, thumbnailUrl, duration }: VideoMessageProps) {
+export function VideoMessage({ videoUrl, thumbnailUrl, duration, onFullscreen }: VideoMessageProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [isMuted, setIsMuted] = useState(false)
@@ -48,7 +49,7 @@ export function VideoMessage({ videoUrl, thumbnailUrl, duration }: VideoMessageP
       if (isMobile) {
         await Haptics.impact({ style: ImpactStyle.Light })
       }
-      
+
       if (isPlaying) {
         videoRef.current.pause()
       } else {
@@ -72,17 +73,32 @@ export function VideoMessage({ videoUrl, thumbnailUrl, duration }: VideoMessageP
    * Toggle fullscreen with orientation lock on mobile
    */
   const toggleFullscreen = async () => {
+    if (onFullscreen) {
+      if (isMobile) {
+        await Haptics.impact({ style: ImpactStyle.Medium })
+      }
+
+      // Pause inline video before opening modal
+      if (isPlaying && videoRef.current) {
+        videoRef.current.pause()
+        setIsPlaying(false)
+      }
+
+      onFullscreen()
+      return
+    }
+
     if (videoRef.current) {
       if (isMobile) {
         await Haptics.impact({ style: ImpactStyle.Medium })
       }
-      
+
       if (document.fullscreenElement || isFullscreen) {
         // Exit fullscreen
         if (document.exitFullscreen) {
           await document.exitFullscreen()
         }
-        
+
         // Unlock orientation on mobile
         if (isMobile) {
           try {
@@ -91,14 +107,14 @@ export function VideoMessage({ videoUrl, thumbnailUrl, duration }: VideoMessageP
             console.log('Orientation unlock failed:', error)
           }
         }
-        
+
         setIsFullscreen(false)
       } else {
         // Enter fullscreen
         if (videoRef.current.requestFullscreen) {
           await videoRef.current.requestFullscreen()
         }
-        
+
         // Lock to landscape on mobile
         if (isMobile) {
           try {
@@ -107,18 +123,18 @@ export function VideoMessage({ videoUrl, thumbnailUrl, duration }: VideoMessageP
             console.log('Orientation lock failed:', error)
           }
         }
-        
+
         setIsFullscreen(true)
       }
     }
   }
-  
+
   // Handle fullscreen change events
   useEffect(() => {
     const handleFullscreenChange = async () => {
       const isNowFullscreen = !!document.fullscreenElement
       setIsFullscreen(isNowFullscreen)
-      
+
       if (isMobile) {
         if (isNowFullscreen) {
           try {
@@ -135,7 +151,7 @@ export function VideoMessage({ videoUrl, thumbnailUrl, duration }: VideoMessageP
         }
       }
     }
-    
+
     document.addEventListener('fullscreenchange', handleFullscreenChange)
     return () => {
       document.removeEventListener('fullscreenchange', handleFullscreenChange)
@@ -170,7 +186,7 @@ export function VideoMessage({ videoUrl, thumbnailUrl, duration }: VideoMessageP
 
   return (
     <div className="relative inline-block max-w-md rounded-lg overflow-hidden bg-black group">
-      {!isLoaded && !hasError && (
+      {!isLoaded && !hasError && !thumbnailUrl && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-900 min-h-[200px]">
           <Loader2 className="w-8 h-8 animate-spin text-white" />
         </div>

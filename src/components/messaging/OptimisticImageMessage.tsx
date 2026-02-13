@@ -11,6 +11,8 @@ interface OptimisticImageMessageProps {
   onRetry?: () => void
   caption?: string
   isOwn?: boolean
+  hideCaption?: boolean
+  className?: string
 }
 
 /**
@@ -33,23 +35,30 @@ export function OptimisticImageMessage({
   onCancel,
   onRetry,
   caption,
-  isOwn = true
+  isOwn = true,
+  hideCaption = false,
+  className
 }: OptimisticImageMessageProps) {
   const imageUrl = status === 'uploaded' && fullResUrl ? fullResUrl : thumbnailUrl
+  const isGridItem = hideCaption // Heuristic: if caption is hidden, it's likely a grid item
 
   return (
-    <div className="space-y-2">
+    <div className={cn("space-y-2", isGridItem && "h-full w-full space-y-0", className)}>
       {/* Image Container - with overflow hidden to contain progress indicator */}
-      <div className="relative inline-block max-w-full min-w-[120px] overflow-hidden rounded-lg">
+      <div className={cn(
+        "relative inline-block overflow-hidden rounded-lg",
+        isGridItem ? "w-full h-full" : "max-w-full min-w-[120px]"
+      )}>
         <img
           src={imageUrl}
           alt="Shared image"
           className={cn(
-            "max-w-full w-auto h-auto block transition-all duration-300",
+            "transition-all duration-300",
             status === 'uploading' && "opacity-100", // Keep image visible
-            status === 'failed' && "opacity-50 grayscale"
+            status === 'failed' && "opacity-50 grayscale",
+            isGridItem ? "w-full h-full object-cover" : "max-w-full w-auto h-auto block"
           )}
-          style={{ maxHeight: '300px', minHeight: '80px', minWidth: '120px', objectFit: 'cover' }}
+          style={isGridItem ? {} : { maxHeight: '300px', minHeight: '80px', minWidth: '120px', objectFit: 'cover' }}
           loading="lazy"
         />
 
@@ -123,7 +132,7 @@ export function OptimisticImageMessage({
       </div>
 
       {/* Caption */}
-      {caption && (
+      {!hideCaption && caption && (
         <p className="whitespace-pre-wrap text-sm">{caption}</p>
       )}
     </div>

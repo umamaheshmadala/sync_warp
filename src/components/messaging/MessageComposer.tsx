@@ -253,7 +253,9 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
               id: replyToMessage.id,
               content: replyToMessage.content,
               sender_name: 'You', // Will be replaced with actual sender name from backend
-              type: replyToMessage.type
+              type: replyToMessage.type,
+              media_urls: replyToMessage.media_urls,
+              thumbnail_url: replyToMessage.thumbnail_url
             }}
             onCancel={onCancelReply!}
           />

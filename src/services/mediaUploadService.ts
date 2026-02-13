@@ -309,7 +309,10 @@ class MediaUploadService {
       video.playsInline = true  // 📱 Important for iOS
 
       video.onloadedmetadata = () => {
-        video.currentTime = 1 // Seek to 1 second for better thumbnail
+        // Try to seek to 25% of duration or 1.5s, whichever is shorter, 
+        // but at least 0.5s to avoid black start frames
+        const seekTime = Math.min(Math.max(video.duration * 0.25, 1.5), 5.0)
+        video.currentTime = seekTime
       }
 
       video.onseeked = () => {
