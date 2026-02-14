@@ -51,6 +51,10 @@ interface MessagingState {
   isLoadingMessages: boolean;
   isSendingMessage: boolean;
 
+  // Video Playback State
+  playingVideoId: string | null;
+  setPlayingVideo: (videoId: string | null) => void;
+
   // ============================================================================
   // Conversation Actions
   // ============================================================================
@@ -138,6 +142,9 @@ export const useMessagingStore = create<MessagingState>()(
       isLoadingConversations: false,
       isLoadingMessages: false,
       isSendingMessage: false,
+      playingVideoId: null,
+
+      setPlayingVideo: (videoId) => set({ playingVideoId: videoId }, false, 'setPlayingVideo'),
 
       // ========================================================================
       // Conversation Actions

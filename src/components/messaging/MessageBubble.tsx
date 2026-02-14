@@ -842,6 +842,7 @@ export function MessageBubble({
                     // Regular video display with controls
                     <div className="space-y-2">
                       <VideoMessage
+                        id={message.id}
                         videoUrl={message.media_urls[0]}
                         thumbnailUrl={message.thumbnail_url}
                         duration={undefined}

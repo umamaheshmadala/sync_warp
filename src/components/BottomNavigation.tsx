@@ -131,7 +131,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentRoute }) => 
                 key={item.id}
                 to={item.route}
                 onClick={() => handleNavClick(item.route, item.id)}
-                className="flex flex-col items-center justify-center p-0.5 rounded-lg relative min-w-0 flex-1 group overflow-hidden active:bg-gray-50 transition-colors focus:outline-none focus:bg-transparent"
+                className="flex flex-col items-center justify-center p-0.5 rounded-lg relative min-w-0 flex-1 group overflow-hidden transition-colors focus:outline-none focus:bg-transparent active:bg-transparent safe-hover-bg"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 {/* Icon with enhanced animations */}

@@ -5,6 +5,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Capacitor } from '@capacitor/core'
+import { timestamp } from 'virtual:build-info'
 
 const DevMenu = () => {
   const [isOpen, setIsOpen] = useState(false)
@@ -41,7 +42,8 @@ const DevMenu = () => {
   ]
 
   // Build/Sync timestamp for identification (IST) - shows when files were synced with Capacitor
-  const SYNC_TIMESTAMP = typeof __BUILD_TIMESTAMP__ !== 'undefined' ? __BUILD_TIMESTAMP__ : 'Dev Mode'
+  // In dev mode, this comes from the virtual module and updates on HMR
+  const SYNC_TIMESTAMP = timestamp
 
   // Build timestamp for identification (IST)
   const buildTime = new Date().toLocaleString('en-IN', {
@@ -79,7 +81,7 @@ const DevMenu = () => {
         {/* Sync timestamp badge - simplified for small size */}
         {/* Sync timestamp badge - simplified for small size */}
         <span className="absolute -top-3 -right-6 bg-blue-500 text-white text-[9px] font-mono px-1.5 py-0.5 rounded-full whitespace-nowrap border border-white shadow-sm z-50">
-          {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })} {new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+          {SYNC_TIMESTAMP}
         </span>
       </button>
 
