@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Archive, Pin, Trash, X } from 'lucide-react'
+import { Archive, Pin, PinOff, Trash, X } from 'lucide-react'
 import { conversationManagementService } from '../../services/conversationManagementService'
 import { useMessagingStore } from '../../store/messagingStore'
 import { toast } from 'react-hot-toast'
@@ -18,7 +18,12 @@ export function ConversationListBulkActions({
   onUpdate
 }: Props) {
   const [isProcessing, setIsProcessing] = useState(false)
-  const { togglePinOptimistic, toggleArchiveOptimistic } = useMessagingStore()
+  const { conversations, togglePinOptimistic, toggleArchiveOptimistic } = useMessagingStore()
+
+  // Check if all selected conversations are already pinned
+  const allPinned = selectedConversations.length > 0 && selectedConversations.every(id =>
+    conversations.find(c => c.conversation_id === id)?.is_pinned
+  )
 
   const handleBulkArchive = async () => {
     setIsProcessing(true)
@@ -29,7 +34,7 @@ export function ConversationListBulkActions({
           return conversationManagementService.archiveConversation(id)
         })
       )
-      
+
       toast.success(`Archived ${selectedConversations.length} conversation${selectedConversations.length > 1 ? 's' : ''}`, {
         action: {
           label: 'Undo',
@@ -44,7 +49,7 @@ export function ConversationListBulkActions({
           }
         }
       })
-      
+
       onUpdate()
       onClearSelection()
     } catch (error) {
@@ -55,23 +60,48 @@ export function ConversationListBulkActions({
     }
   }
 
-  const handleBulkPin = async () => {
+  const handleTogglePin = async () => {
     setIsProcessing(true)
+    const action = allPinned ? 'unpin' : 'pin'
+
     try {
       await Promise.all(
         selectedConversations.map(id => {
-          togglePinOptimistic(id)
-          return conversationManagementService.pinConversation(id)
+          // Only update if state matches intended action (to avoid flipping correctly set ones in mixed selection)
+          // Actually, standard behavior for "Pin" on mixed selection is to Pin ALL.
+          // For "Unpin" (only if all pinned), it Unpins ALL.
+
+          const conversation = conversations.find(c => c.conversation_id === id)
+          if (!conversation) return Promise.resolve()
+
+          // If we are pinning, and it's already pinned, skip API call but maybe ensure store is correct? 
+          // Pinning an already pinned item is idempotent usually.
+          // Unpinning an unpinned item is also safe.
+
+          // Optimistic update
+          if ((action === 'pin' && !conversation.is_pinned) || (action === 'unpin' && conversation.is_pinned)) {
+            togglePinOptimistic(id)
+          }
+
+          return action === 'pin'
+            ? conversationManagementService.pinConversation(id)
+            : conversationManagementService.unpinConversation(id)
         })
       )
-      
-      toast.success(`Pinned ${selectedConversations.length} conversation${selectedConversations.length > 1 ? 's' : ''}`, {
+
+      const successMessage = action === 'pin'
+        ? `Pinned ${selectedConversations.length} conversation${selectedConversations.length > 1 ? 's' : ''}`
+        : `Unpinned ${selectedConversations.length} conversation${selectedConversations.length > 1 ? 's' : ''}`
+
+      toast.success(successMessage, {
         action: {
           label: 'Undo',
           onClick: async () => {
             await Promise.all(
               selectedConversations.map(id =>
-                conversationManagementService.unpinConversation(id)
+                action === 'pin'
+                  ? conversationManagementService.unpinConversation(id)
+                  : conversationManagementService.pinConversation(id)
               )
             )
             toast.success('Undo successful')
@@ -79,12 +109,12 @@ export function ConversationListBulkActions({
           }
         }
       })
-      
+
       onUpdate()
       onClearSelection()
     } catch (error) {
-      console.error('Bulk pin failed:', error)
-      toast.error('Failed to pin conversations')
+      console.error(`Bulk ${action} failed:`, error)
+      toast.error(`Failed to ${action} conversations`)
     } finally {
       setIsProcessing(false)
     }
@@ -105,7 +135,7 @@ export function ConversationListBulkActions({
           conversationManagementService.deleteConversation(id)
         )
       )
-      
+
       toast.success(`Deleted ${selectedConversations.length} conversation${selectedConversations.length > 1 ? 's' : ''}`)
       onUpdate()
       onClearSelection()
@@ -137,13 +167,13 @@ export function ConversationListBulkActions({
 
       <div className="flex items-center gap-2">
         <button
-          onClick={handleBulkPin}
+          onClick={handleTogglePin}
           disabled={isProcessing || selectedConversations.length === 0}
           className="p-2 bg-blue-700 hover:bg-blue-800 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          aria-label="Pin selected conversations"
-          title="Pin selected conversations"
+          aria-label={allPinned ? "Unpin selected conversations" : "Pin selected conversations"}
+          title={allPinned ? "Unpin selected conversations" : "Pin selected conversations"}
         >
-          <Pin className="w-4 h-4" />
+          {allPinned ? <PinOff className="w-4 h-4" /> : <Pin className="w-4 h-4" />}
         </button>
 
         <button

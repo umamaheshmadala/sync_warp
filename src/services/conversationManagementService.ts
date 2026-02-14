@@ -132,22 +132,27 @@ class ConversationManagementService {
   /**
    * Pin a conversation to the top
    */
+  /**
+   * Pin a conversation to the top
+   */
   async pinConversation(conversationId: string): Promise<void> {
     console.log('📌 Pinning conversation:', conversationId)
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
 
     // Optimistic Update
     const updateId = `pin:${conversationId}`
     optimisticUpdates.applyOptimistic(updateId, { is_pinned: true }, { is_pinned: false })
     useMessagingStore.getState().togglePinOptimistic(conversationId)
 
-    const { data, error } = await supabase
-      .from('conversations')
+    const { error } = await supabase
+      .from('conversation_participants')
       .update({
         is_pinned: true,
-        pinned_at: new Date().toISOString(),
       })
-      .eq('id', conversationId)
-      .select()
+      .eq('conversation_id', conversationId)
+      .eq('user_id', user.id)
 
     if (error) {
       console.error('❌ Failed to pin conversation:', error)
@@ -155,13 +160,6 @@ class ConversationManagementService {
       optimisticUpdates.rollbackUpdate(updateId)
       useMessagingStore.getState().togglePinOptimistic(conversationId)
       throw error
-    }
-
-    if (!data || data.length === 0) {
-      // Rollback if no rows updated
-      optimisticUpdates.rollbackUpdate(updateId)
-      useMessagingStore.getState().togglePinOptimistic(conversationId)
-      throw new Error('No conversation found with that ID')
     }
 
     optimisticUpdates.confirmUpdate(updateId)
@@ -177,18 +175,21 @@ class ConversationManagementService {
   async unpinConversation(conversationId: string): Promise<void> {
     console.log('📍 Unpinning conversation:', conversationId)
 
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
+
     // Optimistic Update
     const updateId = `unpin:${conversationId}`
     optimisticUpdates.applyOptimistic(updateId, { is_pinned: false }, { is_pinned: true })
     useMessagingStore.getState().togglePinOptimistic(conversationId)
 
     const { error } = await supabase
-      .from('conversations')
+      .from('conversation_participants')
       .update({
         is_pinned: false,
-        pinned_at: null,
       })
-      .eq('id', conversationId)
+      .eq('conversation_id', conversationId)
+      .eq('user_id', user.id)
 
     if (error) {
       console.error('Failed to unpin conversation:', error)
