@@ -64,6 +64,7 @@
     "build-storybook": "storybook build"
   },
   "dependencies": {
+    "@awesome-cordova-plugins/core": "^8.1.0",
     "@capacitor-community/contacts": "^7.0.0",
     "@capacitor/action-sheet": "^7.0.2",
     "@capacitor/android": "^7.4.4",
@@ -114,6 +115,7 @@
     "@types/qrcode": "^1.5.5",
     "@types/uuid": "^10.0.0",
     "@use-gesture/react": "^10.3.1",
+    "@whiteguru/capacitor-plugin-video-editor": "^7.1.0",
     "browser-image-compression": "^2.0.2",
     "canvas-confetti": "^1.9.4",
     "class-variance-authority": "^0.7.1",
@@ -143,6 +145,7 @@
     "react-window": "^2.2.4",
     "react-zoom-pan-pinch": "^3.7.0",
     "recharts": "^3.2.1",
+    "rxjs": "^7.8.2",
     "server-destroy": "^1.0.1",
     "sonner": "^2.0.7",
     "tailwind-merge": "^2.6.0",

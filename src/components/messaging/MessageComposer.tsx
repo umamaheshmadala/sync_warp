@@ -1,5 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react'
-import { Send, Plus, Image, Video, Paperclip, Smile, X, Pencil } from 'lucide-react'
+import React, { useState, useRef, useEffect, Suspense } from 'react'
+import { Send, Plus, Image, Video, Smile, X, Pencil } from 'lucide-react'
+import { cn } from '../../lib/utils'
 import { Textarea } from '../ui/textarea'
 import { Button } from '../ui/button'
 import { ImageUploadButton } from './ImageUploadButton'
@@ -14,6 +15,9 @@ import { Capacitor } from '@capacitor/core'
 import { Haptics, NotificationType } from '@capacitor/haptics'
 import type { Message } from '../../types/messaging'
 import { toast } from 'react-hot-toast'
+
+// Lazy load emoji picker to allow code splitting
+const EmojiPicker = React.lazy(() => import('emoji-picker-react'))
 
 interface MessageComposerProps {
   conversationId: string
@@ -39,11 +43,13 @@ interface MessageComposerProps {
 export function MessageComposer({ conversationId, onTyping, replyToMessage, onCancelReply, editingMessage, onCancelEdit, initialText }: MessageComposerProps) {
   const [content, setContent] = useState(initialText || '')
   const [showAttachMenu, setShowAttachMenu] = useState(false)
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [isEditSaving, setIsEditSaving] = useState(false)
   const { sendMessage, isSending } = useSendMessage()
   const { previews, removePreview, reset: resetPreviews } = useLinkPreview(content)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const attachMenuRef = useRef<HTMLDivElement>(null)
+  const emojiPickerRef = useRef<HTMLDivElement>(null)
 
   // Populate content when editing message (WhatsApp-style)
   useEffect(() => {
@@ -75,15 +81,20 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
       if (attachMenuRef.current && !attachMenuRef.current.contains(e.target as Node)) {
         setShowAttachMenu(false)
       }
+      if (emojiPickerRef.current && !emojiPickerRef.current.contains(e.target as Node)) {
+        setShowEmojiPicker(false)
+      }
     }
-    if (showAttachMenu) {
+    if (showAttachMenu || showEmojiPicker) {
       document.addEventListener('mousedown', handleClickOutside)
     }
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [showAttachMenu])
+  }, [showAttachMenu, showEmojiPicker])
 
   const handleSend = async () => {
-    if (!content.trim() || isSending || isEditSaving) return
+    // Only block if empty or currently SAVING an edit (which needs to be synchronous)
+    // We do NOT block normal sending even if a previous send is in progress (isSending is for overall hook state)
+    if (!content.trim() || isEditSaving) return
 
     // Handle edit mode (Story 8.5.2 - WhatsApp style)
     if (editingMessage) {
@@ -113,68 +124,71 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
       return
     }
 
-    // Normal send flow
+    // Normal send flow - OPTIMIZED for speed
+
+    // 1. Capture content and reset UI immediately
+    const messageContent = content.trim();
+    const currentPreviews = previews.length > 0 ? [...previews] : undefined;
+    const replyToId = replyToMessage?.id;
+
+    // Clear input and context immediately
+    setContent('')
+    resetPreviews()
+    onCancelReply?.()
+
+    // Keep focus (or re-focus)
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.focus();
+    }
+
     try {
       if (Capacitor.isNativePlatform()) {
-        try {
-          await Haptics.notification({ type: NotificationType.Success })
-        } catch (error) {
-          console.warn('Haptic feedback not available:', error)
-        }
+        Haptics.notification({ type: NotificationType.Success }).catch(() => { });
       }
 
-      await sendMessage({
+      // 2. Fire and forget (mostly) - let the hook handle the optimistic update and server call
+      // We don't await this because we want the UI to be responsive immediately.
+      // The hook handles errors internally via toast/state.
+      sendMessage({
         conversationId,
-        content: content.trim(),
+        content: messageContent,
         type: 'text',
-        linkPreviews: previews.length > 0 ? previews : undefined,
-        replyToId: replyToMessage?.id  // Include reply_to_id if replying
-      })
-
-      // Track shares for coupon/deal link previews (Story 8.3.4)
-      if (previews.length > 0) {
-        for (const preview of previews) {
-          if (preview.type === 'sync-coupon' && preview.metadata?.couponId) {
-            await shareTrackingService.trackShare({
-              shareableType: 'coupon',
-              shareableId: preview.metadata.couponId,
-              conversationId,
-              shareMethod: 'message',
-              metadata: {
-                title: preview.title,
-                via: 'message_composer'
-              }
-            })
-          } else if (preview.type === 'sync-deal' && preview.metadata?.offerId) {
-            await shareTrackingService.trackShare({
-              shareableType: 'offer',
-              shareableId: preview.metadata.offerId,
-              conversationId,
-              shareMethod: 'message',
-              metadata: {
-                title: preview.title,
-                via: 'message_composer'
-              }
-            })
+        linkPreviews: currentPreviews,
+        replyToId: replyToId
+      }).then(async () => {
+        // Track shares asynchronously after send is initiated
+        if (currentPreviews && currentPreviews.length > 0) {
+          for (const preview of currentPreviews) {
+            if (preview.type === 'sync-coupon' && preview.metadata?.couponId) {
+              shareTrackingService.trackShare({
+                shareableType: 'coupon',
+                shareableId: preview.metadata.couponId,
+                conversationId,
+                shareMethod: 'message',
+                metadata: { title: preview.title, via: 'message_composer' }
+              }).catch(console.error);
+            } else if (preview.type === 'sync-deal' && preview.metadata?.offerId) {
+              shareTrackingService.trackShare({
+                shareableType: 'offer',
+                shareableId: preview.metadata.offerId,
+                conversationId,
+                shareMethod: 'message',
+                metadata: { title: preview.title, via: 'message_composer' }
+              }).catch(console.error);
+            }
           }
         }
-      }
+      }).catch(err => {
+        console.error('Background send failed:', err);
+        // The hook manages the failed state in the store, so the message will show as failed in the list.
+        // We might want to show a global toast if strictly necessary, but per-message failure UI is better.
+      });
 
-      setContent('')
-      resetPreviews()  // Clear link previews after sending
-      onCancelReply?.()  // Clear reply context after sending
-
-      if (textareaRef.current) {
-        textareaRef.current.style.height = 'auto'
-        const inputToFocus = textareaRef.current;
-        // Robust focus attempt for mobile/web
-        requestAnimationFrame(() => {
-          inputToFocus.focus();
-          setTimeout(() => inputToFocus.focus(), 100);
-        });
-      }
     } catch (error) {
-      console.error('Failed to send message:', error)
+      console.error('Failed to initiate send:', error)
+      // Restore content if immediate failure? 
+      // Nah, better to rely on the "failed message" in the list which allows retry.
     }
   }
 
@@ -244,7 +258,9 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
               id: replyToMessage.id,
               content: replyToMessage.content,
               sender_name: 'You', // Will be replaced with actual sender name from backend
-              type: replyToMessage.type
+              type: replyToMessage.type,
+              media_urls: replyToMessage.media_urls,
+              thumbnail_url: replyToMessage.thumbnail_url
             }}
             onCancel={onCancelReply!}
           />
@@ -300,20 +316,14 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
                   variant="menu"
                 />
 
-                {/* Document/File (placeholder for future) */}
-                <button className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-gray-50 transition-colors">
-                  <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
-                    <Paperclip className="h-4 w-4 text-purple-600" />
-                  </div>
-                  <span className="text-sm font-medium text-gray-700">Document</span>
-                </button>
+
               </div>
             </div>
           )}
         </div>
 
         {/* Text Input Container - Takes Maximum Width */}
-        <div className="flex-1 flex items-end bg-gray-100 rounded-3xl border border-gray-200 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all overflow-hidden">
+        <div className="flex-1 flex items-end bg-gray-100 rounded-3xl border border-gray-200 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
           <Textarea
             ref={textareaRef}
             value={content}
@@ -323,23 +333,51 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
             data-testid="message-input"
             className="flex-1 min-h-[40px] max-h-[120px] resize-none border-none bg-transparent px-4 py-2.5 focus-visible:ring-0 placeholder:text-gray-400 text-sm leading-5"
             rows={1}
-            disabled={isSending}
+            disabled={isEditSaving}
           />
 
           {/* Emoji Button - Inside text field */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-10 w-10 text-gray-400 hover:text-gray-600 hover:bg-transparent flex-shrink-0 mr-1"
-          >
-            <Smile className="h-5 w-5" />
-          </Button>
+          <div className="relative flex-shrink-0" ref={emojiPickerRef}>
+            {showEmojiPicker && (
+              <div className="absolute bottom-12 right-0 z-50 shadow-xl rounded-xl border border-gray-200 bg-white" onClick={(e) => e.stopPropagation()}>
+                <Suspense fallback={<div className="w-[300px] h-[400px] flex items-center justify-center"><div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div></div>}>
+                  <EmojiPicker
+                    onEmojiClick={(emojiData) => {
+                      setContent(prev => prev + emojiData.emoji)
+                    }}
+                    width={300}
+                    height={400}
+                    previewConfig={{ showPreview: false }}
+                    searchDisabled={false}
+                    skinTonesDisabled
+                  />
+                </Suspense>
+              </div>
+            )}
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault(); // Prevent any form submission or other default behavior
+                console.log('😊 Emoji button clicked, toggling picker. Current state:', showEmojiPicker);
+                setShowEmojiPicker(prev => !prev);
+              }}
+              className={cn(
+                "h-10 w-10 flex-shrink-0 mr-1 transition-colors",
+                showEmojiPicker ? "text-blue-500 bg-blue-50" : "text-gray-400 hover:text-gray-600 hover:bg-transparent"
+              )}
+            >
+              <Smile className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
 
         {/* Send Button - Only shows when there's text */}
         <Button
           onClick={handleSend}
-          disabled={!hasText || isSending}
+          disabled={!hasText || isEditSaving}
           size="icon"
           data-testid="send-message-btn"
           className={`h-10 w-10 rounded-full flex-shrink-0 transition-all ${hasText

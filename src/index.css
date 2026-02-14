@@ -20,7 +20,8 @@ html {
 
 html {
   scroll-behavior: smooth;
-  overscroll-behavior-y: none; /* Prevent pull-to-refresh on mobile webviews if not needed */
+  overscroll-behavior-y: none;
+  /* Prevent pull-to-refresh on mobile webviews if not needed */
 }
 
 @layer base {
@@ -189,4 +190,18 @@ body,
   min-height: 100vh;
   overflow-y: auto;
   overflow-x: hidden;
+}
+
+/* Hide Emoji Picker Category Navigation to reduce clutter */
+.epr-category-nav {
+  display: none !important;
+}
+
+/* Safe hover effect - only apply hover styles on devices that support hover */
+/* Safe hover effect - only apply hover styles on devices that support hover AND have a fine pointer (mouse) */
+@media (hover: hover) and (pointer: fine) {
+  .safe-hover-bg:hover {
+    background-color: #f9fafb;
+    /* gray-50 */
+  }
 }

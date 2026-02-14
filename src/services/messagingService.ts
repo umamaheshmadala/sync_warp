@@ -67,6 +67,9 @@ class MessagingService {
         console.warn('⚠️ Network monitoring unavailable:', error);
       }
     }
+
+    // Initialize spam detection (prefetch rules)
+    spamDetectionService.init().catch(err => console.error('Failed to init spam detection:', err));
   }
 
   /**
@@ -224,12 +227,12 @@ class MessagingService {
       // SPAM DETECTION: Client-side pre-flight checks
       // ============================================================
 
-      // 1. Rate limit check (prevent unnecessary network calls)
-      const rateLimitCheck = await spamDetectionService.checkRateLimits(params.conversationId)
-      if (!rateLimitCheck.allowed) {
-        console.warn('[SpamDetection] Rate limit check failed:', rateLimitCheck.reason)
-        throw new Error(rateLimitCheck.reason || 'Rate limit exceeded')
-      }
+      // 1. Rate limit check (OPTIMIZED: Rely on server-side limits to save 2 DB round-trips)
+      // const rateLimitCheck = await spamDetectionService.checkRateLimits(params.conversationId)
+      // if (!rateLimitCheck.allowed) {
+      //   console.warn('[SpamDetection] Rate limit check failed:', rateLimitCheck.reason)
+      //   throw new Error(rateLimitCheck.reason || 'Rate limit exceeded')
+      // }
 
       // 2. Spam content check
       const spamCheck = await spamDetectionService.isSpam(params.content, user.id)
@@ -695,13 +698,23 @@ class MessagingService {
           .eq('id', otherUserId)
           .single();
 
+
+        // Fetch latest message to populate fields
+        const { data: latestMsg } = await supabase
+          .from('messages')
+          .select('id, content, type, sender_id, created_at')
+          .eq('conversation_id', conversationId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
         // Construct object
         conversationData = {
           conversation_id: rawConv.id,
           type: rawConv.type,
           participants: participantsArr,
           created_at: rawConv.created_at,
-          last_message_at: rawConv.created_at, // timestamps
+          last_message_at: latestMsg?.created_at || rawConv.created_at,
           unread_count: 0,
           // Participant specific
           is_archived: false,
@@ -712,12 +725,12 @@ class MessagingService {
           other_participant_name: otherProfile?.full_name,
           other_participant_avatar: otherProfile?.avatar_url,
           other_participant_online: otherProfile?.is_online,
-          // Nulls for messages
-          last_message_id: null,
-          last_message_content: null,
-          last_message_type: null,
-          last_message_sender_id: null,
-          last_message_timestamp: null,
+          // Message details
+          last_message_id: latestMsg?.id || null,
+          last_message_content: latestMsg?.content || null,
+          last_message_type: latestMsg?.type || null,
+          last_message_sender_id: latestMsg?.sender_id || null,
+          last_message_timestamp: latestMsg?.created_at || null,
           last_message_status: null
         };
       }

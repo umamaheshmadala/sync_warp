@@ -23,6 +23,7 @@ import { Capacitor } from '@capacitor/core'
 import { Haptics, ImpactStyle } from '@capacitor/haptics'
 import toast from 'react-hot-toast'
 import { useMessagingStore } from '../../store/messagingStore'
+import { useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { mediaUploadService } from '../../services/mediaUploadService'
 import { messagingService } from '../../services/messagingService'
@@ -44,6 +45,7 @@ import { ClickableUrl } from './ClickableUrl'
 import { parseMessageContent } from '../../utils/urlUtils'
 import { ReviewLinkPreview } from '../chat/ReviewLinkPreview'
 import { OfferLinkPreview } from '../chat/OfferLinkPreview'
+import { ExpandableText } from './ExpandableText'
 
 interface MessageBubbleProps {
   message: Message
@@ -114,6 +116,7 @@ export function MessageBubble({
   const [lightboxInitialIndex, setLightboxInitialIndex] = useState(0)
   // const [showReactionBar, setShowReactionBar] = useState(false) // Removed per user feedback
   const [showPicker, setShowPicker] = useState(false)
+  const queryClient = useQueryClient()
 
   // Custom Hook for long press
   const {
@@ -413,6 +416,16 @@ export function MessageBubble({
       if (result.success) {
         // Optimistic UI: Remove message from local state immediately
         useMessagingStore.getState().removeMessage(message.conversation_id, message.id)
+
+        // ALSO remove from React Query cache so it disappears from the list
+        queryClient.setQueryData(['messages', message.conversation_id], (old: any) => {
+          if (!old || !old.messages) return old
+          return {
+            ...old,
+            messages: old.messages.filter((m: Message) => m.id !== message.id)
+          }
+        })
+
         toast.success('Message deleted for you', { icon: '🙈' })
       } else {
         toast.error(result.message || 'Failed to delete message')
@@ -653,64 +666,138 @@ export function MessageBubble({
               {message.type === 'image' ? (
                 message.media_urls && message.media_urls.length > 0 ? (
                   message._optimistic ? (
-                    // Optimistic UI: Show thumbnail with loading state
-                    <OptimisticImageMessage
-                      thumbnailUrl={message.thumbnail_url || message.media_urls[0]}
-                      fullResUrl={message.media_urls[0]}
-                      uploadProgress={message._uploadProgress || 0}
-                      status={message._failed ? 'failed' : 'uploading'}
-                      caption={content}
-                      isOwn={isOwn}
-                      onRetry={handleRetryUpload}
-                      onCancel={() => {
-                        // Cancel upload by marking as failed (WhatsApp style)
-                        if (message._tempId) {
-                          console.log('🛑 User cancelled upload via UI')
-                          useMessagingStore.getState().updateMessage(message.conversation_id, message._tempId, {
-                            _failed: true,
-                            _uploadProgress: 0
-                          })
-                        }
-                      }}
-                    />
-                  ) : (
-                    // Regular image display with lightbox
-                    <div className="space-y-2">
-                      <ImageMessage
-                        imageUrl={message.media_urls[0]}
-                        thumbnailUrl={message.thumbnail_url}
-                        alt="Shared image"
-                        onImageClick={() => {
-                          // Get all images from the conversation for gallery navigation
-                          const conversationMessages = useMessagingStore.getState().messages.get(message.conversation_id) || []
-                          const allImages: string[] = []
-                          let currentImageIndex = 0
-
-                          conversationMessages.forEach((msg) => {
-                            if (msg.type === 'image' && Array.isArray(msg.media_urls) && msg.media_urls.length > 0 && !msg._optimistic) {
-                              // Track the index of the current image
-                              if (msg.id === message.id) {
-                                currentImageIndex = allImages.length
+                    // Optimistic UI: Show grid of thumbnails with loading state
+                    <div className={cn(
+                      "grid gap-1",
+                      message.media_urls.length === 1 ? "grid-cols-1" :
+                        message.media_urls.length === 2 ? "grid-cols-2" :
+                          "grid-cols-2",
+                      // Limit width for grids to prevent them being too large
+                      message.media_urls.length > 1 ? "max-w-[300px]" : "max-w-sm"
+                    )}>
+                      {message.media_urls.slice(0, 4).map((url, index) => (
+                        <div key={index} className={cn(
+                          "relative aspect-square overflow-hidden",
+                          message.media_urls!.length === 3 && index === 0 ? "col-span-2 aspect-video" : "",
+                          "rounded-lg"
+                        )}>
+                          <OptimisticImageMessage
+                            thumbnailUrl={url}
+                            fullResUrl={url}
+                            uploadProgress={message._uploadProgress || 0}
+                            status={message._failed ? 'failed' : 'uploading'}
+                            caption={index === message.media_urls!.length - 1 ? content : undefined} // Show caption only on last or wrapper? Optimistic component handles caption internally, might duplication. Let's hide caption in individual items and show it below grid if possible, but OptimisticImageMessage is designed to be the message body. 
+                            // Actually, OptimisticImageMessage includes the specific UI. We might need a simpler wrapper for grid items.
+                            // Re-using OptimisticImageMessage for each item might look weird if each has progress bar.
+                            // But usually upload is one block. 
+                            // For simplicity in this iteration, let's assume all share same progress.
+                            isOwn={isOwn}
+                            onRetry={handleRetryUpload}
+                            onCancel={() => {
+                              if (message._tempId) {
+                                console.log('🛑 User cancelled upload via UI')
+                                useMessagingStore.getState().updateMessage(message.conversation_id, message._tempId, {
+                                  _failed: true,
+                                  _uploadProgress: 0
+                                })
                               }
-                              allImages.push(...msg.media_urls)
-                            }
-                          })
+                            }}
+                            // Hide caption for grid items, we'll show it below
+                            hideCaption={true}
+                          />
+                          {/* Overflow Count for 5+ images */}
+                          {index === 3 && message.media_urls!.length > 4 && (
+                            <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-lg">
+                              <span className="text-white text-2xl font-bold">
+                                +{message.media_urls!.length - 4}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      {/* Caption for optimistic message */}
+                      {content && (
+                        <div className={cn("col-span-full pt-1", isOwn ? "text-right" : "text-left")}>
+                          <ExpandableText content={content} limit={40} className="text-sm" isOwn={isOwn} />
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    // Regular image display with lightbox and grid
+                    <div className="space-y-1">
+                      <div className={cn(
+                        "grid gap-1",
+                        message.media_urls.length === 1 ? "grid-cols-1" :
+                          message.media_urls.length === 2 ? "grid-cols-2" :
+                            "grid-cols-2",
+                        // Limit width for grids to prevent them being too large
+                        message.media_urls.length > 1 ? "max-w-[300px]" : "max-w-sm"
+                      )}>
+                        {message.media_urls.slice(0, 4).map((url, index) => (
+                          <div
+                            key={index}
+                            className={cn(
+                              "relative cursor-pointer overflow-hidden rounded-lg hover:opacity-95 transition-opacity",
+                              message.media_urls!.length === 1 ? "aspect-auto" : "aspect-square",
+                              message.media_urls!.length === 3 && index === 0 ? "col-span-2 aspect-video" : ""
+                            )}
+                            onClick={() => {
+                              // Get all images
+                              const conversationMessages = useMessagingStore.getState().messages.get(message.conversation_id) || []
+                              const allImages: string[] = []
+                              let globalIndex = 0
+                              let found = false
 
-                          // Fallback: If for some reason we didn't find any (e.g. current message missing from store),
-                          // at least show the current image.
-                          if (allImages.length === 0 && message.media_urls?.[0]) {
-                            console.warn('⚠️ Lightbox: Could not find images in store, falling back to current message image')
-                            allImages.push(message.media_urls[0])
-                            currentImageIndex = 0
-                          }
+                              // Construct global list and find index of clicked image
+                              conversationMessages.forEach((msg) => {
+                                if (msg.type === 'image' && Array.isArray(msg.media_urls) && msg.media_urls.length > 0 && !msg._optimistic) {
+                                  if (msg.id === message.id) {
+                                    // This is the current message
+                                    globalIndex = allImages.length + index
+                                    found = true
+                                  }
+                                  allImages.push(...msg.media_urls)
+                                }
+                              })
 
-                          console.log('🖼️ Opening lightbox with images:', allImages.length, 'Current index:', currentImageIndex)
-                          setLightboxImages(allImages)
-                          setLightboxInitialIndex(currentImageIndex)
-                          setLightboxOpen(true)
-                        }}
-                      />
-                      {content && <p className="whitespace-pre-wrap mt-2">{content}</p>}
+                              if (!found && message.media_urls) {
+                                // Fallback
+                                allImages.push(...message.media_urls)
+                                globalIndex = index
+                              }
+
+                              setLightboxImages(allImages)
+                              setLightboxInitialIndex(globalIndex)
+                              setLightboxOpen(true)
+                            }}
+                          >
+                            <img
+                              src={url}
+                              alt={`Image ${index + 1}`}
+                              className="w-full h-full object-cover"
+                              style={message.media_urls!.length === 1 ? { maxHeight: '300px', width: 'auto' } : {}}
+                              loading="lazy"
+                            />
+                            {/* Overlay for +N */}
+                            {index === 3 && message.media_urls!.length > 4 && (
+                              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                <span className="text-white text-2xl font-bold">
+                                  +{message.media_urls!.length - 4}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+
+                      {content && (
+                        <ExpandableText
+                          content={content}
+                          limit={40}
+                          className="mt-1 text-sm pl-1"
+                          isOwn={isOwn}
+                        />
+                      )}
                     </div>
                   )
                 ) : (
@@ -718,7 +805,14 @@ export function MessageBubble({
                   <div className="p-4 bg-gray-100 rounded-lg border border-gray-200 text-center min-w-[200px]">
                     <p className="text-sm text-gray-500 italic">Image unavailable</p>
                     <p className="text-xs text-gray-400 mt-1">Media URL missing</p>
-                    {content && <p className="whitespace-pre-wrap mt-2 text-left">{content}</p>}
+                    {content && (
+                      <ExpandableText
+                        content={content}
+                        limit={40}
+                        className="mt-2 text-sm text-left"
+                        isOwn={isOwn}
+                      />
+                    )}
                   </div>
                 )
               ) : message.type === 'video' ? (
@@ -748,11 +842,20 @@ export function MessageBubble({
                     // Regular video display with controls
                     <div className="space-y-2">
                       <VideoMessage
+                        id={message.id}
                         videoUrl={message.media_urls[0]}
                         thumbnailUrl={message.thumbnail_url}
                         duration={undefined}
+                        onFullscreen={() => setShowVideoPlayer(true)}
                       />
-                      {content && <p className="whitespace-pre-wrap mt-2">{content}</p>}
+                      {content && (
+                        <ExpandableText
+                          content={content}
+                          limit={40}
+                          className="mt-2 text-sm"
+                          isOwn={isOwn}
+                        />
+                      )}
                     </div>
                   )
                 ) : (
@@ -760,7 +863,14 @@ export function MessageBubble({
                   <div className="p-4 bg-gray-100 rounded-lg border border-gray-200 text-center min-w-[200px]">
                     <p className="text-sm text-gray-500 italic">Video unavailable</p>
                     <p className="text-xs text-gray-400 mt-1">Media URL missing</p>
-                    {content && <p className="whitespace-pre-wrap mt-2 text-left">{content}</p>}
+                    {content && (
+                      <ExpandableText
+                        content={content}
+                        limit={40}
+                        className="mt-2 text-sm text-left"
+                        isOwn={isOwn}
+                      />
+                    )}
                   </div>
                 )
               ) : (

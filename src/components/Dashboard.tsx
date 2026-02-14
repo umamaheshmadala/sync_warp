@@ -18,6 +18,10 @@ import { FriendLikedDealsSection } from './deals/FriendLikedDealsSection';
 import { NewBusinesses } from './business';
 import { SpotlightBusiness, HotOffer, TrendingProduct } from '../services/dashboardService';
 import { OfferCard } from './offers/OfferCard';
+import { StandardBusinessCard, type StandardBusinessCardData } from './common';
+
+import { StorefrontShareButton } from './Sharing/StorefrontShareButton';
+import { FollowButton } from './following/FollowButton';
 
 // Dummy data as fallback - defined outside component for immediate initialization
 const dummySpotlightBusinesses: SpotlightBusiness[] = [
@@ -152,60 +156,58 @@ const Dashboard: React.FC = () => {
 
             </div>
 
-            {/* Mobile: 2-column compact grid, Desktop: 3-column cards */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
+            {/* Mobile & Desktop: Single column list */}
+            <div className="grid grid-cols-1 gap-3 md:gap-4">
               {spotlightBusinesses.length === 0 ? (
-                <div className="col-span-2 md:col-span-3 text-center py-8 text-gray-500">
+                <div className="col-span-1 text-center py-8 text-gray-500">
                   <p className="text-lg font-medium">No businesses to spotlight yet</p>
                   <p className="text-sm">Businesses will appear here as they join!</p>
                 </div>
-              ) : spotlightBusinesses.map((business, index) => (
-                <div
-                  key={business.id}
-                  onClick={() => navigate(getBusinessUrl(business.id, business.name))}
-                  className="bg-white rounded-xl md:rounded-2xl shadow-sm md:shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-105 relative"
-                >
-                  {/* Desktop only: Show cover image */}
-                  <div className="hidden md:flex h-32 bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 items-center justify-center relative">
-                    {business.isPromoted && (
-                      <div className="absolute top-3 left-3 z-10">
-                        <span className="bg-gradient-to-r from-yellow-400 to-orange-400 text-white px-3 py-1 rounded-full text-xs font-medium shadow-sm">
-                          ✨ Featured
-                        </span>
-                      </div>
-                    )}
-                    <div className="text-center">
-                      <div className="text-2xl mb-2">{index === 0 ? '🏢' : '🏪'}</div>
-                      <p className="text-sm text-gray-600 font-medium">{business.category}</p>
-                    </div>
-                  </div>
+              ) : spotlightBusinesses.map((business, index) => {
+                // Map SpotlightBusiness to StandardBusinessCardData
+                const businessData: StandardBusinessCardData = {
+                  id: business.id,
+                  business_name: business.name,
+                  business_type: business.category,
+                  city: business.city,
+                  rating: business.rating,
+                  review_count: business.reviewCount,
+                  logo_url: business.imageUrl || undefined,
+                  // Spotlight data doesn't have all fields, but StandardBusinessCard handles optional props
+                };
 
-                  {/* Mobile and Desktop: Content section */}
-                  <div className="p-3 md:p-4">
-                    <div className="flex md:block items-start gap-2 md:gap-0">
-                      {/* Mobile only: Icon */}
-                      <div className="md:hidden flex-shrink-0 w-10 h-10 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-lg flex items-center justify-center text-xl relative">
-                        {business.isPromoted && (
-                          <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full border-2 border-white"></div>
-                        )}
-                        {index === 0 ? '🏢' : '🏪'}
+                return (
+                  <StandardBusinessCard
+                    key={business.id}
+                    business={businessData}
+                    onCardClick={(id) => navigate(getBusinessUrl(id, business.name))}
+                    variant="search"
+                    showChevron={false}
+                    actionButton={
+                      <div className="flex items-center gap-2">
+                        <StorefrontShareButton
+                          businessId={business.id}
+                          businessName={business.name}
+                          businessImageUrl={business.imageUrl || undefined}
+                          showLabel={false}
+                          showIcon={true}
+                          showModal={true}
+                          className="p-2.5 w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-700 border-none shadow-none"
+                          variant="ghost"
+                        />
+                        <FollowButton
+                          businessId={business.id}
+                          businessName={business.name}
+                          variant="ghost"
+                          size="sm"
+                          showLabel={false}
+                          className="p-2.5 w-10 h-10 rounded-full bg-green-100 text-green-700 hover:bg-green-200 hover:text-green-800 border-none shadow-none"
+                        />
                       </div>
-
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-gray-900 text-sm mb-1 truncate">{business.name}</h3>
-                        <p className="text-xs md:text-sm text-gray-600 mb-2 md:mb-3 truncate">{business.location}</p>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            <Star className="w-3 h-3 md:w-4 md:h-4 text-yellow-400 fill-current mr-1" />
-                            <span className="text-xs md:text-sm font-medium">{business.rating}</span>
-                          </div>
-                          <span className="text-xs md:text-sm text-gray-500">({business.reviewCount})</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                    }
+                  />
+                )
+              })}
             </div>
           </section>
 
@@ -294,14 +296,7 @@ const Dashboard: React.FC = () => {
                       <TrendingUp className="w-5 h-5 text-purple-600 drop-shadow-md" />
                     </div>
 
-                    {/* Multiple Images Indicator - Top Right (matches Products tab) */}
-                    {product.imageCount && product.imageCount > 1 && (
-                      <div className="absolute top-2 right-2">
-                        <div className="bg-black/50 backdrop-blur-sm rounded-full p-1.5 text-white">
-                          <Layers className="w-4 h-4" />
-                        </div>
-                      </div>
-                    )}
+
                   </div>
                 </div>
               ))}

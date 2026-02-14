@@ -5,10 +5,14 @@ import { ScreenOrientation } from '@capacitor/screen-orientation'
 import { Haptics, ImpactStyle } from '@capacitor/haptics'
 import { cn } from '../../lib/utils'
 
+import { useMessagingStore } from '../../store/messagingStore'
+
 interface VideoMessageProps {
+  id: string
   videoUrl: string
   thumbnailUrl?: string
   duration?: number
+  onFullscreen?: () => void
 }
 
 /**
@@ -22,17 +26,20 @@ interface VideoMessageProps {
  * - Mobile: Orientation lock to landscape in fullscreen
  * - Duration badge when not playing
  * - Responsive controls overlay
+ * - Single video playback enforcement
+ * - Automatic thumbnail generation (seek to start)
  * 
  * @example
  * ```tsx
  * <VideoMessage
+ *   id="msg-123"
  *   videoUrl="https://example.com/video.mp4"
  *   thumbnailUrl="https://example.com/thumb.jpg"
  *   duration={120}
  * />
  * ```
  */
-export function VideoMessage({ videoUrl, thumbnailUrl, duration }: VideoMessageProps) {
+export function VideoMessage({ id, videoUrl, thumbnailUrl, duration, onFullscreen }: VideoMessageProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [isMuted, setIsMuted] = useState(false)
@@ -43,15 +50,31 @@ export function VideoMessage({ videoUrl, thumbnailUrl, duration }: VideoMessageP
   const [isFullscreen, setIsFullscreen] = useState(false)
   const isMobile = Capacitor.isNativePlatform()
 
+  // Global playback state
+  const playingVideoId = useMessagingStore(state => state.playingVideoId)
+  const setPlayingVideo = useMessagingStore(state => state.setPlayingVideo)
+
+  // Sync with global state
+  useEffect(() => {
+    if (playingVideoId && playingVideoId !== id && isPlaying) {
+      // Another video started playing, pause this one
+      videoRef.current?.pause()
+      setIsPlaying(false)
+    }
+  }, [playingVideoId, id, isPlaying])
+
   const togglePlay = async () => {
     if (videoRef.current) {
       if (isMobile) {
         await Haptics.impact({ style: ImpactStyle.Light })
       }
-      
+
       if (isPlaying) {
         videoRef.current.pause()
+        setPlayingVideo(null) // clear global state
       } else {
+        // Stop others and play this one
+        setPlayingVideo(id)
         videoRef.current.play()
       }
       setIsPlaying(!isPlaying)
@@ -72,17 +95,33 @@ export function VideoMessage({ videoUrl, thumbnailUrl, duration }: VideoMessageP
    * Toggle fullscreen with orientation lock on mobile
    */
   const toggleFullscreen = async () => {
+    if (onFullscreen) {
+      if (isMobile) {
+        await Haptics.impact({ style: ImpactStyle.Medium })
+      }
+
+      // Pause inline video before opening modal
+      if (isPlaying && videoRef.current) {
+        videoRef.current.pause()
+        setIsPlaying(false)
+        setPlayingVideo(null)
+      }
+
+      onFullscreen()
+      return
+    }
+
     if (videoRef.current) {
       if (isMobile) {
         await Haptics.impact({ style: ImpactStyle.Medium })
       }
-      
+
       if (document.fullscreenElement || isFullscreen) {
         // Exit fullscreen
         if (document.exitFullscreen) {
           await document.exitFullscreen()
         }
-        
+
         // Unlock orientation on mobile
         if (isMobile) {
           try {
@@ -91,14 +130,14 @@ export function VideoMessage({ videoUrl, thumbnailUrl, duration }: VideoMessageP
             console.log('Orientation unlock failed:', error)
           }
         }
-        
+
         setIsFullscreen(false)
       } else {
         // Enter fullscreen
         if (videoRef.current.requestFullscreen) {
           await videoRef.current.requestFullscreen()
         }
-        
+
         // Lock to landscape on mobile
         if (isMobile) {
           try {
@@ -107,18 +146,18 @@ export function VideoMessage({ videoUrl, thumbnailUrl, duration }: VideoMessageP
             console.log('Orientation lock failed:', error)
           }
         }
-        
+
         setIsFullscreen(true)
       }
     }
   }
-  
+
   // Handle fullscreen change events
   useEffect(() => {
     const handleFullscreenChange = async () => {
       const isNowFullscreen = !!document.fullscreenElement
       setIsFullscreen(isNowFullscreen)
-      
+
       if (isMobile) {
         if (isNowFullscreen) {
           try {
@@ -135,7 +174,7 @@ export function VideoMessage({ videoUrl, thumbnailUrl, duration }: VideoMessageP
         }
       }
     }
-    
+
     document.addEventListener('fullscreenchange', handleFullscreenChange)
     return () => {
       document.removeEventListener('fullscreenchange', handleFullscreenChange)
@@ -152,6 +191,11 @@ export function VideoMessage({ videoUrl, thumbnailUrl, duration }: VideoMessageP
     if (videoRef.current) {
       setVideoDuration(videoRef.current.duration)
       setIsLoaded(true)
+
+      // If no thumbnail, seek to 0.1s to generate a frame
+      if (!thumbnailUrl && videoRef.current.currentTime === 0) {
+        videoRef.current.currentTime = 0.1
+      }
     }
   }
 
@@ -169,8 +213,8 @@ export function VideoMessage({ videoUrl, thumbnailUrl, duration }: VideoMessageP
   }
 
   return (
-    <div className="relative inline-block max-w-md rounded-lg overflow-hidden bg-black group">
-      {!isLoaded && !hasError && (
+    <div className="relative inline-block max-w-md rounded-lg overflow-hidden bg-black group w-full">
+      {!isLoaded && !hasError && !thumbnailUrl && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-900 min-h-[200px]">
           <Loader2 className="w-8 h-8 animate-spin text-white" />
         </div>
@@ -186,24 +230,32 @@ export function VideoMessage({ videoUrl, thumbnailUrl, duration }: VideoMessageP
             ref={videoRef}
             src={videoUrl}
             poster={thumbnailUrl}
-            className="w-full h-auto"
+            className="w-full h-auto object-contain bg-black"
             style={{ maxHeight: '300px' }}
             onLoadedMetadata={handleLoadedMetadata}
             onError={() => setHasError(true)}
             onTimeUpdate={handleTimeUpdate}
-            onEnded={() => setIsPlaying(false)}
+            onEnded={() => {
+              setIsPlaying(false)
+              setPlayingVideo(null)
+            }}
             preload="metadata"
+            playsInline
           />
 
           {/* Video Controls Overlay */}
           <div className={cn(
             "absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20",
-            "opacity-0 group-hover:opacity-100 transition-opacity"
+            // Show controls if playing (on hover) or if paused (always, to allow play)
+            // Actually, we want a play button always visible if paused.
+            // If playing, controls fade out unless hovered.
+            !isPlaying ? "opacity-100" : "opacity-0 group-hover:opacity-100",
+            "transition-opacity duration-200"
           )}>
             {/* Play/Pause Button */}
             <button
               onClick={togglePlay}
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-4 bg-black/50 hover:bg-black/70 rounded-full transition-colors"
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-4 bg-black/50 hover:bg-black/70 rounded-full transition-colors z-20 backdrop-blur-sm"
               aria-label={isPlaying ? 'Pause' : 'Play'}
             >
               {isPlaying ? (
@@ -214,15 +266,17 @@ export function VideoMessage({ videoUrl, thumbnailUrl, duration }: VideoMessageP
             </button>
 
             {/* Bottom Controls */}
-            <div className="absolute bottom-0 left-0 right-0 p-3 space-y-2">
+            <div className="absolute bottom-0 left-0 right-0 p-3 space-y-2 z-10">
               {/* Progress Bar */}
               <input
                 type="range"
                 min="0"
                 max={videoDuration || 0}
+                step="0.1"
                 value={currentTime}
                 onChange={handleSeek}
-                className="w-full h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-white"
+                onClick={(e) => e.stopPropagation()}
+                className="w-full h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-white hover:h-1.5 transition-all"
                 style={{
                   background: `linear-gradient(to right, white 0%, white ${(currentTime / (videoDuration || 1)) * 100}%, rgb(75 85 99) ${(currentTime / (videoDuration || 1)) * 100}%, rgb(75 85 99) 100%)`
                 }}
@@ -236,7 +290,10 @@ export function VideoMessage({ videoUrl, thumbnailUrl, duration }: VideoMessageP
 
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={toggleMute}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      toggleMute()
+                    }}
                     className="p-2 hover:bg-white/10 rounded-lg transition-colors"
                     aria-label={isMuted ? 'Unmute' : 'Mute'}
                   >
@@ -248,7 +305,10 @@ export function VideoMessage({ videoUrl, thumbnailUrl, duration }: VideoMessageP
                   </button>
 
                   <button
-                    onClick={toggleFullscreen}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      toggleFullscreen()
+                    }}
                     className="p-2 hover:bg-white/10 rounded-lg transition-colors"
                     aria-label="Fullscreen"
                   >
@@ -259,9 +319,9 @@ export function VideoMessage({ videoUrl, thumbnailUrl, duration }: VideoMessageP
             </div>
           </div>
 
-          {/* Duration Badge (when not playing) */}
+          {/* Duration Badge (when not playing and controls might be hidden) */}
           {!isPlaying && videoDuration > 0 && (
-            <div className="absolute top-2 right-2 px-2 py-1 bg-black/70 rounded text-xs text-white font-medium">
+            <div className="absolute top-2 right-2 px-2 py-1 bg-black/70 rounded text-xs text-white font-medium backdrop-blur-sm">
               {formatTime(videoDuration)}
             </div>
           )}
