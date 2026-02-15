@@ -77,7 +77,7 @@ const config: CapacitorConfig = {
     },
     StatusBar: {
       overlay: true,
-      style: "DARK",
+      style: "LIGHT",
       backgroundColor: "#ffffffff"
     },
     CapacitorHttp: {
