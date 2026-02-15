@@ -81,12 +81,13 @@ export async function createOrGetDirectConversation(userId: string): Promise<str
  * Get conversations with enriched friend status
  * Uses the conversations_with_friend_status view from Story 9.1.9
  */
-export async function getConversationsWithFriendStatus(): Promise<ConversationWithFriendStatus[]> {
+export async function getConversationsWithFriendStatus(signal?: AbortSignal): Promise<ConversationWithFriendStatus[]> {
   try {
     const { data, error } = await supabase
       .from('conversations_with_friend_status')
       .select('*')
-      .order('last_message_at', { ascending: false });
+      .order('last_message_at', { ascending: false })
+      .abortSignal(signal as AbortSignal); // Cast is safe as Supabase handles undefined
 
     if (error) {
       console.error('❌ Error fetching conversations:', error);
@@ -94,7 +95,11 @@ export async function getConversationsWithFriendStatus(): Promise<ConversationWi
     }
 
     return data as ConversationWithFriendStatus[];
-  } catch (error) {
+  } catch (error: any) {
+    if (error.name === 'AbortError') {
+      console.log('🛑 Fetch conversations aborted');
+      return []; // Return empty or rethrow depending on needs, usually silent for abort
+    }
     console.error('❌ getConversationsWithFriendStatus error:', error);
     return [];
   }

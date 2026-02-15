@@ -15,6 +15,8 @@ import { useInAppNotifications } from '@/hooks/useInAppNotifications';
 import { useNotificationNavigation } from '@/hooks/useNotificationNavigation';
 import { InAppNotification } from '@/services/notificationService';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { groupNotifications, NotificationGroup, isNotificationGroup } from '@/utils/notificationGrouping';
+import { MessageSquare } from 'lucide-react';
 
 export function NotificationCenter() {
     const navigate = useNavigate();
@@ -34,14 +36,29 @@ export function NotificationCenter() {
     const { handleNavigation } = useNotificationNavigation();
 
     // Take top 5 for the dropdown to keep it lightweight
-    const recentNotifications = notifications.slice(0, 5);
+    // Group them first, then slice? Or slice then group? 
+    // Better to group all first, then slice, so we show the top 5 *groups/items*.
+    const groupedNotifications = groupNotifications(notifications);
+    const recentNotifications = groupedNotifications.slice(0, 5);
 
-    const handleNotificationClick = async (notification: InAppNotification) => {
-        if (!notification.opened) {
-            markAsRead(notification.id);
+    const handleNotificationClick = async (notification: InAppNotification | NotificationGroup) => {
+        if (isNotificationGroup(notification)) {
+            // Mark all in group as read? Or just navigate?
+            // Let's assume navigating handles it or we should mark specific ones.
+            // For now, mark the group's children as read locally or let the user action do it.
+            notification.notifications.forEach(n => {
+                if (!n.opened) markAsRead(n.id);
+            });
+
+            // Navigate based on the *latest* notification in the group
+            handleNavigation(notification.notifications[0]);
+        } else {
+            if (!notification.opened) {
+                markAsRead(notification.id);
+            }
+            handleNavigation(notification);
         }
 
-        handleNavigation(notification);
         setIsOpen(false);
     };
 
@@ -120,37 +137,63 @@ export function NotificationCenter() {
                         </div>
                     ) : (
                         <div className="divide-y">
-                            {recentNotifications.map((notification) => (
-                                <DropdownMenuItem
-                                    key={notification.id}
-                                    className={cn(
-                                        'flex items-start space-x-3 p-4 cursor-pointer focus:bg-gray-50 outline-none',
-                                        !notification.opened && 'bg-blue-50/20'
-                                    )}
-                                    onClick={() => handleNotificationClick(notification)}
-                                >
-                                    <Avatar className="h-8 w-8 border flex-shrink-0">
-                                        <AvatarImage src={notification.sender_avatar || undefined} />
-                                        <AvatarFallback className="text-xs">{notification.sender_name?.[0] || '?'}</AvatarFallback>
-                                    </Avatar>
+                            {recentNotifications.map((notification) => {
+                                const isGroup = isNotificationGroup(notification);
+                                // Type safe access
+                                const senderName = isGroup ? notification.sender_name : (notification as InAppNotification).sender_name;
+                                const senderAvatar = isGroup ? notification.sender_avatar : (notification as InAppNotification).sender_avatar;
+                                const title = isGroup ? notification.title : (notification as InAppNotification).title;
+                                const body = isGroup ? notification.body : (notification as InAppNotification).body;
+                                const sentAt = notification.sent_at;
+                                const opened = isGroup
+                                    ? (notification as NotificationGroup).notifications.every(n => n.opened)
+                                    : (notification as InAppNotification).opened;
 
-                                    <div className="flex-1 min-w-0">
-                                        <p className="font-medium text-sm text-gray-900 leading-snug truncate">
-                                            {notification.title}
-                                        </p>
-                                        <p className="text-xs text-gray-500 mt-1 line-clamp-2">
-                                            {notification.body}
-                                        </p>
-                                        <p className="text-[10px] text-gray-400 mt-1.5">
-                                            {formatDistanceToNow(new Date(notification.sent_at), { addSuffix: true })}
-                                        </p>
-                                    </div>
+                                return (
+                                    <DropdownMenuItem
+                                        key={notification.id}
+                                        className={cn(
+                                            'flex items-start space-x-3 p-4 cursor-pointer focus:bg-gray-50 outline-none',
+                                            !opened && 'bg-blue-50/20',
+                                            isGroup && 'relative'
+                                        )}
+                                        onClick={() => handleNotificationClick(notification)}
+                                    >
+                                        {/* Stacked effect */}
+                                        {isGroup && (
+                                            <div className="absolute top-2 left-6 right-6 h-full bg-white border border-gray-200 rounded-lg shadow-sm -z-10 transform translate-y-2 scale-[0.95]" />
+                                        )}
 
-                                    {!notification.opened && (
-                                        <div className="h-2 w-2 rounded-full bg-blue-500 flex-shrink-0 mt-1.5" />
-                                    )}
-                                </DropdownMenuItem>
-                            ))}
+                                        <div className="relative">
+                                            <Avatar className="h-8 w-8 border flex-shrink-0">
+                                                <AvatarImage src={senderAvatar || undefined} />
+                                                <AvatarFallback className="text-xs">{senderName?.[0] || '?'}</AvatarFallback>
+                                            </Avatar>
+                                            {isGroup && (
+                                                <div className="absolute -bottom-1 -right-1 p-0.5 rounded-full bg-white shadow-sm ring-1 ring-white bg-blue-100">
+                                                    <MessageSquare className="h-3 w-3 text-blue-600" />
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-medium text-sm text-gray-900 leading-snug truncate">
+                                                {title}
+                                            </p>
+                                            <p className={cn("text-xs text-gray-500 mt-1 line-clamp-2", isGroup && "font-medium text-blue-600")}>
+                                                {body}
+                                            </p>
+                                            <p className="text-[10px] text-gray-400 mt-1.5">
+                                                {formatDistanceToNow(new Date(sentAt), { addSuffix: true })}
+                                            </p>
+                                        </div>
+
+                                        {!opened && (
+                                            <div className="h-2 w-2 rounded-full bg-blue-500 flex-shrink-0 mt-1.5" />
+                                        )}
+                                    </DropdownMenuItem>
+                                )
+                            })}
                         </div>
                     )}
                 </div>

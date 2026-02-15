@@ -202,43 +202,80 @@ export const useAuthStore = create<AuthState>()(
         try {
           const { user } = get()
 
-          // Set user offline BEFORE signing out
+          // Helper to create a timeout promise
+          const withTimeout = (promise: Promise<any>, ms: number = 2000) => {
+            const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Operation timed out')), ms))
+            return Promise.race([promise, timeout])
+          }
+
+          // 1. Best effort: Set user offline
           if (user) {
-            await supabase
-              .from('profiles')
-              .update({
-                is_online: false,
-                last_active: new Date().toISOString()
-              })
-              .eq('id', user.id)
-
-            console.log('[Auth] User marked as offline')
+            try {
+              await withTimeout(
+                supabase
+                  .from('profiles')
+                  .update({
+                    is_online: false,
+                    last_active: new Date().toISOString()
+                  })
+                  .eq('id', user.id)
+                  .then(), // Convert to Promise
+                1000 // 1s timeout
+              )
+            } catch (err) {
+              console.warn('[Auth] Failed to set user offline:', err)
+            }
           }
 
-          // Remove push token from database before signing out
-          const pushToken = await SecureStorage.getPushToken()
-          if (pushToken) {
-            await supabase
-              .from('push_tokens')
-              .delete()
-              .eq('token', pushToken)
+          // 2. Best effort: Remove push token
+          try {
+            // Create a safe timeout wrapper for SecureStorage
+            const safeGetToken = async () => {
+              try {
+                return await withTimeout(SecureStorage.getPushToken() as Promise<any>, 500)
+              } catch {
+                return null
+              }
+            }
 
-            // Remove from secure storage
-            await SecureStorage.remove('push.token')
-            console.log('[Auth] Push token cleaned up')
+            const pushToken = await safeGetToken()
+
+            if (pushToken) {
+              // Delete from DB (fire and forget with timeout)
+              const deletePromise = supabase.from('push_tokens').delete().eq('token', pushToken).then()
+              withTimeout(deletePromise, 1000).catch(e => console.warn('[Auth] DB token delete failed', e))
+
+              // Remove from local storage
+              await withTimeout(SecureStorage.remove('push.token') as Promise<any>, 500).catch(e => console.warn('[Auth] Local token remove failed', e))
+            }
+          } catch (err) {
+            console.warn('[Auth] Failed to remove push token:', err)
           }
 
-          const { error } = await supabase.auth.signOut({ scope: 'local' })
-          if (error) throw error
+          // 3. Sign out from Supabase (strict timeout)
+          try {
+            const { error } = await withTimeout(
+              supabase.auth.signOut({ scope: 'local' }) as Promise<any>,
+              2000
+            ) as any
+            if (error) console.error('[Auth] Supabase signOut error:', error)
+          } catch (err) {
+            console.warn('[Auth] Supabase signOut timed out:', err)
+          }
 
-          // Clear persisted state
-          await useAuthStore.persist.clearStorage()
-          console.log('[Auth] Persisted storage cleared')
-
-          set({ user: null, profile: null, initialized: false })
+          return Promise.resolve()
         } catch (error) {
           console.error('Sign out error:', error)
-          throw error
+        } finally {
+          // ALWAYS clear local state and storage
+          try {
+            await useAuthStore.persist.clearStorage()
+            console.log('[Auth] Persisted storage cleared')
+          } catch (e) {
+            console.error('[Auth] Failed to clear storage:', e)
+          }
+
+          set({ user: null, profile: null, initialized: false, loading: false })
         }
       },
 

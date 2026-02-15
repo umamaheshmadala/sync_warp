@@ -3,12 +3,12 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search as SearchIcon, Settings, X, Users, ChevronDown } from 'lucide-react';
+import { Search as SearchIcon, X, Users } from 'lucide-react';
 import { useBusinessFollowing } from '../../hooks/useBusinessFollowing';
-import { FollowButton } from './FollowButton';
-import NotificationPreferencesModal from './NotificationPreferencesModal';
-import { StandardBusinessCard, type StandardBusinessCardData } from '../common';
-import { StorefrontShareButton } from '../Sharing/StorefrontShareButton';
+// import { FollowButton } from './FollowButton';
+// import NotificationPreferencesModal from './NotificationPreferencesModal';
+// import { StorefrontShareButton } from '../Sharing/StorefrontShareButton';
+import { StandardBusinessCard, type StandardBusinessCardData, BusinessActionMenu } from '../common';
 import {
   Select,
   SelectContent,
@@ -28,7 +28,6 @@ const FollowingPage: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortBy>('recent');
-  const [selectedBusiness, setSelectedBusiness] = useState<{ id: string; name: string } | null>(null);
 
   // Update page title dynamically
   useEffect(() => {
@@ -185,47 +184,12 @@ const FollowingPage: React.FC = () => {
                   showChevron={false}
                   variant="search"
                   actionButton={
-                    <div className="flex items-center gap-2">
-                      {/* Share Button */}
-                      <StorefrontShareButton
-                        businessId={follow.business_id}
-                        businessName={follow.business?.business_name || ''}
-                        businessImageUrl={follow.business?.logo_url}
-                        showLabel={false}
-                        showIcon={true}
-                        showModal={true}
-                        className="p-2.5 w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-700 border-none shadow-none"
-                        variant="ghost"
-                      />
-
-                      {/* Settings/Notification Preferences Button */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedBusiness({
-                            id: follow.business_id,
-                            name: follow.business?.business_name || 'Business'
-                          });
-                        }}
-                        className="p-2.5 w-10 h-10 rounded-full bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-800 border-none shadow-none flex items-center justify-center transition-colors"
-                        title="Notification preferences"
-                      >
-                        <Settings className="w-5 h-5" />
-                      </button>
-
-                      {/* Follow Button */}
-                      <FollowButton
-                        businessId={follow.business_id}
-                        businessName={follow.business?.business_name}
-                        variant="ghost"
-                        size="sm"
-                        showLabel={false}
-                        className={cn(
-                          "p-2.5 w-10 h-10 rounded-full border-none shadow-none transition-colors",
-                          "bg-green-100 text-green-700 hover:bg-green-200 hover:text-green-800"
-                        )}
-                      />
-                    </div>
+                    <BusinessActionMenu
+                      businessId={follow.business_id}
+                      businessName={follow.business?.business_name || ''}
+                      businessImageUrl={follow.business?.logo_url}
+                      className="-mr-2"
+                    />
                   }
                 />
               );
@@ -234,21 +198,6 @@ const FollowingPage: React.FC = () => {
         )}
       </div>
 
-      {/* Notification Preferences Modal */}
-      {selectedBusiness && (
-        <NotificationPreferencesModal
-          businessId={selectedBusiness.id}
-          businessName={selectedBusiness.name}
-          isOpen={!!selectedBusiness}
-          onClose={() => setSelectedBusiness(null)}
-          currentPreferences={
-            followedBusinesses.find(fb => fb.business_id === selectedBusiness.id)?.notification_preferences
-          }
-          currentChannel={
-            followedBusinesses.find(fb => fb.business_id === selectedBusiness.id)?.notification_channel
-          }
-        />
-      )}
     </div>
   );
 };

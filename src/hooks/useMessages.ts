@@ -74,7 +74,23 @@ export function useMessages(conversationId: string | null) {
     gcTime: 1000 * 60 * 60, // 1 hour cache
   })
 
-  const conversationMessages = messagesData?.messages || []
+  // Get messages from Zustand store (for optimistic updates)
+  const storeMessages = useMessagingStore(
+    useCallback((state) => state.messages.get(conversationId!) || [], [conversationId])
+  )
+  const optimisticMessages = storeMessages.filter(m => m._optimistic)
+
+  // Merge React Query messages with optimistic messages
+  // Deduplicate by ID in case an optimistic message was just confirmed but key hasn't updated
+  const allMessages = [...(messagesData?.messages || [])]
+
+  optimisticMessages.forEach(optMsg => {
+    if (!allMessages.find(m => m.id === optMsg.id)) {
+      allMessages.push(optMsg)
+    }
+  })
+
+  const conversationMessages = allMessages
   hasMore.current = messagesData?.hasMore ?? true
 
   // DEBUG: Log cache state

@@ -51,6 +51,10 @@ interface MessagingState {
   isLoadingMessages: boolean;
   isSendingMessage: boolean;
 
+  // Video Playback State
+  playingVideoId: string | null;
+  setPlayingVideo: (videoId: string | null) => void;
+
   // ============================================================================
   // Conversation Actions
   // ============================================================================
@@ -138,6 +142,9 @@ export const useMessagingStore = create<MessagingState>()(
       isLoadingConversations: false,
       isLoadingMessages: false,
       isSendingMessage: false,
+      playingVideoId: null,
+
+      setPlayingVideo: (videoId) => set({ playingVideoId: videoId }, false, 'setPlayingVideo'),
 
       // ========================================================================
       // Conversation Actions
@@ -368,12 +375,59 @@ export const useMessagingStore = create<MessagingState>()(
           const newMessages = new Map(state.messages);
           const conversationMessages = newMessages.get(conversationId) || [];
 
-          // Prevent duplicates (fix for double rendering on realtime + fetch race)
+          // 1. Check if message already exists by ID
           if (conversationMessages.some(m => m.id === message.id)) {
             return {}; // No change if message already exists
           }
 
-          const updatedMessages = [...conversationMessages, message];
+          // 2. Check for optimistic match based on media URL (for smooth replacement)
+          // This requires the optimistic message to have been updated with the public URL
+          // before the real message arrives.
+          let updatedMessages = conversationMessages;
+
+          const tryMatchUrls = (url1: string, url2: string) => {
+            if (!url1 || !url2) return false;
+            // Exact match
+            if (url1 === url2) return true;
+            // Decoded match
+            if (decodeURIComponent(url1) === decodeURIComponent(url2)) return true;
+            // Ignore query parameters
+            const clean1 = url1.split('?')[0];
+            const clean2 = url2.split('?')[0];
+            if (clean1 === clean2) return true;
+            return false;
+          }
+
+          const optimisticMatch = conversationMessages.find(m =>
+            m._optimistic &&
+            m.media_urls?.length > 0 &&
+            message.media_urls?.length > 0 &&
+            tryMatchUrls(m.media_urls[0], message.media_urls[0])
+          );
+
+          if (optimisticMatch) {
+            console.log(`✨ [Store] Replaced optimistic message with real message (matched via URL)`, {
+              optimisticId: optimisticMatch.id,
+              realId: message.id,
+              url: message.media_urls?.[0]
+            });
+            updatedMessages = conversationMessages.map(msg =>
+              msg._tempId === optimisticMatch._tempId ? message : msg
+            );
+          } else {
+            // Debugging: Log if we have an optimistic video message that DIDN'T match
+            const optimisticVideo = conversationMessages.find(m => m._optimistic && m.type === 'video');
+            if (optimisticVideo && message.type === 'video') {
+              console.log('⚠️ [Store] Received Realtime video but failed to match optimistic video', {
+                optimisticUrl: optimisticVideo.media_urls?.[0],
+                realUrl: message.media_urls?.[0],
+                optimisticId: optimisticVideo.id,
+                realId: message.id
+              });
+            }
+
+            updatedMessages = [...conversationMessages, message];
+          }
 
           // Enforce cache limit on mobile
           const finalMessages = Capacitor.isNativePlatform()

@@ -8,6 +8,8 @@ interface ReplyContextProps {
     content: string
     sender_name: string
     type: string
+    media_urls?: string[]
+    thumbnail_url?: string
   }
   onCancel: () => void
   className?: string
@@ -33,11 +35,26 @@ export function ReplyContext({ parentMessage, onCancel, className }: ReplyContex
         <div className="text-xs font-medium text-blue-600 mb-1">
           Replying to {parentMessage.sender_name}
         </div>
-        <div className="text-sm text-gray-700 truncate">
-          {parentMessage.type === 'text'
-            ? parentMessage.content
-            : `[${parentMessage.type}]`
-          }
+        <div className="flex items-center gap-2">
+          {parentMessage.thumbnail_url || (parentMessage.type === 'image' && parentMessage.media_urls?.[0]) ? (
+            <img
+              src={parentMessage.thumbnail_url || parentMessage.media_urls![0]}
+              alt="Reply thumbnail"
+              className="w-8 h-8 rounded object-cover flex-shrink-0 bg-gray-200"
+            />
+          ) : parentMessage.type === 'video' && parentMessage.media_urls?.[0] ? (
+            <video
+              src={parentMessage.media_urls[0]}
+              className="w-8 h-8 rounded object-cover flex-shrink-0 bg-gray-200"
+            />
+          ) : null}
+
+          <div className="text-sm text-gray-700 truncate">
+            {parentMessage.type === 'text'
+              ? parentMessage.content
+              : parentMessage.content || (parentMessage.type === 'image' ? 'Photo' : 'Video')
+            }
+          </div>
         </div>
       </div>
 

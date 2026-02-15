@@ -158,8 +158,8 @@ class RealtimeService {
       }
 
       this.lastSyncTimestamp = new Date().toISOString();
-    } catch (error) {
-      console.error('❌ Catch-up sync failed:', error);
+    } catch (error: any) {
+      console.error('❌ Catch-up sync failed:', error instanceof Error ? error.message : JSON.stringify(error));
     }
   }
 
@@ -501,14 +501,18 @@ class RealtimeService {
     userId: string,
     onNotification: (payload: any) => void
   ): () => void {
+    if (!userId) {
+      console.warn('[RealtimeService] ⚠️ Cannot subscribe to notifications: userId is missing');
+      return () => { };
+    }
+
     // Unique channel name to prevent conflicts with other listeners
     const channelName = `realtime-notifications-toast-${userId}`;
 
     this.unsubscribe(channelName);
 
     console.log(`[RealtimeService] 🚀 Setting up in-app notification subscription for user: ${userId}`);
-    console.log(`[RealtimeService] 📡 Channel name: ${channelName}`);
-    console.log(`[RealtimeService] 📊 Current active channels: ${this.getActiveChannelCount()}`);
+    // console.log(`[RealtimeService] 📡 Channel name: ${channelName}`);
 
     const channel = supabase
       .channel(channelName)
@@ -518,41 +522,39 @@ class RealtimeService {
           event: 'INSERT',
           schema: 'public',
           table: 'notification_log'
-          // Filter removed: Relying on RLS policy to filter rows by user_id. 
-          // Explicit filters can sometimes cause issues if types don't match perfectly.
         },
         (payload) => {
           console.log('🔔 [RealtimeService] ✅ In-app notification event received!');
-          console.log('🔔 [RealtimeService] 📦 Payload:', {
-            id: payload.new.id,
-            type: payload.new.notification_type,
-            userId: payload.new.user_id,
-            timestamp: new Date().toISOString()
-          });
+          // console.log('🔔 [RealtimeService] 📦 Payload:', {
+          //   id: payload.new.id,
+          //   type: payload.new.notification_type,
+          //   userId: payload.new.user_id,
+          //   timestamp: new Date().toISOString()
+          // });
           onNotification(payload);
         }
       )
       .subscribe((status) => {
-        console.log(`🔔 [RealtimeService] 📡 Subscription status update [${channelName}]:`, status);
+        // console.log(`🔔 [RealtimeService] 📡 Subscription status update [${channelName}]:`, status);
 
         if (status === 'SUBSCRIBED') {
           console.log(`✅ [RealtimeService] 🎉 Successfully subscribed to in-app notifications!`);
-          console.log(`✅ [RealtimeService] Listening for INSERT events on notification_log`);
-          console.log(`✅ [RealtimeService] User filter: ${userId} (via RLS)`);
         } else if (status === 'CHANNEL_ERROR') {
-          console.error(`❌ [RealtimeService] Channel error for ${channelName}`);
-          console.error(`❌ [RealtimeService] This might indicate a network or permission issue`);
+          console.error(`❌ [RealtimeService] Channel error for ${channelName}. Retrying in 5s...`);
+          setTimeout(() => {
+            console.log(`🔄 Attempting to resubscribe to ${channelName}...`);
+            channel.subscribe();
+          }, 5000);
         } else if (status === 'TIMED_OUT') {
-          console.error(`⏱️ [RealtimeService] Channel subscription timed out: ${channelName}`);
-        } else if (status === 'CLOSED') {
-          console.warn(`🔌 [RealtimeService] Channel closed: ${channelName}`);
-        } else {
-          console.log(`📊 [RealtimeService] Status: ${status} for channel: ${channelName}`);
+          console.error(`⏱️ [RealtimeService] Channel subscription timed out: ${channelName}. Retrying...`);
+          setTimeout(() => {
+            console.log(`🔄 Attempting to resubscribe to ${channelName}...`);
+            channel.subscribe();
+          }, 5000);
         }
       });
 
     this.channels.set(channelName, channel);
-    console.log(`[RealtimeService] 💾 Channel registered. Total channels: ${this.getActiveChannelCount()}`);
 
     return () => this.unsubscribe(channelName);
   }

@@ -5,6 +5,7 @@ import { messagingService } from '../services/messagingService'
 import { useAuthStore } from '../store/authStore'
 import type { SendMessageParams, Message } from '../types/messaging'
 import toast from 'react-hot-toast'
+import { queryClient } from '../lib/react-query'
 
 export function useSendMessage() {
   const [isSending, setIsSending] = useState(false)
@@ -59,12 +60,29 @@ export function useSendMessage() {
       const realMessageId = await messagingService.sendMessage(params)
 
       // 3. Replace temp message with real one
-      replaceOptimisticMessage(params.conversationId, tempId, {
+      const confirmedMessage = {
         ...optimisticMessage,
         id: realMessageId,
         _optimistic: false,
         _tempId: undefined,
-        status: 'sent' // Server confirmed reception
+        status: 'sent' as const // Server confirmed reception
+      }
+
+      replaceOptimisticMessage(params.conversationId, tempId, confirmedMessage)
+
+      // 4. Update React Query cache immediately to prevent flicker
+      // (The optimistic message disappears from store.messages when replaceOptimisticMessage runs,
+      // so we must ensure it exists in React Query cache before Realtime event arrives)
+      queryClient.setQueryData(['messages', params.conversationId], (old: any) => {
+        const currentMessages = old?.messages || []
+        // Prevent duplicates if Realtime was faster
+        if (currentMessages.some((m: Message) => m.id === realMessageId)) {
+          return old
+        }
+        return {
+          messages: [...currentMessages, confirmedMessage],
+          hasMore: old?.hasMore ?? true
+        }
       })
 
       return realMessageId
