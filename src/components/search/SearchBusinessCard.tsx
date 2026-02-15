@@ -7,9 +7,10 @@ import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 import { getOptimizedImageUrl } from '../../utils/imageUtils';
 import { VerificationBadge } from '../business/VerificationBadge';
 import { cn } from '../../lib/utils';
-import { StorefrontShareButton } from '../Sharing/StorefrontShareButton';
-import FollowButton from '../following/FollowButton';
+// import { StorefrontShareButton } from '../Sharing/StorefrontShareButton';
+// import FollowButton from '../following/FollowButton';
 import { useBusinessFollowing } from '../../hooks/useBusinessFollowing';
+import { BusinessActionMenu } from '../common/BusinessActionMenu';
 
 interface SearchBusinessCardProps {
     business: Business | SearchBusiness;
@@ -101,34 +102,14 @@ export function SearchBusinessCard({
 
             {/* Actions Section */}
             <div
-                className="flex items-center gap-2 pl-4 border-l border-gray-100 self-stretch"
+                className="flex items-center gap-2 pl-4 self-stretch"
                 onClick={(e) => e.stopPropagation()} // Prevent card click when clicking area
             >
-                <StorefrontShareButton
+                <BusinessActionMenu
                     businessId={business.id}
                     businessName={business.business_name}
                     businessImageUrl={business.logo_url}
-                    showLabel={false}
-                    showIcon={true}
-                    showModal={true}
-                    className="p-2.5 w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-700 border-none shadow-none"
-                    variant="ghost"
-                />
-
-                <FollowButton
-                    businessId={business.id}
-                    businessName={business.business_name}
-                    showLabel={false}
-                    variant="ghost"
-                    className={cn(
-                        "p-2.5 w-10 h-10 rounded-full border-none shadow-none transition-colors",
-                        isFollowed
-                            ? "bg-green-100 text-green-700 hover:bg-green-200 hover:text-green-800"
-                            : "bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700"
-                    )}
-                    onFollowChange={(isFollowing) => {
-                        if (onFollow) onFollow(business);
-                    }}
+                    className="-mr-2"
                 />
             </div>
         </div>

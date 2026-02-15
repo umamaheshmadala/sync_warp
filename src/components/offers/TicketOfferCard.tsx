@@ -108,7 +108,7 @@ export function TicketOfferCard({
                         </div>
 
                         <div>
-                            <h2 className={cn("text-lg font-mono font-bold leading-snug tracking-tight", color.replace('bg-', 'text-').replace('600', '800'))}>
+                            <h2 className={cn("text-base font-semibold leading-snug tracking-tight", color.replace('bg-', 'text-').replace('600', '800'))}>
                                 {formattedOfferName}
                             </h2>
                         </div>
@@ -116,7 +116,7 @@ export function TicketOfferCard({
                         {/* Expiry Date Moved Here */}
                         <div className="flex items-center pt-1">
                             <span className="text-[10px] font-bold text-gray-400 uppercase mr-1">Exp:</span>
-                            <span className="font-mono font-bold text-xs text-gray-600 tracking-wide">
+                            <span className="font-semibold text-xs text-gray-600 tracking-wide">
                                 {validUntil}
                             </span>
                         </div>

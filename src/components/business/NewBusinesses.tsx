@@ -2,12 +2,12 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TrendingUp, ChevronRight, RefreshCw, Store } from 'lucide-react';
-import { StandardBusinessCard, type StandardBusinessCardData } from '../common';
+import { StandardBusinessCard, type StandardBusinessCardData, BusinessActionMenu } from '../common';
 import { useNewBusinesses } from '../../hooks/useNewBusinesses';
 import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 import type { NewBusinessesProps } from '../../types/business';
-import { StorefrontShareButton } from '../Sharing/StorefrontShareButton';
-import { FollowButton } from '../following/FollowButton';
+// import { StorefrontShareButton } from '../Sharing/StorefrontShareButton';
+// import { FollowButton } from '../following/FollowButton';
 import { cn } from '../../lib/utils'; // Make sure cn is imported if used, though strict style prop usage might avoid it. Based on prev file content it wasn't there, but it's good practice. Wait, I see I didn't see it in imports, but I'll add it if needed. Actually I'll stick to the plan.
 
 export function NewBusinesses({
@@ -140,26 +140,12 @@ export function NewBusinesses({
                 variant="search"
                 showChevron={false}
                 actionButton={
-                  <div className="flex items-center gap-2">
-                    <StorefrontShareButton
-                      businessId={business.id}
-                      businessName={businessData.business_name || ''}
-                      businessImageUrl={businessData.logo_url}
-                      showLabel={false}
-                      showIcon={true}
-                      showModal={true}
-                      className="p-2.5 w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-700 border-none shadow-none"
-                      variant="ghost"
-                    />
-                    <FollowButton
-                      businessId={business.id}
-                      businessName={businessData.business_name}
-                      variant="ghost"
-                      size="sm"
-                      showLabel={false}
-                      className="p-2.5 w-10 h-10 rounded-full bg-green-100 text-green-700 hover:bg-green-200 hover:text-green-800 border-none shadow-none"
-                    />
-                  </div>
+                  <BusinessActionMenu
+                    businessId={business.id}
+                    businessName={businessData.business_name}
+                    businessImageUrl={businessData.logo_url}
+                    className="-mr-2"
+                  />
                 }
               />
             );

@@ -18,10 +18,11 @@ import { FriendLikedDealsSection } from './deals/FriendLikedDealsSection';
 import { NewBusinesses } from './business';
 import { SpotlightBusiness, HotOffer, TrendingProduct } from '../services/dashboardService';
 import { OfferCard } from './offers/OfferCard';
-import { StandardBusinessCard, type StandardBusinessCardData } from './common';
+import { StandardBusinessCard, type StandardBusinessCardData, BusinessActionMenu } from './common';
 
-import { StorefrontShareButton } from './Sharing/StorefrontShareButton';
-import { FollowButton } from './following/FollowButton';
+// Remove unused imports if they are not used elsewhere in the file
+// import { StorefrontShareButton } from './Sharing/StorefrontShareButton';
+// import { FollowButton } from './following/FollowButton';
 
 // Dummy data as fallback - defined outside component for immediate initialization
 const dummySpotlightBusinesses: SpotlightBusiness[] = [
@@ -184,26 +185,12 @@ const Dashboard: React.FC = () => {
                     variant="search"
                     showChevron={false}
                     actionButton={
-                      <div className="flex items-center gap-2">
-                        <StorefrontShareButton
-                          businessId={business.id}
-                          businessName={business.name}
-                          businessImageUrl={business.imageUrl || undefined}
-                          showLabel={false}
-                          showIcon={true}
-                          showModal={true}
-                          className="p-2.5 w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-700 border-none shadow-none"
-                          variant="ghost"
-                        />
-                        <FollowButton
-                          businessId={business.id}
-                          businessName={business.name}
-                          variant="ghost"
-                          size="sm"
-                          showLabel={false}
-                          className="p-2.5 w-10 h-10 rounded-full bg-green-100 text-green-700 hover:bg-green-200 hover:text-green-800 border-none shadow-none"
-                        />
-                      </div>
+                      <BusinessActionMenu
+                        businessId={business.id}
+                        businessName={business.name}
+                        businessImageUrl={business.imageUrl || undefined}
+                        className="-mr-2"
+                      />
                     }
                   />
                 )

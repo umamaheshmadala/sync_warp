@@ -209,7 +209,7 @@ export const StandardBusinessCard: React.FC<StandardBusinessCardProps> = ({
           {/* Row 1: Name + Badge */}
           <div className="flex items-center gap-2">
             <h3
-              className="font-bold text-gray-900 text-lg truncate leading-tight group-hover:text-indigo-600 transition-colors"
+              className="font-semibold text-gray-900 text-base truncate leading-tight group-hover:text-indigo-600 transition-colors"
               dangerouslySetInnerHTML={{ __html: displayName }}
             />
 
@@ -253,7 +253,7 @@ export const StandardBusinessCard: React.FC<StandardBusinessCardProps> = ({
         {/* Action button container - mimicking SearchBusinessCard's right section */}
         {actionButton && (
           <div
-            className="flex items-center gap-2 pl-4 border-l border-gray-100 self-stretch"
+            className="flex items-center gap-2 pl-4 self-stretch"
             onClick={(e) => e.stopPropagation()}
           >
             {actionButton}
@@ -318,7 +318,7 @@ export const StandardBusinessCard: React.FC<StandardBusinessCardProps> = ({
           {/* Title & Category */}
           <div className="flex-1 min-w-0 md:pt-2">
             <h3
-              className="text-base font-semibold text-gray-900 truncate group-hover:text-indigo-600 transition-colors"
+              className="text-[15px] font-semibold text-gray-900 truncate group-hover:text-indigo-600 transition-colors"
               dangerouslySetInnerHTML={{ __html: displayName }}
             />
             {businessType && (
