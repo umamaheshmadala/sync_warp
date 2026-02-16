@@ -331,7 +331,7 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
             onKeyDown={handleKeyDown}
             placeholder="Type a message"
             data-testid="message-input"
-            className="flex-1 min-h-[40px] max-h-[120px] resize-none border-none bg-transparent px-4 py-2.5 focus-visible:ring-0 placeholder:text-gray-400 text-sm leading-5"
+            className="flex-1 min-h-[40px] max-h-[120px] resize-none border-none bg-transparent px-4 py-2.5 rounded-3xl focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-gray-400 text-sm leading-5"
             rows={1}
             disabled={isEditSaving}
           />
