@@ -138,19 +138,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           {/* Messages route needs full-width layout without PullToRefresh constraints */}
           {isMessagesRoute ? (
             <div
-              className="w-full h-full flex flex-col !pb-0"
-              style={{ paddingTop: 'calc(54px + env(safe-area-inset-top, 0px))' }}
+              className="w-full flex-1 min-h-0 flex flex-col"
+              style={{
+                paddingTop: 'calc(54px + env(safe-area-inset-top, 0px))',
+                paddingBottom: shouldShowBottomNav ? 'calc(56px + env(safe-area-inset-bottom, 0px))' : '0px'
+              }}
             >
               {children}
-              {/* Spacer for Bottom Navigation - Matches height and visibility of actual nav */}
-              {shouldShowBottomNav && (
-                <div
-                  className="w-full flex-shrink-0"
-                  style={{
-                    height: 'calc(56px + env(safe-area-inset-bottom, 0px))',
-                  }}
-                />
-              )}
             </div>
           ) : (
             <PullToRefresh
