@@ -28,6 +28,7 @@ import { useMessagingStore } from '../../store/messagingStore'
 import './ChatScreen.css'
 import { friendsService } from '../../services/friendsService'
 import { useFriendProfile } from '../../hooks/friends/useFriendProfile'
+import { useScrollPosition } from '../../hooks/useScrollPosition'
 
 /**
  * ChatScreen Component
@@ -58,11 +59,13 @@ export default function ChatScreen() {
   const location = useLocation()
   const { updateConversation } = useMessagingStore() // For clearing unread count
   const { messages, isLoading, hasMore, loadMore } = useMessages(conversationId || null)
+  const { scrollContainerRef, isAtBottom, scrollToBottom: scrollToBottomHook } = useScrollPosition()
   const { isTyping, typingUserIds, handleTyping } = useTypingIndicator(conversationId || null)
   const { retryMessage } = useSendMessage() // For retrying failed messages (Story 8.2.7)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const prevMessageCount = useRef(messages.length)
+  const prevLastMessageId = useRef<string | null>(null)
 
   // Reply state (Story 8.10.5)
   const [replyToMessage, setReplyToMessage] = useState<Message | null>(null)
@@ -159,37 +162,50 @@ export default function ChatScreen() {
     return () => window.removeEventListener('friends-updated', checkFriendship)
   }, [conversationId, currentUserId, otherUserId])
 
-  // Scroll to bottom helper
+  // Scroll to bottom helper (adapts hook to expected interface)
   const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({
-        behavior: Capacitor.isNativePlatform() ? 'auto' : behavior,
-        block: 'end'
-      })
-    }
+    scrollToBottomHook(behavior)
   }
 
-  // Auto-scroll to bottom on new messages
+  // Auto-scroll to bottom on new messages (Smart Scroll)
   useEffect(() => {
-    const lastMessage = messages[messages.length - 1]
-    const isUserMessage = lastMessage?.sender_id === 'current_user' || (lastMessage?._optimistic)
+    // If we have no messages, nothing to do
+    if (messages.length === 0) return
 
-    // Scroll if new message added OR if it's a user message (ensure visibility)
-    if (messages.length > prevMessageCount.current || isUserMessage) {
-      // Use a small timeout to ensure DOM is updated with new message height
-      setTimeout(() => {
-        scrollToBottom('smooth')
-      }, 100)
+    // Get the last message
+    const lastMessage = messages[messages.length - 1]
+
+    // Check if the current user sent it
+    const isUserMessage = lastMessage?.sender_id === currentUserId || (lastMessage?._optimistic)
+
+    // Check if the last message has changed (indicates new message at bottom vs history loaded at top)
+    const isNewMessageAtBottom = lastMessage?.id !== prevLastMessageId.current
+
+    // Scroll automatically if:
+    // 1. We have more messages than before AND the last message is new
+    if (messages.length > prevMessageCount.current && isNewMessageAtBottom) {
+      if (isUserMessage || isAtBottom) {
+        console.log('📜 Smart Scroll: Scrolling to bottom', { isUserMessage, isAtBottom })
+        // Use a small timeout to ensure DOM update
+        setTimeout(() => {
+          scrollToBottomHook('smooth')
+        }, 100)
+      } else {
+        console.log('📜 Smart Scroll: staying put (not at bottom)', { isUserMessage, isAtBottom })
+      }
     }
+
     prevMessageCount.current = messages.length
-  }, [messages.length, messages[messages.length - 1]?.id])
+    prevLastMessageId.current = lastMessage?.id || null
+  }, [messages.length, messages[messages.length - 1]?.id, isAtBottom, scrollToBottomHook, currentUserId])
 
   // Initial scroll to latest message
   useEffect(() => {
-    if (messages.length > 0 && !isLoading && messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'instant', block: 'end' })
+    if (messages.length > 0 && !isLoading) {
+      // Force auto scroll on initial load
+      scrollToBottomHook('auto')
     }
-  }, [isLoading])
+  }, [isLoading, messages.length === 0])
 
   // Mark conversation as read ONLY when user is actively viewing
   useEffect(() => {
@@ -483,6 +499,7 @@ export default function ChatScreen() {
         </div>
       ) : (
         <MessageList
+          ref={scrollContainerRef}
           messages={messages}
           hasMore={hasMore}
           onLoadMore={loadMore}

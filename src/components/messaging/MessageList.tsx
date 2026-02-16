@@ -43,7 +43,7 @@ interface MessageListProps {
  * />
  * ```
  */
-export function MessageList({
+export const MessageList = React.forwardRef<HTMLDivElement, MessageListProps>(({
   messages,
   hasMore,
   onLoadMore,
@@ -53,13 +53,13 @@ export function MessageList({
   onForward,
   onEdit,
   onQuoteClick,
-  messagesEndRef,
+  messagesEndRef, // We might not need this anymore if we use the main container, but keeping for now
   onPin,
   onUnpin,
   isMessagePinned,
   lastReadAt,
   friendReadReceiptsEnabled = true
-}: MessageListProps) {
+}, ref) => {
   const currentUserId = useAuthStore(state => state.user?.id)
   const scrollRef = useRef<HTMLDivElement>(null)
   const isLoadingMore = useRef(false)
@@ -87,6 +87,16 @@ export function MessageList({
       setFrozenReadAt(lastReadAt)
     }
   }, [lastReadAt, frozenReadAt])
+
+  // Sync forwarded ref with local ref
+  useEffect(() => {
+    if (!ref) return
+    if (typeof ref === 'function') {
+      ref(scrollRef.current)
+    } else {
+      (ref as React.MutableRefObject<HTMLDivElement | null>).current = scrollRef.current
+    }
+  }, [ref])
 
   // Handle scroll to load more messages
   const handleScroll = () => {
@@ -257,4 +267,4 @@ export function MessageList({
       {messagesEndRef && <div ref={messagesEndRef} />}
     </div >
   )
-}
+})
