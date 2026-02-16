@@ -29,6 +29,7 @@ import './ChatScreen.css'
 import { friendsService } from '../../services/friendsService'
 import { useFriendProfile } from '../../hooks/friends/useFriendProfile'
 import { useScrollPosition } from '../../hooks/useScrollPosition'
+import { ScrollToBottomFAB } from './ScrollToBottomFAB'
 
 /**
  * ChatScreen Component
@@ -59,13 +60,23 @@ export default function ChatScreen() {
   const location = useLocation()
   const { updateConversation } = useMessagingStore() // For clearing unread count
   const { messages, isLoading, hasMore, loadMore } = useMessages(conversationId || null)
-  const { scrollContainerRef, isAtBottom, scrollToBottom: scrollToBottomHook } = useScrollPosition()
+  const { scrollContainerRef, isAtBottom, scrollToBottom: scrollToBottomHook, showScrollButton: showScrollButtonFromHook } = useScrollPosition()
   const { isTyping, typingUserIds, handleTyping } = useTypingIndicator(conversationId || null)
   const { retryMessage } = useSendMessage() // For retrying failed messages (Story 8.2.7)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const prevMessageCount = useRef(messages.length)
   const prevLastMessageId = useRef<string | null>(null)
+
+  // Local unread count for FAB (Story 8.12.2)
+  const [unreadCountSinceScroll, setUnreadCountSinceScroll] = useState(0)
+
+  // Reset local unread count when we scroll to bottom
+  useEffect(() => {
+    if (isAtBottom) {
+      setUnreadCountSinceScroll(0)
+    }
+  }, [isAtBottom])
 
   // Reply state (Story 8.10.5)
   const [replyToMessage, setReplyToMessage] = useState<Message | null>(null)
@@ -191,6 +202,11 @@ export default function ChatScreen() {
           scrollToBottomHook('smooth')
         }, 100)
       } else {
+        // We are not at bottom and received a new message -> increment unread count
+        // Only if it's NOT a user message (user messages auto-scroll anyway)
+        if (!isUserMessage) {
+          setUnreadCountSinceScroll(prev => prev + 1)
+        }
         console.log('📜 Smart Scroll: staying put (not at bottom)', { isUserMessage, isAtBottom })
       }
     }
@@ -517,6 +533,12 @@ export default function ChatScreen() {
           friendReadReceiptsEnabled={friendReadReceiptsEnabled}
         />
       )}
+
+      <ScrollToBottomFAB
+        isVisible={showScrollButtonFromHook}
+        unreadCount={unreadCountSinceScroll}
+        onPress={() => scrollToBottom('smooth')}
+      />
 
       {isTyping && (
         <TypingIndicator
