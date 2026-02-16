@@ -52,10 +52,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
     const setupListeners = async () => {
       showListener = await Keyboard.addListener('keyboardWillShow', () => {
+        console.log('[AppLayout] ⌨️ keyboardWillShow - hiding bottom nav');
         setIsKeyboardVisible(true);
       });
 
       hideListener = await Keyboard.addListener('keyboardWillHide', () => {
+        console.log('[AppLayout] ⌨️ keyboardWillHide - showing bottom nav');
         setIsKeyboardVisible(false);
       });
     };
@@ -136,36 +138,44 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           {/* Messages route needs full-width layout without PullToRefresh constraints */}
           {isMessagesRoute ? (
             <div
-              className="w-full h-full flex flex-col"
+              className="w-full h-full flex flex-col !pb-0"
               style={{ paddingTop: 'calc(54px + env(safe-area-inset-top, 0px))' }}
             >
               {children}
+              {/* Spacer for Bottom Navigation - Matches height and visibility of actual nav */}
+              {shouldShowBottomNav && (
+                <div
+                  className="w-full flex-shrink-0"
+                  style={{
+                    height: 'calc(56px + env(safe-area-inset-bottom, 0px))',
+                  }}
+                />
+              )}
             </div>
           ) : (
             <PullToRefresh
               onRefresh={handlePullToRefresh}
               disabled={false}
               className="w-full max-w-4xl mx-auto min-h-full"
+              style={{ paddingTop: 'calc(54px + env(safe-area-inset-top, 0px))' }}
             >
-              <div style={{ paddingTop: 'calc(54px + env(safe-area-inset-top, 0px))' }}>
-                {children}
-                {/* Spacer for Bottom Navigation - Physical element ensures scroll clearance */}
-                <div
-                  className="w-full transition-all duration-200"
-                  style={{
-                    height: shouldShowBottomNav
-                      ? 'calc(56px + env(safe-area-inset-bottom, 0px) + 3px)'
-                      : '0px'
-                  }}
-                />
-              </div>
+              {children}
+              {/* Spacer for Bottom Navigation - Physical element ensures scroll clearance */}
+              <div
+                className="w-full transition-all duration-200"
+                style={{
+                  height: shouldShowBottomNav
+                    ? 'calc(56px + env(safe-area-inset-bottom, 0px) + 3px)'
+                    : '0px',
+                }}
+              />
             </PullToRefresh>
           )}
         </main>
 
         {/* Fixed Bottom Navigation */}
         {shouldShowBottomNav && <BottomNavigation currentRoute={location.pathname} />}
-      </div>
-    </GestureHandler>
+      </div >
+    </GestureHandler >
   );
 }

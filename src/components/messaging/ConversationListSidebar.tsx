@@ -72,6 +72,8 @@ export function ConversationListSidebar() {
 
         // Tab filter
         switch (activeFilter) {
+          case 'unread':
+            return !c.is_archived && !c.is_blocked && (c.unread_count > 0)
           case 'archived':
             return c.is_archived && !c.is_blocked  // Exclude blocked from archived
           case 'blocked':
@@ -140,8 +142,9 @@ export function ConversationListSidebar() {
       {/* Header */}
       <div className="px-4 py-3 border-b flex flex-col gap-3">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold text-gray-900">Messaging</h1>
-          <div className="flex items-center gap-1">
+          {/* <h1 className="text-xl font-bold text-gray-900">Messaging</h1> -- Removed as per request */}
+          <div className="flex-1" /> {/* Spacer to keep buttons aligned right if needed, or just remove h1 */}
+          <div className="flex items-center gap-1 ml-auto">
             {!selectionMode && (
               <Button
                 variant="ghost"
@@ -201,7 +204,8 @@ export function ConversationListSidebar() {
             <p className="text-gray-500 text-sm">
               {activeFilter === 'archived' ? 'No archived conversations' :
                 activeFilter === 'blocked' ? 'No blocked users' :
-                  'No messages found'}
+                  activeFilter === 'unread' ? 'No unread messages' :
+                    'No messages found'}
             </p>
             {activeFilter === 'all' && (
               <Button

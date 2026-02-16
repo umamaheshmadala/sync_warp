@@ -558,6 +558,8 @@ export default function ChatScreen() {
         onOpenChange={setShowPinDialog}
         onConfirm={handleConfirmPin}
       />
+
+
     </div>
   )
 }

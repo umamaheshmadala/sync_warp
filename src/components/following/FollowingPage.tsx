@@ -96,7 +96,7 @@ const FollowingPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="bg-gray-50 h-full">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Search and Filters - Always inline */}
         <div className="flex flex-row items-center gap-2 mb-6">

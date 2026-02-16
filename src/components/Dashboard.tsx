@@ -206,9 +206,7 @@ const Dashboard: React.FC = () => {
               </div>
 
             </div>
-            <p className="text-xs text-gray-500 mb-3 -mt-3 italic">
-              Hot offers are the most viewed offers by the user as of now.
-            </p>
+
 
             {/* Mobile: 1-column list, Tablet: 2-column, Desktop: 2-column (since we want them bigger/ticket style) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -243,9 +241,7 @@ const Dashboard: React.FC = () => {
                 <h2 className="text-lg font-semibold text-gray-900">Trending Now 📈</h2>
               </div>
             </div>
-            <p className="text-xs text-gray-500 mb-3 -mt-3 italic">
-              Trending products serve the most visited, liked, shared, and saved items.
-            </p>
+
 
             {/* Mobile: 3-column grid, Tablet: 5-column, Desktop: 6-column */}
             <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-1.5 md:gap-2 mb-2">

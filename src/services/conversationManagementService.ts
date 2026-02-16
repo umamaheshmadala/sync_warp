@@ -2,7 +2,7 @@ import { supabase } from '../lib/supabase'
 import { optimisticUpdates } from '../utils/optimisticUpdates'
 import { useMessagingStore } from '../store/messagingStore'
 
-export type ConversationFilter = 'all' | 'archived' | 'blocked'
+export type ConversationFilter = 'all' | 'unread' | 'archived' | 'blocked'
 export type MuteDuration = 'hour' | 'day' | 'week' | 'forever'
 
 interface Conversation {
