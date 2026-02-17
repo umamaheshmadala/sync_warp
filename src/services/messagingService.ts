@@ -265,6 +265,8 @@ class MessagingService {
         p_content: params.content,
         p_type: params.type || 'text',
         p_media_urls: params.mediaUrls || null,
+        p_media_width: params.mediaWidth || null,
+        p_media_height: params.mediaHeight || null,
         p_thumbnail_url: params.thumbnailUrl || null,
         p_link_previews: params.linkPreviews || null,
         p_shared_coupon_id: params.sharedCouponId || null,

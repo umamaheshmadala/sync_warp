@@ -119,6 +119,24 @@ class MediaUploadService {
   }
 
   /**
+   * Get image dimensions
+   */
+  async getImageDimensions(file: File): Promise<{ width: number; height: number }> {
+    return new Promise((resolve, reject) => {
+      const img = new Image()
+      img.onload = () => {
+        resolve({ width: img.width, height: img.height })
+        URL.revokeObjectURL(img.src)
+      }
+      img.onerror = () => {
+        reject(new Error('Failed to load image for dimensions'))
+        URL.revokeObjectURL(img.src)
+      }
+      img.src = URL.createObjectURL(file)
+    })
+  }
+
+  /**
    * Generate thumbnail (max 300px)
    * Works on BOTH web and mobile
    */
@@ -149,7 +167,7 @@ class MediaUploadService {
     conversationId: string,
     onProgress?: (progress: UploadProgress) => void,
     abortSignal?: AbortSignal
-  ): Promise<{ url: string; thumbnailUrl: string }> {
+  ): Promise<{ url: string; thumbnailUrl: string; width: number; height: number }> {
     try {
       // Get current user
       const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -164,6 +182,9 @@ class MediaUploadService {
       // Compress image
       const compressed = await this.compressImage(file)
       onProgress?.({ loaded: compressed.size * 0.2, total: file.size, percentage: 20 })
+
+      // Get dimensions of the compressed image (which will be the final image)
+      const { width, height } = await this.getImageDimensions(compressed)
 
       // Check abort signal again after compression
       if (abortSignal?.aborted) throw new Error('Upload cancelled')
@@ -245,7 +266,9 @@ class MediaUploadService {
 
         return {
           url: uploadData.path,
-          thumbnailUrl: thumbnailPath
+          thumbnailUrl: thumbnailPath,
+          width,
+          height
         }
       } finally {
         clearInterval(progressInterval)
@@ -357,9 +380,9 @@ class MediaUploadService {
   }
 
   /**
-   * Get video duration in seconds
+   * Get video dimensions and duration
    */
-  private async getVideoDuration(file: File): Promise<number> {
+  private async getVideoMetadata(file: File): Promise<{ duration: number; width: number; height: number }> {
     return new Promise((resolve) => {
       const video = document.createElement('video')
       video.preload = 'metadata'
@@ -367,12 +390,16 @@ class MediaUploadService {
       video.playsInline = true
 
       video.onloadedmetadata = () => {
-        resolve(Math.round(video.duration))
+        resolve({
+          duration: Math.round(video.duration),
+          width: video.videoWidth,
+          height: video.videoHeight
+        })
         URL.revokeObjectURL(video.src)
       }
 
       video.onerror = () => {
-        resolve(0)
+        resolve({ duration: 0, width: 0, height: 0 })
         URL.revokeObjectURL(video.src)
       }
 
@@ -414,7 +441,7 @@ class MediaUploadService {
     conversationId: string,
     onProgress?: (progress: number) => void,
     abortSignal?: AbortSignal
-  ): Promise<{ url: string; thumbnailUrl: string; duration: number }> {
+  ): Promise<{ url: string; thumbnailUrl: string; duration: number; width: number; height: number }> {
     try {
       let fileToUpload: File | Blob = file as File
 
@@ -479,8 +506,8 @@ class MediaUploadService {
       // Check abort signal after thumbnail generation
       if (abortSignal?.aborted) throw new Error('Upload cancelled')
 
-      // 10-15% for duration detection
-      const duration = await this.getVideoDuration(fileToUpload as File)
+      // 10-15% for duration and dimension detection
+      const { duration, width, height } = await this.getVideoMetadata(fileToUpload as File)
       onProgress?.(15)
 
       // Generate unique file path
@@ -550,7 +577,9 @@ class MediaUploadService {
         return {
           url: uploadData.path,
           thumbnailUrl: thumbnailPath,
-          duration
+          duration,
+          width,
+          height
         }
       } finally {
         clearInterval(progressInterval)
