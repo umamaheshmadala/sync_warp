@@ -20,8 +20,9 @@ html {
 
 html {
   scroll-behavior: smooth;
-  overscroll-behavior-y: none;
-  /* Prevent pull-to-refresh on mobile webviews if not needed */
+  /* overscroll-behavior-y: removed from html — Story 8.12.1 AC#7
+     Native rubber-band bounce must be preserved for nested scroll containers (chat list).
+     Pull-to-refresh prevention is scoped to #root instead. */
 }
 
 @layer base {
@@ -190,6 +191,8 @@ body,
   min-height: 100vh;
   overflow-y: auto;
   overflow-x: hidden;
+  overscroll-behavior-y: none;
+  /* Prevent pull-to-refresh on app shell — Story 8.12.1 AC#7 */
 }
 
 /* Hide Emoji Picker Category Navigation to reduce clutter */

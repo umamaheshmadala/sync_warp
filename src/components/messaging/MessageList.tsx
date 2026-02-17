@@ -2,8 +2,11 @@ import React, { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import { MessageBubble } from './MessageBubble'
+import { DateSeparator } from './DateSeparator'
 import { Loader2 } from 'lucide-react'
 import type { Message } from '../../types/messaging'
+import { parseDatabaseDate } from '../../utils/dateUtils'
+import { format, isToday, isYesterday, isSameYear, differenceInCalendarDays } from 'date-fns'
 
 interface MessageListProps {
   messages: Message[]
@@ -168,6 +171,26 @@ export const MessageList = React.forwardRef<HTMLDivElement, MessageListProps>(({
     )
   }
 
+  // Helper to format date labels
+  const formatDateLabel = (dateString: string) => {
+    const date = parseDatabaseDate(dateString)
+    if (!date) return ''
+
+    if (isToday(date)) return 'Today'
+    if (isYesterday(date)) return 'Yesterday'
+
+    const now = new Date()
+    const diffInDays = differenceInCalendarDays(now, date)
+
+    // Show day name for the last 7 days
+    if (diffInDays < 7 && diffInDays > 0) {
+      return format(date, 'EEEE') // "Monday"
+    }
+
+    if (isSameYear(date, now)) return format(date, 'MMMM d') // "February 14"
+    return format(date, 'MMMM d, yyyy') // "February 14, 2024"
+  }
+
   return (
     <div
       ref={scrollRef}
@@ -192,9 +215,9 @@ export const MessageList = React.forwardRef<HTMLDivElement, MessageListProps>(({
         </div>
       )}
 
-      {/* Message Bubbles */}
+      {/* Message Bubbles with Date Separators */}
       {(() => {
-        // Deduplicate messages by ID (handles optimistic + realtime duplicates)
+        // Deduplicate messages first
         const uniqueMessages = messages.reduce((acc, message) => {
           if (!acc.find(m => m.id === message.id)) {
             acc.push(message)
@@ -202,17 +225,24 @@ export const MessageList = React.forwardRef<HTMLDivElement, MessageListProps>(({
           return acc
         }, [] as Message[])
 
+        // Sort by created_at ascending (oldest first)
+        const sortedMessages = uniqueMessages.sort((a, b) =>
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        )
+
+        let lastDate: string | null = null
+
         // Find index of first unread message using the FROZEN read timestamp
         let firstUnreadIndex = -1
 
         // Defensive check: If the latest message is sent by the current user, 
         // effectively everything is "read" by us (we don't need a divider).
-        const lastMessage = uniqueMessages[uniqueMessages.length - 1]
+        const lastMessage = sortedMessages[sortedMessages.length - 1]
         const isLastMessageOutgoing = lastMessage?.sender_id === currentUserId
 
         console.log('📊 MessageList Divider Calc:', {
           frozenReadAt,
-          msgCount: uniqueMessages.length,
+          msgCount: sortedMessages.length,
           lastMsgOutgoing: isLastMessageOutgoing
         })
 
@@ -223,7 +253,7 @@ export const MessageList = React.forwardRef<HTMLDivElement, MessageListProps>(({
           firstUnreadIndex = -1
         } else if (frozenReadAt !== null) {
           // We have a timestamp. Find first message NEWER than it.
-          const firstUnread = uniqueMessages.findIndex(m => {
+          const firstUnread = sortedMessages.findIndex(m => {
             const msgDate = new Date(m.created_at)
             const readDate = new Date(frozenReadAt)
             return msgDate > readDate
@@ -255,8 +285,21 @@ export const MessageList = React.forwardRef<HTMLDivElement, MessageListProps>(({
             index === firstUnreadIndex &&
             isIncoming
 
+          // Date Separator Logic
+          const messageDate = parseDatabaseDate(message.created_at)
+          const dateKey = messageDate ? format(messageDate, 'yyyy-MM-dd') : null
+
+          let showDateSeparator = false
+          if (dateKey && dateKey !== lastDate) {
+            showDateSeparator = true
+            lastDate = dateKey
+          }
+
           return (
             <React.Fragment key={message.id}>
+              {showDateSeparator && (
+                <DateSeparator label={formatDateLabel(message.created_at)} />
+              )}
               {showUnreadDivider && (
                 <div className="flex items-center gap-3 py-3 px-2">
                   <div className="flex-1 h-[1px] bg-gradient-to-r from-transparent via-blue-500 to-transparent" />

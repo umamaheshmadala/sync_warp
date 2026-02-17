@@ -1,6 +1,6 @@
 # 📖 STORY 8.12.2: Unread Badge & Scroll-to-Bottom Floating Action Button
 
-**Status:** ✅ Completed  
+**Status:** 🧪 Implementation Complete — User Testing Pending  
 **Epic:** [EPIC 8.12: Chat Scroll UX](../epics/EPIC_8.12_Chat_Scroll_UX.md)  
 **Priority:** 🔴 Critical (Direct dependency on Story 8.12.1)  
 **Depends On:** Story 8.12.1 (`isAtBottom` state from `useScrollPosition` hook)

@@ -106,6 +106,21 @@ export function ImageUploadButton({
       // Don't revoke yet, we need them for optimistic message
       handleCancelPreview(false) // false = don't revoke/reset state deeply yet
 
+      // 1. Get dimensions for first image (to prevent CLS on optimistic message)
+      let width: number | undefined
+      let height: number | undefined
+      try {
+        if (selectedFiles.length > 0) {
+          const dims = await mediaUploadService.getImageDimensions(selectedFiles[0])
+          width = dims.width
+          height = dims.height
+        }
+      } catch (e) {
+        console.warn('Failed to get dimensions for optimistic message', e)
+      }
+
+      console.log('📏 Optimistic dimensions:', width, height)
+
       const optimisticMessage: Message = {
         id: tempId,
         conversation_id: conversationId,
@@ -114,6 +129,8 @@ export function ImageUploadButton({
         type: 'image',
         media_urls: blobUrls,
         thumbnail_url: blobUrls[0], // Use first image as thumbnail
+        media_width: width,
+        media_height: height,
         is_edited: false,
         is_deleted: false,
         created_at: new Date().toISOString(),
@@ -238,7 +255,9 @@ export function ImageUploadButton({
         content: caption,
         type: 'image',
         mediaUrls: publicMediaUrls,
-        thumbnailUrl: publicThumbUrl
+        thumbnailUrl: publicThumbUrl,
+        mediaWidth: width, // Use dimensions captured earlier (or from upload result if we tracked it per file)
+        mediaHeight: height
       })
 
       console.log('✅ Message sent with public URLs')

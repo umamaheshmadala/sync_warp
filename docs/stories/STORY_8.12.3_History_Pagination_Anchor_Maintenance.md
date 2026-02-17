@@ -1,6 +1,6 @@
 # 📖 STORY 8.12.3: History Pagination with Scroll Anchor Maintenance
 
-**Status:** ✅ Completed  
+**Status:** 🧪 Implementation Complete — User Testing Pending  
 **Epic:** [EPIC 8.12: Chat Scroll UX](../epics/EPIC_8.12_Chat_Scroll_UX.md)  
 **Priority:** 🟠 High (Critical UX — prevents most jarring scroll bug)  
 **Depends On:** Story 8.12.1 (shared scroll container ref from `useScrollPosition`)

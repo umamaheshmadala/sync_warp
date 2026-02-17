@@ -1,6 +1,6 @@
 # 📖 STORY 8.12.5: Media Placeholders & Zero Layout Shift
 
-**Status:** 📋 Planned  
+**Status:** 🧪 Implementation Complete — User Testing Pending  
 **Epic:** [EPIC 8.12: Chat Scroll UX](../epics/EPIC_8.12_Chat_Scroll_UX.md)  
 **Priority:** 🟡 Medium (Polish — eliminates jarring visual shifts from media loading)  
 **Depends On:** Epic 8.3 ✅ (Media & Rich Content)

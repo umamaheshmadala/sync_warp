@@ -31,7 +31,7 @@ export function useVideoUpload() {
       }
 
       // Upload with progress tracking
-      const { url, thumbnailUrl, duration } = await mediaUploadService.uploadVideo(
+      const { url, thumbnailUrl, duration, width, height } = await mediaUploadService.uploadVideo(
         file,
         nativePath || null,
         conversationId,
@@ -44,7 +44,7 @@ export function useVideoUpload() {
       setUploadState({ isUploading: false, progress: 100, error: null })
       toast.success('Video uploaded successfully!')
 
-      return { url, thumbnailUrl, duration }
+      return { url, thumbnailUrl, duration, width, height }
     } catch (error: any) {
       const errorMessage = error.message || 'Upload failed'
       // Don't toast for user cancellations

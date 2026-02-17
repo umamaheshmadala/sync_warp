@@ -74,6 +74,13 @@ export default function ChatScreen() {
   const prevMessageCount = useRef(messages.length)
   const prevLastMessageId = useRef<string | null>(null)
 
+  // Ref to track isAtBottom for event listeners (avoids stale closures) — Story 8.12.1 AC#5
+  const isAtBottomRef = useRef(isAtBottom)
+  useEffect(() => { isAtBottomRef.current = isAtBottom }, [isAtBottom])
+
+  // Throttle ref for bulk message auto-scroll — Story 8.12.1 AC#9
+  const scrollThrottleRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   // Local unread count for FAB (Story 8.12.2)
   const [unreadCountSinceScroll, setUnreadCountSinceScroll] = useState(0)
 
@@ -203,10 +210,13 @@ export default function ChatScreen() {
     if (messages.length > prevMessageCount.current && isNewMessageAtBottom) {
       if (isUserMessage || isAtBottom) {
         console.log('📜 Smart Scroll: Scrolling to bottom', { isUserMessage, isAtBottom })
-        // Use a small timeout to ensure DOM update
-        setTimeout(() => {
+        // Throttle auto-scroll for burst messages (Story 8.12.1 AC#9)
+        // During rapid message arrival, only the final scroll fires after 150ms of quiet
+        if (scrollThrottleRef.current) clearTimeout(scrollThrottleRef.current)
+        scrollThrottleRef.current = setTimeout(() => {
           scrollToBottomHook('smooth')
-        }, 100)
+          scrollThrottleRef.current = null
+        }, 150)
       } else {
         // We are not at bottom and received a new message -> increment unread count
         // Only if it's NOT a user message (user messages auto-scroll anyway)
@@ -355,12 +365,19 @@ export default function ChatScreen() {
       showListener = await Keyboard.addListener('keyboardWillShow', () => {
         console.log('⌨️ Keyboard showing')
 
-        // Auto-scroll to bottom when keyboard shows
-        setTimeout(() => scrollToBottom('auto'), 100)
+        // Only auto-scroll when user is already at bottom (Story 8.12.1 AC#5)
+        // Prevents yanking user away from history when tapping input
+        if (isAtBottomRef.current) {
+          setTimeout(() => scrollToBottom('auto'), 100)
+        }
       })
 
       hideListener = await Keyboard.addListener('keyboardWillHide', () => {
         console.log('⌨️ Keyboard hiding')
+        // Maintain bottom anchor when keyboard dismisses interactively (Story 8.12.1 AC#8)
+        if (isAtBottomRef.current) {
+          setTimeout(() => scrollToBottom('auto'), 100)
+        }
       })
     }
 
@@ -430,19 +447,47 @@ export default function ChatScreen() {
     scrollToMessage(messageId)
   }
 
-  // Scroll to message with highlight (Story 8.5.4 - Search)
-  const scrollToMessage = (messageId: string) => {
+  // Scroll to message with highlight (Story 8.5.4 / 8.12.2 AC#6-7)
+  const scrollToMessage = async (messageId: string) => {
+    // Helper to highlight a found element
+    const highlightElement = (el: HTMLElement) => {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      el.classList.add('search-highlight-flash')
+      setTimeout(() => {
+        el.classList.remove('search-highlight-flash')
+      }, 2000)
+    }
+
+    // 1. Fast path: message already in DOM
     const messageElement = document.getElementById(`message-${messageId}`)
     if (messageElement) {
-      messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      // Highlight the message briefly
-      messageElement.classList.add('search-highlight-flash')
-      setTimeout(() => {
-        messageElement.classList.remove('search-highlight-flash')
-      }, 2000)
-    } else {
-      console.warn('Message not found in current view:', messageId)
+      highlightElement(messageElement)
+      return
     }
+
+    // 2. Slow path: fetch messages around the target (Story 8.12.2 AC#6-7)
+    if (!conversationId) return
+    try {
+      console.log('📍 Fetching context for message:', messageId)
+      const { messages: aroundMessages } = await messagingService.fetchMessagesAround(
+        conversationId, messageId
+      )
+      if (aroundMessages.length > 0) {
+        // Replace current message window in store
+        useMessagingStore.getState().setMessages(conversationId, aroundMessages)
+        // Wait for React to render the new messages
+        await new Promise(resolve => setTimeout(resolve, 300))
+        const el = document.getElementById(`message-${messageId}`)
+        if (el) {
+          highlightElement(el)
+          return
+        }
+      }
+    } catch (err) {
+      console.error('❌ Failed to fetch messages around target:', err)
+    }
+
+    console.warn('⚠️ Message not found even after fetch-around:', messageId)
   }
 
   // Handle search result click

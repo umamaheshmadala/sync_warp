@@ -8,6 +8,7 @@ import { hapticService } from '../../services/hapticService'
 import { RefreshCw, CornerDownRight, Forward, Pin } from 'lucide-react'
 import { MessageStatusIcon } from './MessageStatusIcon'
 import { OptimisticImageMessage } from './OptimisticImageMessage'
+import { MediaPlaceholder } from './MediaPlaceholder'
 import { OptimisticVideoMessage } from './OptimisticVideoMessage'
 import { VideoPlayer } from './VideoPlayer'
 import { LinkPreviewCard } from './LinkPreviewCard'
@@ -114,6 +115,7 @@ export function MessageBubble({
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [lightboxImages, setLightboxImages] = useState<string[]>([])
   const [lightboxInitialIndex, setLightboxInitialIndex] = useState(0)
+  const [imageLoadedStates, setImageLoadedStates] = useState<Record<string, boolean>>({})
   // const [showReactionBar, setShowReactionBar] = useState(false) // Removed per user feedback
   const [showPicker, setShowPicker] = useState(false)
   const queryClient = useQueryClient()
@@ -733,61 +735,91 @@ export function MessageBubble({
                         // Limit width for grids to prevent them being too large
                         message.media_urls.length > 1 ? "max-w-[300px]" : "max-w-sm"
                       )}>
-                        {message.media_urls.slice(0, 4).map((url, index) => (
-                          <div
-                            key={index}
-                            className={cn(
-                              "relative cursor-pointer overflow-hidden rounded-lg hover:opacity-95 transition-opacity",
-                              message.media_urls!.length === 1 ? "aspect-auto" : "aspect-square",
-                              message.media_urls!.length === 3 && index === 0 ? "col-span-2 aspect-video" : ""
-                            )}
-                            onClick={() => {
-                              // Get all images
-                              const conversationMessages = useMessagingStore.getState().messages.get(message.conversation_id) || []
-                              const allImages: string[] = []
-                              let globalIndex = 0
-                              let found = false
+                        {message.media_urls.slice(0, 4).map((url, index) => {
+                          const isSingle = message.media_urls!.length === 1
+                          const hasDim = isSingle && message.media_width && message.media_height
 
-                              // Construct global list and find index of clicked image
-                              conversationMessages.forEach((msg) => {
-                                if (msg.type === 'image' && Array.isArray(msg.media_urls) && msg.media_urls.length > 0 && !msg._optimistic) {
-                                  if (msg.id === message.id) {
-                                    // This is the current message
-                                    globalIndex = allImages.length + index
-                                    found = true
-                                  }
-                                  allImages.push(...msg.media_urls)
+                          // Open lightbox handler
+                          const handleImageClick = () => {
+                            const conversationMessages = useMessagingStore.getState().messages.get(message.conversation_id) || []
+                            const allImages: string[] = []
+                            let globalIndex = 0
+                            let found = false
+
+                            conversationMessages.forEach((msg) => {
+                              if (msg.type === 'image' && Array.isArray(msg.media_urls) && msg.media_urls.length > 0 && !msg._optimistic) {
+                                if (msg.id === message.id) {
+                                  globalIndex = allImages.length + index
+                                  found = true
                                 }
-                              })
-
-                              if (!found && message.media_urls) {
-                                // Fallback
-                                allImages.push(...message.media_urls)
-                                globalIndex = index
+                                allImages.push(...msg.media_urls)
                               }
+                            })
 
-                              setLightboxImages(allImages)
-                              setLightboxInitialIndex(globalIndex)
-                              setLightboxOpen(true)
-                            }}
-                          >
-                            <img
-                              src={url}
-                              alt={`Image ${index + 1}`}
-                              className="w-full h-full object-cover"
-                              style={message.media_urls!.length === 1 ? { maxHeight: '300px', width: 'auto' } : {}}
-                              loading="lazy"
-                            />
-                            {/* Overlay for +N */}
-                            {index === 3 && message.media_urls!.length > 4 && (
-                              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                                <span className="text-white text-2xl font-bold">
-                                  +{message.media_urls!.length - 4}
-                                </span>
+                            if (!found && message.media_urls) {
+                              allImages.push(...message.media_urls)
+                              globalIndex = index
+                            }
+
+                            setLightboxImages(allImages)
+                            setLightboxInitialIndex(globalIndex)
+                            setLightboxOpen(true)
+                          }
+
+                          // Single image: wrap in MediaPlaceholder for zero-CLS (Story 8.12.5)
+                          if (isSingle) {
+                            return (
+                              <div
+                                key={index}
+                                className="relative cursor-pointer hover:opacity-95 transition-opacity rounded-lg"
+                                onClick={handleImageClick}
+                              >
+                                <MediaPlaceholder
+                                  width={message.media_width}
+                                  height={message.media_height}
+                                  thumbnailUrl={message.thumbnail_url}
+                                  isLoading={!imageLoadedStates[url]}
+                                  maxWidth={300}
+                                >
+                                  <img
+                                    src={url}
+                                    alt={`Image ${index + 1}`}
+                                    className="w-full h-full object-cover rounded-lg"
+                                    loading="lazy"
+                                    onLoad={() => setImageLoadedStates(prev => ({ ...prev, [url]: true }))}
+                                  />
+                                </MediaPlaceholder>
                               </div>
-                            )}
-                          </div>
-                        ))}
+                            )
+                          }
+
+                          // Multi-image grid: use fixed aspect-square (no CLS issue)
+                          return (
+                            <div
+                              key={index}
+                              className={cn(
+                                "relative cursor-pointer overflow-hidden rounded-lg hover:opacity-95 transition-opacity aspect-square",
+                                message.media_urls!.length === 3 && index === 0 ? "col-span-2 aspect-video" : ""
+                              )}
+                              onClick={handleImageClick}
+                            >
+                              <img
+                                src={url}
+                                alt={`Image ${index + 1}`}
+                                className="w-full h-full object-cover"
+                                loading="lazy"
+                              />
+                              {/* Overlay for +N */}
+                              {index === 3 && message.media_urls!.length > 4 && (
+                                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                  <span className="text-white text-2xl font-bold">
+                                    +{message.media_urls!.length - 4}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })}
                       </div>
 
                       {content && (
@@ -846,6 +878,8 @@ export function MessageBubble({
                         videoUrl={message.media_urls[0]}
                         thumbnailUrl={message.thumbnail_url}
                         duration={undefined}
+                        width={message.media_width || undefined}
+                        height={message.media_height || undefined}
                         onFullscreen={() => setShowVideoPlayer(true)}
                       />
                       {content && (

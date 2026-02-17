@@ -102,6 +102,22 @@ export function VideoUploadButton({
         }
       }
 
+      // 1. Get dimensions for optimistic message
+      let width: number | undefined
+      let height: number | undefined
+      let duration: number | undefined
+
+      try {
+        if (selectedFile) {
+          const meta = await mediaUploadService.getVideoMetadata(selectedFile)
+          width = meta.width
+          height = meta.height
+          duration = meta.duration
+        }
+      } catch (e) {
+        console.warn('Failed to get video metadata for optimistic message', e)
+      }
+
       // 2. Create Optimistic Message
       const optimisticMessage: Message = {
         id: tempId,
@@ -111,6 +127,9 @@ export function VideoUploadButton({
         type: 'video',
         media_urls: blobUrl ? [blobUrl] : [], // Empty if native path for now
         thumbnail_url: thumbnailBlobUrl,
+        media_width: width,
+        media_height: height,
+        media_duration: duration,
         is_edited: false,
         is_deleted: false,
         created_at: new Date().toISOString(),
@@ -125,7 +144,7 @@ export function VideoUploadButton({
       onUploadStart?.()
 
       // 3. Upload
-      const { url, thumbnailUrl, duration } = await uploadVideo(
+      const uploadResult = await uploadVideo(
         selectedFile,
         conversationId,
         (uploadProgress) => {
@@ -135,6 +154,11 @@ export function VideoUploadButton({
         nativePath
       )
 
+      const { url, thumbnailUrl: uploadedThumbUrl } = uploadResult
+      // Use dimensions from upload result if available (might be more accurate after processing)
+      const finalWidth = uploadResult.width || width
+      const finalHeight = uploadResult.height || height
+
       // 4. Get Public URLs
       const { data: { publicUrl } } = supabase.storage
         .from('message-attachments')
@@ -142,7 +166,7 @@ export function VideoUploadButton({
 
       const { data: { publicUrl: thumbPublicUrl } } = supabase.storage
         .from('message-attachments')
-        .getPublicUrl(thumbnailUrl)
+        .getPublicUrl(uploadedThumbUrl)
 
       // UPDATE OPTIMISTIC MESSAGE: Set public URL so store can detecting duplication
       updateMessage(conversationId, tempId, {
@@ -156,7 +180,9 @@ export function VideoUploadButton({
         content: caption,
         type: 'video',
         mediaUrls: [publicUrl],
-        thumbnailUrl: thumbPublicUrl
+        thumbnailUrl: thumbPublicUrl,
+        mediaWidth: finalWidth,
+        mediaHeight: finalHeight
       })
 
       // 6. Replace Optimistic Message with Real One

@@ -382,7 +382,7 @@ class MediaUploadService {
   /**
    * Get video dimensions and duration
    */
-  private async getVideoMetadata(file: File): Promise<{ duration: number; width: number; height: number }> {
+  async getVideoMetadata(file: File): Promise<{ duration: number; width: number; height: number }> {
     return new Promise((resolve) => {
       const video = document.createElement('video')
       video.preload = 'metadata'
