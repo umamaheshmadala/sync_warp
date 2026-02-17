@@ -63,7 +63,7 @@ const config: CapacitorConfig = {
   server: getServerConfig(),
   plugins: {
     Keyboard: {
-      resize: 'native',
+      resize: 'none',
       resizeOnFullScreen: true,
     },
     SplashScreen: {

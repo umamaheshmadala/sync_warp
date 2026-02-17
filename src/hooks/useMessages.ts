@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useRef } from 'react'
+import { useEffect, useCallback, useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMessagingStore } from '../store/messagingStore'
 import { messagingService } from '../services/messagingService'
@@ -50,7 +50,8 @@ export function useMessages(conversationId: string | null) {
   } = useMessagingStore()
 
   const hasMore = useRef(true)
-  const isLoadingMore = useRef(false)
+  const [isFetchingOlder, setIsFetchingOlder] = useState(false)
+  const isLoadingMoreRef = useRef(false) // Keep ref for preventing duplicate calls logic
   // isFetching is no longer needed as React Query handles fetching state
 
   // Platform-specific page size
@@ -100,18 +101,20 @@ export function useMessages(conversationId: string | null) {
     messageCount: conversationMessages.length,
     isLoading,
     isFetching,
+    isFetchingOlder,
     fromCache: !isLoading && !!messagesData
   })
 
   // Load more (older) messages
   const loadMore = useCallback(async () => {
-    if (!conversationId || !hasMore.current || isLoadingMore.current) return
+    if (!conversationId || !hasMore.current || isLoadingMoreRef.current) return
 
     const oldestMessage = conversationMessages[0] // Messages sorted DESC by created_at
     if (!oldestMessage) return
 
     try {
-      isLoadingMore.current = true
+      isLoadingMoreRef.current = true
+      setIsFetchingOlder(true)
 
       // Fetch messages (hidden filtering is now handled server-side)
       const { messages: olderMessages, hasMore: more } = await messagingService.fetchMessages(conversationId, pageSize, oldestMessage.id)
@@ -127,7 +130,8 @@ export function useMessages(conversationId: string | null) {
       console.error('Failed to load more messages:', error)
       toast.error('Failed to load older messages')
     } finally {
-      isLoadingMore.current = false
+      isLoadingMoreRef.current = false
+      setIsFetchingOlder(false)
     }
   }, [conversationId, conversationMessages, pageSize, queryClient])
 
@@ -229,6 +233,7 @@ export function useMessages(conversationId: string | null) {
   return {
     messages: conversationMessages,
     isLoading: isLoading && conversationMessages.length === 0, // Only show loading if no cached data
+    isFetchingOlder, // Exposed for UI loading indicators
     hasMore: hasMore.current,
     loadMore,
     refresh: refetch

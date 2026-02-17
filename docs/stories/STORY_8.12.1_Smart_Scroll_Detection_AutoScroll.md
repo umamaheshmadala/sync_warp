@@ -1,6 +1,6 @@
 # 📖 STORY 8.12.1: Smart Scroll Position Detection & Conditional Auto-Scroll
 
-**Status:** 📋 Planned  
+**Status:** ✅ Completed  
 **Epic:** [EPIC 8.12: Chat Scroll UX](../epics/EPIC_8.12_Chat_Scroll_UX.md)  
 **Priority:** 🔴 Critical (Foundation — all other stories depend on this)
 

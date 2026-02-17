@@ -59,7 +59,13 @@ export default function ChatScreen() {
   const navigate = useNavigate()
   const location = useLocation()
   const { updateConversation } = useMessagingStore() // For clearing unread count
-  const { messages, isLoading, hasMore, loadMore } = useMessages(conversationId || null)
+  const {
+    messages,
+    isLoading,
+    hasMore,
+    loadMore,
+    isFetchingOlder
+  } = useMessages(conversationId || null)
   const { scrollContainerRef, isAtBottom, scrollToBottom: scrollToBottomHook, showScrollButton: showScrollButtonFromHook } = useScrollPosition()
   const { isTyping, typingUserIds, handleTyping } = useTypingIndicator(conversationId || null)
   const { retryMessage } = useSendMessage() // For retrying failed messages (Story 8.2.7)
@@ -215,13 +221,57 @@ export default function ChatScreen() {
     prevLastMessageId.current = lastMessage?.id || null
   }, [messages.length, messages[messages.length - 1]?.id, isAtBottom, scrollToBottomHook, currentUserId])
 
-  // Initial scroll to latest message
+  // Initial scroll handling (Smart Load)
+  // Scrolls to first unread message if present, otherwise to bottom
+  const [initialScrollDone, setInitialScrollDone] = useState(false)
+
   useEffect(() => {
-    if (messages.length > 0 && !isLoading) {
-      // Force auto scroll on initial load
-      scrollToBottomHook('auto')
+    if (initialScrollDone || isLoading || messages.length === 0 || lastReadAt === undefined) return
+
+    const performInitialScroll = () => {
+      // 1. Check for unread messages
+      let targetMessageId: string | null = null
+
+      if (lastReadAt !== null) {
+        // Find first message newer than lastReadAt
+        const firstUnread = messages.find(m => {
+          const msgDate = new Date(m.created_at)
+          const readDate = new Date(lastReadAt)
+          return msgDate > readDate && m.sender_id !== currentUserId
+        })
+        if (firstUnread) {
+          targetMessageId = firstUnread.id
+          console.log('📍 Initial Load: Found unread message, scrolling to:', targetMessageId)
+        }
+      } else {
+        // No read history (all unread) - scroll to top (first message)
+        // Only if not sent by user
+        const firstMsg = messages[0]
+        if (firstMsg && firstMsg.sender_id !== currentUserId) {
+          targetMessageId = firstMsg.id
+          console.log('📍 Initial Load: No history, scrolling to start:', targetMessageId)
+        }
+      }
+
+      // 2. Perform Scroll
+      if (targetMessageId) {
+        // Scroll to specific message
+        setTimeout(() => {
+          scrollToMessage(targetMessageId!)
+          setInitialScrollDone(true)
+        }, 100)
+      } else {
+        // Default: Scroll to bottom
+        console.log('📍 Initial Load: No unread context, scrolling to bottom')
+        setTimeout(() => {
+          scrollToBottomHook('auto')
+          setInitialScrollDone(true)
+        }, 100)
+      }
     }
-  }, [isLoading, messages.length === 0])
+
+    performInitialScroll()
+  }, [isLoading, messages.length, lastReadAt, initialScrollDone, currentUserId])
 
   // Mark conversation as read ONLY when user is actively viewing
   useEffect(() => {
@@ -520,6 +570,7 @@ export default function ChatScreen() {
           hasMore={hasMore}
           onLoadMore={loadMore}
           isLoading={isLoading}
+          isFetchingOlder={isFetchingOlder} // New prop for pagination loading
           onRetry={handleRetry}
           onReply={handleReply}
           onForward={handleForward}

@@ -19,6 +19,7 @@ import { NewBusinesses } from './business';
 import { SpotlightBusiness, HotOffer, TrendingProduct } from '../services/dashboardService';
 import { OfferCard } from './offers/OfferCard';
 import { StandardBusinessCard, type StandardBusinessCardData, BusinessActionMenu } from './common';
+import DashboardSkeleton from './ui/skeletons/DashboardSkeleton';
 
 // Remove unused imports if they are not used elsewhere in the file
 // import { StorefrontShareButton } from './Sharing/StorefrontShareButton';
@@ -93,10 +94,18 @@ const Dashboard: React.FC = () => {
     offersData,
     productsData,
     // We can use these loading states to show skeletons if needed
-    // isLoadingBusinesses,
-    // isLoadingOffers,
-    // isLoadingProducts
+    isLoadingBusinesses,
+    isLoadingOffers,
+    isLoadingProducts
   } = useDashboardData();
+
+  // Aggregate loading state for the main skeleton
+  // We show skeleton if critical data is still loading
+  const isLoading = isLoadingBusinesses || isLoadingOffers || isLoadingProducts;
+
+  if (isLoading) {
+    return <DashboardSkeleton />;
+  }
 
   // Use cached data or fallback to dummy data
   const spotlightBusinesses = businessesData && businessesData.length > 0

@@ -32,33 +32,36 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const isMessagesRoute = location.pathname.includes('/messages');
 
   // Configure Keyboard and Listeners
+  // Story 8.12.1: We use resize: 'none' in config and handle layout manually for better interactive dismissal
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
 
-    // Fix Android Safe Area / Status Bar Overlap - Re-applied as Runtime Fix works best for Physical Devices
+    // Fix Android Safe Area / Status Bar Overlap
     if (Capacitor.getPlatform() === 'android') {
       StatusBar.setOverlaysWebView({ overlay: false }).catch(() => { });
       StatusBar.setBackgroundColor({ color: '#ffffff' }).catch(() => { });
       StatusBar.setStyle({ style: Style.Light }).catch(() => { });
     }
 
-    // Set Keyboard Resize Mode to Native as requested by user
-    Keyboard.setResizeMode({ mode: KeyboardResize.Native });
-    // Disable webview scroll to let our CSS handle scrolling within containers
-    Keyboard.setScroll({ isDisabled: true });
+    // Note: 'resize: none' is set in capacitor.config.ts
+    // We intentionally do NOT set it here to avoid race conditions overriding the config
 
     let showListener: any;
     let hideListener: any;
 
     const setupListeners = async () => {
-      showListener = await Keyboard.addListener('keyboardWillShow', () => {
-        console.log('[AppLayout] ⌨️ keyboardWillShow - hiding bottom nav');
+      showListener = await Keyboard.addListener('keyboardWillShow', (info) => {
+        console.log('[AppLayout] ⌨️ keyboardWillShow', info.keyboardHeight);
         setIsKeyboardVisible(true);
+        setKeyboardHeight(info.keyboardHeight);
       });
 
       hideListener = await Keyboard.addListener('keyboardWillHide', () => {
-        console.log('[AppLayout] ⌨️ keyboardWillHide - showing bottom nav');
+        console.log('[AppLayout] ⌨️ keyboardWillHide');
         setIsKeyboardVisible(false);
+        setKeyboardHeight(0);
       });
     };
 
@@ -141,7 +144,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               className="w-full flex-1 min-h-0 flex flex-col"
               style={{
                 paddingTop: 'calc(54px + env(safe-area-inset-top, 0px))',
-                paddingBottom: shouldShowBottomNav ? 'calc(56px + env(safe-area-inset-bottom, 0px))' : '0px'
+                // Adjust bottom padding:
+                // 1. If keyboard visible -> specific keyboard height
+                // 2. If nav visible -> nav height + safe area
+                // 3. Otherwise -> 0
+                paddingBottom: isKeyboardVisible
+                  ? `${keyboardHeight}px`
+                  : (shouldShowBottomNav ? 'calc(56px + env(safe-area-inset-bottom, 0px))' : '0px'),
+                transition: 'padding-bottom 0.2s cubic-bezier(0.2, 0.0, 0, 1.0)' // match iOS keyboard timing roughly
               }}
             >
               {children}

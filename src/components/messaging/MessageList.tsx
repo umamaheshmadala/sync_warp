@@ -9,7 +9,8 @@ interface MessageListProps {
   messages: Message[]
   hasMore: boolean
   onLoadMore: () => void
-  isLoading?: boolean
+  isLoading: boolean
+  isFetchingOlder?: boolean // Optional for backward compatibility, but we should always pass it
   onRetry?: (message: Message) => void // Story 8.2.7 - Retry failed messages
   onReply?: (message: Message) => void // Story 8.10.5 - Reply to message
   onForward?: (message: Message) => void // Story 8.10.6 - Forward message
@@ -48,6 +49,7 @@ export const MessageList = React.forwardRef<HTMLDivElement, MessageListProps>(({
   hasMore,
   onLoadMore,
   isLoading = false,
+  isFetchingOlder = false,
   onRetry,
   onReply,
   onForward,
@@ -98,46 +100,57 @@ export const MessageList = React.forwardRef<HTMLDivElement, MessageListProps>(({
     }
   }, [ref])
 
-  // Handle scroll to load more messages
-  const handleScroll = () => {
-    if (!scrollRef.current || !hasMore || isLoadingMore.current) return
+  // Scroll Anchor Maintenance Logic
+  // Story 8.12.3: Prevent visual jumping when loading older messages
+  const sentinelRef = useRef<HTMLDivElement>(null)
 
-    const { scrollTop } = scrollRef.current
+  // Use LayoutEffect to interact with DOM before paint
+  React.useLayoutEffect(() => {
+    if (!scrollRef.current) return
 
-    // Load more when scrolled near top (within 100px)
-    if (scrollTop < 100) {
-      isLoadingMore.current = true
-      prevScrollHeight.current = scrollRef.current.scrollHeight
-      onLoadMore()
+    const currentScrollHeight = scrollRef.current.scrollHeight
+    const heightCheck = currentScrollHeight - prevScrollHeight.current
 
-      // Reset loading flag after delay
-      setTimeout(() => {
-        isLoadingMore.current = false
-      }, 1000)
+    // If height increased significantly (suggesting prepend), restore position
+    // We only do this if we were previously tracking a height (i.e., a load occurred)
+    if (prevScrollHeight.current > 0 && heightCheck > 0) {
+      console.log('⚓️ Restoring scroll anchor:', {
+        prev: prevScrollHeight.current,
+        curr: currentScrollHeight,
+        delta: heightCheck
+      })
+      scrollRef.current.scrollTop += heightCheck
+      prevScrollHeight.current = 0 // Reset
     }
-  }
+  }, [messages]) // Run synchronously when messages update
 
-  // Restore scroll position after loading more messages
+  // Intersection Observer for Infinite Scroll
   useEffect(() => {
-    if (scrollRef.current && prevScrollHeight.current > 0) {
-      const newScrollHeight = scrollRef.current.scrollHeight
-      const heightDifference = newScrollHeight - prevScrollHeight.current
+    const scrollContainer = scrollRef.current
+    const sentinel = sentinelRef.current
 
-      if (heightDifference > 0) {
-        scrollRef.current.scrollTop = heightDifference
-        prevScrollHeight.current = 0
+    if (!scrollContainer || !sentinel || !hasMore || isLoading) return
+
+    const observer = new IntersectionObserver((entries) => {
+      const entry = entries[0]
+      if (entry.isIntersecting) {
+        // Capture height BEFORE loading new messages
+        prevScrollHeight.current = scrollContainer.scrollHeight
+        console.log('📡 Load More Triggered. Snapshot height:', prevScrollHeight.current)
+        onLoadMore()
       }
-    }
-  }, [messages.length])
+    }, {
+      root: scrollContainer,
+      rootMargin: '200px 0px 0px 0px', // Trigger 200px before top
+      threshold: 0
+    })
 
-  // Add scroll listener
-  useEffect(() => {
-    const scrollElement = scrollRef.current
-    if (scrollElement) {
-      scrollElement.addEventListener('scroll', handleScroll)
-      return () => scrollElement.removeEventListener('scroll', handleScroll)
+    observer.observe(sentinel)
+
+    return () => {
+      observer.disconnect()
     }
-  }, [hasMore])
+  }, [hasMore, isLoading, onLoadMore])
 
   // Empty state
   if (!isLoading && messages.length === 0) {
@@ -159,11 +172,23 @@ export const MessageList = React.forwardRef<HTMLDivElement, MessageListProps>(({
     <div
       ref={scrollRef}
       className="flex-1 overflow-y-auto px-4 py-4 space-y-1 message-list-scroll bg-white"
+      style={{ overflowAnchor: 'none' }} // Disable browser auto-anchoring (Story 8.12.3)
     >
-      {/* Load More Indicator */}
-      {hasMore && (
-        <div className="flex justify-center py-2">
+      {/* Sentinel & Loading Indicator */}
+      <div ref={sentinelRef} className="h-px w-full" />
+
+      {(isFetchingOlder || (isLoading && hasMore)) && (
+        <div className="flex justify-center py-4">
           <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+        </div>
+      )}
+
+      {/* Start of Conversation Indicator */}
+      {!hasMore && messages.length > 0 && (
+        <div className="flex justify-center py-6 pb-8">
+          <span className="text-xs font-medium text-gray-400 bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
+            Start of conversation
+          </span>
         </div>
       )}
 

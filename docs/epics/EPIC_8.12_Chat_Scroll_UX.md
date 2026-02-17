@@ -80,9 +80,9 @@ Implement **premium, WhatsApp-grade chat scroll behavior** across Web, iOS, and 
 
 | # | Story | Priority | Status | File |
 |---|---|---|---|---|
-| 1 | Smart Scroll Position Detection & Auto-Scroll | 🔴 Critical | 📋 Planned | [STORY_8.12.1](../stories/STORY_8.12.1_Smart_Scroll_Detection_AutoScroll.md) |
-| 2 | Unread Badge & Scroll-to-Bottom FAB | 🔴 Critical | 📋 Planned | [STORY_8.12.2](../stories/STORY_8.12.2_Unread_Badge_ScrollToBottom_FAB.md) |
-| 3 | History Pagination with Anchor Maintenance | 🟠 High | 📋 Planned | [STORY_8.12.3](../stories/STORY_8.12.3_History_Pagination_Anchor_Maintenance.md) |
+| 1 | Smart Scroll Position Detection & Auto-Scroll | 🔴 Critical | ✅ Completed | [STORY_8.12.1](../stories/STORY_8.12.1_Smart_Scroll_Detection_AutoScroll.md) |
+| 2 | Unread Badge & Scroll-to-Bottom FAB | 🔴 Critical | ✅ Completed | [STORY_8.12.2](../stories/STORY_8.12.2_Unread_Badge_ScrollToBottom_FAB.md) |
+| 3 | History Pagination with Anchor Maintenance | 🟠 High | ✅ Completed | [STORY_8.12.3](../stories/STORY_8.12.3_History_Pagination_Anchor_Maintenance.md) |
 | 4 | Sticky Date Headers | 🟡 Medium | 📋 Planned | [STORY_8.12.4](../stories/STORY_8.12.4_Sticky_Date_Headers.md) |
 | 5 | Media Placeholders & Zero Layout Shift | 🟡 Medium | 📋 Planned | [STORY_8.12.5](../stories/STORY_8.12.5_Media_Placeholders_Zero_Layout_Shift.md) |
 
