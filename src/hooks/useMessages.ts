@@ -7,6 +7,7 @@ import { realtimeService } from '../services/realtimeService'
 import { useAuthStore } from '../store/authStore'
 import { toast } from 'react-hot-toast'
 import { usePlatform } from './usePlatform'
+import { supabase } from '../lib/supabase'
 import type { Message } from '../types/messaging'
 
 /**
@@ -140,52 +141,87 @@ export function useMessages(conversationId: string | null) {
     const unsubscribeNew = realtimeService.subscribeToMessages(
       conversationId,
       (newMessage: Message) => {
-        // Populate parent_message for replies if missing
-        if (newMessage.reply_to_id && !newMessage.parent_message) {
-          // Get current messages directly from cache to avoid dependency on conversationMessages
-          const currentData = queryClient.getQueryData(['messages', conversationId]) as any
-          const currentMessages = currentData?.messages || []
+        const enrichMessageWithParent = async () => {
+          if (newMessage.reply_to_id && !newMessage.parent_message) {
+            // 1. Try Cache First
+            const currentData = queryClient.getQueryData(['messages', conversationId]) as any
+            const currentMessages = currentData?.messages || []
+            const parentMsg = currentMessages.find((m: Message) => m.id === newMessage.reply_to_id)
 
-          const parentMsg = currentMessages.find((m: Message) => m.id === newMessage.reply_to_id)
+            if (parentMsg) {
+              newMessage.parent_message = {
+                id: parentMsg.id,
+                content: parentMsg.content,
+                type: parentMsg.type,
+                sender_id: parentMsg.sender_id,
+                sender_name: parentMsg.sender_id === currentUserId ? 'You' : 'User', // Fallback
+                created_at: parentMsg.created_at
+              }
+            } else {
+              // 2. Fetch from DB if not in cache (Slow path, but ensures consistency)
+              try {
+                // Fetch message + sender profile name
+                const { data, error } = await supabase
+                  .from('messages')
+                  .select('content, type, sender_id, created_at, sender:sender_id(full_name)')
+                  .eq('id', newMessage.reply_to_id)
+                  .single()
 
-          if (parentMsg) {
-            newMessage.parent_message = {
-              id: parentMsg.id,
-              content: parentMsg.content,
-              type: parentMsg.type,
-              sender_id: parentMsg.sender_id,
-              sender_name: parentMsg.sender_id === currentUserId ? 'You' : 'User',
-              created_at: parentMsg.created_at
+                if (data && !error) {
+                  const senderName = (data.sender as any)?.full_name || 'User'
+                  newMessage.parent_message = {
+                    id: newMessage.reply_to_id!,
+                    content: data.content,
+                    type: data.type,
+                    sender_id: data.sender_id,
+                    sender_name: data.sender_id === currentUserId ? 'You' : senderName,
+                    created_at: data.created_at
+                  }
+                }
+              } catch (err) {
+                console.error('Failed to fetch reply context:', err)
+              }
             }
           }
         }
 
-        // Derive status for own messages arriving via realtime
-        if (newMessage.sender_id === currentUserId && !newMessage.status) {
-          newMessage.status = 'delivered'
-        }
+        // Execute enrichment then update state
+        enrichMessageWithParent().then(() => {
+          const processedMessage = { ...newMessage };
 
-        // Update React Query cache
-        // Update React Query cache with deduplication
-        queryClient.setQueryData(['messages', conversationId], (old: any) => {
-          const currentMessages = old?.messages || []
-
-          // Check if message with this ID already exists
-          if (currentMessages.some((m: Message) => m.id === newMessage.id)) {
-            return old
+          // Derive status for own messages arriving via realtime
+          if (processedMessage.sender_id === currentUserId && !processedMessage.status) {
+            processedMessage.status = 'delivered'
           }
 
-          // Check for optimistic version match (by temp ID match? No, usually handled by sender swapping ID)
-          // For now, simple ID deduplication matches typical optimistic flow where ID is swapped before realtime arrives
+          // Update React Query cache with deduplication
+          queryClient.setQueryData(['messages', conversationId], (old: any) => {
+            const currentMessages = old?.messages || []
 
-          return {
-            messages: [...currentMessages, newMessage],
-            hasMore: old?.hasMore ?? true
-          }
+            // If message already exists (e.g. optimistic), merge parent_message context
+            if (currentMessages.some((m: Message) => m.id === processedMessage.id)) {
+              return {
+                ...old,
+                messages: currentMessages.map((m: Message) => {
+                  if (m.id === processedMessage.id && !m.parent_message && processedMessage.parent_message) {
+                    return { ...m, parent_message: processedMessage.parent_message }
+                  }
+                  return m
+                })
+              }
+            }
+
+            return {
+              messages: [...currentMessages, processedMessage],
+              hasMore: old?.hasMore ?? true
+            }
+          })
+
+          // Also update Zustand store for backwards compatibility
+          useMessagingStore.getState().addMessage(conversationId, processedMessage)
         })
 
-        // Also update Zustand store for backwards compatibility
-        useMessagingStore.getState().addMessage(conversationId, newMessage)
+
       }
     )
 

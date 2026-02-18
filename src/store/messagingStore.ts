@@ -580,9 +580,24 @@ export const useMessagingStore = create<MessagingState>()(
 
           let updatedMessages;
           if (realMessageExists) {
-            // Real message already exists, so just remove the optimistic one to avoid duplication
+            // Real message already exists (e.g. from Realtime).
+            // CRITICAL FIX: We must MERGE the optimistic context (parent_message) into the existing real message
+            // because Realtime messages often lack this joined data.
+            const optimisticMsg = conversationMessages.find(msg => msg._tempId === tempId);
+
+            // Remove the optimistic copy
             updatedMessages = conversationMessages.filter(msg => msg._tempId !== tempId);
-            console.log(`🧹 [Store] Message ${realMessage.id} arrived via Realtime before API. Removed optimistic copy.`);
+
+            // If we have context to save, update the real message in the list
+            if (optimisticMsg?.parent_message) {
+              updatedMessages = updatedMessages.map(msg =>
+                msg.id === realMessage.id && !msg.parent_message
+                  ? { ...msg, parent_message: optimisticMsg.parent_message }
+                  : msg
+              );
+            }
+
+            console.log(`🧹 [Store] Message ${realMessage.id} arrived via Realtime. Merged context & removed optimistic copy.`);
           } else {
             // Normal case: replace optimistic with real
             updatedMessages = conversationMessages.map(msg =>

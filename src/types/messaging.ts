@@ -172,6 +172,7 @@ export interface SendMessageParams {
   sharedCouponId?: string;
   sharedDealId?: string;
   replyToId?: string;
+  replyToMessage?: Message; // Story 8.10.5 - For optimistic UI updates
   tempId?: string; // For retrying failed messages
 }
 

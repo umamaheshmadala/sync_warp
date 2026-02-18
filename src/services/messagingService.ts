@@ -513,7 +513,10 @@ class MessagingService {
 
           // Legacy fields normalization
           // read_at is less relevant now that we have read_by array, but mapping just in case
-          read_at: msg.read_at
+          read_at: msg.read_at,
+
+          // Reply context (Story 8.10.5) - populated by get_messages_v2 SQL LEFT JOIN
+          parent_message: msg.parent_message || null
         };
       });
 

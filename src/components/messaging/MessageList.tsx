@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import { MessageBubble } from './MessageBubble'
 import { DateSeparator } from './DateSeparator'
+import { FloatingDateBubble } from './FloatingDateBubble'
 import { Loader2 } from 'lucide-react'
 import type { Message } from '../../types/messaging'
 import { parseDatabaseDate } from '../../utils/dateUtils'
@@ -264,25 +265,26 @@ export const MessageList = React.forwardRef<HTMLDivElement, MessageListProps>(({
 
   // Scroll Anchor Maintenance Logic
   // Story 8.12.3: Prevent visual jumping when loading older messages
+  // We use ID-based anchoring which is more robust than height-based diffing
   const sentinelRef = useRef<HTMLDivElement>(null)
+  const anchorMessageId = useRef<string | null>(null)
 
   // Use LayoutEffect to interact with DOM before paint
   React.useLayoutEffect(() => {
     if (!scrollRef.current) return
 
-    const currentScrollHeight = scrollRef.current.scrollHeight
-    const heightCheck = currentScrollHeight - prevScrollHeight.current
-
-    // If height increased significantly (suggesting prepend), restore position
-    // We only do this if we were previously tracking a height (i.e., a load occurred)
-    if (prevScrollHeight.current > 0 && heightCheck > 0) {
-      console.log('⚓️ Restoring scroll anchor:', {
-        prev: prevScrollHeight.current,
-        curr: currentScrollHeight,
-        delta: heightCheck
-      })
-      scrollRef.current.scrollTop += heightCheck
-      prevScrollHeight.current = 0 // Reset
+    // If we have an anchor message from before the update, scroll to it
+    if (anchorMessageId.current) {
+      const anchorElement = document.getElementById(`message-${anchorMessageId.current}`)
+      if (anchorElement) {
+        console.log('⚓️ Restoring scroll anchor to message:', anchorMessageId.current)
+        // Scroll to the element, maintaining a small offset for padding
+        // currentScrollTop = anchorElement.offsetTop - padding
+        scrollRef.current.scrollTop = anchorElement.offsetTop - 16 // 16px = py-4
+        anchorMessageId.current = null // Reset
+      } else {
+        console.warn('⚠️ Anchor message not found in DOM:', anchorMessageId.current)
+      }
     }
   }, [messages]) // Run synchronously when messages update
 
@@ -292,8 +294,6 @@ export const MessageList = React.forwardRef<HTMLDivElement, MessageListProps>(({
     const sentinel = sentinelRef.current
 
     // CRITICAL FIX: Don't start observing until initial scroll is done!
-    // This prevents "Load More" from triggering immediately on mount before
-    // the auto-scroll has a chance to push us to the bottom.
     if (!scrollContainer || !sentinel || !hasMore || isLoading || !initialScrollDone) return
 
     console.log('👀 Observer activating. scrollTop:', scrollContainer.scrollTop, 'scrollHeight:', scrollContainer.scrollHeight)
@@ -301,9 +301,12 @@ export const MessageList = React.forwardRef<HTMLDivElement, MessageListProps>(({
     const observer = new IntersectionObserver((entries) => {
       const entry = entries[0]
       if (entry.isIntersecting) {
-        // Capture height BEFORE loading new messages
-        prevScrollHeight.current = scrollContainer.scrollHeight
-        console.log('📡 Load More Triggered. Snapshot height:', prevScrollHeight.current, 'scrollTop:', scrollContainer.scrollTop)
+        // Capture the ID of the top message to anchor to
+        // validating that messages exists and has length
+        if (messages.length > 0) {
+          anchorMessageId.current = messages[0].id
+          console.log('📡 Load More Triggered. Anchoring to:', anchorMessageId.current)
+        }
         onLoadMore()
       }
     }, {
@@ -317,7 +320,7 @@ export const MessageList = React.forwardRef<HTMLDivElement, MessageListProps>(({
     return () => {
       observer.disconnect()
     }
-  }, [hasMore, isLoading, onLoadMore, initialScrollDone])
+  }, [hasMore, isLoading, onLoadMore, initialScrollDone, messages]) // Added messages dependency to capture ID
 
   // Helper to format date labels
   const formatDateLabel = (dateString: string) => {
@@ -340,147 +343,153 @@ export const MessageList = React.forwardRef<HTMLDivElement, MessageListProps>(({
   }
 
   return (
-    <div
-      ref={scrollRef}
-      className="flex-1 overflow-y-auto message-list-scroll bg-white" // Removed padding/spacing from container
-    >
-      <div ref={contentRef} className="px-4 py-4 space-y-1">
-        {/* Sentinel & Loading Indicator */}
-        <div ref={sentinelRef} className="h-px w-full" />
+    <div className="relative flex-1 flex flex-col h-full min-h-0 bg-white">
+      {/* Floating Date Bubble (Story 8.12.3 AC#1) */}
+      <FloatingDateBubble messages={messages} scrollContainerRef={scrollRef} />
+      <div
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto message-list-scroll"
+        style={{ overflowAnchor: 'none' }} // Disable browser native anchoring to prevent conflict
+      >
+        <div ref={contentRef} className="px-4 py-4 space-y-1">
+          {/* Sentinel & Loading Indicator */}
+          <div ref={sentinelRef} className="h-px w-full" />
 
-        {(isFetchingOlder || (isLoading && hasMore)) && (
-          <div className="flex justify-center py-4">
-            <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
-          </div>
-        )}
+          {(isFetchingOlder || (isLoading && hasMore)) && (
+            <div className="flex justify-center py-4">
+              <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+            </div>
+          )}
 
-        {/* Start of Conversation Indicator */}
-        {!hasMore && messages.length > 0 && (
-          <div className="flex justify-center py-6 pb-8">
-            <span className="text-xs font-medium text-gray-400 bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
-              Start of conversation
-            </span>
-          </div>
-        )}
+          {/* Start of Conversation Indicator */}
+          {!hasMore && messages.length > 0 && (
+            <div className="flex justify-center py-6 pb-8">
+              <span className="text-xs font-medium text-gray-400 bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
+                Start of conversation
+              </span>
+            </div>
+          )}
 
-        {/* Message Bubbles with Date Separators */}
-        {(() => {
-          // Deduplicate messages first
-          const uniqueMessages = messages.reduce((acc, message) => {
-            if (!acc.find(m => m.id === message.id)) {
-              acc.push(message)
-            }
-            return acc
-          }, [] as Message[])
+          {/* Message Bubbles with Date Separators */}
+          {(() => {
+            // Deduplicate messages first
+            const uniqueMessages = messages.reduce((acc, message) => {
+              if (!acc.find(m => m.id === message.id)) {
+                acc.push(message)
+              }
+              return acc
+            }, [] as Message[])
 
-          // Sort by created_at ascending (oldest first)
-          const sortedMessages = uniqueMessages.sort((a, b) =>
-            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-          )
+            // Sort by created_at ascending (oldest first)
+            const sortedMessages = uniqueMessages.sort((a, b) =>
+              new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+            )
 
-          let lastDate: string | null = null
+            let lastDate: string | null = null
 
-          // Find index of first unread message using the FROZEN read timestamp
-          let firstUnreadIndex = -1
+            // Find index of first unread message using the FROZEN read timestamp
+            let firstUnreadIndex = -1
 
-          // Defensive check: If the latest message is sent by the current user, 
-          // effectively everything is "read" by us (we don't need a divider).
-          const lastMessage = sortedMessages[sortedMessages.length - 1]
-          const isLastMessageOutgoing = lastMessage?.sender_id === currentUserId
+            // Defensive check: If the latest message is sent by the current user, 
+            // effectively everything is "read" by us (we don't need a divider).
+            const lastMessage = sortedMessages[sortedMessages.length - 1]
+            const isLastMessageOutgoing = lastMessage?.sender_id === currentUserId
 
-          console.log('📊 MessageList Divider Calc:', {
-            frozenReadAt,
-            msgCount: sortedMessages.length,
-            lastMsgOutgoing: isLastMessageOutgoing
-          })
-
-          if (isLastMessageOutgoing) {
-            firstUnreadIndex = -1
-          } else if (frozenReadAt === undefined) {
-            // Still loading read status, don't show divider yet
-            firstUnreadIndex = -1
-          } else if (frozenReadAt !== null) {
-            // We have a timestamp. Find first message NEWER than it.
-            const firstUnread = sortedMessages.findIndex(m => {
-              const msgDate = new Date(m.created_at)
-              const readDate = new Date(frozenReadAt)
-              return msgDate > readDate
+            console.log('📊 MessageList Divider Calc:', {
+              frozenReadAt,
+              msgCount: sortedMessages.length,
+              lastMsgOutgoing: isLastMessageOutgoing
             })
 
-            if (firstUnread !== -1) {
-              console.log('📍 Found first unread message at index:', firstUnread)
-              firstUnreadIndex = firstUnread
-            }
-          } else if (uniqueMessages.length > 0) {
-            // No read history found (frozenReadAt is null). Assume all unread.
-            // BUT only if we have messages.
-            console.log('⚠️ No frozenReadAt (null), treating start matching unread')
-            firstUnreadIndex = 0
-          }
+            if (isLastMessageOutgoing) {
+              firstUnreadIndex = -1
+            } else if (frozenReadAt === undefined) {
+              // Still loading read status, don't show divider yet
+              firstUnreadIndex = -1
+            } else if (frozenReadAt !== null) {
+              // We have a timestamp. Find first message NEWER than it.
+              const firstUnread = sortedMessages.findIndex(m => {
+                const msgDate = new Date(m.created_at)
+                const readDate = new Date(frozenReadAt)
+                return msgDate > readDate
+              })
 
-          return uniqueMessages.map((message, index) => {
-            // Show timestamp every 10 messages or on first message
-            const showTimestamp = index === 0 || index % 10 === 0
-
-            // Check if message is from another user to justify "New Messages" divider
-            const isIncoming = message.sender_id !== currentUserId;
-
-            // Show unread divider before this message if:
-            // 1. We have a valid unread index (>= 0)
-            // 2. This matches the index
-            // 3. The message is incoming
-            const showUnreadDivider = firstUnreadIndex >= 0 &&
-              index === firstUnreadIndex &&
-              isIncoming
-
-            // Date Separator Logic
-            const messageDate = parseDatabaseDate(message.created_at)
-            const dateKey = messageDate ? format(messageDate, 'yyyy-MM-dd') : null
-
-            let showDateSeparator = false
-            if (dateKey && dateKey !== lastDate) {
-              showDateSeparator = true
-              lastDate = dateKey
+              if (firstUnread !== -1) {
+                console.log('📍 Found first unread message at index:', firstUnread)
+                firstUnreadIndex = firstUnread
+              }
+            } else if (uniqueMessages.length > 0) {
+              // No read history found (frozenReadAt is null). Assume all unread.
+              // BUT only if we have messages.
+              console.log('⚠️ No frozenReadAt (null), treating start matching unread')
+              firstUnreadIndex = 0
             }
 
-            return (
-              <React.Fragment key={message.id}>
-                {showDateSeparator && (
-                  <DateSeparator label={formatDateLabel(message.created_at)} />
-                )}
-                {showUnreadDivider && (
-                  <div className="flex items-center gap-3 py-3 px-2">
-                    <div className="flex-1 h-[1px] bg-gradient-to-r from-transparent via-blue-500 to-transparent" />
-                    <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-3 py-1 rounded-full shadow-sm">
-                      New Messages
-                    </span>
-                    <div className="flex-1 h-[1px] bg-gradient-to-r from-transparent via-blue-500 to-transparent" />
+            return uniqueMessages.map((message, index) => {
+              // Show timestamp every 10 messages or on first message
+              const showTimestamp = index === 0 || index % 10 === 0
+
+              // Check if message is from another user to justify "New Messages" divider
+              const isIncoming = message.sender_id !== currentUserId;
+
+              // Show unread divider before this message if:
+              // 1. We have a valid unread index (>= 0)
+              // 2. This matches the index
+              // 3. The message is incoming
+              const showUnreadDivider = firstUnreadIndex >= 0 &&
+                index === firstUnreadIndex &&
+                isIncoming
+
+              // Date Separator Logic
+              const messageDate = parseDatabaseDate(message.created_at)
+              const dateKey = messageDate ? format(messageDate, 'yyyy-MM-dd') : null
+
+              let showDateSeparator = false
+              if (dateKey && dateKey !== lastDate) {
+                showDateSeparator = true
+                lastDate = dateKey
+              }
+
+              return (
+                <React.Fragment key={message.id}>
+                  {showDateSeparator && (
+                    <DateSeparator label={formatDateLabel(message.created_at)} />
+                  )}
+                  {showUnreadDivider && (
+                    <div className="flex items-center gap-3 py-3 px-2">
+                      <div className="flex-1 h-[1px] bg-gradient-to-r from-transparent via-blue-500 to-transparent" />
+                      <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-3 py-1 rounded-full shadow-sm">
+                        New Messages
+                      </span>
+                      <div className="flex-1 h-[1px] bg-gradient-to-r from-transparent via-blue-500 to-transparent" />
+                    </div>
+                  )}
+                  <div id={`message-${message.id}`}>
+                    <MessageBubble
+                      message={message}
+                      isOwn={message.sender_id === currentUserId}
+                      showTimestamp={showTimestamp}
+                      onRetry={onRetry}
+                      onReply={onReply}
+                      onForward={onForward}
+                      onEdit={onEdit}
+                      onQuoteClick={onQuoteClick}
+                      currentUserId={currentUserId || ''}
+                      onPin={onPin}
+                      onUnpin={onUnpin}
+                      isMessagePinned={isMessagePinned}
+                      friendReadReceiptsEnabled={friendReadReceiptsEnabled}
+                    />
                   </div>
-                )}
-                <div id={`message-${message.id}`}>
-                  <MessageBubble
-                    message={message}
-                    isOwn={message.sender_id === currentUserId}
-                    showTimestamp={showTimestamp}
-                    onRetry={onRetry}
-                    onReply={onReply}
-                    onForward={onForward}
-                    onEdit={onEdit}
-                    onQuoteClick={onQuoteClick}
-                    currentUserId={currentUserId || ''}
-                    onPin={onPin}
-                    onUnpin={onUnpin}
-                    isMessagePinned={isMessagePinned}
-                    friendReadReceiptsEnabled={friendReadReceiptsEnabled}
-                  />
-                </div>
-              </React.Fragment>
-            )
-          })
-        })()}
+                </React.Fragment>
+              )
+            })
+          })()}
 
-        {/* Scroll anchor - positioned at end of messages */}
-        {messagesEndRef && <div ref={messagesEndRef} />}
+          {/* Scroll anchor - positioned at end of messages */}
+          {messagesEndRef && <div ref={messagesEndRef} />}
+        </div>
+
       </div>
     </div >
   )

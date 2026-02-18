@@ -155,7 +155,8 @@ export function MessageComposer({ conversationId, onTyping, replyToMessage, onCa
         content: messageContent,
         type: 'text',
         linkPreviews: currentPreviews,
-        replyToId: replyToId
+        replyToId: replyToId,
+        replyToMessage: replyToMessage // Story 8.10.5
       }).then(async () => {
         // Track shares asynchronously after send is initiated
         if (currentPreviews && currentPreviews.length > 0) {

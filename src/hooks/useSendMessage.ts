@@ -26,6 +26,16 @@ export function useSendMessage() {
     setIsSending(true)
     const tempId = `temp-${uuidv4()}`
 
+    // Story 8.10.5 - Construct parent_message for optimistic reply context
+    const parentMessage = params.replyToMessage ? {
+      id: params.replyToMessage.id,
+      content: params.replyToMessage.content,
+      type: params.replyToMessage.type,
+      sender_id: params.replyToMessage.sender_id,
+      sender_name: params.replyToMessage.sender_id === user.id ? 'You' : (params.replyToMessage.sender_id === params.conversationId ? 'Partner' : 'User'),
+      created_at: params.replyToMessage.created_at
+    } : undefined;
+
     // Create optimistic message object
     const optimisticMessage: Message = {
       id: tempId,
@@ -45,12 +55,13 @@ export function useSendMessage() {
       shared_coupon_id: params.sharedCouponId,
       shared_deal_id: params.sharedDealId,
 
-      // Optimistic flags (will be set/overwritten by store action, but good to have)
       _optimistic: true,
       _failed: false,
       _tempId: tempId,
-      status: 'sending'
+      status: 'sending',
+      parent_message: parentMessage
     }
+
 
     try {
       // 1. Add to store immediately
@@ -76,8 +87,19 @@ export function useSendMessage() {
       queryClient.setQueryData(['messages', params.conversationId], (old: any) => {
         const currentMessages = old?.messages || []
         // Prevent duplicates if Realtime was faster
+        // BUT: Realtime message might lack parent_message context. 
+        // If it exists, we must MERGE the context from our optimistic message.
         if (currentMessages.some((m: Message) => m.id === realMessageId)) {
-          return old
+          return {
+            ...old,
+            messages: currentMessages.map((m: Message) => {
+              if (m.id === realMessageId && !m.parent_message && confirmedMessage.parent_message) {
+                // Merge in the context we have locally
+                return { ...m, parent_message: confirmedMessage.parent_message }
+              }
+              return m
+            })
+          }
         }
         return {
           messages: [...currentMessages, confirmedMessage],
