@@ -129,10 +129,16 @@ export const MessageList = React.forwardRef<HTMLDivElement, MessageListProps>(({
 
       let targetMessageId: string | null = null
 
+      // Sort messages by date (Older -> Newer) to ensure we find the FIRST unread message, not the newest
+      // The `messages` prop is typically Newest-First from the API
+      const sortedMessages = [...messages].sort((a, b) =>
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      )
+
       // A. Determine Target
       if (lastReadAt !== null) {
         // Find first message newer than lastReadAt
-        const firstUnread = messages.find(m => {
+        const firstUnread = sortedMessages.find(m => {
           const msgDate = new Date(m.created_at)
           const readDate = new Date(lastReadAt)
           return msgDate > readDate && m.sender_id !== currentUserId
@@ -337,7 +343,6 @@ export const MessageList = React.forwardRef<HTMLDivElement, MessageListProps>(({
     <div
       ref={scrollRef}
       className="flex-1 overflow-y-auto message-list-scroll bg-white" // Removed padding/spacing from container
-      style={{ overflowAnchor: 'none' }}
     >
       <div ref={contentRef} className="px-4 py-4 space-y-1">
         {/* Sentinel & Loading Indicator */}

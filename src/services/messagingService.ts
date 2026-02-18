@@ -260,19 +260,20 @@ class MessagingService {
       // SEND MESSAGE VIA RPC
       // ============================================================
 
-      const { data, error } = await supabase.rpc('send_message', {
+      const rpcParams: any = {
         p_conversation_id: params.conversationId,
         p_content: params.content,
-        p_type: params.type || 'text',
-        p_media_urls: params.mediaUrls || null,
-        p_media_width: params.mediaWidth || null,
-        p_media_height: params.mediaHeight || null,
-        p_thumbnail_url: params.thumbnailUrl || null,
-        p_link_previews: params.linkPreviews || null,
-        p_shared_coupon_id: params.sharedCouponId || null,
-        p_shared_deal_id: params.sharedDealId || null,
-        p_reply_to_id: params.replyToId || null
-      })
+        p_type: params.type || 'text'
+      }
+
+      if (params.mediaUrls) rpcParams.p_media_urls = params.mediaUrls
+      if (params.thumbnailUrl) rpcParams.p_thumbnail_url = params.thumbnailUrl
+      if (params.linkPreviews) rpcParams.p_link_previews = params.linkPreviews
+      if (params.sharedCouponId) rpcParams.p_shared_coupon_id = params.sharedCouponId
+      if (params.sharedDealId) rpcParams.p_shared_deal_id = params.sharedDealId
+      if (params.replyToId) rpcParams.p_reply_to_id = params.replyToId
+
+      const { data, error } = await supabase.rpc('send_message', rpcParams)
 
       if (error) {
         // Check if error is from rate limit triggers

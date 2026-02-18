@@ -468,9 +468,26 @@ export const useAuthStore = create<AuthState>()(
               console.warn('Profile fetch failed during user check:', profileError)
               // Don't fail the entire user check for profile errors
             }
+          } else {
+            // CRITICAL: If Supabase returns no user (e.g. invalid token), we must clear our local state
+            console.log('[Auth] No session found during checkUser - clearing local state')
+            set({ user: null, profile: null, initialized: true, loading: false })
+            return
           }
         } catch (error: any) {
           console.error('Check user error:', error)
+
+          // Check for specific auth errors that should trigger a logout
+          const isAuthError = error.message?.includes('Auth session missing') ||
+            error.message?.includes('Invalid Refresh Token') ||
+            error.message?.includes('not authenticated');
+
+          if (isAuthError) {
+            console.warn('[Auth] Auth error detected - clearing local state')
+            set({ user: null, profile: null, initialized: true, loading: false })
+            return
+          }
+
           // Don't throw error for user check failures, just log them
           if (error.message?.includes('timeout')) {
             console.warn('User check timed out - continuing without user data')
