@@ -44,10 +44,8 @@ export function useMessages(conversationId: string | null) {
   const currentUserId = useAuthStore((state) => state.user?.id)
   const queryClient = useQueryClient()
 
-  const {
-    addMessage,
-    updateMessage,
-  } = useMessagingStore()
+  // Actions are now accessed statically to prevent re-renders
+  // const { addMessage, updateMessage } = useMessagingStore()
 
   const hasMore = useRef(true)
   const [isFetchingOlder, setIsFetchingOlder] = useState(false)
@@ -187,7 +185,7 @@ export function useMessages(conversationId: string | null) {
         })
 
         // Also update Zustand store for backwards compatibility
-        addMessage(conversationId, newMessage)
+        useMessagingStore.getState().addMessage(conversationId, newMessage)
       }
     )
 
@@ -203,7 +201,7 @@ export function useMessages(conversationId: string | null) {
         }))
 
         // Also update Zustand store
-        updateMessage(conversationId, updatedMessage.id, updatedMessage)
+        useMessagingStore.getState().updateMessage(conversationId, updatedMessage.id, updatedMessage)
       }
     )
 
@@ -219,7 +217,7 @@ export function useMessages(conversationId: string | null) {
         }))
 
         // Also update Zustand store
-        updateMessage(conversationId, receipt.message_id, { status: 'read' })
+        useMessagingStore.getState().updateMessage(conversationId, receipt.message_id, { status: 'read' })
       }
     )
 
@@ -228,7 +226,7 @@ export function useMessages(conversationId: string | null) {
       unsubscribeUpdates()
       unsubscribeReadReceipts()
     }
-  }, [conversationId, addMessage, updateMessage, currentUserId, queryClient])
+  }, [conversationId, currentUserId, queryClient])
 
   return {
     messages: conversationMessages,

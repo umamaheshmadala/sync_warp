@@ -53,15 +53,25 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
   const conversationFromStore = conversations.find(c => c.conversation_id === conversationId)
 
   // Fallback: Fetch conversation if not in store (race condition with navigation)
+  // Fallback: Fetch conversation if not in store (race condition with navigation)
+  // Fix: Removed isLoadingConversation from deps to prevent infinite loop (Story 8.12.4 fix)
+  const fetchAttemptedRef = React.useRef<string | null>(null)
+
   React.useEffect(() => {
+    // Reset attempt tracker if conversation changes
+    if (fetchAttemptedRef.current !== conversationId) {
+      fetchAttemptedRef.current = null
+    }
+
     // If conversation is already in store, no need to fetch
     if (conversationFromStore) return
 
-    // Prevent duplicate fetches
-    if (isLoadingConversation) return
+    // Prevent duplicate fetches or infinite loops
+    if (isLoadingConversation || fetchAttemptedRef.current === conversationId) return
 
     const fetchConversation = async () => {
       setIsLoadingConversation(true)
+      fetchAttemptedRef.current = conversationId // Mark as attempted
       console.log('🔄 [ChatHeader] Conversation not in store, fetching:', conversationId)
 
       try {
@@ -79,7 +89,7 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
     }
 
     fetchConversation()
-  }, [conversationId, conversationFromStore, isLoadingConversation])
+  }, [conversationId, conversationFromStore]) // Removed isLoadingConversation
 
   // Use conversation from store (will update when fetched)
   const conversation = conversationFromStore

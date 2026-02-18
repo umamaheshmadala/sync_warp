@@ -152,9 +152,32 @@ export const useMessagingStore = create<MessagingState>()(
 
       setConversations: (conversations) => {
         // Apply platform-specific limits
-        const limitedConversations = Capacitor.isNativePlatform()
+        let limitedConversations = Capacitor.isNativePlatform()
           ? conversations.slice(0, MAX_CACHED_CONVERSATIONS)
           : conversations;
+
+        // CRITICAL FIX: Preserve active conversation if it's being sliced out or missing
+        const activeId = get().activeConversationId;
+        if (activeId) {
+          const isActiveInNew = limitedConversations.some(c => c.conversation_id === activeId);
+          if (!isActiveInNew) {
+            // Check if it's in the full list (if we sliced it out)
+            const inFullList = conversations.find(c => c.conversation_id === activeId);
+            if (inFullList) {
+              // It was just sliced out, add it back (at end or appropriate place? active is usually important, maybe keep?)
+              // Actually, if we are viewing it, we want it in memory.
+              limitedConversations = [...limitedConversations, inFullList];
+            } else {
+              // It wasn't in the new fetch at all. Check if we have it in CURRENT state
+              const currentActive = get().conversations.find(c => c.conversation_id === activeId);
+              if (currentActive) {
+                // Keep the stale version until we fetch a new one or navigate away
+                console.log('🛡️ [Store] Preserving active conversation not in new list:', activeId);
+                limitedConversations = [...limitedConversations, currentActive];
+              }
+            }
+          }
+        }
 
         // Calculate unread counts
         const unreadCounts = new Map<string, number>();
