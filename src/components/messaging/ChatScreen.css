@@ -20,7 +20,7 @@
   /* iOS smooth scrolling */
   overflow-y: auto;
   /* overscroll-behavior: contain; - REMOVED to allow swipe gestures to propagate */
-  scroll-behavior: smooth;
+  /* scroll-behavior: smooth — REMOVED to prevent animation on chat load (Epic 8.12 fix) */
 }
 
 /* Hide scrollbar on mobile */

@@ -20,10 +20,12 @@
 
 /* Native Scrolling Optimization */
 .conversation-list-scroll {
-  -webkit-overflow-scrolling: touch; /* iOS smooth scrolling */
+  -webkit-overflow-scrolling: touch;
+  /* iOS smooth scrolling */
   overflow-y: auto;
-  overscroll-behavior: contain; /* Prevent pull-to-refresh conflicts */
-  scroll-behavior: smooth;
+  overscroll-behavior: contain;
+  /* Prevent pull-to-refresh conflicts */
+  /* scroll-behavior: smooth — REMOVED to prevent animation on chat load (Epic 8.12 fix) */
 }
 
 /* Prevent scrollbar from taking up space on mobile */
@@ -37,16 +39,16 @@
   .conversation-list-scroll::-webkit-scrollbar {
     width: 8px;
   }
-  
+
   .conversation-list-scroll::-webkit-scrollbar-track {
     background: #f1f1f1;
   }
-  
+
   .conversation-list-scroll::-webkit-scrollbar-thumb {
     background: #888;
     border-radius: 4px;
   }
-  
+
   .conversation-list-scroll::-webkit-scrollbar-thumb:hover {
     background: #555;
   }
@@ -57,26 +59,30 @@
 /* Small mobile devices (320px - 479px) */
 @media (max-width: 479px) {
   .conversation-list-header h1 {
-    font-size: 1.5rem; /* 24px */
+    font-size: 1.5rem;
+    /* 24px */
   }
 }
 
 /* Mobile devices (480px - 767px) */
 @media (min-width: 480px) and (max-width: 767px) {
   .conversation-list-header h1 {
-    font-size: 1.75rem; /* 28px */
+    font-size: 1.75rem;
+    /* 28px */
   }
 }
 
 /* Tablets (768px - 1023px) */
 @media (min-width: 768px) and (max-width: 1023px) {
   .conversation-list-header h1 {
-    font-size: 2rem; /* 32px */
+    font-size: 2rem;
+    /* 32px */
   }
 }
 
 /* Desktop (1024px+) */
 @media (min-width: 1024px) {
+
   /* Center the conversation list on large screens */
   .conversation-list-container {
     max-width: 800px;
@@ -106,7 +112,7 @@
 }
 
 /* Touch target sizing (minimum 44x44px for accessibility) */
-button, 
+button,
 .conversation-card {
   min-height: 44px;
   min-width: 44px;
@@ -123,9 +129,10 @@ button,
 /* Hover states only on devices with hover capability */
 @media (hover: hover) {
   .conversation-card:hover {
-    background-color: rgb(249, 250, 251); /* gray-50 */
+    background-color: rgb(249, 250, 251);
+    /* gray-50 */
   }
-  
+
   button:hover {
     opacity: 0.8;
   }

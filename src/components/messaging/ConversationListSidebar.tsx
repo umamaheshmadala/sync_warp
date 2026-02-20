@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Plus, Search, MoreHorizontal, Edit } from 'lucide-react'
+import { Plus, Search, MoreHorizontal, Edit, ListChecks } from 'lucide-react'
 import { Capacitor } from '@capacitor/core'
 import { useConversations } from '../../hooks/useConversations'
 import { ConversationCard } from './ConversationCard'
@@ -139,51 +139,48 @@ export function ConversationListSidebar() {
 
   return (
     <div className="flex flex-col h-full bg-white">
-      {/* Header */}
-      <div className="px-4 py-3 border-b flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          {/* <h1 className="text-xl font-bold text-gray-900">Messaging</h1> -- Removed as per request */}
-          <div className="flex-1" /> {/* Spacer to keep buttons aligned right if needed, or just remove h1 */}
-          <div className="flex items-center gap-1 ml-auto">
-            {!selectionMode && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 text-gray-600"
-                onClick={() => setSelectionMode(true)}
-              >
-                Select
-              </Button>
-            )}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-gray-600"
-              onClick={() => setShowFriendPicker(true)}
-            >
-              <Edit className="h-5 w-5" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="Search messages"
-            className="pl-9 bg-gray-100 border-none focus-visible:ring-1 focus-visible:ring-gray-300 focus-visible:bg-white transition-colors"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-      </div>
-
       {/* Filter Tabs */}
       <ConversationFilterTabs
         activeFilter={activeFilter}
         onFilterChange={handleFilterChange}
         counts={counts}
       />
+
+      {/* Search and Actions */}
+      <div className="px-4 py-3 border-b flex items-center gap-2">
+        {/* Search */}
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="Search messages"
+            className="pl-9 bg-gray-100 border-none focus-visible:ring-1 focus-visible:ring-gray-300 focus-visible:bg-white transition-colors h-9"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+
+        <div className="flex items-center gap-1 shrink-0">
+          {!selectionMode && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 text-gray-600 shrink-0"
+              onClick={() => setSelectionMode(true)}
+              title="Select conversations"
+            >
+              <ListChecks className="h-5 w-5" />
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 text-gray-600 shrink-0"
+            onClick={() => setShowFriendPicker(true)}
+          >
+            <Edit className="h-5 w-5" />
+          </Button>
+        </div>
+      </div>
 
       {/* Bulk Actions Bar */}
       <ConversationListBulkActions

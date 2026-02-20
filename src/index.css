@@ -19,7 +19,7 @@ html {
 /* Custom Typography System configured in main.tsx and tailwind.config.js */
 
 html {
-  scroll-behavior: smooth;
+  /* scroll-behavior: smooth — REMOVED to prevent animation on chat load (Epic 8.12 fix) */
   /* overscroll-behavior-y: removed from html — Story 8.12.1 AC#7
      Native rubber-band bounce must be preserved for nested scroll containers (chat list).
      Pull-to-refresh prevention is scoped to #root instead. */

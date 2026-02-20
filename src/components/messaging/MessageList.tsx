@@ -1,9 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import { MessageBubble } from './MessageBubble'
 import { DateSeparator } from './DateSeparator'
-import { FloatingDateBubble } from './FloatingDateBubble'
 import { Loader2 } from 'lucide-react'
 import type { Message } from '../../types/messaging'
 import { parseDatabaseDate } from '../../utils/dateUtils'
@@ -60,6 +59,19 @@ export const MessageList = React.forwardRef<HTMLDivElement, MessageListProps>(({
   friendReadReceiptsEnabled = true
 }, ref) => {
   const currentUserId = useAuthStore(state => state.user?.id)
+
+  // O(N) deduplication + sorting via useMemo (Performance Fix)
+  // Previously this was O(N^2) inside the render body, causing 250k+ iterations per frame
+  const sortedMessages = useMemo(() => {
+    const seen = new Map<string, Message>()
+    for (const msg of messages) {
+      // Keep the latest version of each message (by id)
+      seen.set(msg.id, msg)
+    }
+    return Array.from(seen.values()).sort((a, b) =>
+      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    )
+  }, [messages])
   const scrollRef = useRef<HTMLDivElement>(null)
   const isLoadingMore = useRef(false)
   const prevScrollHeight = useRef(0)
@@ -344,8 +356,6 @@ export const MessageList = React.forwardRef<HTMLDivElement, MessageListProps>(({
 
   return (
     <div className="relative flex-1 flex flex-col h-full min-h-0 bg-white">
-      {/* Floating Date Bubble (Story 8.12.3 AC#1) */}
-      <FloatingDateBubble messages={messages} scrollContainerRef={scrollRef} />
       <div
         ref={scrollRef}
         className="flex-1 overflow-y-auto message-list-scroll"
@@ -372,18 +382,6 @@ export const MessageList = React.forwardRef<HTMLDivElement, MessageListProps>(({
 
           {/* Message Bubbles with Date Separators */}
           {(() => {
-            // Deduplicate messages first
-            const uniqueMessages = messages.reduce((acc, message) => {
-              if (!acc.find(m => m.id === message.id)) {
-                acc.push(message)
-              }
-              return acc
-            }, [] as Message[])
-
-            // Sort by created_at ascending (oldest first)
-            const sortedMessages = uniqueMessages.sort((a, b) =>
-              new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-            )
 
             let lastDate: string | null = null
 
@@ -418,14 +416,14 @@ export const MessageList = React.forwardRef<HTMLDivElement, MessageListProps>(({
                 console.log('📍 Found first unread message at index:', firstUnread)
                 firstUnreadIndex = firstUnread
               }
-            } else if (uniqueMessages.length > 0) {
+            } else if (sortedMessages.length > 0) {
               // No read history found (frozenReadAt is null). Assume all unread.
               // BUT only if we have messages.
               console.log('⚠️ No frozenReadAt (null), treating start matching unread')
               firstUnreadIndex = 0
             }
 
-            return uniqueMessages.map((message, index) => {
+            return sortedMessages.map((message, index) => {
               // Show timestamp every 10 messages or on first message
               const showTimestamp = index === 0 || index % 10 === 0
 
