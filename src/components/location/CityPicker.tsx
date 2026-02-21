@@ -7,7 +7,8 @@ import type { City, CityPickerProps } from '../../types/location';
 
 const CityPicker: React.FC<CityPickerProps> = ({ isOpen, onClose, onCitySelect }) => {
   const { cities, loading, getCitiesByTier, getTierLabel } = useCities();
-  const { profile, updateProfile } = useAuthStore();
+  const profile = useAuthStore((state) => state.profile);
+  const { updateProfile } = useAuthStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTier, setSelectedTier] = useState<number | null>(null);
   const [updating, setUpdating] = useState(false);

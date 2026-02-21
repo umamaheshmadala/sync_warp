@@ -235,8 +235,7 @@ export const CouponDetailsModal: React.FC<CouponDetailsModalProps> = ({
                     {/* Header with Image */}
                     <div className="relative h-32 bg-gradient-to-r from-indigo-500 to-purple-600">
                       {coupon.image_url && (
-                        <img
-                          src={coupon.image_url}
+                        <img loading="lazy" decoding="async"                           src={coupon.image_url}
                           alt={coupon.title}
                           className="w-full h-full object-cover"
                         />

@@ -37,7 +37,7 @@ export function ContactMatchesList() {
             onClick={() => navigate(`/profile/${match.user_id}`)}
           >
             <div className="flex items-center space-x-3">
-              <img
+              <img loading="lazy" decoding="async" 
                 src={match.avatar_url || '/default-avatar.png'}
                 alt={match.full_name}
                 className="w-10 h-10 rounded-full object-cover"

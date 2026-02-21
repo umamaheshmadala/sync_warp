@@ -12,7 +12,7 @@ import { productService } from '../services/productService';
 import { logActivity } from '../services/businessActivityLogService';
 
 export const useProducts = (businessId?: string) => {
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const [products, setProducts] = useState<Product[]>([]);
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(false);

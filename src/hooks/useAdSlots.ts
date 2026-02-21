@@ -159,7 +159,7 @@ async function fetchAdSlotsData(city: string | undefined): Promise<AdSlotData[]>
 }
 
 export function useAdSlots() {
-  const { profile } = useAuthStore();
+  const profile = useAuthStore((state) => state.profile);
   const queryClient = useQueryClient();
 
   // Use React Query with SWR pattern - shows cached data immediately while revalidating

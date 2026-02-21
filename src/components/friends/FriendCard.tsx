@@ -88,7 +88,7 @@ export function FriendCard({ friend, badge, style, onClick }: FriendCardProps) {
         {/* Avatar with online badge */}
         <div className="relative flex-shrink-0">
           {friend.avatar_url ? (
-            <img
+            <img loading="lazy" decoding="async" 
               src={friend.avatar_url}
               alt={friend.full_name}
               className="w-14 h-14 rounded-full object-cover"

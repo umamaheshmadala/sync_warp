@@ -56,7 +56,7 @@ interface UseRateLimitReturn {
  */
 export function useRateLimit(options: UseRateLimitOptions): UseRateLimitReturn {
   const { endpoint, autoCheck = false, pollInterval } = options;
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
 
   const [rateLimitInfo, setRateLimitInfo] = useState<RateLimitResult | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);

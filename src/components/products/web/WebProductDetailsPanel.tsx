@@ -58,7 +58,7 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
     const [deleteInput, setDeleteInput] = useState('');
     const [isDeleting, setIsDeleting] = useState(false);
 
-    const { user } = useAuthStore();
+    const user = useAuthStore((state) => state.user);
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
     // Derived Business Info
@@ -191,7 +191,7 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                 <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden">
                         {businessLogo ? (
-                            <img src={businessLogo} alt={businessName} className="w-full h-full object-cover" />
+                            <img loading="lazy" decoding="async" src={businessLogo} alt={businessName} className="w-full h-full object-cover" />
                         ) : (
                             <div className="w-full h-full flex items-center justify-center text-xs font-bold text-gray-500">
                                 {businessName.charAt(0)}

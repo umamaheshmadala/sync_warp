@@ -41,7 +41,7 @@ const ImagePreviewCarousel = ({ images }: { images: any[] }) => {
             <div id="preview-carousel-container" className="flex overflow-x-hidden h-full scrollbar-hide snap-x snap-mandatory">
                 {images.map((img, idx) => (
                     <div key={img.id} className="min-w-full h-full snap-center flex items-center justify-center bg-black">
-                        <img src={img.preview || img.url} alt={`Preview ${idx}`} className="h-full object-contain" />
+                        <img loading="lazy" decoding="async" src={img.preview || img.url} alt={`Preview ${idx}`} className="h-full object-contain" />
                     </div>
                 ))}
             </div>

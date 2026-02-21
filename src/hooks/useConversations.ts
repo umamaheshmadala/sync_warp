@@ -53,7 +53,9 @@ export function useConversations() {
   const isFetchingRef = useRef(false)
   const shouldRefetchRef = useRef(false)
 
-  const { user, loading: authLoading, initialized: authInitialized } = useAuthStore()
+  const user = useAuthStore((state) => state.user);
+  const authLoading = useAuthStore((state) => state.loading);
+  const authInitialized = useAuthStore((state) => state.initialized);
 
   // Fetch conversations - using useRef to make it stable
   const fetchConversationsRef = useRef(async () => {
@@ -197,7 +199,7 @@ export function useConversations() {
           // App went to background - stop polling
           console.log('📱 App inactive - pausing conversation updates')
           if (pollInterval.current) {
-            clearInterval(pollInterval.current)
+            clearTimeout(pollInterval.current)
           }
         }
       })

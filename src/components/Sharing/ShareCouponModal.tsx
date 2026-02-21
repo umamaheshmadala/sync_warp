@@ -209,8 +209,7 @@ const ShareCouponModal: React.FC<ShareCouponModalProps> = ({
                                 <div className="flex items-start space-x-4">
                                   {/* Coupon Image */}
                                   {coupon.image_url && (
-                                    <img
-                                      src={coupon.image_url}
+                                    <img loading="lazy" decoding="async"                                       src={coupon.image_url}
                                       alt={coupon.title}
                                       className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
                                     />

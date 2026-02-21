@@ -257,7 +257,7 @@ export function ImagePreviewModal({
           )}
 
           {currentUrl && (
-            <img
+            <img loading="lazy" decoding="async" 
               src={currentUrl}
               alt={`Preview ${currentIndex + 1}`}
               className="max-w-full max-h-full object-contain shadow-2xl transition-transform duration-200"
@@ -403,7 +403,7 @@ function SortableThumbnail({ url, idx, isActive, onClick }: SortableThumbnailPro
           onClick();
         }}
       >
-        <img
+        <img loading="lazy" decoding="async" 
           src={url}
           alt={`Thumbnail ${idx + 1}`}
           className="w-full h-full object-cover pointer-events-none select-none"

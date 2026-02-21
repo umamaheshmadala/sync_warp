@@ -14,6 +14,8 @@ export const usePresenceStore = create<PresenceState>((set, get) => {
     let channel: any = null;
     let heartbeatInterval: any = null;
     let appStateListener: any = null;
+    let visibilityHandler: any = null;
+    let unloadHandler: any = null;
 
     return {
         onlineUsers: new Map(),
@@ -139,17 +141,20 @@ export const usePresenceStore = create<PresenceState>((set, get) => {
             startHeartbeat();
 
             // Web Visibility
-            document.addEventListener('visibilitychange', () => {
-                if (document.hidden) {
-                    untrackPresence(userId);
-                } else {
-                    trackPresence(userId);
-                }
-            });
+            if (!visibilityHandler) {
+                visibilityHandler = () => {
+                    if (document.hidden) {
+                        untrackPresence(userId);
+                    } else {
+                        trackPresence(userId);
+                    }
+                };
+                document.addEventListener('visibilitychange', visibilityHandler);
+            }
 
             // Mobile App State
-            if (Capacitor.isNativePlatform()) {
-                appStateListener = App.addListener('appStateChange', async ({ isActive }) => {
+            if (Capacitor.isNativePlatform() && !appStateListener) {
+                App.addListener('appStateChange', async ({ isActive }) => {
                     if (isActive) {
                         trackPresence(userId);
                         startHeartbeat(); // Resume heartbeat
@@ -157,13 +162,16 @@ export const usePresenceStore = create<PresenceState>((set, get) => {
                         untrackPresence(userId);
                         stopHeartbeat(); // Pause heartbeat in background
                     }
-                });
+                }).then(listener => appStateListener = listener);
             }
 
             // Browser Unload
-            window.addEventListener('beforeunload', () => {
-                untrackPresence(userId);
-            });
+            if (!unloadHandler) {
+                unloadHandler = () => {
+                    untrackPresence(userId);
+                };
+                window.addEventListener('beforeunload', unloadHandler);
+            }
 
             set({ isInitialized: true });
         },
@@ -171,7 +179,16 @@ export const usePresenceStore = create<PresenceState>((set, get) => {
         cleanup: async () => {
             console.log('[PresenceStore] Cleaning up');
             if (heartbeatInterval) clearTimeout(heartbeatInterval);
-            if (appStateListener) appStateListener.remove();
+            if (appStateListener && appStateListener.remove) appStateListener.remove();
+
+            if (visibilityHandler) {
+                document.removeEventListener('visibilitychange', visibilityHandler);
+                visibilityHandler = null;
+            }
+            if (unloadHandler) {
+                window.removeEventListener('beforeunload', unloadHandler);
+                unloadHandler = null;
+            }
 
             if (channel) {
                 await channel.untrack();

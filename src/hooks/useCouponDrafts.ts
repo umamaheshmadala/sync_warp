@@ -42,7 +42,7 @@ interface UseCouponDraftsState {
 }
 
 export const useCouponDrafts = (businessId?: string) => {
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const [state, setState] = useState<UseCouponDraftsState>({
     drafts: [],
     loading: false,

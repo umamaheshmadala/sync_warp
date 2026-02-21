@@ -358,7 +358,7 @@ export const MessageList = React.forwardRef<HTMLDivElement, MessageListProps>(({
     <div className="relative flex-1 flex flex-col h-full min-h-0 bg-white">
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto message-list-scroll"
+        className="flex-1 overflow-y-auto message-list-scroll will-change-scroll"
         style={{ overflowAnchor: 'none' }} // Disable browser native anchoring to prevent conflict
       >
         <div ref={contentRef} className="px-4 py-4 space-y-1">

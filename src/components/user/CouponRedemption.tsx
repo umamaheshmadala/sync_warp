@@ -308,7 +308,7 @@ const CouponRedemption: React.FC<CouponRedemptionProps> = ({
                     ref={qrRef}
                     className="inline-block p-4 bg-white border-2 border-gray-200 rounded-xl shadow-inner"
                   >
-                    <img
+                    <img loading="lazy" decoding="async" 
                       src={qrCodeUrl}
                       alt="Redemption QR Code"
                       className="w-48 h-48 mx-auto"

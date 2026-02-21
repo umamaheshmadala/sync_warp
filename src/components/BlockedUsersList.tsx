@@ -46,7 +46,7 @@ export const BlockedUsersList: React.FC = () => {
               {/* Avatar */}
               <div className="w-12 h-12 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center overflow-hidden">
                 {user.avatar_url ? (
-                  <img
+                  <img loading="lazy" decoding="async" 
                     src={user.avatar_url}
                     alt={user.full_name || user.email}
                     className="w-full h-full object-cover"

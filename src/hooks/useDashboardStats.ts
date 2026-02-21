@@ -12,7 +12,7 @@ export interface DashboardStats {
 }
 
 export const useDashboardStats = () => {
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const [stats, setStats] = useState<DashboardStats>({
     favoritesCount: 0,
     reviewsCount: 0,

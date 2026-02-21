@@ -212,7 +212,7 @@ export const FriendPickerModal: React.FC<FriendPickerModalProps> = ({
                             {/* Avatar with online status */}
                             <div className="relative flex-shrink-0">
                               {friend.avatar_url ? (
-                                <img
+                                <img loading="lazy" decoding="async" 
                                   className="h-10 w-10 rounded-full object-cover"
                                   src={friend.avatar_url}
                                   alt={friend.full_name}

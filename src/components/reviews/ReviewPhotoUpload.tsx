@@ -62,7 +62,7 @@ function SortablePhoto({ url, onRemove, id }: { url: string; onRemove: () => voi
       style={style}
       className="relative group w-24 h-24 flex-shrink-0 bg-gray-100 rounded-lg border border-gray-200 overflow-hidden"
     >
-      <img
+      <img loading="lazy" decoding="async" 
         src={url}
         alt="Review upload"
         className="w-full h-full object-cover"

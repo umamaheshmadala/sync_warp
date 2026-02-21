@@ -24,7 +24,7 @@ type TabType = 'friends' | 'requests'
 const ContactsSidebar: React.FC<ContactsSidebarProps> = ({ isOpen, onClose }) => {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { user } = useAuthStore()
+  const user = useAuthStore((state) => state.user);
   const {
     friends,
     friendRequests,
@@ -352,8 +352,7 @@ const ContactsSidebar: React.FC<ContactsSidebarProps> = ({ isOpen, onClose }) =>
                                                                                                       >
                                                                                                         <div className="relative">
                                                                                                           {friend.avatar_url ? (
-                                                                                                            <img
-                                                                                                              className="h-10 w-10 rounded-full object-cover"
+                                                                                                            <img loading="lazy" decoding="async"                                                                                                               className="h-10 w-10 rounded-full object-cover"
                                                                                                               src={friend.avatar_url}
                                                                                                               alt={friend.full_name}
                                                                                                             />
@@ -438,7 +437,7 @@ const ContactsSidebar: React.FC<ContactsSidebarProps> = ({ isOpen, onClose }) =>
                                       <div className="flex items-center space-x-3">
                                         <div className="relative">
                                           {request.requester_avatar ? (
-                                            <img
+                                            <img loading="lazy" decoding="async" 
                                               src={request.requester_avatar}
                                               alt={request.requester_name}
                                               className="h-12 w-12 rounded-full object-cover"

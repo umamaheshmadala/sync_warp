@@ -1,7 +1,7 @@
 # STORY 15.1 — Add Zustand Selectors to All 89+ `useAuthStore()` Call Sites
 
 **EPIC:** [EPIC 15 — Rendering Performance & State Management](../epics/EPIC_15_Rendering_Performance_State_Management.md)  
-**Status:** 📋 Ready  
+**Status:** ✅ COMPLETE  
 **Priority:** 🔴 Critical  
 **Estimate:** 5 points  
 **Dependencies:** None (first story, no blockers)  

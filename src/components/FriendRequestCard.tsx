@@ -74,7 +74,7 @@ export const FriendRequestCard: React.FC<FriendRequestCardProps> = ({
           {/* Avatar */}
           <div className="relative">
             {profile?.avatar_url ? (
-              <img
+              <img loading="lazy" decoding="async" 
                 src={profile.avatar_url}
                 alt={profile.full_name}
                 className="h-12 w-12 rounded-full object-cover"

@@ -95,7 +95,7 @@ interface SelectedImages {
 
 const BusinessRegistration: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const queryClient = useQueryClient();
   const [currentStep, setCurrentStep] = useState(0); // Start at Step 0 (Search)
   const [loading, setLoading] = useState(false);

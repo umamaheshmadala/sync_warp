@@ -26,6 +26,10 @@ class NetworkService {
   private isMobile: boolean
   private isInitialized = false
 
+  private webOnlineHandler: (() => void) | null = null
+  private webOfflineHandler: (() => void) | null = null
+  private webVisibilityHandler: (() => void) | null = null
+
   // Heartbeat for accurate connectivity detection (Industry Best Practice: Slack/Discord)
   private heartbeatInterval: NodeJS.Timeout | null = null
   private readonly HEARTBEAT_INTERVAL = 120000 // 120 seconds
@@ -61,34 +65,43 @@ class NetworkService {
    * WEB ONLY: Monitor browser events with heartbeat verification
    */
   private initWebMonitoring(): void {
-    window.addEventListener('online', async () => {
-      console.log('[NetworkService] Browser reports online, verifying...')
-      // Verify before notifying (navigator.onLine can be unreliable)
-      const isConnected = await this.verifyConnectivity()
-      if (isConnected) {
-        this.consecutiveFailures = 0
-        this.notifyNetworkChange(true)
-      }
-    })
-
-    window.addEventListener('offline', () => {
-      console.log('[NetworkService] Offline (web)')
-      this.notifyNetworkChange(false)
-      this.stopHeartbeat()
-    })
-
-    // Visibility change (tab focus)
-    document.addEventListener('visibilitychange', async () => {
-      if (!document.hidden) {
-        console.log('[NetworkService] Tab visible, checking network...')
-        this.notifyAppStateChange(true)
-
-        // Verify connectivity when tab becomes visible
-        if (navigator.onLine) {
-          await this.verifyConnectivity()
+    if (!this.webOnlineHandler) {
+      this.webOnlineHandler = async () => {
+        console.log('[NetworkService] Browser reports online, verifying...')
+        // Verify before notifying (navigator.onLine can be unreliable)
+        const isConnected = await this.verifyConnectivity()
+        if (isConnected) {
+          this.consecutiveFailures = 0
+          this.notifyNetworkChange(true)
         }
       }
-    })
+      window.addEventListener('online', this.webOnlineHandler)
+    }
+
+    if (!this.webOfflineHandler) {
+      this.webOfflineHandler = () => {
+        console.log('[NetworkService] Offline (web)')
+        this.notifyNetworkChange(false)
+        this.stopHeartbeat()
+      }
+      window.addEventListener('offline', this.webOfflineHandler)
+    }
+
+    // Visibility change (tab focus)
+    if (!this.webVisibilityHandler) {
+      this.webVisibilityHandler = async () => {
+        if (!document.hidden) {
+          console.log('[NetworkService] Tab visible, checking network...')
+          this.notifyAppStateChange(true)
+
+          // Verify connectivity when tab becomes visible
+          if (navigator.onLine) {
+            await this.verifyConnectivity()
+          }
+        }
+      }
+      document.addEventListener('visibilitychange', this.webVisibilityHandler)
+    }
 
     // Start heartbeat for accurate detection (Industry Best Practice)
     this.startHeartbeat()
@@ -275,6 +288,20 @@ class NetworkService {
     this.networkCallbacks.clear()
     this.appStateCallbacks.clear()
     this.isInitialized = false
+    this.consecutiveFailures = 0
+
+    if (this.webOnlineHandler) {
+      window.removeEventListener('online', this.webOnlineHandler)
+      this.webOnlineHandler = null
+    }
+    if (this.webOfflineHandler) {
+      window.removeEventListener('offline', this.webOfflineHandler)
+      this.webOfflineHandler = null
+    }
+    if (this.webVisibilityHandler) {
+      document.removeEventListener('visibilitychange', this.webVisibilityHandler)
+      this.webVisibilityHandler = null
+    }
 
     if (this.isMobile) {
       Network.removeAllListeners()

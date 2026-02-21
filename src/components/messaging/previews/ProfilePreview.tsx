@@ -9,7 +9,7 @@ export function ProfilePreview({ preview }: { preview: LinkPreview }) {
         <div className="flex items-start gap-3 p-3">
             <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0 border border-gray-100">
                 {image ? (
-                    <img src={image} alt="" className="w-full h-full object-cover" />
+                    <img loading="lazy" decoding="async" src={image} alt="" className="w-full h-full object-cover" />
                 ) : (
                     <User className="w-6 h-6 text-gray-400" />
                 )}

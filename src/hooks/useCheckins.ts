@@ -79,7 +79,7 @@ const MIN_ACCURACY = process.env.NODE_ENV === 'development' ? 5000 : 200; // 5km
 const CHECKIN_COOLDOWN = 60 * 60 * 1000; // 1 hour in milliseconds
 
 export const useCheckins = (): UseCheckinsReturn => {
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
 
   // Location state
   const [location, setLocation] = useState<LocationState>({

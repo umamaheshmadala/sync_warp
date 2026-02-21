@@ -75,7 +75,7 @@ export const useSearch = (options: UseSearchOptions = {}) => {
     saveToUrl = true
   } = options;
 
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation(); // Use location.search for reliable effect triggering

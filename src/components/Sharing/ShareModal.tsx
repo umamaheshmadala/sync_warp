@@ -189,7 +189,7 @@ export function ShareModal({
                 <div className="p-6 border-b border-gray-100 bg-gray-50">
                     <div className="flex items-start gap-4">
                         {imageUrl ? (
-                            <img
+                            <img loading="lazy" decoding="async" 
                                 src={imageUrl}
                                 alt={title}
                                 className="w-16 h-16 rounded-lg object-cover"

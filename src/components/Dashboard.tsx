@@ -85,7 +85,7 @@ const dummyTrendingProducts: TrendingProduct[] = [
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { getBusinessUrl } = useBusinessUrl();
-  const { profile } = useAuthStore();
+  const profile = useAuthStore((state) => state.profile);
   const [showNotifications, setShowNotifications] = useState(false);
 
   // Use extracted hook for dashboard data with granular loading states

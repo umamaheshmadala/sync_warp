@@ -325,7 +325,7 @@ export default function Header() {
             className="hidden md:flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
           >
             {/* Logo with text for desktop */}
-            <img
+            <img loading="eager" decoding="async"
               src="/Logo/Logo Text Transparent PNG 2.png"
               alt="Sync"
               className="h-[40px]"

@@ -9,7 +9,7 @@ export function ProductPreview({ preview }: { preview: LinkPreview }) {
         <div className="flex items-start gap-3 p-3">
             <div className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center overflow-hidden flex-shrink-0">
                 {image ? (
-                    <img src={image} alt="" className="w-full h-full object-cover" />
+                    <img loading="lazy" decoding="async" src={image} alt="" className="w-full h-full object-cover" />
                 ) : (
                     <ShoppingBag className="w-6 h-6 text-green-500" />
                 )}

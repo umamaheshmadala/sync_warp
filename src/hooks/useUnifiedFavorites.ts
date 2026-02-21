@@ -191,7 +191,7 @@ export const syncFavoritesFromDatabase = async (currentUserId?: string) => {
 const syncFromDatabase = syncFavoritesFromDatabase;
 
 export const useUnifiedFavorites = () => {
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const userId = user?.id;
 
   // Load user-specific favorites when user changes

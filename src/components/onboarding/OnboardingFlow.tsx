@@ -22,7 +22,9 @@ const TOTAL_STEPS = 2
 
 export default function OnboardingFlow() {
   const navigate = useNavigate()
-  const { user, updateProfile, loading } = useAuthStore()
+  const user = useAuthStore((state) => state.user);
+  const loading = useAuthStore((state) => state.loading);
+  const { updateProfile } = useAuthStore();
   const [currentStep, setCurrentStep] = useState(1)
   const [isCompleting, setIsCompleting] = useState(false)
   const [showCompletion, setShowCompletion] = useState(false)

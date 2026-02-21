@@ -77,7 +77,7 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
     },
     ref
   ) => {
-    const { user } = useAuthStore();
+    const user = useAuthStore((state) => state.user);
     const queryClient = useQueryClient();
     const navigate = useNavigate();
 
@@ -219,7 +219,7 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
             {/* User Avatar */}
             <div className="flex-shrink-0">
               {review.user_avatar ? (
-                <img
+                <img loading="lazy" decoding="async" 
                   src={review.user_avatar}
                   alt={review.user_name}
                   className="w-10 h-10 rounded-full object-cover border border-gray-100"

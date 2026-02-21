@@ -37,7 +37,7 @@ interface UseFriendsReturn {
 }
 
 export const useFriends = (): UseFriendsReturn => {
-  const { user } = useAuthStore()
+  const user = useAuthStore((state) => state.user);
   const { triggerHaptic } = useHapticFeedback()
 
   // State

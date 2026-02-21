@@ -9,7 +9,7 @@ export function StorefrontPreview({ preview }: { preview: LinkPreview }) {
         <div className="flex items-start gap-3 p-3">
             <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center overflow-hidden flex-shrink-0">
                 {image ? (
-                    <img src={image} alt="" className="w-full h-full object-cover" />
+                    <img loading="lazy" decoding="async" src={image} alt="" className="w-full h-full object-cover" />
                 ) : (
                     <Store className="w-5 h-5 text-purple-500" />
                 )}

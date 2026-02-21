@@ -6,7 +6,8 @@ import toast from 'react-hot-toast';
 import { INTEREST_CATEGORIES } from '../../constants/interests';
 
 export const ProfileEditForm: React.FC = () => {
-  const { profile, updateProfile } = useAuthStore();
+  const profile = useAuthStore((state) => state.profile);
+  const { updateProfile } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);

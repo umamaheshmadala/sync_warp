@@ -38,7 +38,7 @@ interface UseFollowerUpdatesReturn {
 const PAGE_SIZE = 20;
 
 export function useFollowerUpdates(): UseFollowerUpdatesReturn {
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const [updates, setUpdates] = useState<FollowerUpdate[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);

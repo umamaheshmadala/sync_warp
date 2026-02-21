@@ -31,7 +31,7 @@ export const useUserCheckin = (
   businessId: string | undefined,
   enabled: boolean = true
 ): UseUserCheckinReturn => {
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const [checkin, setCheckin] = useState<UserCheckin | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

@@ -54,7 +54,7 @@ interface QuickStat {
 const BusinessAnalyticsPage: React.FC = () => {
   const { businessId } = useParams<{ businessId: string }>();
   const { getBusinessUrl } = useBusinessUrl();
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const [business, setBusiness] = useState<Business | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -219,7 +219,7 @@ const BusinessAnalyticsPage: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 {business.logo_url ? (
-                  <img
+                  <img loading="lazy" decoding="async" 
                     src={business.logo_url}
                     alt={business.business_name}
                     className="w-16 h-16 rounded-lg object-cover border"

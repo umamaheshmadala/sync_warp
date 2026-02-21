@@ -343,7 +343,7 @@ const BusinessDiscoveryPage: React.FC<BusinessDiscoveryPageProps> = ({ className
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow overflow-hidden">
                   {business.cover_image_url && (
                     <div className="h-32 bg-gray-200">
-                      <img
+                      <img loading="lazy" decoding="async" 
                         src={business.cover_image_url}
                         alt={business.name}
                         className="w-full h-full object-cover"
@@ -354,7 +354,7 @@ const BusinessDiscoveryPage: React.FC<BusinessDiscoveryPageProps> = ({ className
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center space-x-3">
                         {business.logo_url && (
-                          <img
+                          <img loading="lazy" decoding="async" 
                             src={business.logo_url}
                             alt={business.name}
                             className="w-12 h-12 rounded-full object-cover"
@@ -540,7 +540,7 @@ const BusinessDiscoveryPage: React.FC<BusinessDiscoveryPageProps> = ({ className
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center space-x-3">
                       {coupon.business_logo && (
-                        <img
+                        <img loading="lazy" decoding="async" 
                           src={coupon.business_logo}
                           alt={coupon.business_name}
                           className="w-12 h-12 rounded-full object-cover"

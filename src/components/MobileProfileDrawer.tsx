@@ -53,7 +53,9 @@ async function fetchUserBusinesses(userId: string): Promise<Business[]> {
 export default function MobileProfileDrawer({ isOpen, onClose }: MobileProfileDrawerProps) {
   const navigate = useNavigate()
   const { getBusinessUrl } = useBusinessUrl()
-  const { user, profile, signOut } = useAuthStore()
+  const user = useAuthStore((state) => state.user);
+  const profile = useAuthStore((state) => state.profile);
+  const { signOut } = useAuthStore();
 
   // Use React Query with SWR pattern - cached data shown immediately
   const { data: businesses = [], isLoading: loadingBusinesses } = useQuery({
@@ -118,7 +120,7 @@ export default function MobileProfileDrawer({ isOpen, onClose }: MobileProfileDr
             <div className="mb-4">
               <div className="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
                 {profile?.avatar_url ? (
-                  <img
+                  <img loading="lazy" decoding="async" 
                     src={profile.avatar_url}
                     alt={profile.full_name || 'User'}
                     className="w-full h-full rounded-full object-cover"
@@ -196,7 +198,7 @@ export default function MobileProfileDrawer({ isOpen, onClose }: MobileProfileDr
                   {/* Business Logo */}
                   <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center flex-shrink-0">
                     {business.logo_url ? (
-                      <img
+                      <img loading="lazy" decoding="async" 
                         src={business.logo_url}
                         alt={business.name}
                         className="w-full h-full rounded-lg object-cover"

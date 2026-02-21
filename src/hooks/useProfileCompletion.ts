@@ -63,7 +63,7 @@ interface UseProfileCompletionReturn {
 export function useProfileCompletion({
   businessId,
   autoRefresh = false,
-  refreshInterval = 30000
+  refreshInterval = 120000
 }: UseProfileCompletionOptions): UseProfileCompletionReturn {
 
   const [businessData, setBusinessData] = useState<EnhancedBusinessData | null>(null);

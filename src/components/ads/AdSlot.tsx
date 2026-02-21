@@ -65,7 +65,7 @@ const AdSlot: React.FC<AdSlotProps> = ({ slot, onAdClick, onImpression }) => {
         {/* Image Section - Full Cover */}
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100">
           {content?.image_url ? (
-            <img
+            <img loading="lazy" decoding="async" 
               src={content.image_url}
               alt={content.title}
               className="w-full h-full object-cover"

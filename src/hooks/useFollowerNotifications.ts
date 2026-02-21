@@ -35,7 +35,7 @@ interface UseFollowerNotificationsReturn {
 }
 
 export function useFollowerNotifications(): UseFollowerNotificationsReturn {
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const [notifications, setNotifications] = useState<FollowerNotification[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

@@ -7,7 +7,7 @@ import { useAuthStore } from '../store/authStore';
 
 // Standalone hook for just the Badge count
 export const useUnreadNotificationCount = () => {
-    const { user } = useAuthStore();
+    const user = useAuthStore((state) => state.user);
     const { data: unreadCount = 0 } = useQuery({
         queryKey: ['notifications', 'unread', user?.id], // valid query key
         queryFn: notificationService.getUnreadCount,
@@ -19,7 +19,7 @@ export const useUnreadNotificationCount = () => {
 
 export const useInAppNotifications = () => {
     const queryClient = useQueryClient();
-    const { user } = useAuthStore();
+    const user = useAuthStore((state) => state.user);
     const unreadCount = useUnreadNotificationCount();
 
     // Infinite Query for Notifications List

@@ -183,7 +183,7 @@ export function EditBusinessModal({ business, isOpen, onClose, onSuccess }: Edit
                             <Label>Logo</Label>
                             <div className="flex items-center gap-4">
                                 {formData.logo_url && (
-                                    <img src={formData.logo_url} alt="Logo" className="w-16 h-16 rounded-full object-cover border" />
+                                    <img loading="lazy" decoding="async" src={formData.logo_url} alt="Logo" className="w-16 h-16 rounded-full object-cover border" />
                                 )}
                                 <div className="relative">
                                     <Input
@@ -199,7 +199,7 @@ export function EditBusinessModal({ business, isOpen, onClose, onSuccess }: Edit
                             <Label>Cover Image</Label>
                             <div className="space-y-2">
                                 {formData.cover_image_url && (
-                                    <img src={formData.cover_image_url} alt="Cover" className="w-full h-32 rounded-md object-cover border" />
+                                    <img loading="lazy" decoding="async" src={formData.cover_image_url} alt="Cover" className="w-full h-32 rounded-md object-cover border" />
                                 )}
                                 <Input
                                     type="file"

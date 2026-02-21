@@ -147,7 +147,7 @@ export const GlobalUserSearch: React.FC<GlobalUserSearchProps> = ({ query, onEmp
                         <div className="flex items-center space-x-3">
                             <div className="relative">
                                 {user.avatar_url ? (
-                                    <img
+                                    <img loading="lazy" decoding="async" 
                                         src={user.avatar_url}
                                         alt={user.full_name}
                                         className="h-10 w-10 rounded-full object-cover"

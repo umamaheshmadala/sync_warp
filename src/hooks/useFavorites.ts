@@ -74,7 +74,7 @@ export const useFavorites = (options: UseFavoritesOptions = {}) => {
     pageSize = 20
   } = options;
 
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const [state, setState] = useState<FavoritesState>({
     businesses: [],
     coupons: [],

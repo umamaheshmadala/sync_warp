@@ -49,7 +49,7 @@ export function SearchBusinessCard({
             {/* Pop-out Avatar Section */}
             <div className="absolute -left-8 top-1/2 -translate-y-1/2 w-20 h-20 rounded-full border-4 border-white shadow-lg bg-white overflow-hidden flex-shrink-0 z-10">
                 {business.logo_url ? (
-                    <img
+                    <img loading="lazy" decoding="async" 
                         src={getOptimizedImageUrl(business.logo_url, 200)}
                         alt={`${business.business_name} logo`}
                         className="w-full h-full object-cover"

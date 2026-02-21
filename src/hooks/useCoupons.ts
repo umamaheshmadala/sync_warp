@@ -22,7 +22,7 @@ import {
 } from '../types/coupon';
 
 export const useCoupons = (businessId?: string) => {
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [coupon, setCoupon] = useState<Coupon | null>(null);
   const [loading, setLoading] = useState(false);
@@ -618,7 +618,7 @@ export const fetchUserCouponsForPrefetch = async (userId: string) => {
 
 // Hook for fetching user's collected coupons
 export const useUserCoupons = () => {
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const queryClient = useQueryClient();
   const queryKey = ['userCoupons', user?.id];
 

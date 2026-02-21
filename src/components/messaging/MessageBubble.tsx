@@ -783,7 +783,7 @@ export function MessageBubble({
                                   isLoading={!imageLoadedStates[url]}
                                   maxWidth={300}
                                 >
-                                  <img
+                                  <img decoding="async" 
                                     src={url}
                                     alt={`Image ${index + 1}`}
                                     className="w-full h-full object-cover rounded-lg"
@@ -805,7 +805,7 @@ export function MessageBubble({
                               )}
                               onClick={handleImageClick}
                             >
-                              <img
+                              <img decoding="async" 
                                 src={url}
                                 alt={`Image ${index + 1}`}
                                 className="w-full h-full object-cover"

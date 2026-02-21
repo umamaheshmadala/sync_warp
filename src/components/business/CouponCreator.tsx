@@ -58,7 +58,7 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
 }) => {
   const { createCoupon, updateCoupon, loading, generateCouponCode } = useCoupons();
   const drafts = useCouponDrafts(businessId);
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const [currentStep, setCurrentStep] = useState(1);
   const [previewCode, setPreviewCode] = useState('');
   const [showDrafts, setShowDrafts] = useState(false);

@@ -12,7 +12,9 @@ import { useCities } from '../hooks/useCities'
 import { ProfileShareButton } from './Sharing/ProfileShareButton'
 
 export default function Profile() {
-  const { user, profile, updateProfile } = useAuthStore()
+  const user = useAuthStore((state) => state.user);
+  const profile = useAuthStore((state) => state.profile);
+  const { updateProfile } = useAuthStore();
   const { preferences, updatePreference } = useNavigationPreferences()
   const { cities, loading: citiesLoading } = useCities()
   const [searchParams, setSearchParams] = useSearchParams();

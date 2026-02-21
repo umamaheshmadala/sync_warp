@@ -150,7 +150,7 @@ async function fetchUserBusinesses(userId: string): Promise<Business[]> {
 const BusinessDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { getBusinessUrl } = useBusinessUrl();
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); // Added useState for modal
 
   const queryClient = useQueryClient();
@@ -256,7 +256,7 @@ const BusinessDashboard: React.FC = () => {
       {/* Cover Image */}
       <div className="h-32 bg-gray-200 rounded-t-lg overflow-hidden relative">
         {business.cover_image_url ? (
-          <img
+          <img loading="lazy" decoding="async" 
             src={business.cover_image_url}
             alt={business.business_name}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"

@@ -367,7 +367,7 @@ export function QuickImageUploader({
                                                 className="w-full h-full block cursor-pointer"
                                                 title="Click to load/crop this image"
                                             >
-                                                <img src={img.url} alt="History" className="w-full h-full object-cover" />
+                                                <img loading="lazy" decoding="async" src={img.url} alt="History" className="w-full h-full object-cover" />
                                             </button>
 
                                             {/* Delete from History Button */}
@@ -403,7 +403,7 @@ export function QuickImageUploader({
                             <X className="h-6 w-6" />
                         </Button>
                         {currentImageUrl && (
-                            <img
+                            <img loading="lazy" decoding="async" 
                                 src={currentImageUrl}
                                 alt="View"
                                 className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"

@@ -9,7 +9,7 @@ export interface NavigationBadges {
 }
 
 export const useNavigationBadges = () => {
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const [badges, setBadges] = useState<NavigationBadges>({
     wallet: 0,
     social: 0,

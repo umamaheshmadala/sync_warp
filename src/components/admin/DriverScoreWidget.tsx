@@ -129,7 +129,7 @@ export function DriverScoreWidget() {
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
                                             {score.profile?.avatar_url ? (
-                                                <img
+                                                <img loading="lazy" decoding="async" 
                                                     src={score.profile.avatar_url}
                                                     alt=""
                                                     className="w-8 h-8 rounded-full object-cover bg-gray-200"

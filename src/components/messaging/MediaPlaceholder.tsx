@@ -78,7 +78,7 @@ export const MediaPlaceholder: React.FC<MediaPlaceholderProps> = ({
                 )}
             >
                 {thumbnailUrl ? (
-                    <img
+                    <img loading="lazy" decoding="async" 
                         src={thumbnailUrl}
                         alt={alt}
                         className={cn(
