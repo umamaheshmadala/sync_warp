@@ -1,6 +1,5 @@
 // src/components/FriendActivityFeed.tsx
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Heart, 
   Share2, 
@@ -234,67 +233,62 @@ const FriendActivityFeed: React.FC<FriendActivityFeedProps> = ({
           </div>
         ) : (
           <div className="p-4 space-y-3">
-            <AnimatePresence mode="popLayout">
-              {filteredActivities.map((activity) => {
-                const friend = friends.find(f => f.friend_profile.user_id === activity.user_id);
-                const timeAgo = formatDistanceToNow(new Date(activity.created_at), { addSuffix: true });
-                
-                return (
-                  <motion.div
-                    key={activity.id}
-                    className={`flex items-start space-x-3 p-3 rounded-lg border ${getActivityColorScheme(activity)}`}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                    layout
-                  >
-                    {/* Friend Avatar */}
-                    <div className="relative flex-shrink-0">
-                      {friend?.friend_profile.avatar_url ? (
-                        <img
-                          src={friend.friend_profile.avatar_url}
-                          alt={friend.friend_profile.full_name}
-                          className="h-8 w-8 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="h-8 w-8 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center">
-                          <span className="text-white text-xs font-medium">
-                            {friend?.friend_profile.full_name.charAt(0).toUpperCase() || '?'}
-                          </span>
-                        </div>
-                      )}
-                      
-                      {/* Activity Icon Badge */}
-                      <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
-                        {getActivityIcon(activity)}
-                      </div>
-                    </div>
+            <>
+                              {filteredActivities.map((activity) => {
+                                              const friend = friends.find(f => f.friend_profile.user_id === activity.user_id);
+                                              const timeAgo = formatDistanceToNow(new Date(activity.created_at), { addSuffix: true });
+                                              
+                                              return (
+                                                <div
+                                                  key={activity.id}
+                                                  className={`flex items-start space-x-3 p-3 rounded-lg border ${getActivityColorScheme(activity)}`}
+                                                >
+                                                  {/* Friend Avatar */}
+                                                  <div className="relative flex-shrink-0">
+                                                    {friend?.friend_profile.avatar_url ? (
+                                                      <img
+                                                        src={friend.friend_profile.avatar_url}
+                                                        alt={friend.friend_profile.full_name}
+                                                        className="h-8 w-8 rounded-full object-cover"
+                                                      />
+                                                    ) : (
+                                                      <div className="h-8 w-8 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center">
+                                                        <span className="text-white text-xs font-medium">
+                                                          {friend?.friend_profile.full_name.charAt(0).toUpperCase() || '?'}
+                                                        </span>
+                                                      </div>
+                                                    )}
+                                                    
+                                                    {/* Activity Icon Badge */}
+                                                    <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
+                                                      {getActivityIcon(activity)}
+                                                    </div>
+                                                  </div>
 
-                    {/* Activity Content */}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-gray-900 break-words">
-                        {getActivityDescription(activity)}
-                      </p>
-                      
-                      <div className="flex items-center mt-1 space-x-2">
-                        <p className="text-xs text-gray-500">{timeAgo}</p>
-                        
-                        {/* Additional metadata */}
-                        {activity.deal_id && (
-                          <>
-                            <span className="text-xs text-gray-300">•</span>
-                            <button className="text-xs text-indigo-600 hover:text-indigo-800 font-medium">
-                              View Deal
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
+                                                  {/* Activity Content */}
+                                                  <div className="flex-1 min-w-0">
+                                                    <p className="text-sm text-gray-900 break-words">
+                                                      {getActivityDescription(activity)}
+                                                    </p>
+                                                    
+                                                    <div className="flex items-center mt-1 space-x-2">
+                                                      <p className="text-xs text-gray-500">{timeAgo}</p>
+                                                      
+                                                      {/* Additional metadata */}
+                                                      {activity.deal_id && (
+                                                        <>
+                                                          <span className="text-xs text-gray-300">•</span>
+                                                          <button className="text-xs text-indigo-600 hover:text-indigo-800 font-medium">
+                                                            View Deal
+                                                          </button>
+                                                        </>
+                                                      )}
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              );
+                                            })}
+                              </>
           </div>
         )}
       </div>

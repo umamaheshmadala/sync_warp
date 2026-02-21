@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import { X, Send, Search, Tag, Clock, Star, AlertCircle } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
 import { useNewFriends as useFriends } from '../hooks/useNewFriends';
 // import { useDealsStore } from '../store/dealsStore';
@@ -198,11 +197,8 @@ const ShareDeal: React.FC<ShareDealProps> = ({ friendId, dealId, isOpen, onClose
                     </Dialog.Title>
 
                     {shareSuccess ? (
-                      <motion.div
-                        className="text-center py-8"
-                        initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                      <div
+                        className="text-center py-8 animate-fadeIn"
                       >
                         <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
                           <Send className="h-6 w-6 text-green-600" />
@@ -211,7 +207,7 @@ const ShareDeal: React.FC<ShareDealProps> = ({ friendId, dealId, isOpen, onClose
                         <p className="text-sm text-gray-500">
                           {friend?.friend_profile.full_name} will be notified about this deal.
                         </p>
-                      </motion.div>
+                      </div>
                     ) : (
                       <div className="space-y-4">
                         {/* Deal Selection */}
@@ -244,12 +240,10 @@ const ShareDeal: React.FC<ShareDealProps> = ({ friendId, dealId, isOpen, onClose
                                 </div>
                               ) : (
                                 availableDeals.map((deal) => (
-                                  <motion.button
+                                  <button
                                     key={deal.id}
                                     onClick={() => handleDealSelect(deal)}
-                                    className="w-full text-left p-3 rounded-lg border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-colors"
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
+                                    className="w-full text-left p-3 rounded-lg border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-colors active:scale-95 transition-transform duration-150 safe-hover-scale transition-transform duration-150"
                                   >
                                     <div className="flex items-start space-x-3">
                                       {deal.image_url && (
@@ -279,7 +273,7 @@ const ShareDeal: React.FC<ShareDealProps> = ({ friendId, dealId, isOpen, onClose
                                         </div>
                                       </div>
                                     </div>
-                                  </motion.button>
+                                  </button>
                                 ))
                               )}
                             </div>

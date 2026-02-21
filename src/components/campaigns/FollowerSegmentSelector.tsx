@@ -3,7 +3,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { Users, Filter, TrendingUp, MapPin, Calendar, Info } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { supabase } from '../../lib/supabase';
 import { cn } from '../../lib/utils';
 
@@ -248,11 +247,8 @@ export const FollowerSegmentSelector: React.FC<FollowerSegmentSelectorProps> = (
 
       {/* Filter options (only show if targeting followers) */}
       {targetFollowersOnly && stats && stats.total > 0 && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          exit={{ opacity: 0, height: 0 }}
-          className="space-y-4"
+        <div
+          className="space-y-4 animate-fadeIn"
         >
           <div className="flex items-center space-x-2 text-sm text-gray-700">
             <Filter className="h-4 w-4" />
@@ -337,7 +333,7 @@ export const FollowerSegmentSelector: React.FC<FollowerSegmentSelectorProps> = (
               </div>
             )}
           </div>
-        </motion.div>
+        </div>
       )}
 
       {/* No followers message */}

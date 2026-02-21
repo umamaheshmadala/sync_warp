@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   QrCode,
   CheckCircle,
@@ -253,11 +252,8 @@ const CouponRedemption: React.FC<CouponRedemptionProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9, y: 50 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.9, y: 50 }}
-        className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden"
+      <div
+        className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-fadeIn"
       >
         {/* Header */}
         <div className="relative bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 text-white p-6">
@@ -318,17 +314,15 @@ const CouponRedemption: React.FC<CouponRedemptionProps> = ({
 
           {redeemed ? (
             /* Redemption Success */
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              className="text-center py-8"
+            <div
+              className="text-center py-8 animate-fadeIn"
             >
               <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <CheckCircle className="w-10 h-10 text-green-600" />
               </div>
               <h3 className="text-xl font-bold text-green-600 mb-2">Redeemed Successfully!</h3>
               <p className="text-gray-600">Enjoy your savings!</p>
-            </motion.div>
+            </div>
           ) : loading ? (
             /* Loading State */
             <div className="text-center py-8">
@@ -483,7 +477,7 @@ const CouponRedemption: React.FC<CouponRedemptionProps> = ({
             </div>
           )}
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 };

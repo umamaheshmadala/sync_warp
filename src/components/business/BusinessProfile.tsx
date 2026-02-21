@@ -3,7 +3,6 @@ import { QuickImageUploader } from './QuickImageUploader';
 import { PendingChangesWarning } from './PendingChangesWarning';
 import { submitPendingEdits, applyInstantUpdates, isSensitiveField } from '../../services/businessEditService';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import { parseBusinessIdentifier } from '../../utils/slugUtils';
 import {
   Edit3,
@@ -1262,128 +1261,119 @@ const BusinessProfile: React.FC = () => {
   return (
     <>
       {/* Review Modal */}
-      <AnimatePresence>
-        {showReviewModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
-            onClick={() => setShowReviewModal(false)}
-          >
-            <div onClick={(e) => e.stopPropagation()}>
-              <BusinessReviewForm
-                businessId={business?.id!}
-                businessName={business?.business_name || ''}
-                checkinId={checkin?.id || null}
-                onSubmit={handleReviewSubmit}
-                onCancel={async () => {
-                  if (editingReview) {
-                    await refreshStats();
-                    setReviewsKey(prev => prev + 1);
-                  }
-                  setShowReviewModal(false);
-                  setEditingReview(null);
-                }}
-                loading={isSubmittingReview}
-                editMode={!!editingReview}
-                existingReview={editingReview}
-              />
-            </div>
-          </motion.div>
-        )}
-
-        {/* Info Detail Modal */}
-        {showInfoModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
-            onClick={() => setShowInfoModal(false)}
-          >
-            <div
-              onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden max-h-[90vh] overflow-y-auto"
-            >
-              <div className="px-6 py-4 border-b flex justify-between items-center bg-gray-50">
-                <h3 className="font-semibold text-lg text-gray-900">Business Details</h3>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => setShowInfoModal(false)} className="p-1 hover:bg-gray-200 rounded-full">
-                    <X className="w-5 h-5 text-gray-500" />
-                  </button>
-                </div>
-              </div>
-              <div className="p-6 space-y-6">
-                <div>
-                  <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">About</h4>
-                  <p className="text-gray-700">{business?.description}</p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">Contact & Location</h4>
-                  <div className="space-y-3">
-                    <div className="flex items-start">
-                      <MapPin className="w-5 h-5 text-gray-400 mr-3 mt-0.5" />
-                      <div>
-                        <p className="text-gray-900">{business?.address}</p>
-                        <p className="text-gray-600 text-sm">{business?.city}, {business?.state} {business?.postal_code}</p>
-                        {(business?.latitude && business?.longitude) && (
-                          <a
-                            href={`https://maps.google.com/?q=${business.latitude},${business.longitude}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center text-indigo-600 hover:text-indigo-800 mt-1 text-sm"
-                          >
-                            View on Google Maps <ExternalLink className="w-3 h-3 ml-1" />
-                          </a>
-                        )}
+      <>
+          {showReviewModal && (
+                    <div
+                      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+                      onClick={() => setShowReviewModal(false)}
+                    >
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <BusinessReviewForm
+                          businessId={business?.id!}
+                          businessName={business?.business_name || ''}
+                          checkinId={checkin?.id || null}
+                          onSubmit={handleReviewSubmit}
+                          onCancel={async () => {
+                            if (editingReview) {
+                              await refreshStats();
+                              setReviewsKey(prev => prev + 1);
+                            }
+                            setShowReviewModal(false);
+                            setEditingReview(null);
+                          }}
+                          loading={isSubmittingReview}
+                          editMode={!!editingReview}
+                          existingReview={editingReview}
+                        />
                       </div>
                     </div>
-                    {business?.business_phone && (
-                      <div className="flex items-center">
-                        <Phone className="w-5 h-5 text-gray-400 mr-3" />
-                        <a href={`tel:${business.business_phone}`} className="text-indigo-600 hover:underline">{business.business_phone}</a>
-                      </div>
-                    )}
-                    {business?.business_email && (
-                      <div className="flex items-center">
-                        <Mail className="w-5 h-5 text-gray-400 mr-3" />
-                        <a href={`mailto:${business.business_email}`} className="text-indigo-600 hover:underline break-all">{business.business_email}</a>
-                      </div>
-                    )}
-                    {business?.website_url && (
-                      <div className="flex items-center">
-                        <Globe className="w-5 h-5 text-gray-400 mr-3" />
-                        <a href={business.website_url} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline break-all items-center inline-flex">
-                          Visit Website <ExternalLink className="w-3 h-3 ml-1" />
-                        </a>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">Operating Hours</h4>
-                  <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                    {business?.operating_hours && dayOrder
-                      .filter(day => business.operating_hours[day])
-                      .map(day => {
-                        const hours = business.operating_hours[day];
-                        return (
-                          <div key={day} className="flex justify-between text-sm">
-                            <span className="capitalize font-medium text-gray-700">{day}</span>
-                            <span className="text-gray-600">
-                              {hours.closed ? 'Closed' : `${hours.open} - ${hours.close}`}
-                            </span>
+                  )}{/* Info Detail Modal */}{showInfoModal && (
+                    <div
+                      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+                      onClick={() => setShowInfoModal(false)}
+                    >
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden max-h-[90vh] overflow-y-auto"
+                      >
+                        <div className="px-6 py-4 border-b flex justify-between items-center bg-gray-50">
+                          <h3 className="font-semibold text-lg text-gray-900">Business Details</h3>
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => setShowInfoModal(false)} className="p-1 hover:bg-gray-200 rounded-full">
+                              <X className="w-5 h-5 text-gray-500" />
+                            </button>
                           </div>
-                        );
-                      })}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div >
-        )}
-      </AnimatePresence >
+                        </div>
+                        <div className="p-6 space-y-6">
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">About</h4>
+                            <p className="text-gray-700">{business?.description}</p>
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">Contact & Location</h4>
+                            <div className="space-y-3">
+                              <div className="flex items-start">
+                                <MapPin className="w-5 h-5 text-gray-400 mr-3 mt-0.5" />
+                                <div>
+                                  <p className="text-gray-900">{business?.address}</p>
+                                  <p className="text-gray-600 text-sm">{business?.city}, {business?.state} {business?.postal_code}</p>
+                                  {(business?.latitude && business?.longitude) && (
+                                    <a
+                                      href={`https://maps.google.com/?q=${business.latitude},${business.longitude}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center text-indigo-600 hover:text-indigo-800 mt-1 text-sm"
+                                    >
+                                      View on Google Maps <ExternalLink className="w-3 h-3 ml-1" />
+                                    </a>
+                                  )}
+                                </div>
+                              </div>
+                              {business?.business_phone && (
+                                <div className="flex items-center">
+                                  <Phone className="w-5 h-5 text-gray-400 mr-3" />
+                                  <a href={`tel:${business.business_phone}`} className="text-indigo-600 hover:underline">{business.business_phone}</a>
+                                </div>
+                              )}
+                              {business?.business_email && (
+                                <div className="flex items-center">
+                                  <Mail className="w-5 h-5 text-gray-400 mr-3" />
+                                  <a href={`mailto:${business.business_email}`} className="text-indigo-600 hover:underline break-all">{business.business_email}</a>
+                                </div>
+                              )}
+                              {business?.website_url && (
+                                <div className="flex items-center">
+                                  <Globe className="w-5 h-5 text-gray-400 mr-3" />
+                                  <a href={business.website_url} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline break-all items-center inline-flex">
+                                    Visit Website <ExternalLink className="w-3 h-3 ml-1" />
+                                  </a>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">Operating Hours</h4>
+                            <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                              {business?.operating_hours && dayOrder
+                                .filter(day => business.operating_hours[day])
+                                .map(day => {
+                                  const hours = business.operating_hours[day];
+                                  return (
+                                    <div key={day} className="flex justify-between text-sm">
+                                      <span className="capitalize font-medium text-gray-700">{day}</span>
+                                      <span className="text-gray-600">
+                                        {hours.closed ? 'Closed' : `${hours.open} - ${hours.close}`}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div >
+                  )}
+          </>
 
       {/* Follower List Modal */}
       < FollowerListModal
@@ -1985,53 +1975,49 @@ const BusinessProfile: React.FC = () => {
 
           {/* Tab Content */}
           <div className="max-w-7xl mx-auto px-[5px] pt-[25px] pb-2">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeTab}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}
-              >
-                {activeTab === 'overview' && renderOverview()}
-                {activeTab === 'products' && (
-                  <BusinessProductsTab
-                    businessId={business?.id!}
-                    isOwner={isOwner}
-                  />
-                )}
-                {activeTab === 'offers' && (
-                  <div className="space-y-6">
-                    <FeaturedOffers
-                      businessId={business?.id!}
-                      businessName={business?.business_name!}
-                      isOwner={isOwner}
-                      initialOfferId={searchParams.get('offer') || searchParams.get('offerId')}
-                      shareId={searchParams.get('share_id')}
-                      compact={false}
-                      className=""
-                      showHeading={false}
-                    />
-                  </div>
-                )}
-                {activeTab === 'reviews' && renderReviews()}
-                {activeTab === 'statistics' && renderStatistics()}
-                {activeTab === 'enhanced-profile' && (
-                  <EnhancedProfileTab
-                    businessId={business?.id!}
-                    business={business!}
-                    isOwner={isOwner}
-                    onUpdate={async () => {
-                      // Refresh business data from cache
-                      await refetchBusiness();
-                    }}
-                  />
-                )}
-                {activeTab === 'activity' && (
-                  <BusinessActivityLogsTab businessId={business?.id!} />
-                )}
-              </motion.div>
-            </AnimatePresence>
+            <>
+                      <div
+                                      key={activeTab}
+                                    >
+                                      {activeTab === 'overview' && renderOverview()}
+                                      {activeTab === 'products' && (
+                                        <BusinessProductsTab
+                                          businessId={business?.id!}
+                                          isOwner={isOwner}
+                                        />
+                                      )}
+                                      {activeTab === 'offers' && (
+                                        <div className="space-y-6">
+                                          <FeaturedOffers
+                                            businessId={business?.id!}
+                                            businessName={business?.business_name!}
+                                            isOwner={isOwner}
+                                            initialOfferId={searchParams.get('offer') || searchParams.get('offerId')}
+                                            shareId={searchParams.get('share_id')}
+                                            compact={false}
+                                            className=""
+                                            showHeading={false}
+                                          />
+                                        </div>
+                                      )}
+                                      {activeTab === 'reviews' && renderReviews()}
+                                      {activeTab === 'statistics' && renderStatistics()}
+                                      {activeTab === 'enhanced-profile' && (
+                                        <EnhancedProfileTab
+                                          businessId={business?.id!}
+                                          business={business!}
+                                          isOwner={isOwner}
+                                          onUpdate={async () => {
+                                            // Refresh business data from cache
+                                            await refetchBusiness();
+                                          }}
+                                        />
+                                      )}
+                                      {activeTab === 'activity' && (
+                                        <BusinessActivityLogsTab businessId={business?.id!} />
+                                      )}
+                                    </div>
+                      </>
           </div>
         </div>
       </div >

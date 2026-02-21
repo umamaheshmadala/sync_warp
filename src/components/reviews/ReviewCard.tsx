@@ -3,7 +3,6 @@
 // =====================================================
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
   ThumbsUp,
@@ -187,12 +186,9 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
     };
 
     return (
-      <motion.div
+      <div
         ref={ref}
         id={`review-${review.id}`} // Add ID for deep linking
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -20 }}
         className={`
           bg-white rounded-xl border overflow-hidden
           hover:shadow-md transition-shadow
@@ -445,9 +441,7 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
         {
           review.response_text && (
             <div className="mt-2 pt-2 border-t border-gray-100">
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
+              <div className="animate-fadeIn"
               >
                 <div className="bg-blue-50/50 rounded-lg p-2.5">
                   <div className="flex items-center justify-between mb-1">
@@ -485,7 +479,7 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
                   </div>
                   <p className="text-xs text-gray-700 leading-snug">{review.response_text}</p>
                 </div>
-              </motion.div>
+              </div>
             </div>
           )
         }
@@ -512,7 +506,7 @@ const ReviewCard = React.forwardRef<HTMLDivElement, ReviewCardProps>(
           reviewId={review.id}
           onReported={() => setHasReported(true)}
         />
-      </motion.div >
+      </div >
     );
   }
 );

@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 import {
   Plus,
@@ -250,10 +249,8 @@ const BusinessDashboard: React.FC = () => {
 
   // Business card component
   const BusinessCard: React.FC<BusinessCardProps> = ({ business }) => (
-    <motion.div
-      initial={false}  // Prevent animation replay on parent re-renders
-      animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow duration-200 cursor-pointer group"
+    <div  // Prevent animation replay on parent re-renders
+      className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow duration-200 cursor-pointer group animate-fadeIn"
       onClick={() => navigate(getBusinessUrl(business.id, business.business_name))}
     >
       {/* Cover Image */}
@@ -333,7 +330,7 @@ const BusinessDashboard: React.FC = () => {
 
 
       </div>
-    </motion.div>
+    </div>
   );
 
   // Statistics card component

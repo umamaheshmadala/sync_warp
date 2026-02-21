@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
 import {
   Edit3,
   Trash2,
@@ -14,7 +13,6 @@ import {
 } from 'lucide-react';
 import { Product, CURRENCIES } from '../../types/product';
 import ProductView from './ProductView';
-import { AnimatePresence } from 'framer-motion';
 import { getOptimizedImageUrl } from '../../utils/imageUtils';
 import { FavoriteProductButton } from '../favorites/FavoriteProductButton';
 
@@ -143,17 +141,17 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
         </div>
 
         {/* Product View Modal */}
-        <AnimatePresence>
-          {showProductView && (
-            <ProductView
-              product={product}
-              isOwner={isOwner}
-              isModal={true}
-              onClose={handleCloseProductView}
-              onEdit={onEdit}
-            />
-          )}
-        </AnimatePresence>
+        <>
+            {showProductView && (
+                        <ProductView
+                          product={product}
+                          isOwner={isOwner}
+                          isModal={true}
+                          onClose={handleCloseProductView}
+                          onEdit={onEdit}
+                        />
+                      )}
+            </>
       </>
     );
   }
@@ -256,20 +254,20 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
       </div>
 
       {/* Product View Modal */}
-      <AnimatePresence>
-        {
-          showProductView && (
-            <ProductView
-              product={product}
-              isOwner={isOwner}
-              isModal={true}
-              onClose={handleCloseProductView}
-              onEdit={onEdit}
-              onDelete={onDelete}
-            />
-          )
-        }
-      </AnimatePresence >
+      <>
+          {
+                    showProductView && (
+                      <ProductView
+                        product={product}
+                        isOwner={isOwner}
+                        isModal={true}
+                        onClose={handleCloseProductView}
+                        onEdit={onEdit}
+                        onDelete={onDelete}
+                      />
+                    )
+                  }
+          </>
     </>
   );
 };

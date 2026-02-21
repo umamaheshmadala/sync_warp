@@ -3,7 +3,6 @@
 // =====================================================
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Check, ChevronDown, Tag } from 'lucide-react';
 import { getTagsForCategory, getTagsUpToRound, type Tag as TagType } from '../../data/reviewTags';
 
@@ -85,40 +84,34 @@ export default function ReviewTagSelector({
 
       {/* Tag Grid */}
       <div className="flex flex-wrap gap-2">
-        <AnimatePresence mode="popLayout">
-          {visibleTags.map((tag, index) => {
-            const isSelected = selectedTags.includes(tag.id);
-            const isNegative = tag.sentiment === 'negative';
+        <>
+              {visibleTags.map((tag, index) => {
+                          const isSelected = selectedTags.includes(tag.id);
+                          const isNegative = tag.sentiment === 'negative';
 
-            return (
-              <motion.button
-                key={tag.id}
-                type="button"
-                initial={{ opacity: 0, scale: 0.8, y: 10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                transition={{ delay: index * 0.02, duration: 0.2 }}
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => toggleTag(tag.id)}
-                className={`
+                          return (
+                            <button
+                              key={tag.id}
+                              type="button"
+                              onClick={() => toggleTag(tag.id)}
+                              className={`
                   inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm
                   border transition-colors
                   ${isSelected
-                    ? isNegative
-                      ? 'bg-red-100 border-red-300 text-red-800'
-                      : 'bg-blue-100 border-blue-300 text-blue-800'
-                    : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100 hover:border-gray-300'
-                  }
+                                  ? isNegative
+                                    ? 'bg-red-100 border-red-300 text-red-800'
+                                    : 'bg-blue-100 border-blue-300 text-blue-800'
+                                  : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100 hover:border-gray-300'
+                                }
                 `}
-              >
-                <span>{tag.icon}</span>
-                <span>{tag.label}</span>
-                {isSelected && <Check className="w-3.5 h-3.5" />}
-              </motion.button>
-            );
-          })}
-        </AnimatePresence>
+                            >
+                              <span>{tag.icon}</span>
+                              <span>{tag.label}</span>
+                              {isSelected && <Check className="w-3.5 h-3.5" />}
+                            </button>
+                          );
+                        })}
+              </>
       </div>
 
       {/* Show More Button */}

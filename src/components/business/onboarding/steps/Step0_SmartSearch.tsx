@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Store, MapPin, Plus, AlertCircle, Loader2 } from 'lucide-react';
 import { useJsApiLoader } from '@react-google-maps/api';
 import { useBusinessSearch } from '@/hooks/useBusinessSearch';
@@ -167,10 +166,8 @@ export function Step0_SmartSearch({
     if (loadError || !isApiAvailable) {
         return (
             <div className="max-w-lg mx-auto">
-                <motion.div
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-center mb-8"
+                <div
+                    className="text-center mb-8 animate-fadeIn"
                 >
                     <div className="w-16 h-16 bg-indigo-100 rounded-2xl mx-auto mb-4 flex items-center justify-center">
                         <Store className="w-8 h-8 text-indigo-600" />
@@ -178,12 +175,10 @@ export function Step0_SmartSearch({
                     <h1 className="text-2xl font-bold text-gray-900 mb-2">
                         Let's find your business!
                     </h1>
-                </motion.div>
+                </div>
 
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="p-4 bg-amber-50 border border-amber-200 rounded-xl"
+                <div
+                    className="p-4 bg-amber-50 border border-amber-200 rounded-xl animate-fadeIn"
                 >
                     <div className="flex items-start gap-3">
                         <AlertCircle className="w-5 h-5 text-amber-500 mt-0.5" />
@@ -203,7 +198,7 @@ export function Step0_SmartSearch({
                             </button>
                         </div>
                     </div>
-                </motion.div>
+                </div>
             </div>
         );
     }
@@ -211,10 +206,8 @@ export function Step0_SmartSearch({
     return (
         <div className="max-w-lg mx-auto">
             {/* Header */}
-            <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-center mb-8"
+            <div
+                className="text-center mb-8 animate-fadeIn"
             >
                 <div className="w-16 h-16 bg-indigo-100 rounded-2xl mx-auto mb-4 flex items-center justify-center">
                     <Store className="w-8 h-8 text-indigo-600" />
@@ -225,14 +218,11 @@ export function Step0_SmartSearch({
                 <p className="text-gray-600">
                     Search for your business below and we'll help you set it up quickly.
                 </p>
-            </motion.div>
+            </div>
 
             {/* Search Input */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="relative"
+            <div
+                className="relative animate-fadeIn"
                 ref={dropdownRef}
             >
                 <div className="relative">
@@ -264,98 +254,89 @@ export function Step0_SmartSearch({
                 )}
 
                 {/* Suggestions Dropdown */}
-                <AnimatePresence>
-                    {showSuggestions && query.length >= 3 && !selectingPlace && (
-                        <motion.div
-                            initial={{ opacity: 0, y: -10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            className="absolute w-full bg-white border-2 border-t-0 border-indigo-500 rounded-b-2xl shadow-lg z-50 overflow-hidden"
-                        >
-                            {/* API Error State */}
-                            {error && (
-                                <div className="p-4 bg-amber-50 border-b border-amber-100">
-                                    <div className="flex items-center gap-2 text-amber-700">
-                                        <AlertCircle className="w-4 h-4" />
-                                        <span className="text-sm">{error}</span>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Suggestions List */}
-                            {suggestions.length > 0 && (
-                                <ul className="divide-y divide-gray-100">
-                                    {suggestions.slice(0, 5).map((suggestion) => (
-                                        <li key={suggestion.place_id}>
-                                            <button
-                                                onClick={() => handleSelectSuggestion(suggestion)}
-                                                className="w-full px-4 py-3 text-left hover:bg-indigo-50 transition-colors flex items-start gap-3"
-                                            >
-                                                <MapPin className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                                                <div>
-                                                    <p className="font-medium text-gray-900">
-                                                        {suggestion.structured_formatting.main_text}
-                                                    </p>
-                                                    <p className="text-sm text-gray-500 truncate">
-                                                        {suggestion.structured_formatting.secondary_text}
-                                                    </p>
+                <>
+                {showSuggestions && query.length >= 3 && !selectingPlace && (
+                                        <div
+                                            className="absolute w-full bg-white border-2 border-t-0 border-indigo-500 rounded-b-2xl shadow-lg z-50 overflow-hidden"
+                                        >
+                                            {/* API Error State */}
+                                            {error && (
+                                                <div className="p-4 bg-amber-50 border-b border-amber-100">
+                                                    <div className="flex items-center gap-2 text-amber-700">
+                                                        <AlertCircle className="w-4 h-4" />
+                                                        <span className="text-sm">{error}</span>
+                                                    </div>
                                                 </div>
-                                            </button>
-                                        </li>
-                                    ))}
-                                </ul>
-                            )}
+                                            )}
 
-                            {/* No Results */}
-                            {suggestions.length === 0 && !isLoading && !error && (
-                                <div className="p-4 text-center text-gray-500">
-                                    No businesses found matching "{query}"
-                                </div>
-                            )}
+                                            {/* Suggestions List */}
+                                            {suggestions.length > 0 && (
+                                                <ul className="divide-y divide-gray-100">
+                                                    {suggestions.slice(0, 5).map((suggestion) => (
+                                                        <li key={suggestion.place_id}>
+                                                            <button
+                                                                onClick={() => handleSelectSuggestion(suggestion)}
+                                                                className="w-full px-4 py-3 text-left hover:bg-indigo-50 transition-colors flex items-start gap-3"
+                                                            >
+                                                                <MapPin className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                                                                <div>
+                                                                    <p className="font-medium text-gray-900">
+                                                                        {suggestion.structured_formatting.main_text}
+                                                                    </p>
+                                                                    <p className="text-sm text-gray-500 truncate">
+                                                                        {suggestion.structured_formatting.secondary_text}
+                                                                    </p>
+                                                                </div>
+                                                            </button>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            )}
 
-                            {/* Add New Business Option */}
-                            <div className="border-t border-gray-100">
-                                <button
-                                    onClick={handleAddNew}
-                                    className="w-full px-4 py-3 text-left hover:bg-green-50 transition-colors flex items-center gap-3 text-green-700"
-                                >
-                                    <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
-                                        <Plus className="w-5 h-5" />
-                                    </div>
-                                    <div>
-                                        <p className="font-medium">
-                                            Add "{query}" as a new business
-                                        </p>
-                                        <p className="text-sm text-green-600">
-                                            Your business not in the list? Add it manually
-                                        </p>
-                                    </div>
-                                </button>
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </motion.div>
+                                            {/* No Results */}
+                                            {suggestions.length === 0 && !isLoading && !error && (
+                                                <div className="p-4 text-center text-gray-500">
+                                                    No businesses found matching "{query}"
+                                                </div>
+                                            )}
+
+                                            {/* Add New Business Option */}
+                                            <div className="border-t border-gray-100">
+                                                <button
+                                                    onClick={handleAddNew}
+                                                    className="w-full px-4 py-3 text-left hover:bg-green-50 transition-colors flex items-center gap-3 text-green-700"
+                                                >
+                                                    <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
+                                                        <Plus className="w-5 h-5" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-medium">
+                                                            Add "{query}" as a new business
+                                                        </p>
+                                                        <p className="text-sm text-green-600">
+                                                            Your business not in the list? Add it manually
+                                                        </p>
+                                                    </div>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                </>
+            </div>
 
             {/* Statistics Banner */}
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 }}
-                className="mt-12 flex items-center justify-center gap-2 text-gray-500"
+            <div
+                className="mt-12 flex items-center justify-center gap-2 text-gray-500 animate-fadeIn"
             >
                 <Store className="w-5 h-5" />
                 <span className="text-sm">
                     Join <strong>12,000+</strong> businesses already on SynC
                 </span>
-            </motion.div>
+            </div>
 
             {/* Skip to Manual Entry Link */}
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.4 }}
-                className="mt-4 text-center"
+            <div
+                className="mt-4 text-center animate-fadeIn"
             >
                 <button
                     onClick={onSkipToManual}
@@ -363,7 +344,7 @@ export function Step0_SmartSearch({
                 >
                     Can't find your business? Enter details manually
                 </button>
-            </motion.div>
+            </div>
         </div>
     );
 }

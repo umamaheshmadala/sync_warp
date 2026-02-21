@@ -4,7 +4,6 @@
 // =====================================================
 
 import React from 'react';
-import { motion } from 'framer-motion';
 
 interface WordCounterProps {
   text: string;
@@ -90,9 +89,7 @@ export default function WordCounter({
 
   return (
     <div className="flex items-center gap-2 mt-1">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
+      <div
         className={`
           inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium
           ${getBgColor()} ${getColor()} ${className}
@@ -102,15 +99,13 @@ export default function WordCounter({
         <span className="opacity-50">/</span>
         <span>{maxWords}</span>
         {isOverLimit && (
-          <motion.span
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className="text-red-600 ml-1"
+          <span
+            className="text-red-600 ml-1 animate-fadeIn"
           >
             ⚠️
-          </motion.span>
+          </span>
         )}
-      </motion.div>
+      </div>
 
       {showMinWarning && (
         <span className="text-red-500 text-xs">

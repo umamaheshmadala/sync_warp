@@ -5,7 +5,6 @@ import { Haptics, ImpactStyle } from '@capacitor/haptics'
 import { Filesystem, Directory } from '@capacitor/filesystem'
 import { Share } from '@capacitor/share'
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch'
-import { motion, AnimatePresence } from 'framer-motion'
 import {
   Dialog,
   DialogContent,
@@ -298,51 +297,42 @@ export function ImageLightbox({
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
           >
-            <AnimatePresence initial={false} custom={direction}>
-              <motion.div
-                key={currentIndex}
-                custom={direction}
-                variants={variants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{
-                  x: { type: "spring", stiffness: 300, damping: 30 },
-                  opacity: { duration: 0.2 }
-                }}
-                className="absolute inset-0 flex items-center justify-center p-0 md:p-8 w-full h-full"
-              >
-                {isMobile ? (
-                  <TransformWrapper
-                    initialScale={1}
-                    minScale={0.5}
-                    maxScale={4}
-                    doubleClick={{ disabled: false, step: 0.5 }}  // Double-tap to zoom
-                    wheel={{ disabled: true }}  // Disable mouse wheel on mobile
-                    pinch={{ disabled: false }}  // Enable pinch-to-zoom
-                    panning={{ disabled: true }}  // DISABLE panning by default to allow swipe
-                    limitToBounds={true}
-                    centerOnInit={true}
-                  >
-                    <TransformComponent>
-                      <img
-                        src={currentImage}
-                        alt={`Image ${currentIndex + 1}`}
-                        className="max-w-full max-h-full object-contain"
-                        style={{ maxHeight: 'calc(100vh - 4rem)' }}
-                      />
-                    </TransformComponent>
-                  </TransformWrapper>
-                ) : (
-                  <img
-                    src={currentImage}
-                    alt={`Image ${currentIndex + 1}`}
-                    className="max-w-full max-h-full object-contain"
-                    style={{ maxHeight: 'calc(100vh - 4rem)' }}
-                  />
-                )}
-              </motion.div>
-            </AnimatePresence>
+            <>
+                      <div
+                                      key={currentIndex}
+                                      className="absolute inset-0 flex items-center justify-center p-0 md:p-8 w-full h-full"
+                                    >
+                                      {isMobile ? (
+                                        <TransformWrapper
+                                          initialScale={1}
+                                          minScale={0.5}
+                                          maxScale={4}
+                                          doubleClick={{ disabled: false, step: 0.5 }}  // Double-tap to zoom
+                                          wheel={{ disabled: true }}  // Disable mouse wheel on mobile
+                                          pinch={{ disabled: false }}  // Enable pinch-to-zoom
+                                          panning={{ disabled: true }}  // DISABLE panning by default to allow swipe
+                                          limitToBounds={true}
+                                          centerOnInit={true}
+                                        >
+                                          <TransformComponent>
+                                            <img
+                                              src={currentImage}
+                                              alt={`Image ${currentIndex + 1}`}
+                                              className="max-w-full max-h-full object-contain"
+                                              style={{ maxHeight: 'calc(100vh - 4rem)' }}
+                                            />
+                                          </TransformComponent>
+                                        </TransformWrapper>
+                                      ) : (
+                                        <img
+                                          src={currentImage}
+                                          alt={`Image ${currentIndex + 1}`}
+                                          className="max-w-full max-h-full object-contain"
+                                          style={{ maxHeight: 'calc(100vh - 4rem)' }}
+                                        />
+                                      )}
+                                    </div>
+                      </>
           </div>
 
           {/* Mobile Action Sheet */}

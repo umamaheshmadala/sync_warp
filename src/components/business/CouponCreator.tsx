@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useForm, Controller } from 'react-hook-form';
 import {
   X,
@@ -1098,11 +1097,8 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <motion.div
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.95, opacity: 0 }}
-        className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden"
+      <div
+        className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden animate-fadeIn"
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
@@ -1200,17 +1196,13 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
         {/* Content */}
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col h-full">
           <div className="flex-1 overflow-y-auto p-6">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentStep}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.2 }}
-              >
-                {renderStep()}
-              </motion.div>
-            </AnimatePresence>
+            <>
+                      <div
+                                      key={currentStep}
+                                    >
+                                      {renderStep()}
+                                    </div>
+                      </>
           </div>
 
           {/* Actions */}
@@ -1249,11 +1241,9 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
                   ].length > 0;
 
                   return (
-                    <motion.button
+                    <button
                       type="submit"
                       disabled={loading || hasValidationErrors}
-                      whileHover={{ scale: (loading || hasValidationErrors) ? 1 : 1.05 }}
-                      whileTap={{ scale: (loading || hasValidationErrors) ? 1 : 0.95 }}
                       className={`inline-flex items-center px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed ${hasValidationErrors ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
                         }`}
                     >
@@ -1273,7 +1263,7 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
                           {isEditing ? 'Update Coupon' : 'Create Coupon'}
                         </>
                       )}
-                    </motion.button>
+                    </button>
                   );
                 })()
               ) : (
@@ -1289,15 +1279,12 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
             </div>
           </div>
         </form>
-      </motion.div>
+      </div>
 
       {/* Save Draft Dialog */}
       {showSaveDraftDialog && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+        <div
+          className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 animate-fadeIn"
         >
           <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -1341,16 +1328,13 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
               </button>
             </div>
           </div>
-        </motion.div>
+        </div>
       )}
 
       {/* Load Drafts Dialog */}
       {showDrafts && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+        <div
+          className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 animate-fadeIn"
         >
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
@@ -1423,7 +1407,7 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
               )}
             </div>
           </div>
-        </motion.div>
+        </div>
       )}
     </div>
   );

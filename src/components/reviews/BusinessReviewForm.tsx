@@ -3,7 +3,6 @@
 // =====================================================
 
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { ThumbsUp, ThumbsDown, X, CheckCircle, AlertCircle, Camera, Loader2, Image as ImageIcon } from 'lucide-react';
 import { countWords, updateReview } from '../../services/reviewService';
 import { REVIEW_TEXT_WORD_LIMIT, REVIEW_TEXT_MIN_WORDS } from '../../types/review';
@@ -285,23 +284,20 @@ export default function BusinessReviewForm({
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 20 }}
-      className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-auto overflow-hidden flex flex-col max-h-[90vh]"
+    <div
+      className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-auto overflow-hidden flex flex-col max-h-[90vh] animate-fadeIn"
     >
       {/* Success Overlay */}
-      <AnimatePresence>
-        {showSuccess && (
-          <div className="absolute inset-0 bg-white z-50 flex items-center justify-center">
-            <div className="text-center">
-              <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4 animate-bounce" />
-              <h3 className="text-xl font-bold text-gray-900">Submitted!</h3>
-            </div>
-          </div>
-        )}
-      </AnimatePresence>
+      <>
+          {showSuccess && (
+                    <div className="absolute inset-0 bg-white z-50 flex items-center justify-center">
+                      <div className="text-center">
+                        <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4 animate-bounce" />
+                        <h3 className="text-xl font-bold text-gray-900">Submitted!</h3>
+                      </div>
+                    </div>
+                  )}
+          </>
 
       {/* Header - Compact */}
       <div className="px-4 py-3 border-b flex items-center justify-between bg-gray-50 shrink-0">
@@ -447,6 +443,6 @@ export default function BusinessReviewForm({
           {isSubmitting ? 'Sending...' : (editMode ? 'Update' : 'Submit')}
         </button>
       </div>
-    </motion.div>
+    </div>
   );
 }

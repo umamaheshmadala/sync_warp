@@ -2,7 +2,6 @@
 // Analytics dashboard for business owners to track customer check-ins
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { motion } from 'framer-motion';
 import {
   MapPin,
   Users,
@@ -294,10 +293,8 @@ const BusinessCheckinAnalytics: React.FC<BusinessCheckinAnalyticsProps> = ({
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-lg border p-6"
+        <div
+          className="bg-white rounded-lg border p-6 animate-fadeIn"
         >
           <div className="flex items-center">
             <div className="p-3 bg-blue-100 rounded-lg">
@@ -313,13 +310,10 @@ const BusinessCheckinAnalytics: React.FC<BusinessCheckinAnalyticsProps> = ({
               )}
             </div>
           </div>
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-white rounded-lg border p-6"
+        <div
+          className="bg-white rounded-lg border p-6 animate-fadeIn"
         >
           <div className="flex items-center">
             <div className="p-3 bg-green-100 rounded-lg">
@@ -330,13 +324,10 @@ const BusinessCheckinAnalytics: React.FC<BusinessCheckinAnalyticsProps> = ({
               <p className="text-2xl font-bold text-gray-900">{analytics.uniqueVisitors}</p>
             </div>
           </div>
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-white rounded-lg border p-6"
+        <div
+          className="bg-white rounded-lg border p-6 animate-fadeIn"
         >
           <div className="flex items-center">
             <div className="p-3 bg-purple-100 rounded-lg">
@@ -347,13 +338,10 @@ const BusinessCheckinAnalytics: React.FC<BusinessCheckinAnalyticsProps> = ({
               <p className="text-2xl font-bold text-gray-900">{analytics.avgCheckinsPerDay.toFixed(1)}</p>
             </div>
           </div>
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="bg-white rounded-lg border p-6"
+        <div
+          className="bg-white rounded-lg border p-6 animate-fadeIn"
         >
           <div className="flex items-center">
             <div className="p-3 bg-yellow-100 rounded-lg">
@@ -368,17 +356,14 @@ const BusinessCheckinAnalytics: React.FC<BusinessCheckinAnalyticsProps> = ({
               </p>
             </div>
           </div>
-        </motion.div>
+        </div>
       </div>
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top Days */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="bg-white rounded-lg border p-6"
+        <div
+          className="bg-white rounded-lg border p-6 animate-fadeIn"
         >
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Busiest Days</h3>
           <div className="space-y-3">
@@ -399,14 +384,11 @@ const BusinessCheckinAnalytics: React.FC<BusinessCheckinAnalyticsProps> = ({
               </div>
             ))}
           </div>
-        </motion.div>
+        </div>
 
         {/* Hourly Distribution */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="bg-white rounded-lg border p-6"
+        <div
+          className="bg-white rounded-lg border p-6 animate-fadeIn"
         >
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Peak Hours</h3>
           <div className="space-y-2">
@@ -434,15 +416,12 @@ const BusinessCheckinAnalytics: React.FC<BusinessCheckinAnalyticsProps> = ({
                 </div>
               ))}
           </div>
-        </motion.div>
+        </div>
       </div>
 
       {/* Recent Check-ins */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
-        className="bg-white rounded-lg border"
+      <div
+        className="bg-white rounded-lg border animate-fadeIn"
       >
         <div className="p-6 border-b">
           <h3 className="text-lg font-semibold text-gray-900">Recent Check-ins</h3>
@@ -497,7 +476,7 @@ const BusinessCheckinAnalytics: React.FC<BusinessCheckinAnalyticsProps> = ({
             ))
           )}
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 };

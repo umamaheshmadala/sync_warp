@@ -1,7 +1,6 @@
 // src/components/BottomNavigation.tsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Home, Heart, UserCheck, Wallet, Users } from 'lucide-react';
 import NavigationBadge from './NavigationBadge';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
@@ -31,8 +30,6 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentRoute }) => 
   const { addToHistory } = useNavigationState();
   const { unreadCount } = useFollowerNotifications();
   const { preloadRoute } = useRoutePreload();
-  const [lastActiveTab, setLastActiveTab] = useState<string>('');
-  const [isAnimating, setIsAnimating] = useState(false);
 
   const navItems: NavItem[] = [
     {
@@ -87,15 +84,11 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentRoute }) => 
     return false;
   };
 
-  // Track navigation changes for animations
+  // Track navigation changes (previously used for animations)
   useEffect(() => {
-    const activeItem = navItems.find(item => isActive(item.route));
-    if (activeItem && activeItem.id !== lastActiveTab) {
-      setLastActiveTab(activeItem.id);
-      setIsAnimating(true);
-      setTimeout(() => setIsAnimating(false), 300);
-    }
-  }, [currentPath, lastActiveTab, navItems]);
+    // Kept to maintain the same effect hook structure if needed,
+    // though previously it managed lastActiveTab and isAnimating.
+  }, [currentPath, navItems]);
 
   const handleNavClick = (route: string, _itemId: string) => {
     // Trigger haptic feedback
@@ -103,21 +96,11 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentRoute }) => 
 
     // Add to navigation history
     addToHistory(route);
-
-    // Navigate with smooth animation
-    setIsAnimating(true);
-    // navigate(route); // Handled by Link
-
-    // Reset animation state
-    setTimeout(() => setIsAnimating(false), 300);
   };
 
   return (
-    <motion.nav
-      className="w-full z-50 bg-white border-t border-gray-200 pb-[env(safe-area-inset-bottom)]"
-      initial={{ y: 100 }}
-      animate={{ y: 0 }}
-      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+    <nav
+      className="w-full z-50 bg-white border-t border-gray-200 pb-[env(safe-area-inset-bottom)] bottom-nav-enter"
     >
       {/* Container with max width matching header */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -135,58 +118,35 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentRoute }) => 
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 {/* Icon with enhanced animations */}
-                <motion.div
-                  className="relative z-10"
-                  animate={{
-                    scale: active ? 1.1 : 1,
-                    rotate: active && isAnimating ? [0, -10, 10, 0] : 0
-                  }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 400,
-                    damping: 25,
-                    rotate: { duration: 0.3 }
-                  }}
+                <div
+                  className="relative z-10 transition-transform duration-200 ease-out"
+                  style={{ transform: active ? 'scale(1.1)' : 'scale(1)' }}
                 >
                   <IconComponent
                     className={`h-5 w-5 transition-all duration-200 ${active ? (item.activeColor || 'text-indigo-600') : (item.color || 'text-gray-500')
                       }`}
                     strokeWidth={active ? 2.5 : 2}
                   />
-                </motion.div>
+                </div>
 
                 {/* Label with smooth transitions */}
-                <motion.span
-                  className={`mt-0.5 text-[10px] font-medium transition-all duration-200 relative z-10 ${active ? (item.activeColor || 'text-indigo-600') : (item.color || 'text-gray-500')
-                    }`}
-                  animate={{
-                    y: active ? -1 : 0,
-                    fontWeight: active ? 600 : 500
-                  }}
-                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                <span
+                  className={`mt-0.5 text-[10px] relative z-10 transition-all duration-200 ease-out ${active ? 'font-semibold -translate-y-px' : 'font-medium'
+                    } ${active ? (item.activeColor || 'text-indigo-600') : (item.color || 'text-gray-500')}`}
                 >
                   {item.label}
-                </motion.span>
+                </span>
 
                 {/* Ripple effect on tap */}
-                <motion.div
-                  className="absolute inset-0 rounded-lg"
-                  initial={false}
-                  animate={isAnimating && lastActiveTab === item.id ? {
-                    background: [
-                      'rgba(99, 102, 241, 0)',
-                      'rgba(99, 102, 241, 0.1)',
-                      'rgba(99, 102, 241, 0)'
-                    ]
-                  } : {}}
-                  transition={{ duration: 0.3 }}
-                />
+                {active && (
+                  <div className="absolute inset-0 rounded-lg nav-ripple" />
+                )}
               </Link>
             );
           })}
         </div>
       </div>
-    </motion.nav>
+    </nav>
   );
 };
 

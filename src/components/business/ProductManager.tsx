@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus,
   Eye,
@@ -178,15 +177,13 @@ const ProductManager: React.FC<ProductManagerProps> = React.memo(({
                 </button>
               </div>
 
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+              <button
                 onClick={handleCreateProduct}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 active:scale-95 transition-transform duration-150 safe-hover-scale transition-transform duration-150"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Add Product
-              </motion.button>
+              </button>
             </div>
           )}
         </div>
@@ -194,12 +191,9 @@ const ProductManager: React.FC<ProductManagerProps> = React.memo(({
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
           {getStatsCards().map((stat, index) => (
-            <motion.div
+            <div
               key={stat.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="bg-white rounded-lg border border-gray-200 p-4"
+              className="bg-white rounded-lg border border-gray-200 p-4 animate-fadeIn"
             >
               <div className="flex items-center">
                 <div className={`flex-shrink-0 w-10 h-10 ${stat.color} rounded-lg flex items-center justify-center`}>
@@ -210,7 +204,7 @@ const ProductManager: React.FC<ProductManagerProps> = React.memo(({
                   <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
                 </div>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
       </div>
@@ -270,85 +264,82 @@ const ProductManager: React.FC<ProductManagerProps> = React.memo(({
         </div>
 
         {/* Filters Panel */}
-        <AnimatePresence>
-          {showFilters && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="bg-gray-50 rounded-lg p-4 border border-gray-200"
-            >
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                {/* Category Filter */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Category
-                  </label>
-                  <select
-                    value={filters.category || ''}
-                    onChange={(e) => setFilters({ ...filters, category: e.target.value || undefined })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="">All Categories</option>
-                    {categories.map(category => (
-                      <option key={category} value={category}>
-                        {category}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+        <>
+              {showFilters && (
+                          <div
+                            className="bg-gray-50 rounded-lg p-4 border border-gray-200"
+                          >
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                              {/* Category Filter */}
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  Category
+                                </label>
+                                <select
+                                  value={filters.category || ''}
+                                  onChange={(e) => setFilters({ ...filters, category: e.target.value || undefined })}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                >
+                                  <option value="">All Categories</option>
+                                  {categories.map(category => (
+                                    <option key={category} value={category}>
+                                      {category}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
 
-                {/* Availability Filter */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Availability
-                  </label>
-                  <select
-                    value={filters.availability === undefined ? '' : filters.availability.toString()}
-                    onChange={(e) => setFilters({
-                      ...filters,
-                      availability: e.target.value === '' ? undefined : e.target.value === 'true'
-                    })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="">All Products</option>
-                    <option value="true">Available</option>
-                    <option value="false">Unavailable</option>
-                  </select>
-                </div>
+                              {/* Availability Filter */}
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  Availability
+                                </label>
+                                <select
+                                  value={filters.availability === undefined ? '' : filters.availability.toString()}
+                                  onChange={(e) => setFilters({
+                                    ...filters,
+                                    availability: e.target.value === '' ? undefined : e.target.value === 'true'
+                                  })}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                >
+                                  <option value="">All Products</option>
+                                  <option value="true">Available</option>
+                                  <option value="false">Unavailable</option>
+                                </select>
+                              </div>
 
-                {/* Featured Filter */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Featured
-                  </label>
-                  <select
-                    value={filters.featured === undefined ? '' : filters.featured.toString()}
-                    onChange={(e) => setFilters({
-                      ...filters,
-                      featured: e.target.value === '' ? undefined : e.target.value === 'true'
-                    })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="">All Products</option>
-                    <option value="true">Featured</option>
-                    <option value="false">Not Featured</option>
-                  </select>
-                </div>
+                              {/* Featured Filter */}
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  Featured
+                                </label>
+                                <select
+                                  value={filters.featured === undefined ? '' : filters.featured.toString()}
+                                  onChange={(e) => setFilters({
+                                    ...filters,
+                                    featured: e.target.value === '' ? undefined : e.target.value === 'true'
+                                  })}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                >
+                                  <option value="">All Products</option>
+                                  <option value="true">Featured</option>
+                                  <option value="false">Not Featured</option>
+                                </select>
+                              </div>
 
-                {/* Clear Filters */}
-                <div className="flex items-end">
-                  <button
-                    onClick={clearFilters}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-                  >
-                    Clear Filters
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                              {/* Clear Filters */}
+                              <div className="flex items-end">
+                                <button
+                                  onClick={clearFilters}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                                >
+                                  Clear Filters
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+              </>
       </div>
 
       {/* Products Or Drafts Display */}
@@ -389,11 +380,8 @@ const ProductManager: React.FC<ProductManagerProps> = React.memo(({
             : 'grid-cols-1'
             }`}>
             {filteredProducts.map((product, index) => (
-              <motion.div
-                key={product.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
+              <div
+                key={product.id} className="animate-fadeIn"
               >
                 <ProductCard
                   product={product}
@@ -402,7 +390,7 @@ const ProductManager: React.FC<ProductManagerProps> = React.memo(({
                   onEdit={() => handleEditProduct(product)}
                   onDelete={() => handleDeleteProduct(product.id, product.name)}
                 />
-              </motion.div>
+              </div>
             ))}
           </div>
         )

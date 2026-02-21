@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 interface GlassCardProps {
@@ -31,10 +30,7 @@ export default function GlassCard({
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
+    <div
       className={cn(
         'relative overflow-hidden rounded-2xl',
         getBlurClass(),
@@ -57,6 +53,6 @@ export default function GlassCard({
 
       {/* Bottom highlight */}
       <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
-    </motion.div>
+    </div>
   );
 }

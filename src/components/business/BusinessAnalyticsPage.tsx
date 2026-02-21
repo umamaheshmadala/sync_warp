@@ -3,7 +3,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 import {
   ArrowLeft,
@@ -254,12 +253,9 @@ const BusinessAnalyticsPage: React.FC = () => {
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {quickStats.map((stat, index) => (
-            <motion.div
+            <div
               key={stat.label}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="bg-white rounded-lg border p-6 hover:shadow-md transition-shadow"
+              className="bg-white rounded-lg border p-6 hover:shadow-md transition-shadow animate-fadeIn"
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -278,7 +274,7 @@ const BusinessAnalyticsPage: React.FC = () => {
                   <stat.icon className={`w-6 h-6 text-${stat.color}-600`} />
                 </div>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
 
@@ -288,29 +284,23 @@ const BusinessAnalyticsPage: React.FC = () => {
         </div>
 
         {/* Main Analytics Component */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
+        <div className="animate-fadeIn"
         >
           <BusinessCheckinAnalytics
             businessId={businessId!}
             businessName={business.business_name}
           />
-        </motion.div>
+        </div>
 
         {/* Share Analytics Dashboard - Story 10.1.10 */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="mt-8"
+        <div
+          className="mt-8 animate-fadeIn"
         >
           <BusinessShareDashboard
             businessId={businessId!}
             businessName={business.business_name}
           />
-        </motion.div>
+        </div>
 
         {/* Quick Actions */}
         <div className="mt-12 bg-white rounded-lg border p-6">

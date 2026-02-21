@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 
 import { createPortal } from 'react-dom'
-import { motion } from 'framer-motion'
 import { useLongPress } from '../../hooks/useLongPress'
 import { useSwipeToReply } from '../../hooks/useSwipeToReply'
 import { hapticService } from '../../services/hapticService'
@@ -214,9 +213,9 @@ export function MessageBubble({
   // 2. Swipe to Reply
   const {
     x: swipeX,
-    controls: swipeControls,
-    onDrag: onSwipeDrag,
-    onDragEnd: onSwipeDragEnd
+    isTriggered: isSwipeTriggered,
+    isDragging: isSwipeDragging,
+    handlers: swipeHandlers
   } = useSwipeToReply({
     onReply: () => {
       hapticService.trigger('selection'); // Ensure haptic
@@ -610,49 +609,52 @@ export function MessageBubble({
           <div className="flex flex-col relative">
             {/* Added relative wrapper for swipe context */}
 
-            <motion.div
+            <div
               id={`message-${message.id}`}
               role="article"
               aria-label={ariaLabel}
               tabIndex={0}
 
-              // Gestures
-              drag="x"
-              dragConstraints={{ left: 0, right: 80 }} // Allow drag right to reply
-              dragElastic={0.1} // Rubber band effect
-              onDrag={onSwipeDrag}
-              onDragEnd={onSwipeDragEnd}
-              style={{ x: swipeX }}
-              animate={swipeControls}
+              style={{
+                transform: `translateX(${swipeX}px)`,
+                transition: isSwipeDragging ? 'none' : 'transform 0.2s cubic-bezier(0.2, 0, 0, 1)'
+              }}
 
-              // Long Press & Mouse Events
-              // We combine manual handlers with hook handlers
+              // Long Press & Mouse Events combined with swipe handlers
               onContextMenu={handleContextMenu}
               onMouseDown={(e) => {
                 onLPMouseDown(e);
-                // Also capture position for potential long press?
                 setContextMenuPosition({
                   x: Math.min(e.clientX, window.innerWidth - 220),
                   y: Math.min(e.clientY, window.innerHeight - 300)
                 });
+                swipeHandlers.onMouseDown(e);
               }}
-              onMouseUp={onLPMouseUp}
-              onMouseLeave={onLPMouseLeave}
+              onMouseUp={(e) => {
+                onLPMouseUp(e);
+                swipeHandlers.onMouseUp();
+              }}
+              onMouseLeave={(e) => {
+                onLPMouseLeave(e);
+                swipeHandlers.onMouseLeave();
+              }}
               onTouchStart={(e) => {
                 onLPTouchStart(e);
-                // Capture touch position for menu
                 const touch = e.touches[0];
                 setContextMenuPosition({
                   x: Math.min(touch.clientX, window.innerWidth - 220),
                   y: Math.min(touch.clientY, window.innerHeight - 300)
                 });
+                swipeHandlers.onTouchStart(e);
               }}
-              onTouchEnd={onLPTouchEnd}
-              // onTouchMove is handled by onDrag usually, but we need strictly for long press cancel
-              // If dragging starts, onTouchMove might fire.
-              // But we actually want dragging to Cancel long press.
-              // Our useLongPress hook cancels on movement > 10px.
-              onTouchMove={onLPTouchMove}
+              onTouchEnd={(e) => {
+                onLPTouchEnd(e);
+                swipeHandlers.onTouchEnd();
+              }}
+              onTouchMove={(e) => {
+                onLPTouchMove(e);
+                swipeHandlers.onTouchMove(e);
+              }}
 
               className={cn(
                 "px-4 py-2 rounded-2xl break-words text-[15px] leading-relaxed shadow-sm cursor-pointer select-none relative z-10 touch-pan-y", // touch-pan-y allows vertical scroll but captures horizontal
@@ -1036,7 +1038,7 @@ export function MessageBubble({
                   </span>
                 )}
               </div>
-            </motion.div>
+            </div>
             {/* Message Reactions (Displays below bubble) */}
             <MessageReactions
               reactions={reactionsSummary}

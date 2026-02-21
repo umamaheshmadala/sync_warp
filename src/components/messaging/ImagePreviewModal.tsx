@@ -2,8 +2,23 @@ import React, { useState, useEffect } from 'react'
 import { X, Check, Trash2, ChevronLeft, ChevronRight, GripHorizontal } from 'lucide-react'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
-import { Reorder, useDragControls } from 'framer-motion'
-
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  horizontalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 interface ImagePreviewModalProps {
   isOpen: boolean
   imageFiles: File[]
@@ -125,10 +140,6 @@ export function ImagePreviewModal({
   const handleReorder = (newOrderUrls: string[]) => {
     if (!onReorder) return;
 
-    // Reconstruct files array based on new url order
-    // We need to map back URL -> File. 
-    // Assumption: imageUrls and imageFiles are index-matched.
-    // We can create a map first.
     const urlToFileMap = new Map<string, File>();
     imageUrls.forEach((url, i) => {
       urlToFileMap.set(url, imageFiles[i]);
@@ -139,6 +150,38 @@ export function ImagePreviewModal({
     onReorder(newFiles, newOrderUrls);
   }
 
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = imageUrls.indexOf(active.id as string);
+      const newIndex = imageUrls.indexOf(over.id as string);
+      const newOrderUrls = arrayMove(imageUrls, oldIndex, newIndex);
+
+      // Update the current index so it tracks the selected image
+      if (currentIndex === oldIndex) {
+        setCurrentIndex(newIndex);
+      } else if (currentIndex === newIndex) {
+        setCurrentIndex(oldIndex);
+      } else if (currentIndex > oldIndex && currentIndex <= newIndex) {
+        setCurrentIndex(currentIndex - 1);
+      } else if (currentIndex < oldIndex && currentIndex >= newIndex) {
+        setCurrentIndex(currentIndex + 1);
+      }
+
+      handleReorder(newOrderUrls);
+    }
+  };
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
   if (!isOpen || imageUrls.length === 0) return null
 
   const currentUrl = imageUrls[currentIndex]
@@ -241,40 +284,28 @@ export function ImagePreviewModal({
           {/* Thumbnail Carousel with Reordering */}
           {imageUrls.length > 1 && (
             <div className="flex justify-center w-full overflow-x-auto py-2 px-4 no-scrollbar">
-              <Reorder.Group
-                axis="x"
-                values={imageUrls}
-                onReorder={handleReorder}
-                className="flex gap-2"
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
               >
-                {imageUrls.map((url, idx) => (
-                  <Reorder.Item
-                    key={url}
-                    value={url}
-                    className="relative"
-                  >
-                    <div
-                      className={cn(
-                        "relative w-14 h-14 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all cursor-pointer group",
-                        idx === currentIndex
-                          ? "border-blue-500 opacity-100 scale-110"
-                          : "border-transparent opacity-60 hover:opacity-100"
-                      )}
-                      onClick={() => setCurrentIndex(idx)}
-                    >
-                      <img
-                        src={url}
-                        alt={`Thumbnail ${idx + 1}`}
-                        className="w-full h-full object-cover pointer-events-none" // prevent img drag interfering with Reorder
+                <SortableContext
+                  items={imageUrls}
+                  strategy={horizontalListSortingStrategy}
+                >
+                  <div className="flex gap-2">
+                    {imageUrls.map((url, idx) => (
+                      <SortableThumbnail
+                        key={url}
+                        url={url}
+                        idx={idx}
+                        isActive={idx === currentIndex}
+                        onClick={() => setCurrentIndex(idx)}
                       />
-                      {/* Drag handle hint on hover */}
-                      <div className="absolute inset-x-0 bottom-0 h-4 bg-black/40 hidden group-hover:flex items-center justify-center pointer-events-none">
-                        <GripHorizontal className="w-3 h-3 text-white/80" />
-                      </div>
-                    </div>
-                  </Reorder.Item>
-                ))}
-              </Reorder.Group>
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
             </div>
           )}
 
@@ -331,3 +362,57 @@ export function ImagePreviewModal({
   )
 }
 
+interface SortableThumbnailProps {
+  url: string;
+  idx: number;
+  isActive: boolean;
+  onClick: () => void;
+}
+
+function SortableThumbnail({ url, idx, isActive, onClick }: SortableThumbnailProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: url });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 10 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="relative touch-none">
+      <div
+        className={cn(
+          "relative w-14 h-14 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all cursor-pointer group",
+          isActive
+            ? "border-blue-500 opacity-100 scale-110"
+            : "border-transparent opacity-60 hover:opacity-100",
+          isDragging ? "opacity-50" : ""
+        )}
+        onPointerDown={(e) => {
+          // Allow selection click without interrupting drag, or let onClick handle it
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          onClick();
+        }}
+      >
+        <img
+          src={url}
+          alt={`Thumbnail ${idx + 1}`}
+          className="w-full h-full object-cover pointer-events-none select-none"
+          draggable={false}
+        />
+        <div className="absolute inset-x-0 bottom-0 h-4 bg-black/40 hidden group-hover:flex items-center justify-center pointer-events-none">
+          <GripHorizontal className="w-3 h-3 text-white/80" />
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search,
   User,
@@ -221,100 +220,95 @@ const FriendSelector: React.FC<FriendSelectorProps> = ({
             )}
           </div>
         ) : (
-          <AnimatePresence>
-            {filteredUsers.map((user) => {
-              const friendStats = getFriendSharingStats(user.id);
-              const isSelected = selectedUser?.id === user.id;
-              const sharedCount = friendStats?.count || 0;
-              const limit = sharingStats?.per_friend_limit || 3;
-              const atLimit = sharedCount >= limit;
+          <>
+                              {filteredUsers.map((user) => {
+                                            const friendStats = getFriendSharingStats(user.id);
+                                            const isSelected = selectedUser?.id === user.id;
+                                            const sharedCount = friendStats?.count || 0;
+                                            const limit = sharingStats?.per_friend_limit || 3;
+                                            const atLimit = sharedCount >= limit;
 
-              return (
-                <motion.div
-                  key={user.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className={`p-2 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${
-                    isSelected ? 'bg-blue-50 border-blue-200' : ''
-                  } ${atLimit ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  onClick={() => !atLimit && handleSelectUser(user)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3 flex-1">
-                      {/* Avatar */}
-                      <div className="flex-shrink-0">
-                        {user.avatar_url ? (
-                          <img
-                            src={user.avatar_url}
-                            alt={getDisplayName(user)}
-                            className="w-8 h-8 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-medium text-xs">
-                            {getUserInitials(user)}
-                          </div>
-                        )}
-                      </div>
+                                            return (
+                                              <div
+                                                key={user.id}
+                                                className={`p-2 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${
+                                                  isSelected ? 'bg-blue-50 border-blue-200' : ''
+                                                } ${atLimit ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                onClick={() => !atLimit && handleSelectUser(user)}
+                                              >
+                                                <div className="flex items-center justify-between">
+                                                  <div className="flex items-center space-x-3 flex-1">
+                                                    {/* Avatar */}
+                                                    <div className="flex-shrink-0">
+                                                      {user.avatar_url ? (
+                                                        <img
+                                                          src={user.avatar_url}
+                                                          alt={getDisplayName(user)}
+                                                          className="w-8 h-8 rounded-full object-cover"
+                                                        />
+                                                      ) : (
+                                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-medium text-xs">
+                                                          {getUserInitials(user)}
+                                                        </div>
+                                                      )}
+                                                    </div>
 
-                      {/* User Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-medium text-gray-900 truncate">
-                            {getDisplayName(user)}
-                          </p>
-                          {friendStats && sharedCount > 0 && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-full">
-                              <Star className="w-3 h-3" />
-                              {sharedCount}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center text-xs text-gray-500 mt-0.5">
-                          <Mail className="w-3 h-3 mr-1" />
-                          {user.email}
-                        </div>
-                        {/* Sharing Stats */}
-                        {friendStats ? (
-                          <div className="mt-1 text-xs text-gray-600">
-                            Shared {sharedCount}/{limit} today
-                            {atLimit && (
-                              <span className="ml-2 text-red-600 font-medium">
-                                (Limit reached)
-                              </span>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="mt-1 text-xs text-green-600 flex items-center gap-1">
-                            <UserPlus className="w-3 h-3" />
-                            Can share with this friend
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                                                    {/* User Info */}
+                                                    <div className="flex-1 min-w-0">
+                                                      <div className="flex items-center gap-2">
+                                                        <p className="text-sm font-medium text-gray-900 truncate">
+                                                          {getDisplayName(user)}
+                                                        </p>
+                                                        {friendStats && sharedCount > 0 && (
+                                                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-full">
+                                                            <Star className="w-3 h-3" />
+                                                            {sharedCount}
+                                                          </span>
+                                                        )}
+                                                      </div>
+                                                      <div className="flex items-center text-xs text-gray-500 mt-0.5">
+                                                        <Mail className="w-3 h-3 mr-1" />
+                                                        {user.email}
+                                                      </div>
+                                                      {/* Sharing Stats */}
+                                                      {friendStats ? (
+                                                        <div className="mt-1 text-xs text-gray-600">
+                                                          Shared {sharedCount}/{limit} today
+                                                          {atLimit && (
+                                                            <span className="ml-2 text-red-600 font-medium">
+                                                              (Limit reached)
+                                                            </span>
+                                                          )}
+                                                        </div>
+                                                      ) : (
+                                                        <div className="mt-1 text-xs text-green-600 flex items-center gap-1">
+                                                          <UserPlus className="w-3 h-3" />
+                                                          Can share with this friend
+                                                        </div>
+                                                      )}
+                                                    </div>
+                                                  </div>
 
-                    {/* Selection Indicator */}
-                    {isSelected && (
-                      <div className="flex-shrink-0 ml-3">
-                        <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
-                          <Check className="w-4 h-4 text-white" />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
+                                                  {/* Selection Indicator */}
+                                                  {isSelected && (
+                                                    <div className="flex-shrink-0 ml-3">
+                                                      <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
+                                                        <Check className="w-4 h-4 text-white" />
+                                                      </div>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            );
+                                          })}
+                              </>
         )}
       </div>
 
       {/* Footer - Confirm Button */}
       {selectedUser && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="p-3 border-t border-gray-200 bg-gray-50"
+        <div
+          className="p-3 border-t border-gray-200 bg-gray-50 animate-fadeIn"
         >
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center space-x-2">
@@ -350,7 +344,7 @@ const FriendSelector: React.FC<FriendSelectorProps> = ({
               Confirm
             </button>
           </div>
-        </motion.div>
+        </div>
       )}
 
       {/* Empty State - No Selection */}

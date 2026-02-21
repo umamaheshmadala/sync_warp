@@ -11,7 +11,6 @@ import {
   Tag,
   Package
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 import { useFavoritesContext } from '../../contexts/FavoritesContext';
 // Using storefront OfferCard for visual consistency
@@ -299,10 +298,8 @@ const FavoritesPage: React.FC = () => {
           </div>
         ) : currentData.length === 0 ? (
           // Empty state
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center py-12"
+          <div
+            className="text-center py-12 animate-fadeIn"
           >
             <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
               {activeTab === 'offers' ? (
@@ -320,14 +317,11 @@ const FavoritesPage: React.FC = () => {
                 : `Start favoriting ${activeTab} to see them here`}
             </p>
 
-          </motion.div>
+          </div>
         ) : (
           // Grid of items
-          <motion.div
+          <div
             key={activeTab}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.2 }}
             className={`grid gap-4 ${activeTab === 'offers'
               ? 'grid-cols-1 lg:grid-cols-2'
               : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'
@@ -351,20 +345,20 @@ const FavoritesPage: React.FC = () => {
                   onClick={() => handleProductClick(mapFavoriteToProduct(product))}
                 />
               ))}
-          </motion.div>
+          </div>
         )}
       </div>
 
       {/* Offer Detail Modal */}
-      <AnimatePresence>
-        {selectedOffer && (
-          <OfferDetailModal
-            offer={selectedOffer}
-            onClose={() => setSelectedOffer(null)}
-            showStats={false}
-          />
-        )}
-      </AnimatePresence>
+      <>
+          {selectedOffer && (
+                    <OfferDetailModal
+                      offer={selectedOffer}
+                      onClose={() => setSelectedOffer(null)}
+                      showStats={false}
+                    />
+                  )}
+          </>
 
       {/* Mobile Product Modal */}
       {!isDesktop && (

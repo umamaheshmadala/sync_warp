@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Heart } from 'lucide-react';
 import { Product } from '../../../types/product';
 
@@ -96,20 +95,16 @@ export const MobileProductCarousel: React.FC<MobileProductCarouselProps> = ({
             )}
 
             {/* Heart Animation Overlay */}
-            <AnimatePresence>
-                {showHeart && (
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-                        <motion.div
-                            initial={{ scale: 0, opacity: 0 }}
-                            animate={{ scale: 1.5, opacity: 1 }}
-                            exit={{ scale: 0.5, opacity: 0 }}
-                            transition={{ duration: 0.4 }}
-                        >
-                            <Heart className="w-24 h-24 text-white fill-white drop-shadow-lg" />
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
+            <>
+            {showHeart && (
+                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                                    <div
+                                    >
+                                        <Heart className="w-24 h-24 text-white fill-white drop-shadow-lg" />
+                                    </div>
+                                </div>
+                            )}
+            </>
         </div>
     );
 };

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Pin, ChevronDown, ChevronUp, X, Image, Video } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import type { PinnedMessage } from '../../services/pinnedMessageService';
 
 interface Props {
@@ -118,62 +117,59 @@ export function PinnedMessagesBanner({
         </button>
       </div>
 
-      <AnimatePresence>
-        {isExpanded && pinnedMessages.length > 1 && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden border-t border-gray-100 bg-gray-50"
-          >
-            {pinnedMessages.map((pin, idx) => {
-              const display = getMessageDisplayText(pin.message);
-              return (
-                <div 
-                  key={pin.id}
-                  className={`flex items-center px-4 py-3 hover:bg-white cursor-pointer border-l-2 transition-colors ${
-                    idx === validIndex 
-                      ? 'bg-blue-50 border-blue-500' 
-                      : 'border-transparent'
-                  }`}
-                  onClick={() => {
-                    onMessageClick(pin.messageId);
-                    setIsExpanded(false);
-                    setCurrentIndex(idx);
-                  }}
-                >
-                  <div className="flex-1 min-w-0 ml-2">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <span className="text-xs font-medium text-slate-900">
-                        {pin.message?.senderName || 'Unknown User'}
-                      </span>
-                      <span className="text-xs text-slate-400">
-                        • {new Date(pin.pinnedAt).toLocaleDateString('en-GB')}
-                      </span>
+      <>
+          {isExpanded && pinnedMessages.length > 1 && (
+                    <div
+                      className="overflow-hidden border-t border-gray-100 bg-gray-50"
+                    >
+                      {pinnedMessages.map((pin, idx) => {
+                        const display = getMessageDisplayText(pin.message);
+                        return (
+                          <div 
+                            key={pin.id}
+                            className={`flex items-center px-4 py-3 hover:bg-white cursor-pointer border-l-2 transition-colors ${
+                              idx === validIndex 
+                                ? 'bg-blue-50 border-blue-500' 
+                                : 'border-transparent'
+                            }`}
+                            onClick={() => {
+                              onMessageClick(pin.messageId);
+                              setIsExpanded(false);
+                              setCurrentIndex(idx);
+                            }}
+                          >
+                            <div className="flex-1 min-w-0 ml-2">
+                              <div className="flex items-center gap-2 mb-0.5">
+                                <span className="text-xs font-medium text-slate-900">
+                                  {pin.message?.senderName || 'Unknown User'}
+                                </span>
+                                <span className="text-xs text-slate-400">
+                                  • {new Date(pin.pinnedAt).toLocaleDateString('en-GB')}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                {display.icon}
+                                <p className="text-sm text-slate-600 truncate">
+                                  {display.text}
+                                </p>
+                              </div>
+                            </div>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onUnpin(pin.messageId);
+                              }}
+                              className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                              title="Unpin message"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        );
+                      })}
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      {display.icon}
-                      <p className="text-sm text-slate-600 truncate">
-                        {display.text}
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onUnpin(pin.messageId);
-                    }}
-                    className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
-                    title="Unpin message"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              );
-            })}
-          </motion.div>
-        )}
-      </AnimatePresence>
+                  )}
+          </>
     </div>
   );
 }

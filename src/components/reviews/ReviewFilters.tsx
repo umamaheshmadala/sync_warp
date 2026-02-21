@@ -3,7 +3,6 @@
 // =====================================================
 
 import React from 'react';
-import { motion } from 'framer-motion';
 import {
   ThumbsUp,
   ThumbsDown,
@@ -54,9 +53,7 @@ export default function ReviewFilters({
             Sort by
           </label>
           <div className="grid grid-cols-2 gap-2">
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+            <button
               onClick={() => updateFilter('sort_by', 'newest')}
               className={`
                 px-4 py-2 rounded-lg text-sm font-medium transition-all
@@ -67,10 +64,8 @@ export default function ReviewFilters({
               `}
             >
               Newest First
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+            </button>
+            <button
               onClick={() => updateFilter('sort_by', 'oldest')}
               className={`
                 px-4 py-2 rounded-lg text-sm font-medium transition-all
@@ -81,10 +76,8 @@ export default function ReviewFilters({
               `}
             >
               Oldest First
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+            </button>
+            <button
               onClick={() => updateFilter('sort_by', 'most-helpful')}
               className={`
                 px-4 py-2 rounded-lg text-sm font-medium transition-all
@@ -95,7 +88,7 @@ export default function ReviewFilters({
               `}
             >
               Most Helpful
-            </motion.button>
+            </button>
           </div>
         </div>
 
@@ -106,9 +99,7 @@ export default function ReviewFilters({
           </label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {/* Recommends Filter */}
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+            <button
               onClick={() => updateFilter('recommendation', true)}
               className={`
                 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all
@@ -120,12 +111,10 @@ export default function ReviewFilters({
             >
               <ThumbsUp className="w-4 h-4" />
               <span className="hidden sm:inline">Recommends</span>
-            </motion.button>
+            </button>
 
             {/* Doesn't Recommend Filter */}
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+            <button
               onClick={() => updateFilter('recommendation', false)}
               className={`
                 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all
@@ -137,12 +126,10 @@ export default function ReviewFilters({
             >
               <ThumbsDown className="w-4 h-4" />
               <span className="hidden sm:inline">Doesn't</span>
-            </motion.button>
+            </button>
 
             {/* With Text Filter */}
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+            <button
               onClick={() => updateFilter('has_text', true)}
               className={`
                 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all
@@ -154,12 +141,10 @@ export default function ReviewFilters({
             >
               <FileText className="w-4 h-4" />
               <span className="hidden sm:inline">With Text</span>
-            </motion.button>
+            </button>
 
             {/* With Photo Filter */}
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+            <button
               onClick={() => updateFilter('has_photo', true)}
               className={`
                 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all
@@ -171,20 +156,18 @@ export default function ReviewFilters({
             >
               <ImageIcon className="w-4 h-4" />
               <span className="hidden sm:inline">With Photo</span>
-            </motion.button>
+            </button>
           </div>
         </div>
 
         {/* Clear Filters */}
         {Object.keys(filters).length > 1 && ( // More than just sort_by
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+          <button
             onClick={() => onFiltersChange({ sort_by: 'newest' })}
-            className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
+            className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors active:scale-95 transition-transform duration-150 safe-hover-scale transition-transform duration-150"
           >
             Clear All Filters
-          </motion.button>
+          </button>
         )}
       </div>
     </div>

@@ -7,9 +7,6 @@ import { StatusBar, Style } from '@capacitor/status-bar';
 import { useQueryClient } from '@tanstack/react-query';
 import Header from './Header';
 import BottomNavigation from '../BottomNavigation';
-import { useNavigate } from 'react-router-dom';
-import { useNavigationPreferences } from '../../hooks/useNavigationState';
-import GestureHandler from '../GestureHandler';
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 import { notificationSettingsService } from '@/services/notificationSettingsService';
 import { PullToRefresh } from '@/components/ui/PullToRefresh';
@@ -20,9 +17,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   // Initialize Realtime Notifications
   useRealtimeNotifications();
-
-  const navigate = useNavigate();
-  const { preferences } = useNavigationPreferences();
 
   // Don't show header/nav on auth pages and admin pages (admin has its own layout)
   const isAuthPage = location.pathname.startsWith('/auth');
@@ -118,68 +112,56 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const shouldShowBottomNav = !isKeyboardVisible && !isAuthPage;
 
   return (
-    <GestureHandler
-      onSwipeRight={() => {
-        if (preferences.swipeGesturesEnabled) {
-          console.log('[AppLayout] Swipe Right Detected -> Go Back');
-          navigate(-1);
-        }
-      }}
-      disabled={!preferences.swipeGesturesEnabled}
-      enableHaptics={preferences.enableHapticFeedback}
-      className="w-full h-full"
-    >
-      <div className="fixed inset-0 w-full h-full flex flex-col overflow-hidden bg-gray-50">
-        <Header />
-        <main
-          className={`flex-1 flex flex-col min-h-0 relative ${isMessagesRoute ? 'overflow-hidden' : 'overflow-y-auto'}`}
-          style={{
-            overscrollBehaviorY: 'none', // Prevent bounce effects
-            WebkitOverflowScrolling: 'touch' // Ensure momentum scrolling
-          }}
-        >
-          {/* Messages route needs full-width layout without PullToRefresh constraints */}
-          {isMessagesRoute ? (
+    <div className="fixed inset-0 w-full h-full flex flex-col overflow-hidden bg-gray-50">
+      <Header />
+      <main
+        className={`flex-1 flex flex-col min-h-0 relative ${isMessagesRoute ? 'overflow-hidden' : 'overflow-y-auto'}`}
+        style={{
+          overscrollBehaviorY: 'none', // Prevent bounce effects
+          WebkitOverflowScrolling: 'touch' // Ensure momentum scrolling
+        }}
+      >
+        {/* Messages route needs full-width layout without PullToRefresh constraints */}
+        {isMessagesRoute ? (
+          <div
+            className="w-full flex-1 min-h-0 flex flex-col"
+            style={{
+              paddingTop: 'calc(54px + env(safe-area-inset-top, 0px))',
+              // Adjust bottom padding:
+              // 1. If keyboard visible -> specific keyboard height
+              // 2. If nav visible -> nav height + safe area
+              // 3. Otherwise -> 0
+              paddingBottom: isKeyboardVisible
+                ? `${keyboardHeight}px`
+                : (shouldShowBottomNav ? 'calc(56px + env(safe-area-inset-bottom, 0px))' : '0px'),
+              transition: 'padding-bottom 0.2s cubic-bezier(0.2, 0.0, 0, 1.0)' // match iOS keyboard timing roughly
+            }}
+          >
+            {children}
+          </div>
+        ) : (
+          <PullToRefresh
+            onRefresh={handlePullToRefresh}
+            disabled={false}
+            className="w-full max-w-4xl mx-auto min-h-full"
+            style={{ paddingTop: 'calc(54px + env(safe-area-inset-top, 0px))' }}
+          >
+            {children}
+            {/* Spacer for Bottom Navigation - Physical element ensures scroll clearance */}
             <div
-              className="w-full flex-1 min-h-0 flex flex-col"
+              className="w-full transition-all duration-200"
               style={{
-                paddingTop: 'calc(54px + env(safe-area-inset-top, 0px))',
-                // Adjust bottom padding:
-                // 1. If keyboard visible -> specific keyboard height
-                // 2. If nav visible -> nav height + safe area
-                // 3. Otherwise -> 0
-                paddingBottom: isKeyboardVisible
-                  ? `${keyboardHeight}px`
-                  : (shouldShowBottomNav ? 'calc(56px + env(safe-area-inset-bottom, 0px))' : '0px'),
-                transition: 'padding-bottom 0.2s cubic-bezier(0.2, 0.0, 0, 1.0)' // match iOS keyboard timing roughly
+                height: shouldShowBottomNav
+                  ? 'calc(56px + env(safe-area-inset-bottom, 0px) + 3px)'
+                  : '0px',
               }}
-            >
-              {children}
-            </div>
-          ) : (
-            <PullToRefresh
-              onRefresh={handlePullToRefresh}
-              disabled={false}
-              className="w-full max-w-4xl mx-auto min-h-full"
-              style={{ paddingTop: 'calc(54px + env(safe-area-inset-top, 0px))' }}
-            >
-              {children}
-              {/* Spacer for Bottom Navigation - Physical element ensures scroll clearance */}
-              <div
-                className="w-full transition-all duration-200"
-                style={{
-                  height: shouldShowBottomNav
-                    ? 'calc(56px + env(safe-area-inset-bottom, 0px) + 3px)'
-                    : '0px',
-                }}
-              />
-            </PullToRefresh>
-          )}
-        </main>
+            />
+          </PullToRefresh>
+        )}
+      </main>
 
-        {/* Fixed Bottom Navigation */}
-        {shouldShowBottomNav && <BottomNavigation currentRoute={location.pathname} />}
-      </div >
-    </GestureHandler >
+      {/* Fixed Bottom Navigation */}
+      {shouldShowBottomNav && <BottomNavigation currentRoute={location.pathname} />}
+    </div >
   );
 }

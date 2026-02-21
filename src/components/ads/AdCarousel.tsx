@@ -1,6 +1,5 @@
 // src/components/ads/AdCarousel.tsx
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, TrendingUp } from 'lucide-react';
 import AdSlot from './AdSlot';
 import { useAdSlots } from '../../hooks/useAdSlots';
@@ -57,21 +56,16 @@ const AdCarousel: React.FC = () => {
     <div className="relative">
       {/* Carousel Container */}
       <div className="relative overflow-hidden rounded-2xl group">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentIndex}
-            initial={{ opacity: 0, x: 100 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -100 }}
-            transition={{ duration: 0.3 }}
-          >
-            <AdSlot
-              slot={slots[currentIndex]}
-              onAdClick={trackClick}
-              onImpression={trackImpression}
-            />
-          </motion.div>
-        </AnimatePresence>
+        <div
+          key={currentIndex}
+          className="animate-fadeIn"
+        >
+          <AdSlot
+            slot={slots[currentIndex]}
+            onAdClick={trackClick}
+            onImpression={trackImpression}
+          />
+        </div>
 
         {/* Navigation Buttons */}
         {slots.length > 1 && (

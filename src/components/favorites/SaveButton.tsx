@@ -4,7 +4,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { Heart } from 'lucide-react';
-import { motion } from 'framer-motion';
 import useFavorites from '../../hooks/useFavorites';
 import { cn } from '../../lib/utils';
 
@@ -170,7 +169,7 @@ const SaveButton: React.FC<SaveButtonProps> = ({
 
   return (
     <div className={cn("inline-flex items-center", className)}>
-      <motion.button
+      <button
         onClick={handleToggle}
         disabled={disabled || isAnimating || !isAuthenticated}
         className={cn(
@@ -182,18 +181,11 @@ const SaveButton: React.FC<SaveButtonProps> = ({
           !isAuthenticated && "opacity-60 cursor-not-allowed",
           "active:scale-95"
         )}
-        whileTap={{ scale: 0.95 }}
         aria-label={isFavorited ? `Remove from favorites` : `Add to favorites`}
         title={isFavorited ? `Remove from favorites` : `Add to favorites`}
       >
         {/* Heart Icon with Animation */}
-        <motion.div
-          variants={isAnimating ? pulseVariants : heartVariants}
-          animate={
-            isAnimating ? "pulse" :
-            isFavorited ? "favorited" : 
-            "idle"
-          }
+        <div
           className="flex items-center justify-center"
         >
           <Heart
@@ -203,48 +195,32 @@ const SaveButton: React.FC<SaveButtonProps> = ({
               isFavorited ? "fill-current text-red-600" : "text-current"
             )}
           />
-        </motion.div>
+        </div>
 
         {/* Ripple effect on click */}
         {isAnimating && (
-          <motion.div
-            className="absolute inset-0 rounded-full bg-current opacity-20"
-            initial={{ scale: 0 }}
-            animate={{ scale: 2, opacity: 0 }}
-            transition={{ duration: 0.4 }}
+          <div
+            className="absolute inset-0 rounded-full bg-current opacity-20 animate-fadeIn"
           />
         )}
-      </motion.button>
+      </button>
 
       {/* Optional label */}
       {showLabel && (
-        <motion.span
-          initial={{ opacity: 0.7 }}
-          animate={{ 
-            opacity: isFavorited ? 1 : 0.7,
-            color: isFavorited ? "#dc2626" : "#6b7280"
-          }}
-          className="ml-2 text-sm font-medium transition-colors duration-200"
+        <span
+          className="ml-2 text-sm font-medium transition-colors duration-200 animate-fadeIn"
         >
           {isFavorited ? savedLabel : unsavedLabel}
-        </motion.span>
+        </span>
       )}
 
       {/* Floating heart animation on save */}
       {isAnimating && isFavorited && (
-        <motion.div
-          className="absolute pointer-events-none"
-          initial={{ opacity: 0, scale: 0.5, y: 0 }}
-          animate={{ 
-            opacity: [0, 1, 0], 
-            scale: [0.5, 1, 0.8], 
-            y: [-20, -40],
-            x: [0, 10, -5]
-          }}
-          transition={{ duration: 0.8 }}
+        <div
+          className="absolute pointer-events-none animate-fadeIn"
         >
           <Heart size={16} className="fill-red-500 text-red-500" />
-        </motion.div>
+        </div>
       )}
     </div>
   );
