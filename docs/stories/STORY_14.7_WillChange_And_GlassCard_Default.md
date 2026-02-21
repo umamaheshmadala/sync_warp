@@ -1,7 +1,7 @@
 # STORY 14.7 — Add `will-change` to Scroll Containers; Default `GlassCard` Blur to None
 
 **EPIC:** [EPIC 14 — Energy, Battery & Resource Efficiency](../epics/EPIC_14_Energy_Battery_Resource_Efficiency.md)  
-**Status:** 📋 Ready  
+**Status:** ✅ COMPLETE
 **Priority:** 🟠 High  
 **Estimate:** 1 point  
 **Dependencies:** Story 14.3 (blur cleanup first)  

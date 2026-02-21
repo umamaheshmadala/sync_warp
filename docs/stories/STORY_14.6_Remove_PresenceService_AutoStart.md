@@ -1,7 +1,7 @@
 # STORY 14.6 — Remove `presenceService` Auto-Start on Import
 
 **EPIC:** [EPIC 14 — Energy, Battery & Resource Efficiency](../epics/EPIC_14_Energy_Battery_Resource_Efficiency.md)  
-**Status:** 📋 Ready  
+**Status:** ✅ COMPLETE
 **Priority:** 🔴 Critical  
 **Estimate:** 1 point  
 **Dependencies:** Story 14.1 (this is part of the same cleanup)  
@@ -52,13 +52,13 @@ No auto-start code remains in the codebase.
 
 ## ✅ Acceptance Criteria
 
-- [ ] `presenceService.ts` is deleted (handled by Story 14.1)
-- [ ] No module-level side effects remain in any presence-related file
-- [ ] `presenceStore.initialize()` is called explicitly on sign-in
-- [ ] `presenceStore.cleanup()` is called explicitly on sign-out
+- [x] `presenceService.ts` is deleted (handled by Story 14.1)
+- [x] No module-level side effects remain in any presence-related file
+- [x] `presenceStore.initialize()` is called explicitly on sign-in
+- [x] `presenceStore.cleanup()` is called explicitly on sign-out
 
 ---
 
 ## ✅ Definition of Done
 
-- [ ] Completed as part of Story 14.1
+- [x] Completed as part of Story 14.1

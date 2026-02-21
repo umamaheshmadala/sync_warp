@@ -1,7 +1,7 @@
 # STORY 14.2 — Consolidate Quad Heartbeat → Single 120s Heartbeat
 
 **EPIC:** [EPIC 14 — Energy, Battery & Resource Efficiency](../epics/EPIC_14_Energy_Battery_Resource_Efficiency.md)  
-**Status:** 📋 Ready  
+**Status:** ✅ COMPLETE
 **Priority:** 🔴 Critical  
 **Estimate:** 2 points  
 **Dependencies:** Story 14.1 (triple presence must be consolidated first)  

@@ -1,7 +1,7 @@
 # STORY 14.8 — Add `loading="lazy"` + `decoding="async"` to All `<img>` Tags
 
 **EPIC:** [EPIC 14 — Energy, Battery & Resource Efficiency](../epics/EPIC_14_Energy_Battery_Resource_Efficiency.md)  
-**Status:** 📋 Ready  
+**Status:** ✅ COMPLETE
 **Priority:** 🟠 High  
 **Estimate:** 1 point  
 **Dependencies:** None  

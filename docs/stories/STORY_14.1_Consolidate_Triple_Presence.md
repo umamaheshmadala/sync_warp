@@ -1,7 +1,7 @@
 # STORY 14.1 — Consolidate Triple Presence → Single `presenceStore`
 
 **EPIC:** [EPIC 14 — Energy, Battery & Resource Efficiency](../epics/EPIC_14_Energy_Battery_Resource_Efficiency.md)  
-**Status:** 📋 Ready  
+**Status:** ✅ COMPLETE
 **Priority:** 🔴 Critical  
 **Estimate:** 3 points  
 **Dependencies:** None (first story, no blockers)  

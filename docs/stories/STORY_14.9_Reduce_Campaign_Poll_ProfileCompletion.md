@@ -1,7 +1,7 @@
 # STORY 14.9 — Reduce Campaign Poll 30s → 5min; `ProfileCompletion` 50ms Interval → CSS Transition
 
 **EPIC:** [EPIC 14 — Energy, Battery & Resource Efficiency](../epics/EPIC_14_Energy_Battery_Resource_Efficiency.md)  
-**Status:** 📋 Ready  
+**Status:** ✅ COMPLETE
 **Priority:** 🟠 High  
 **Estimate:** 1 point  
 **Dependencies:** Story 14.4 (setTimeout conversion covers these files too)  

@@ -1,7 +1,7 @@
 # STORY 14.3 — Replace `backdrop-blur` → Solid `rgba()` on Mobile
 
 **EPIC:** [EPIC 14 — Energy, Battery & Resource Efficiency](../epics/EPIC_14_Energy_Battery_Resource_Efficiency.md)  
-**Status:** 📋 Ready  
+**Status:** ✅ COMPLETE
 **Priority:** 🔴 Critical  
 **Estimate:** 3 points  
 **Dependencies:** None  

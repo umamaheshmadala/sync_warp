@@ -1,7 +1,7 @@
 # STORY 14.5 — Audit and Fix All Uncleaned Event Listeners
 
 **EPIC:** [EPIC 14 — Energy, Battery & Resource Efficiency](../epics/EPIC_14_Energy_Battery_Resource_Efficiency.md)  
-**Status:** 📋 Ready  
+**Status:** ✅ COMPLETE
 **Priority:** 🔴 Critical  
 **Estimate:** 2 points  
 **Dependencies:** None (independent audit)  
