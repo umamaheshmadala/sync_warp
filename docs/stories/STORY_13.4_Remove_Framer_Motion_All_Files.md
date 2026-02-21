@@ -1,7 +1,7 @@
 # STORY 13.4 — Remove framer-motion From All Component Files
 
 **EPIC:** [EPIC 13 — iOS Flickering & Animation Removal](../epics/EPIC_13_iOS_Flickering_Animation_Removal.md)  
-**Status:** 📋 Ready  
+**Status:** ✅ Complete  
 **Priority:** 🔴 Critical  
 **Estimate:** 5 points  
 **Dependencies:** Story 13.3 (BottomNavigation already converted — this story handles the remaining 89 files)
@@ -331,11 +331,11 @@ npm uninstall framer-motion motion
 
 ## ✅ Acceptance Criteria
 
-- [ ] Zero `framer-motion` or `motion` imports in any `.tsx` or `.ts` file
-- [ ] `framer-motion` and `motion` uninstalled from `package.json`
-- [ ] CSS animation utilities added to `index.css`
-- [ ] All modals still animate in (CSS `fadeIn` / `scaleIn`)
-- [ ] All list items still animate in (CSS `fadeInUp`)
-- [ ] All buttons have CSS `active:scale-95` where previously using `whileTap`
-- [ ] `npm run build` passes with zero errors
-- [ ] Production bundle ~60KB smaller (verify with `npx vite-bundle-visualizer`)
+- [x] Zero `framer-motion` or `motion` imports in any `.tsx` or `.ts` file
+- [x] `framer-motion` and `motion` uninstalled from `package.json`
+- [x] CSS animation utilities added to `index.css`
+- [x] All modals still animate in (CSS `fadeIn` / `scaleIn`)
+- [x] All list items still animate in (CSS `fadeInUp`)
+- [x] All buttons have CSS `active:scale-95` where previously using `whileTap`
+- [x] `npm run build` passes with zero errors
+- [x] Production bundle ~60KB smaller (verify with `npx vite-bundle-visualizer`)

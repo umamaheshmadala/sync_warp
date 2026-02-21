@@ -1,7 +1,7 @@
 # STORY 13.2 — Remove GestureHandler Wrapper
 
 **EPIC:** [EPIC 13 — iOS Flickering & Animation Removal](../epics/EPIC_13_iOS_Flickering_Animation_Removal.md)  
-**Status:** 📋 Ready  
+**Status:** ✅ Complete  
 **Priority:** 🔴 Critical  
 **Estimate:** 1 point  
 **Dependencies:** None (can run in parallel with Story 13.1)
@@ -136,11 +136,11 @@ npm run build
 
 ## ✅ Acceptance Criteria
 
-- [ ] `GestureHandler` import removed from `AppLayout.tsx`
-- [ ] `<GestureHandler>` wrapper replaced with direct children in `AppLayout.tsx`
-- [ ] Unused `navigate` and `useNavigationPreferences` cleaned up if no longer needed
-- [ ] `src/components/GestureHandler.tsx` deleted
-- [ ] `npm run build` passes with zero errors
-- [ ] Zero references to `GestureHandler` in codebase
-- [ ] All 5 tab routes navigate correctly
-- [ ] Vertical scrolling works on all pages
+- [x] `GestureHandler` import removed from `AppLayout.tsx`
+- [x] `<GestureHandler>` wrapper replaced with direct children in `AppLayout.tsx`
+- [x] Unused `navigate` and `useNavigationPreferences` cleaned up if no longer needed
+- [x] `src/components/GestureHandler.tsx` deleted
+- [x] `npm run build` passes with zero errors
+- [x] Zero references to `GestureHandler` in codebase
+- [x] All 5 tab routes navigate correctly
+- [x] Vertical scrolling works on all pages

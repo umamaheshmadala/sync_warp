@@ -1,7 +1,7 @@
 # STORY 13.5 — Add Global prefers-reduced-motion Guard
 
 **EPIC:** [EPIC 13 — iOS Flickering & Animation Removal](../epics/EPIC_13_iOS_Flickering_Animation_Removal.md)  
-**Status:** 📋 Ready  
+**Status:** ✅ Complete  
 **Priority:** 🟠 High  
 **Estimate:** 1 point  
 **Dependencies:** Story 13.4 (all motion libs removed, only CSS animations remain)
@@ -130,11 +130,11 @@ Add the following at the **end of the file** (after all other rules):
 
 ## ✅ Acceptance Criteria
 
-- [ ] `@media (prefers-reduced-motion: reduce)` guard added to `src/index.css`
-- [ ] Guard uses `0.01ms` duration (not `0s`) to preserve JS event callbacks
-- [ ] All CSS animations disabled when Reduce Motion is enabled
-- [ ] All CSS transitions disabled when Reduce Motion is enabled
-- [ ] `scroll-behavior: auto` applied when Reduce Motion is enabled
-- [ ] Existing 4 component guards remain untouched and functional
-- [ ] `npm run build` passes with zero errors
-- [ ] Visual verification in Chrome DevTools emulation mode
+- [x] `@media (prefers-reduced-motion: reduce)` guard added to `src/index.css`
+- [x] Guard uses `0.01ms` duration (not `0s`) to preserve JS event callbacks
+- [x] All CSS animations disabled when Reduce Motion is enabled
+- [x] All CSS transitions disabled when Reduce Motion is enabled
+- [x] `scroll-behavior: auto` applied when Reduce Motion is enabled
+- [x] Existing 4 component guards remain untouched and functional
+- [x] `npm run build` passes with zero errors
+- [x] Visual verification in Chrome DevTools emulation mode

@@ -1,6 +1,6 @@
 # 🔴 EPIC 13: iOS Flickering & Animation Removal
 
-**Status:** 📋 Planning  
+**Status:** ✅ Complete  
 **Created:** 2026-02-21  
 **Owner:** Frontend Engineering  
 **Audit Reference:** [Codebase Audit Report — Category 2 + Finding 7.1](../../.gemini/antigravity/brain/4990934d-85a5-413b-9a20-e2901b49f1fe/codebase_audit_report.md)  
@@ -93,11 +93,11 @@ Eliminate all iOS WebView flickering and animation jank by removing the framer-m
 
 ## ✅ Definition of Done
 
-- [ ] `PageTransition.tsx` deleted, no orphan imports
-- [ ] `GestureHandler` removed from all layouts
-- [ ] `BottomNavigation.tsx` uses zero framer-motion — CSS-only transitions
-- [ ] `framer-motion` and `motion` uninstalled from `package.json`
-- [ ] Zero `framer-motion` or `motion` imports in entire codebase
-- [ ] Global `prefers-reduced-motion` guard active in `index.css`
-- [ ] iOS WebView shows zero flickering on route changes
-- [ ] All 5 bottom nav routes highlight correctly
+- [x] `PageTransition.tsx` deleted, no orphan imports
+- [x] `GestureHandler` removed from all layouts
+- [x] `BottomNavigation.tsx` uses zero framer-motion — CSS-only transitions
+- [x] `framer-motion` and `motion` uninstalled from `package.json`
+- [x] Zero `framer-motion` or `motion` imports in entire codebase
+- [x] Global `prefers-reduced-motion` guard active in `index.css`
+- [x] iOS WebView shows zero flickering on route changes
+- [x] All 5 bottom nav routes highlight correctly

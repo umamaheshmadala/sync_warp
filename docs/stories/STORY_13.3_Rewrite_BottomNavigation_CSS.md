@@ -1,7 +1,7 @@
 # STORY 13.3 — Rewrite BottomNavigation to CSS-Only
 
 **EPIC:** [EPIC 13 — iOS Flickering & Animation Removal](../epics/EPIC_13_iOS_Flickering_Animation_Removal.md)  
-**Status:** 📋 Ready  
+**Status:** ✅ Complete  
 **Priority:** 🔴 Critical  
 **Estimate:** 3 points  
 **Dependencies:** Story 13.1 (PageTransition deleted, so framer-motion is no longer re-triggered per route)
@@ -242,13 +242,13 @@ Remove or simplify `isAnimating` and `lastActiveTab` if they're only used for fr
 
 ## ✅ Acceptance Criteria
 
-- [ ] Zero `framer-motion` imports in `BottomNavigation.tsx`
-- [ ] Zero `motion.*` elements in `BottomNavigation.tsx`
-- [ ] `AnimatePresence` removed (was imported but unused)
-- [ ] Nav enters with CSS `slideUp` animation
-- [ ] Active icon scales to 1.1x with CSS transition
-- [ ] Active label shifts up 1px with CSS transition
-- [ ] Ripple effect plays on tab tap via CSS `@keyframes`
-- [ ] `isAnimating` and `lastActiveTab` state removed or simplified
-- [ ] All 5 tabs highlight correctly when active
-- [ ] `npm run build` passes
+- [x] Zero `framer-motion` imports in `BottomNavigation.tsx`
+- [x] Zero `motion.*` elements in `BottomNavigation.tsx`
+- [x] `AnimatePresence` removed (was imported but unused)
+- [x] Nav enters with CSS `slideUp` animation
+- [x] Active icon scales to 1.1x with CSS transition
+- [x] Active label shifts up 1px with CSS transition
+- [x] Ripple effect plays on tab tap via CSS `@keyframes`
+- [x] `isAnimating` and `lastActiveTab` state removed or simplified
+- [x] All 5 tabs highlight correctly when active
+- [x] `npm run build` passes

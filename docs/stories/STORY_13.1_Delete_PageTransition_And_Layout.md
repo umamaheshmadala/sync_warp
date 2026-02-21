@@ -1,7 +1,7 @@
 # STORY 13.1 — Delete PageTransition.tsx & Dead Layout.tsx
 
 **EPIC:** [EPIC 13 — iOS Flickering & Animation Removal](../epics/EPIC_13_iOS_Flickering_Animation_Removal.md)  
-**Status:** 📋 Ready  
+**Status:** ✅ Complete  
 **Priority:** 🔴 Critical  
 **Estimate:** 1 point  
 **Dependencies:** None (first story, no blockers)
@@ -99,8 +99,8 @@ Run `npm run build` to confirm no file references `PageTransition` or `Layout` f
 
 ## ✅ Acceptance Criteria
 
-- [ ] `src/components/PageTransition.tsx` deleted
-- [ ] `src/components/Layout.tsx` deleted
-- [ ] `npm run build` passes with zero errors
-- [ ] Zero references to `PageTransition`, `usePageTransition`, `staggerContainer`, `staggerItem` in codebase
-- [ ] All 5 tab routes still navigate correctly (they were never using these files)
+- [x] `src/components/PageTransition.tsx` deleted
+- [x] `src/components/Layout.tsx` deleted
+- [x] `npm run build` passes with zero errors
+- [x] Zero references to `PageTransition`, `usePageTransition`, `staggerContainer`, `staggerItem` in codebase
+- [x] All 5 tab routes still navigate correctly (they were never using these files)
