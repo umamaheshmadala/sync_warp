@@ -128,31 +128,37 @@ class NetworkService {
       return // Already running
     }
 
-    this.heartbeatInterval = setInterval(async () => {
-      if (!navigator.onLine) {
-        return // Skip if browser says offline
-      }
-
-      const isConnected = await this.verifyConnectivity()
-
-      if (!isConnected) {
-        this.consecutiveFailures++
-        console.warn(`[NetworkService] Heartbeat failed (${this.consecutiveFailures}/${this.MAX_FAILURES})`)
-
-        if (this.consecutiveFailures >= this.MAX_FAILURES) {
-          console.error('[NetworkService] Max failures reached, marking as offline')
-          this.notifyNetworkChange(false)
+    const startTick = () => {
+      this.heartbeatInterval = setTimeout(async () => {
+        if (!navigator.onLine) {
+          startTick() // Skip if browser says offline, but keep heartbeat alive
+          return
         }
-      } else {
-        if (this.consecutiveFailures > 0) {
-          console.log('[NetworkService] Heartbeat recovered')
-          this.consecutiveFailures = 0
-          this.notifyNetworkChange(true)
-        }
-      }
-    }, this.HEARTBEAT_INTERVAL)
 
-    console.log('[NetworkService] Heartbeat started (120s interval)')
+        const isConnected = await this.verifyConnectivity()
+
+        if (!isConnected) {
+          this.consecutiveFailures++
+          console.warn(`[NetworkService] Heartbeat failed (${this.consecutiveFailures}/${this.MAX_FAILURES})`)
+
+          if (this.consecutiveFailures >= this.MAX_FAILURES) {
+            console.error('[NetworkService] Max failures reached, marking as offline')
+            this.notifyNetworkChange(false)
+          }
+        } else {
+          if (this.consecutiveFailures > 0) {
+            console.log('[NetworkService] Heartbeat recovered')
+            this.consecutiveFailures = 0
+            this.notifyNetworkChange(true)
+          }
+        }
+
+        startTick() // schedule next execution
+      }, this.HEARTBEAT_INTERVAL)
+    }
+
+    startTick()
+    console.log('[NetworkService] Heartbeat started (120s interval) using setTimeout')
   }
 
   /**
@@ -160,7 +166,7 @@ class NetworkService {
    */
   private stopHeartbeat(): void {
     if (this.heartbeatInterval) {
-      clearInterval(this.heartbeatInterval)
+      clearTimeout(this.heartbeatInterval)
       this.heartbeatInterval = null
       console.log('[NetworkService] Heartbeat stopped')
     }

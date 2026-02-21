@@ -57,7 +57,7 @@ interface UseRateLimitReturn {
 export function useRateLimit(options: UseRateLimitOptions): UseRateLimitReturn {
   const { endpoint, autoCheck = false, pollInterval } = options;
   const { user } = useAuthStore();
-  
+
   const [rateLimitInfo, setRateLimitInfo] = useState<RateLimitResult | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
@@ -74,7 +74,7 @@ export function useRateLimit(options: UseRateLimitOptions): UseRateLimitReturn {
         endpoint,
         user?.id
       );
-      
+
       setRateLimitInfo(result);
       return result;
     } catch (err) {
@@ -98,7 +98,7 @@ export function useRateLimit(options: UseRateLimitOptions): UseRateLimitReturn {
         endpoint,
         user?.id
       );
-      
+
       // Refresh rate limit info after recording request
       await checkRateLimit();
     } catch (err) {
@@ -120,11 +120,18 @@ export function useRateLimit(options: UseRateLimitOptions): UseRateLimitReturn {
   // Poll for rate limit status if interval is set
   useEffect(() => {
     if (pollInterval && pollInterval > 0) {
-      const interval = setInterval(() => {
-        checkRateLimit();
-      }, pollInterval);
+      let timeoutId: ReturnType<typeof setTimeout>;
 
-      return () => clearInterval(interval);
+      const tick = () => {
+        checkRateLimit().finally(() => {
+          timeoutId = setTimeout(tick, pollInterval);
+        });
+      };
+
+      // Start the timer
+      timeoutId = setTimeout(tick, pollInterval);
+
+      return () => clearTimeout(timeoutId);
     }
   }, [pollInterval, checkRateLimit]);
 

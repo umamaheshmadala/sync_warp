@@ -32,7 +32,7 @@ interface UseProfileCompletionReturn {
   percentage: number;
   missingFields: string[];
   recommendations: string[];
-  
+
   // Section breakdowns
   sectionsCompletion: {
     basics: number;
@@ -40,17 +40,17 @@ interface UseProfileCompletionReturn {
     metrics: number;
     marketing_goals: number;
   };
-  
+
   // Business data
   businessData: EnhancedBusinessData | null;
-  
+
   // Actions
   refresh: () => Promise<void>;
   updateSection: (
     section: 'customer_profile' | 'metrics' | 'marketing_goals',
     data: any
   ) => Promise<boolean>;
-  
+
   // Status
   loading: boolean;
   updating: boolean;
@@ -65,7 +65,7 @@ export function useProfileCompletion({
   autoRefresh = false,
   refreshInterval = 30000
 }: UseProfileCompletionOptions): UseProfileCompletionReturn {
-  
+
   const [businessData, setBusinessData] = useState<EnhancedBusinessData | null>(null);
   const [completionData, setCompletionData] = useState<ProfileCompletionData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -80,11 +80,18 @@ export function useProfileCompletion({
   // Auto-refresh effect
   useEffect(() => {
     if (autoRefresh) {
-      const interval = setInterval(() => {
-        loadProfileData();
-      }, refreshInterval);
-      
-      return () => clearInterval(interval);
+      let timeoutId: ReturnType<typeof setTimeout>;
+
+      const tick = () => {
+        loadProfileData().finally(() => {
+          timeoutId = setTimeout(tick, refreshInterval);
+        });
+      };
+
+      // Start the timer
+      timeoutId = setTimeout(tick, refreshInterval);
+
+      return () => clearTimeout(timeoutId);
     }
   }, [autoRefresh, refreshInterval, businessId]);
 
@@ -298,8 +305,8 @@ export function useProfileCompletion({
       const tableName = section === 'customer_profile'
         ? 'business_customer_profiles'
         : section === 'metrics'
-        ? 'business_metrics'
-        : 'business_marketing_goals';
+          ? 'business_metrics'
+          : 'business_marketing_goals';
 
       // Upsert to appropriate table
       const { error: upsertError } = await supabase
@@ -352,17 +359,17 @@ export function useProfileCompletion({
     percentage,
     missingFields,
     recommendations,
-    
+
     // Section breakdowns
     sectionsCompletion,
-    
+
     // Business data
     businessData,
-    
+
     // Actions
     refresh,
     updateSection,
-    
+
     // Status
     loading,
     updating,

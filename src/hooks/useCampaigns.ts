@@ -372,8 +372,14 @@ export function useCampaignAnalytics(campaignId?: string) {
     fetchAnalytics();
 
     // Refresh analytics every 30 seconds
-    const interval = setInterval(fetchAnalytics, 30000);
-    return () => clearInterval(interval);
+    let timeoutId: ReturnType<typeof setTimeout>;
+    const tick = () => {
+      fetchAnalytics().finally(() => {
+        timeoutId = setTimeout(tick, 30000);
+      });
+    };
+    timeoutId = setTimeout(tick, 30000);
+    return () => clearTimeout(timeoutId);
   }, [fetchAnalytics]);
 
   return {

@@ -117,12 +117,26 @@ export const usePresenceStore = create<PresenceState>((set, get) => {
                     .eq('id', uid);
             };
 
-            // Heartbeat (120s)
-            heartbeatInterval = setInterval(() => {
-                if (document.visibilityState === 'visible') {
-                    trackPresence(userId);
+            // Heartbeat (120s) with recursive setTimeout
+            const startHeartbeat = () => {
+                if (heartbeatInterval) return; // Prevent multiple loops
+                const tick = () => {
+                    if (document.visibilityState === 'visible') {
+                        trackPresence(userId);
+                    }
+                    heartbeatInterval = setTimeout(tick, 120000);
+                };
+                heartbeatInterval = setTimeout(tick, 120000);
+            };
+
+            const stopHeartbeat = () => {
+                if (heartbeatInterval) {
+                    clearTimeout(heartbeatInterval);
+                    heartbeatInterval = null;
                 }
-            }, 120000);
+            };
+
+            startHeartbeat();
 
             // Web Visibility
             document.addEventListener('visibilitychange', () => {
@@ -138,21 +152,10 @@ export const usePresenceStore = create<PresenceState>((set, get) => {
                 appStateListener = App.addListener('appStateChange', async ({ isActive }) => {
                     if (isActive) {
                         trackPresence(userId);
-                        // Resume heartbeat
-                        if (!heartbeatInterval) {
-                            heartbeatInterval = setInterval(() => {
-                                if (document.visibilityState === 'visible') {
-                                    trackPresence(userId);
-                                }
-                            }, 120000);
-                        }
+                        startHeartbeat(); // Resume heartbeat
                     } else {
                         untrackPresence(userId);
-                        // Pause heartbeat in background
-                        if (heartbeatInterval) {
-                            clearInterval(heartbeatInterval);
-                            heartbeatInterval = null;
-                        }
+                        stopHeartbeat(); // Pause heartbeat in background
                     }
                 });
             }
@@ -167,7 +170,7 @@ export const usePresenceStore = create<PresenceState>((set, get) => {
 
         cleanup: async () => {
             console.log('[PresenceStore] Cleaning up');
-            if (heartbeatInterval) clearInterval(heartbeatInterval);
+            if (heartbeatInterval) clearTimeout(heartbeatInterval);
             if (appStateListener) appStateListener.remove();
 
             if (channel) {

@@ -155,12 +155,22 @@ export function ReachEstimator({
     fetchEstimate();
 
     // Set up periodic updates
-    const intervalId = setInterval(fetchEstimate, updateInterval);
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    const tick = () => {
+      fetchEstimate().finally(() => {
+        if (isMounted) {
+          timeoutId = setTimeout(tick, updateInterval);
+        }
+      });
+    };
+
+    timeoutId = setTimeout(tick, updateInterval);
 
     return () => {
       isMounted = false;
       controller.abort();
-      clearInterval(intervalId);
+      clearTimeout(timeoutId);
     };
   }, [targetingRules, cityId, updateInterval]);
 

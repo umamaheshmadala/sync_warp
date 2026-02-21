@@ -71,13 +71,20 @@ export function useReviewStats(options: UseReviewStatsOptions = {}): UseReviewSt
 
     console.log(`🔄 Setting up auto-refresh every ${refreshInterval}ms`);
 
-    const interval = setInterval(() => {
-      loadStats();
-    }, refreshInterval);
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    const tick = () => {
+      loadStats().finally(() => {
+        timeoutId = setTimeout(tick, refreshInterval);
+      });
+    };
+
+    // Start the timer
+    timeoutId = setTimeout(tick, refreshInterval);
 
     return () => {
       console.log('🔄 Cleaning up auto-refresh');
-      clearInterval(interval);
+      clearTimeout(timeoutId);
     };
   }, [autoRefresh, refreshInterval, loadStats]);
 
