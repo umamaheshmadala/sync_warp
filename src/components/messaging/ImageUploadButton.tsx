@@ -28,7 +28,9 @@ export function ImageUploadButton({
   const cancelledRef = useRef<boolean>(false) // Track cancellation
   const { uploadImage, isUploading, cancelUpload } = useImageUpload()
   const { sendMessage } = useSendMessage()
-  const { addOptimisticMessage, removeMessage, updateMessageProgress } = useMessagingStore()
+  const addOptimisticMessage = useMessagingStore((state) => state.addOptimisticMessage);
+  const removeMessage = useMessagingStore((state) => state.removeMessage);
+  const updateMessageProgress = useMessagingStore((state) => state.updateMessageProgress);
   const currentUserId = useAuthStore(state => state.user?.id)
 
   const [showPreview, setShowPreview] = useState(false)

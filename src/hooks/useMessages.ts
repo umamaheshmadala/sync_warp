@@ -46,7 +46,8 @@ export function useMessages(conversationId: string | null) {
   const queryClient = useQueryClient()
 
   // Actions are now accessed statically to prevent re-renders
-  // const { addMessage, updateMessage } = useMessagingStore()
+  // const addMessage = useMessagingStore((state) => state.addMessage);
+ const updateMessage = useMessagingStore((state) => state.updateMessage);
 
   const hasMore = useRef(true)
   const [isFetchingOlder, setIsFetchingOlder] = useState(false)

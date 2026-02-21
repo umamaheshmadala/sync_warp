@@ -58,7 +58,8 @@ export default function ChatScreen() {
   const { conversationId } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
-  const { updateConversation, setActiveConversation } = useMessagingStore() // For clearing unread count and tracking active
+  const updateConversation = useMessagingStore((state) => state.updateConversation);
+  const setActiveConversation = useMessagingStore((state) => state.setActiveConversation); // For clearing unread count and tracking active
   // Set active conversation on mount
   useEffect(() => {
     if (conversationId) {
@@ -162,7 +163,7 @@ export default function ChatScreen() {
   } = useMessageSearch(conversationId || undefined)
 
   // Determine Other User ID
-  const { conversations } = useMessagingStore()
+  const conversations = useMessagingStore((state) => state.conversations);
   const conversation = conversations.find(c => c.conversation_id === conversationId)
   const otherUserId = conversation
     ? (conversation.participant1_id === currentUserId ? conversation.participant2_id : conversation.participant1_id)

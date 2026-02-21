@@ -35,7 +35,7 @@ const ContactsSidebar: React.FC<ContactsSidebarProps> = ({ isOpen, onClose }) =>
     acceptFriendRequest,
     rejectFriendRequest
   } = useFriends()
-  const { conversations } = useMessagingStore()
+  const conversations = useMessagingStore((state) => state.conversations);
   const { triggerHaptic } = useHapticFeedback()
 
   const [activeTab, setActiveTab] = useState<TabType>('friends')

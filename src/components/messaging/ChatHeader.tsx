@@ -38,7 +38,9 @@ interface ChatHeaderProps {
 export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { conversations, togglePinOptimistic, toggleArchiveOptimistic } = useMessagingStore()
+  const conversations = useMessagingStore((state) => state.conversations);
+  const togglePinOptimistic = useMessagingStore((state) => state.togglePinOptimistic);
+  const toggleArchiveOptimistic = useMessagingStore((state) => state.toggleArchiveOptimistic);
   const { friends } = useNewFriends()
   const [showDeleteDialog, setShowDeleteDialog] = React.useState(false)
   const [showClearDialog, setShowClearDialog] = React.useState(false)

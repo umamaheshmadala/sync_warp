@@ -21,7 +21,7 @@ export const FriendPickerModal: React.FC<FriendPickerModalProps> = ({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: friendsResponse, isLoading: loading } = useFriends();
-  const { conversations } = useMessagingStore();
+  const conversations = useMessagingStore((state) => state.conversations);
   const { triggerHaptic } = useHapticFeedback();
 
   const [searchQuery, setSearchQuery] = useState('');

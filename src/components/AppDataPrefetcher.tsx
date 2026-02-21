@@ -22,7 +22,7 @@ import { syncFavoritesFromDatabase } from '../hooks/useUnifiedFavorites';
 export const AppDataPrefetcher = () => {
     const user = useAuthStore((state) => state.user);
     const queryClient = useQueryClient();
-    const { setConversations } = useMessagingStore();
+    const setConversations = useMessagingStore((state) => state.setConversations);
     const hasHiddenSplash = useRef(false);
 
     // Helper to safely hide splash

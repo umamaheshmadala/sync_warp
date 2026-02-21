@@ -37,16 +37,14 @@ import { App } from '@capacitor/app'
  */
 export function useConversations() {
   const { isMobile } = usePlatform()
-  const {
-    conversations,
-    isLoadingConversations,
-    setLoadingConversations,
-    setConversations,
-    upsertConversation,
-    updateConversation,
-    addConversation,
-    removeConversation
-  } = useMessagingStore()
+  const conversations = useMessagingStore((state) => state.conversations);
+  const isLoadingConversations = useMessagingStore((state) => state.isLoadingConversations);
+  const setLoadingConversations = useMessagingStore((state) => state.setLoadingConversations);
+  const setConversations = useMessagingStore((state) => state.setConversations);
+  const upsertConversation = useMessagingStore((state) => state.upsertConversation);
+  const updateConversation = useMessagingStore((state) => state.updateConversation);
+  const addConversation = useMessagingStore((state) => state.addConversation);
+  const removeConversation = useMessagingStore((state) => state.removeConversation);
 
   const isAppActive = useRef(true)
   const pollInterval = useRef<NodeJS.Timeout>()

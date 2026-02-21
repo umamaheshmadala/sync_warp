@@ -1,7 +1,7 @@
 # STORY 15.2 — Add Zustand Selectors to All 15+ `useMessagingStore()` Call Sites
 
 **EPIC:** [EPIC 15 — Rendering Performance & State Management](../epics/EPIC_15_Rendering_Performance_State_Management.md)  
-**Status:** 📋 Ready  
+**Status:** ✅ COMPLETE  
 **Priority:** 🔴 Critical  
 **Estimate:** 3 points  
 **Dependencies:** None (can run in parallel with 15.1)  
