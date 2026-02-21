@@ -15,10 +15,10 @@
 Eliminate all iOS WebView flickering and animation jank by removing the framer-motion animation layer entirely and replacing it with lightweight CSS transitions. This epic also adds a global `prefers-reduced-motion` accessibility guard (WCAG 2.1 AA compliance).
 
 ### Core Objectives:
-1. **Delete `PageTransition.tsx`** — triple animation per route change causing flickering on iOS
-2. **Rewrite `BottomNavigation.tsx`** — replace 21 framer-motion nodes with CSS transitions
-3. **Remove `framer-motion` entirely** — eliminate ~60KB duplicate bundle weight
-4. **Remove `GestureHandler` wrapper** — unused wrapper around entire app
+1. **Delete `PageTransition.tsx` + dead `Layout.tsx`** — triple animation per route causing flickering. `Layout.tsx` is dead code (never imported; `AppLayout.tsx` is the live layout)
+2. **Rewrite `BottomNavigation.tsx`** — replace 4 framer-motion nodes with CSS transitions
+3. **Remove `framer-motion` from 92 files** — eliminate ~60KB bundle weight (both `framer-motion` ^12.23.18 and `motion` ^12.23.22 installed)
+4. **Remove `GestureHandler` wrapper** — wraps entire app in `AppLayout.tsx` for edge-swipe detection (iOS handles natively)
 5. **Add global `prefers-reduced-motion`** — WCAG 2.1 AA compliance
 
 ---
@@ -29,9 +29,9 @@ Eliminate all iOS WebView flickering and animation jank by removing the framer-m
 |--------|--------|---------|
 | iOS route-change flickering | Zero flicker | Triple animation per nav |
 | Bundle size (animation libs) | 0 KB | ~60KB (framer-motion + motion) |
-| framer-motion imports | 0 files | 50+ component files |
+| framer-motion imports | 0 files | 92 component files |
 | `prefers-reduced-motion` coverage | 100% global | 4 CSS files only |
-| BottomNavigation motion nodes | 0 | 21 |
+| BottomNavigation motion nodes | 0 | 4 (nav, icon div, label span, ripple div) |
 
 ---
 
@@ -51,10 +51,10 @@ Eliminate all iOS WebView flickering and animation jank by removing the framer-m
 
 | # | Story | Priority | Estimate | Dependencies |
 |---|-------|----------|----------|--------------|
-| 13.1 | Delete `PageTransition.tsx` and unwrap from `Layout.tsx` | 🔴 Critical | 1 pt | None |
-| 13.2 | Remove `GestureHandler` from `Layout.tsx` and `AppLayout.tsx` | 🔴 Critical | 1 pt | None |
-| 13.3 | Rewrite `BottomNavigation.tsx` — framer-motion → CSS transitions | 🔴 Critical | 3 pts | 13.1 |
-| 13.4 | Remove `framer-motion` from all 50+ component files | 🔴 Critical | 5 pts | 13.3 |
+| 13.1 | Delete dead `PageTransition.tsx` + dead `Layout.tsx` (never imported) | 🔴 Critical | 1 pt | None |
+| 13.2 | Remove `GestureHandler` wrapper from `AppLayout.tsx`; delete `GestureHandler.tsx` | 🔴 Critical | 1 pt | None |
+| 13.3 | Rewrite `BottomNavigation.tsx` — 4 framer-motion nodes → CSS transitions | 🔴 Critical | 3 pts | 13.1 |
+| 13.4 | Remove `framer-motion` from remaining 89 files; uninstall both packages | 🔴 Critical | 5 pts | 13.3 |
 | 13.5 | Add global `prefers-reduced-motion` guard in `index.css` | 🟠 High | 1 pt | 13.4 |
 
 ### 📌 Recommended Execution Order
@@ -70,13 +70,14 @@ Eliminate all iOS WebView flickering and animation jank by removing the framer-m
 
 | File | Action |
 |------|--------|
-| `src/components/PageTransition.tsx` | **DELETE** |
-| `src/components/Layout.tsx` | MODIFY — remove PageTransition + GestureHandler imports/wrappers |
+| `src/components/PageTransition.tsx` | **DELETE** (165 lines, 4 exports — all dead) |
+| `src/components/Layout.tsx` | **DELETE** (280 lines — dead code, never imported anywhere) |
+| `src/components/GestureHandler.tsx` | **DELETE** (221 lines — only used by AppLayout) |
 | `src/components/layout/AppLayout.tsx` | MODIFY — remove GestureHandler wrapper |
-| `src/components/BottomNavigation.tsx` | MODIFY — rewrite all motion→CSS |
-| `src/index.css` | MODIFY — add `prefers-reduced-motion` media query |
-| 50+ component files | MODIFY — remove framer-motion imports and `motion.*` elements |
-| `package.json` | MODIFY — uninstall `framer-motion` and `motion` |
+| `src/components/BottomNavigation.tsx` | MODIFY — replace 4 motion nodes → CSS |
+| `src/index.css` | MODIFY — add animation utilities + `prefers-reduced-motion` |
+| 89 component files | MODIFY — remove framer-motion imports and `motion.*` elements |
+| `package.json` | MODIFY — uninstall `framer-motion` (^12.23.18) and `motion` (^12.23.22) |
 
 ---
 
