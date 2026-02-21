@@ -66,6 +66,9 @@ function AppContent() {
 
     if (!Capacitor.isNativePlatform()) return
 
+    // Disable backdrop-blur on native mobile for GPU performance (Story 14.3)
+    document.body.classList.add('native-platform');
+
     // Cap Text Zoom to 1.2x to prevent UI clutter
     TextZoom.getPreferred().then((value) => {
       console.log('📱 System Text Zoom:', value.value);
