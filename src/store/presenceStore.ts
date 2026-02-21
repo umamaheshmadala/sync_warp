@@ -117,12 +117,12 @@ export const usePresenceStore = create<PresenceState>((set, get) => {
                     .eq('id', uid);
             };
 
-            // Heartbeat (30s)
+            // Heartbeat (120s)
             heartbeatInterval = setInterval(() => {
                 if (document.visibilityState === 'visible') {
                     trackPresence(userId);
                 }
-            }, 30000);
+            }, 120000);
 
             // Web Visibility
             document.addEventListener('visibilitychange', () => {
@@ -138,8 +138,21 @@ export const usePresenceStore = create<PresenceState>((set, get) => {
                 appStateListener = App.addListener('appStateChange', async ({ isActive }) => {
                     if (isActive) {
                         trackPresence(userId);
+                        // Resume heartbeat
+                        if (!heartbeatInterval) {
+                            heartbeatInterval = setInterval(() => {
+                                if (document.visibilityState === 'visible') {
+                                    trackPresence(userId);
+                                }
+                            }, 120000);
+                        }
                     } else {
                         untrackPresence(userId);
+                        // Pause heartbeat in background
+                        if (heartbeatInterval) {
+                            clearInterval(heartbeatInterval);
+                            heartbeatInterval = null;
+                        }
                     }
                 });
             }

@@ -28,7 +28,7 @@ class NetworkService {
 
   // Heartbeat for accurate connectivity detection (Industry Best Practice: Slack/Discord)
   private heartbeatInterval: NodeJS.Timeout | null = null
-  private readonly HEARTBEAT_INTERVAL = 30000 // 30 seconds
+  private readonly HEARTBEAT_INTERVAL = 120000 // 120 seconds
   private readonly HEARTBEAT_TIMEOUT = 10000 // 10 seconds
   private consecutiveFailures = 0
   private readonly MAX_FAILURES = 3 // 3 failed pings = offline
@@ -82,7 +82,7 @@ class NetworkService {
       if (!document.hidden) {
         console.log('[NetworkService] Tab visible, checking network...')
         this.notifyAppStateChange(true)
-        
+
         // Verify connectivity when tab becomes visible
         if (navigator.onLine) {
           await this.verifyConnectivity()
@@ -134,7 +134,7 @@ class NetworkService {
       }
 
       const isConnected = await this.verifyConnectivity()
-      
+
       if (!isConnected) {
         this.consecutiveFailures++
         console.warn(`[NetworkService] Heartbeat failed (${this.consecutiveFailures}/${this.MAX_FAILURES})`)
@@ -152,7 +152,7 @@ class NetworkService {
       }
     }, this.HEARTBEAT_INTERVAL)
 
-    console.log('[NetworkService] Heartbeat started (30s interval)')
+    console.log('[NetworkService] Heartbeat started (120s interval)')
   }
 
   /**
