@@ -6,6 +6,8 @@ import { useSwipeToReply } from '../../hooks/useSwipeToReply'
 import { hapticService } from '../../services/hapticService'
 import { RefreshCw, CornerDownRight, Forward, Pin } from 'lucide-react'
 import { MessageStatusIcon } from './MessageStatusIcon'
+import { MessageStatus } from './MessageStatus'
+import { MessageMedia } from './MessageMedia'
 import { OptimisticImageMessage } from './OptimisticImageMessage'
 import { MediaPlaceholder } from './MediaPlaceholder'
 import { OptimisticVideoMessage } from './OptimisticVideoMessage'
@@ -92,7 +94,7 @@ interface MessageBubbleProps {
  * />
  * ```
  */
-export function MessageBubble({
+export const MessageBubble = React.memo(function MessageBubble({
   message,
   isOwn,
   showTimestamp = true,
@@ -667,248 +669,39 @@ export function MessageBubble({
               )}
             >
               {/* Message Content */}
-              {message.type === 'image' ? (
-                message.media_urls && message.media_urls.length > 0 ? (
-                  message._optimistic ? (
-                    // Optimistic UI: Show grid of thumbnails with loading state
-                    <div className={cn(
-                      "grid gap-1",
-                      message.media_urls.length === 1 ? "grid-cols-1" :
-                        message.media_urls.length === 2 ? "grid-cols-2" :
-                          "grid-cols-2",
-                      // Limit width for grids to prevent them being too large
-                      message.media_urls.length > 1 ? "max-w-[300px]" : "max-w-sm"
-                    )}>
-                      {message.media_urls.slice(0, 4).map((url, index) => (
-                        <div key={index} className={cn(
-                          "relative aspect-square overflow-hidden",
-                          message.media_urls!.length === 3 && index === 0 ? "col-span-2 aspect-video" : "",
-                          "rounded-lg"
-                        )}>
-                          <OptimisticImageMessage
-                            thumbnailUrl={url}
-                            fullResUrl={url}
-                            uploadProgress={message._uploadProgress || 0}
-                            status={message._failed ? 'failed' : 'uploading'}
-                            caption={index === message.media_urls!.length - 1 ? content : undefined} // Show caption only on last or wrapper? Optimistic component handles caption internally, might duplication. Let's hide caption in individual items and show it below grid if possible, but OptimisticImageMessage is designed to be the message body. 
-                            // Actually, OptimisticImageMessage includes the specific UI. We might need a simpler wrapper for grid items.
-                            // Re-using OptimisticImageMessage for each item might look weird if each has progress bar.
-                            // But usually upload is one block. 
-                            // For simplicity in this iteration, let's assume all share same progress.
-                            isOwn={isOwn}
-                            onRetry={handleRetryUpload}
-                            onCancel={() => {
-                              if (message._tempId) {
-                                console.log('🛑 User cancelled upload via UI')
-                                useMessagingStore.getState().updateMessage(message.conversation_id, message._tempId, {
-                                  _failed: true,
-                                  _uploadProgress: 0
-                                })
-                              }
-                            }}
-                            // Hide caption for grid items, we'll show it below
-                            hideCaption={true}
-                          />
-                          {/* Overflow Count for 5+ images */}
-                          {index === 3 && message.media_urls!.length > 4 && (
-                            <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-lg">
-                              <span className="text-white text-2xl font-bold">
-                                +{message.media_urls!.length - 4}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                      {/* Caption for optimistic message */}
-                      {content && (
-                        <div className={cn("col-span-full pt-1", isOwn ? "text-right" : "text-left")}>
-                          <ExpandableText content={content} limit={40} className="text-sm" isOwn={isOwn} />
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    // Regular image display with lightbox and grid
-                    <div className="space-y-1">
-                      <div className={cn(
-                        "grid gap-1",
-                        message.media_urls.length === 1 ? "grid-cols-1" :
-                          message.media_urls.length === 2 ? "grid-cols-2" :
-                            "grid-cols-2",
-                        // Limit width for grids to prevent them being too large
-                        message.media_urls.length > 1 ? "max-w-[300px]" : "max-w-sm"
-                      )}>
-                        {message.media_urls.slice(0, 4).map((url, index) => {
-                          const isSingle = message.media_urls!.length === 1
-                          const hasDim = isSingle && message.media_width && message.media_height
+              {message.type === 'image' || message.type === 'video' ? (
+                <MessageMedia
+                  message={message}
+                  isOwn={isOwn}
+                  content={content}
+                  onRetryUpload={handleRetryUpload}
+                  onImageClick={(index) => {
+                    const conversationMessages = useMessagingStore.getState().messages.get(message.conversation_id) || []
+                    const allImages = []
+                    let globalIndex = 0
+                    let found = false
 
-                          // Open lightbox handler
-                          const handleImageClick = () => {
-                            const conversationMessages = useMessagingStore.getState().messages.get(message.conversation_id) || []
-                            const allImages: string[] = []
-                            let globalIndex = 0
-                            let found = false
-
-                            conversationMessages.forEach((msg) => {
-                              if (msg.type === 'image' && Array.isArray(msg.media_urls) && msg.media_urls.length > 0 && !msg._optimistic) {
-                                if (msg.id === message.id) {
-                                  globalIndex = allImages.length + index
-                                  found = true
-                                }
-                                allImages.push(...msg.media_urls)
-                              }
-                            })
-
-                            if (!found && message.media_urls) {
-                              allImages.push(...message.media_urls)
-                              globalIndex = index
-                            }
-
-                            setLightboxImages(allImages)
-                            setLightboxInitialIndex(globalIndex)
-                            setLightboxOpen(true)
-                          }
-
-                          // Single image: wrap in MediaPlaceholder for zero-CLS (Story 8.12.5)
-                          if (isSingle) {
-                            return (
-                              <div
-                                key={index}
-                                className="relative cursor-pointer hover:opacity-95 transition-opacity rounded-lg"
-                                onClick={handleImageClick}
-                              >
-                                <MediaPlaceholder
-                                  width={message.media_width}
-                                  height={message.media_height}
-                                  thumbnailUrl={message.thumbnail_url}
-                                  isLoading={!imageLoadedStates[url]}
-                                  maxWidth={300}
-                                >
-                                  <img decoding="async" 
-                                    src={url}
-                                    alt={`Image ${index + 1}`}
-                                    className="w-full h-full object-cover rounded-lg"
-                                    loading="lazy"
-                                    onLoad={() => setImageLoadedStates(prev => ({ ...prev, [url]: true }))}
-                                  />
-                                </MediaPlaceholder>
-                              </div>
-                            )
-                          }
-
-                          // Multi-image grid: use fixed aspect-square (no CLS issue)
-                          return (
-                            <div
-                              key={index}
-                              className={cn(
-                                "relative cursor-pointer overflow-hidden rounded-lg hover:opacity-95 transition-opacity aspect-square",
-                                message.media_urls!.length === 3 && index === 0 ? "col-span-2 aspect-video" : ""
-                              )}
-                              onClick={handleImageClick}
-                            >
-                              <img decoding="async" 
-                                src={url}
-                                alt={`Image ${index + 1}`}
-                                className="w-full h-full object-cover"
-                                loading="lazy"
-                              />
-                              {/* Overlay for +N */}
-                              {index === 3 && message.media_urls!.length > 4 && (
-                                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                                  <span className="text-white text-2xl font-bold">
-                                    +{message.media_urls!.length - 4}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          )
-                        })}
-                      </div>
-
-                      {content && (
-                        <ExpandableText
-                          content={content}
-                          limit={40}
-                          className="mt-1 text-sm pl-1"
-                          isOwn={isOwn}
-                        />
-                      )}
-                    </div>
-                  )
-                ) : (
-                  // Fallback for missing media URLs
-                  <div className="p-4 bg-gray-100 rounded-lg border border-gray-200 text-center min-w-[200px]">
-                    <p className="text-sm text-gray-500 italic">Image unavailable</p>
-                    <p className="text-xs text-gray-400 mt-1">Media URL missing</p>
-                    {content && (
-                      <ExpandableText
-                        content={content}
-                        limit={40}
-                        className="mt-2 text-sm text-left"
-                        isOwn={isOwn}
-                      />
-                    )}
-                  </div>
-                )
-              ) : message.type === 'video' ? (
-                // Video message display
-                message.media_urls && message.media_urls.length > 0 ? (
-                  message._optimistic ? (
-                    // Optimistic UI: Show thumbnail with loading state
-                    <OptimisticVideoMessage
-                      thumbnailUrl={message.thumbnail_url || message.media_urls[0]}
-                      fullResUrl={message.media_urls[0]}
-                      uploadProgress={message._uploadProgress || 0}
-                      status={message._failed ? 'failed' : 'uploading'}
-                      caption={content}
-                      isOwn={isOwn}
-                      onCancel={() => {
-                        // Cancel upload by marking as failed
-                        if (message._tempId) {
-                          console.log('🛑 User cancelled video upload via UI')
-                          useMessagingStore.getState().updateMessage(message.conversation_id, message._tempId, {
-                            _failed: true,
-                            _uploadProgress: 0
-                          })
+                    conversationMessages.forEach((msg) => {
+                      if (msg.type === 'image' && Array.isArray(msg.media_urls) && msg.media_urls.length > 0 && !msg._optimistic) {
+                        if (msg.id === message.id) {
+                          globalIndex = allImages.length + index
+                          found = true
                         }
-                      }}
-                    />
-                  ) : (
-                    // Regular video display with controls
-                    <div className="space-y-2">
-                      <VideoMessage
-                        id={message.id}
-                        videoUrl={message.media_urls[0]}
-                        thumbnailUrl={message.thumbnail_url}
-                        duration={undefined}
-                        width={message.media_width || undefined}
-                        height={message.media_height || undefined}
-                        onFullscreen={() => setShowVideoPlayer(true)}
-                      />
-                      {content && (
-                        <ExpandableText
-                          content={content}
-                          limit={40}
-                          className="mt-2 text-sm"
-                          isOwn={isOwn}
-                        />
-                      )}
-                    </div>
-                  )
-                ) : (
-                  // Fallback for missing video URLs
-                  <div className="p-4 bg-gray-100 rounded-lg border border-gray-200 text-center min-w-[200px]">
-                    <p className="text-sm text-gray-500 italic">Video unavailable</p>
-                    <p className="text-xs text-gray-400 mt-1">Media URL missing</p>
-                    {content && (
-                      <ExpandableText
-                        content={content}
-                        limit={40}
-                        className="mt-2 text-sm text-left"
-                        isOwn={isOwn}
-                      />
-                    )}
-                  </div>
-                )
+                        allImages.push(...msg.media_urls)
+                      }
+                    })
+
+                    if (!found && message.media_urls) {
+                      allImages.push(...message.media_urls)
+                      globalIndex = index
+                    }
+
+                    setLightboxImages(allImages)
+                    setLightboxInitialIndex(globalIndex)
+                    setLightboxOpen(true)
+                  }}
+                  onVideoFullscreen={() => setShowVideoPlayer(true)}
+                />
               ) : (
                 <div className="flex flex-col gap-2">
                   {/* Review Preview */}
@@ -989,55 +782,12 @@ export function MessageBubble({
                 </div>
               )}
               {/* Timestamp & Status Row */}
-              <div className={cn(
-                "flex items-center justify-end gap-1 mt-0.5",
-                isOwn ? "text-blue-100/80" : "text-gray-400"
-              )}>
-                {is_edited && (
-                  <EditedBadge
-                    editedAt={message.edited_at || message.updated_at || ''}
-                    isOwnMessage={isOwn}
-                  />
-                )}
-
-                {/* Pin Icon (if message is pinned) */}
-                {isMessagePinned?.(message.id) && (
-                  <Pin className={cn(
-                    "w-3 h-3 rotate-45",
-                    isOwn ? "text-blue-200" : "text-gray-400"
-                  )} />
-                )}
-
-                <span className="text-[10px]">
-                  {formatMessageTime(created_at)}
-                </span>
-
-                {/* Reported Indicator */}
-                {message.viewer_has_reported && (
-                  <span className="text-[10px] text-orange-600 font-medium ml-1">
-                    Reported
-                  </span>
-                )}
-
-                {/* Message Status Icons (for own messages) */}
-                {isOwn && (
-                  <span className="ml-0.5">
-                    <MessageStatusIcon
-                      status={_failed ? 'failed' : _optimistic ? 'sending' : (
-                        // Reciprocal privacy: if user disabled read receipts, they can't see 'read' status
-                        // Downgrade 'read' to 'delivered' to enforce fairness
-                        message.status === 'read' && showReadAsDelivered
-                          ? 'delivered'
-                          : message.status || 'sent'
-                      )}
-                      className={cn(
-                        "h-3 w-3",
-                        isOwn ? "text-blue-100/80" : "text-gray-400"
-                      )}
-                    />
-                  </span>
-                )}
-              </div>
+              <MessageStatus
+                message={message}
+                isOwn={isOwn}
+                isPinned={isMessagePinned?.(message.id)}
+                showReadAsDelivered={showReadAsDelivered}
+              />
             </div>
             {/* Message Reactions (Displays below bubble) */}
             <MessageReactions
@@ -1162,4 +912,4 @@ export function MessageBubble({
       }
     </div >
   )
-}
+})
