@@ -40,9 +40,10 @@ import { useReactions } from '../../hooks/useReactions'
 import { QuickReactionBar } from './QuickReactionBar'
 import { MessageReactions } from './MessageReactions'
 import { ClickableUrl } from './ClickableUrl'
-import { parseMessageContent } from '../../utils/urlUtils'
 import { ExpandableText } from './ExpandableText'
 import { MessageTextContent } from './MessageTextContent'
+import { QuotedMessage } from './QuotedMessage'
+import { useMessageRetry } from '../../hooks/useMessageRetry'
 
 interface MessageBubbleProps {
   message: Message
@@ -216,93 +217,7 @@ export const MessageBubble = React.memo(function MessageBubble({
   } = message
 
   // Handle retry for failed image uploads
-  const handleRetryUpload = async () => {
-    if (!message.media_urls?.[0]) return
-
-    console.log('🔄 Retrying message:', message._tempId)
-    const blobUrl = message.media_urls[0]
-    const conversationId = message.conversation_id
-    const tempId = message._tempId
-
-    try {
-      // 1. Reset state to uploading
-      useMessagingStore.getState().updateMessage(conversationId, tempId!, {
-        _failed: false,
-        _uploadProgress: 0
-      })
-
-      // 2. Fetch blob
-      const response = await fetch(blobUrl)
-      const blob = await response.blob()
-      const file = new File([blob], "retry_image.jpg", { type: blob.type })
-
-      // 3. Upload
-      const { url, thumbnailUrl } = await mediaUploadService.uploadImage(
-        file,
-        conversationId,
-        (progress) => {
-          // Check for cancellation during retry
-          const currentMessages = useMessagingStore.getState().messages[conversationId] || []
-          const currentMsg = currentMessages.find(m => m._tempId === tempId)
-          if (currentMsg?._failed) {
-            throw new Error('Cancelled')
-          }
-
-          useMessagingStore.getState().updateMessage(conversationId, tempId!, {
-            _uploadProgress: progress.percentage
-          })
-        }
-      )
-
-      // Check for cancellation AFTER upload completes
-      const currentMsg = useMessagingStore.getState().messages[conversationId]?.find(m => m._tempId === tempId)
-      if (currentMsg?._failed) {
-        console.log('🛑 Retry cancelled after upload, aborting send')
-        await mediaUploadService.deleteImage(url)
-        await mediaUploadService.deleteImage(thumbnailUrl)
-        return
-      }
-
-      // 4. Get Public URLs
-      const { data: { publicUrl } } = supabase.storage
-        .from('message-attachments')
-        .getPublicUrl(url)
-
-      const { data: { publicUrl: thumbPublicUrl } } = supabase.storage
-        .from('message-attachments')
-        .getPublicUrl(thumbnailUrl)
-
-      console.log('🔄 Retry sending message with mediaUrls:', [publicUrl])
-
-      // 5. Send Message
-      await messagingService.sendMessage({
-        conversationId,
-        content: message.content || '',
-        type: 'image',
-        mediaUrls: [publicUrl],
-        thumbnailUrl: thumbPublicUrl
-      })
-
-      // 6. Remove optimistic message
-      useMessagingStore.getState().removeMessage(conversationId, tempId!)
-
-      toast.success('Image sent successfully')
-
-    } catch (error) {
-      console.error('Retry failed:', error)
-      if (error instanceof Error && error.message === 'Cancelled') {
-        console.log('⏹️ Retry cancelled')
-      } else {
-        toast.error('Retry failed')
-      }
-
-      // Mark as failed again
-      useMessagingStore.getState().updateMessage(conversationId, tempId!, {
-        _failed: true,
-        _uploadProgress: 0
-      })
-    }
-  }
+  const { handleRetryUpload } = useMessageRetry({ message })
 
   // Refactored Context Menu Handler (works with both native context menu event and our Long Press)
   const handleContextMenu = (e: React.MouseEvent | React.TouchEvent | Event) => {
@@ -416,31 +331,7 @@ export const MessageBubble = React.memo(function MessageBubble({
         )}
 
         {/* Quoted Message (if reply) */}
-        {message.parent_message && (
-          <button
-            onClick={() => onQuoteClick?.(message.parent_message!.id)}
-            className={cn(
-              'flex items-start gap-2 p-2 rounded text-xs max-w-full',
-              'border-l-2 hover:bg-gray-100 transition-colors text-left',
-              isOwn
-                ? 'bg-blue-100 border-blue-400 self-end'
-                : 'bg-gray-100 border-gray-400 self-start'
-            )}
-          >
-            <CornerDownRight className="w-3 h-3 mt-0.5 flex-shrink-0 text-gray-500" />
-            <div className="flex-1 min-w-0">
-              <div className="font-medium text-gray-700 truncate">
-                {message.parent_message.sender_name}
-              </div>
-              <div className="text-gray-600 truncate">
-                {message.parent_message.type === 'text'
-                  ? message.parent_message.content
-                  : `[${message.parent_message.type}]`
-                }
-              </div>
-            </div>
-          </button>
-        )}
+        <QuotedMessage message={message} isOwn={isOwn} onQuoteClick={onQuoteClick} />
 
         <div className="flex items-end gap-2">
           {/* Failed Retry Button */}
