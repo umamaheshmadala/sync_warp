@@ -16,7 +16,7 @@ import { DeleteAccountModal } from './DeleteAccountModal';
 export const ProfileSettings: React.FC = () => {
   const profile = useAuthStore((state) => state.profile);
   const user = useAuthStore((state) => state.user);
-  const { updateProfile } = useAuthStore();
+  const updateProfile = useAuthStore(s => s.updateProfile);
   const { preferences: navPreferences, updatePreference } = useNavigationPreferences();
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);

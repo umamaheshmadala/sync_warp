@@ -27,7 +27,7 @@ const ResetPassword: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const loading = useAuthStore((state) => state.loading);
-  const { resetPassword } = useAuthStore();
+  const resetPassword = useAuthStore(s => s.resetPassword);
   const [authError, setAuthError] = useState<string | null>(null);
   const [isPasswordReset, setIsPasswordReset] = useState(false);
   const [showPassword, setShowPassword] = useState(false);

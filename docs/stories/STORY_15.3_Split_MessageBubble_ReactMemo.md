@@ -1,7 +1,7 @@
 # STORY 15.3 — Split `MessageBubble.tsx` (1,166 lines) and Wrap with `React.memo`
 
 **EPIC:** [EPIC 15 — Rendering Performance & State Management](../epics/EPIC_15_Rendering_Performance_State_Management.md)  
-**Status:** 📋 Ready  
+**Status:** ✅ Complete  
 **Priority:** 🔴 Critical  
 **Estimate:** 5 points  
 **Dependencies:** Story 15.2 (messaging selectors must be fixed first)  

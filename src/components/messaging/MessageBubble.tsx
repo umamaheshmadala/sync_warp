@@ -278,7 +278,7 @@ export const MessageBubble = React.memo(function MessageBubble({
         conversationId,
         (progress) => {
           // Check for cancellation during retry
-          const currentMessages = useMessagingStore.getState().messages.get(conversationId) || []
+          const currentMessages = useMessagingStore.getState().messages[conversationId] || []
           const currentMsg = currentMessages.find(m => m._tempId === tempId)
           if (currentMsg?._failed) {
             throw new Error('Cancelled')
@@ -291,7 +291,7 @@ export const MessageBubble = React.memo(function MessageBubble({
       )
 
       // Check for cancellation AFTER upload completes
-      const currentMsg = useMessagingStore.getState().messages.get(conversationId)?.find(m => m._tempId === tempId)
+      const currentMsg = useMessagingStore.getState().messages[conversationId]?.find(m => m._tempId === tempId)
       if (currentMsg?._failed) {
         console.log('🛑 Retry cancelled after upload, aborting send')
         await mediaUploadService.deleteImage(url)
@@ -676,7 +676,7 @@ export const MessageBubble = React.memo(function MessageBubble({
                   content={content}
                   onRetryUpload={handleRetryUpload}
                   onImageClick={(index) => {
-                    const conversationMessages = useMessagingStore.getState().messages.get(message.conversation_id) || []
+                    const conversationMessages = useMessagingStore.getState().messages[message.conversation_id] || []
                     const allImages = []
                     let globalIndex = 0
                     let found = false

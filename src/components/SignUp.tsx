@@ -23,7 +23,7 @@ interface FormErrors {
 export default function SignUp() {
   const navigate = useNavigate()
   const loading = useAuthStore((state) => state.loading);
-  const { signUp } = useAuthStore();
+  const signUp = useAuthStore(s => s.signUp);
 
   const [formData, setFormData] = useState<FormData>({
     email: '',

@@ -29,7 +29,7 @@ export default function ProtectedRoute({
   const profile = useAuthStore((state) => state.profile);
   const initialized = useAuthStore((state) => state.initialized);
   const loading = useAuthStore((state) => state.loading);
-  const { checkUser } = useAuthStore();
+  const checkUser = useAuthStore(s => s.checkUser);
   const location = useLocation()
   const [retryCount, setRetryCount] = useState(0)
   const [sessionChecked, setSessionChecked] = useState(false)

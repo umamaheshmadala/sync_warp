@@ -54,7 +54,7 @@ export function useTypingIndicator(conversationId: string | null) {
 
   // Get typing users for this conversation (excluding current user)
   const otherTypingUsers = conversationId
-    ? Array.from(typingUsers.get(conversationId) || []).filter(id => id !== currentUserId)
+    ? Array.from(typingUsers[conversationId] || []).filter(id => id !== currentUserId)
     : []
 
   // Broadcast typing indicator

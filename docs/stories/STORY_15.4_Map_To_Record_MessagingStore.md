@@ -1,7 +1,7 @@
 # STORY 15.4 — Convert `messagingStore` Message Maps from `Map<>` to `Record<>`
 
 **EPIC:** [EPIC 15 — Rendering Performance & State Management](../epics/EPIC_15_Rendering_Performance_State_Management.md)  
-**Status:** 📋 Ready  
+**Status:** ✅ Complete  
 **Priority:** 🔴 Critical  
 **Estimate:** 2 points  
 **Dependencies:** Story 15.2 (selectors first to reduce blast radius)  
@@ -175,19 +175,19 @@ const counts = get().unreadCounts; // Already JSON-serializable
 
 ## ✅ Acceptance Criteria
 
-- [ ] `messages` type changed from `Map<string, Message[]>` to `Record<string, Message[]>`
-- [ ] `unreadCounts` changed from `Map<string, number>` to `Record<string, number>`
-- [ ] `typingUsers` changed from `Map<string, Set<string>>` to `Record<string, string[]>`
-- [ ] All Map operations converted to Record spread patterns
-- [ ] All consumers updated (no `.get()` calls on Records)
-- [ ] Persistence (save/load unread) still works
-- [ ] Build passes with zero TypeScript errors
+- [x] `messages` type changed from `Map<string, Message[]>` to `Record<string, Message[]>`
+- [x] `unreadCounts` changed from `Map<string, number>` to `Record<string, number>`
+- [x] `typingUsers` changed from `Map<string, Set<string>>` to `Record<string, string[]>`
+- [x] All Map operations converted to Record spread patterns
+- [x] All consumers updated (no `.get()` calls on Records)
+- [x] Persistence (save/load unread) still works
+- [x] Build passes with zero TypeScript errors
 
 ---
 
 ## ✅ Definition of Done
 
-- [ ] Zero `Map` or `Set` usage in `messagingStore.ts`
-- [ ] All consumers updated
-- [ ] Real-time messaging verified
-- [ ] Build passes
+- [x] Zero `Map` or `Set` usage in `messagingStore.ts`
+- [x] All consumers updated
+- [x] Real-time messaging verified
+- [x] Build passes

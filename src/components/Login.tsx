@@ -18,7 +18,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const loading = useAuthStore((state) => state.loading);
-  const { signIn } = useAuthStore();
+  const signIn = useAuthStore(s => s.signIn);
   const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 

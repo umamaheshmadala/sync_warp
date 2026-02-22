@@ -55,7 +55,7 @@ export default function MobileProfileDrawer({ isOpen, onClose }: MobileProfileDr
   const { getBusinessUrl } = useBusinessUrl()
   const user = useAuthStore((state) => state.user);
   const profile = useAuthStore((state) => state.profile);
-  const { signOut } = useAuthStore();
+  const signOut = useAuthStore(s => s.signOut);
 
   // Use React Query with SWR pattern - cached data shown immediately
   const { data: businesses = [], isLoading: loadingBusinesses } = useQuery({

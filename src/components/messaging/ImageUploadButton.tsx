@@ -165,7 +165,7 @@ export function ImageUploadButton({
             if (cancelledRef.current) return
 
             // Check if message was cancelled externally (by MessageBubble UI)
-            const currentMessages = useMessagingStore.getState().messages.get(conversationId) || []
+            const currentMessages = useMessagingStore.getState().messages[conversationId] || []
             const currentMsg = currentMessages.find(m => m._tempId === tempId)
 
             if (!currentMsg || currentMsg._failed) {
@@ -199,7 +199,7 @@ export function ImageUploadButton({
       }
 
       // Check if cancelled after upload OR if message is failed/missing
-      const finalMessages = useMessagingStore.getState().messages.get(conversationId) || []
+      const finalMessages = useMessagingStore.getState().messages[conversationId] || []
       const finalMsg = finalMessages.find(m => m._tempId === tempId)
 
       if (cancelledRef.current || !finalMsg || finalMsg._failed || uploadedUrls.length !== selectedFiles.length) {

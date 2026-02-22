@@ -127,9 +127,7 @@ const CouponRedemption: React.FC<CouponRedemptionProps> = ({
   // Start expiry timer
   const startExpiryTimer = () => {
     if (coupon.expires_at) {
-      const updateTimer = () => {
-      } else {
-        return `${seconds}s`;
+      return;
     }
   };
 

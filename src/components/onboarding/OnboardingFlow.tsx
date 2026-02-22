@@ -24,7 +24,7 @@ export default function OnboardingFlow() {
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user);
   const loading = useAuthStore((state) => state.loading);
-  const { updateProfile } = useAuthStore();
+  const updateProfile = useAuthStore(s => s.updateProfile);
   const [currentStep, setCurrentStep] = useState(1)
   const [isCompleting, setIsCompleting] = useState(false)
   const [showCompletion, setShowCompletion] = useState(false)

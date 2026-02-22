@@ -104,7 +104,7 @@ Eliminate cascading re-renders across the entire application by fixing Zustand o
 - [ ] All 89+ `useAuthStore()` calls use granular selectors
 - [ ] All 15+ `useMessagingStore()` calls use granular selectors
 - [ ] `MessageBubble.tsx` split into ≤3 sub-components, each wrapped in `React.memo`
-- [ ] `messagingStore` uses `Record<string, Message>` instead of `Map`
+- [x] `messagingStore` uses `Record<string, Message>` instead of `Map`
 - [ ] `Header.tsx` uses `useUnreadCount()` — no longer fetches all conversations
 - [ ] Top 4 lists use `react-window` virtualization
 - [ ] Dead `VirtualProductGrid.tsx` either wired up or removed

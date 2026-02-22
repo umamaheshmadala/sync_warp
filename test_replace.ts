@@ -211,7 +211,7 @@ export const useMessagingStore = create<MessagingState>()(
             : updatedConversations;
 
           // Update counts
-          const newCounts = { ...state.unreadCounts };
+          const newCounts = { ...state. };
           const count = conversation.unread_count || 0;
 
           let countToAdd = 0;
@@ -235,7 +235,7 @@ export const useMessagingStore = create<MessagingState>()(
             c => c.conversation_id === conversation.conversation_id
           );
           let newConversations: ConversationWithDetails[];
-          let newCounts = { ...state.unreadCounts };
+          let newCounts = { ...state. };
           let totalUnreadCount = state.totalUnreadCount;
           if (existingIndex !== -1) {
             // Exists: Remove and prepend to top
@@ -301,7 +301,7 @@ export const useMessagingStore = create<MessagingState>()(
 
             // Update unread map if count changed
             if (updates.unread_count !== undefined) {
-              unreadCounts = { ...state.unreadCounts };
+              unreadCounts = { ...state. };
               unreadCounts[conversationId] = newCount;
             }
 
@@ -333,7 +333,7 @@ export const useMessagingStore = create<MessagingState>()(
           );
 
           // Also remove from unread counts
-          const newCounts = { ...state.unreadCounts };
+          const newCounts = { ...state. };
           const removedCount = newCounts[conversationId] || 0;
           delete newCounts[conversationId];
 
@@ -371,7 +371,7 @@ export const useMessagingStore = create<MessagingState>()(
 
       setMessages: (conversationId, messages) =>
         set((state) => {
-          const newMessages = { ...state.messages };
+          const newMessages = { ...state. };
 
           // Preserve optimistic messages when setting new messages
           const currentMessages = newMessages[conversationId] || [];
@@ -395,7 +395,7 @@ export const useMessagingStore = create<MessagingState>()(
 
       addMessage: (conversationId, message) =>
         set((state) => {
-          const newMessages = { ...state.messages };
+          const newMessages = { ...state. };
           const conversationMessages = newMessages[conversationId] || [];
 
           // 1. Check if message already exists by ID
@@ -465,8 +465,8 @@ export const useMessagingStore = create<MessagingState>()(
         set((state) => {
           if (messages.length === 0) return {};
 
-          const newMessages = { ...state.messages };
-          const messagesByConversation: Record<string, Message[]> = {};
+          const newMessages = { ...state. };
+          const messagesByConversation = {};
 
           // Group by conversation
           messages.forEach(msg => {
@@ -475,21 +475,20 @@ export const useMessagingStore = create<MessagingState>()(
           });
 
           // Process each conversation
-          Object.entries(messagesByConversation).forEach(([conversationId, newMsgs]) => {
+          messagesByConversation.forEach((newMsgs, conversationId) => {
             const existingMsgs = newMessages[conversationId] || [];
 
-            // Create a record of existing messages by ID for O(1) lookup
-            const msgRecord: Record<string, Message> = {};
-            existingMsgs.forEach(m => { msgRecord[m.id] = m; });
+            // Create a map of existing messages by ID for O(1) lookup
+            const msgMap = new Map(existingMsgs.map(m => [m.id, m]));
 
             // Update or add new messages
             newMsgs.forEach(msg => {
-              msgRecord[msg.id] = msg;
+              msgMap[msg.id] = msg;
             });
 
             // Convert back to array and sort
             // (Assuming we want chronological order)
-            const sortedMessages = Object.values(msgRecord).sort((a, b) =>
+            const sortedMessages = Array.from(msgMap.values()).sort((a, b) =>
               new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
             );
 
@@ -506,25 +505,30 @@ export const useMessagingStore = create<MessagingState>()(
 
       updateMessage: (conversationId, messageId, updates) =>
         set((state) => {
-          const newMessages = { ...state.messages };
+          const newMessages = { ...state. };
           const conversationMessages = newMessages[conversationId] || [];
-          newMessages[conversationId] = conversationMessages.map(msg =>
-            msg.id === messageId ? { ...msg, ...updates } : msg
+          newMessages.set(
+            conversationId,
+            conversationMessages.map(msg =>
+              msg.id === messageId ? { ...msg, ...updates } : msg
+            )
           );
           return { messages: newMessages };
         }, false, 'updateMessage'),
 
       removeMessage: (conversationId, messageId) =>
         set((state) => {
-          const newMessages = { ...state.messages };
+          const newMessages = { ...state. };
           const conversationMessages = newMessages[conversationId] || [];
-          newMessages[conversationId] = conversationMessages.filter(msg => msg.id !== messageId);
+          newMessages[
+            conversationId] = conversationMessages.filter(msg => msg.id !== messageId
+          );
           return { messages: newMessages };
         }, false, 'removeMessage'),
 
       prependMessages: (conversationId, messages) =>
         set((state) => {
-          const newMessages = { ...state.messages };
+          const newMessages = { ...state. };
           const existing = newMessages[conversationId] || [];
           const combined = [...messages, ...existing];
 
@@ -543,7 +547,7 @@ export const useMessagingStore = create<MessagingState>()(
 
       addOptimisticMessage: (conversationId, message) =>
         set((state) => {
-          const newMessages = { ...state.messages };
+          const newMessages = { ...state. };
           const conversationMessages = newMessages[conversationId] || [];
 
           // Add optimistic message with _optimistic flag and 'sending' status
@@ -567,7 +571,7 @@ export const useMessagingStore = create<MessagingState>()(
 
       replaceOptimisticMessage: (conversationId, tempId, realMessage) =>
         set((state) => {
-          const newMessages = { ...state.messages };
+          const newMessages = { ...state. };
           const conversationMessages = newMessages[conversationId] || [];
 
           // Check if the real message already exists in the list (e.g. came via Realtime first)
@@ -606,7 +610,7 @@ export const useMessagingStore = create<MessagingState>()(
 
       markMessageFailed: (conversationId, tempId) =>
         set((state) => {
-          const newMessages = { ...state.messages };
+          const newMessages = { ...state. };
           const conversationMessages = newMessages[conversationId] || [];
 
           // Mark optimistic message as failed
@@ -626,7 +630,7 @@ export const useMessagingStore = create<MessagingState>()(
        */
       updateMessageProgress: (conversationId, tempId, progress) =>
         set((state) => {
-          const newMessages = { ...state.messages };
+          const newMessages = { ...state. };
           const conversationMessages = newMessages[conversationId] || [];
 
           // Update progress for optimistic message
@@ -646,7 +650,7 @@ export const useMessagingStore = create<MessagingState>()(
 
       setUnreadCount: (conversationId, count) =>
         set((state) => {
-          const newCounts = { ...state.unreadCounts };
+          const newCounts = { ...state. };
           newCounts[conversationId] = count;
 
           // Auto-save on mobile
@@ -661,7 +665,7 @@ export const useMessagingStore = create<MessagingState>()(
 
       incrementUnreadCount: (conversationId) =>
         set((state) => {
-          const newCounts = { ...state.unreadCounts };
+          const newCounts = { ...state. };
           const current = newCounts[conversationId] || 0;
           newCounts[conversationId] = current + 1;
 
@@ -684,7 +688,7 @@ export const useMessagingStore = create<MessagingState>()(
 
       clearUnreadCount: (conversationId) =>
         set((state) => {
-          const newCounts = { ...state.unreadCounts };
+          const newCounts = { ...state. };
           const removed = newCounts[conversationId] || 0;
           newCounts[conversationId] = 0;
 
@@ -741,24 +745,25 @@ export const useMessagingStore = create<MessagingState>()(
 
       addTypingUser: (conversationId, userId) =>
         set((state) => {
-          const newTyping = { ...state.typingUsers };
-          const users = newTyping[conversationId] ? [...newTyping[conversationId]] : [];
-          if (!users.includes(userId)) users.push(userId);
+          const newTyping = { ...state. };
+          const users = new Set<string>(newTyping[conversationId] || []);
+          users.add(userId);
           newTyping[conversationId] = users;
           return { typingUsers: newTyping };
         }, false, 'addTypingUser'),
 
       removeTypingUser: (conversationId, userId) =>
         set((state) => {
-          const newTyping = { ...state.typingUsers };
-          const current = newTyping[conversationId] || [];
-          newTyping[conversationId] = current.filter(u => u !== userId);
+          const newTyping = { ...state. };
+          const users = new Set<string>(newTyping[conversationId] || []);
+          users.delete(userId);
+          newTyping[conversationId] = users;
           return { typingUsers: newTyping };
         }, false, 'removeTypingUser'),
 
       getTypingUsers: (conversationId) => {
-        const users = get().typingUsers[conversationId];
-        return users ? [...users] : [];
+        const users = get().typingUsers.get(conversationId);
+        return users ? Array.from(users) : [];
       },
 
       // ========================================================================
@@ -783,9 +788,8 @@ export const useMessagingStore = create<MessagingState>()(
 
         try {
           const counts = get().unreadCounts;
-          await Preferences.set({
-            key: STORAGE_KEYS.UNREAD_COUNTS,
-            value: JSON.stringify(counts)
+          await Preferences[{
+            key: STORAGE_KEYS.UNREAD_COUNTS] = value: JSON.stringify(counts
           });
           console.log('💾 Unread counts saved');
         } catch (error) {
@@ -799,16 +803,9 @@ export const useMessagingStore = create<MessagingState>()(
         try {
           const { value } = await Preferences.get({ key: STORAGE_KEYS.UNREAD_COUNTS });
           if (value) {
-            const parsed = JSON.parse(value);
+            const counts = JSON.parse(value) as [string, number][];
             const unreadCounts: Record<string, number> = {};
-
-            // Handle both legacy Array format and new Record format
-            if (Array.isArray(parsed)) {
-              parsed.forEach(([k, v]) => { unreadCounts[k] = v; });
-            } else if (parsed && typeof parsed === 'object') {
-              Object.assign(unreadCounts, parsed);
-            }
-
+            counts.forEach(([k, v]) => unreadCounts[k] = v);
             const totalUnreadCount = Object.values(unreadCounts)
               .reduce((sum, count) => sum + count, 0);
 

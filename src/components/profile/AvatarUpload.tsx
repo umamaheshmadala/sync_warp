@@ -18,7 +18,7 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
 }) => {
   const user = useAuthStore((state) => state.user);
   const profile = useAuthStore((state) => state.profile);
-  const { updateProfile } = useAuthStore();
+  const updateProfile = useAuthStore(s => s.updateProfile);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);

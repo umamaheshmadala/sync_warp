@@ -14,7 +14,7 @@ import { ProfileShareButton } from './Sharing/ProfileShareButton'
 export default function Profile() {
   const user = useAuthStore((state) => state.user);
   const profile = useAuthStore((state) => state.profile);
-  const { updateProfile } = useAuthStore();
+  const updateProfile = useAuthStore(s => s.updateProfile);
   const { preferences, updatePreference } = useNavigationPreferences()
   const { cities, loading: citiesLoading } = useCities()
   const [searchParams, setSearchParams] = useSearchParams();
