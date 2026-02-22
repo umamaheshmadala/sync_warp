@@ -1,7 +1,7 @@
 # STORY 15.6 — Apply List Virtualization to Top 4 Lists; Wire Up or Replace `VirtualProductGrid`
 
 **EPIC:** [EPIC 15 — Rendering Performance & State Management](../epics/EPIC_15_Rendering_Performance_State_Management.md)  
-**Status:** 📋 Ready  
+**Status:** 📋 Implemented, but send iteration pending
 **Priority:** 🟠 High  
 **Estimate:** 3 points  
 **Dependencies:** None (independent)  
