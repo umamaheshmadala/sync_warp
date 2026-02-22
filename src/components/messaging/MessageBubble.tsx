@@ -30,23 +30,17 @@ import { supabase } from '../../lib/supabase'
 import { mediaUploadService } from '../../services/mediaUploadService'
 import { messagingService } from '../../services/messagingService'
 import type { LinkPreview } from '../../services/linkPreviewService'
-import { useShare } from '../../hooks/useShare'
+import { useMessageActions } from '../../hooks/useMessageActions'
 import { usePrivacySettings } from '../../hooks/usePrivacySettings'
-import { messageEditService } from '../../services/messageEditService'
-import { messageDeleteService } from '../../services/messageDeleteService'
 import { EditedBadge } from './EditedBadge'
-import { DeleteConfirmationDialog } from './DeleteConfirmationDialog'
+import { MessageDialogs } from './MessageDialogs'
+import { MessageLinkPreviews } from './MessageLinkPreviews'
 import { DeletedMessagePlaceholder } from './DeletedMessagePlaceholder'
 import { useReactions } from '../../hooks/useReactions'
 import { QuickReactionBar } from './QuickReactionBar'
 import { MessageReactions } from './MessageReactions'
-import { ReactionUserList } from './ReactionUserList'
-import { MessageEmojiPicker } from './MessageEmojiPicker'
-import { ReportDialog } from '../reporting/ReportDialog'
 import { ClickableUrl } from './ClickableUrl'
 import { parseMessageContent } from '../../utils/urlUtils'
-import { ReviewLinkPreview } from '../chat/ReviewLinkPreview'
-import { OfferLinkPreview } from '../chat/OfferLinkPreview'
 import { ExpandableText } from './ExpandableText'
 
 interface MessageBubbleProps {
@@ -193,20 +187,19 @@ export const MessageBubble = React.memo(function MessageBubble({
     viewReactionUsers(emoji)
   }
 
-  // Edit eligibility - calculate inline without a hook to avoid database calls per message
-  // Only own text messages within 15-minute window can be edited
-  const EDIT_WINDOW_MS = 15 * 60 * 1000 // 15 minutes
-  const messageAge = Date.now() - new Date(message.created_at).getTime()
-  const canEditMessage = isOwn &&
-    message.type === 'text' &&
-    !message._optimistic &&
-    !message._failed &&
-    !message.is_deleted &&
-    messageAge < EDIT_WINDOW_MS
-
-  const editRemainingTime = canEditMessage
-    ? messageEditService.formatRemainingTime(EDIT_WINDOW_MS - messageAge)
-    : ''
+  const {
+    canEditMessage,
+    editRemainingTime,
+    canDeleteMessage,
+    deleteRemainingTime,
+    isDeleting,
+    showDeleteConfirm,
+    setShowDeleteConfirm,
+    handleCopy,
+    handleShare,
+    handleDeleteForMe,
+    handleDeleteForEveryone
+  } = useMessageActions({ message, isOwn, content: content || '' })
 
   // -- Gesture Hooks --
 
@@ -225,21 +218,7 @@ export const MessageBubble = React.memo(function MessageBubble({
     }
   });
 
-  // Delete eligibility - similar to edit, 15-minute window for "Delete for Everyone"
-  const DELETE_WINDOW_MS = 15 * 60 * 1000 // 15 minutes
-  const canDeleteMessage = isOwn &&
-    !message._optimistic &&
-    !message._failed &&
-    !message.is_deleted &&
-    messageAge < DELETE_WINDOW_MS
-
-  const deleteRemainingTime = canDeleteMessage
-    ? messageDeleteService.formatRemainingTime(DELETE_WINDOW_MS - messageAge)
-    : ''
-
-  // Delete confirmation dialog state
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
+  // Delete eligibility Handled by useMessageActions
 
   // Determine styling based on sender
   const isSystem = message.type === 'system'
@@ -369,123 +348,7 @@ export const MessageBubble = React.memo(function MessageBubble({
 
   // NOTE: Previous long press handlers removed in favor of useLongPress hook below
 
-  /* 
-   * Long press logic is now handled by usage of useLongPress hook in the render method 
-   * and the modified useLongPress signature that captures coordinates would be better 
-   * but for now we rely on the native hook.
-   * 
-   * Actually, my useLongPress hook doesn't pass coordinates to onLongPress.
-   * That is a limitation. 
-   * However, we can track the touch start in the wrapper.
-   */
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(content)
-    toast.success('Message copied')
-  }
-
-  // Share handlers
-  const { shareImage, shareVideo, shareLink } = useShare()
-
-  const handleShare = async () => {
-    try {
-      if (message.type === 'image' && message.media_urls?.[0]) {
-        await shareImage(message.media_urls[0], message.id)
-      } else if (message.type === 'video' && message.media_urls?.[0]) {
-        await shareVideo(message.media_urls[0], message.id)
-      } else if (message.link_previews?.[0]?.url) {
-        await shareLink(
-          message.link_previews[0].url,
-          message.link_previews[0].title || 'Check this out!',
-          message.id
-        )
-      } else if (content) {
-        // Share text message content
-        await shareLink(
-          window.location.href,
-          content,
-          message.id
-        )
-      }
-    } catch (error) {
-      console.error('Share failed:', error)
-    }
-  }
-
-  // Handle "Delete for me" - hides in database (synced across devices)
-  const handleDeleteForMe = async () => {
-    try {
-      const result = await messageDeleteService.deleteForMe(message.id)
-      if (result.success) {
-        // Optimistic UI: Remove message from local state immediately
-        useMessagingStore.getState().removeMessage(message.conversation_id, message.id)
-
-        // ALSO remove from React Query cache so it disappears from the list
-        queryClient.setQueryData(['messages', message.conversation_id], (old: any) => {
-          if (!old || !old.messages) return old
-          return {
-            ...old,
-            messages: old.messages.filter((m: Message) => m.id !== message.id)
-          }
-        })
-
-        toast.success('Message deleted for you', { icon: '🙈' })
-      } else {
-        toast.error(result.message || 'Failed to delete message')
-      }
-    } catch (error) {
-      console.error('Delete for me failed:', error)
-      toast.error('Failed to delete message')
-    }
-  }
-
-  // Handle "Delete for everyone" confirmation (WhatsApp-style)
-  const handleDeleteForEveryone = async () => {
-    setIsDeleting(true)
-    try {
-      const result = await messageDeleteService.deleteMessage(message.id)
-      if (result.success) {
-        setShowDeleteConfirm(false)
-        // Optimistic UI: Update message to show deleted placeholder immediately
-        useMessagingStore.getState().updateMessage(message.conversation_id, message.id, {
-          is_deleted: true,
-          deleted_at: new Date().toISOString()
-        })
-        // Show undo toast for 5 seconds
-        toast((t) => (
-          <div className="flex items-center gap-3">
-            <span>Message deleted for everyone</span>
-            <button
-              onClick={async () => {
-                const undoResult = await messageDeleteService.undoDelete(message.id)
-                toast.dismiss(t.id)
-                if (undoResult.success) {
-                  // Restore message in local state
-                  useMessagingStore.getState().updateMessage(message.conversation_id, message.id, {
-                    is_deleted: false,
-                    deleted_at: null
-                  })
-                  toast.success('Message restored')
-                } else {
-                  toast.error('Could not restore message')
-                }
-              }}
-              className="text-blue-500 underline text-sm font-medium"
-            >
-              Undo
-            </button>
-          </div>
-        ), { duration: 5000, icon: '🗑️' })
-      } else {
-        toast.error(result.message || 'Failed to delete message')
-      }
-    } catch (error) {
-      console.error('Delete failed:', error)
-      toast.error('Failed to delete message')
-    } finally {
-      setIsDeleting(false)
-    }
-  }
+  // Action Handlers (Delete, Share, Copy) handled by useMessageActions hook
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -704,40 +567,8 @@ export const MessageBubble = React.memo(function MessageBubble({
                 />
               ) : (
                 <div className="flex flex-col gap-2">
-                  {/* Review Preview */}
-                  {message.link_previews &&
-                    message.link_previews.length > 0 &&
-                    message.link_previews[0].metadata?.type === 'review' && (
-                      <div className="mt-2">
-                        <ReviewLinkPreview preview={message.link_previews[0]} />
-                      </div>
-                    )}
-
-                  {/* Offer Preview (Ticket Style) */}
-                  {message.link_previews &&
-                    message.link_previews.length > 0 &&
-                    (message.link_previews[0].type === 'sync-offer' || message.link_previews[0].metadata?.type === 'offer') && (
-                      <div className="mt-2 text-left">
-                        <OfferLinkPreview preview={message.link_previews[0]} />
-                      </div>
-                    )}
-
-                  {/* Standard Link Previews (Exclude review and offer types) */}
-                  {message.link_previews &&
-                    message.link_previews.length > 0 &&
-                    message.link_previews[0].metadata?.type !== 'review' &&
-                    message.link_previews[0].type !== 'sync-offer' &&
-                    message.link_previews[0].metadata?.type !== 'offer' && (
-                      <div className="space-y-2 w-full max-w-[75vw]">
-                        {message.link_previews.map((preview, index) => (
-                          <LinkPreviewCard
-                            key={`${preview.url}-${index}`}
-                            preview={preview}
-                            showRemoveButton={false}
-                          />
-                        ))}
-                      </div>
-                    )}
+                  {/* Link Previews */}
+                  <MessageLinkPreviews previews={message.link_previews} />
 
                   {/* Text content with Read More expansion (Story 8.6.7) */}
                   <div className="relative">
@@ -801,115 +632,48 @@ export const MessageBubble = React.memo(function MessageBubble({
         </div >
       </div >
 
-      {/* Context Menu - Rendered at document body level to avoid scroll container issues */}
-      {
-        showContextMenu && createPortal(
-          <MessageContextMenu
-            message={message}
-            position={contextMenuPosition}
-            isOwn={isOwn}
-            onClose={() => setShowContextMenu(false)}
-            onReply={() => onReply?.(message)}
-            onForward={() => onForward?.(message)}
-            onCopy={handleCopy}
-            onShare={handleShare}
-            onEdit={() => onEdit?.(message)}
-            canEdit={canEditMessage}
-            editRemainingTime={editRemainingTime}
-            onDeleteForMe={handleDeleteForMe}
-            onDeleteForEveryone={() => handleDeleteForEveryone()}
-            canDeleteForEveryone={canDeleteMessage}
-            deleteRemainingTime={deleteRemainingTime}
-            onReact={toggleReaction}
-            onOpenPicker={() => {
-              setShowContextMenu(false)
-              setShowPicker(true)
-            }}
-            userReactions={userReactions}
-            onPin={() => onPin?.(message.id)}
-            onUnpin={() => onUnpin?.(message.id)}
-            isPinned={isMessagePinned?.(message.id)}
-            onReport={() => {
-              setShowContextMenu(false)
-              setShowReportDialog(true)
-            }}
-          />,
-          document.body
-        )
-      }
-
-      {/* Report Dialog */}
-      <ReportDialog
-        messageId={message.id}
-        conversationId={message.conversation_id}
-        senderId={message.sender_id}
-        isOpen={showReportDialog}
-        onClose={() => setShowReportDialog(false)}
-      />
-
-      {/* Reaction User List Dialog */}
-      <ReactionUserList
-        isOpen={!!selectedEmoji}
-        onClose={closeReactionUsers}
-        emoji={selectedEmoji}
-        users={emojiUsers}
-        isLoading={loadingUsers}
+      <MessageDialogs
+        message={message}
+        isOwn={isOwn}
         currentUserId={currentUserId}
-        position={popupPosition}
-        onRemoveReaction={() => {
-          if (selectedEmoji) {
-            toggleReaction(selectedEmoji);
-            closeReactionUsers(); // Optional: close list after removing? Or keep open?
-            // WhatsApp keeps open if there are other reactions, but if I remove mine, maybe I want to close or see updated list.
-            // Since toggleReaction updates state, the list *should* update if we re-fetch or if optimistic updates propagate.
-            // But `emojiUsers` in `useReactions` is fetched on `viewReactionUsers`.
-            // If I remove reaction, `emojiUsers` needs to be updated or closed.
-            // Closing is safer to avoid stale state for now.
-            closeReactionUsers();
-          }
-        }}
+        showContextMenu={showContextMenu}
+        contextMenuPosition={contextMenuPosition}
+        setShowContextMenu={setShowContextMenu}
+        onReply={() => onReply?.(message)}
+        onForward={() => onForward?.(message)}
+        handleCopy={handleCopy}
+        handleShare={handleShare}
+        onEdit={() => onEdit?.(message)}
+        canEditMessage={canEditMessage}
+        editRemainingTime={editRemainingTime}
+        handleDeleteForMe={handleDeleteForMe}
+        handleDeleteForEveryone={handleDeleteForEveryone}
+        canDeleteMessage={canDeleteMessage}
+        deleteRemainingTime={deleteRemainingTime}
+        toggleReaction={toggleReaction}
+        setShowPicker={setShowPicker}
+        userReactions={userReactions}
+        onPin={() => onPin?.(message.id)}
+        onUnpin={() => onUnpin?.(message.id)}
+        isPinned={isMessagePinned?.(message.id)}
+        setShowReportDialog={setShowReportDialog}
+        showReportDialog={showReportDialog}
+        selectedEmoji={selectedEmoji}
+        closeReactionUsers={closeReactionUsers}
+        emojiUsers={emojiUsers}
+        loadingUsers={loadingUsers}
+        popupPosition={popupPosition}
+        showPicker={showPicker}
+        showVideoPlayer={showVideoPlayer}
+        setShowVideoPlayer={setShowVideoPlayer}
+        lightboxImages={lightboxImages}
+        lightboxInitialIndex={lightboxInitialIndex}
+        lightboxOpen={lightboxOpen}
+        setLightboxOpen={setLightboxOpen}
+        showDeleteConfirm={showDeleteConfirm}
+        setShowDeleteConfirm={setShowDeleteConfirm}
+        isDeleting={isDeleting}
       />
-
-      {/* Full Emoji Picker Dialog */}
-      <MessageEmojiPicker
-        isOpen={showPicker}
-        onClose={() => setShowPicker(false)}
-        onEmojiClick={toggleReaction}
-      />
-
-      {/* Video Player Modal */}
-      {
-        showVideoPlayer && message.type === 'video' && message.media_urls && message.media_urls.length > 0 && (
-          <VideoPlayer
-            videoUrl={message.media_urls[0]}
-            thumbnailUrl={message.thumbnail_url || message.media_urls[0]}
-            onClose={() => setShowVideoPlayer(false)}
-          />
-        )
-      }
-
-      {/* Image Lightbox */}
-      <ImageLightbox
-        images={lightboxImages}
-        initialIndex={lightboxInitialIndex}
-        isOpen={lightboxOpen}
-        onClose={() => setLightboxOpen(false)}
-      />
-
-      {/* Delete Confirmation Dialog (Story 8.5.3) */}
-      {
-        showDeleteConfirm && createPortal(
-          <DeleteConfirmationDialog
-            isOpen={showDeleteConfirm}
-            onClose={() => setShowDeleteConfirm(false)}
-            onConfirm={handleDeleteForEveryone}
-            remainingTime={deleteRemainingTime}
-            isDeleting={isDeleting}
-            showDeleteForMe={false}
-          />,
-          document.body
-        )
-      }
     </div >
   )
 })
