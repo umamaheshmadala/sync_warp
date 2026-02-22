@@ -13,6 +13,199 @@ import { messagingService } from '../services/messagingService'
 import AddFriend from './AddFriend'
 import ShareDeal from './ShareDealSimple'
 import type { Friend } from '../services/newFriendService'
+import * as ReactWindow from 'react-window'
+import AutoSizer from 'react-virtualized-auto-sizer'
+
+const listKey = 'FixedSizeList';
+const List = (ReactWindow as any)[listKey];
+
+const formatLastActive = (lastActive: string): string => {
+  const date = new Date(lastActive)
+  const now = new Date()
+  const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60))
+
+  if (diffInMinutes < 1) return 'now'
+  if (diffInMinutes < 60) return `${diffInMinutes}m ago`
+  if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`
+  return `${Math.floor(diffInMinutes / 1440)}d ago`
+}
+
+const formatTimeAgo = (dateString: string): string => {
+  const date = new Date(dateString)
+  const now = new Date()
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+
+  if (diffInSeconds < 60) return 'just now'
+  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`
+  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`
+  return `${Math.floor(diffInSeconds / 86400)}d ago`
+}
+
+interface FriendItemData {
+  friends: Friend[];
+  handleShareTap: (friend: Friend) => void;
+  handleMessageTap: (friend: Friend) => void;
+  handleRemoveFriend: (friend: Friend) => void;
+}
+
+const areFriendsEqual = (prevProps: any, nextProps: any) => {
+  return prevProps.data.friends[prevProps.index] === nextProps.data.friends[nextProps.index];
+};
+
+const FriendRow = React.memo(({ data, index, style }: { data: FriendItemData, index: number, style: React.CSSProperties }) => {
+  const friendship = data.friends[index];
+  const friend = friendship.friend_profile;
+  const { handleShareTap, handleMessageTap, handleRemoveFriend } = data;
+
+  return (
+    <div style={style}>
+      <div className="group flex items-center rounded-lg p-2 hover:bg-gray-50 transition-colors h-full">
+        <div className="relative">
+          {friend.avatar_url ? (
+            <img loading="lazy" decoding="async" className="h-10 w-10 rounded-full object-cover"
+              src={friend.avatar_url}
+              alt={friend.full_name}
+            />
+          ) : (
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-indigo-400 to-purple-500">
+              <span className="text-white font-medium text-sm">
+                {friend.full_name.charAt(0).toUpperCase()}
+              </span>
+            </div>
+          )}
+          <div
+            className={`absolute -bottom-0 -right-0 h-3 w-3 rounded-full border-2 border-white ${friend.is_online ? 'bg-green-400' : 'bg-gray-400'
+              }`}
+          />
+        </div>
+        <div className="ml-3 flex-1 min-w-0">
+          <p className="text-sm font-medium text-gray-900 truncate">
+            {friend.full_name}
+          </p>
+          <div className="flex items-center space-x-2">
+            <p className="text-xs text-gray-500">
+              {friend.is_online ? 'Online' : `Active ${formatLastActive(friend.last_active)}`}
+            </p>
+            {friend.city && (
+              <>
+                <span className="text-xs text-gray-300">•</span>
+                <p className="text-xs text-gray-500 truncate">{friend.city}</p>
+              </>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            onClick={() => handleShareTap(friendship)}
+            className="rounded-full p-1.5 text-indigo-600 hover:bg-indigo-100 active:scale-95 transition-transform duration-150 safe-hover-scale"
+            title="Share deal"
+          >
+            <Share2 className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => handleMessageTap(friendship)}
+            className="rounded-full p-1.5 text-gray-600 hover:bg-gray-100 active:scale-95 transition-transform duration-150 safe-hover-scale"
+            title="Send message"
+          >
+            <MessageCircle className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => handleRemoveFriend(friendship)}
+            className="rounded-full p-1.5 text-red-600 hover:bg-red-100 active:scale-95 transition-transform duration-150 safe-hover-scale"
+            title="Remove friend"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}, areFriendsEqual);
+
+interface RequestItemData {
+  requests: any[];
+  processingRequest: Set<string>;
+  handleAcceptRequest: (id: string) => void;
+  handleRejectRequest: (id: string) => void;
+}
+
+const areRequestsEqual = (prevProps: any, nextProps: any) => {
+  const prevId = prevProps.data.requests[prevProps.index].id;
+  const nextId = nextProps.data.requests[nextProps.index].id;
+  return prevId === nextId && prevProps.data.processingRequest.has(prevId) === nextProps.data.processingRequest.has(nextId);
+};
+
+const RequestRow = React.memo(({ data, index, style }: { data: RequestItemData, index: number, style: React.CSSProperties }) => {
+  const request = data.requests[index];
+  const { processingRequest, handleAcceptRequest, handleRejectRequest } = data;
+  const isProcessing = processingRequest.has(request.id);
+
+  return (
+    <div style={{ ...style, padding: '0 16px', paddingTop: '8px', paddingBottom: '8px' }}>
+      <div className="p-4 bg-gray-50 rounded-xl h-full flex flex-col justify-center">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="relative">
+              {request.requester_avatar ? (
+                <img loading="lazy" decoding="async"
+                  src={request.requester_avatar}
+                  alt={request.requester_name}
+                  className="h-12 w-12 rounded-full object-cover"
+                />
+              ) : (
+                <div className="h-12 w-12 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center">
+                  <span className="text-white font-semibold text-lg">
+                    {request.requester_name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex-1">
+              <h4 className="font-medium text-gray-900">{request.requester_name}</h4>
+              <div className="flex items-center space-x-4 mt-1">
+                <div className="flex items-center text-sm text-gray-500">
+                  <Clock className="h-3 w-3 mr-1" />
+                  {formatTimeAgo(request.created_at)}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex items-center justify-end space-x-3 mt-4">
+          <button
+            onClick={() => handleRejectRequest(request.id)}
+            disabled={isProcessing}
+            className="flex items-center space-x-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors active:scale-95 transition-transform duration-150 safe-hover-scale"
+          >
+            <X className="h-4 w-4" />
+            <span>Decline</span>
+          </button>
+
+          <button
+            onClick={() => handleAcceptRequest(request.id)}
+            disabled={isProcessing}
+            className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors active:scale-95 transition-transform duration-150 safe-hover-scale"
+          >
+            {isProcessing ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                <span>Processing...</span>
+              </>
+            ) : (
+              <>
+                <Check className="h-4 w-4" />
+                <span>Accept</span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}, areRequestsEqual);
 
 interface ContactsSidebarProps {
   isOpen: boolean
@@ -153,27 +346,19 @@ const ContactsSidebar: React.FC<ContactsSidebarProps> = ({ isOpen, onClose }) =>
     }
   }
 
-  const formatLastActive = (lastActive: string): string => {
-    const date = new Date(lastActive)
-    const now = new Date()
-    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60))
+  const friendItemData = React.useMemo(() => ({
+    friends: filteredFriends,
+    handleShareTap,
+    handleMessageTap,
+    handleRemoveFriend
+  }), [filteredFriends, handleShareTap, handleMessageTap, handleRemoveFriend]);
 
-    if (diffInMinutes < 1) return 'now'
-    if (diffInMinutes < 60) return `${diffInMinutes}m ago`
-    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`
-    return `${Math.floor(diffInMinutes / 1440)}d ago`
-  }
-
-  const formatTimeAgo = (dateString: string): string => {
-    const date = new Date(dateString)
-    const now = new Date()
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
-
-    if (diffInSeconds < 60) return 'just now'
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`
-    return `${Math.floor(diffInSeconds / 86400)}d ago`
-  }
+  const requestItemData = React.useMemo(() => ({
+    requests: friendRequests,
+    processingRequest,
+    handleAcceptRequest,
+    handleRejectRequest
+  }), [friendRequests, processingRequest, handleAcceptRequest, handleRejectRequest]);
 
   return (
     <>
@@ -340,77 +525,22 @@ const ContactsSidebar: React.FC<ContactsSidebarProps> = ({ isOpen, onClose }) =>
                               )}
                             </div>
                           ) : (
-                            <div className="space-y-1">
-                              <>
-                                                                  {filteredFriends.map((friendship) => {
-                                                                                                    const friend = friendship.friend_profile
-
-                                                                                                    return (
-                                                                                                      <div
-                                                                                                        key={friendship.id}
-                                                                                                        className="group flex items-center rounded-lg p-2 hover:bg-gray-50 transition-colors"
-                                                                                                      >
-                                                                                                        <div className="relative">
-                                                                                                          {friend.avatar_url ? (
-                                                                                                            <img loading="lazy" decoding="async"                                                                                                               className="h-10 w-10 rounded-full object-cover"
-                                                                                                              src={friend.avatar_url}
-                                                                                                              alt={friend.full_name}
-                                                                                                            />
-                                                                                                          ) : (
-                                                                                                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-indigo-400 to-purple-500">
-                                                                                                              <span className="text-white font-medium text-sm">
-                                                                                                                {friend.full_name.charAt(0).toUpperCase()}
-                                                                                                              </span>
-                                                                                                            </div>
-                                                                                                          )}
-                                                                                                          <div
-                                                                                                            className={`absolute -bottom-0 -right-0 h-3 w-3 rounded-full border-2 border-white ${friend.is_online ? 'bg-green-400' : 'bg-gray-400'
-                                                                                                              }`}
-                                                                                                          />
-                                                                                                        </div>
-                                                                                                        <div className="ml-3 flex-1 min-w-0">
-                                                                                                          <p className="text-sm font-medium text-gray-900 truncate">
-                                                                                                            {friend.full_name}
-                                                                                                          </p>
-                                                                                                          <div className="flex items-center space-x-2">
-                                                                                                            <p className="text-xs text-gray-500">
-                                                                                                              {friend.is_online ? 'Online' : `Active ${formatLastActive(friend.last_active)}`}
-                                                                                                            </p>
-                                                                                                            {friend.city && (
-                                                                                                              <>
-                                                                                                                <span className="text-xs text-gray-300">•</span>
-                                                                                                                <p className="text-xs text-gray-500 truncate">{friend.city}</p>
-                                                                                                              </>
-                                                                                                            )}
-                                                                                                          </div>
-                                                                                                        </div>
-                                                                                                        <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                                                          <button
-                                                                                                            onClick={() => handleShareTap(friendship)}
-                                                                                                            className="rounded-full p-1.5 text-indigo-600 hover:bg-indigo-100 transition-colors active:scale-95 transition-transform duration-150 safe-hover-scale transition-transform duration-150"
-                                                                                                            title="Share deal"
-                                                                                                          >
-                                                                                                            <Share2 className="h-4 w-4" />
-                                                                                                          </button>
-                                                                                                          <button
-                                                                                                            onClick={() => handleMessageTap(friendship)}
-                                                                                                            className="rounded-full p-1.5 text-gray-600 hover:bg-gray-100 transition-colors active:scale-95 transition-transform duration-150 safe-hover-scale transition-transform duration-150"
-                                                                                                            title="Send message"
-                                                                                                          >
-                                                                                                            <MessageCircle className="h-4 w-4" />
-                                                                                                          </button>
-                                                                                                          <button
-                                                                                                            onClick={() => handleRemoveFriend(friendship)}
-                                                                                                            className="rounded-full p-1.5 text-red-600 hover:bg-red-100 transition-colors active:scale-95 transition-transform duration-150 safe-hover-scale transition-transform duration-150"
-                                                                                                            title="Remove friend"
-                                                                                                          >
-                                                                                                            <Trash2 className="h-4 w-4" />
-                                                                                                          </button>
-                                                                                                        </div>
-                                                                                                      </div>
-                                                                                                    )
-                                                                                                  })}
-                                                                  </>
+                            <div className="flex-1 w-full h-full min-h-[400px]">
+                              <AutoSizer>
+                                {({ height, width }) => (
+                                  <List
+                                    height={height}
+                                    itemCount={filteredFriends.length}
+                                    itemSize={64} // 64px is standard row height for contacts
+                                    width={width}
+                                    itemData={friendItemData}
+                                    overscanCount={5}
+                                    className="scrollbar-hide"
+                                  >
+                                    {FriendRow}
+                                  </List>
+                                )}
+                              </AutoSizer>
                             </div>
                           )
                         ) : (
@@ -424,77 +554,22 @@ const ContactsSidebar: React.FC<ContactsSidebarProps> = ({ isOpen, onClose }) =>
                               </p>
                             </div>
                           ) : (
-                            <div className="space-y-4">
-                              {friendRequests.map((request) => {
-                                const isProcessing = processingRequest.has(request.id)
-
-                                return (
-                                  <div
-                                    key={request.id}
-                                    className="p-4 bg-gray-50 rounded-xl animate-fadeIn"
+                            <div className="flex-1 w-full h-full min-h-[400px]">
+                              <AutoSizer>
+                                {({ height, width }) => (
+                                  <List
+                                    height={height}
+                                    itemCount={friendRequests.length}
+                                    itemSize={136} // 136px accommodates the larger card + margins
+                                    width={width}
+                                    itemData={requestItemData}
+                                    overscanCount={3}
+                                    className="scrollbar-hide"
                                   >
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex items-center space-x-3">
-                                        <div className="relative">
-                                          {request.requester_avatar ? (
-                                            <img loading="lazy" decoding="async" 
-                                              src={request.requester_avatar}
-                                              alt={request.requester_name}
-                                              className="h-12 w-12 rounded-full object-cover"
-                                            />
-                                          ) : (
-                                            <div className="h-12 w-12 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center">
-                                              <span className="text-white font-semibold text-lg">
-                                                {request.requester_name.charAt(0).toUpperCase()}
-                                              </span>
-                                            </div>
-                                          )}
-                                        </div>
-
-                                        <div className="flex-1">
-                                          <h4 className="font-medium text-gray-900">{request.requester_name}</h4>
-                                          <div className="flex items-center space-x-4 mt-1">
-                                            <div className="flex items-center text-sm text-gray-500">
-                                              <Clock className="h-3 w-3 mr-1" />
-                                              {formatTimeAgo(request.created_at)}
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-
-                                    {/* Action Buttons */}
-                                    <div className="flex items-center justify-end space-x-3 mt-4">
-                                      <button
-                                        onClick={() => handleRejectRequest(request.id)}
-                                        disabled={isProcessing}
-                                        className="flex items-center space-x-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors active:scale-95 transition-transform duration-150 safe-hover-scale transition-transform duration-150"
-                                      >
-                                        <X className="h-4 w-4" />
-                                        <span>Decline</span>
-                                      </button>
-
-                                      <button
-                                        onClick={() => handleAcceptRequest(request.id)}
-                                        disabled={isProcessing}
-                                        className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors active:scale-95 transition-transform duration-150 safe-hover-scale transition-transform duration-150"
-                                      >
-                                        {isProcessing ? (
-                                          <>
-                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                                            <span>Processing...</span>
-                                          </>
-                                        ) : (
-                                          <>
-                                            <Check className="h-4 w-4" />
-                                            <span>Accept</span>
-                                          </>
-                                        )}
-                                      </button>
-                                    </div>
-                                  </div>
-                                )
-                              })}
+                                    {RequestRow}
+                                  </List>
+                                )}
+                              </AutoSizer>
                             </div>
                           )
                         )}

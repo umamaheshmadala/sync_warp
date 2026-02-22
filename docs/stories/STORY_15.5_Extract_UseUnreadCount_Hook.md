@@ -1,7 +1,7 @@
 # STORY 15.5 — Extract `useUnreadCount()` Hook; Refactor Header Badge Logic
 
 **EPIC:** [EPIC 15 — Rendering Performance & State Management](../epics/EPIC_15_Rendering_Performance_State_Management.md)  
-**Status:** 📋 Ready  
+**Status:** ✅ Complete  
 **Priority:** 🔴 Critical  
 **Estimate:** 2 points  
 **Dependencies:** Story 15.1 (auth selectors must be fixed first)  
@@ -122,17 +122,17 @@ If `BottomNavigation.tsx`, `useNavigationBadges.ts`, or other files also access 
 
 ## ✅ Acceptance Criteria
 
-- [ ] `useUnreadCount()` hook created in `src/hooks/`
-- [ ] `Header.tsx` uses `useUnreadCount()` instead of direct store access
-- [ ] All other `totalUnreadCount` consumers migrated to the hook
-- [ ] Badge behavior unchanged
-- [ ] Build passes
+- [x] `useUnreadCount()` hook created in `src/hooks/`
+- [x] `Header.tsx` uses `useUnreadCount()` instead of direct store access
+- [x] All other `totalUnreadCount` consumers migrated to the hook
+- [x] Badge behavior unchanged
+- [x] Build passes
 
 ---
 
 ## ✅ Definition of Done
 
-- [ ] Hook created
-- [ ] All consumers migrated
-- [ ] Badge works correctly
-- [ ] Build passes
+- [x] Hook created
+- [x] All consumers migrated
+- [x] Badge works correctly
+- [x] Build passes
