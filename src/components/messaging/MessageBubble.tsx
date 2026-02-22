@@ -42,6 +42,7 @@ import { MessageReactions } from './MessageReactions'
 import { ClickableUrl } from './ClickableUrl'
 import { parseMessageContent } from '../../utils/urlUtils'
 import { ExpandableText } from './ExpandableText'
+import { MessageTextContent } from './MessageTextContent'
 
 interface MessageBubbleProps {
   message: Message
@@ -127,23 +128,7 @@ export const MessageBubble = React.memo(function MessageBubble({
     onLongPress: () => setShowContextMenu(true)
   });
 
-  // Long message expansion state (Story 8.6.7)
-  const [isExpanded, setIsExpanded] = useState(false)
-  const [needsReadMore, setNeedsReadMore] = useState(false)
-  const textRef = useRef<HTMLParagraphElement>(null)
-
-  // Check text height on mount/content change
-  useEffect(() => {
-    if (message.type === 'text' && textRef.current) {
-      // 140px is approx 7 lines of text (20px line-height)
-      const MAX_COLLAPSED_HEIGHT = 140
-      if (textRef.current.scrollHeight > MAX_COLLAPSED_HEIGHT) {
-        setNeedsReadMore(true)
-      } else {
-        setNeedsReadMore(false)
-      }
-    }
-  }, [message.content, message.type])
+  // Long message expansion state (Story 8.6.7) - Moved to MessageTextContent
 
   const content = message.content || ''
   const isDeleted = !!message.deleted_at
@@ -571,109 +556,73 @@ export const MessageBubble = React.memo(function MessageBubble({
                   <MessageLinkPreviews previews={message.link_previews} />
 
                   {/* Text content with Read More expansion (Story 8.6.7) */}
-                  <div className="relative">
-                    <p
-                      ref={textRef}
-                      className={cn(
-                        "whitespace-pre-wrap break-words break-all transition-all duration-200",
-                        !isExpanded && needsReadMore ? "line-clamp-7 max-h-[140px] overflow-hidden" : ""
-                      )}
-                    >
-                      {/* Parse content and render URLs as clickable links (AC-14 through AC-17) */}
-                      {parseMessageContent(content).map((segment, index) =>
-                        segment.type === 'url' ? (
-                          <ClickableUrl
-                            key={`url-${index}`}
-                            url={segment.fullUrl || segment.content}
-                            isOwnMessage={isOwn}
-                          />
-                        ) : (
-                          <React.Fragment key={`text-${index}`}>
-                            {segment.content}
-                          </React.Fragment>
-                        )
-                      )}
-                    </p>
+                  <MessageTextContent message={message} isOwn={isOwn} />
 
-                    {!isExpanded && needsReadMore && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation() // Prevent bubbling to message click
-                          setIsExpanded(true)
-                        }}
-                        className={cn(
-                          "mt-1 text-sm font-medium hover:underline focus:outline-none",
-                          isOwn ? "text-blue-100 opacity-90" : "text-blue-600"
-                        )}
-                      >
-                        Read more
-                      </button>
-                    )}
-                  </div>
+                  {/* Timestamp & Status Row */}
+                  <MessageStatus
+                    message={message}
+                    isOwn={isOwn}
+                    isPinned={isMessagePinned?.(message.id)}
+                    showReadAsDelivered={showReadAsDelivered}
+                  />
                 </div>
               )}
-              {/* Timestamp & Status Row */}
-              <MessageStatus
-                message={message}
-                isOwn={isOwn}
-                isPinned={isMessagePinned?.(message.id)}
-                showReadAsDelivered={showReadAsDelivered}
+
+              {/* Message Reactions (Displays below bubble) */}
+              <MessageReactions
+                reactions={reactionsSummary}
+                currentUserId={currentUserId || ''}
+                onReactionClick={toggleReaction}
+                onViewUsers={(emoji, e) => handleViewReactionUsers(emoji, e)}  // Pass event for positioning
+                isOwnMessage={isOwn}
               />
             </div>
-            {/* Message Reactions (Displays below bubble) */}
-            <MessageReactions
-              reactions={reactionsSummary}
-              currentUserId={currentUserId || ''}
-              onReactionClick={toggleReaction}
-              onViewUsers={(emoji, e) => handleViewReactionUsers(emoji, e)}  // Pass event for positioning
-              isOwnMessage={isOwn}
-            />
           </div>
-        </div >
-      </div >
+        </div>
 
-      <MessageDialogs
-        message={message}
-        isOwn={isOwn}
-        currentUserId={currentUserId}
-        showContextMenu={showContextMenu}
-        contextMenuPosition={contextMenuPosition}
-        setShowContextMenu={setShowContextMenu}
-        onReply={() => onReply?.(message)}
-        onForward={() => onForward?.(message)}
-        handleCopy={handleCopy}
-        handleShare={handleShare}
-        onEdit={() => onEdit?.(message)}
-        canEditMessage={canEditMessage}
-        editRemainingTime={editRemainingTime}
-        handleDeleteForMe={handleDeleteForMe}
-        handleDeleteForEveryone={handleDeleteForEveryone}
-        canDeleteMessage={canDeleteMessage}
-        deleteRemainingTime={deleteRemainingTime}
-        toggleReaction={toggleReaction}
-        setShowPicker={setShowPicker}
-        userReactions={userReactions}
-        onPin={() => onPin?.(message.id)}
-        onUnpin={() => onUnpin?.(message.id)}
-        isPinned={isMessagePinned?.(message.id)}
-        setShowReportDialog={setShowReportDialog}
-        showReportDialog={showReportDialog}
-        selectedEmoji={selectedEmoji}
-        closeReactionUsers={closeReactionUsers}
-        emojiUsers={emojiUsers}
-        loadingUsers={loadingUsers}
-        popupPosition={popupPosition}
-        showPicker={showPicker}
-        showVideoPlayer={showVideoPlayer}
-        setShowVideoPlayer={setShowVideoPlayer}
-        lightboxImages={lightboxImages}
-        lightboxInitialIndex={lightboxInitialIndex}
-        lightboxOpen={lightboxOpen}
-        setLightboxOpen={setLightboxOpen}
-        showDeleteConfirm={showDeleteConfirm}
-        setShowDeleteConfirm={setShowDeleteConfirm}
-        isDeleting={isDeleting}
-      />
-    </div >
+        <MessageDialogs
+          message={message}
+          isOwn={isOwn}
+          currentUserId={currentUserId}
+          showContextMenu={showContextMenu}
+          contextMenuPosition={contextMenuPosition}
+          setShowContextMenu={setShowContextMenu}
+          onReply={() => onReply?.(message)}
+          onForward={() => onForward?.(message)}
+          handleCopy={handleCopy}
+          handleShare={handleShare}
+          onEdit={() => onEdit?.(message)}
+          canEditMessage={canEditMessage}
+          editRemainingTime={editRemainingTime}
+          handleDeleteForMe={handleDeleteForMe}
+          handleDeleteForEveryone={handleDeleteForEveryone}
+          canDeleteMessage={canDeleteMessage}
+          deleteRemainingTime={deleteRemainingTime}
+          toggleReaction={toggleReaction}
+          setShowPicker={setShowPicker}
+          userReactions={userReactions}
+          onPin={() => onPin?.(message.id)}
+          onUnpin={() => onUnpin?.(message.id)}
+          isPinned={isMessagePinned?.(message.id)}
+          setShowReportDialog={setShowReportDialog}
+          showReportDialog={showReportDialog}
+          selectedEmoji={selectedEmoji}
+          closeReactionUsers={closeReactionUsers}
+          emojiUsers={emojiUsers}
+          loadingUsers={loadingUsers}
+          popupPosition={popupPosition}
+          showPicker={showPicker}
+          showVideoPlayer={showVideoPlayer}
+          setShowVideoPlayer={setShowVideoPlayer}
+          lightboxImages={lightboxImages}
+          lightboxInitialIndex={lightboxInitialIndex}
+          lightboxOpen={lightboxOpen}
+          setLightboxOpen={setLightboxOpen}
+          showDeleteConfirm={showDeleteConfirm}
+          setShowDeleteConfirm={setShowDeleteConfirm}
+          isDeleting={isDeleting}
+        />
+      </div>
+    </div>
   )
 })
