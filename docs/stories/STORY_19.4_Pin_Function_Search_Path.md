@@ -21,12 +21,12 @@ Add `SET search_path = ''` to all functions flagged with a mutable `search_path`
 
 | Lint ID | Name | Level | Count |
 |---------|------|-------|-------|
-| `0011` | `function_search_path_mutable` | ⚠️ WARN | **130+ functions** |
+| `0011` | `function_search_path_mutable` | ⚠️ WARN | **200+ functions** |
 
 ### Complete List of Affected Functions
 
 <details>
-<summary>Click to expand full list (130+ functions)</summary>
+<summary>Click to expand full list (200+ functions)</summary>
 
 | # | Function Name | Category |
 |---|---------------|----------|
@@ -286,7 +286,7 @@ SELECT public.send_message(
 
 ## ✅ Acceptance Criteria
 
-- [ ] All 130+ functions have `SET search_path = ''` in their config
+- [ ] All 200+ functions have `SET search_path = ''` in their config
 - [ ] Supabase Security Advisor reports 0 `function_search_path_mutable` warnings
 - [ ] All existing function calls still work correctly (no unqualified reference errors)
 - [ ] Overloaded functions are individually pinned
@@ -298,7 +298,7 @@ SELECT public.send_message(
 
 | File | Action |
 |------|--------|
-| Supabase Migration | NEW — `ALTER FUNCTION ... SET search_path = ''` for all 130+ functions |
+| Supabase Migration | NEW — `ALTER FUNCTION ... SET search_path = ''` for all 200+ functions |
 
 ---
 

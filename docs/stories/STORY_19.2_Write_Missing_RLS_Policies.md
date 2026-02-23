@@ -11,7 +11,7 @@
 
 ## 🎯 Goal
 
-Create appropriate RLS policies for all 11 tables that have RLS enabled but **zero policies defined**. These tables are currently **fully locked out** — RLS blocks all access because no policies grant any permissions. This means legitimate application queries to these tables will silently return empty results or fail.
+Create appropriate RLS policies for all 10 tables that have RLS enabled but **zero policies defined**. These tables are currently **fully locked out** — RLS blocks all access because no policies grant any permissions. This means legitimate application queries to these tables will silently return empty results or fail.
 
 ---
 
@@ -23,7 +23,7 @@ Create appropriate RLS policies for all 11 tables that have RLS enabled but **ze
 |---------|------|-------|
 | `0008` | `rls_enabled_no_policy` | ℹ️ INFO |
 
-### Affected Tables (11 total)
+### Affected Tables (10 total)
 
 | # | Table | Expected Access Pattern |
 |---|-------|------------------------|
@@ -214,7 +214,7 @@ CREATE POLICY "Users can delete own wishlist items"
 
 ### Post-Migration Checks
 
-1. **Supabase Security Advisor:** Re-run → all 11 `rls_enabled_no_policy` warnings should be resolved
+1. **Supabase Security Advisor:** Re-run → all 10 `rls_enabled_no_policy` warnings should be resolved
 2. **Policy count check:**
    ```sql
    SELECT tablename, COUNT(*) as policy_count
@@ -240,7 +240,7 @@ CREATE POLICY "Users can delete own wishlist items"
 
 ## ✅ Acceptance Criteria
 
-- [ ] All 11 tables have at least one RLS policy
+- [ ] All 10 tables have at least one RLS policy
 - [ ] Supabase Security Advisor reports 0 `rls_enabled_no_policy` warnings
 - [ ] Authenticated users can only access data they are authorized to see
 - [ ] Service-role access to `retention_archives` and `retention_audit_log` still works
@@ -253,7 +253,7 @@ CREATE POLICY "Users can delete own wishlist items"
 
 | File | Action |
 |------|--------|
-| Supabase Migration | NEW — Create RLS policies for all 11 tables |
+| Supabase Migration | NEW — Create RLS policies for all 10 tables |
 
 ---
 
