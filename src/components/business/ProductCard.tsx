@@ -79,13 +79,11 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
             {/* Product Image - Portrait */}
             <div className="flex-shrink-0 w-24 aspect-[9/16] overflow-hidden rounded-lg bg-gray-100">
               {getImageUrl() && !imageError ? (
-                <img loading="lazy" decoding="async" 
+                <img loading="lazy" decoding="async"
                   src={getImageUrl()}
                   alt={product.name}
                   className="w-full h-full object-cover rounded-lg"
                   onError={() => setImageError(true)}
-                  decoding="async"
-                  loading="lazy"
                 />
               ) : (
                 <div className="w-full h-full bg-gray-100 rounded-lg flex items-center justify-center">
@@ -142,16 +140,16 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
 
         {/* Product View Modal */}
         <>
-            {showProductView && (
-                        <ProductView
-                          product={product}
-                          isOwner={isOwner}
-                          isModal={true}
-                          onClose={handleCloseProductView}
-                          onEdit={onEdit}
-                        />
-                      )}
-            </>
+          {showProductView && (
+            <ProductView
+              product={product}
+              isOwner={isOwner}
+              isModal={true}
+              onClose={handleCloseProductView}
+              onEdit={onEdit}
+            />
+          )}
+        </>
       </>
     );
   }
@@ -166,13 +164,11 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
         {/* Product Image - Aspect Ratio */}
         <div className="relative bg-gray-100 overflow-hidden aspect-[4/5] sm:aspect-[1/1]">
           {getImageUrl() && !imageError ? (
-            <img loading="lazy" decoding="async" 
+            <img loading="lazy" decoding="async"
               src={getImageUrl()}
               alt={product.name}
               className="w-full h-full object-cover"
               onError={() => setImageError(true)}
-              decoding="async"
-              loading="lazy"
             />
           ) : (
             <div className="w-full h-full bg-gray-100 flex items-center justify-center">
@@ -255,19 +251,19 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
 
       {/* Product View Modal */}
       <>
-          {
-                    showProductView && (
-                      <ProductView
-                        product={product}
-                        isOwner={isOwner}
-                        isModal={true}
-                        onClose={handleCloseProductView}
-                        onEdit={onEdit}
-                        onDelete={onDelete}
-                      />
-                    )
-                  }
-          </>
+        {
+          showProductView && (
+            <ProductView
+              product={product}
+              isOwner={isOwner}
+              isModal={true}
+              onClose={handleCloseProductView}
+              onEdit={onEdit}
+              onDelete={onDelete}
+            />
+          )
+        }
+      </>
     </>
   );
 };

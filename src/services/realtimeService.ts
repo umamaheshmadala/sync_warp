@@ -142,13 +142,13 @@ class RealtimeService {
       // Need dynamic import to avoid circular dependency since messagingService uses us? 
       // Or simply import it at the top (messagingService doesn't import realtimeService usually)
       const { messagingService } = await import('./messagingService');
-      const { useMessagingStore } = await import('../store/messagingStore');
+      const { messageCacheManager } = await import('../utils/messageCacheManager');
 
       const missedMessages = await messagingService.fetchMessagesSince(this.lastSyncTimestamp);
 
       if (missedMessages.length > 0) {
         console.log(`📥 Upserting ${missedMessages.length} missed messages...`);
-        useMessagingStore.getState().upsertMessages(missedMessages);
+        messageCacheManager.upsertMessages(missedMessages);
 
         // Story 8.11.4 Fix: Invalidate React Query cache to reflect new messages in UI
         console.log('🔄 Invalidating text query cache to reflect catch-up...');

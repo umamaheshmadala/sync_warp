@@ -415,7 +415,8 @@ export const MessageBubble = React.memo(function MessageBubble({
                   content={content}
                   onRetryUpload={handleRetryUpload}
                   onImageClick={(index) => {
-                    const conversationMessages = useMessagingStore.getState().messages[message.conversation_id] || []
+                    const queryData = queryClient.getQueryData(['messages', message.conversation_id]) as any
+                    const conversationMessages = queryData?.messages || []
                     const allImages = []
                     let globalIndex = 0
                     let found = false

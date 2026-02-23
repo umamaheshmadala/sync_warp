@@ -4,7 +4,7 @@ import { Image as ImageIcon, Loader2 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { useImageUpload } from '../../hooks/useImageUpload'
 import { useSendMessage } from '../../hooks/useSendMessage'
-import { useMessagingStore } from '../../store/messagingStore'
+import { messageCacheManager } from '../../utils/messageCacheManager'
 import { useAuthStore } from '../../store/authStore'
 import { mediaUploadService } from '../../services/mediaUploadService'
 import { supabase } from '../../lib/supabase'
@@ -28,9 +28,9 @@ export function ImageUploadButton({
   const cancelledRef = useRef<boolean>(false) // Track cancellation
   const { uploadImage, isUploading, cancelUpload } = useImageUpload()
   const { sendMessage } = useSendMessage()
-  const addOptimisticMessage = useMessagingStore((state) => state.addOptimisticMessage);
-  const removeMessage = useMessagingStore((state) => state.removeMessage);
-  const updateMessageProgress = useMessagingStore((state) => state.updateMessageProgress);
+  const addOptimisticMessage = messageCacheManager.addOptimisticMessage;
+  const removeMessage = messageCacheManager.removeMessage;
+  const updateMessageProgress = messageCacheManager.updateMessageProgress;
   const currentUserId = useAuthStore(state => state.user?.id)
 
   const [showPreview, setShowPreview] = useState(false)
@@ -165,7 +165,7 @@ export function ImageUploadButton({
             if (cancelledRef.current) return
 
             // Check if message was cancelled externally (by MessageBubble UI)
-            const currentMessages = useMessagingStore.getState().messages[conversationId] || []
+            const currentMessages = messageCacheManager.getMessages(conversationId)
             const currentMsg = currentMessages.find(m => m._tempId === tempId)
 
             if (!currentMsg || currentMsg._failed) {
@@ -199,7 +199,7 @@ export function ImageUploadButton({
       }
 
       // Check if cancelled after upload OR if message is failed/missing
-      const finalMessages = useMessagingStore.getState().messages[conversationId] || []
+      const finalMessages = messageCacheManager.getMessages(conversationId)
       const finalMsg = finalMessages.find(m => m._tempId === tempId)
 
       if (cancelledRef.current || !finalMsg || finalMsg._failed || uploadedUrls.length !== selectedFiles.length) {
@@ -210,7 +210,7 @@ export function ImageUploadButton({
 
         // Ensure message is failed if it exists (and wasn't already marked)
         if (finalMsg && !finalMsg._failed) {
-          useMessagingStore.getState().updateMessage(conversationId, tempId, {
+          messageCacheManager.updateMessage(conversationId, tempId, {
             _failed: true,
             _optimistic: true,
             _uploadProgress: 0
@@ -279,7 +279,7 @@ export function ImageUploadButton({
       if (error.message === 'Upload cancelled' || cancelledRef.current) {
         console.log('⏹️ Upload cancelled caught in catch block')
         if (tempId) {
-          useMessagingStore.getState().updateMessage(conversationId, tempId, {
+          messageCacheManager.updateMessage(conversationId, tempId, {
             _failed: true,
             _optimistic: true,
             _uploadProgress: 0
@@ -292,7 +292,7 @@ export function ImageUploadButton({
       console.error('❌ Image upload error:', error)
       // Mark as failed
       if (tempId && !cancelledRef.current) {
-        useMessagingStore.getState().updateMessage(conversationId, tempId, {
+        messageCacheManager.updateMessage(conversationId, tempId, {
           _failed: true,
           _optimistic: false
         })

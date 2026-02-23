@@ -110,7 +110,7 @@ const ProductCardBase = ({
             />
           )}
 
-          <img loading="lazy" decoding="async" 
+          <img loading="lazy" decoding="async"
             src={imageError ? '/placeholder-product.jpg' : primaryImage}
             alt={product.name}
             className={cn(
@@ -123,8 +123,6 @@ const ProductCardBase = ({
               setImageError(true);
               setImageLoading(false);
             }}
-            decoding="async"
-            loading="lazy"
           />
 
           {/* Featured Star - Top Left */}

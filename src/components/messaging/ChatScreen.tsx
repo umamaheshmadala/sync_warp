@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { useMessages } from '../../hooks/useMessages'
 import { useTypingIndicator } from '../../hooks/useTypingIndicator'
 import { useSendMessage } from '../../hooks/useSendMessage'
@@ -25,6 +26,7 @@ import type { PinDuration } from '../../services/pinnedMessageService'
 import { supabase } from '../../lib/supabase'
 import { useAuthStore } from '../../store/authStore'
 import { useMessagingStore } from '../../store/messagingStore'
+import { useConversations } from '../../hooks/useConversations'
 import './ChatScreen.css'
 import { friendsService } from '../../services/friendsService'
 import { useFriendProfile } from '../../hooks/friends/useFriendProfile'
@@ -58,7 +60,7 @@ export default function ChatScreen() {
   const { conversationId } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
-  const updateConversation = useMessagingStore((state) => state.updateConversation);
+  const queryClient = useQueryClient()
   const setActiveConversation = useMessagingStore((state) => state.setActiveConversation); // For clearing unread count and tracking active
   // Set active conversation on mount
   useEffect(() => {
@@ -163,7 +165,7 @@ export default function ChatScreen() {
   } = useMessageSearch(conversationId || undefined)
 
   // Determine Other User ID
-  const conversations = useMessagingStore((state) => state.conversations);
+  const { conversations } = useConversations();
   const conversation = conversations.find(c => c.conversation_id === conversationId)
   const otherUserId = conversation
     ? (conversation.participant1_id === currentUserId ? conversation.participant2_id : conversation.participant1_id)
@@ -284,8 +286,10 @@ export default function ChatScreen() {
             console.log('✅ Updated last_read_at to:', now)
           }
 
-          // 3. Update store to clear unread count (fixes badge not updating)
-          updateConversation(conversationId, { unread_count: 0 })
+          // 3. Update React Query cache to clear unread count (fixes badge not updating)
+          queryClient.setQueryData<typeof conversations>(['conversations'], (old = []) =>
+            old.map(c => c.conversation_id === conversationId ? { ...c, unread_count: 0 } : c)
+          )
           console.log('✅ Cleared unread count in store for conversation:', conversationId)
 
         } catch (err) {
@@ -437,7 +441,7 @@ export default function ChatScreen() {
       )
       if (aroundMessages.length > 0) {
         // Replace current message window in store
-        useMessagingStore.getState().setMessages(conversationId, aroundMessages)
+        queryClient.setQueryData(['messages', conversationId], (old: any) => ({ ...old, messages: aroundMessages }))
         // Wait for React to render the new messages
         await new Promise(resolve => setTimeout(resolve, 300))
         const el = document.getElementById(`message-${messageId}`)

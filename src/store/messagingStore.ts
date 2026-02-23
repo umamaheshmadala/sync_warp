@@ -6,7 +6,7 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { Capacitor } from '@capacitor/core';
 import { Preferences } from '@capacitor/preferences';
-import type { Message, ConversationWithDetails } from '../types/messaging';
+import type { ConversationWithDetails } from '../types/messaging';
 
 // ============================================================================
 // Constants - Platform-Specific Memory Limits
@@ -32,16 +32,7 @@ const STORAGE_KEYS = {
 // ============================================================================
 
 interface MessagingState {
-  // Conversations
-  conversations: ConversationWithDetails[];
   activeConversationId: string | null;
-
-  // Messages (Map for efficient O(1) lookup by conversation ID)
-  messages: Record<string, Message[]>;
-
-  // Unread counts
-  unreadCounts: Record<string, number>; // conversationId -> count
-  totalUnreadCount: number;
 
   // Typing indicators (Map<conversationId, Set<userId>>)
   typingUsers: Record<string, string[]>;
@@ -55,50 +46,8 @@ interface MessagingState {
   playingVideoId: string | null;
   setPlayingVideo: (videoId: string | null) => void;
 
-  // ============================================================================
-  // Conversation Actions
-  // ============================================================================
-
-  setConversations: (conversations: ConversationWithDetails[]) => void;
-  addConversation: (conversation: ConversationWithDetails) => void;
-  upsertConversation: (conversation: ConversationWithDetails) => void; // Add or update and move to top
-  updateConversation: (conversationId: string, updates: Partial<ConversationWithDetails>) => void;
-  removeConversation: (conversationId: string) => void;
   setActiveConversation: (conversationId: string | null) => void;
 
-  // ============================================================================
-  // Message Actions
-  // ============================================================================
-
-  setMessages: (conversationId: string, messages: Message[]) => void;
-  addMessage: (conversationId: string, message: Message) => void;
-  upsertMessages: (messages: Message[]) => void; // Batch upsert for catch-up
-  updateMessage: (conversationId: string, messageId: string, updates: Partial<Message>) => void;
-  removeMessage: (conversationId: string, messageId: string) => void;
-  prependMessages: (conversationId: string, messages: Message[]) => void; // For pagination
-
-  // Optimistic Updates (Story 8.2.7)
-  addOptimisticMessage: (conversationId: string, message: Message) => void;
-  replaceOptimisticMessage: (conversationId: string, tempId: string, realMessage: Message) => void;
-  markMessageFailed: (conversationId: string, tempId: string) => void;
-  updateMessageProgress: (conversationId: string, tempId: string, progress: number) => void;
-
-  // ============================================================================
-  // Unread Count Actions
-  // ============================================================================
-
-  setUnreadCount: (conversationId: string, count: number) => void;
-  incrementUnreadCount: (conversationId: string) => void;
-  clearUnreadCount: (conversationId: string) => void;
-  setTotalUnreadCount: (count: number) => void;
-
-  // ============================================================================
-  // Optimistic Conversation Actions
-  // ============================================================================
-
-  togglePinOptimistic: (conversationId: string) => void;
-  toggleArchiveOptimistic: (conversationId: string) => void;
-  toggleMuteOptimistic: (conversationId: string, isMuted: boolean) => void;
 
   // ============================================================================
   // Typing Indicator Actions
@@ -120,8 +69,6 @@ interface MessagingState {
   // Persistence & Reset
   // ============================================================================
 
-  saveUnreadCounts: () => Promise<void>;
-  loadUnreadCounts: () => Promise<void>;
   reset: () => void;
 }
 
@@ -133,11 +80,7 @@ export const useMessagingStore = create<MessagingState>()(
   devtools(
     (set, get) => ({
       // Initial State
-      conversations: [],
       activeConversationId: null,
-      messages: {},
-      unreadCounts: {},
-      totalUnreadCount: 0,
       typingUsers: {},
       isLoadingConversations: false,
       isLoadingMessages: false,
@@ -146,212 +89,7 @@ export const useMessagingStore = create<MessagingState>()(
 
       setPlayingVideo: (videoId) => set({ playingVideoId: videoId }, false, 'setPlayingVideo'),
 
-      // ========================================================================
-      // Conversation Actions
-      // ========================================================================
 
-      setConversations: (conversations) => {
-        // Apply platform-specific limits
-        let limitedConversations = Capacitor.isNativePlatform()
-          ? conversations.slice(0, MAX_CACHED_CONVERSATIONS)
-          : conversations;
-
-        // CRITICAL FIX: Preserve active conversation if it's being sliced out or missing
-        const activeId = get().activeConversationId;
-        if (activeId) {
-          const isActiveInNew = limitedConversations.some(c => c.conversation_id === activeId);
-          if (!isActiveInNew) {
-            // Check if it's in the full list (if we sliced it out)
-            const inFullList = conversations.find(c => c.conversation_id === activeId);
-            if (inFullList) {
-              // It was just sliced out, add it back (at end or appropriate place? active is usually important, maybe keep?)
-              // Actually, if we are viewing it, we want it in memory.
-              limitedConversations = [...limitedConversations, inFullList];
-            } else {
-              // It wasn't in the new fetch at all. Check if we have it in CURRENT state
-              const currentActive = get().conversations.find(c => c.conversation_id === activeId);
-              if (currentActive) {
-                // Keep the stale version until we fetch a new one or navigate away
-                console.log('🛡️ [Store] Preserving active conversation not in new list:', activeId);
-                limitedConversations = [...limitedConversations, currentActive];
-              }
-            }
-          }
-        }
-
-        // Calculate unread counts
-        const unreadCounts: Record<string, number> = {};
-        let totalUnreadCount = 0;
-
-        limitedConversations.forEach(c => {
-          const count = c.unread_count || 0;
-          if (count > 0) {
-            unreadCounts[c.conversation_id] = count;
-            // Only add to total if NOT muted
-            if (!c.is_muted) {
-              totalUnreadCount += count;
-            }
-          }
-        });
-
-        set({
-          conversations: limitedConversations,
-          unreadCounts,
-          totalUnreadCount
-        }, false, 'setConversations');
-      },
-
-      addConversation: (conversation) =>
-        set((state) => {
-          const updatedConversations = [conversation, ...state.conversations];
-
-          // Trim excess conversations on mobile to prevent memory bloat
-          const finalConversations = Capacitor.isNativePlatform()
-            ? updatedConversations.slice(0, MAX_CACHED_CONVERSATIONS)
-            : updatedConversations;
-
-          // Update counts
-          const newCounts = { ...state.unreadCounts };
-          const count = conversation.unread_count || 0;
-
-          let countToAdd = 0;
-          if (count > 0) {
-            newCounts[conversation.conversation_id] = count;
-            if (!conversation.is_muted) {
-              countToAdd = count;
-            }
-          }
-
-          return {
-            conversations: finalConversations,
-            unreadCounts: newCounts,
-            totalUnreadCount: state.totalUnreadCount + countToAdd
-          };
-        }, false, 'addConversation'),
-
-      upsertConversation: (conversation) =>
-        set((state) => {
-          const existingIndex = state.conversations.findIndex(
-            c => c.conversation_id === conversation.conversation_id
-          );
-          let newConversations: ConversationWithDetails[];
-          let newCounts = { ...state.unreadCounts };
-          let totalUnreadCount = state.totalUnreadCount;
-          if (existingIndex !== -1) {
-            // Exists: Remove and prepend to top
-            const oldConv = state.conversations[existingIndex];
-            const oldCount = state.unreadCounts[conversation.conversation_id] || 0;
-            const newCount = conversation.unread_count || 0;
-            // Update count map
-            if (newCount > 0) {
-              newCounts[conversation.conversation_id] = newCount;
-            } else {
-              delete newCounts[conversation.conversation_id];
-            }
-            // Recalculate total (respecting mute)
-            if (!oldConv.is_muted) totalUnreadCount -= oldCount;
-            if (!conversation.is_muted) totalUnreadCount += newCount;
-            newConversations = [
-              conversation,
-              ...state.conversations.filter(c => c.conversation_id !== conversation.conversation_id)
-            ];
-            console.log(`🔄 [Store] Updated and moved conversation to top: ${conversation.conversation_id}`);
-          } else {
-            // New: Prepend
-            const count = conversation.unread_count || 0;
-            if (count > 0) {
-              newCounts[conversation.conversation_id] = count;
-              if (!conversation.is_muted) totalUnreadCount += count;
-            }
-            newConversations = [conversation, ...state.conversations];
-            console.log(`✨ [Store] Added new conversation to top: ${conversation.conversation_id}`);
-          }
-          // Mobile limits
-          const finalConversations = Capacitor.isNativePlatform()
-            ? newConversations.slice(0, MAX_CACHED_CONVERSATIONS)
-            : newConversations;
-          return {
-            conversations: finalConversations,
-            unreadCounts: newCounts,
-            totalUnreadCount: Math.max(0, totalUnreadCount)
-          };
-        }, false, 'upsertConversation'),
-
-      updateConversation: (conversationId, updates) =>
-        set((state) => {
-          const updatedConversations = state.conversations.map(conv =>
-            conv.conversation_id === conversationId
-              ? { ...conv, ...updates }
-              : conv
-          );
-
-          // Recalculate if unread_count OR is_muted changed
-          let unreadCounts = state.unreadCounts;
-          let totalUnreadCount = state.totalUnreadCount;
-
-          const oldConv = state.conversations.find(c => c.conversation_id === conversationId);
-          // New conversation state (merged)
-          const newConv = updatedConversations.find(c => c.conversation_id === conversationId);
-
-          if (oldConv && newConv) {
-            const oldIsMuted = oldConv.is_muted;
-            const newIsMuted = newConv.is_muted;
-            const oldCount = state.unreadCounts[conversationId] || 0;
-            const newCount = updates.unread_count !== undefined ? updates.unread_count : oldCount;
-
-            // Update unread map if count changed
-            if (updates.unread_count !== undefined) {
-              unreadCounts = { ...state.unreadCounts };
-              unreadCounts[conversationId] = newCount;
-            }
-
-            // Logic to update total count
-            // Subtract old contribution
-            if (!oldIsMuted) {
-              totalUnreadCount -= oldCount;
-            }
-            // Add new contribution
-            if (!newIsMuted) {
-              totalUnreadCount += newCount;
-            }
-          }
-
-          // Fallback safety: prevent negative
-          totalUnreadCount = Math.max(0, totalUnreadCount);
-
-          return {
-            conversations: updatedConversations,
-            unreadCounts,
-            totalUnreadCount
-          };
-        }, false, 'updateConversation'),
-
-      removeConversation: (conversationId) =>
-        set((state) => {
-          const updatedConversations = state.conversations.filter(
-            c => c.conversation_id !== conversationId
-          );
-
-          // Also remove from unread counts
-          const newCounts = { ...state.unreadCounts };
-          const removedCount = newCounts[conversationId] || 0;
-          delete newCounts[conversationId];
-
-          // Check if conversation was muted (to know if it contributed to total)
-          const conv = state.conversations.find(c => c.conversation_id === conversationId);
-          const wasMuted = conv?.is_muted ?? false;
-
-          let countToSubtract = 0;
-          if (!wasMuted) {
-            countToSubtract = removedCount;
-          }
-
-          return {
-            conversations: updatedConversations,
-            unreadCounts: newCounts,
-            totalUnreadCount: Math.max(0, state.totalUnreadCount - countToSubtract)
-          };
-        }, false, 'removeConversation'),
 
       setActiveConversation: (conversationId) => {
         set({ activeConversationId: conversationId }, false, 'setActiveConversation');
@@ -364,376 +102,6 @@ export const useMessagingStore = create<MessagingState>()(
           }).catch(err => console.error('Failed to save active conversation:', err));
         }
       },
-
-      // ========================================================================
-      // Message Actions
-      // ========================================================================
-
-      setMessages: (conversationId, messages) =>
-        set((state) => {
-          const newMessages = { ...state.messages };
-
-          // Preserve optimistic messages when setting new messages
-          const currentMessages = newMessages[conversationId] || [];
-          const optimisticMessages = currentMessages.filter(m => m._optimistic);
-
-          // Filter out any optimistic messages that have been confirmed in the new fetch
-          // (Simple check: if we fetched the message, we don't need the optimistic version if it matches content/sender? 
-          //  Actually, we can't easily link them without ID. 
-          //  Safest is to keep optimistic ones at the end until they are explicitly resolved by replaceOptimisticMessage)
-
-          // Limit cache on mobile
-          let allMessages = [...messages, ...optimisticMessages];
-
-          const limitedMessages = Capacitor.isNativePlatform()
-            ? allMessages.slice(-MAX_CACHED_MESSAGES) // Keep last N messages
-            : allMessages;
-
-          newMessages[conversationId] = limitedMessages;
-          return { messages: newMessages };
-        }, false, 'setMessages'),
-
-      addMessage: (conversationId, message) =>
-        set((state) => {
-          const newMessages = { ...state.messages };
-          const conversationMessages = newMessages[conversationId] || [];
-
-          // 1. Check if message already exists by ID
-          if (conversationMessages.some(m => m.id === message.id)) {
-            return {}; // No change if message already exists
-          }
-
-          // 2. Check for optimistic match based on media URL (for smooth replacement)
-          // This requires the optimistic message to have been updated with the public URL
-          // before the real message arrives.
-          let updatedMessages = conversationMessages;
-
-          const tryMatchUrls = (url1: string, url2: string) => {
-            if (!url1 || !url2) return false;
-            // Exact match
-            if (url1 === url2) return true;
-            // Decoded match
-            if (decodeURIComponent(url1) === decodeURIComponent(url2)) return true;
-            // Ignore query parameters
-            const clean1 = url1.split('?')[0];
-            const clean2 = url2.split('?')[0];
-            if (clean1 === clean2) return true;
-            return false;
-          }
-
-          const optimisticMatch = conversationMessages.find(m =>
-            m._optimistic &&
-            m.media_urls?.length > 0 &&
-            message.media_urls?.length > 0 &&
-            tryMatchUrls(m.media_urls[0], message.media_urls[0])
-          );
-
-          if (optimisticMatch) {
-            console.log(`✨ [Store] Replaced optimistic message with real message (matched via URL)`, {
-              optimisticId: optimisticMatch.id,
-              realId: message.id,
-              url: message.media_urls?.[0]
-            });
-            updatedMessages = conversationMessages.map(msg =>
-              msg._tempId === optimisticMatch._tempId ? message : msg
-            );
-          } else {
-            // Debugging: Log if we have an optimistic video message that DIDN'T match
-            const optimisticVideo = conversationMessages.find(m => m._optimistic && m.type === 'video');
-            if (optimisticVideo && message.type === 'video') {
-              console.log('⚠️ [Store] Received Realtime video but failed to match optimistic video', {
-                optimisticUrl: optimisticVideo.media_urls?.[0],
-                realUrl: message.media_urls?.[0],
-                optimisticId: optimisticVideo.id,
-                realId: message.id
-              });
-            }
-
-            updatedMessages = [...conversationMessages, message];
-          }
-
-          // Enforce cache limit on mobile
-          const finalMessages = Capacitor.isNativePlatform()
-            ? updatedMessages.slice(-MAX_CACHED_MESSAGES)
-            : updatedMessages;
-
-          newMessages[conversationId] = finalMessages;
-          return { messages: newMessages };
-        }, false, 'addMessage'),
-
-      upsertMessages: (messages) =>
-        set((state) => {
-          if (messages.length === 0) return {};
-
-          const newMessages = { ...state.messages };
-          const messagesByConversation: Record<string, Message[]> = {};
-
-          // Group by conversation
-          messages.forEach(msg => {
-            const existing = messagesByConversation[msg.conversation_id] || [];
-            messagesByConversation[msg.conversation_id] = [...existing, msg];
-          });
-
-          // Process each conversation
-          Object.entries(messagesByConversation).forEach(([conversationId, newMsgs]) => {
-            const existingMsgs = newMessages[conversationId] || [];
-
-            // Create a record of existing messages by ID for O(1) lookup
-            const msgRecord: Record<string, Message> = {};
-            existingMsgs.forEach(m => { msgRecord[m.id] = m; });
-
-            // Update or add new messages
-            newMsgs.forEach(msg => {
-              msgRecord[msg.id] = msg;
-            });
-
-            // Convert back to array and sort
-            // (Assuming we want chronological order)
-            const sortedMessages = Object.values(msgRecord).sort((a, b) =>
-              new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-            );
-
-            // Enforce cache limit on mobile
-            const finalMessages = Capacitor.isNativePlatform()
-              ? sortedMessages.slice(-MAX_CACHED_MESSAGES)
-              : sortedMessages;
-
-            newMessages[conversationId] = finalMessages;
-          });
-
-          return { messages: newMessages };
-        }, false, 'upsertMessages'),
-
-      updateMessage: (conversationId, messageId, updates) =>
-        set((state) => {
-          const newMessages = { ...state.messages };
-          const conversationMessages = newMessages[conversationId] || [];
-          newMessages[conversationId] = conversationMessages.map(msg =>
-            msg.id === messageId ? { ...msg, ...updates } : msg
-          );
-          return { messages: newMessages };
-        }, false, 'updateMessage'),
-
-      removeMessage: (conversationId, messageId) =>
-        set((state) => {
-          const newMessages = { ...state.messages };
-          const conversationMessages = newMessages[conversationId] || [];
-          newMessages[conversationId] = conversationMessages.filter(msg => msg.id !== messageId);
-          return { messages: newMessages };
-        }, false, 'removeMessage'),
-
-      prependMessages: (conversationId, messages) =>
-        set((state) => {
-          const newMessages = { ...state.messages };
-          const existing = newMessages[conversationId] || [];
-          const combined = [...messages, ...existing];
-
-          // Enforce cache limit on mobile
-          const finalMessages = Capacitor.isNativePlatform()
-            ? combined.slice(-MAX_CACHED_MESSAGES)
-            : combined;
-
-          newMessages[conversationId] = finalMessages;
-          return { messages: newMessages };
-        }, false, 'prependMessages'),
-
-      // ========================================================================
-      // Optimistic Update Actions (Story 8.2.7)
-      // ========================================================================
-
-      addOptimisticMessage: (conversationId, message) =>
-        set((state) => {
-          const newMessages = { ...state.messages };
-          const conversationMessages = newMessages[conversationId] || [];
-
-          // Add optimistic message with _optimistic flag and 'sending' status
-          const optimisticMessage = {
-            ...message,
-            status: 'sending' as const, // Explicitly set status to sending
-            _optimistic: true,
-            _failed: false
-          };
-
-          const updatedMessages = [...conversationMessages, optimisticMessage];
-
-          // Enforce cache limit on mobile
-          const finalMessages = Capacitor.isNativePlatform()
-            ? updatedMessages.slice(-MAX_CACHED_MESSAGES)
-            : updatedMessages;
-
-          newMessages[conversationId] = finalMessages;
-          return { messages: newMessages };
-        }, false, 'addOptimisticMessage'),
-
-      replaceOptimisticMessage: (conversationId, tempId, realMessage) =>
-        set((state) => {
-          const newMessages = { ...state.messages };
-          const conversationMessages = newMessages[conversationId] || [];
-
-          // Check if the real message already exists in the list (e.g. came via Realtime first)
-          const realMessageExists = conversationMessages.some(m => m.id === realMessage.id);
-
-          let updatedMessages;
-          if (realMessageExists) {
-            // Real message already exists (e.g. from Realtime).
-            // CRITICAL FIX: We must MERGE the optimistic context (parent_message) into the existing real message
-            // because Realtime messages often lack this joined data.
-            const optimisticMsg = conversationMessages.find(msg => msg._tempId === tempId);
-
-            // Remove the optimistic copy
-            updatedMessages = conversationMessages.filter(msg => msg._tempId !== tempId);
-
-            // If we have context to save, update the real message in the list
-            if (optimisticMsg?.parent_message) {
-              updatedMessages = updatedMessages.map(msg =>
-                msg.id === realMessage.id && !msg.parent_message
-                  ? { ...msg, parent_message: optimisticMsg.parent_message }
-                  : msg
-              );
-            }
-
-            console.log(`🧹 [Store] Message ${realMessage.id} arrived via Realtime. Merged context & removed optimistic copy.`);
-          } else {
-            // Normal case: replace optimistic with real
-            updatedMessages = conversationMessages.map(msg =>
-              msg._tempId === tempId ? realMessage : msg
-            );
-          }
-
-          newMessages[conversationId] = updatedMessages;
-          return { messages: newMessages };
-        }, false, 'replaceOptimisticMessage'),
-
-      markMessageFailed: (conversationId, tempId) =>
-        set((state) => {
-          const newMessages = { ...state.messages };
-          const conversationMessages = newMessages[conversationId] || [];
-
-          // Mark optimistic message as failed
-          const updatedMessages = conversationMessages.map(msg =>
-            msg._tempId === tempId
-              ? { ...msg, status: 'failed' as const, _optimistic: false, _failed: true }
-              : msg
-          );
-
-          newMessages[conversationId] = updatedMessages;
-          return { messages: newMessages };
-        }, false, 'markMessageFailed'),
-
-      /**
-       * Update upload progress for optimistic message
-       * Used for real-time progress tracking during media uploads
-       */
-      updateMessageProgress: (conversationId, tempId, progress) =>
-        set((state) => {
-          const newMessages = { ...state.messages };
-          const conversationMessages = newMessages[conversationId] || [];
-
-          // Update progress for optimistic message
-          const updatedMessages = conversationMessages.map(msg =>
-            msg._tempId === tempId
-              ? { ...msg, _uploadProgress: progress }
-              : msg
-          );
-
-          newMessages[conversationId] = updatedMessages;
-          return { messages: newMessages };
-        }, false, 'updateMessageProgress'),
-
-      // ========================================================================
-      // Unread Count Actions
-      // ========================================================================
-
-      setUnreadCount: (conversationId, count) =>
-        set((state) => {
-          const newCounts = { ...state.unreadCounts };
-          newCounts[conversationId] = count;
-
-          // Auto-save on mobile
-          if (Capacitor.isNativePlatform()) {
-            get().saveUnreadCounts().catch(err =>
-              console.error('Failed to save unread counts:', err)
-            );
-          }
-
-          return { unreadCounts: newCounts };
-        }, false, 'setUnreadCount'),
-
-      incrementUnreadCount: (conversationId) =>
-        set((state) => {
-          const newCounts = { ...state.unreadCounts };
-          const current = newCounts[conversationId] || 0;
-          newCounts[conversationId] = current + 1;
-
-          // Check if conversation is muted
-          const conv = state.conversations.find(c => c.conversation_id === conversationId);
-          const isMuted = conv?.is_muted ?? false;
-
-          // Auto-save on mobile
-          if (Capacitor.isNativePlatform()) {
-            get().saveUnreadCounts().catch(err =>
-              console.error('Failed to save unread counts:', err)
-            );
-          }
-
-          return {
-            unreadCounts: newCounts,
-            totalUnreadCount: isMuted ? state.totalUnreadCount : state.totalUnreadCount + 1
-          };
-        }, false, 'incrementUnreadCount'),
-
-      clearUnreadCount: (conversationId) =>
-        set((state) => {
-          const newCounts = { ...state.unreadCounts };
-          const removed = newCounts[conversationId] || 0;
-          newCounts[conversationId] = 0;
-
-          // Auto-save on mobile
-          if (Capacitor.isNativePlatform()) {
-            get().saveUnreadCounts().catch(err =>
-              console.error('Failed to save unread counts:', err)
-            );
-          }
-
-          return {
-            unreadCounts: newCounts,
-            totalUnreadCount: Math.max(0, state.totalUnreadCount - removed)
-          };
-        }, false, 'clearUnreadCount'),
-
-      setTotalUnreadCount: (count) =>
-        set({ totalUnreadCount: count }, false, 'setTotalUnreadCount'),
-
-      // ========================================================================
-      // Optimistic Conversation Actions
-      // ========================================================================
-
-      togglePinOptimistic: (conversationId) =>
-        set((state) => ({
-          conversations: state.conversations.map(c =>
-            c.conversation_id === conversationId
-              ? { ...c, is_pinned: !c.is_pinned }
-              : c
-          )
-        }), false, 'togglePinOptimistic'),
-
-      toggleArchiveOptimistic: (conversationId) =>
-        set((state) => ({
-          conversations: state.conversations.map(c =>
-            c.conversation_id === conversationId
-              ? { ...c, is_archived: !c.is_archived }
-              : c
-          )
-        }), false, 'toggleArchiveOptimistic'),
-
-      toggleMuteOptimistic: (conversationId, isMuted) =>
-        set((state) => ({
-          conversations: state.conversations.map(c =>
-            c.conversation_id === conversationId
-              ? { ...c, is_muted: isMuted }
-              : c
-          )
-        }), false, 'toggleMuteOptimistic'),
 
       // ========================================================================
       // Typing Indicator Actions
@@ -774,51 +142,7 @@ export const useMessagingStore = create<MessagingState>()(
       setSendingMessage: (sending) =>
         set({ isSendingMessage: sending }, false, 'setSendingMessage'),
 
-      // ========================================================================
-      // Persistence (Mobile Only)
-      // ========================================================================
 
-      saveUnreadCounts: async () => {
-        if (!Capacitor.isNativePlatform()) return;
-
-        try {
-          const counts = get().unreadCounts;
-          await Preferences.set({
-            key: STORAGE_KEYS.UNREAD_COUNTS,
-            value: JSON.stringify(counts)
-          });
-          console.log('💾 Unread counts saved');
-        } catch (error) {
-          console.error('Failed to save unread counts:', error);
-        }
-      },
-
-      loadUnreadCounts: async () => {
-        if (!Capacitor.isNativePlatform()) return;
-
-        try {
-          const { value } = await Preferences.get({ key: STORAGE_KEYS.UNREAD_COUNTS });
-          if (value) {
-            const parsed = JSON.parse(value);
-            const unreadCounts: Record<string, number> = {};
-
-            // Handle both legacy Array format and new Record format
-            if (Array.isArray(parsed)) {
-              parsed.forEach(([k, v]) => { unreadCounts[k] = v; });
-            } else if (parsed && typeof parsed === 'object') {
-              Object.assign(unreadCounts, parsed);
-            }
-
-            const totalUnreadCount = Object.values(unreadCounts)
-              .reduce((sum, count) => sum + count, 0);
-
-            set({ unreadCounts, totalUnreadCount }, false, 'loadUnreadCounts');
-            console.log('📂 Unread counts loaded:', totalUnreadCount);
-          }
-        } catch (error) {
-          console.error('Failed to load unread counts:', error);
-        }
-      },
 
       // ========================================================================
       // Reset (Logout/Cleanup)
@@ -834,11 +158,7 @@ export const useMessagingStore = create<MessagingState>()(
         }
 
         set({
-          conversations: [],
           activeConversationId: null,
-          messages: {},
-          unreadCounts: {},
-          totalUnreadCount: 0,
           typingUsers: {},
           isLoadingConversations: false,
           isLoadingMessages: false,
@@ -861,21 +181,10 @@ export const useMessagingStore = create<MessagingState>()(
  * Use these in components instead of accessing state directly
  */
 export const messagingSelectors = {
-  // Get messages for a specific conversation
-  getMessages: (conversationId: string) => (state: MessagingState) =>
-    state.messages[conversationId] || [],
 
-  // Get unread count for a specific conversation
-  getUnreadCount: (conversationId: string) => (state: MessagingState) =>
-    state.unreadCounts[conversationId] || 0,
-
-  // Get typing users for a specific conversation
-  getTypingUsers: (conversationId: string) => (state: MessagingState) =>
-    state.typingUsers[conversationId] || [],
-
-  // Get active conversation details
+  // Get active conversation details (Note: You may need to fetch this from React Query instead depending on usage)
   getActiveConversation: (state: MessagingState) =>
-    state.conversations.find(c => c.conversation_id === state.activeConversationId),
+    null, // Removed conversations from state
 
   // Check if any message is being sent
   isSending: (state: MessagingState) =>

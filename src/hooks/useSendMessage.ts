@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react'
 import { v4 as uuidv4 } from 'uuid'
-import { useMessagingStore } from '../store/messagingStore'
 import { messagingService } from '../services/messagingService'
 import { useAuthStore } from '../store/authStore'
 import type { SendMessageParams, Message } from '../types/messaging'
@@ -10,10 +9,6 @@ import { queryClient } from '../lib/react-query'
 export function useSendMessage() {
   const [isSending, setIsSending] = useState(false)
   const user = useAuthStore((state) => state.user)
-
-  const addOptimisticMessage = useMessagingStore((state) => state.addOptimisticMessage);
-  const replaceOptimisticMessage = useMessagingStore((state) => state.replaceOptimisticMessage);
-  const markMessageFailed = useMessagingStore((state) => state.markMessageFailed);
 
   const sendMessage = useCallback(async (params: SendMessageParams) => {
     if (!user) {
@@ -62,14 +57,20 @@ export function useSendMessage() {
 
 
     try {
-      // 1. Add to store immediately
-      addOptimisticMessage(params.conversationId, optimisticMessage)
+      // 1. Add to React Query cache immediately
+      queryClient.setQueryData(['messages', params.conversationId], (old: any) => {
+        const currentMessages = old?.messages || []
+        return {
+          ...old,
+          messages: [...currentMessages, optimisticMessage]
+        }
+      })
 
       // 2. Send to server
       const realMessageId = await messagingService.sendMessage(params)
 
-      // 3. Replace temp message with real one
-      const confirmedMessage = {
+      // 3. Replace temp message with real one in React Query cache
+      const confirmedMessage: Message = {
         ...optimisticMessage,
         id: realMessageId,
         _optimistic: false,
@@ -77,16 +78,10 @@ export function useSendMessage() {
         status: 'sent' as const // Server confirmed reception
       }
 
-      replaceOptimisticMessage(params.conversationId, tempId, confirmedMessage)
-
-      // 4. Update React Query cache immediately to prevent flicker
-      // (The optimistic message disappears from store.messages when replaceOptimisticMessage runs,
-      // so we must ensure it exists in React Query cache before Realtime event arrives)
       queryClient.setQueryData(['messages', params.conversationId], (old: any) => {
         const currentMessages = old?.messages || []
+
         // Prevent duplicates if Realtime was faster
-        // BUT: Realtime message might lack parent_message context. 
-        // If it exists, we must MERGE the context from our optimistic message.
         if (currentMessages.some((m: Message) => m.id === realMessageId)) {
           return {
             ...old,
@@ -95,13 +90,17 @@ export function useSendMessage() {
                 // Merge in the context we have locally
                 return { ...m, parent_message: confirmedMessage.parent_message }
               }
+              // Also ensure we remove the optimistic message if it's still there
+              if (m._tempId === tempId) return null as any;
               return m
-            })
+            }).filter(Boolean)
           }
         }
+
+        // Otherwise replace the temp message
         return {
-          messages: [...currentMessages, confirmedMessage],
-          hasMore: old?.hasMore ?? true
+          ...old,
+          messages: currentMessages.map((m: Message) => m.id === tempId ? confirmedMessage : m)
         }
       })
 
@@ -109,8 +108,16 @@ export function useSendMessage() {
     } catch (error) {
       console.error('❌ Send message failed:', error)
 
-      // 4. Mark as failed
-      markMessageFailed(params.conversationId, tempId)
+      // 4. Mark as failed in React Query cache
+      queryClient.setQueryData(['messages', params.conversationId], (old: any) => {
+        const currentMessages = old?.messages || []
+        return {
+          ...old,
+          messages: currentMessages.map((m: Message) =>
+            m.id === tempId ? { ...m, _failed: true, status: 'failed' } : m
+          )
+        }
+      })
 
       // Optional: Show toast if it's a general error, but the UI should show the retry button
       // toast.error('Failed to send message') 
@@ -119,7 +126,7 @@ export function useSendMessage() {
     } finally {
       setIsSending(false)
     }
-  }, [user, addOptimisticMessage, replaceOptimisticMessage, markMessageFailed])
+  }, [user])
 
   const retryMessage = useCallback(async (message: Message) => {
     if (!message._tempId || !message._failed) return
@@ -127,10 +134,15 @@ export function useSendMessage() {
     setIsSending(true)
     const { conversation_id, _tempId, content, type, media_urls, thumbnail_url, reply_to_id, link_previews, shared_coupon_id, shared_deal_id } = message
 
-    // Reset failure state to sending
-    useMessagingStore.getState().updateMessage(conversation_id, _tempId, {
-      _failed: false,
-      status: 'sending'
+    // Reset failure state to sending in cache
+    queryClient.setQueryData(['messages', conversation_id], (old: any) => {
+      const currentMessages = old?.messages || []
+      return {
+        ...old,
+        messages: currentMessages.map((m: Message) =>
+          m.id === _tempId ? { ...m, _failed: false, status: 'sending' } : m
+        )
+      }
     })
 
     try {
@@ -146,21 +158,37 @@ export function useSendMessage() {
         sharedDealId: shared_deal_id || undefined
       })
 
-      replaceOptimisticMessage(conversation_id, _tempId, {
+      const confirmedMessage: Message = {
         ...message,
         id: realMessageId,
         _optimistic: false,
         _tempId: undefined,
         _failed: false,
         status: 'sent'
+      }
+
+      queryClient.setQueryData(['messages', conversation_id], (old: any) => {
+        const currentMessages = old?.messages || []
+        return {
+          ...old,
+          messages: currentMessages.map((m: Message) => m.id === _tempId ? confirmedMessage : m)
+        }
       })
     } catch (error) {
       console.error('❌ Retry failed:', error)
-      markMessageFailed(conversation_id, _tempId)
+      queryClient.setQueryData(['messages', conversation_id], (old: any) => {
+        const currentMessages = old?.messages || []
+        return {
+          ...old,
+          messages: currentMessages.map((m: Message) =>
+            m.id === _tempId ? { ...m, _failed: true, status: 'failed' } : m
+          )
+        }
+      })
     } finally {
       setIsSending(false)
     }
-  }, [replaceOptimisticMessage, markMessageFailed])
+  }, [])
 
   return { sendMessage, isSending, retryMessage }
 }

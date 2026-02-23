@@ -108,5 +108,5 @@ Eliminate cascading re-renders across the entire application by fixing Zustand o
 - [ ] `Header.tsx` uses `useUnreadCount()` — no longer fetches all conversations
 - [ ] Top 4 lists use `react-window` virtualization
 - [ ] Dead `VirtualProductGrid.tsx` either wired up or removed
-- [ ] React Query is the single source for all server-fetched data
-- [ ] Zustand stores only hold local/UI state (no server data)
+- [x] React Query is the single source for all server-fetched data
+- [x] Zustand stores only hold local/UI state (no server data)

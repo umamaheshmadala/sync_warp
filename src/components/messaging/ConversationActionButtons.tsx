@@ -1,9 +1,10 @@
 import React from 'react'
 import { Archive, Pin, MoreVertical, ArchiveX, PinOff } from 'lucide-react'
 import { conversationManagementService } from '../../services/conversationManagementService'
-import { useMessagingStore } from '../../store/messagingStore'
 import { toast } from 'react-hot-toast'
+import { useQueryClient } from '@tanstack/react-query'
 import { cn } from '../../lib/utils'
+import type { ConversationWithDetails } from '../../types/messaging'
 
 interface Props {
   conversation: any
@@ -13,8 +14,7 @@ interface Props {
 
 export function ConversationActionButtons({ conversation, onUpdate, className }: Props) {
   const [showActions, setShowActions] = React.useState(false)
-  const togglePinOptimistic = useMessagingStore((state) => state.togglePinOptimistic);
-  const toggleArchiveOptimistic = useMessagingStore((state) => state.toggleArchiveOptimistic);
+  const queryClient = useQueryClient()
 
   const handleArchive = async (e: React.MouseEvent) => {
     e.preventDefault()
@@ -22,22 +22,19 @@ export function ConversationActionButtons({ conversation, onUpdate, className }:
     console.log('🔘 Archive button clicked')
     try {
       if (conversation.is_archived) {
-        toggleArchiveOptimistic(conversation.conversation_id)
+        // Optimistic update
+        queryClient.setQueryData<ConversationWithDetails[]>(['conversations'], (old = []) =>
+          old.map(c => c.conversation_id === conversation.conversation_id ? { ...c, is_archived: false } : c)
+        )
         await conversationManagementService.unarchiveConversation(conversation.conversation_id)
         toast.success('Conversation unarchived')
       } else {
-        toggleArchiveOptimistic(conversation.conversation_id)
+        // Optimistic update
+        queryClient.setQueryData<ConversationWithDetails[]>(['conversations'], (old = []) =>
+          old.map(c => c.conversation_id === conversation.conversation_id ? { ...c, is_archived: true } : c)
+        )
         await conversationManagementService.archiveConversation(conversation.conversation_id)
-        toast.success('Conversation archived', {
-          action: {
-            label: 'Undo',
-            onClick: async () => {
-              await conversationManagementService.unarchiveConversation(conversation.conversation_id)
-              toast.success('Undo successful')
-              onUpdate?.()
-            }
-          }
-        })
+        toast.success('Conversation archived')
       }
       onUpdate?.()
     } catch (error) {
@@ -52,22 +49,19 @@ export function ConversationActionButtons({ conversation, onUpdate, className }:
     console.log('🔘 Pin button clicked')
     try {
       if (conversation.is_pinned) {
-        togglePinOptimistic(conversation.conversation_id)
+        // Optimistic update
+        queryClient.setQueryData<ConversationWithDetails[]>(['conversations'], (old = []) =>
+          old.map(c => c.conversation_id === conversation.conversation_id ? { ...c, is_pinned: false } : c)
+        )
         await conversationManagementService.unpinConversation(conversation.conversation_id)
         toast.success('Conversation unpinned')
       } else {
-        togglePinOptimistic(conversation.conversation_id)
+        // Optimistic update
+        queryClient.setQueryData<ConversationWithDetails[]>(['conversations'], (old = []) =>
+          old.map(c => c.conversation_id === conversation.conversation_id ? { ...c, is_pinned: true } : c)
+        )
         await conversationManagementService.pinConversation(conversation.conversation_id)
-        toast.success('Conversation pinned', {
-          action: {
-            label: 'Undo',
-            onClick: async () => {
-              await conversationManagementService.unpinConversation(conversation.conversation_id)
-              toast.success('Undo successful')
-              onUpdate?.()
-            }
-          }
-        })
+        toast.success('Conversation pinned')
       }
       onUpdate?.()
     } catch (error) {
@@ -77,7 +71,7 @@ export function ConversationActionButtons({ conversation, onUpdate, className }:
   }
 
   return (
-    <div 
+    <div
       className={cn('flex items-center gap-1', className)}
       onClick={(e) => e.stopPropagation()} // Prevent parent card onClick
     >

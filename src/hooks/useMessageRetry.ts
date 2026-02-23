@@ -2,7 +2,7 @@ import { useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { mediaUploadService } from '../services/mediaUploadService'
 import { messagingService } from '../services/messagingService'
-import { useMessagingStore } from '../store/messagingStore'
+import { messageCacheManager } from '../utils/messageCacheManager'
 import type { Message } from '../types/messaging'
 import toast from 'react-hot-toast'
 
@@ -21,7 +21,7 @@ export function useMessageRetry({ message }: UseMessageRetryProps) {
 
         try {
             // 1. Reset state to uploading
-            useMessagingStore.getState().updateMessage(conversationId, tempId!, {
+            messageCacheManager.updateMessage(conversationId, tempId!, {
                 _failed: false,
                 _uploadProgress: 0
             })
@@ -37,20 +37,20 @@ export function useMessageRetry({ message }: UseMessageRetryProps) {
                 conversationId,
                 (progress) => {
                     // Check for cancellation during retry
-                    const currentMessages = useMessagingStore.getState().messages[conversationId] || []
+                    const currentMessages = messageCacheManager.getMessages(conversationId)
                     const currentMsg = currentMessages.find((m: Message) => m._tempId === tempId)
                     if (currentMsg?._failed) {
                         throw new Error('Cancelled')
                     }
 
-                    useMessagingStore.getState().updateMessage(conversationId, tempId!, {
+                    messageCacheManager.updateMessage(conversationId, tempId!, {
                         _uploadProgress: progress.percentage
                     })
                 }
             )
 
             // Check for cancellation AFTER upload completes
-            const currentMsg = useMessagingStore.getState().messages[conversationId]?.find((m: Message) => m._tempId === tempId)
+            const currentMsg = messageCacheManager.getMessages(conversationId).find((m: Message) => m._tempId === tempId)
             if (currentMsg?._failed) {
                 console.log('🛑 Retry cancelled after upload, aborting send')
                 await mediaUploadService.deleteImage(url)
@@ -79,7 +79,7 @@ export function useMessageRetry({ message }: UseMessageRetryProps) {
             })
 
             // 6. Remove optimistic message
-            useMessagingStore.getState().removeMessage(conversationId, tempId!)
+            messageCacheManager.removeMessage(conversationId, tempId!)
 
             toast.success('Image sent successfully')
 
@@ -92,7 +92,7 @@ export function useMessageRetry({ message }: UseMessageRetryProps) {
             }
 
             // Mark as failed again
-            useMessagingStore.getState().updateMessage(conversationId, tempId!, {
+            messageCacheManager.updateMessage(conversationId, tempId!, {
                 _failed: true,
                 _uploadProgress: 0
             })

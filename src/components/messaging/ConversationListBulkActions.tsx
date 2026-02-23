@@ -3,6 +3,7 @@ import { Archive, ArchiveRestore, Pin, PinOff, Trash, X } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import { conversationManagementService } from '../../services/conversationManagementService'
 import { useMessagingStore } from '../../store/messagingStore'
+import { useConversations } from '../../hooks/useConversations'
 import { toast } from 'react-hot-toast'
 
 interface Props {
@@ -19,9 +20,8 @@ export function ConversationListBulkActions({
   onUpdate
 }: Props) {
   const [isProcessing, setIsProcessing] = useState(false)
-  const conversations = useMessagingStore((state) => state.conversations);
-  const togglePinOptimistic = useMessagingStore((state) => state.togglePinOptimistic);
-  const toggleArchiveOptimistic = useMessagingStore((state) => state.toggleArchiveOptimistic);
+  const { conversations } = useConversations();
+  const queryClient = useQueryClient();
 
   // Check if all selected conversations are already pinned
   const allPinned = selectedConversations.length > 0 && selectedConversations.every(id =>

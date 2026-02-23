@@ -5,7 +5,7 @@ import { MediaPlaceholder } from './MediaPlaceholder'
 import { OptimisticVideoMessage } from './OptimisticVideoMessage'
 import { VideoMessage } from './VideoMessage'
 import { ExpandableText } from './ExpandableText'
-import { useMessagingStore } from '../../store/messagingStore'
+import { messageCacheManager } from '../../utils/messageCacheManager'
 import type { Message } from '../../types/messaging'
 
 interface MessageMediaProps {
@@ -30,7 +30,7 @@ export const MessageMedia = React.memo(function MessageMedia({
     const handleCancelUpload = () => {
         if (message._tempId) {
             console.log('🛑 User cancelled upload via UI')
-            useMessagingStore.getState().updateMessage(message.conversation_id, message._tempId, {
+            messageCacheManager.updateMessage(message.conversation_id, message._tempId, {
                 _failed: true,
                 _uploadProgress: 0
             })
