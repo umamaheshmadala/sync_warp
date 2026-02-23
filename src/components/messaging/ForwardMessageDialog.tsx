@@ -35,7 +35,7 @@ function MessagePreview({ message }: { message: Props['message'] }) {
         {isMedia && message.media_urls?.[0] && (
           <div className="w-16 h-16 rounded-md bg-gray-200 flex-shrink-0 overflow-hidden relative">
             {message.type === 'image' ? (
-              <img
+              <img loading="lazy" decoding="async" 
                 src={message.media_urls[0]}
                 alt="Preview"
                 className="w-full h-full object-cover"
@@ -51,7 +51,7 @@ function MessagePreview({ message }: { message: Props['message'] }) {
         {/* Link Preview Thumbnail */}
         {!isMedia && hasLink && message.link_previews![0].image && (
           <div className="w-16 h-16 rounded-md bg-gray-200 flex-shrink-0 overflow-hidden">
-            <img
+            <img loading="lazy" decoding="async" 
               src={message.link_previews![0].image}
               alt="Link Preview"
               className="w-full h-full object-cover"
@@ -248,7 +248,7 @@ export function ForwardMessageDialog({ message, onClose, onForwarded }: Props) {
                 <div key={id} className="flex-shrink-0 flex items-center gap-1.5 bg-white border border-blue-100 pl-1 pr-2 py-0.5 rounded-full shadow-sm animate-in zoom-in duration-200">
                   <div className="w-5 h-5 rounded-full bg-gray-100 overflow-hidden">
                     {friend.avatar_url ? (
-                      <img src={friend.avatar_url} alt="" className="w-full h-full object-cover" />
+                      <img loading="lazy" decoding="async" src={friend.avatar_url} alt="" className="w-full h-full object-cover" />
                     ) : (
                       <User className="w-3 h-3 text-gray-400 m-auto" />
                     )}
@@ -303,7 +303,7 @@ export function ForwardMessageDialog({ message, onClose, onForwarded }: Props) {
                     {/* Avatar */}
                     <div className="w-10 h-10 rounded-full bg-gray-100 flex-shrink-0 overflow-hidden border border-gray-100">
                       {friend.avatar_url ? (
-                        <img
+                        <img loading="lazy" decoding="async" 
                           src={friend.avatar_url}
                           alt={friend.full_name}
                           className="w-full h-full object-cover"

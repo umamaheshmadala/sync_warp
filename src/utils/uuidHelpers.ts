@@ -54,7 +54,7 @@ export const uuidHelpers = {
    */
   createLookupMap: <T extends UUIDEntity>(items: T[]): Map<string, T> => {
     const map = new Map<string, T>();
-    
+
     items.forEach(item => {
       if (item.id) {
         // Full UUID lookup
@@ -63,7 +63,7 @@ export const uuidHelpers = {
         map.set(item.id.substring(0, 8), item);
       }
     });
-    
+
     return map;
   },
 
@@ -117,7 +117,7 @@ export const uuidHelpers = {
    */
   extractUUIDs: (obj: Record<string, any>): Array<{ field: string; uuid: string; shortId: string }> => {
     const uuids: Array<{ field: string; uuid: string; shortId: string }> = [];
-    
+
     Object.entries(obj).forEach(([key, value]) => {
       if (typeof value === 'string' && uuidHelpers.isValidUUID(value)) {
         uuids.push({
@@ -127,7 +127,7 @@ export const uuidHelpers = {
         });
       }
     });
-    
+
     return uuids;
   }
 };
@@ -158,7 +158,7 @@ export const debugLog = {
         return `${key}=${value}`;
       })
       .join(', ');
-    
+
     console.log(`🔍 Querying ${tableName}: ${formattedConditions}`);
   },
 
@@ -201,11 +201,11 @@ class UUIDCache {
   async getName(uuid: string, tableName: string): Promise<string> {
     const shortId = uuidHelpers.getShortId(uuid);
     const cacheKey = `${tableName}:${shortId}`;
-    
+
     // Check cache and TTL
     const cached = this.cache.get(cacheKey);
     const timestamp = this.timestamps.get(cacheKey);
-    
+
     if (cached && timestamp && (Date.now() - timestamp < this.TTL)) {
       return cached;
     }
@@ -220,10 +220,10 @@ class UUIDCache {
 
       // For now, return short ID as fallback
       const displayName = shortId; // Would be data.display_name in real implementation
-      
+
       this.cache.set(cacheKey, displayName);
       this.timestamps.set(cacheKey, Date.now());
-      
+
       return displayName;
     } catch (error) {
       console.warn(`Failed to fetch name for ${tableName}:${shortId}`, error);
@@ -268,9 +268,11 @@ export const uuidCache = new UUIDCache();
 
 // Cleanup cache every 10 minutes
 if (typeof window !== 'undefined') {
-  setInterval(() => {
+  const scheduleCleanup = () => {
     uuidCache.cleanup();
-  }, 10 * 60 * 1000);
+    setTimeout(scheduleCleanup, 10 * 60 * 1000);
+  };
+  setTimeout(scheduleCleanup, 10 * 60 * 1000);
 }
 
 /**

@@ -6,7 +6,8 @@ import { useAuthStore } from '../../store/authStore';
 import { ShieldAlert } from 'lucide-react';
 
 export default function AdminLayout() {
-    const { profile, loading } = useAuthStore();
+    const profile = useAuthStore((state) => state.profile);
+    const loading = useAuthStore((state) => state.loading);
     const [isAdmin, setIsAdmin] = useState(false);
 
     useEffect(() => {

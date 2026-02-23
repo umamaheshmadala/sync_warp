@@ -11,16 +11,16 @@ interface SaveButtonProps {
   // Item identification
   itemId: string;
   itemType: 'business' | 'coupon';
-  
+
   // Visual customization
   variant?: 'default' | 'compact' | 'large';
   showLabel?: boolean;
   className?: string;
-  
+
   // Behavior
   disabled?: boolean;
   onClick?: (isFavorited: boolean) => void;
-  
+
   // Custom labels
   savedLabel?: string;
   unsavedLabel?: string;
@@ -48,34 +48,39 @@ const SaveButton: React.FC<SaveButtonProps> = ({
 
   const [isAnimating, setIsAnimating] = useState(false);
   const [, forceUpdate] = useState({});
-  
+
   // Check if item is favorited directly from cache - no local state needed
-  const isFavorited = itemType === 'business' 
+  const isFavorited = itemType === 'business'
     ? isBusinessFavorited(itemId)
     : isCouponFavorited(itemId);
-  
+
   // Force re-render when cache updates
   useEffect(() => {
     // This effect will run when the favorites state changes
     const timer = setTimeout(() => forceUpdate({}), 10);
     return () => clearTimeout(timer);
   }, [favorites.counts, favorites.totalFavorites]);
-  
+
   // Additional effect to handle cache timestamp changes with more aggressive polling during animation
   useEffect(() => {
     const pollInterval = isAnimating ? 50 : 200; // Poll more frequently during animation
-    
-    const interval = setInterval(() => {
-      const currentState = itemType === 'business' 
+
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    const tick = () => {
+      const currentState = itemType === 'business'
         ? isBusinessFavorited(itemId)
         : isCouponFavorited(itemId);
       // Force update only if needed
       if (currentState !== isFavorited) {
         forceUpdate({});
       }
-    }, pollInterval);
-    
-    return () => clearInterval(interval);
+      timeoutId = setTimeout(tick, pollInterval);
+    };
+
+    timeoutId = setTimeout(tick, pollInterval);
+
+    return () => clearTimeout(timeoutId);
   }, [itemType, itemId, isFavorited, isBusinessFavorited, isCouponFavorited, isAnimating]);
 
   // Handle save/unsave action
@@ -94,7 +99,7 @@ const SaveButton: React.FC<SaveButtonProps> = ({
 
     try {
       let result: boolean;
-      
+
       if (itemType === 'business') {
         result = await toggleBusinessFavorite(itemId);
       } else {
@@ -102,7 +107,7 @@ const SaveButton: React.FC<SaveButtonProps> = ({
       }
 
       // Result will be reflected in cache immediately
-      
+
       // Call optional callback
       onClick?.(result);
     } catch (error) {
@@ -116,7 +121,7 @@ const SaveButton: React.FC<SaveButtonProps> = ({
   // Get button styles based on variant
   const getButtonStyles = () => {
     const baseStyles = "relative flex items-center justify-center transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-full";
-    
+
     switch (variant) {
       case 'compact':
         return cn(baseStyles, "w-8 h-8 text-sm");
@@ -143,18 +148,18 @@ const SaveButton: React.FC<SaveButtonProps> = ({
 
   // Animation variants for the heart
   const heartVariants = {
-    idle: { 
-      scale: 1, 
+    idle: {
+      scale: 1,
       rotate: 0,
       transition: { duration: 0.2 }
     },
-    favorited: { 
-      scale: [1, 1.3, 1], 
+    favorited: {
+      scale: [1, 1.3, 1],
       rotate: [0, -10, 10, 0],
       transition: { duration: 0.4, times: [0, 0.5, 1] }
     },
-    unfavorited: { 
-      scale: [1, 0.8, 1], 
+    unfavorited: {
+      scale: [1, 0.8, 1],
       transition: { duration: 0.3 }
     }
   };

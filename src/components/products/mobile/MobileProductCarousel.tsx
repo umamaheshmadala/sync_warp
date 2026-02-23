@@ -67,7 +67,7 @@ export const MobileProductCarousel: React.FC<MobileProductCarouselProps> = ({
                         className="w-full h-full flex-shrink-0 snap-center relative"
                         onDoubleClick={handleDoubleTap}
                     >
-                        <img
+                        <img decoding="async" 
                             src={img.url}
                             alt={img.alt || productName}
                             className="w-full h-full object-cover"

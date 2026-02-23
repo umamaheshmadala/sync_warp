@@ -78,7 +78,7 @@ function SortablePhoto({ url, onRemove, id }: { url: string; onRemove: () => voi
     >
       {/* Photo Container */}
       <div className="w-full h-full rounded-lg overflow-hidden border border-gray-200 shadow-sm cursor-move">
-        <img src={url} alt="Uploaded" className="w-full h-full object-cover pointer-events-none" />
+        <img loading="lazy" decoding="async" src={url} alt="Uploaded" className="w-full h-full object-cover pointer-events-none" />
       </div>
 
       {/* Cancel Button - Outside Top Right */}

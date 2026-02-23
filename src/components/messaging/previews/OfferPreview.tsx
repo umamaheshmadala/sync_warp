@@ -13,7 +13,7 @@ export function OfferPreview({ preview }: { preview: LinkPreview }) {
         <div className="flex items-start gap-3 p-3">
             <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center overflow-hidden flex-shrink-0 text-white shadow-sm relative">
                 {image ? (
-                    <img src={image} alt="" className="w-full h-full object-cover" />
+                    <img loading="lazy" decoding="async" src={image} alt="" className="w-full h-full object-cover" />
                 ) : metadata?.discountValue ? (
                     <span className="font-bold text-sm tracking-tighter">{metadata.discountValue}%</span>
                 ) : (

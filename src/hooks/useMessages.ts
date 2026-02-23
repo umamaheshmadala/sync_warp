@@ -46,7 +46,8 @@ export function useMessages(conversationId: string | null) {
   const queryClient = useQueryClient()
 
   // Actions are now accessed statically to prevent re-renders
-  // const { addMessage, updateMessage } = useMessagingStore()
+  // const addMessage = useMessagingStore((state) => state.addMessage);
+ const updateMessage = useMessagingStore((state) => state.updateMessage);
 
   const hasMore = useRef(true)
   const [isFetchingOlder, setIsFetchingOlder] = useState(false)
@@ -76,7 +77,7 @@ export function useMessages(conversationId: string | null) {
 
   // Get messages from Zustand store (for optimistic updates)
   const storeMessages = useMessagingStore(
-    useCallback((state) => state.messages.get(conversationId!) || [], [conversationId])
+    useCallback((state) => state.messages[conversationId!] || [], [conversationId])
   )
   const optimisticMessages = storeMessages.filter(m => m._optimistic)
 

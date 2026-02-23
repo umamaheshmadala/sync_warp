@@ -17,7 +17,6 @@ import { CustomToast } from './components/ui/CustomToast'
 import { useAuthStore } from './store/authStore'
 import { OfflineBanner } from './components/ui/OfflineBanner'
 import DevMenu from './components/DevMenu'
-import { useUpdateOnlineStatus } from './hooks/useUpdateOnlineStatus'
 import { usePresence } from './hooks/usePresence'
 import { useRealtimeFriends } from './hooks/friends/useRealtimeFriends'
 import { AppDataPrefetcher } from './components/AppDataPrefetcher'
@@ -43,9 +42,6 @@ function AppContent() {
   // Automatically register push notifications when user logs in
   const pushState = usePushNotifications(user?.id ?? null)
 
-  // Track user's online status in database
-  useUpdateOnlineStatus()
-
   // Track real-time presence via Supabase Realtime
   usePresence()
 
@@ -69,6 +65,9 @@ function AppContent() {
     initRealtime();
 
     if (!Capacitor.isNativePlatform()) return
+
+    // Disable backdrop-blur on native mobile for GPU performance (Story 14.3)
+    document.body.classList.add('native-platform');
 
     // Cap Text Zoom to 1.2x to prevent UI clutter
     TextZoom.getPreferred().then((value) => {

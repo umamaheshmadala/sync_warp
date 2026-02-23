@@ -44,7 +44,7 @@ export default function BusinessReviews({
   businessImage,
   userReview,
 }: BusinessReviewsProps) {
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
 
   // Filter States
   const [filters, setFilters] = useState<ReviewFiltersType>({

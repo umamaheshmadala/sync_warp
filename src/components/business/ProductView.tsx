@@ -183,7 +183,7 @@ const ProductView: React.FC<ProductViewProps> = ({
           <div className="space-y-4">
             {/* Main Image */}
             <div className="relative aspect-w-16 aspect-h-9 bg-gray-100 rounded-lg overflow-hidden">
-              <img
+              <img loading="lazy" decoding="async" 
                 src={product.image_urls[currentImageIndex]}
                 alt={product.name}
                 className="w-full h-96 object-cover"
@@ -219,7 +219,7 @@ const ProductView: React.FC<ProductViewProps> = ({
                       : 'border-gray-200 hover:border-gray-300'
                       }`}
                   >
-                    <img
+                    <img loading="lazy" decoding="async" 
                       src={url}
                       alt={`${product.name} ${index + 1}`}
                       className="w-full h-full object-cover"

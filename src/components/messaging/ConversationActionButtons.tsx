@@ -13,7 +13,8 @@ interface Props {
 
 export function ConversationActionButtons({ conversation, onUpdate, className }: Props) {
   const [showActions, setShowActions] = React.useState(false)
-  const { togglePinOptimistic, toggleArchiveOptimistic } = useMessagingStore()
+  const togglePinOptimistic = useMessagingStore((state) => state.togglePinOptimistic);
+  const toggleArchiveOptimistic = useMessagingStore((state) => state.toggleArchiveOptimistic);
 
   const handleArchive = async (e: React.MouseEvent) => {
     e.preventDefault()

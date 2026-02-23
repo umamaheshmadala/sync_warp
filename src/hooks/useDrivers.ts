@@ -88,7 +88,7 @@ export function useDriverProfile(userId?: string, cityId?: string) {
  * Get driver profile for the current authenticated user
  */
 export function useMyDriverProfile(cityId?: string) {
-  const { profile: userProfile } = useAuthStore();
+  const userProfile = useAuthStore((state) => state.profile);
   const [profile, setProfile] = useState<DriverProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

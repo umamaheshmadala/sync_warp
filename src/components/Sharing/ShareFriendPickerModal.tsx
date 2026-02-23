@@ -201,7 +201,7 @@ export function ShareFriendPickerModal({
                 <div className="p-4 border-b bg-gray-50">
                     <div className="flex items-center gap-3">
                         {entityData.imageUrl ? (
-                            <img
+                            <img loading="lazy" decoding="async" 
                                 src={entityData.imageUrl}
                                 alt={entityData.title}
                                 className="w-12 h-12 rounded-lg object-cover"
@@ -380,7 +380,7 @@ function CompactFriendItem({
         >
             <div className="relative">
                 {avatarUrl && !imageError ? (
-                    <img
+                    <img loading="lazy" decoding="async" 
                         src={avatarUrl}
                         alt={name}
                         className={`w-12 h-12 rounded-full object-cover transition ${isSelected ? 'ring-2 ring-purple-600 ring-offset-2' : 'group-hover:ring-2 group-hover:ring-gray-200 group-hover:ring-offset-2'

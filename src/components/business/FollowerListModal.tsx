@@ -93,7 +93,7 @@ export const FollowerListModal: React.FC<FollowerListModalProps> = ({
                                     {/* Profile Picture */}
                                     <div className="flex-shrink-0">
                                         {follower.user?.avatar_url ? (
-                                            <img
+                                            <img loading="lazy" decoding="async" 
                                                 src={follower.user.avatar_url}
                                                 alt={follower.user.full_name || 'User'}
                                                 className="w-12 h-12 rounded-full object-cover border-2 border-gray-200"

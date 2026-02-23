@@ -45,14 +45,16 @@ const TYPING_TIMEOUT = 3000 // 3 seconds
  */
 export function useTypingIndicator(conversationId: string | null) {
   const currentUserId = useAuthStore((state) => state.user?.id)
-  const { typingUsers, addTypingUser, removeTypingUser } = useMessagingStore()
+  const typingUsers = useMessagingStore((state) => state.typingUsers);
+  const addTypingUser = useMessagingStore((state) => state.addTypingUser);
+  const removeTypingUser = useMessagingStore((state) => state.removeTypingUser);
 
   const typingTimeout = useRef<NodeJS.Timeout>()
   const isTyping = useRef(false)
 
   // Get typing users for this conversation (excluding current user)
   const otherTypingUsers = conversationId
-    ? Array.from(typingUsers.get(conversationId) || []).filter(id => id !== currentUserId)
+    ? Array.from(typingUsers[conversationId] || []).filter(id => id !== currentUserId)
     : []
 
   // Broadcast typing indicator

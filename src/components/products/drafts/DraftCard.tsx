@@ -19,7 +19,7 @@ export const DraftCard: React.FC<DraftCardProps> = ({ draft, onResume, onDelete 
         >
             <div className="aspect-[4/5] w-full bg-gray-100 dark:bg-gray-700 relative">
                 {coverImage ? (
-                    <img src={coverImage} alt="Draft preview" className="w-full h-full object-cover" />
+                    <img loading="lazy" decoding="async" src={coverImage} alt="Draft preview" className="w-full h-full object-cover" />
                 ) : (
                     <div className="w-full h-full flex items-center justify-center text-gray-400">
                         <Image className="w-8 h-8" />

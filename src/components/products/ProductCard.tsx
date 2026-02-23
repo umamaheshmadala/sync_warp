@@ -110,7 +110,7 @@ const ProductCardBase = ({
             />
           )}
 
-          <img
+          <img loading="lazy" decoding="async" 
             src={imageError ? '/placeholder-product.jpg' : primaryImage}
             alt={product.name}
             className={cn(

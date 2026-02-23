@@ -37,7 +37,7 @@ export function ReplyContext({ parentMessage, onCancel, className }: ReplyContex
         </div>
         <div className="flex items-center gap-2">
           {parentMessage.thumbnail_url || (parentMessage.type === 'image' && parentMessage.media_urls?.[0]) ? (
-            <img
+            <img loading="lazy" decoding="async" 
               src={parentMessage.thumbnail_url || parentMessage.media_urls![0]}
               alt="Reply thumbnail"
               className="w-8 h-8 rounded object-cover flex-shrink-0 bg-gray-200"

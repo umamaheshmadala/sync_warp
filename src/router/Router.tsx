@@ -152,7 +152,8 @@ export interface RouteConfig {
 
 // Root Redirect Component
 const RootRedirect = () => {
-  const { user, initialized } = useAuthStore()
+  const user = useAuthStore((state) => state.user);
+  const initialized = useAuthStore((state) => state.initialized);
 
   if (!initialized) {
     return (

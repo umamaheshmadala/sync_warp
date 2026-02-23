@@ -25,7 +25,7 @@ export const MobileProductHeader: React.FC<MobileProductHeaderProps> = ({
     onArchive,
     editUrl
 }) => {
-    const { user } = useAuthStore();
+    const user = useAuthStore((state) => state.user);
     // Assuming product.business_id availability or we check ownership via props parent passes
     const isOwner = user?.id && product.business_id; // Simpler check needed or pass isOwner prop
 

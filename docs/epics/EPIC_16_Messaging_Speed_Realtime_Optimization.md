@@ -32,7 +32,7 @@ Achieve WhatsApp-level messaging speed by filtering realtime subscriptions, mult
 | Realtime messages processed/event | 1 (filtered) | All messages (firehose) |
 | Startup prefetches | ≤3 | 20 |
 | ChatScreen load | Lazy (on navigate) | Eager (in main bundle) |
-| Supabase connections per user | ≤2 | ~4 (per-table subscriptions) |
+| Supabase connections per user | ≤3 | ~4+ (per-table subscriptions) |
 | Monthly realtime messages (1K users) | ≤1.5M | ~3M+ (firehose) |
 | Cache TTL for media | 1 year | 1 hour |
 | Monthly bandwidth (1K users) | ≤5GB | ~8GB+ |
@@ -59,7 +59,7 @@ Achieve WhatsApp-level messaging speed by filtering realtime subscriptions, mult
 | # | Story | Priority | Estimate | Dependencies |
 |---|-------|----------|----------|--------------|
 | 16.1 | Add `conversation_id` filter to realtime message subscriptions | 🔴 Critical | 3 pts | None |
-| 16.2 | Multiplex Supabase realtime channels (≤2 channels per user) | 🔴 Critical | 3 pts | 16.1 |
+| 16.2 | Multiplex Supabase realtime channels (≤3 channels per user) | 🔴 Critical | 3 pts | 16.1 |
 | 16.3 | Reduce startup prefetches from 20 → 3 (defer rest to on-demand) | 🔴 Critical | 2 pts | None |
 | 16.4 | Lazy-load `ChatScreen` via `React.lazy()` | 🔴 Critical | 1 pt | None |
 | 16.5 | Extend media `cacheControl` from `'3600'` → `'31536000'` (1 year) | 🟠 High | 1 pt | None |
@@ -96,7 +96,7 @@ Achieve WhatsApp-level messaging speed by filtering realtime subscriptions, mult
 - **Network tab:** Confirm ≤3 requests during startup
 - **Bundle analyzer:** Verify `ChatScreen` in separate chunk (not main)
 - **Supabase Dashboard:** Monitor realtime message count over 24h — verify ≤quota
-- **Connection count:** Verify ≤2 active WebSocket channels per user
+- **Connection count:** Verify ≤3 active WebSocket channels per user
 - **Response headers:** Verify `Cache-Control: max-age=31536000` on media
 
 ---
@@ -104,7 +104,7 @@ Achieve WhatsApp-level messaging speed by filtering realtime subscriptions, mult
 ## ✅ Definition of Done
 
 - [ ] Realtime subscription filters by `conversation_id` — verified in WebSocket frames
-- [ ] ≤2 Supabase realtime channels per user session
+- [ ] ≤3 Supabase realtime channels per user session
 - [ ] Startup prefetches reduced to ≤3 — deferred fetches load on navigation
 - [ ] `ChatScreen` chunk separated from main bundle
 - [ ] Media uploads have 1-year cache TTL

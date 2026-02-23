@@ -51,7 +51,7 @@ const CheckinRewards: React.FC<CheckinRewardsProps> = ({
   checkins, 
   onPointsEarned 
 }) => {
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const [rewards, setRewards] = useState<UserRewards>({
     totalPoints: 0,
     level: 1,

@@ -29,7 +29,11 @@ export function VideoUploadButton({
   const cancelledRef = useRef<boolean>(false)
   const { uploadVideo, isUploading, progress } = useVideoUpload()
   // const { sendMessage } = useSendMessage() // Removed to avoid double optimistic message
-  const { addOptimisticMessage, replaceOptimisticMessage, removeMessage, updateMessageProgress, updateMessage } = useMessagingStore()
+  const addOptimisticMessage = useMessagingStore((state) => state.addOptimisticMessage);
+  const replaceOptimisticMessage = useMessagingStore((state) => state.replaceOptimisticMessage);
+  const removeMessage = useMessagingStore((state) => state.removeMessage);
+  const updateMessageProgress = useMessagingStore((state) => state.updateMessageProgress);
+  const updateMessage = useMessagingStore((state) => state.updateMessage);
   const currentUserId = useAuthStore(state => state.user?.id)
   const [currentTempId, setCurrentTempId] = useState<string>('')
 

@@ -21,7 +21,7 @@ export const FriendPickerModal: React.FC<FriendPickerModalProps> = ({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: friendsResponse, isLoading: loading } = useFriends();
-  const { conversations } = useMessagingStore();
+  const conversations = useMessagingStore((state) => state.conversations);
   const { triggerHaptic } = useHapticFeedback();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -212,7 +212,7 @@ export const FriendPickerModal: React.FC<FriendPickerModalProps> = ({
                             {/* Avatar with online status */}
                             <div className="relative flex-shrink-0">
                               {friend.avatar_url ? (
-                                <img
+                                <img loading="lazy" decoding="async" 
                                   className="h-10 w-10 rounded-full object-cover"
                                   src={friend.avatar_url}
                                   alt={friend.full_name}

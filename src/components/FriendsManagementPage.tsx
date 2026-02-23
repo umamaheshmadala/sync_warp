@@ -30,7 +30,7 @@ import { GlobalUserSearch } from './friends/GlobalUserSearch'; // New Component
 type TabType = 'friends' | 'requests' | 'activity'; // Removed 'add'
 
 const FriendsManagementPage: React.FC = () => {
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const { data: friendsResponse, isLoading: loading } = useFriends();
   const friends = friendsResponse?.data || [];
 

@@ -197,7 +197,7 @@ const UnifiedFavoritesPage: React.FC = () => {
                 {/* Product Image */}
                 <div className="relative h-48 bg-gray-100">
                   {product.image_urls && product.image_urls.length > 0 ? (
-                    <img
+                    <img loading="lazy" decoding="async" 
                       src={product.image_urls[0]}
                       alt={product.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"

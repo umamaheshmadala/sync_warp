@@ -205,7 +205,8 @@ class MediaUploadService {
       const uploadStartTime = Date.now()
       const estimatedUploadTime = Math.max(1000, compressed.size / 200000) // ~200KB/s estimate
 
-      const progressInterval = setInterval(() => {
+      let progressTimer: ReturnType<typeof setTimeout> | null = null;
+      const tickProgress = () => {
         const elapsed = Date.now() - uploadStartTime
         const progress = Math.min(85, 30 + (elapsed / estimatedUploadTime) * 55)
         onProgress?.({
@@ -213,7 +214,9 @@ class MediaUploadService {
           total: file.size,
           percentage: Math.round(progress)
         })
-      }, 100)
+        progressTimer = setTimeout(tickProgress, 100)
+      }
+      progressTimer = setTimeout(tickProgress, 100)
 
       try {
         // Upload original (compressed) image
@@ -224,7 +227,7 @@ class MediaUploadService {
             upsert: false,
           })
 
-        clearInterval(progressInterval)
+        if (progressTimer) clearTimeout(progressTimer)
 
         if (uploadError) throw uploadError
 
@@ -271,7 +274,7 @@ class MediaUploadService {
           height
         }
       } finally {
-        clearInterval(progressInterval)
+        if (progressTimer) clearTimeout(progressTimer)
       }
     } catch (error) {
       console.error('❌ Upload failed:', error)
@@ -520,11 +523,14 @@ class MediaUploadService {
       const uploadStartTime = Date.now()
       const estimatedUploadTime = Math.max(2000, fileToUpload.size / 100000) // ~100KB/s estimate
 
-      const progressInterval = setInterval(() => {
+      let progressTimer: ReturnType<typeof setTimeout> | null = null;
+      const tickProgress = () => {
         const elapsed = Date.now() - uploadStartTime
         const progress = Math.min(85, 15 + (elapsed / estimatedUploadTime) * 70)
         onProgress?.(Math.round(progress))
-      }, 100)
+        progressTimer = setTimeout(tickProgress, 100)
+      }
+      progressTimer = setTimeout(tickProgress, 100)
 
       try {
         // Upload video
@@ -536,7 +542,7 @@ class MediaUploadService {
             upsert: false
           })
 
-        clearInterval(progressInterval)
+        if (progressTimer) clearTimeout(progressTimer)
 
         if (uploadError) throw uploadError
 
@@ -582,7 +588,7 @@ class MediaUploadService {
           height
         }
       } finally {
-        clearInterval(progressInterval)
+        if (progressTimer) clearTimeout(progressTimer)
       }
     } catch (error) {
       console.warn('⚠️ Video upload failed (non-critical if retry works):', error)

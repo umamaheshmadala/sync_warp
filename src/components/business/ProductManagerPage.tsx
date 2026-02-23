@@ -19,7 +19,7 @@ const ProductManagerPage: React.FC = () => {
   const { businessId } = useParams<{ businessId: string }>();
   const navigate = useNavigate();
   const { getBusinessUrl } = useBusinessUrl();
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const [business, setBusiness] = useState<Business | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

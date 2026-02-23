@@ -11,7 +11,7 @@ import { NotificationSettings } from '@/services/notificationSettingsService';
 
 export function useRealtimeNotifications() {
     const queryClient = useQueryClient();
-    const { user } = useAuthStore();
+    const user = useAuthStore((state) => state.user);
 
     // Debug Log: Check if hook is mounting
     if (user?.id) {

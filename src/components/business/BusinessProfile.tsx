@@ -87,7 +87,7 @@ const BusinessProfile: React.FC = () => {
   const { getBusinessUrl } = useBusinessUrl();
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
 
   // SWR: Fetch business data with caching (instant load on revisits)
   const {
@@ -1262,118 +1262,118 @@ const BusinessProfile: React.FC = () => {
     <>
       {/* Review Modal */}
       <>
-          {showReviewModal && (
-                    <div
-                      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
-                      onClick={() => setShowReviewModal(false)}
-                    >
-                      <div onClick={(e) => e.stopPropagation()}>
-                        <BusinessReviewForm
-                          businessId={business?.id!}
-                          businessName={business?.business_name || ''}
-                          checkinId={checkin?.id || null}
-                          onSubmit={handleReviewSubmit}
-                          onCancel={async () => {
-                            if (editingReview) {
-                              await refreshStats();
-                              setReviewsKey(prev => prev + 1);
-                            }
-                            setShowReviewModal(false);
-                            setEditingReview(null);
-                          }}
-                          loading={isSubmittingReview}
-                          editMode={!!editingReview}
-                          existingReview={editingReview}
-                        />
+        {showReviewModal && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+            onClick={() => setShowReviewModal(false)}
+          >
+            <div onClick={(e) => e.stopPropagation()}>
+              <BusinessReviewForm
+                businessId={business?.id!}
+                businessName={business?.business_name || ''}
+                checkinId={checkin?.id || null}
+                onSubmit={handleReviewSubmit}
+                onCancel={async () => {
+                  if (editingReview) {
+                    await refreshStats();
+                    setReviewsKey(prev => prev + 1);
+                  }
+                  setShowReviewModal(false);
+                  setEditingReview(null);
+                }}
+                loading={isSubmittingReview}
+                editMode={!!editingReview}
+                existingReview={editingReview}
+              />
+            </div>
+          </div>
+        )}{/* Info Detail Modal */}{showInfoModal && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+            onClick={() => setShowInfoModal(false)}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden max-h-[90vh] overflow-y-auto"
+            >
+              <div className="px-6 py-4 border-b flex justify-between items-center bg-gray-50">
+                <h3 className="font-semibold text-lg text-gray-900">Business Details</h3>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => setShowInfoModal(false)} className="p-1 hover:bg-gray-200 rounded-full">
+                    <X className="w-5 h-5 text-gray-500" />
+                  </button>
+                </div>
+              </div>
+              <div className="p-6 space-y-6">
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">About</h4>
+                  <p className="text-gray-700">{business?.description}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">Contact & Location</h4>
+                  <div className="space-y-3">
+                    <div className="flex items-start">
+                      <MapPin className="w-5 h-5 text-gray-400 mr-3 mt-0.5" />
+                      <div>
+                        <p className="text-gray-900">{business?.address}</p>
+                        <p className="text-gray-600 text-sm">{business?.city}, {business?.state} {business?.postal_code}</p>
+                        {(business?.latitude && business?.longitude) && (
+                          <a
+                            href={`https://maps.google.com/?q=${business.latitude},${business.longitude}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center text-indigo-600 hover:text-indigo-800 mt-1 text-sm"
+                          >
+                            View on Google Maps <ExternalLink className="w-3 h-3 ml-1" />
+                          </a>
+                        )}
                       </div>
                     </div>
-                  )}{/* Info Detail Modal */}{showInfoModal && (
-                    <div
-                      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
-                      onClick={() => setShowInfoModal(false)}
-                    >
-                      <div
-                        onClick={(e) => e.stopPropagation()}
-                        className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden max-h-[90vh] overflow-y-auto"
-                      >
-                        <div className="px-6 py-4 border-b flex justify-between items-center bg-gray-50">
-                          <h3 className="font-semibold text-lg text-gray-900">Business Details</h3>
-                          <div className="flex items-center gap-2">
-                            <button onClick={() => setShowInfoModal(false)} className="p-1 hover:bg-gray-200 rounded-full">
-                              <X className="w-5 h-5 text-gray-500" />
-                            </button>
-                          </div>
-                        </div>
-                        <div className="p-6 space-y-6">
-                          <div>
-                            <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">About</h4>
-                            <p className="text-gray-700">{business?.description}</p>
-                          </div>
-                          <div>
-                            <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">Contact & Location</h4>
-                            <div className="space-y-3">
-                              <div className="flex items-start">
-                                <MapPin className="w-5 h-5 text-gray-400 mr-3 mt-0.5" />
-                                <div>
-                                  <p className="text-gray-900">{business?.address}</p>
-                                  <p className="text-gray-600 text-sm">{business?.city}, {business?.state} {business?.postal_code}</p>
-                                  {(business?.latitude && business?.longitude) && (
-                                    <a
-                                      href={`https://maps.google.com/?q=${business.latitude},${business.longitude}`}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="inline-flex items-center text-indigo-600 hover:text-indigo-800 mt-1 text-sm"
-                                    >
-                                      View on Google Maps <ExternalLink className="w-3 h-3 ml-1" />
-                                    </a>
-                                  )}
-                                </div>
-                              </div>
-                              {business?.business_phone && (
-                                <div className="flex items-center">
-                                  <Phone className="w-5 h-5 text-gray-400 mr-3" />
-                                  <a href={`tel:${business.business_phone}`} className="text-indigo-600 hover:underline">{business.business_phone}</a>
-                                </div>
-                              )}
-                              {business?.business_email && (
-                                <div className="flex items-center">
-                                  <Mail className="w-5 h-5 text-gray-400 mr-3" />
-                                  <a href={`mailto:${business.business_email}`} className="text-indigo-600 hover:underline break-all">{business.business_email}</a>
-                                </div>
-                              )}
-                              {business?.website_url && (
-                                <div className="flex items-center">
-                                  <Globe className="w-5 h-5 text-gray-400 mr-3" />
-                                  <a href={business.website_url} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline break-all items-center inline-flex">
-                                    Visit Website <ExternalLink className="w-3 h-3 ml-1" />
-                                  </a>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                          <div>
-                            <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">Operating Hours</h4>
-                            <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                              {business?.operating_hours && dayOrder
-                                .filter(day => business.operating_hours[day])
-                                .map(day => {
-                                  const hours = business.operating_hours[day];
-                                  return (
-                                    <div key={day} className="flex justify-between text-sm">
-                                      <span className="capitalize font-medium text-gray-700">{day}</span>
-                                      <span className="text-gray-600">
-                                        {hours.closed ? 'Closed' : `${hours.open} - ${hours.close}`}
-                                      </span>
-                                    </div>
-                                  );
-                                })}
-                            </div>
-                          </div>
-                        </div>
+                    {business?.business_phone && (
+                      <div className="flex items-center">
+                        <Phone className="w-5 h-5 text-gray-400 mr-3" />
+                        <a href={`tel:${business.business_phone}`} className="text-indigo-600 hover:underline">{business.business_phone}</a>
                       </div>
-                    </div >
-                  )}
-          </>
+                    )}
+                    {business?.business_email && (
+                      <div className="flex items-center">
+                        <Mail className="w-5 h-5 text-gray-400 mr-3" />
+                        <a href={`mailto:${business.business_email}`} className="text-indigo-600 hover:underline break-all">{business.business_email}</a>
+                      </div>
+                    )}
+                    {business?.website_url && (
+                      <div className="flex items-center">
+                        <Globe className="w-5 h-5 text-gray-400 mr-3" />
+                        <a href={business.website_url} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline break-all items-center inline-flex">
+                          Visit Website <ExternalLink className="w-3 h-3 ml-1" />
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">Operating Hours</h4>
+                  <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                    {business?.operating_hours && dayOrder
+                      .filter(day => business.operating_hours[day])
+                      .map(day => {
+                        const hours = business.operating_hours[day];
+                        return (
+                          <div key={day} className="flex justify-between text-sm">
+                            <span className="capitalize font-medium text-gray-700">{day}</span>
+                            <span className="text-gray-600">
+                              {hours.closed ? 'Closed' : `${hours.open} - ${hours.close}`}
+                            </span>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div >
+        )}
+      </>
 
       {/* Follower List Modal */}
       < FollowerListModal
@@ -1466,7 +1466,7 @@ const BusinessProfile: React.FC = () => {
                 </button>
 
                 {business?.cover_image_url ? (
-                  <img
+                  <img loading="eager" decoding="async"
                     src={business.cover_image_url}
                     alt={`${business.business_name} cover`}
                     className="w-full h-full object-cover"
@@ -1499,7 +1499,7 @@ const BusinessProfile: React.FC = () => {
               <div className="absolute -bottom-24 md:-bottom-[9.75rem] left-4 md:left-8 z-30">
                 <div className="rounded-full border-[4px] border-white bg-white shadow-md overflow-hidden w-32 h-32 md:w-52 md:h-52 relative group">
                   {business?.logo_url ? (
-                    <img
+                    <img loading="eager" decoding="async"
                       src={business.logo_url}
                       alt={`${business.business_name} logo`}
                       className="w-full h-full object-cover"
@@ -1677,7 +1677,7 @@ const BusinessProfile: React.FC = () => {
                           onClick={() => navigate(`/business/${business?.id}/manage/campaigns`)}
                           className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-pink-600 hover:bg-pink-700 transition-colors h-10"
                         >
-                          <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-trending-up'%3E%3Cpolyline points='22 7 13.5 15.5 8.5 10.5 2 17'/%3E%3Cpolyline points='16 7 22 7 22 13'/%3E%3C/svg%3E" alt="" className="w-4 h-4 mr-2" />
+                          <img loading="lazy" decoding="async" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-trending-up'%3E%3Cpolyline points='22 7 13.5 15.5 8.5 10.5 2 17'/%3E%3Cpolyline points='16 7 22 7 22 13'/%3E%3C/svg%3E" alt="" className="w-4 h-4 mr-2" />
                           Campaigns
                         </button>
 
@@ -1840,7 +1840,7 @@ const BusinessProfile: React.FC = () => {
                       onClick={() => navigate(`/business/${business?.id}/manage/campaigns`)}
                       className="flex-1 inline-flex justify-center items-center px-2 py-2 border border-transparent text-xs font-medium rounded-lg shadow-sm text-white bg-pink-600 hover:bg-pink-700 transition-colors h-10"
                     >
-                      <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-trending-up'%3E%3Cpolyline points='22 7 13.5 15.5 8.5 10.5 2 17'/%3E%3Cpolyline points='16 7 22 7 22 13'/%3E%3C/svg%3E" alt="" className="w-3.5 h-3.5 mr-1.5" />
+                      <img loading="lazy" decoding="async" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-trending-up'%3E%3Cpolyline points='22 7 13.5 15.5 8.5 10.5 2 17'/%3E%3Cpolyline points='16 7 22 7 22 13'/%3E%3C/svg%3E" alt="" className="w-3.5 h-3.5 mr-1.5" />
                       Campaigns
                     </button>
 
@@ -1976,48 +1976,48 @@ const BusinessProfile: React.FC = () => {
           {/* Tab Content */}
           <div className="max-w-7xl mx-auto px-[5px] pt-[25px] pb-2">
             <>
-                      <div
-                                      key={activeTab}
-                                    >
-                                      {activeTab === 'overview' && renderOverview()}
-                                      {activeTab === 'products' && (
-                                        <BusinessProductsTab
-                                          businessId={business?.id!}
-                                          isOwner={isOwner}
-                                        />
-                                      )}
-                                      {activeTab === 'offers' && (
-                                        <div className="space-y-6">
-                                          <FeaturedOffers
-                                            businessId={business?.id!}
-                                            businessName={business?.business_name!}
-                                            isOwner={isOwner}
-                                            initialOfferId={searchParams.get('offer') || searchParams.get('offerId')}
-                                            shareId={searchParams.get('share_id')}
-                                            compact={false}
-                                            className=""
-                                            showHeading={false}
-                                          />
-                                        </div>
-                                      )}
-                                      {activeTab === 'reviews' && renderReviews()}
-                                      {activeTab === 'statistics' && renderStatistics()}
-                                      {activeTab === 'enhanced-profile' && (
-                                        <EnhancedProfileTab
-                                          businessId={business?.id!}
-                                          business={business!}
-                                          isOwner={isOwner}
-                                          onUpdate={async () => {
-                                            // Refresh business data from cache
-                                            await refetchBusiness();
-                                          }}
-                                        />
-                                      )}
-                                      {activeTab === 'activity' && (
-                                        <BusinessActivityLogsTab businessId={business?.id!} />
-                                      )}
-                                    </div>
-                      </>
+              <div
+                key={activeTab}
+              >
+                {activeTab === 'overview' && renderOverview()}
+                {activeTab === 'products' && (
+                  <BusinessProductsTab
+                    businessId={business?.id!}
+                    isOwner={isOwner}
+                  />
+                )}
+                {activeTab === 'offers' && (
+                  <div className="space-y-6">
+                    <FeaturedOffers
+                      businessId={business?.id!}
+                      businessName={business?.business_name!}
+                      isOwner={isOwner}
+                      initialOfferId={searchParams.get('offer') || searchParams.get('offerId')}
+                      shareId={searchParams.get('share_id')}
+                      compact={false}
+                      className=""
+                      showHeading={false}
+                    />
+                  </div>
+                )}
+                {activeTab === 'reviews' && renderReviews()}
+                {activeTab === 'statistics' && renderStatistics()}
+                {activeTab === 'enhanced-profile' && (
+                  <EnhancedProfileTab
+                    businessId={business?.id!}
+                    business={business!}
+                    isOwner={isOwner}
+                    onUpdate={async () => {
+                      // Refresh business data from cache
+                      await refetchBusiness();
+                    }}
+                  />
+                )}
+                {activeTab === 'activity' && (
+                  <BusinessActivityLogsTab businessId={business?.id!} />
+                )}
+              </div>
+            </>
           </div>
         </div>
       </div >

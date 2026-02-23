@@ -115,7 +115,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="fixed inset-0 w-full h-full flex flex-col overflow-hidden bg-gray-50">
       <Header />
       <main
-        className={`flex-1 flex flex-col min-h-0 relative ${isMessagesRoute ? 'overflow-hidden' : 'overflow-y-auto'}`}
+        className={`flex-1 flex flex-col min-h-0 relative ${isMessagesRoute ? 'overflow-hidden' : 'overflow-y-auto will-change-scroll'}`}
         style={{
           overscrollBehaviorY: 'none', // Prevent bounce effects
           WebkitOverflowScrolling: 'touch' // Ensure momentum scrolling

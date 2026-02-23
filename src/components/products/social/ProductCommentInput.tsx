@@ -15,7 +15,7 @@ export const ProductCommentInput: React.FC<ProductCommentInputProps> = ({
     autoFocus = false,
     id
 }) => {
-    const { user } = useAuthStore();
+    const user = useAuthStore((state) => state.user);
     const [text, setText] = useState('');
     const [isFocused, setIsFocused] = useState(false);
     const charCount = text.length;
@@ -34,7 +34,7 @@ export const ProductCommentInput: React.FC<ProductCommentInputProps> = ({
             {/* User Avatar */}
             <div className="w-8 h-8 rounded-full bg-gray-200 flex-shrink-0 mt-1 overflow-hidden">
                 {user?.user_metadata?.avatar_url ? (
-                    <img src={user.user_metadata.avatar_url} alt="Me" className="w-full h-full object-cover" />
+                    <img loading="lazy" decoding="async" src={user.user_metadata.avatar_url} alt="Me" className="w-full h-full object-cover" />
                 ) : (
                     <div className="w-full h-full flex items-center justify-center text-xs font-bold text-gray-500">
                         {user?.user_metadata?.full_name?.charAt(0) || '👤'}

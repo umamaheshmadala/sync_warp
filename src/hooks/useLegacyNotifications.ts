@@ -11,7 +11,7 @@ export function useNotifications() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const navigate = useNavigate();
 
   /**

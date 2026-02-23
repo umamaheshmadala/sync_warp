@@ -26,7 +26,7 @@ const SortableImageItem = ({ id, url, isActive, onClick }: any) => {
             onClick={onClick}
             className={`relative flex-shrink-0 w-20 h-24 rounded-lg overflow-hidden border-2 cursor-pointer transition-all ${isActive ? 'border-primary ring-2 ring-primary/20' : 'border-gray-200 bg-gray-100'}`}
         >
-            <img src={url} alt="Thumbnail" className="w-full h-full object-contain" />
+            <img loading="lazy" decoding="async" src={url} alt="Thumbnail" className="w-full h-full object-contain" />
         </div>
     );
 };
@@ -165,7 +165,7 @@ export const EditArrangeStep: React.FC = () => {
                     </div>
                 ) : (
                     <div className="relative w-full max-w-md aspect-[4/5] bg-black shadow-lg rounded-lg overflow-hidden group">
-                        <img
+                        <img loading="lazy" decoding="async" 
                             src={activeImage.preview || activeImage.url}
                             alt="Preview"
                             className="w-full h-full object-contain bg-black"

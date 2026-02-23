@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useMessages } from '../../hooks/useMessages'
 import { useTypingIndicator } from '../../hooks/useTypingIndicator'
@@ -58,7 +58,8 @@ export default function ChatScreen() {
   const { conversationId } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
-  const { updateConversation, setActiveConversation } = useMessagingStore() // For clearing unread count and tracking active
+  const updateConversation = useMessagingStore((state) => state.updateConversation);
+  const setActiveConversation = useMessagingStore((state) => state.setActiveConversation); // For clearing unread count and tracking active
   // Set active conversation on mount
   useEffect(() => {
     if (conversationId) {
@@ -162,7 +163,7 @@ export default function ChatScreen() {
   } = useMessageSearch(conversationId || undefined)
 
   // Determine Other User ID
-  const { conversations } = useMessagingStore()
+  const conversations = useMessagingStore((state) => state.conversations);
   const conversation = conversations.find(c => c.conversation_id === conversationId)
   const otherUserId = conversation
     ? (conversation.participant1_id === currentUserId ? conversation.participant2_id : conversation.participant1_id)
@@ -378,45 +379,39 @@ export default function ChatScreen() {
   }, [navigate])
 
   // Retry handler for failed messages
-  const handleRetry = (message: Message) => {
+  const handleRetry = useCallback((message: Message) => {
     console.log('🔄 Retrying message:', message.id)
     retryMessage(message)
-  }
+  }, [retryMessage])
 
   // Reply handler (Story 8.10.5)
-  const handleReply = (message: Message) => {
+  const handleReply = useCallback((message: Message) => {
     console.log('💬 Replying to message:', message.id)
     setReplyToMessage(message)
-  }
+  }, [])
 
   // Cancel reply handler (Story 8.10.5)
-  const handleCancelReply = () => {
+  const handleCancelReply = useCallback(() => {
     console.log('❌ Cancelled reply')
     setReplyToMessage(null)
-  }
+  }, [])
 
   // Edit handler (Story 8.5.2 - WhatsApp-style)
-  const handleEdit = (message: Message) => {
+  const handleEdit = useCallback((message: Message) => {
     console.log('✏️ Editing message:', message.id)
     setEditingMessage(message)
     // Clear reply if any
     setReplyToMessage(null)
-  }
+  }, [])
 
   // Cancel edit handler (Story 8.5.2)
-  const handleCancelEdit = () => {
+  const handleCancelEdit = useCallback(() => {
     console.log('❌ Cancelled edit')
     setEditingMessage(null)
-  }
-
-  // Scroll to message handler (Story 8.10.5)
-  const handleQuoteClick = (messageId: string) => {
-    console.log('📍 Scrolling to message:', messageId)
-    scrollToMessage(messageId)
-  }
+  }, [])
 
   // Scroll to message with highlight (Story 8.5.4 / 8.12.2 AC#6-7)
-  const scrollToMessage = async (messageId: string) => {
+  const scrollToMessage = useCallback(async (messageId: string) => {
     // Helper to highlight a found element
     const highlightElement = (el: HTMLElement) => {
       el.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -456,26 +451,32 @@ export default function ChatScreen() {
     }
 
     console.warn('⚠️ Message not found even after fetch-around:', messageId)
-  }
+  }, [conversationId])
+
+  // Scroll to message handler (Story 8.10.5)
+  const handleQuoteClick = useCallback((messageId: string) => {
+    console.log('📍 Scrolling to message:', messageId)
+    scrollToMessage(messageId)
+  }, [scrollToMessage])
 
   // Handle search result click
-  const handleSearchResultClick = (result: { id: string }) => {
+  const handleSearchResultClick = useCallback((result: { id: string }) => {
     scrollToMessage(result.id)
     setShowSearch(false)
     clearSearch()
-  }
+  }, [scrollToMessage, clearSearch])
 
   // Pin handlers (Story 8.5.7)
-  const handlePinRequest = (messageId: string) => {
+  const handlePinRequest = useCallback((messageId: string) => {
     setPinningMessageId(messageId)
     setShowPinDialog(true)
-  }
+  }, [])
 
-  const handleConfirmPin = (duration: PinDuration) => {
+  const handleConfirmPin = useCallback((duration: PinDuration) => {
     if (pinningMessageId) {
       pinMessage(pinningMessageId, duration)
     }
-  }
+  }, [pinningMessageId, pinMessage])
 
   // Keyboard shortcut for search (Ctrl/Cmd+F)
   useEffect(() => {
@@ -508,10 +509,10 @@ export default function ChatScreen() {
 
 
   // Forward handler (Story 8.10.6)
-  const handleForward = (message: Message) => {
+  const handleForward = useCallback((message: Message) => {
     console.log('↪️ Forwarding message:', message.id)
     setForwardMessage(message)
-  }
+  }, [])
 
 
 

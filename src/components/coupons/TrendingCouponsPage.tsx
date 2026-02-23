@@ -337,7 +337,7 @@ const TrendingCouponsPage: React.FC<TrendingCouponsPageProps> = ({ className = '
                 <div className="p-6 pb-4">
                   <div className="flex items-center space-x-3 mb-4">
                     {coupon.business_logo && (
-                      <img
+                      <img loading="lazy" decoding="async" 
                         src={coupon.business_logo}
                         alt={coupon.business_name}
                         className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm"
