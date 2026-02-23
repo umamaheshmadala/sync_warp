@@ -448,7 +448,7 @@ function CompactFriendItem({
     >
       <div className="relative">
         {avatarUrl && !imageError ? (
-          <img
+          <img loading="lazy" decoding="async" 
             src={avatarUrl}
             alt={name}
             className={`w-14 h-14 rounded-full object-cover transition ${isSelected ? 'ring-2 ring-blue-600 ring-offset-2' : 'group-hover:ring-2 group-hover:ring-gray-200 group-hover:ring-offset-2'
@@ -506,7 +506,7 @@ function FriendRow({
     >
       {/* Avatar */}
       {avatarUrl && !imageError ? (
-        <img
+        <img loading="lazy" decoding="async" 
           src={avatarUrl}
           alt={name}
           className="w-10 h-10 rounded-full object-cover bg-gray-200"

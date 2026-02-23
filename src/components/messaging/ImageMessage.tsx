@@ -61,7 +61,7 @@ export function ImageMessage({
       ) : (
         <>
           {/* Image */}
-          <img
+          <img loading="lazy" decoding="async" 
             src={displayUrl}
             alt={alt}
             className={cn(

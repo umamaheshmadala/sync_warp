@@ -22,7 +22,7 @@ import { toast } from 'react-hot-toast';
  * @returns Object with favorite state and toggle function
  */
 export function useFavoriteProduct(productId: string, productName?: string) {
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const [isFavorited, setIsFavorited] = useState(false);
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);

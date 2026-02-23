@@ -13,11 +13,16 @@ const AdCarousel: React.FC = () => {
   useEffect(() => {
     if (!autoplay || slots.length === 0) return;
 
-    const timer = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % slots.length);
-    }, 5000);
+    let timeoutId: ReturnType<typeof setTimeout>;
 
-    return () => clearInterval(timer);
+    const tick = () => {
+      setCurrentIndex((prev) => (prev + 1) % slots.length);
+      timeoutId = setTimeout(tick, 5000);
+    };
+
+    timeoutId = setTimeout(tick, 5000);
+
+    return () => clearTimeout(timeoutId);
   }, [autoplay, slots.length]);
 
   const goToPrevious = () => {

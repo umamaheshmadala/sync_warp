@@ -13,7 +13,7 @@ export const registerServiceWorker = (
   const updateSW = registerSW({
     onNeedRefresh() {
       console.log('[SW] New version available - update ready')
-      
+
       if (onUpdate) {
         onUpdate({
           updateAvailable: true,
@@ -25,25 +25,27 @@ export const registerServiceWorker = (
         })
       }
     },
-    
+
     onOfflineReady() {
       console.log('[SW] App ready to work offline')
-      
+
       if (onOfflineReady) {
         onOfflineReady()
       }
     },
-    
+
     onRegistered(registration) {
       console.log('[SW] Service Worker registered:', registration)
-      
+
       // Check for updates every hour
-      setInterval(() => {
+      const scheduleUpdate = () => {
         console.log('[SW] Checking for updates...')
         registration?.update()
-      }, 60 * 60 * 1000) // 1 hour
+        setTimeout(scheduleUpdate, 60 * 60 * 1000)
+      }
+      setTimeout(scheduleUpdate, 60 * 60 * 1000) // 1 hour
     },
-    
+
     onRegisterError(error) {
       console.error('[SW] Service Worker registration error:', error)
     }
@@ -56,14 +58,14 @@ export const registerServiceWorker = (
 export const unregisterServiceWorker = async () => {
   if ('serviceWorker' in navigator) {
     const registrations = await navigator.serviceWorker.getRegistrations()
-    
+
     for (const registration of registrations) {
       const success = await registration.unregister()
       console.log(`[SW] Unregistered: ${success}`)
     }
-    
+
     console.log('[SW] All service workers unregistered')
-    
+
     // Clear caches
     const cacheNames = await caches.keys()
     await Promise.all(cacheNames.map(name => caches.delete(name)))
@@ -78,7 +80,7 @@ export const getServiceWorkerStatus = async () => {
   }
 
   const registration = await navigator.serviceWorker.getRegistration()
-  
+
   return {
     supported: true,
     registered: !!registration,

@@ -339,3 +339,34 @@ body,
     scroll-behavior: auto !important;
   }
 }
+
+/* ============================================
+   EPIC 14 — Story 14.3: Disable backdrop-blur on mobile
+   GPU composite layers cause battery drain & frame drops
+   Desktop keeps blur; mobile gets solid rgba() fallback
+   ============================================ */
+@media (max-width: 768px) {
+
+  *,
+  *::before,
+  *::after {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+}
+
+.native-platform *,
+.native-platform *::before,
+.native-platform *::after {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+/* ============================================
+   EPIC 14 — Story 14.7: GPU-accelerate scroll containers
+   Hint the browser to pre-promote these to composite layers
+   ============================================ */
+.will-change-scroll {
+  will-change: transform;
+  -webkit-overflow-scrolling: touch;
+}

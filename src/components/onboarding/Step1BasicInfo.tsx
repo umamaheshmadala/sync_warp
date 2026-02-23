@@ -12,7 +12,7 @@ interface Step1BasicInfoProps {
 }
 
 export default function Step1BasicInfo({ data, onUpdate, onNext, onSkip }: Step1BasicInfoProps) {
-  const { user } = useAuthStore()
+  const user = useAuthStore((state) => state.user);
   const [phone, setPhone] = useState(data.phone || '')
   const [phoneError, setPhoneError] = useState('')
   const [birthday, setBirthday] = useState(data.date_of_birth || '')

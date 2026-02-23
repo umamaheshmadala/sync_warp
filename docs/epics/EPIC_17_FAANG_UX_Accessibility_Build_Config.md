@@ -34,7 +34,7 @@ Close the gap between "good app" and "FAANG-level app" by re-enabling PWA/Servic
 | Service Worker | Active (precache app shell) | Disabled (commented out) |
 | Pinch-to-zoom on web | Allowed | Blocked (`user-scalable=no`) |
 | Dark mode auto-detection | System preference respected | None |
-| Vite manual chunks | 6+ | 3 |
+| Vite manual chunks | 7+ | 3 |
 | Main bundle size reduction | -15% | Baseline |
 | Touch target size | ≥48px | 44px |
 | Build target | `es2020` | `es2015` |
@@ -109,7 +109,7 @@ Close the gap between "good app" and "FAANG-level app" by re-enabling PWA/Servic
 - **Offline test:** Disconnect network → verify app shell loads from service worker
 - **Zoom test:** Pinch-to-zoom works on web; keyboard doesn't hide input on mobile
 - **Dark mode test:** Toggle OS dark mode → app switches automatically
-- **Bundle analyzer:** Verify 6+ chunks, main bundle ≤500KB
+- **Bundle analyzer:** Verify 7+ chunks, main bundle ≤500KB
 - **DevTools audit:** No duplicate meta tags, description present
 - **Touch target test:** Verify all buttons ≥48px via computed styles
 
@@ -121,7 +121,7 @@ Close the gap between "good app" and "FAANG-level app" by re-enabling PWA/Servic
 - [ ] `user-scalable=no` and `maximum-scale=1.0` removed from viewport
 - [ ] Keyboard resize set to `'ionic'`; Capacitor comment syntax fixed
 - [ ] Auto dark mode toggles based on `prefers-color-scheme`
-- [ ] Vite produces 6+ chunks; `recharts`/`xlsx` in separate chunks
+- [ ] Vite produces 7+ chunks; `recharts`/`xlsx` in separate chunks
 - [ ] `<meta name="description">` present in `index.html`
 - [ ] All interactive elements ≥48px touch targets
 - [ ] Build target is `es2020`; chunk warning at 500KB

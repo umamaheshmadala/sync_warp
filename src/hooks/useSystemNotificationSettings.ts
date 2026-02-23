@@ -4,7 +4,7 @@ import { useAuthStore } from '@/store/authStore';
 import toast from 'react-hot-toast';
 
 export function useSystemNotificationSettings() {
-    const { user } = useAuthStore();
+    const user = useAuthStore((state) => state.user);
     const queryClient = useQueryClient();
     const queryKey = ['system-notification-settings', user?.id];
 

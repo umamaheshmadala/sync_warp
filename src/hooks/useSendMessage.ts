@@ -11,11 +11,9 @@ export function useSendMessage() {
   const [isSending, setIsSending] = useState(false)
   const user = useAuthStore((state) => state.user)
 
-  const {
-    addOptimisticMessage,
-    replaceOptimisticMessage,
-    markMessageFailed
-  } = useMessagingStore()
+  const addOptimisticMessage = useMessagingStore((state) => state.addOptimisticMessage);
+  const replaceOptimisticMessage = useMessagingStore((state) => state.replaceOptimisticMessage);
+  const markMessageFailed = useMessagingStore((state) => state.markMessageFailed);
 
   const sendMessage = useCallback(async (params: SendMessageParams) => {
     if (!user) {

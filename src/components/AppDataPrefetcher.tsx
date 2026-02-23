@@ -20,9 +20,9 @@ import { syncFavoritesFromDatabase } from '../hooks/useUnifiedFavorites';
  * It also manages the Splash Screen to ensure it only hides when critical data is ready.
  */
 export const AppDataPrefetcher = () => {
-    const { user } = useAuthStore();
+    const user = useAuthStore((state) => state.user);
     const queryClient = useQueryClient();
-    const { setConversations } = useMessagingStore();
+    const setConversations = useMessagingStore((state) => state.setConversations);
     const hasHiddenSplash = useRef(false);
 
     // Helper to safely hide splash

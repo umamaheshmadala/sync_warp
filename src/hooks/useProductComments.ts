@@ -5,7 +5,7 @@ import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
 
 export const useProductComments = (productId: string, initialCount: number = 0) => {
-    const { user } = useAuthStore();
+    const user = useAuthStore((state) => state.user);
     const [comments, setComments] = useState<ProductComment[]>([]);
     const [commentCount, setCommentCount] = useState(initialCount);
     const [loading, setLoading] = useState(false);

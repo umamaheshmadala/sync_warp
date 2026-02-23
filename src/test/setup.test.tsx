@@ -23,7 +23,7 @@ describe('Test Infrastructure', () => {
 
     it('should detect accessibility violations', async () => {
         // Renders an image without alt text (violation)
-        const { container } = render(<img src="foo.jpg" />);
+        const { container } = render(<img loading="lazy" decoding="async" src="foo.jpg" />);
         const results = await axe(container);
         // We expect violations here, but for this "infrastructure test" we just checking the tool works.
         // Ideally we'd expect(results).not.toHaveNoViolations() but toHaveNoViolations() prints nice diffs.

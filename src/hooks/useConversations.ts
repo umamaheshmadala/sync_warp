@@ -37,23 +37,23 @@ import { App } from '@capacitor/app'
  */
 export function useConversations() {
   const { isMobile } = usePlatform()
-  const {
-    conversations,
-    isLoadingConversations,
-    setLoadingConversations,
-    setConversations,
-    upsertConversation,
-    updateConversation,
-    addConversation,
-    removeConversation
-  } = useMessagingStore()
+  const conversations = useMessagingStore((state) => state.conversations);
+  const isLoadingConversations = useMessagingStore((state) => state.isLoadingConversations);
+  const setLoadingConversations = useMessagingStore((state) => state.setLoadingConversations);
+  const setConversations = useMessagingStore((state) => state.setConversations);
+  const upsertConversation = useMessagingStore((state) => state.upsertConversation);
+  const updateConversation = useMessagingStore((state) => state.updateConversation);
+  const addConversation = useMessagingStore((state) => state.addConversation);
+  const removeConversation = useMessagingStore((state) => state.removeConversation);
 
   const isAppActive = useRef(true)
   const pollInterval = useRef<NodeJS.Timeout>()
   const isFetchingRef = useRef(false)
   const shouldRefetchRef = useRef(false)
 
-  const { user, loading: authLoading, initialized: authInitialized } = useAuthStore()
+  const user = useAuthStore((state) => state.user);
+  const authLoading = useAuthStore((state) => state.loading);
+  const authInitialized = useAuthStore((state) => state.initialized);
 
   // Fetch conversations - using useRef to make it stable
   const fetchConversationsRef = useRef(async () => {
@@ -197,7 +197,7 @@ export function useConversations() {
           // App went to background - stop polling
           console.log('📱 App inactive - pausing conversation updates')
           if (pollInterval.current) {
-            clearInterval(pollInterval.current)
+            clearTimeout(pollInterval.current)
           }
         }
       })

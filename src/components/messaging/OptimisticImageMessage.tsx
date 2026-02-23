@@ -49,7 +49,7 @@ export function OptimisticImageMessage({
         "relative inline-block overflow-hidden rounded-lg",
         isGridItem ? "w-full h-full" : "max-w-full min-w-[120px]"
       )}>
-        <img
+        <img decoding="async" 
           src={imageUrl}
           alt="Shared image"
           className={cn(

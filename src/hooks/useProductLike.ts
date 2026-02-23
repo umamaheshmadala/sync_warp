@@ -4,7 +4,7 @@ import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
 
 export const useProductLike = (productId: string, initialLikeCount: number = 0) => {
-    const { user } = useAuthStore();
+    const user = useAuthStore((state) => state.user);
     const [isLiked, setIsLiked] = useState(false);
     const [likeCount, setLikeCount] = useState(initialLikeCount);
     const [likedByFriends, setLikedByFriends] = useState<LikedByFriend[]>([]);

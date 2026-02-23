@@ -58,7 +58,7 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
 }) => {
   const { createCoupon, updateCoupon, loading, generateCouponCode } = useCoupons();
   const drafts = useCouponDrafts(businessId);
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const [currentStep, setCurrentStep] = useState(1);
   const [previewCode, setPreviewCode] = useState('');
   const [showDrafts, setShowDrafts] = useState(false);
@@ -272,14 +272,19 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
   // Save form state periodically and on changes
   useEffect(() => {
     if (isOpen) {
-      const interval = setInterval(() => {
+      let timeoutId: ReturnType<typeof setTimeout>;
+
+      const tick = () => {
         // Only save if there's actually form data to save
         const formData = watch();
         if (formData.title || formData.description || formData.type) {
           saveFormState();
         }
-      }, 60000); // Save every 60 seconds (much less frequent)
-      return () => clearInterval(interval);
+        timeoutId = setTimeout(tick, 60000);
+      };
+
+      timeoutId = setTimeout(tick, 60000); // Save every 60 seconds (much less frequent)
+      return () => clearTimeout(timeoutId);
     }
   }, [isOpen, watch, saveFormState]);
 
@@ -691,8 +696,8 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
                       render={({ field }) => (
                         <label
                           className={`relative border rounded-lg p-4 cursor-pointer transition-all ${field.value === type.value
-                              ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
-                              : 'border-gray-300 hover:border-gray-400'
+                            ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
+                            : 'border-gray-300 hover:border-gray-400'
                             }`}
                         >
                           <input
@@ -919,8 +924,8 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
                     render={({ field }) => (
                       <label
                         className={`relative border rounded-lg p-4 cursor-pointer transition-all ${field.value === audience.value
-                            ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
-                            : 'border-gray-300 hover:border-gray-400'
+                          ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
+                          : 'border-gray-300 hover:border-gray-400'
                           }`}
                       >
                         <input
@@ -1159,10 +1164,10 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
                 >
                   <div
                     className={`flex items-center justify-center w-8 h-8 rounded-full border-2 ${currentStep === step.id
-                        ? 'border-blue-500 bg-blue-500 text-white'
-                        : currentStep > step.id
-                          ? 'border-green-500 bg-green-500 text-white'
-                          : 'border-gray-300 bg-white text-gray-500'
+                      ? 'border-blue-500 bg-blue-500 text-white'
+                      : currentStep > step.id
+                        ? 'border-green-500 bg-green-500 text-white'
+                        : 'border-gray-300 bg-white text-gray-500'
                       }`}
                   >
                     {currentStep > step.id ? (
@@ -1197,12 +1202,12 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col h-full">
           <div className="flex-1 overflow-y-auto p-6">
             <>
-                      <div
-                                      key={currentStep}
-                                    >
-                                      {renderStep()}
-                                    </div>
-                      </>
+              <div
+                key={currentStep}
+              >
+                {renderStep()}
+              </div>
+            </>
           </div>
 
           {/* Actions */}

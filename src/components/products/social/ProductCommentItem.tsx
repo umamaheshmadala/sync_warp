@@ -13,7 +13,7 @@ interface ProductCommentItemProps {
 }
 
 export const ProductCommentItem: React.FC<ProductCommentItemProps> = ({ comment, onDelete, onReport, isBusinessOwner }) => {
-    const { user } = useAuthStore();
+    const user = useAuthStore((state) => state.user);
     const isOwnComment = user?.id === comment.user_id;
     const canDelete = isOwnComment || isBusinessOwner;
     const [showMenu, setShowMenu] = useState(false);
@@ -49,7 +49,7 @@ export const ProductCommentItem: React.FC<ProductCommentItemProps> = ({ comment,
             {/* Avatar */}
             <div className="w-8 h-8 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden">
                 {comment.user?.avatar_url ? (
-                    <img src={comment.user.avatar_url} alt={comment.user.full_name} className="w-full h-full object-cover" />
+                    <img loading="lazy" decoding="async" src={comment.user.avatar_url} alt={comment.user.full_name} className="w-full h-full object-cover" />
                 ) : (
                     <div className="w-full h-full flex items-center justify-center text-xs font-bold text-gray-500">
                         {comment.user?.full_name?.charAt(0) || '?'}

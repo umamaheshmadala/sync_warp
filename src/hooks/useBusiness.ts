@@ -53,7 +53,7 @@ interface BusinessCategory {
 }
 
 export const useBusiness = (businessId: string | null = null) => {
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const [business, setBusiness] = useState<Business | null>(null);
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(true);

@@ -11,8 +11,7 @@ import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Skeleton } from '../ui/skeleton';
 import * as ReactWindow from 'react-window';
-const gridKey = 'FixedSizeGrid';
-const FixedSizeGrid = (ReactWindow as any)[gridKey];
+const { FixedSizeGrid } = ReactWindow as any;
 import AutoSizer from 'react-virtualized-auto-sizer';
 
 type SortOption = 'newest' | 'price-low' | 'price-high' | 'name-asc' | 'name-desc';

@@ -1,0 +1,282 @@
+--- Line 214
+
+          // Update counts
+          const newCounts = new Map(state.unreadCounts);
+          const count = conversation.unread_count || 0;
+
+--- Line 219
+          let countToAdd = 0;
+          if (count > 0) {
+            newCounts.set(conversation.conversation_id, count);
+            if (!conversation.is_muted) {
+              countToAdd = count;
+--- Line 238
+          );
+          let newConversations: ConversationWithDetails[];
+          let newCounts = new Map(state.unreadCounts);
+          let totalUnreadCount = state.totalUnreadCount;
+          if (existingIndex !== -1) {
+--- Line 247
+            // Update count map
+            if (newCount > 0) {
+              newCounts.set(conversation.conversation_id, newCount);
+            } else {
+              newCounts.delete(conversation.conversation_id);
+--- Line 249
+              newCounts.set(conversation.conversation_id, newCount);
+            } else {
+              newCounts.delete(conversation.conversation_id);
+            }
+            // Recalculate total (respecting mute)
+--- Line 263
+            const count = conversation.unread_count || 0;
+            if (count > 0) {
+              newCounts.set(conversation.conversation_id, count);
+              if (!conversation.is_muted) totalUnreadCount += count;
+            }
+--- Line 304
+            // Update unread map if count changed
+            if (updates.unread_count !== undefined) {
+              unreadCounts = new Map(state.unreadCounts);
+              unreadCounts.set(conversationId, newCount);
+            }
+--- Line 305
+            if (updates.unread_count !== undefined) {
+              unreadCounts = new Map(state.unreadCounts);
+              unreadCounts.set(conversationId, newCount);
+            }
+
+--- Line 336
+
+          // Also remove from unread counts
+          const newCounts = new Map(state.unreadCounts);
+          const removedCount = newCounts.get(conversationId) || 0;
+          newCounts.delete(conversationId);
+--- Line 338
+          const newCounts = new Map(state.unreadCounts);
+          const removedCount = newCounts.get(conversationId) || 0;
+          newCounts.delete(conversationId);
+
+          // Check if conversation was muted (to know if it contributed to total)
+--- Line 361
+        // Persist active conversation on mobile
+        if (Capacitor.isNativePlatform() && conversationId) {
+          Preferences.set({
+            key: STORAGE_KEYS.ACTIVE_CONVERSATION,
+            value: conversationId
+--- Line 374
+      setMessages: (conversationId, messages) =>
+        set((state) => {
+          const newMessages = new Map(state.messages);
+
+          // Preserve optimistic messages when setting new messages
+--- Line 392
+            : allMessages;
+
+          newMessages.set(conversationId, limitedMessages);
+          return { messages: newMessages };
+        }, false, 'setMessages'),
+--- Line 398
+      addMessage: (conversationId, message) =>
+        set((state) => {
+          const newMessages = new Map(state.messages);
+          const conversationMessages = newMessages.get(conversationId) || [];
+
+--- Line 460
+            : updatedMessages;
+
+          newMessages.set(conversationId, finalMessages);
+          return { messages: newMessages };
+        }, false, 'addMessage'),
+--- Line 468
+          if (messages.length === 0) return {};
+
+          const newMessages = new Map(state.messages);
+          const messagesByConversation = new Map<string, Message[]>();
+
+--- Line 469
+
+          const newMessages = new Map(state.messages);
+          const messagesByConversation = new Map<string, Message[]>();
+
+          // Group by conversation
+--- Line 474
+          messages.forEach(msg => {
+            const existing = messagesByConversation.get(msg.conversation_id) || [];
+            messagesByConversation.set(msg.conversation_id, [...existing, msg]);
+          });
+
+--- Line 482
+
+            // Create a map of existing messages by ID for O(1) lookup
+            const msgMap = new Map(existingMsgs.map(m => [m.id, m]));
+
+            // Update or add new messages
+--- Line 486
+            // Update or add new messages
+            newMsgs.forEach(msg => {
+              msgMap.set(msg.id, msg);
+            });
+
+--- Line 500
+              : sortedMessages;
+
+            newMessages.set(conversationId, finalMessages);
+          });
+
+--- Line 508
+      updateMessage: (conversationId, messageId, updates) =>
+        set((state) => {
+          const newMessages = new Map(state.messages);
+          const conversationMessages = newMessages.get(conversationId) || [];
+          newMessages.set(
+--- Line 510
+          const newMessages = new Map(state.messages);
+          const conversationMessages = newMessages.get(conversationId) || [];
+          newMessages.set(
+            conversationId,
+            conversationMessages.map(msg =>
+--- Line 521
+      removeMessage: (conversationId, messageId) =>
+        set((state) => {
+          const newMessages = new Map(state.messages);
+          const conversationMessages = newMessages.get(conversationId) || [];
+          newMessages.set(
+--- Line 523
+          const newMessages = new Map(state.messages);
+          const conversationMessages = newMessages.get(conversationId) || [];
+          newMessages.set(
+            conversationId,
+            conversationMessages.filter(msg => msg.id !== messageId)
+--- Line 532
+      prependMessages: (conversationId, messages) =>
+        set((state) => {
+          const newMessages = new Map(state.messages);
+          const existing = newMessages.get(conversationId) || [];
+          const combined = [...messages, ...existing];
+--- Line 541
+            : combined;
+
+          newMessages.set(conversationId, finalMessages);
+          return { messages: newMessages };
+        }, false, 'prependMessages'),
+--- Line 551
+      addOptimisticMessage: (conversationId, message) =>
+        set((state) => {
+          const newMessages = new Map(state.messages);
+          const conversationMessages = newMessages.get(conversationId) || [];
+
+--- Line 569
+            : updatedMessages;
+
+          newMessages.set(conversationId, finalMessages);
+          return { messages: newMessages };
+        }, false, 'addOptimisticMessage'),
+--- Line 575
+      replaceOptimisticMessage: (conversationId, tempId, realMessage) =>
+        set((state) => {
+          const newMessages = new Map(state.messages);
+          const conversationMessages = newMessages.get(conversationId) || [];
+
+--- Line 614
+      markMessageFailed: (conversationId, tempId) =>
+        set((state) => {
+          const newMessages = new Map(state.messages);
+          const conversationMessages = newMessages.get(conversationId) || [];
+
+--- Line 634
+      updateMessageProgress: (conversationId, tempId, progress) =>
+        set((state) => {
+          const newMessages = new Map(state.messages);
+          const conversationMessages = newMessages.get(conversationId) || [];
+
+--- Line 654
+      setUnreadCount: (conversationId, count) =>
+        set((state) => {
+          const newCounts = new Map(state.unreadCounts);
+          newCounts.set(conversationId, count);
+
+--- Line 655
+        set((state) => {
+          const newCounts = new Map(state.unreadCounts);
+          newCounts.set(conversationId, count);
+
+          // Auto-save on mobile
+--- Line 669
+      incrementUnreadCount: (conversationId) =>
+        set((state) => {
+          const newCounts = new Map(state.unreadCounts);
+          const current = newCounts.get(conversationId) || 0;
+          newCounts.set(conversationId, current + 1);
+--- Line 671
+          const newCounts = new Map(state.unreadCounts);
+          const current = newCounts.get(conversationId) || 0;
+          newCounts.set(conversationId, current + 1);
+
+          // Check if conversation is muted
+--- Line 692
+      clearUnreadCount: (conversationId) =>
+        set((state) => {
+          const newCounts = new Map(state.unreadCounts);
+          const removed = newCounts.get(conversationId) || 0;
+          newCounts.set(conversationId, 0);
+--- Line 694
+          const newCounts = new Map(state.unreadCounts);
+          const removed = newCounts.get(conversationId) || 0;
+          newCounts.set(conversationId, 0);
+
+          // Auto-save on mobile
+--- Line 749
+      addTypingUser: (conversationId, userId) =>
+        set((state) => {
+          const newTyping = new Map(state.typingUsers);
+          const users = new Set<string>(newTyping.get(conversationId) || []);
+          users.add(userId);
+--- Line 750
+        set((state) => {
+          const newTyping = new Map(state.typingUsers);
+          const users = new Set<string>(newTyping.get(conversationId) || []);
+          users.add(userId);
+          newTyping.set(conversationId, users);
+--- Line 752
+          const users = new Set<string>(newTyping.get(conversationId) || []);
+          users.add(userId);
+          newTyping.set(conversationId, users);
+          return { typingUsers: newTyping };
+        }, false, 'addTypingUser'),
+--- Line 758
+      removeTypingUser: (conversationId, userId) =>
+        set((state) => {
+          const newTyping = new Map(state.typingUsers);
+          const users = new Set<string>(newTyping.get(conversationId) || []);
+          users.delete(userId);
+--- Line 759
+        set((state) => {
+          const newTyping = new Map(state.typingUsers);
+          const users = new Set<string>(newTyping.get(conversationId) || []);
+          users.delete(userId);
+          newTyping.set(conversationId, users);
+--- Line 760
+          const newTyping = new Map(state.typingUsers);
+          const users = new Set<string>(newTyping.get(conversationId) || []);
+          users.delete(userId);
+          newTyping.set(conversationId, users);
+          return { typingUsers: newTyping };
+--- Line 761
+          const users = new Set<string>(newTyping.get(conversationId) || []);
+          users.delete(userId);
+          newTyping.set(conversationId, users);
+          return { typingUsers: newTyping };
+        }, false, 'removeTypingUser'),
+--- Line 792
+        try {
+          const counts = get().unreadCounts;
+          await Preferences.set({
+            key: STORAGE_KEYS.UNREAD_COUNTS,
+            value: JSON.stringify(counts)
+--- Line 809
+          if (value) {
+            const counts = JSON.parse(value) as [string, number][];
+            const unreadCounts = new Map(counts);
+            const totalUnreadCount = Object.values(unreadCounts)
+              .reduce((sum, count) => sum + count, 0);

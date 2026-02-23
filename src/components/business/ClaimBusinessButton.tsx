@@ -26,7 +26,7 @@ export function ClaimBusinessButton({
     onClaimed,
     className
 }: ClaimBusinessButtonProps) {
-    const { user } = useAuthStore();
+    const user = useAuthStore((state) => state.user);
     const navigate = useNavigate();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [claimId, setClaimId] = useState<string | null>(null);

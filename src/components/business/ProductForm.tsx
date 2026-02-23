@@ -320,7 +320,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
               {/* Existing images */}
               {imageUrls.map((url, index) => (
                 <div key={`existing-${index}`} className="relative group">
-                  <img
+                  <img loading="lazy" decoding="async" 
                     src={url}
                     alt={`Product ${index + 1}`}
                     className="w-full h-24 object-cover rounded-lg"
@@ -338,7 +338,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
               {/* New preview images */}
               {previewImages.map((url, index) => (
                 <div key={`preview-${index}`} className="relative group">
-                  <img
+                  <img loading="lazy" decoding="async" 
                     src={url}
                     alt={`Preview ${index + 1}`}
                     className="w-full h-24 object-cover rounded-lg"

@@ -14,7 +14,7 @@ export function GenericPreview({ preview }: { preview: LinkPreview }) {
     return (
         <>
             {preview.image && (
-                <img
+                <img loading="lazy" decoding="async" 
                     src={preview.image}
                     alt=""
                     className="w-full h-32 object-cover block bg-gray-100"
@@ -23,7 +23,7 @@ export function GenericPreview({ preview }: { preview: LinkPreview }) {
             <div className="p-3">
                 <h4 className="font-semibold text-gray-900 text-sm line-clamp-1 flex items-center gap-1">
                     {preview.favicon && (
-                        <img src={preview.favicon} alt="" className="w-4 h-4" />
+                        <img loading="lazy" decoding="async" src={preview.favicon} alt="" className="w-4 h-4" />
                     )}
                     {preview.title}
                 </h4>

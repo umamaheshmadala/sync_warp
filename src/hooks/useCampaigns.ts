@@ -371,9 +371,15 @@ export function useCampaignAnalytics(campaignId?: string) {
   useEffect(() => {
     fetchAnalytics();
 
-    // Refresh analytics every 30 seconds
-    const interval = setInterval(fetchAnalytics, 30000);
-    return () => clearInterval(interval);
+    // Refresh analytics every 5 minutes
+    let timeoutId: ReturnType<typeof setTimeout>;
+    const tick = () => {
+      fetchAnalytics().finally(() => {
+        timeoutId = setTimeout(tick, 300000);
+      });
+    };
+    timeoutId = setTimeout(tick, 300000);
+    return () => clearTimeout(timeoutId);
   }, [fetchAnalytics]);
 
   return {

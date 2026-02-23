@@ -13,7 +13,7 @@ import { useAuthStore } from '../../store/authStore';
 import type { BusinessReviewWithDetails } from '../../types/review';
 
 export default function UserReviewsList() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const [editingReview, setEditingReview] = useState<BusinessReviewWithDetails | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
 

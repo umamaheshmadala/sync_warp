@@ -24,7 +24,8 @@ export function SwipeableConversationCard({ conversation, isSelectionMode = fals
   const longPressTimer = useRef<NodeJS.Timeout>()
   const startTime = useRef(0)
   
-  const { togglePinOptimistic, toggleArchiveOptimistic } = useMessagingStore()
+  const togglePinOptimistic = useMessagingStore((state) => state.togglePinOptimistic);
+  const toggleArchiveOptimistic = useMessagingStore((state) => state.toggleArchiveOptimistic);
 
   const SWIPE_THRESHOLD = 80 // pixels to trigger action
   const MAX_SWIPE = 120 // maximum swipe distance

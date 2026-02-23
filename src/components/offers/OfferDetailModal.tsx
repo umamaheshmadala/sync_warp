@@ -170,8 +170,7 @@ export const OfferDetailModal: React.FC<OfferDetailModalProps> = ({
                     {/* Icon/Image */}
                     {offer.icon_image_url ? (
                       <div className="flex justify-center">
-                        <img
-                          src={offer.icon_image_url}
+                        <img loading="lazy" decoding="async"                           src={offer.icon_image_url}
                           alt={offer.title}
                           className="w-full h-32 md:h-48 rounded-xl object-cover shadow-sm"
                         />

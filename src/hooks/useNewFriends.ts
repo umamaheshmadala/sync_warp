@@ -27,7 +27,7 @@ interface UseNewFriendsReturn {
 }
 
 export const useNewFriends = (): UseNewFriendsReturn => {
-  const { user } = useAuthStore()
+  const user = useAuthStore((state) => state.user);
   
   // State
   const [friends, setFriends] = useState<Friend[]>([])

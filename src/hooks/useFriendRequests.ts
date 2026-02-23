@@ -13,7 +13,7 @@ import type { FriendRequest } from '../types/friends'
  * Hook for managing received friend requests (pending requests to current user)
  */
 export function useReceivedFriendRequests() {
-  const { user } = useAuthStore()
+  const user = useAuthStore((state) => state.user);
   const queryClient = useQueryClient()
 
   const {
@@ -76,7 +76,7 @@ export function useReceivedFriendRequests() {
  * Hook for managing sent friend requests (pending requests from current user)
  */
 export function useSentFriendRequests() {
-  const { user } = useAuthStore()
+  const user = useAuthStore((state) => state.user);
   const queryClient = useQueryClient()
 
   const {

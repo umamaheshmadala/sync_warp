@@ -163,7 +163,7 @@ export function ProductDetails() {
                 <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
               </div>
             )}
-            <img
+            <img loading="lazy" decoding="async" 
               src={selectedImage}
               alt={product.name}
               className="h-full w-full object-contain"
@@ -202,7 +202,7 @@ export function ProductDetails() {
                     : 'border-gray-200 hover:border-gray-300'
                     }`}
                 >
-                  <img
+                  <img loading="lazy" decoding="async" 
                     src={image}
                     alt={`${product.name} - ${index + 1}`}
                     className="h-full w-full object-cover"

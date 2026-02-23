@@ -315,8 +315,7 @@ export function ImageLightbox({
                                           centerOnInit={true}
                                         >
                                           <TransformComponent>
-                                            <img
-                                              src={currentImage}
+                                            <img loading="lazy" decoding="async"                                               src={currentImage}
                                               alt={`Image ${currentIndex + 1}`}
                                               className="max-w-full max-h-full object-contain"
                                               style={{ maxHeight: 'calc(100vh - 4rem)' }}
@@ -324,8 +323,7 @@ export function ImageLightbox({
                                           </TransformComponent>
                                         </TransformWrapper>
                                       ) : (
-                                        <img
-                                          src={currentImage}
+                                        <img loading="lazy" decoding="async"                                           src={currentImage}
                                           alt={`Image ${currentIndex + 1}`}
                                           className="max-w-full max-h-full object-contain"
                                           style={{ maxHeight: 'calc(100vh - 4rem)' }}

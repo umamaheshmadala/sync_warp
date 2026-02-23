@@ -14,7 +14,7 @@ import { toast } from 'react-hot-toast';
 
 export default function BusinessOnboardingPage() {
   const navigate = useNavigate();
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const [searchParams] = useSearchParams();
   const [businessId, setBusinessId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);

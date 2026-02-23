@@ -37,7 +37,7 @@ interface RetentionStats {
 }
 
 export function RetentionMonitor() {
-    const { profile } = useAuthStore()
+    const profile = useAuthStore((state) => state.profile);
     const [logs, setLogs] = useState<CleanupLog[]>([])
     const [stats, setStats] = useState<RetentionStats>({
         totalMessages: 0,

@@ -161,7 +161,7 @@ export const ImageUploadWithCropper: React.FC<ImageUploadWithCropperProps> = ({
                 {image ? (
                     <div className="relative group">
                         <div className="flex items-center justify-center">
-                            <img
+                            <img loading="lazy" decoding="async" 
                                 src={URL.createObjectURL(image)}
                                 alt={`${label} preview`}
                                 className={`${previewClassName} object-cover rounded shadow-sm`}

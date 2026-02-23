@@ -111,7 +111,7 @@ export const BusinessEngagementLog: React.FC<BusinessEngagementLogProps> = ({ bu
                                 {/* User Avatar */}
                                 <div className="flex-shrink-0">
                                     {event.user_avatar ? (
-                                        <img
+                                        <img loading="lazy" decoding="async" 
                                             src={event.user_avatar}
                                             alt={event.user_name}
                                             className="w-10 h-10 rounded-full object-cover border"

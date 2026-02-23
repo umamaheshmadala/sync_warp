@@ -60,7 +60,7 @@ export default function FeaturedOffers({
 
   // Delete Modal State
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Audit Log State

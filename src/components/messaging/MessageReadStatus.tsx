@@ -183,7 +183,7 @@ export function MessageReadStatus({
                   className="flex items-center gap-2 text-xs"
                 >
                   {receipt.avatarUrl ? (
-                    <img
+                    <img loading="lazy" decoding="async" 
                       src={receipt.avatarUrl}
                       alt={receipt.username || 'User'}
                       className="w-5 h-5 rounded-full"

@@ -12,7 +12,7 @@ import { SearchSuggestions } from '../search/SearchSuggestions';
 import { useSearch } from '../../hooks/useSearch';
 import { SearchSuggestion } from '../../services/searchService';
 import { useConversations } from '../../hooks/useConversations';
-import { useMessagingStore } from '../../store/messagingStore';
+import { useUnreadCount } from '../../hooks/useUnreadCount';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -100,7 +100,7 @@ export default function Header() {
 
   // Initialize conversations to get unread count
   useConversations();
-  const totalUnreadCount = useMessagingStore((state) => state.totalUnreadCount);
+  const { hasUnread, formattedCount } = useUnreadCount();
 
   // Get recent searches from localStorage
   const [recentSearches, setRecentSearches] = useState<any[]>([]); // Changed type to any for backwards compat/flexibility
@@ -325,7 +325,7 @@ export default function Header() {
             className="hidden md:flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
           >
             {/* Logo with text for desktop */}
-            <img
+            <img loading="eager" decoding="async"
               src="/Logo/Logo Text Transparent PNG 2.png"
               alt="Sync"
               className="h-[40px]"
@@ -412,9 +412,9 @@ export default function Header() {
           >
             <Link to="/messages" title="Messages">
               <MessageCircle className="h-7 w-7" />
-              {totalUnreadCount > 0 && (
+              {hasUnread && (
                 <span className="absolute top-0 right-0 h-4 w-4 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-bold ring-2 ring-white">
-                  {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
+                  {formattedCount}
                 </span>
               )}
             </Link>
@@ -434,9 +434,9 @@ export default function Header() {
           >
             <Link to="/messages" title="Messages">
               <MessageCircle className="h-9 w-9" />
-              {totalUnreadCount > 0 && (
+              {hasUnread && (
                 <span className="absolute top-1 right-1 h-5 w-5 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-bold ring-2 ring-white">
-                  {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
+                  {formattedCount}
                 </span>
               )}
             </Link>

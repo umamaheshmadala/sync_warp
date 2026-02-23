@@ -7,7 +7,7 @@ interface ProfileCompletionWizardProps {
 }
 
 export const ProfileCompletionWizard: React.FC<ProfileCompletionWizardProps> = ({ onStepClick }) => {
-  const { profile } = useAuthStore();
+  const profile = useAuthStore((state) => state.profile);
   const [visible, setVisible] = useState(true);
   const [completionPercentage, setCompletionPercentage] = useState(0);
 

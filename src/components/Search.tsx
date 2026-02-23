@@ -16,7 +16,7 @@ import CouponDetailsModal from './modals/CouponDetailsModal'
 
 export default function Search() {
   const navigate = useNavigate();
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   // ... (rest of component)
 
   // Search hook with all functionality

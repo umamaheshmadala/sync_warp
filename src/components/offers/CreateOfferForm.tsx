@@ -868,7 +868,7 @@ function Step4Review({ formData }: { formData: Partial<OfferFormData> }) {
         {formData.icon_image_url && (
           <div className="border border-gray-200 rounded-lg p-4">
             <h3 className="text-sm font-semibold text-gray-700 mb-2">Icon</h3>
-            <img
+            <img loading="lazy" decoding="async" 
               src={formData.icon_image_url}
               alt="Offer icon"
               className="w-24 h-24 rounded-lg object-cover"

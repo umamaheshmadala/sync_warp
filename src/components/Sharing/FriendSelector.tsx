@@ -241,8 +241,7 @@ const FriendSelector: React.FC<FriendSelectorProps> = ({
                                                     {/* Avatar */}
                                                     <div className="flex-shrink-0">
                                                       {user.avatar_url ? (
-                                                        <img
-                                                          src={user.avatar_url}
+                                                        <img loading="lazy" decoding="async"                                                           src={user.avatar_url}
                                                           alt={getDisplayName(user)}
                                                           className="w-8 h-8 rounded-full object-cover"
                                                         />

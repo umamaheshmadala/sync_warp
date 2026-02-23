@@ -124,7 +124,7 @@ export function BusinessPreviewCard({
             {/* Cover Image Area */}
             <div className="h-40 bg-gray-200 relative">
                 {coverUrl ? (
-                    <img
+                    <img loading="lazy" decoding="async" 
                         src={coverUrl}
                         alt="Cover"
                         className="w-full h-full object-cover"
@@ -149,7 +149,7 @@ export function BusinessPreviewCard({
                 <div className="absolute -top-16 left-4">
                     <div className="w-28 h-28 rounded-full border-4 border-white bg-white shadow-md overflow-hidden">
                         {logoUrl ? (
-                            <img
+                            <img loading="lazy" decoding="async" 
                                 src={logoUrl}
                                 alt="Logo"
                                 className="w-full h-full object-cover"

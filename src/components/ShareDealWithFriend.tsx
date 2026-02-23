@@ -247,7 +247,7 @@ const ShareDeal: React.FC<ShareDealProps> = ({ friendId, dealId, isOpen, onClose
                                   >
                                     <div className="flex items-start space-x-3">
                                       {deal.image_url && (
-                                        <img
+                                        <img loading="lazy" decoding="async" 
                                           src={deal.image_url}
                                           alt={deal.title}
                                           className="h-12 w-12 rounded-lg object-cover flex-shrink-0"
@@ -286,7 +286,7 @@ const ShareDeal: React.FC<ShareDealProps> = ({ friendId, dealId, isOpen, onClose
                             <div className="border border-indigo-300 bg-indigo-50 rounded-lg p-3 mb-4">
                               <div className="flex items-start space-x-3">
                                 {selectedDeal.image_url && (
-                                  <img
+                                  <img loading="lazy" decoding="async" 
                                     src={selectedDeal.image_url}
                                     alt={selectedDeal.title}
                                     className="h-16 w-16 rounded-lg object-cover flex-shrink-0"
