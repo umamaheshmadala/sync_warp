@@ -37,7 +37,7 @@ SplashScreen: {
 
 ### Layer 2: AppDataPrefetcher — 7s safety timeout
 
-[AppDataPrefetcher.tsx](file:///c:/Users/umama/OneDrive/Documents/GitHub/sync_warp/src/components/AppDataPrefetcher.tsx) — Lines 42-51:
+[AppDataPrefetcher.tsx](file:///c:/Users/umama/OneDrive/Documents/GitHub/sync_warp/src/components/AppDataPrefetcher.tsx) — Lines 41-51:
 
 ```typescript
 useEffect(() => {

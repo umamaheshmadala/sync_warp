@@ -54,23 +54,26 @@ Vite 5+ uses esbuild for minification (not terser). esbuild supports `drop` for 
 
 ## 🔧 Implementation Details
 
-### Option A (Recommended): Use esbuild `drop` — zero dependencies
+### Option A (Recommended): Use esbuild `pure` — zero dependencies
 
-**File:** [vite.config.ts](file:///c:/Users/umama/OneDrive/Documents/GitHub/sync_warp/vite.config.ts) — Add to the `build` section:
+**File:** [vite.config.ts](file:///c:/Users/umama/OneDrive/Documents/GitHub/sync_warp/vite.config.ts) — Add `esbuild` at the **top level** of the config (NOT inside `build`):
 
 ```diff
- build: {
-   target: 'es2015',
-   chunkSizeWarningLimit: 1000,
-+  // Strip console.log and debugger in production
-+  ...(mode === 'production' && {
+ export default defineConfig(({ mode }) => ({
+   base: mode === 'capacitor' ? './' : '/',
++  // Strip console.log and debugger in production (Story 18.4)
++  ...(mode !== 'development' && {
 +    esbuild: {
 +      drop: ['debugger'],
 +      pure: ['console.log', 'console.info', 'console.debug', 'console.warn'],
 +    }
 +  }),
-   rollupOptions: {
+   plugins: [
+     react(),
 ```
+
+> [!IMPORTANT]
+> The `esbuild` option MUST be at the **top level** of the Vite config object, **not inside `build`**. Vite uses esbuild for both dev transforms and prod minification. The `build.esbuild` key does not exist — placing it there would silently do nothing.
 
 **How `pure` works:** esbuild marks these functions as "pure" (side-effect-free), which allows the minifier to remove the entire call expression. The function calls are eliminated entirely — not just the output.
 
@@ -137,7 +140,7 @@ build: {
 
 | File | Action |
 |------|--------|
-| [vite.config.ts](file:///c:/Users/umama/OneDrive/Documents/GitHub/sync_warp/vite.config.ts) | MODIFY — add esbuild `pure` and `drop` configuration to `build` section |
+| [vite.config.ts](file:///c:/Users/umama/OneDrive/Documents/GitHub/sync_warp/vite.config.ts) | MODIFY — add top-level `esbuild` config with `pure` and `drop` (NOT inside `build`) |
 
 ---
 
