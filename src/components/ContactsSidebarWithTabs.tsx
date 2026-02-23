@@ -16,8 +16,7 @@ import type { Friend } from '../services/newFriendService'
 import * as ReactWindow from 'react-window'
 import AutoSizer from 'react-virtualized-auto-sizer'
 
-const listKey = 'FixedSizeList';
-const List = (ReactWindow as any)[listKey];
+const { FixedSizeList: List } = ReactWindow as any
 
 const formatLastActive = (lastActive: string): string => {
   const date = new Date(lastActive)

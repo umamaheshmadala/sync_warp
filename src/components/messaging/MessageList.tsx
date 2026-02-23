@@ -187,7 +187,10 @@ export const MessageList = React.forwardRef<HTMLDivElement, MessageListProps>(({
       {frozenReadAt !== undefined ? (
         <Virtuoso
           ref={virtuosoRef}
-          scrollerRef={ref as any}
+          scrollerRef={(el) => {
+            if (typeof ref === 'function') ref(el as HTMLDivElement);
+            else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = el as HTMLDivElement;
+          }}
           data={viewModels}
           className="message-list-scroll scrollbar-hide"
           initialTopMostItemIndex={initialTopMostItemIndex}

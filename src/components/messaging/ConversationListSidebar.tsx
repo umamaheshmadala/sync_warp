@@ -18,8 +18,7 @@ import { parseDatabaseDate } from '../../utils/dateUtils'
 import * as ReactWindow from 'react-window'
 import AutoSizer from 'react-virtualized-auto-sizer'
 
-const listKey = 'FixedSizeList';
-const List = (ReactWindow as any)[listKey];
+const { FixedSizeList: List } = ReactWindow as any
 
 interface ItemData {
   conversations: any[];
