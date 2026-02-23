@@ -61,6 +61,7 @@ Line 85: `chunkSizeWarningLimit: 1000` — This suppresses Vite's default 500KB 
 +  'recharts-vendor': ['recharts'],
 +  'emoji-vendor': ['emoji-picker-react'],
 +  'dnd-vendor': ['@dnd-kit/core', '@dnd-kit/sortable', '@dnd-kit/utilities'],
++  'xlsx-vendor': ['xlsx'],
  },
 ```
 
@@ -83,7 +84,7 @@ import * as XLSX from 'xlsx';
 const XLSX = await import('xlsx');
 ```
 
-If not imported at all (type-only reference), no action needed.
+Whether or not `xlsx` is dynamically imported, the `xlsx-vendor` manual chunk (Step 1) ensures it lands in a separate file rather than the main bundle.
 
 ### Step 3: Ensure lazy-loaded routes benefit from chunking
 
@@ -115,10 +116,15 @@ manualChunks(id) {
   if (id.includes('node_modules/@dnd-kit')) {
     return 'dnd-vendor';
   }
+  if (id.includes('node_modules/xlsx')) {
+    return 'xlsx-vendor';
+  }
 },
 ```
 
 This handles transitive dependencies (e.g., `recharts` pulls in `d3-*` modules) and prevents them from landing in the main bundle.
+
+> **Note on `@radix-ui`:** The audit report (7.6) also mentions `@radix-ui` (~25KB gzipped) as a split candidate. However, Radix components are heavily tree-shaken and used across many pages, so splitting them into a separate chunk may not improve loading characteristics. Monitor after the other splits — if bundle size is still above target, add `'radix-vendor': ['@radix-ui']`.
 
 ---
 
@@ -133,7 +139,7 @@ This handles transitive dependencies (e.g., `recharts` pulls in `d3-*` modules) 
    dnd-vendor-*.js
    ```
 3. **Before fix:** These libraries are embedded in the main `index-*.js`
-4. **After fix:** Separate chunk files exist
+4. **After fix:** Separate chunk files exist, including `xlsx-vendor-*.js`
 
 ### Bundle Size Comparison
 1. Note the main bundle size before the change:
@@ -157,12 +163,14 @@ This handles transitive dependencies (e.g., `recharts` pulls in `d3-*` modules) 
 - [ ] `recharts` extracted into `recharts-vendor` chunk
 - [ ] `emoji-picker-react` extracted into `emoji-vendor` chunk
 - [ ] `@dnd-kit` extracted into `dnd-vendor` chunk
-- [ ] Build output shows 6+ chunk files (up from 3)
+- [ ] `xlsx` extracted into `xlsx-vendor` chunk
+- [ ] Build output shows 7+ chunk files (up from 3)
 - [ ] Main bundle size reduced by ≥15%
 - [ ] Analytics pages load `recharts-vendor` only on navigation
 - [ ] Emoji picker loads `emoji-vendor` only when activated
 - [ ] Product wizard loads `dnd-vendor` only when opened
-- [ ] No functional regressions in charting, emoji, or drag-and-drop features
+- [ ] Follower export loads `xlsx-vendor` only when triggered
+- [ ] No functional regressions in charting, emoji, drag-and-drop, or export features
 
 ---
 
@@ -170,7 +178,7 @@ This handles transitive dependencies (e.g., `recharts` pulls in `d3-*` modules) 
 
 | File | Action |
 |------|--------|
-| [vite.config.ts](file:///c:/Users/umama/OneDrive/Documents/GitHub/sync_warp/vite.config.ts) | MODIFY — add 3 new `manualChunks` entries |
+| [vite.config.ts](file:///c:/Users/umama/OneDrive/Documents/GitHub/sync_warp/vite.config.ts) | MODIFY — add 4 new `manualChunks` entries (recharts, emoji, dnd-kit, xlsx) |
 
 ---
 

@@ -29,12 +29,14 @@ Connect the already-installed `web-vitals` library to an analytics endpoint so t
 private initWebVitals() {
   if (typeof window === 'undefined') return;
   onCLS(this.handleMetric.bind(this));
-  onFID(this.handleMetric.bind(this));
+  onFID(this.handleMetric.bind(this));   // ← DEPRECATED in web-vitals v5 — should be onINP
   onFCP(this.handleMetric.bind(this));
   onLCP(this.handleMetric.bind(this));
   onTTFB(this.handleMetric.bind(this));
 }
 ```
+
+> **Note:** `onFID` (First Input Delay) was deprecated in `web-vitals` v5 and replaced by `onINP` (Interaction to Next Paint). The import at line 1 (`import { onCLS, onFID, onFCP, onLCP, onTTFB, Metric } from 'web-vitals'`) also needs updating. See Step 5 below.
 
 ### `sendToAnalytics()` is a stub — only fires `gtag` (which doesn't exist)
 
@@ -181,6 +183,24 @@ import './utils/performanceMonitoring'; // Ensure singleton initializes
 
 If already imported via another module, no changes needed.
 
+### Step 5: Update `onFID` → `onINP` (web-vitals v5 migration)
+
+**File:** [performanceMonitoring.ts](file:///c:/Users/umama/OneDrive/Documents/GitHub/sync_warp/src/utils/performanceMonitoring.ts) — Lines 1 and 43
+
+`web-vitals` v5 deprecated `onFID` (First Input Delay) and replaced it with `onINP` (Interaction to Next Paint). INP measures the latency of ALL interactions during the page lifecycle, not just the first input. Google adopted INP as a Core Web Vital in March 2024.
+
+```diff
+// Line 1 — import
+-import { onCLS, onFID, onFCP, onLCP, onTTFB, Metric } from 'web-vitals';
++import { onCLS, onINP, onFCP, onLCP, onTTFB, Metric } from 'web-vitals';
+
+// Line 43 — usage
+-  onFID(this.handleMetric.bind(this));
++  onINP(this.handleMetric.bind(this));
+```
+
+No other code changes are needed — `onINP` has the same callback signature as `onFID`.
+
 ---
 
 ## 🧪 Verification
@@ -218,6 +238,7 @@ If already imported via another module, no changes needed.
 - [ ] `performanceMonitor` singleton initializes on app startup
 - [ ] Console logs Web Vitals in development mode (already working)
 - [ ] Network tab shows beacon requests to analytics endpoint in production
+- [ ] `onFID` replaced with `onINP` for web-vitals v5 compatibility
 - [ ] Optional: Supabase `web_vitals` table created for persistent storage
 
 ---
@@ -239,4 +260,4 @@ If already imported via another module, no changes needed.
 | No analytics endpoint exists yet | `navigator.sendBeacon('/api/web-vitals', ...)` will silently fail with a 404 — no page crash. The endpoint can be added later. |
 | Beacon payload too large | Keep payload minimal (~200 bytes per metric). 5 metrics × 200 bytes = 1KB total — well within beacon limits. |
 | Privacy/GDPR concerns with userAgent | The `userAgent` field can be removed or anonymized. It's optional and only useful for debugging browser-specific issues. |
-| `web-vitals` v5 API changes | v5 changed some APIs (e.g., `onFID` → `onINP`). The current code uses `onFID` but INP (Interaction to Next Paint) is the replacement. Consider updating to `onINP` for future-proofing. |
+| `web-vitals` v5 API changes | v5 replaced `onFID` with `onINP`. Step 5 migrates from FID → INP. The callback signature is identical, so no other changes are needed. |
