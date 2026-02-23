@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import type { ConversationWithDetails } from '../types/messaging';
+import { messagingService } from '../services/messagingService';
 
 /**
  * useUnreadCount Hook
@@ -16,7 +17,9 @@ import type { ConversationWithDetails } from '../types/messaging';
 export function useUnreadCount() {
     const { data: conversations = [] } = useQuery<ConversationWithDetails[]>({
         queryKey: ['conversations'],
-        // Only read from cache, do not trigger fetch here
+        // provide queryFn to prevent React Query v5 missing queryFn error
+        queryFn: async () => await messagingService.fetchConversations(),
+        // Only read from cache, do not trigger fetch here unless explicitly forced
         staleTime: Infinity,
         enabled: false,
     });

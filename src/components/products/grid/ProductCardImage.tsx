@@ -17,12 +17,11 @@ export const ProductCardImage: React.FC<ProductCardImageProps> = ({ src, alt, is
                     <span className="text-xs">No Image</span>
                 </div>
             ) : (
-                <img loading="lazy" decoding="async" 
+                <img loading="lazy" decoding="async"
                     src={getOptimizedImageUrl(src, 400)} // Optimize for card width
                     alt={alt}
                     className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
                     onError={() => setHasError(true)}
-                    loading="lazy"
                 />
             )}
 
