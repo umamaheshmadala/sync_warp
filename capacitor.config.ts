@@ -61,6 +61,9 @@ const config: CapacitorConfig = {
   appName: getAppName(),
   webDir: 'dist',
   server: getServerConfig(),
+  ios: {
+    packageManager: 'Cocoapods',
+  },
   plugins: {
     Keyboard: {
       resize: 'none',
