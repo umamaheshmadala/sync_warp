@@ -1,4 +1,4 @@
-# STORY 16.2 — Multiplex Supabase Realtime Channels (≤2 per User)
+# STORY 16.2 — Multiplex Supabase Realtime Channels (≤3 per User)
 
 **Epic:** [EPIC 16 — Messaging Speed & Realtime Optimization](../epics/EPIC_16_Messaging_Speed_Realtime_Optimization.md)  
 **Status:** 📋 Ready  
@@ -11,7 +11,7 @@
 
 ## 🎯 Goal
 
-Reduce the number of Supabase Realtime WebSocket channels from ~4+ per active conversation to a maximum of **2 channels per user session**, fitting comfortably under the Supabase free-tier 200-connection cap. Currently, at ~4 channels per user, only ~50 concurrent users can be supported before hitting the limit. After this story, **200 concurrent users** can be supported.
+Reduce the number of Supabase Realtime WebSocket channels from ~4+ per active conversation to a maximum of **3 channels per user session** (global + active-chat + presence), fitting comfortably under the Supabase free-tier 200-connection cap. Currently, at ~4+ channels per user, only ~50 concurrent users can be supported before hitting the limit. After this story, **~66 concurrent users** can be supported (200 / 3).
 
 ---
 

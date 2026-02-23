@@ -45,13 +45,28 @@ The same filter pattern is applied in:
 
 This channel listens to **ALL** conversation changes and **ALL** notification_log inserts across **ALL** users. Every connected client receives every event.
 
-### Conversation-list subscription — also unfiltered 🔴
+### Conversation-list subscription — no-op stub 🟡
 
-[realtimeService.ts — subscribeToConversationList()](file:///c:/Users/umama/OneDrive/Documents/GitHub/sync_warp/src/services/realtimeService.ts#L469-L490) subscribes to `conversation_participants` and `messages` tables — also without a user-scoped filter.
+[realtimeService.ts — subscribeToConversationList()](file:///c:/Users/umama/OneDrive/Documents/GitHub/sync_warp/src/services/realtimeService.ts#L476-L490) is currently a **no-op stub** — it creates a channel name but immediately returns the unsubscribe function without actually subscribing to any tables. The comments suggest subscribing to `conversation_participants` was considered but not implemented. This method can be safely removed.
 
 ### In-app notifications — firehose on `notification_log` 🔴
 
-[realtimeService.ts — subscribeToInAppNotifications()](file:///c:/Users/umama/OneDrive/Documents/GitHub/sync_warp/src/services/realtimeService.ts#L492-L560) subscribes to `notification_log` inserts with a `filter: user_id=eq.${userId}` — **this is already filtered correctly ✅**.
+[realtimeService.ts — subscribeToInAppNotifications()](file:///c:/Users/umama/OneDrive/Documents/GitHub/sync_warp/src/services/realtimeService.ts#L500-L560) subscribes to `notification_log` inserts **without any user-scoped filter** — this is another firehose:
+
+```typescript
+// Line 519-525 — NO user_id filter → firehose
+.on(
+  'postgres_changes',
+  {
+    event: 'INSERT',
+    schema: 'public',
+    table: 'notification_log'
+  },
+  (payload) => { ... }
+)
+```
+
+**Every notification for every user triggers a callback on every connected client.** This must be fixed by adding `filter: \`user_id=eq.${userId}\``.
 
 ---
 
@@ -90,7 +105,7 @@ Replace the current `subscribeToConversations()` approach:
 
 This ensures only changes relevant to the current user trigger callbacks.
 
-**The `notification_log` listener can be removed** from `subscribeToConversations()` entirely because `subscribeToInAppNotifications()` already handles it with a user-scoped filter.
+**The `notification_log` listener should be removed** from `subscribeToConversations()` entirely — it is redundant once `subscribeToInAppNotifications()` is fixed with a user-scoped filter (see Step 1b below).
 
 ### Step 2: Update `subscribeToConversations()` signature to accept `userId`
 
@@ -126,24 +141,47 @@ realtimeService.subscribeToConversations((payload) => { ... });
 realtimeService.subscribeToConversations(user.id, (payload) => { ... });
 ```
 
-### Step 4: Filter or remove `subscribeToConversationList()`
+### Step 4: Add `user_id` filter to `subscribeToInAppNotifications()`
 
-**File:** [realtimeService.ts](file:///c:/Users/umama/OneDrive/Documents/GitHub/sync_warp/src/services/realtimeService.ts#L469-L490)
+**File:** [realtimeService.ts](file:///c:/Users/umama/OneDrive/Documents/GitHub/sync_warp/src/services/realtimeService.ts#L500-L560)
 
-This method similarly subscribes to `conversation_participants` and `messages` without user filters. Options:
-1. **If duplicate with `subscribeToConversations()`** — remove it entirely and redirect callers to the updated `subscribeToConversations()`.
-2. **If unique purpose** — add the same `user_id` filter pattern.
+This method subscribes to ALL `notification_log` inserts without a user filter. Add the filter:
 
-Check callers:
+```typescript
+// BEFORE (firehose — line 519-525)
+.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notification_log' }, ...)
+
+// AFTER — filter by user_id
+.on(
+  'postgres_changes',
+  {
+    event: 'INSERT',
+    schema: 'public',
+    table: 'notification_log',
+    filter: `user_id=eq.${userId}`
+  },
+  (payload) => { ... }
+)
+```
+
+The `userId` parameter already exists in the method signature — it just isn't used for filtering.
+
+### Step 5: Remove the no-op `subscribeToConversationList()` stub
+
+**File:** [realtimeService.ts](file:///c:/Users/umama/OneDrive/Documents/GitHub/sync_warp/src/services/realtimeService.ts#L476-L490)
+
+This is a no-op stub that creates a channel name but never subscribes. Remove it entirely — its intended functionality is covered by the updated `subscribeToConversations()` method.
+
+Check for callers first:
 ```bash
 grep -rn "subscribeToConversationList" src/
 ```
 
-If no callers exist, delete the method. If callers exist, add the `user_id` filter.
+If callers exist, redirect them to `subscribeToConversations()`. If none, delete the method.
 
-### Step 5: Verify client-side filtering remains as safety net
+### Step 6: Verify client-side filtering remains as safety net
 
-Keep the existing client-side `conversation_id` check in `subscribeToMessages()` (line 274) as a defense-in-depth layer:
+Keep the existing client-side `conversation_id` check in `subscribeToMessages()` (line 273) as a defense-in-depth layer:
 
 ```typescript
 if (newMessage.conversation_id === conversationId) {
@@ -183,12 +221,13 @@ This costs nothing and protects against Supabase filter bugs.
 ## ✅ Acceptance Criteria
 
 - [ ] `subscribeToConversations()` accepts `userId` parameter and filters `conversation_participants` by `user_id`
-- [ ] The `notification_log` listener is removed from `subscribeToConversations()` (already handled by `subscribeToInAppNotifications()`)
-- [ ] `subscribeToConversationList()` is either removed or filtered by `user_id`
+- [ ] The `notification_log` listener is removed from `subscribeToConversations()` (handled by `subscribeToInAppNotifications()` after fix)
+- [ ] `subscribeToInAppNotifications()` adds `filter: \`user_id=eq.${userId}\`` to the `notification_log` subscription
+- [ ] `subscribeToConversationList()` no-op stub is removed
 - [ ] Client-side safety filter retained in `subscribeToMessages()`
 - [ ] WebSocket inspector shows NO unfiltered table subscriptions
-- [ ] Second user's messages do NOT trigger callbacks in first user's client
-- [ ] All existing messaging features work: send, receive, read receipts, typing indicators, conversation list updates
+- [ ] Second user's messages and notifications do NOT trigger callbacks in first user's client
+- [ ] All existing messaging features work: send, receive, read receipts, typing indicators, conversation list updates, notification toasts
 - [ ] Console shows no errors on subscription setup
 - [ ] No regression in conversation list refresh when user receives a new message
 
@@ -199,7 +238,8 @@ This costs nothing and protects against Supabase filter bugs.
 | File | Action |
 |------|--------|
 | [realtimeService.ts](file:///c:/Users/umama/OneDrive/Documents/GitHub/sync_warp/src/services/realtimeService.ts) | MODIFY — `subscribeToConversations()` add userId filter, remove notification_log listener |
-| [realtimeService.ts](file:///c:/Users/umama/OneDrive/Documents/GitHub/sync_warp/src/services/realtimeService.ts) | MODIFY — `subscribeToConversationList()` filter or remove |
+| [realtimeService.ts](file:///c:/Users/umama/OneDrive/Documents/GitHub/sync_warp/src/services/realtimeService.ts) | MODIFY — `subscribeToInAppNotifications()` add `user_id` filter to notification_log subscription |
+| [realtimeService.ts](file:///c:/Users/umama/OneDrive/Documents/GitHub/sync_warp/src/services/realtimeService.ts) | DELETE — `subscribeToConversationList()` no-op stub |
 | Callers of `subscribeToConversations()` | MODIFY — pass `userId` argument |
 
 ---
