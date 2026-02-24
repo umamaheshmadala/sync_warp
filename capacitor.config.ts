@@ -26,14 +26,14 @@ const getServerConfig = () => {
     iosScheme: 'https' as const,
   };
 
-  /*
-  if (isDevelopment) {
-    return {
-      ...baseConfig,
-      hostname: 'localhost',
-      cleartext: true, // Allow HTTP in development
-    };
-    */
+  // Development server config (currently disabled — using local bundle)
+  // if (isDevelopment) {
+  //   return {
+  //     ...baseConfig,
+  //     hostname: 'localhost',
+  //     cleartext: true, // Allow HTTP in development
+  //   };
+  // }
 
 
   if (isStaging) {
@@ -61,12 +61,9 @@ const config: CapacitorConfig = {
   appName: getAppName(),
   webDir: 'dist',
   server: getServerConfig(),
-  ios: {
-    packageManager: 'Cocoapods',
-  },
   plugins: {
     Keyboard: {
-      resize: 'none',
+      resize: 'ionic',
       resizeOnFullScreen: true,
     },
     SplashScreen: {

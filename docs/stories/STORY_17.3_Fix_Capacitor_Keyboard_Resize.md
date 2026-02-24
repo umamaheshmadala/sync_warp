@@ -121,11 +121,11 @@ Converting to single-line comments (`//`) makes the intent clear and prevents mi
 
 ## ✅ Acceptance Criteria
 
-- [ ] `Keyboard.resize` changed from `'none'` to `'ionic'`
-- [ ] Keyboard does not hide input fields on mobile (verified on device/emulator)
-- [ ] Broken block comment replaced with clean single-line comments
-- [ ] `npx tsc --noEmit` passes without errors on `capacitor.config.ts`
-- [ ] No regression in Capacitor build (`npx cap sync` succeeds)
+- [x] `Keyboard.resize` changed from `'none'` to `'ionic'`
+- [x] Keyboard does not hide input fields on mobile (verified on device/emulator)
+- [x] Broken block comment replaced with clean single-line comments
+- [x] `npx tsc --noEmit` passes without errors on `capacitor.config.ts`
+- [x] No regression in Capacitor build (`npx cap sync` succeeds)
 
 ---
 
