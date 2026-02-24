@@ -1,7 +1,7 @@
 # STORY 16.5 — Extend Media cacheControl from 3600 → 31536000 (1 Year)
 
 **Epic:** [EPIC 16 — Messaging Speed & Realtime Optimization](../epics/EPIC_16_Messaging_Speed_Realtime_Optimization.md)  
-**Status:** 📋 Ready  
+**Status:** ✅ Complete
 **Priority:** 🟠 High  
 **Estimate:** 1 story point  
 **Dependencies:** None  

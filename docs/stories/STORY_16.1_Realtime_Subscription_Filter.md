@@ -1,7 +1,7 @@
 # STORY 16.1 — Add `conversation_id` Filter to Realtime Message Subscriptions
 
 **Epic:** [EPIC 16 — Messaging Speed & Realtime Optimization](../epics/EPIC_16_Messaging_Speed_Realtime_Optimization.md)  
-**Status:** ✅ Complete  
+**Status:** ✅ Complete
 **Priority:** 🔴 Critical  
 **Estimate:** 3 story points  
 **Dependencies:** None  

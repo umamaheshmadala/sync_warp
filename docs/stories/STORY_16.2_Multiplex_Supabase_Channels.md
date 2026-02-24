@@ -1,7 +1,7 @@
 # STORY 16.2 — Multiplex Supabase Realtime Channels (≤3 per User)
 
 **Epic:** [EPIC 16 — Messaging Speed & Realtime Optimization](../epics/EPIC_16_Messaging_Speed_Realtime_Optimization.md)  
-**Status:** 📋 Ready  
+**Status:** ✅ Complete
 **Priority:** 🔴 Critical  
 **Estimate:** 3 story points  
 **Dependencies:** STORY 16.1 (subscription filter must be in place first)  

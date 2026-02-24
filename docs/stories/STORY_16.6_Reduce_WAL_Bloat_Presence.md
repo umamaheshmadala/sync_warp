@@ -1,7 +1,7 @@
 # STORY 16.6 — Reduce WAL Bloat: Single Presence Write per Interval, Upsert Pattern
 
 **Epic:** [EPIC 16 — Messaging Speed & Realtime Optimization](../epics/EPIC_16_Messaging_Speed_Realtime_Optimization.md)  
-**Status:** 📋 Ready  
+**Status:** ✅ Complete
 **Priority:** 🟠 High  
 **Estimate:** 2 story points  
 **Dependencies:** EPIC 14.1 (Presence Consolidation — ensures only `presenceStore` manages presence)  

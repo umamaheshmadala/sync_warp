@@ -1,7 +1,7 @@
 # STORY 16.7 — Add Cache-Control Headers to Supabase Storage Uploads for Media
 
 **Epic:** [EPIC 16 — Messaging Speed & Realtime Optimization](../epics/EPIC_16_Messaging_Speed_Realtime_Optimization.md)  
-**Status:** 📋 Ready  
+**Status:** ✅ Complete
 **Priority:** 🟠 High  
 **Estimate:** 1 story point  
 **Dependencies:** STORY 16.5 (cache TTL must be extended first)  

@@ -1,6 +1,6 @@
 # 🚀 EPIC 16: Messaging Speed & Realtime Optimization
 
-**Status:** 📋 Planning  
+**Status:** ✅ Complete
 **Created:** 2026-02-21  
 **Owner:** Frontend Engineering / Backend Engineering  
 **Audit Reference:** [Codebase Audit Report — Categories 3 (partial), 5 (partial)](../../.gemini/antigravity/brain/4990934d-85a5-413b-9a20-e2901b49f1fe/codebase_audit_report.md)  
@@ -103,11 +103,11 @@ Achieve WhatsApp-level messaging speed by filtering realtime subscriptions, mult
 
 ## ✅ Definition of Done
 
-- [ ] Realtime subscription filters by `conversation_id` — verified in WebSocket frames
-- [ ] ≤3 Supabase realtime channels per user session
-- [ ] Startup prefetches reduced to ≤3 — deferred fetches load on navigation
-- [ ] `ChatScreen` chunk separated from main bundle
-- [ ] Media uploads have 1-year cache TTL
-- [ ] Presence upsert pattern reduces WAL writes
-- [ ] Monthly realtime messages ≤1.5M at 1K users (projected)
-- [ ] Monthly bandwidth ≤5GB at 1K users (projected)
+- [x] Realtime subscription filters by `conversation_id` — verified in WebSocket frames
+- [x] ≤3 Supabase realtime channels per user session
+- [x] Startup prefetches reduced to ≤3 — deferred fetches load on navigation
+- [x] `ChatScreen` chunk separated from main bundle
+- [x] Media uploads have 1-year cache TTL
+- [x] Presence upsert pattern reduces WAL writes
+- [x] Monthly realtime messages ≤1.5M at 1K users (projected)
+- [x] Monthly bandwidth ≤5GB at 1K users (projected)
