@@ -521,7 +521,8 @@ class RealtimeService {
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'notification_log'
+          table: 'notification_log',
+          filter: `user_id=eq.${userId}`
         },
         (payload) => {
           console.log('🔔 [RealtimeService] ✅ In-app notification event received!');
@@ -685,34 +686,32 @@ class RealtimeService {
   // ============================================================================
 
   /**
-   * Subscribe to conversation list updates
-   * Triggers on new conversations and new messages
-   * 
-   * @param onUpdate - Callback when conversation list should refresh
-   * @returns Unsubscribe function
-   */
-  subscribeToConversations(onUpdate: ConversationUpdateCallback): () => void {
-    const channelName = 'user-conversations';
+ * Subscribe to conversation list updates
+ * Triggers on new conversations and changes relevant to the current user
+ * 
+ * @param userId - The ID of the authenticated user
+ * @param onUpdate - Callback when conversation list should refresh
+ * @returns Unsubscribe function
+ */
+  subscribeToConversations(userId: string, onUpdate: ConversationUpdateCallback): () => void {
+    const channelName = `user-conversations:${userId}`;
 
     // Remove existing subscription if any
     this.unsubscribe(channelName);
 
-    // Subscribe to both conversations and messages tables
+    // Subscribe to conversation_participants to detect when a conversation is added, removed, or properties like unread count change for THIS specific user.
     const channel = supabase
       .channel(channelName)
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'conversations' },
+        {
+          event: '*',
+          schema: 'public',
+          table: 'conversation_participants',
+          filter: `user_id=eq.${userId}`
+        },
         (payload) => {
-          console.log('🔄 Conversations table updated');
-          onUpdate(payload); // Pass payload for future optimization
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'notification_log' },
-        (payload) => {
-          console.log('🔄 New notification log (updating conversation list)');
+          console.log('🔄 Conversation participants table updated for user');
           onUpdate(payload); // Pass payload for future optimization
         }
       )

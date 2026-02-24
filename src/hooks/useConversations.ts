@@ -110,16 +110,20 @@ export function useConversations() {
   // Stable fetch function
   const fetchConversations = useCallback(() => {
     return fetchConversationsRef.current()
-  }, [])
+  }, []) // Dependency array for useCallback
 
-  // Subscribe to real-time conversation updates (conversations + new messages)
+  // Realtime subscriptions
   useEffect(() => {
-    if (!user?.id) return
+    if (!user?.id) {
+      console.log('⏭️ Skipping realtime subscriptions - user not authenticated')
+      return
+    }
 
     // Use subscribeToConversations which subscribes to BOTH:
-    // 1. Conversation table changes (INSERT/UPDATE/DELETE)
-    // 2. Message INSERT events (to update last_message_content in sidebar)
+    // 1. Conversation participant table changes (INSERT/UPDATE/DELETE)
+    // 2. Message INSERT events (via notification log for updates)
     const unsubscribeConversations = realtimeService.subscribeToConversations(
+      user.id,
       async (payload) => {
         console.log('🔄 [useConversations] Realtime update received:', payload?.table)
 
@@ -128,8 +132,8 @@ export function useConversations() {
           let conversationId: string | null = null;
 
           // Extract conversation ID from payload
-          if (payload?.table === 'conversations') {
-            conversationId = payload.new?.id || payload.old?.id;
+          if (payload?.table === 'conversation_participants') {
+            conversationId = payload.new?.conversation_id || payload.old?.conversation_id;
           } else if (payload?.table === 'notification_log') {
             conversationId = payload.new?.data?.conversation_id;
           }
