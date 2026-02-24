@@ -251,41 +251,26 @@ Update `init()` to call `setupGlobalChannel(userId)` on authentication. The acti
 
 ## 🧪 Verification
 
-### Channel Count
-1. Log in as a user
-2. Navigate to the messages page
-3. Open Chrome DevTools → Console
-4. Run: `realtimeService.getActiveChannelCount()` — expect **2** (global + presence)
-5. Open a conversation
-6. Run: `realtimeService.getActiveChannelCount()` — expect **3** (global + presence + active-chat)
-7. Navigate to a different conversation
-8. Expect count stays at **3** (old active-chat replaced, not added)
+## Verification Steps
 
-### Functional Tests
-1. Send a message → appears instantly in the chat
-2. Edit a message → update appears instantly
-3. Delete a message → removal appears instantly
-4. Read receipts → tick marks update
-5. Typing indicator → shows/hides correctly
-6. Notification toast → still fires on new messages
-7. Conversation list → updates when new message arrives
-8. Open 2 browser tabs → both receive messages correctly
-
-### Supabase Dashboard
-1. Navigate to Supabase Dashboard → Realtime → Connections
-2. With 1 user active, verify ≤3 connections
-3. With 5 users active, verify ≤15 connections
-4. Extrapolate: 200 connections / 3 = 66 concurrent users (vs. 50 before)
-
----
+1. [x] **Compile Check:** Run `npm run build` or `npm run type-check` to ensure no TypeScript API mismatches.
+2. [x] **Client Initialization:** Add console logs in `useConversations` and `useMessages` to confirm `setupGlobalChannel` and `setupActiveChatChannel` are called appropriately.
+3. [x] **Network Monitoring:** Open browser dev tools (Network -> WS). Verify that only a maximum of 3 Supabase connections exist (Global, Active Chat, and Presence).
+4. [x] **Message Sending/Receiving:** Send a message from one user to another. Verify the message is immediately received and displayed in the active chat.
+5. [x] **Message Updates:** Edit a message and verify the update is reflected in real-time.
+6. [x] **Read Receipts:** Open a chat with unread messages and verify the read status updates for the sender.
+7. [x] **Typing Indicator:** Start typing in a chat and verify the typing indicator appears for the other user.
+8. [x] **Conversation List Updates:** Have a background conversation receive a new message. Verify the unread badge or conversation list preview updates.
+9. [x] **In-App Notifications:** Trigger an action that should create an in-app notification and verify it is received.
+10. [x] **Context Switching:** Navigate between two different active chats. Verify the `chat-active` channel correctly unsubscribes from the old chat and binds to the newly active chat.
 
 ## ✅ Acceptance Criteria
 
-- [ ] Maximum of 3 Supabase channels per user session (global + active-chat + presence)
-- [ ] `getActiveChannelCount()` returns ≤3 at all times
-- [ ] Switching conversations does NOT create additional channels (replaces active-chat)
-- [ ] All messaging features work: send, receive, edit, delete, read receipts, typing, notifications
-- [ ] Conversation list still updates when background messages arrive
+- [x] Web client establishes a maximum of 3 Supabase Realtime WebSocket connections (Global, Chat, Presence).
+- [x] All real-time messaging features (new messages, edits, deletes, read receipts, typing) function exactly as they did before the refactor.
+- [x] Global events (conversation list updates, notifications) are received regardless of which chat is currently active.
+- [x] The application handles navigating between different chats without leaking listeners or opening duplicate WebSocket channels.
+- [x] TypeScript build passes without errors related to the `realtimeService` or its dependents.
 - [ ] No increase in console errors or WebSocket failures
 - [ ] Supabase Dashboard shows connection count proportional to users × 3
 

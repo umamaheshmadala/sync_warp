@@ -119,6 +119,9 @@ export function useConversations() {
       return
     }
 
+    // Set up the single global multiplexed channel
+    realtimeService.setupGlobalChannel(user.id)
+
     // Use subscribeToConversations which subscribes to BOTH:
     // 1. Conversation participant table changes (INSERT/UPDATE/DELETE)
     // 2. Message INSERT events (via notification log for updates)

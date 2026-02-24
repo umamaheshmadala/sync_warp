@@ -47,7 +47,7 @@ export function useMessages(conversationId: string | null) {
 
   // Actions are now accessed statically to prevent re-renders
   // const addMessage = useMessagingStore((state) => state.addMessage);
- const updateMessage = useMessagingStore((state) => state.updateMessage);
+  const updateMessage = useMessagingStore((state) => state.updateMessage);
 
   const hasMore = useRef(true)
   const [isFetchingOlder, setIsFetchingOlder] = useState(false)
@@ -138,6 +138,9 @@ export function useMessages(conversationId: string | null) {
   // Subscribe to real-time message updates
   useEffect(() => {
     if (!conversationId) return
+
+    // Initialize the multiplexed active chat channel
+    realtimeService.setupActiveChatChannel(conversationId)
 
     const unsubscribeNew = realtimeService.subscribeToMessages(
       conversationId,
