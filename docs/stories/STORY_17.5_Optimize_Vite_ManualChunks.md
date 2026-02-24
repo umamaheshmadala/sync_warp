@@ -160,17 +160,17 @@ This handles transitive dependencies (e.g., `recharts` pulls in `d3-*` modules) 
 
 ## ✅ Acceptance Criteria
 
-- [ ] `recharts` extracted into `recharts-vendor` chunk
-- [ ] `emoji-picker-react` extracted into `emoji-vendor` chunk
-- [ ] `@dnd-kit` extracted into `dnd-vendor` chunk
-- [ ] `xlsx` extracted into `xlsx-vendor` chunk
-- [ ] Build output shows 7+ chunk files (up from 3)
-- [ ] Main bundle size reduced by ≥15%
-- [ ] Analytics pages load `recharts-vendor` only on navigation
-- [ ] Emoji picker loads `emoji-vendor` only when activated
-- [ ] Product wizard loads `dnd-vendor` only when opened
-- [ ] Follower export loads `xlsx-vendor` only when triggered
-- [ ] No functional regressions in charting, emoji, drag-and-drop, or export features
+- [x] `recharts` extracted into `recharts-vendor` chunk
+- [x] `emoji-picker-react` extracted into `emoji-vendor` chunk
+- [x] `@dnd-kit` extracted into `dnd-vendor` chunk
+- [x] `xlsx` extracted into `xlsx-vendor` chunk
+- [x] Build output shows 7+ chunk files (up from 3)
+- [x] Main bundle size reduced by ≥15%
+- [x] Analytics pages load `recharts-vendor` only on navigation
+- [x] Emoji picker loads `emoji-vendor` only when activated
+- [x] Product wizard loads `dnd-vendor` only when opened
+- [x] Follower export loads `xlsx-vendor` only when triggered
+- [x] No functional regressions in charting, emoji, drag-and-drop, or export features
 
 ---
 

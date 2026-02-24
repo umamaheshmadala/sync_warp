@@ -25,6 +25,7 @@ import { spamConfigService } from './services/SpamConfigService'
 import { FavoritesProvider } from './contexts/FavoritesContext'
 import { DeepLinkModalProvider } from './components/providers/DeepLinkModalProvider'
 import { ShareClickTracker } from './components/analytics/ShareClickTracker'
+import { useTheme } from './hooks/useTheme'
 
 import { queryClient } from './lib/react-query'
 
@@ -38,6 +39,9 @@ const persister = createAsyncStoragePersister({
 // Component that needs Router context
 function AppContent() {
   const user = useAuthStore(state => state.user)
+
+  // Initialize theme detection on mount (Story 17.4)
+  useTheme()
 
   // Automatically register push notifications when user logs in
   const pushState = usePushNotifications(user?.id ?? null)

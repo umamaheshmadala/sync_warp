@@ -56,8 +56,8 @@ export default defineConfig(({ mode }) => ({
       workbox: {
         // Only precache the app shell — not dynamic API data
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
-        // Don't precache chunks larger than 500KB
-        maximumFileSizeToCacheInBytes: 500 * 1024,
+        // Don't precache chunks larger than 1000KB (matches chunkSizeWarningLimit)
+        maximumFileSizeToCacheInBytes: 1000 * 1024,
         // Runtime caching for API responses
         runtimeCaching: [
           {
@@ -187,10 +187,28 @@ export default defineConfig(({ mode }) => ({
         warn(warning)
       },
       output: {
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'supabase-vendor': ['@supabase/supabase-js'],
-          'zustand-vendor': ['zustand']
+        manualChunks(id: string) {
+          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom') || id.includes('node_modules/react-router')) {
+            return 'react-vendor';
+          }
+          if (id.includes('node_modules/@supabase')) {
+            return 'supabase-vendor';
+          }
+          if (id.includes('node_modules/zustand')) {
+            return 'zustand-vendor';
+          }
+          if (id.includes('node_modules/recharts') || id.includes('node_modules/d3-')) {
+            return 'recharts-vendor';
+          }
+          if (id.includes('node_modules/emoji-picker-react')) {
+            return 'emoji-vendor';
+          }
+          if (id.includes('node_modules/@dnd-kit')) {
+            return 'dnd-vendor';
+          }
+          if (id.includes('node_modules/xlsx')) {
+            return 'xlsx-vendor';
+          }
         },
         // Preserve module names to prevent mangling
         preserveModules: false,
