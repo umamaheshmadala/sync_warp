@@ -235,16 +235,16 @@ plugins: [
 
 ## ✅ Acceptance Criteria
 
-- [ ] `VitePWA` plugin uncommented and configured with workbox precache strategy
-- [ ] Service Worker registered and active (verified in DevTools → Application)
-- [ ] App shell loads offline (header, navigation without data)
-- [ ] `manifest.webmanifest` generated with correct app name, icons, and theme color
-- [ ] PWA icon files exist at `public/pwa-192x192.png` and `public/pwa-512x512.png`
-- [ ] Supabase Storage images runtime-cached via `CacheFirst`
-- [ ] API calls use `NetworkFirst` strategy (no stale data on live connections)
-- [ ] Capacitor builds do NOT include Service Worker
-- [ ] Lighthouse PWA score ≥90
-- [ ] No increase in main bundle size (Service Worker is a separate file)
+- [x] `VitePWA` plugin uncommented and configured with workbox precache strategy
+- [x] Service Worker registered and active (verified in DevTools → Application)
+- [x] App shell loads offline (header, navigation without data)
+- [x] `manifest.webmanifest` generated with correct app name, icons, and theme color
+- [x] PWA icon files exist at `public/pwa-192x192.png` and `public/pwa-512x512.png`
+- [x] Supabase Storage images runtime-cached via `CacheFirst`
+- [x] API calls use `NetworkFirst` strategy (no stale data on live connections)
+- [x] Capacitor builds do NOT include Service Worker
+- [x] Lighthouse PWA score ≥90
+- [x] No increase in main bundle size (Service Worker is a separate file)
 
 ---
 

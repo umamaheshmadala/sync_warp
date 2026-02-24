@@ -50,7 +50,103 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     buildInfoPlugin(),
-    // VitePWA({...}) 
+    ...(mode !== 'capacitor' ? [VitePWA({
+      registerType: 'autoUpdate',
+      includeAssets: ['logo.svg', 'favicon.ico'],
+      workbox: {
+        // Only precache the app shell — not dynamic API data
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+        // Don't precache chunks larger than 500KB
+        maximumFileSizeToCacheInBytes: 500 * 1024,
+        // Runtime caching for API responses
+        runtimeCaching: [
+          {
+            // Cache Supabase Storage images for 1 year
+            urlPattern: /^https:\/\/.*\.supabase\.co\/storage\/v1\/object\/public\/.*/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'supabase-media',
+              expiration: {
+                maxEntries: 200,
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
+            // Cache wsrv.nl proxy images
+            urlPattern: /^https:\/\/wsrv\.nl\/.*/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'wsrv-media',
+              expiration: {
+                maxEntries: 200,
+                maxAgeSeconds: 60 * 60 * 24 * 365
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
+            // Network-first for API calls (Supabase REST)
+            urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/v1\/.*/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'supabase-api',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 5 // 5 minutes
+              },
+              networkTimeoutSeconds: 10
+            }
+          },
+          {
+            // Cache Google Fonts
+            urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-fonts',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 365
+              }
+            }
+          }
+        ]
+      },
+      manifest: {
+        name: 'SynC - Connect, Collaborate, Create',
+        short_name: 'SynC',
+        description: 'Connect with local businesses, discover offers, and collaborate with your community',
+        theme_color: '#6366f1',
+        background_color: '#ffffff',
+        display: 'standalone',
+        orientation: 'portrait',
+        scope: '/',
+        start_url: '/',
+        icons: [
+          {
+            src: 'pwa-192x192.png',
+            sizes: '192x192',
+            type: 'image/png'
+          },
+          {
+            src: 'pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png'
+          },
+          {
+            src: 'pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any maskable'
+          }
+        ]
+      }
+    })] : [])
   ],
   resolve: {
     alias: {
