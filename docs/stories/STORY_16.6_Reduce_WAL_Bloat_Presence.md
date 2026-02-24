@@ -233,14 +233,14 @@ cleanup: async () => {
 
 ## ✅ Acceptance Criteria
 
-- [ ] `is_online` DB write removed from heartbeat `trackPresence()` — only `channel.track()` remains
-- [ ] DB writes only occur on online↔offline state transitions
-- [ ] Visibility change handler is debounced (2s) to prevent rapid writes
-- [ ] `isCurrentlyOnline` flag prevents duplicate writes
-- [ ] Presence indicators for friends still work correctly (via Supabase Presence channel, not DB polling)
-- [ ] `profiles.is_online` correctly reflects user's final state (true when online, false when offline)
-- [ ] WAL writes reduced by ≥90% (from ~50/hour to ~2-4/hour per user)
-- [ ] Cleanup properly resets `isCurrentlyOnline` and clears debounce timer
+- [x] `is_online` DB write removed from heartbeat `trackPresence()` — only `channel.track()` remains
+- [x] DB writes only occur on online↔offline state transitions
+- [x] Visibility change handler is debounced (2s) to prevent rapid writes
+- [x] `isCurrentlyOnline` flag prevents duplicate writes
+- [x] Presence indicators for friends still work correctly (via Supabase Presence channel, not DB polling)
+- [x] `profiles.is_online` correctly reflects user's final state (true when online, false when offline)
+- [x] WAL writes reduced by ≥90% (from ~50/hour to ~2-4/hour per user)
+- [x] Cleanup properly resets `isCurrentlyOnline` and clears debounce timer
 
 ---
 

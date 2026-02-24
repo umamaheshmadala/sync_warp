@@ -17,6 +17,10 @@ export const usePresenceStore = create<PresenceState>((set, get) => {
     let visibilityHandler: any = null;
     let unloadHandler: any = null;
 
+    // STORY 16.6: Track local state to minimize WAL DB updates
+    let isCurrentlyOnline = false;
+    let visibilityDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
     return {
         onlineUsers: new Map(),
         isInitialized: false,
@@ -94,14 +98,17 @@ export const usePresenceStore = create<PresenceState>((set, get) => {
                     platform: Capacitor.getPlatform(),
                 });
 
-                // Update DB for persistence
-                await supabase
-                    .from('profiles')
-                    .update({
-                        is_online: true,
-                        last_active: new Date().toISOString()
-                    })
-                    .eq('id', uid);
+                // STORY 16.6: Only update DB for persistence on actual transition to online
+                if (!isCurrentlyOnline) {
+                    isCurrentlyOnline = true;
+                    await supabase
+                        .from('profiles')
+                        .update({
+                            is_online: true,
+                            last_active: new Date().toISOString()
+                        })
+                        .eq('id', uid);
+                }
             };
 
             // Helper to untrack
@@ -110,13 +117,17 @@ export const usePresenceStore = create<PresenceState>((set, get) => {
                 console.log('[PresenceStore] Untracking');
                 await channel.untrack();
 
-                await supabase
-                    .from('profiles')
-                    .update({
-                        is_online: false,
-                        last_active: new Date().toISOString()
-                    })
-                    .eq('id', uid);
+                // STORY 16.6: Only update DB for persistence on actual transition to offline
+                if (isCurrentlyOnline) {
+                    isCurrentlyOnline = false;
+                    await supabase
+                        .from('profiles')
+                        .update({
+                            is_online: false,
+                            last_active: new Date().toISOString()
+                        })
+                        .eq('id', uid);
+                }
             };
 
             // Heartbeat (120s) with recursive setTimeout
@@ -143,11 +154,15 @@ export const usePresenceStore = create<PresenceState>((set, get) => {
             // Web Visibility
             if (!visibilityHandler) {
                 visibilityHandler = () => {
-                    if (document.hidden) {
-                        untrackPresence(userId);
-                    } else {
-                        trackPresence(userId);
-                    }
+                    if (visibilityDebounceTimer) clearTimeout(visibilityDebounceTimer);
+
+                    visibilityDebounceTimer = setTimeout(() => {
+                        if (document.hidden) {
+                            untrackPresence(userId);
+                        } else {
+                            trackPresence(userId);
+                        }
+                    }, 2000); // 2 second debounce — ignore rapid tab switches
                 };
                 document.addEventListener('visibilitychange', visibilityHandler);
             }
@@ -178,6 +193,11 @@ export const usePresenceStore = create<PresenceState>((set, get) => {
 
         cleanup: async () => {
             console.log('[PresenceStore] Cleaning up');
+
+            // STORY 16.6: Clean up state trackers
+            isCurrentlyOnline = false;
+            if (visibilityDebounceTimer) clearTimeout(visibilityDebounceTimer);
+
             if (heartbeatInterval) clearTimeout(heartbeatInterval);
             if (appStateListener && appStateListener.remove) appStateListener.remove();
 
