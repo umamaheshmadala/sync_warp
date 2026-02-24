@@ -93,13 +93,13 @@ This only applies to iOS (`-webkit-touch-callout` is iOS-only) and only sets the
 
 ## ✅ Acceptance Criteria
 
-- [ ] `user-scalable=no` removed from viewport meta tag
-- [ ] `maximum-scale=1.0` removed from viewport meta tag
-- [ ] `viewport-fit=cover` retained for safe area insets
-- [ ] Pinch-to-zoom works on mobile web
-- [ ] iOS Safari does NOT auto-zoom on input focus (16px minimum enforced)
-- [ ] Lighthouse Accessibility score does not flag viewport zoom blocking
-- [ ] Safe area insets (`env(safe-area-inset-*)`) still work correctly
+- [x] `user-scalable=no` removed from viewport meta tag
+- [x] `maximum-scale=1.0` removed from viewport meta tag
+- [x] `viewport-fit=cover` retained for safe area insets
+- [x] Pinch-to-zoom works on mobile web
+- [x] iOS Safari does NOT auto-zoom on input focus (16px minimum enforced)
+- [x] Lighthouse Accessibility score does not flag viewport zoom blocking
+- [x] Safe area insets (`env(safe-area-inset-*)`) still work correctly
 
 ---
 

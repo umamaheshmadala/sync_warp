@@ -96,6 +96,18 @@ body {
 /* Ensure container classes don't exceed viewport */
 
 
+/* Prevent iOS Safari auto-zoom on input focus (Story 17.2)
+   Set minimum 16px on inputs so iOS doesn't zoom when focusing.
+   This does NOT prevent manual pinch-to-zoom (WCAG compliant). */
+@supports (-webkit-touch-callout: none) {
+
+  input,
+  select,
+  textarea {
+    font-size: max(16px, 1em);
+  }
+}
+
 /* Prevent iOS Safari from moving fixed elements during scroll */
 @supports (-webkit-touch-callout: none) {
 
