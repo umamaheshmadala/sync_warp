@@ -42,7 +42,7 @@ export function ImageUpload({ value, onChange, businessId }: ImageUploadProps) {
       const { data, error: uploadError } = await supabase.storage
         .from('offer-images')
         .upload(fileName, file, {
-          cacheControl: '3600',
+          cacheControl: '31536000',
           upsert: false,
         });
 

@@ -107,10 +107,10 @@ This ensures all future uploads use the same value.
 
 ## ✅ Acceptance Criteria
 
-- [ ] All 10 `cacheControl: '3600'` occurrences replaced with `'31536000'`
-- [ ] Response headers on newly uploaded files show `max-age=31536000`
-- [ ] Re-uploaded files display the new version (URL changes ensure cache busting)
-- [ ] No visual regressions in image/video display
+- [x] All 10 `cacheControl: '3600'` occurrences replaced with `'31536000'`
+- [x] Response headers on newly uploaded files show `max-age=31536000`
+- [x] Re-uploaded files display the new version (URL changes ensure cache busting)
+- [x] No visual regressions in image/video display
 - [ ] Optional: `STORAGE_CACHE_TTL` constant defined and used across all files
 
 ---

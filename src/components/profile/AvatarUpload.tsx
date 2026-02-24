@@ -134,7 +134,7 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, compressedFile, {
-          cacheControl: '3600',
+          cacheControl: '31536000',
           upsert: false
         });
 
