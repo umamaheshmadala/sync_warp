@@ -162,13 +162,13 @@ Components to check:
 
 ## ✅ Acceptance Criteria
 
-- [ ] `<meta name="description">` present in `index.html` with meaningful content
-- [ ] Only ONE `<meta name="mobile-web-app-capable">` tag in `index.html`
-- [ ] `format-detection: telephone=yes` (or tag removed) to allow clickable phone numbers
-- [ ] Business phone numbers wrapped in `<a href="tel:">` links
-- [ ] Phone links are styled (indigo color, hover underline)
-- [ ] Lighthouse SEO does not flag missing meta description
-- [ ] Phone links open the dialer on mobile devices
+- [x] `<meta name="description">` present in `index.html` with meaningful content
+- [x] Only ONE `<meta name="mobile-web-app-capable">` tag in `index.html`
+- [x] `format-detection: telephone=yes` (or tag removed) to allow clickable phone numbers
+- [x] Business phone numbers wrapped in `<a href="tel:">` links
+- [x] Phone links are styled (indigo color, hover underline)
+- [x] Lighthouse SEO does not flag missing meta description
+- [x] Phone links open the dialer on mobile devices
 
 ---
 

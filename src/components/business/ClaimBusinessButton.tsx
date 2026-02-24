@@ -155,107 +155,113 @@ export function ClaimBusinessButton({
 
             {/* Claim Modal */}
             <>
-            {isModalOpen && (
-                                <div
-                                    className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4"
-                                    onClick={() => !loading && setIsModalOpen(false)}
-                                >
-                                    <div
-                                        className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl"
-                                        onClick={(e) => e.stopPropagation()}
-                                    >
-                                        {/* Confirm Step */}
-                                        {step === 'confirm' && (
-                                            <>
-                                                <div className="w-14 h-14 bg-amber-100 rounded-2xl mx-auto mb-4 flex items-center justify-center">
-                                                    <Shield className="w-7 h-7 text-amber-600" />
-                                                </div>
-                                                <h2 className="text-xl font-bold text-gray-900 text-center mb-2">
-                                                    Claim {businessName}
-                                                </h2>
-                                                <p className="text-gray-600 text-center mb-6">
-                                                    To prove you own this business, we'll verify the phone number on file.
-                                                </p>
+                {isModalOpen && (
+                    <div
+                        className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4"
+                        onClick={() => !loading && setIsModalOpen(false)}
+                    >
+                        <div
+                            className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {/* Confirm Step */}
+                            {step === 'confirm' && (
+                                <>
+                                    <div className="w-14 h-14 bg-amber-100 rounded-2xl mx-auto mb-4 flex items-center justify-center">
+                                        <Shield className="w-7 h-7 text-amber-600" />
+                                    </div>
+                                    <h2 className="text-xl font-bold text-gray-900 text-center mb-2">
+                                        Claim {businessName}
+                                    </h2>
+                                    <p className="text-gray-600 text-center mb-6">
+                                        To prove you own this business, we'll verify the phone number on file.
+                                    </p>
 
-                                                <div className="bg-gray-50 rounded-xl p-4 mb-6">
-                                                    <p className="text-sm text-gray-600 mb-1">Phone on file:</p>
-                                                    <p className="font-medium text-gray-900">
-                                                        {businessPhone ? `+91 ${businessPhone}` : 'No phone on file'}
-                                                    </p>
-                                                    {!businessPhone && (
-                                                        <p className="text-sm text-amber-600 mt-2">
-                                                            You'll need to provide and verify your business phone.
-                                                        </p>
-                                                    )}
-                                                </div>
-
-                                                <div className="flex gap-3">
-                                                    <button
-                                                        onClick={() => setIsModalOpen(false)}
-                                                        disabled={loading}
-                                                        className="flex-1 px-4 py-3 border border-gray-300 rounded-xl font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                                                    >
-                                                        Cancel
-                                                    </button>
-                                                    <button
-                                                        onClick={handleStartClaim}
-                                                        disabled={loading}
-                                                        className="flex-1 px-4 py-3 bg-amber-500 text-white rounded-xl font-medium hover:bg-amber-600 disabled:opacity-50 flex items-center justify-center gap-2"
-                                                    >
-                                                        {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-                                                        Start Verification
-                                                    </button>
-                                                </div>
-                                            </>
-                                        )}
-
-                                        {/* Verify Step */}
-                                        {step === 'verify' && (
-                                            <>
-                                                <h2 className="text-xl font-bold text-gray-900 mb-4">
-                                                    Verify Ownership
-                                                </h2>
-
-                                                <BusinessPhoneVerification
-                                                    initialPhone={phone}
-                                                    onVerified={(verified) => {
-                                                        if (verified) handleVerified();
-                                                    }}
-                                                />
-
-                                                <button
-                                                    onClick={() => {
-                                                        setStep('confirm');
-                                                        setClaimId(null);
-                                                    }}
-                                                    disabled={loading}
-                                                    className="mt-4 w-full px-4 py-2 text-gray-600 hover:text-gray-800 text-sm"
-                                                >
-                                                    ← Back
-                                                </button>
-                                            </>
-                                        )}
-
-                                        {/* Success Step */}
-                                        {step === 'success' && (
-                                            <div className="text-center py-6">
-                                                <div className="w-16 h-16 bg-green-100 rounded-full mx-auto mb-4 flex items-center justify-center">
-                                                    <CheckCircle className="w-8 h-8 text-green-600" />
-                                                </div>
-                                                <h2 className="text-xl font-bold text-gray-900 mb-2">
-                                                    Congratulations!
-                                                </h2>
-                                                <p className="text-gray-600">
-                                                    You now own <strong>{businessName}</strong>
-                                                </p>
-                                                <p className="text-sm text-gray-500 mt-2">
-                                                    Redirecting to your dashboard...
-                                                </p>
-                                            </div>
+                                    <div className="bg-gray-50 rounded-xl p-4 mb-6">
+                                        <p className="text-sm text-gray-600 mb-1">Phone on file:</p>
+                                        <p className="font-medium text-gray-900">
+                                            {businessPhone ? (
+                                                <a href={`tel:+91${businessPhone}`} className="text-indigo-600 hover:underline">
+                                                    +91 {businessPhone}
+                                                </a>
+                                            ) : (
+                                                'No phone on file'
+                                            )}
+                                        </p>
+                                        {!businessPhone && (
+                                            <p className="text-sm text-amber-600 mt-2">
+                                                You'll need to provide and verify your business phone.
+                                            </p>
                                         )}
                                     </div>
+
+                                    <div className="flex gap-3">
+                                        <button
+                                            onClick={() => setIsModalOpen(false)}
+                                            disabled={loading}
+                                            className="flex-1 px-4 py-3 border border-gray-300 rounded-xl font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            onClick={handleStartClaim}
+                                            disabled={loading}
+                                            className="flex-1 px-4 py-3 bg-amber-500 text-white rounded-xl font-medium hover:bg-amber-600 disabled:opacity-50 flex items-center justify-center gap-2"
+                                        >
+                                            {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+                                            Start Verification
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+
+                            {/* Verify Step */}
+                            {step === 'verify' && (
+                                <>
+                                    <h2 className="text-xl font-bold text-gray-900 mb-4">
+                                        Verify Ownership
+                                    </h2>
+
+                                    <BusinessPhoneVerification
+                                        initialPhone={phone}
+                                        onVerified={(verified) => {
+                                            if (verified) handleVerified();
+                                        }}
+                                    />
+
+                                    <button
+                                        onClick={() => {
+                                            setStep('confirm');
+                                            setClaimId(null);
+                                        }}
+                                        disabled={loading}
+                                        className="mt-4 w-full px-4 py-2 text-gray-600 hover:text-gray-800 text-sm"
+                                    >
+                                        ← Back
+                                    </button>
+                                </>
+                            )}
+
+                            {/* Success Step */}
+                            {step === 'success' && (
+                                <div className="text-center py-6">
+                                    <div className="w-16 h-16 bg-green-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+                                        <CheckCircle className="w-8 h-8 text-green-600" />
+                                    </div>
+                                    <h2 className="text-xl font-bold text-gray-900 mb-2">
+                                        Congratulations!
+                                    </h2>
+                                    <p className="text-gray-600">
+                                        You now own <strong>{businessName}</strong>
+                                    </p>
+                                    <p className="text-sm text-gray-500 mt-2">
+                                        Redirecting to your dashboard...
+                                    </p>
                                 </div>
                             )}
+                        </div>
+                    </div>
+                )}
             </>
         </>
     );
