@@ -115,16 +115,7 @@ useMutation({
 });
 ```
 
-### Phase 4: Migrate `auth user/profile` from Zustand → React Query
-
-The auth store is the most widely used (89+ files). This migration should:
-1. Create `useAuthUser()` and `useAuthProfile()` hooks backed by React Query
-2. Keep `signIn`, `signOut`, `signUp` etc. as mutations
-3. Gradually update consumers from `useAuthStore(s => s.user)` to `useAuthUser()`
-
-**Note:** This is a massive refactor across 89+ files. Consider deferring auth migration to a sub-story or doing it last.
-
-### Phase 5: Slim Down Zustand Stores
+### Phase 4: Slim Down Zustand Stores
 
 After migration, `messagingStore` should only contain:
 - `activeConversationId`
@@ -132,9 +123,8 @@ After migration, `messagingStore` should only contain:
 - UI loading/sending states
 - Typing indicators (ephemeral)
 
-`authStore` should only contain:
-- `loading`, `initialized`, `error`, `uploadingAvatar`
-- Auth action functions
+> **⚠️ Architectural Note on `authStore`**: 
+> Unlike typical server state, `user` and `profile` should **REMAIN** in Zustand. Supabase Auth pushes updates via `onAuthStateChange()`, making a global store the most appropriate pattern. Moving this to React Query would break the realtime auth listener pattern and require rewriting 89+ files immediately after Story 15.1 fixed them. `authStore` is deliberately excluded from this React Query migration.
 
 ---
 

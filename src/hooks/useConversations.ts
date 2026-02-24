@@ -32,17 +32,28 @@ export function useConversations() {
 
   // 2. Subscribe to real-time conversation updates
   useEffect(() => {
-    if (!user?.id) return
+    if (!user?.id) {
+      console.log('⏭️ Skipping realtime subscriptions - user not authenticated')
+      return
+    }
 
+    // Set up the single global multiplexed channel
+    realtimeService.setupGlobalChannel(user.id)
+
+    // Use subscribeToConversations which subscribes to BOTH:
+    // 1. Conversation participant table changes (INSERT/UPDATE/DELETE)
+    // 2. Message INSERT events (via notification log for updates)
     const unsubscribeConversations = realtimeService.subscribeToConversations(
+      user.id,
       async (payload) => {
         console.log('🔄 [useConversations] Realtime update received:', payload?.table)
 
         try {
           let conversationId: string | null = null;
 
-          if (payload?.table === 'conversations') {
-            conversationId = payload.new?.id || payload.old?.id;
+          // Extract conversation ID from payload
+          if (payload?.table === 'conversation_participants' || payload?.table === 'conversations') {
+            conversationId = payload.new?.conversation_id || payload.old?.conversation_id || payload.new?.id || payload.old?.id;
           } else if (payload?.table === 'notification_log') {
             conversationId = payload.new?.data?.conversation_id;
           }

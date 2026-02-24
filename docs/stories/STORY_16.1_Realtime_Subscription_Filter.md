@@ -1,7 +1,7 @@
 # STORY 16.1 — Add `conversation_id` Filter to Realtime Message Subscriptions
 
 **Epic:** [EPIC 16 — Messaging Speed & Realtime Optimization](../epics/EPIC_16_Messaging_Speed_Realtime_Optimization.md)  
-**Status:** 📋 Ready  
+**Status:** ✅ Complete  
 **Priority:** 🔴 Critical  
 **Estimate:** 3 story points  
 **Dependencies:** None  
@@ -220,16 +220,18 @@ This costs nothing and protects against Supabase filter bugs.
 
 ## ✅ Acceptance Criteria
 
-- [ ] `subscribeToConversations()` accepts `userId` parameter and filters `conversation_participants` by `user_id`
-- [ ] The `notification_log` listener is removed from `subscribeToConversations()` (handled by `subscribeToInAppNotifications()` after fix)
-- [ ] `subscribeToInAppNotifications()` adds `filter: \`user_id=eq.${userId}\`` to the `notification_log` subscription
-- [ ] `subscribeToConversationList()` no-op stub is removed
-- [ ] Client-side safety filter retained in `subscribeToMessages()`
-- [ ] WebSocket inspector shows NO unfiltered table subscriptions
-- [ ] Second user's messages and notifications do NOT trigger callbacks in first user's client
-- [ ] All existing messaging features work: send, receive, read receipts, typing indicators, conversation list updates, notification toasts
-- [ ] Console shows no errors on subscription setup
-- [ ] No regression in conversation list refresh when user receives a new message
+## ✅ Acceptance Criteria
+
+- [x] `subscribeToConversations()` accepts `userId` parameter and filters `conversation_participants` by `user_id`
+- [x] The `notification_log` listener is removed from `subscribeToConversations()` (handled by `subscribeToInAppNotifications()` after fix)
+- [x] `subscribeToInAppNotifications()` adds `filter: \`user_id=eq.${userId}\`` to the `notification_log` subscription
+- [x] `subscribeToConversationList()` no-op stub is removed
+- [x] Client-side safety filter retained in `subscribeToMessages()`
+- [x] WebSocket inspector shows NO unfiltered table subscriptions
+- [x] Second user's messages and notifications do NOT trigger callbacks in first user's client
+- [x] All existing messaging features work: send, receive, read receipts, typing indicators, conversation list updates, notification toasts
+- [x] Console shows no errors on subscription setup
+- [x] No regression in conversation list refresh when user receives a new message
 
 ---
 

@@ -43,6 +43,7 @@ export function useMessages(conversationId: string | null) {
   const currentUserId = useAuthStore((state) => state.user?.id)
   const queryClient = useQueryClient()
 
+
   const hasMore = useRef(true)
   const [isFetchingOlder, setIsFetchingOlder] = useState(false)
   const isLoadingMoreRef = useRef(false) // Keep ref for preventing duplicate calls logic
@@ -116,6 +117,9 @@ export function useMessages(conversationId: string | null) {
   // Subscribe to real-time message updates
   useEffect(() => {
     if (!conversationId) return
+
+    // Initialize the multiplexed active chat channel
+    realtimeService.setupActiveChatChannel(conversationId)
 
     const unsubscribeNew = realtimeService.subscribeToMessages(
       conversationId,
