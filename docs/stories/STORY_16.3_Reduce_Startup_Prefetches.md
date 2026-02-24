@@ -132,13 +132,13 @@ The `gcTime` (previously `cacheTime`) ensures prefetched data persists in the Re
 
 ## ✅ Acceptance Criteria
 
-- [ ] Only 3 parallel message prefetch requests at startup (verified in Network tab)
-- [ ] Top 3 most recent conversations show messages instantly
-- [ ] Conversations beyond top 3 load messages on-demand when navigated to
-- [ ] No regression in messaging functionality
-- [ ] `staleTime` set to 5 minutes for prefetched queries
-- [ ] Total startup network requests reduced from ~27 to ~10
-- [ ] Splash screen hide time not adversely affected
+- [x] Only 3 parallel message prefetch requests at startup (verified in Network tab)
+- [x] Top 3 most recent conversations show messages instantly
+- [x] Conversations beyond top 3 load messages on-demand when navigated to
+- [x] No regression in messaging functionality
+- [x] `staleTime` set to 5 minutes for prefetched queries
+- [x] Total startup network requests reduced from ~27 to ~10
+- [x] Splash screen hide time not adversely affected
 
 ---
 

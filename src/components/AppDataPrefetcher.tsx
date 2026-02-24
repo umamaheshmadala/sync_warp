@@ -3,7 +3,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Capacitor } from '@capacitor/core';
 import { SplashScreen } from '@capacitor/splash-screen';
 import { useAuthStore } from '../store/authStore';
-import { useMessagingStore } from '../store/messagingStore';
 import { messagingService } from '../services/messagingService';
 import { friendsService } from '../services/friendsService';
 import { dashboardService } from '../services/dashboardService';
@@ -22,7 +21,6 @@ import { syncFavoritesFromDatabase } from '../hooks/useUnifiedFavorites';
 export const AppDataPrefetcher = () => {
     const user = useAuthStore((state) => state.user);
     const queryClient = useQueryClient();
-    const setConversations = useMessagingStore((state) => state.setConversations);
     const hasHiddenSplash = useRef(false);
 
     // Helper to safely hide splash
@@ -105,21 +103,28 @@ export const AppDataPrefetcher = () => {
                     staleTime: 1000 * 60 * 5
                 });
 
-                // 4. Messages (Zustand Store)
-                messagingService.fetchConversations().then(data => {
-                    setConversations(data);
+                // 4. Conversations & Messages (React Query)
+                queryClient.prefetchQuery({
+                    queryKey: ['conversations'],
+                    queryFn: () => messagingService.fetchConversations(),
+                    staleTime: 1000 * 60 * 5
+                }).then(() => {
+                    const data = queryClient.getQueryData<any[]>(['conversations']);
+                    if (!data) return;
 
-                    // [Story 10.3] Smart Prefetching:
-                    // Automatically fetch messages for the top 20 most active conversations
-                    // This ensures the "next likely click" is already cached.
-                    const topActive = data.slice(0, 20);
+                    // [Story 16.3] Reduced Prefetching:
+                    // Prefetch messages for only the top 3 most recent conversations.
+                    // The remaining conversations load messages on-demand when navigated to.
+                    // This reduces startup from 20 parallel queries to 3, improving initial load speed.
+                    const topActive = data.slice(0, 3);
                     console.log(`⚡ [AppDataPrefetcher] Prefetching messages for top ${topActive.length} chats`);
 
                     topActive.forEach(conv => {
                         queryClient.prefetchQuery({
                             queryKey: ['messages', conv.conversation_id],
                             queryFn: () => messagingService.fetchMessages(conv.conversation_id, 20),
-                            staleTime: 1000 * 60 * 5 // 5 min
+                            staleTime: 1000 * 60 * 5, // 5 min
+                            gcTime: 1000 * 60 * 30    // 30 min
                         });
                     });
                 }).catch(console.warn);
@@ -160,7 +165,7 @@ export const AppDataPrefetcher = () => {
             }
         }
 
-    }, [user?.id, queryClient, setConversations]);
+    }, [user?.id, queryClient]);
 
     return null;
 };
