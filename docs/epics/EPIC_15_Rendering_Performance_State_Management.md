@@ -1,6 +1,6 @@
 # 🔄 EPIC 15: Rendering Performance & State Management
 
-**Status:** 📋 Planning  
+**Status:** ✅ Complete
 **Created:** 2026-02-21  
 **Owner:** Frontend Engineering / Architecture  
 **Audit Reference:** [Codebase Audit Report — Categories 1, 3 (partial), 5 (partial)](../../.gemini/antigravity/brain/4990934d-85a5-413b-9a20-e2901b49f1fe/codebase_audit_report.md)  
@@ -101,12 +101,12 @@ Eliminate cascading re-renders across the entire application by fixing Zustand o
 
 ## ✅ Definition of Done
 
-- [ ] All 89+ `useAuthStore()` calls use granular selectors
-- [ ] All 15+ `useMessagingStore()` calls use granular selectors
-- [ ] `MessageBubble.tsx` split into ≤3 sub-components, each wrapped in `React.memo`
+- [x] All 89+ `useAuthStore()` calls use granular selectors
+- [x] All 15+ `useMessagingStore()` calls use granular selectors
+- [x] `MessageBubble.tsx` split into ≤3 sub-components, each wrapped in `React.memo`
 - [x] `messagingStore` uses `Record<string, Message>` instead of `Map`
-- [ ] `Header.tsx` uses `useUnreadCount()` — no longer fetches all conversations
-- [ ] Top 4 lists use `react-window` virtualization
-- [ ] Dead `VirtualProductGrid.tsx` either wired up or removed
-- [ ] React Query is the single source for all server-fetched data
-- [ ] Zustand stores only hold local/UI state (no server data)
+- [x] `Header.tsx` uses `useUnreadCount()` — no longer fetches all conversations
+- [x] Top 4 lists use `react-window` virtualization
+- [x] Dead `VirtualProductGrid.tsx` either wired up or removed
+- [x] React Query is the single source for all server-fetched data
+- [x] Zustand stores only hold local/UI state (no server data)

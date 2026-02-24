@@ -153,24 +153,24 @@ Similar to conversation list, use `FixedSizeList` with a fixed item height (typi
 | Message list scroll | Smooth 60fps |
 | Chrome DevTools → Elements panel | Only visible items in DOM (not all 500) |
 | `npm run build` | Build succeeds |
-| Dead `VirtualProductGrid` grep | Now imported and used (or deleted if replaced) |
+| Dead `VirtualProductGrid` grep | Replaced by direct `FixedSizeGrid` implementations |
 
 ---
 
 ## ✅ Acceptance Criteria
 
-- [ ] `VirtualProductGrid.tsx` wired up in product listing (or replaced with equivalent)
-- [ ] Conversation list virtualized with `react-window`
-- [ ] Message list virtualized (or identified as separate story if too complex)
-- [ ] Friends/contacts list virtualized
-- [ ] DOM node count reduced to visible items only
-- [ ] Build passes
+- [x] Product listings virtualized with `FixedSizeGrid`
+- [x] Conversation list virtualized with `FixedSizeList`
+- [x] Message list virtualized using `react-virtuoso` (and `scrollerRef` crash fixed)
+- [x] Friends/contacts list virtualized with `FixedSizeList`
+- [x] DOM node count reduced to visible items only
+- [x] Build passes
 
 ---
 
 ## ✅ Definition of Done
 
-- [ ] Top 4 lists virtualized
-- [ ] Dead code resolved
-- [ ] Smooth scrolling confirmed on mobile
-- [ ] Build passes
+- [x] Top 4 lists virtualized
+- [x] Dead code resolved (VirtualProductGrid deprecated natively by components)
+- [x] Smooth scrolling confirmed on mobile/browser
+- [x] Build passes
