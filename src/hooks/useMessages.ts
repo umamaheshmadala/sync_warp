@@ -1,8 +1,6 @@
 import { useEffect, useCallback, useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useMessagingStore } from '../store/messagingStore'
 import { messagingService } from '../services/messagingService'
-import { messageDeleteService } from '../services/messageDeleteService'
 import { realtimeService } from '../services/realtimeService'
 import { useAuthStore } from '../store/authStore'
 import { toast } from 'react-hot-toast'
@@ -45,10 +43,6 @@ export function useMessages(conversationId: string | null) {
   const currentUserId = useAuthStore((state) => state.user?.id)
   const queryClient = useQueryClient()
 
-  // Actions are now accessed statically to prevent re-renders
-  // const addMessage = useMessagingStore((state) => state.addMessage);
- const updateMessage = useMessagingStore((state) => state.updateMessage);
-
   const hasMore = useRef(true)
   const [isFetchingOlder, setIsFetchingOlder] = useState(false)
   const isLoadingMoreRef = useRef(false) // Keep ref for preventing duplicate calls logic
@@ -75,23 +69,7 @@ export function useMessages(conversationId: string | null) {
     gcTime: 1000 * 60 * 60, // 1 hour cache
   })
 
-  // Get messages from Zustand store (for optimistic updates)
-  const storeMessages = useMessagingStore(
-    useCallback((state) => state.messages[conversationId!] || [], [conversationId])
-  )
-  const optimisticMessages = storeMessages.filter(m => m._optimistic)
-
-  // Merge React Query messages with optimistic messages
-  // Deduplicate by ID in case an optimistic message was just confirmed but key hasn't updated
-  const allMessages = [...(messagesData?.messages || [])]
-
-  optimisticMessages.forEach(optMsg => {
-    if (!allMessages.find(m => m.id === optMsg.id)) {
-      allMessages.push(optMsg)
-    }
-  })
-
-  const conversationMessages = allMessages
+  const conversationMessages: Message[] = messagesData?.messages || []
   hasMore.current = messagesData?.hasMore ?? true
 
   // DEBUG: Log cache state
@@ -217,9 +195,6 @@ export function useMessages(conversationId: string | null) {
               hasMore: old?.hasMore ?? true
             }
           })
-
-          // Also update Zustand store for backwards compatibility
-          useMessagingStore.getState().addMessage(conversationId, processedMessage)
         })
 
 
@@ -236,9 +211,6 @@ export function useMessages(conversationId: string | null) {
           ),
           hasMore: old?.hasMore ?? true
         }))
-
-        // Also update Zustand store
-        useMessagingStore.getState().updateMessage(conversationId, updatedMessage.id, updatedMessage)
       }
     )
 
@@ -252,9 +224,6 @@ export function useMessages(conversationId: string | null) {
           ),
           hasMore: old?.hasMore ?? true
         }))
-
-        // Also update Zustand store
-        useMessagingStore.getState().updateMessage(conversationId, receipt.message_id, { status: 'read' })
       }
     )
 

@@ -10,6 +10,7 @@ import { useNewFriends as useFriends } from '../hooks/useNewFriends'
 import { useMessagingStore } from '../store/messagingStore'
 import { useHapticFeedback } from '../hooks/useHapticFeedback'
 import { messagingService } from '../services/messagingService'
+import { useConversations } from '../hooks/useConversations'
 import AddFriend from './AddFriend'
 import ShareDeal from './ShareDealSimple'
 import type { Friend } from '../services/newFriendService'
@@ -227,7 +228,8 @@ const ContactsSidebar: React.FC<ContactsSidebarProps> = ({ isOpen, onClose }) =>
     acceptFriendRequest,
     rejectFriendRequest
   } = useFriends()
-  const conversations = useMessagingStore((state) => state.conversations);
+  // Add import at the top if not present, and replace the hook call
+  const { conversations } = useConversations();
   const { triggerHaptic } = useHapticFeedback()
 
   const [activeTab, setActiveTab] = useState<TabType>('friends')

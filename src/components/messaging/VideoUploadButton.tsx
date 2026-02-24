@@ -4,7 +4,7 @@ import { Video, Loader2 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { useVideoUpload } from '../../hooks/useVideoUpload'
 import { messagingService } from '../../services/messagingService'
-import { useMessagingStore } from '../../store/messagingStore'
+import { messageCacheManager } from '../../utils/messageCacheManager'
 import { useAuthStore } from '../../store/authStore'
 import { mediaUploadService } from '../../services/mediaUploadService'
 import { supabase } from '../../lib/supabase'
@@ -29,11 +29,11 @@ export function VideoUploadButton({
   const cancelledRef = useRef<boolean>(false)
   const { uploadVideo, isUploading, progress } = useVideoUpload()
   // const { sendMessage } = useSendMessage() // Removed to avoid double optimistic message
-  const addOptimisticMessage = useMessagingStore((state) => state.addOptimisticMessage);
-  const replaceOptimisticMessage = useMessagingStore((state) => state.replaceOptimisticMessage);
-  const removeMessage = useMessagingStore((state) => state.removeMessage);
-  const updateMessageProgress = useMessagingStore((state) => state.updateMessageProgress);
-  const updateMessage = useMessagingStore((state) => state.updateMessage);
+  const addOptimisticMessage = messageCacheManager.addOptimisticMessage;
+  const replaceOptimisticMessage = messageCacheManager.replaceOptimisticMessage;
+  const removeMessage = messageCacheManager.removeMessage;
+  const updateMessageProgress = messageCacheManager.updateMessageProgress;
+  const updateMessage = messageCacheManager.updateMessage;
   const currentUserId = useAuthStore(state => state.user?.id)
   const [currentTempId, setCurrentTempId] = useState<string>('')
 
@@ -212,7 +212,7 @@ export function VideoUploadButton({
     } catch (error) {
       console.error('❌ Video upload failed:', error)
       // Mark failed...
-      useMessagingStore.getState().updateMessage(conversationId, tempId, {
+      messageCacheManager.updateMessage(conversationId, tempId, {
         _failed: true,
         _uploadProgress: 0
       })

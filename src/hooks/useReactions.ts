@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { reactionService, Reaction, ReactionUser } from "../services/reactionService";
-import { useMessagingStore } from "../store/messagingStore";
+import { useQueryClient } from "@tanstack/react-query";
 import { Message } from "../types/messaging";
 import { toast } from "react-hot-toast";
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
@@ -19,7 +19,17 @@ export function useReactions(
   // This ensures we always show what's in the store (realtime + optimistic)
   const reactionsSummary: Reaction[] = reactionService.getReactionsSummary(message.reactions || {});
 
-  const updateMessageStore = useMessagingStore(state => state.updateMessage);
+  const queryClient = useQueryClient();
+
+  const updateMessageStore = useCallback((conversationId: string, messageId: string, updates: Partial<Message>) => {
+    queryClient.setQueryData(['messages', conversationId], (old: any) => {
+      if (!old) return old;
+      return {
+        ...old,
+        messages: (old.messages || []).map((m: Message) => m.id === messageId ? { ...m, ...updates } : m)
+      }
+    });
+  }, [queryClient]);
 
   // Toggle reaction
   const toggleReaction = useCallback(
@@ -29,7 +39,7 @@ export function useReactions(
       // but race conditions in 'toggle' logic make it tricky. 
       // For now, let's debounce/block.
       if (isLoading) return;
-      
+
       // Haptic feedback (Mobile only ideally, but harmless on web as it's no-op or ignored)
       if (Capacitor.isNativePlatform()) {
         try {
@@ -38,15 +48,15 @@ export function useReactions(
           // Ignore haptics errors
         }
       }
-      
+
       setIsLoading(true);
-      
+
       const previousReactions = { ...message.reactions };
 
       try {
         // 1. Calculate new reactions locally (Single user logic)
         const reactions = { ...message.reactions } || {};
-        
+
         // Remove from all keys
         let previousEmoji: string | null = null;
         Object.keys(reactions).forEach(key => {
@@ -100,7 +110,7 @@ export function useReactions(
     },
     [message.reactions]
   );
-  
+
   const closeReactionUsers = useCallback(() => {
     setSelectedEmoji(null);
     setEmojiUsers([]);

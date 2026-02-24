@@ -3,9 +3,10 @@ import { Archive, Pin, ArchiveX, PinOff } from 'lucide-react'
 import { Haptics, ImpactStyle } from '@capacitor/haptics'
 import { Capacitor } from '@capacitor/core'
 import { conversationManagementService } from '../../services/conversationManagementService'
-import { useMessagingStore } from '../../store/messagingStore'
 import { toast } from 'react-hot-toast'
+import { useQueryClient } from '@tanstack/react-query'
 import { cn } from '../../lib/utils'
+import type { ConversationWithDetails } from '../../types/messaging'
 
 interface Props {
   conversation: any
@@ -23,9 +24,9 @@ export function SwipeableConversationCard({ conversation, isSelectionMode = fals
   const currentX = useRef(0)
   const longPressTimer = useRef<NodeJS.Timeout>()
   const startTime = useRef(0)
-  
-  const togglePinOptimistic = useMessagingStore((state) => state.togglePinOptimistic);
-  const toggleArchiveOptimistic = useMessagingStore((state) => state.toggleArchiveOptimistic);
+
+
+  const queryClient = useQueryClient();
 
   const SWIPE_THRESHOLD = 80 // pixels to trigger action
   const MAX_SWIPE = 120 // maximum swipe distance
@@ -42,18 +43,18 @@ export function SwipeableConversationCard({ conversation, isSelectionMode = fals
       console.log('⚠️ Touch start ignored - not native platform')
       return
     }
-    
+
     startX.current = e.touches[0].clientX
     currentX.current = e.touches[0].clientX  // Initialize to prevent false swipes on tap
     startTime.current = Date.now()
     console.log('👆 Touch start at X:', startX.current)
-    
+
     // Start long-press timer (500ms)
     longPressTimer.current = setTimeout(() => {
       console.log('⏱️ Long press detected')
       if (onLongPress && !isSelectionMode) {
         // Trigger haptic feedback
-        Haptics.impact({ style: ImpactStyle.Medium }).catch(() => {})
+        Haptics.impact({ style: ImpactStyle.Medium }).catch(() => { })
         onLongPress()
       }
     }, 500)
@@ -61,15 +62,15 @@ export function SwipeableConversationCard({ conversation, isSelectionMode = fals
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!Capacitor.isNativePlatform()) return
-    
+
     // Clear long-press timer if user moves finger
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current)
     }
-    
+
     // Disable swipes in selection mode
     if (isSelectionMode) return
-    
+
     currentX.current = e.touches[0].clientX
     const diff = currentX.current - startX.current
 
@@ -79,7 +80,7 @@ export function SwipeableConversationCard({ conversation, isSelectionMode = fals
 
     setIsSwipingLeft(limitedDiff < -20)
     setIsSwipingRight(limitedDiff > 20)
-    
+
     if (Math.abs(limitedDiff) > 20) {
       console.log('👉 Swiping:', limitedDiff > 0 ? 'RIGHT' : 'LEFT', 'offset:', limitedDiff)
     }
@@ -102,7 +103,7 @@ export function SwipeableConversationCard({ conversation, isSelectionMode = fals
 
     // Detect tap: minimal movement and short duration
     const isTap = Math.abs(diff) < 10 && touchDuration < 300
-    
+
     if (isTap) {
       console.log('👆 Detected as tap - no swipe action')
       setSwipeOffset(0)
@@ -118,7 +119,9 @@ export function SwipeableConversationCard({ conversation, isSelectionMode = fals
         await Haptics.impact({ style: ImpactStyle.Medium })
 
         // Optimistic update
-        toggleArchiveOptimistic(conversation.conversation_id)
+        queryClient.setQueryData<ConversationWithDetails[]>(['conversations'], (old = []) =>
+          old.map(c => c.conversation_id === conversation.conversation_id ? { ...c, is_archived: !c.is_archived } : c)
+        )
 
         if (conversation.is_archived) {
           await conversationManagementService.unarchiveConversation(conversation.conversation_id)
@@ -136,7 +139,9 @@ export function SwipeableConversationCard({ conversation, isSelectionMode = fals
         await Haptics.impact({ style: ImpactStyle.Medium })
 
         // Optimistic update
-        togglePinOptimistic(conversation.conversation_id)
+        queryClient.setQueryData<ConversationWithDetails[]>(['conversations'], (old = []) =>
+          old.map(c => c.conversation_id === conversation.conversation_id ? { ...c, is_pinned: !c.is_pinned } : c)
+        )
 
         if (conversation.is_pinned) {
           await conversationManagementService.unpinConversation(conversation.conversation_id)

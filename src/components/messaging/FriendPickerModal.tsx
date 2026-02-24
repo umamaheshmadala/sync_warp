@@ -5,7 +5,7 @@ import { X, Search, MessageCircle, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useFriends } from '../../hooks/friends/useFriends';
-import { useMessagingStore } from '../../store/messagingStore';
+import { useConversations } from '../../hooks/useConversations';
 import { useHapticFeedback } from '../../hooks/useHapticFeedback';
 import { messagingService } from '../../services/messagingService';
 
@@ -21,7 +21,7 @@ export const FriendPickerModal: React.FC<FriendPickerModalProps> = ({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: friendsResponse, isLoading: loading } = useFriends();
-  const conversations = useMessagingStore((state) => state.conversations);
+  const { conversations } = useConversations();
   const { triggerHaptic } = useHapticFeedback();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -212,7 +212,7 @@ export const FriendPickerModal: React.FC<FriendPickerModalProps> = ({
                             {/* Avatar with online status */}
                             <div className="relative flex-shrink-0">
                               {friend.avatar_url ? (
-                                <img loading="lazy" decoding="async" 
+                                <img loading="lazy" decoding="async"
                                   className="h-10 w-10 rounded-full object-cover"
                                   src={friend.avatar_url}
                                   alt={friend.full_name}

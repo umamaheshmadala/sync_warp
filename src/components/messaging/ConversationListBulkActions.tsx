@@ -1,9 +1,11 @@
 import React, { useState } from 'react'
 import { Archive, ArchiveRestore, Pin, PinOff, Trash, X } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
 import { cn } from '../../lib/utils'
 import { conversationManagementService } from '../../services/conversationManagementService'
-import { useMessagingStore } from '../../store/messagingStore'
+import { useConversations } from '../../hooks/useConversations'
 import { toast } from 'react-hot-toast'
+import type { ConversationWithDetails } from '../../types/messaging'
 
 interface Props {
   selectedConversations: string[]
@@ -19,9 +21,8 @@ export function ConversationListBulkActions({
   onUpdate
 }: Props) {
   const [isProcessing, setIsProcessing] = useState(false)
-  const conversations = useMessagingStore((state) => state.conversations);
-  const togglePinOptimistic = useMessagingStore((state) => state.togglePinOptimistic);
-  const toggleArchiveOptimistic = useMessagingStore((state) => state.toggleArchiveOptimistic);
+  const { conversations } = useConversations();
+  const queryClient = useQueryClient();
 
   // Check if all selected conversations are already pinned
   const allPinned = selectedConversations.length > 0 && selectedConversations.every(id =>
@@ -45,7 +46,9 @@ export function ConversationListBulkActions({
 
           // Optimistic update
           if ((action === 'archive' && !conversation.is_archived) || (action === 'unarchive' && conversation.is_archived)) {
-            toggleArchiveOptimistic(id)
+            queryClient.setQueryData<ConversationWithDetails[]>(['conversations'], (old = []) =>
+              old.map(c => c.conversation_id === id ? { ...c, is_archived: action === 'archive' } : c)
+            );
           }
 
           return action === 'archive'
@@ -58,22 +61,7 @@ export function ConversationListBulkActions({
         ? `Archived ${selectedConversations.length} conversation${selectedConversations.length > 1 ? 's' : ''}`
         : `Unarchived ${selectedConversations.length} conversation${selectedConversations.length > 1 ? 's' : ''}`
 
-      toast.success(successMessage, {
-        action: {
-          label: 'Undo',
-          onClick: async () => {
-            await Promise.all(
-              selectedConversations.map(id =>
-                action === 'archive'
-                  ? conversationManagementService.unarchiveConversation(id)
-                  : conversationManagementService.archiveConversation(id)
-              )
-            )
-            toast.success('Undo successful')
-            onUpdate()
-          }
-        }
-      })
+      toast.success(successMessage)
 
       onUpdate()
       onClearSelection()
@@ -105,7 +93,9 @@ export function ConversationListBulkActions({
 
           // Optimistic update
           if ((action === 'pin' && !conversation.is_pinned) || (action === 'unpin' && conversation.is_pinned)) {
-            togglePinOptimistic(id)
+            queryClient.setQueryData<ConversationWithDetails[]>(['conversations'], (old = []) =>
+              old.map(c => c.conversation_id === id ? { ...c, is_pinned: action === 'pin' } : c)
+            );
           }
 
           return action === 'pin'
@@ -118,22 +108,7 @@ export function ConversationListBulkActions({
         ? `Pinned ${selectedConversations.length} conversation${selectedConversations.length > 1 ? 's' : ''}`
         : `Unpinned ${selectedConversations.length} conversation${selectedConversations.length > 1 ? 's' : ''}`
 
-      toast.success(successMessage, {
-        action: {
-          label: 'Undo',
-          onClick: async () => {
-            await Promise.all(
-              selectedConversations.map(id =>
-                action === 'pin'
-                  ? conversationManagementService.unpinConversation(id)
-                  : conversationManagementService.pinConversation(id)
-              )
-            )
-            toast.success('Undo successful')
-            onUpdate()
-          }
-        }
-      })
+      toast.success(successMessage)
 
       onUpdate()
       onClearSelection()

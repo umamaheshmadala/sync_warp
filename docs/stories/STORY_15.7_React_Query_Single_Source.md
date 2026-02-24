@@ -1,7 +1,7 @@
 # STORY 15.7 — Migrate Server-State from Zustand → React Query Single Source
 
 **EPIC:** [EPIC 15 — Rendering Performance & State Management](../epics/EPIC_15_Rendering_Performance_State_Management.md)  
-**Status:** 📋 Ready  
+**Status:** ✅ Completed  
 **Priority:** 🟠 High  
 **Estimate:** 5 points  
 **Dependencies:** Stories 15.1, 15.2, 15.4 (all selectors and Map→Record must be complete)  
@@ -165,18 +165,18 @@ After migration, `messagingStore` should only contain:
 
 ## ✅ Acceptance Criteria
 
-- [ ] `conversations` data served from React Query, not Zustand
-- [ ] `messages` data served from React Query, not Zustand
-- [ ] Optimistic updates work via React Query mutation pattern
-- [ ] Realtime handlers update React Query cache
-- [ ] Zustand stores only hold local/UI state
-- [ ] Build passes
+- [x] `conversations` data served from React Query, not Zustand
+- [x] `messages` data served from React Query, not Zustand
+- [x] Optimistic updates work via React Query mutation pattern
+- [x] Realtime handlers update React Query cache
+- [x] Zustand stores only hold local/UI state
+- [x] Build passes
 
 ---
 
 ## ✅ Definition of Done
 
-- [ ] React Query is the single source for server-fetched data
-- [ ] Zustand stores trimmed to UI-only state
-- [ ] All messaging features work correctly
-- [ ] Build passes
+- [x] React Query is the single source for server-fetched data
+- [x] Zustand stores trimmed to UI-only state
+- [x] All messaging features work correctly
+- [x] Build passes

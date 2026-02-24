@@ -107,9 +107,6 @@ export function useMessageActions({ message, isOwn, content }: UseMessageActions
         try {
             const result = await messageDeleteService.deleteForMe(message.id)
             if (result.success) {
-                // Optimistic UI: Remove message immediately
-                useMessagingStore.getState().removeMessage(message.conversation_id, message.id)
-
                 // Remove from React Query cache
                 queryClient.setQueryData(['messages', message.conversation_id], (old: any) => {
                     if (!old || !old.messages) return old
@@ -134,10 +131,20 @@ export function useMessageActions({ message, isOwn, content }: UseMessageActions
             const result = await messageDeleteService.deleteMessage(message.id)
             if (result.success) {
                 setShowDeleteConfirm(false)
-                useMessagingStore.getState().updateMessage(message.conversation_id, message.id, {
-                    is_deleted: true,
-                    deleted_at: new Date().toISOString()
+
+                // Update React Query cache
+                queryClient.setQueryData(['messages', message.conversation_id], (old: any) => {
+                    if (!old || !old.messages) return old
+                    return {
+                        ...old,
+                        messages: old.messages.map((m: Message) =>
+                            m.id === message.id
+                                ? { ...m, is_deleted: true, deleted_at: new Date().toISOString() }
+                                : m
+                        )
+                    }
                 })
+
                 toast((t) => (
                     <div className="flex items-center gap-3">
                         <span>Message deleted for everyone</span>
@@ -146,9 +153,17 @@ export function useMessageActions({ message, isOwn, content }: UseMessageActions
                                 const undoResult = await messageDeleteService.undoDelete(message.id)
                                 toast.dismiss(t.id)
                                 if (undoResult.success) {
-                                    useMessagingStore.getState().updateMessage(message.conversation_id, message.id, {
-                                        is_deleted: false,
-                                        deleted_at: null
+                                    // Revert React Query cache
+                                    queryClient.setQueryData(['messages', message.conversation_id], (old: any) => {
+                                        if (!old || !old.messages) return old
+                                        return {
+                                            ...old,
+                                            messages: old.messages.map((m: Message) =>
+                                                m.id === message.id
+                                                    ? { ...m, is_deleted: false, deleted_at: null }
+                                                    : m
+                                            )
+                                        }
                                     })
                                     toast.success('Message restored')
                                 } else {
