@@ -123,12 +123,12 @@ This requires **no changes**.
 
 ## ✅ Acceptance Criteria
 
-- [ ] `ChatScreen` is not in the main JavaScript bundle (verified via build output)
-- [ ] `ChatScreen` chunk loads on-demand when navigating to `/messages/:conversationId`
-- [ ] Loading skeleton appears briefly during `ChatScreen` chunk load (existing `RouteLoader` fallback)
-- [ ] All messaging features work correctly after lazy load
-- [ ] No console errors related to lazy loading or module resolution
-- [ ] Main bundle size reduced (verify with `ls -la dist/assets/index-*.js`)
+- [x] `ChatScreen` is not in the main JavaScript bundle (verified via build output)
+- [x] `ChatScreen` chunk loads on-demand when navigating to `/messages/:conversationId`
+- [x] Loading skeleton appears briefly during `ChatScreen` chunk load (existing `RouteLoader` fallback)
+- [x] All messaging features work correctly after lazy load
+- [x] No console errors related to lazy loading or module resolution
+- [x] Main bundle size reduced (verify with `ls -la dist/assets/index-*.js`)
 
 ---
 
