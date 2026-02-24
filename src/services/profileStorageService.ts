@@ -57,6 +57,7 @@ export async function uploadProfilePicture(
       .from('avatars')
       .upload(filePath, file, {
         cacheControl: '31536000',
+        contentType: file.type || 'image/jpeg',
         upsert: true
       });
 

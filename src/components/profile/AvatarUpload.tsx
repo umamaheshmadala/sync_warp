@@ -135,6 +135,7 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
         .from('avatars')
         .upload(filePath, compressedFile, {
           cacheControl: '31536000',
+          contentType: file.type || 'image/jpeg',
           upsert: false
         });
 

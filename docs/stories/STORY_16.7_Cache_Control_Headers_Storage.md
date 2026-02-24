@@ -204,12 +204,12 @@ Expected: `wsrv.nl` returns its own `Cache-Control` header (typically `max-age=3
 
 ## ✅ Acceptance Criteria
 
-- [ ] All new media uploads include explicit `contentType` header
-- [ ] `Cache-Control: max-age=31536000` verified on response headers for all media types
-- [ ] `Content-Type` header correctly set for images (`image/jpeg`, `image/png`, `image/webp`), videos (`video/mp4`, `video/webm`), audio (`audio/webm`, `audio/ogg`), and documents
-- [ ] Browser disk cache used for repeated media views (verified in DevTools Network tab)
-- [ ] No regressions in media display (images, videos, voice messages, documents)
-- [ ] wsrv.nl proxy returns cached content correctly
+- [x] All new media uploads include explicit `contentType` header
+- [x] `Cache-Control: max-age=31536000` verified on response headers for all media types
+- [x] `Content-Type` header correctly set for images (`image/jpeg`, `image/png`, `image/webp`), videos (`video/mp4`, `video/webm`), audio (`audio/webm`, `audio/ogg`), and documents
+- [x] Browser disk cache used for repeated media views (verified in DevTools Network tab)
+- [x] No regressions in media display (images, videos, voice messages, documents)
+- [x] wsrv.nl proxy returns cached content correctly
 
 ---
 

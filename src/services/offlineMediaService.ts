@@ -274,6 +274,7 @@ class OfflineMediaService {
       .from(bucket)
       .upload(fileName, fileToUpload, {
         cacheControl: '31536000',
+        contentType: file.type || 'application/octet-stream',
         upsert: false
       })
 

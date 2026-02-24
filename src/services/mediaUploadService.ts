@@ -223,6 +223,7 @@ class MediaUploadService {
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('message-attachments')
           .upload(basePath, compressed, {
+            contentType: file.type || 'image/jpeg',
             cacheControl: '31536000',
             upsert: false,
           })
@@ -248,6 +249,7 @@ class MediaUploadService {
         const { error: thumbError } = await supabase.storage
           .from('message-attachments')
           .upload(thumbnailPath, thumbnail, {
+            contentType: 'image/jpeg',
             cacheControl: '31536000',
             upsert: false
           })
@@ -563,6 +565,7 @@ class MediaUploadService {
         const { error: thumbError } = await supabase.storage
           .from('message-attachments')
           .upload(thumbnailPath, thumbnail, {
+            contentType: 'image/jpeg',
             cacheControl: '31536000',
             upsert: false
           })

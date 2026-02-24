@@ -43,6 +43,7 @@ export function ImageUpload({ value, onChange, businessId }: ImageUploadProps) {
         .from('offer-images')
         .upload(fileName, file, {
           cacheControl: '31536000',
+          contentType: file.type || 'image/jpeg',
           upsert: false,
         });
 

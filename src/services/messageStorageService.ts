@@ -150,6 +150,7 @@ export const uploadMessageAttachment = async (
         .from(BUCKET_NAME)
         .upload(path, file, {
           cacheControl: '31536000',
+          contentType: file.type || 'application/octet-stream',
           upsert: false // Prevent accidental overwrites
         });
 

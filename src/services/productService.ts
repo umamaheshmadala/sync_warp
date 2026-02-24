@@ -26,6 +26,7 @@ export const productService = {
                 .from('business-assets')
                 .upload(filePath, file, {
                     cacheControl: '31536000',
+                    contentType: file.type || 'image/jpeg',
                     upsert: false
                 });
 
