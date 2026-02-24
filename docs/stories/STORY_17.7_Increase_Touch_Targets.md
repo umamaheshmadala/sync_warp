@@ -131,12 +131,12 @@ Apply `touch-compact` to any container that needs compact interactive elements (
 
 ## ✅ Acceptance Criteria
 
-- [ ] Global `min-height: 48px` and `min-width: 48px` applied to all interactive elements on touch devices
-- [ ] `@media (pointer: coarse)` gate ensures desktop UI is not affected
-- [ ] Existing 44px rules in `ConversationListPage.css` and `ChatScreen.css` updated to 48px
-- [ ] `touch-compact` opt-out class available for dense UI areas
-- [ ] No visual layout breakage on mobile
-- [ ] All buttons comfortably tappable with a finger
+- [x] Global `min-height: 48px` and `min-width: 48px` applied to all interactive elements on touch devices
+- [x] `@media (pointer: coarse)` gate ensures desktop UI is not affected
+- [x] Existing 44px rules in `ConversationListPage.css` and `ChatScreen.css` updated to 48px
+- [x] `touch-compact` opt-out class available for dense UI areas
+- [x] No visual layout breakage on mobile
+- [x] All buttons comfortably tappable with a finger
 
 ---
 

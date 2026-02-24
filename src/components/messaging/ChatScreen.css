@@ -145,9 +145,9 @@
 /* Touch Target Sizing */
 button,
 textarea {
-  min-height: 44px;
-  /* Apple HIG minimum */
-  min-width: 44px;
+  min-height: 48px;
+  /* Material 3 / WCAG 2.2 minimum */
+  min-width: 48px;
 }
 
 /* Active state feedback for mobile */

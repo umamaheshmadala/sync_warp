@@ -111,11 +111,11 @@
   contain: layout style paint;
 }
 
-/* Touch target sizing (minimum 44x44px for accessibility) */
+/* Touch target sizing (minimum 48x48px for accessibility) */
 button,
 .conversation-card {
-  min-height: 44px;
-  min-width: 44px;
+  min-height: 48px;
+  min-width: 48px;
 }
 
 /* Active state feedback for mobile taps */

@@ -382,3 +382,40 @@ body,
   will-change: transform;
   -webkit-overflow-scrolling: touch;
 }
+
+/* ============================================
+   STORY 17.7 — WCAG 2.2 / Material 3
+   48px minimum touch targets on touch devices.
+   Only applies when the primary pointer is coarse
+   (finger) to avoid bloating desktop UI.
+   ============================================ */
+@media (pointer: coarse) {
+
+  button,
+  [role="button"],
+  a,
+  input[type="checkbox"],
+  input[type="radio"],
+  select,
+  summary,
+  .touch-target {
+    min-height: 48px;
+    min-width: 48px;
+  }
+
+  /* Ensure icon-only buttons have adequate padding */
+  button:not(:has(span)):not(:has(p)) {
+    padding: max(12px, 0.75rem);
+  }
+}
+
+/* Exclude dense UI elements that must stay compact */
+@media (pointer: coarse) {
+
+  .touch-compact,
+  .touch-compact button,
+  .touch-compact a {
+    min-height: unset;
+    min-width: unset;
+  }
+}
