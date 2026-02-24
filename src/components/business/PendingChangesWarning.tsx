@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from 'react';
 import { AlertCircle, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { motion, AnimatePresence } from 'framer-motion';
 
 interface PendingChangesWarningProps {
     businessId: string;
@@ -108,27 +107,24 @@ export const PendingChangesWarning: React.FC<PendingChangesWarningProps> = ({ bu
                                         )}
                                     </button>
 
-                                    <AnimatePresence>
-                                        {expanded && (
-                                            <motion.div
-                                                initial={{ height: 0, opacity: 0 }}
-                                                animate={{ height: 'auto', opacity: 1 }}
-                                                exit={{ height: 0, opacity: 0 }}
-                                                className="overflow-hidden mt-2"
-                                            >
-                                                <ul className="list-disc pl-5 space-y-1">
-                                                    {changes.map(([key, value]) => (
-                                                        <li key={key} className="text-xs text-yellow-800 break-words">
-                                                            <span className="font-medium">{getFieldLabel(key)}:</span>{' '}
-                                                            <span className="italic">
-                                                                {Array.isArray(value) ? value.join(', ') : String(value)}
-                                                            </span>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
+                                    <>
+                                    {expanded && (
+                                                                                <div
+                                                                                    className="overflow-hidden mt-2"
+                                                                                >
+                                                                                    <ul className="list-disc pl-5 space-y-1">
+                                                                                        {changes.map(([key, value]) => (
+                                                                                            <li key={key} className="text-xs text-yellow-800 break-words">
+                                                                                                <span className="font-medium">{getFieldLabel(key)}:</span>{' '}
+                                                                                                <span className="italic">
+                                                                                                    {Array.isArray(value) ? value.join(', ') : String(value)}
+                                                                                                </span>
+                                                                                            </li>
+                                                                                        ))}
+                                                                                    </ul>
+                                                                                </div>
+                                                                            )}
+                                    </>
                                 </div>
                             )}
                         </div>

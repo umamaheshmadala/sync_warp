@@ -35,7 +35,7 @@ export const FollowPromptModal: React.FC<FollowPromptModalProps> = ({
         {/* Business logo */}
         <div className="flex justify-center mb-4">
           {business.logo_url ? (
-            <img
+            <img loading="lazy" decoding="async" 
               src={business.logo_url}
               alt={business.business_name}
               className="w-20 h-20 rounded-full object-cover"

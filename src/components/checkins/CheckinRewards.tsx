@@ -2,7 +2,6 @@
 // Simple rewards and gamification system for check-ins
 
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   Star,
   Award,
@@ -52,7 +51,7 @@ const CheckinRewards: React.FC<CheckinRewardsProps> = ({
   checkins, 
   onPointsEarned 
 }) => {
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const [rewards, setRewards] = useState<UserRewards>({
     totalPoints: 0,
     level: 1,
@@ -328,43 +327,37 @@ const CheckinRewards: React.FC<CheckinRewardsProps> = ({
   return (
     <div className="space-y-6">
       {/* Level Up Animation */}
-      <AnimatePresence>
-        {showLevelUp && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8, y: -50 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.8, y: -50 }}
-            className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none"
-          >
-            <div className="bg-gradient-to-br from-yellow-400 to-orange-500 text-white rounded-2xl p-8 text-center shadow-2xl">
-              <Crown className="w-16 h-16 mx-auto mb-4" />
-              <h2 className="text-3xl font-bold mb-2">Level Up!</h2>
-              <p className="text-xl">You're now Level {rewards.level}!</p>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <>
+          {showLevelUp && (
+                    <div
+                      className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none"
+                    >
+                      <div className="bg-gradient-to-br from-yellow-400 to-orange-500 text-white rounded-2xl p-8 text-center shadow-2xl">
+                        <Crown className="w-16 h-16 mx-auto mb-4" />
+                        <h2 className="text-3xl font-bold mb-2">Level Up!</h2>
+                        <p className="text-xl">You're now Level {rewards.level}!</p>
+                      </div>
+                    </div>
+                  )}
+          </>
 
       {/* New Achievement Animation */}
-      <AnimatePresence>
-        {showNewAchievement && (
-          <motion.div
-            initial={{ opacity: 0, x: 300 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 300 }}
-            className="fixed top-4 right-4 bg-white border border-green-200 rounded-lg p-4 shadow-lg z-50 max-w-sm"
-          >
-            <div className="flex items-center space-x-3">
-              <div className="text-2xl">{showNewAchievement.icon}</div>
-              <div>
-                <h4 className="font-semibold text-green-900">Achievement Unlocked!</h4>
-                <p className="text-sm text-green-700">{showNewAchievement.title}</p>
-                <p className="text-xs text-green-600">+{showNewAchievement.points} points</p>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <>
+          {showNewAchievement && (
+                    <div
+                      className="fixed top-4 right-4 bg-white border border-green-200 rounded-lg p-4 shadow-lg z-50 max-w-sm"
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className="text-2xl">{showNewAchievement.icon}</div>
+                        <div>
+                          <h4 className="font-semibold text-green-900">Achievement Unlocked!</h4>
+                          <p className="text-sm text-green-700">{showNewAchievement.title}</p>
+                          <p className="text-xs text-green-600">+{showNewAchievement.points} points</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+          </>
 
       {/* User Level & Points */}
       <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl p-6 text-white">
@@ -429,10 +422,8 @@ const CheckinRewards: React.FC<CheckinRewardsProps> = ({
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {rewards.achievements.map((achievement) => (
-            <motion.div
+            <div
               key={achievement.id}
-              initial={{ opacity: 0.6 }}
-              animate={{ opacity: achievement.unlocked ? 1 : 0.6 }}
               className={`p-4 rounded-lg border-2 transition-colors ${
                 achievement.unlocked
                   ? 'border-green-200 bg-green-50'
@@ -481,7 +472,7 @@ const CheckinRewards: React.FC<CheckinRewardsProps> = ({
                   </div>
                 </div>
               )}
-            </motion.div>
+            </div>
           ))}
         </div>
       </div>

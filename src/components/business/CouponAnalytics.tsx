@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   BarChart3,
   TrendingUp,
@@ -257,22 +256,16 @@ const CouponAnalytics: React.FC<CouponAnalyticsProps> = ({
             <div className="flex-1 space-y-1">
               <div className="flex items-center space-x-2">
                 <div className="flex-1 bg-gray-200 rounded-full h-2">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${(day.collections / maxValue) * 100}%` }}
-                    transition={{ delay: index * 0.1 }}
-                    className="bg-blue-500 h-2 rounded-full"
+                  <div
+                    className="bg-blue-500 h-2 rounded-full animate-fadeIn"
                   />
                 </div>
                 <span className="text-xs text-gray-600 w-8">{day.collections}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <div className="flex-1 bg-gray-200 rounded-full h-2">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${(day.redemptions / maxValue) * 100}%` }}
-                    transition={{ delay: index * 0.1 + 0.05 }}
-                    className="bg-green-500 h-2 rounded-full"
+                  <div
+                    className="bg-green-500 h-2 rounded-full animate-fadeIn"
                   />
                 </div>
                 <span className="text-xs text-gray-600 w-8">{day.redemptions}</span>
@@ -314,14 +307,11 @@ const CouponAnalytics: React.FC<CouponAnalyticsProps> = ({
             </div>
             <div className="relative">
               <div className="w-full bg-gray-200 rounded-full h-8">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${(stage.value / maxValue) * 100}%` }}
-                  transition={{ delay: index * 0.2 }}
+                <div
                   className={`${stage.color} h-8 rounded-full flex items-center justify-center text-white text-sm font-medium`}
                 >
                   {stage.value > 0 && `${((stage.value / stages[0].value) * 100).toFixed(1)}%`}
-                </motion.div>
+                </div>
               </div>
             </div>
           </div>
@@ -334,11 +324,8 @@ const CouponAnalytics: React.FC<CouponAnalyticsProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-white rounded-xl shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden"
+      <div
+        className="bg-white rounded-xl shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden animate-fadeIn"
       >
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-purple-500 to-pink-500 text-white">
@@ -384,12 +371,9 @@ const CouponAnalytics: React.FC<CouponAnalyticsProps> = ({
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {keyMetrics.map((metric, index) => (
-                    <motion.div
+                    <div
                       key={metric.title}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow"
+                      className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow animate-fadeIn"
                     >
                       <div className="flex items-center justify-between mb-4">
                         <div className={`w-10 h-10 ${metric.color} rounded-lg flex items-center justify-center`}>
@@ -417,7 +401,7 @@ const CouponAnalytics: React.FC<CouponAnalyticsProps> = ({
                           <div className="text-xs text-gray-400 mt-2">{metric.description}</div>
                         )}
                       </div>
-                    </motion.div>
+                    </div>
                   ))}
                 </div>
               </section>
@@ -431,11 +415,8 @@ const CouponAnalytics: React.FC<CouponAnalyticsProps> = ({
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {getPerformanceInsights().map((insight, index) => (
-                      <motion.div
+                      <div
                         key={index}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.1 }}
                         className={`p-4 rounded-lg border-l-4 ${insight.type === 'success' ? 'bg-green-50 border-green-500' :
                             insight.type === 'warning' ? 'bg-yellow-50 border-yellow-500' :
                               'bg-blue-50 border-blue-500'
@@ -451,7 +432,7 @@ const CouponAnalytics: React.FC<CouponAnalyticsProps> = ({
                             <p className="text-sm text-gray-600 mt-1">{insight.message}</p>
                           </div>
                         </div>
-                      </motion.div>
+                      </div>
                     ))}
                   </div>
                 </section>
@@ -525,10 +506,7 @@ const CouponAnalytics: React.FC<CouponAnalyticsProps> = ({
                           </span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${segment.percentage}%` }}
-                            transition={{ delay: index * 0.1 }}
+                          <div
                             className={`h-2 rounded-full ${index === 0 ? 'bg-orange-500' :
                                 index === 1 ? 'bg-blue-500' :
                                   index === 2 ? 'bg-green-500' : 'bg-gray-400'
@@ -590,7 +568,7 @@ const CouponAnalytics: React.FC<CouponAnalyticsProps> = ({
             </div>
           )}
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 };

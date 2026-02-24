@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { MessageCircle, Share2, Send } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { Product } from '../../../types/product';
 import { useProductLike } from '../../../hooks/useProductLike';
 import { useProductFavorite } from '../../../hooks/useProductFavorite';

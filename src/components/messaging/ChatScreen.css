@@ -16,10 +16,11 @@
 
 /* Message List Scrolling */
 .message-list-scroll {
-  -webkit-overflow-scrolling: touch; /* iOS smooth scrolling */
+  -webkit-overflow-scrolling: touch;
+  /* iOS smooth scrolling */
   overflow-y: auto;
   /* overscroll-behavior: contain; - REMOVED to allow swipe gestures to propagate */
-  scroll-behavior: smooth;
+  /* scroll-behavior: smooth — REMOVED to prevent animation on chat load (Epic 8.12 fix) */
 }
 
 /* Hide scrollbar on mobile */
@@ -54,6 +55,7 @@
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -95,6 +97,7 @@
 
 /* Mobile devices (< 768px) */
 @media (max-width: 767px) {
+
   /* Tighter padding on mobile */
   .message-list-scroll {
     padding-left: 12px;
@@ -111,6 +114,7 @@
 
 /* Desktop (>= 768px) */
 @media (min-width: 768px) {
+
   /* Allow chat to fill available space */
   .chat-screen {
     width: 100%;
@@ -126,11 +130,13 @@
 
 /* Typing Indicator Animation */
 @keyframes bounce {
+
   0%,
   60%,
   100% {
     transform: translateY(0);
   }
+
   30% {
     transform: translateY(-6px);
   }
@@ -139,7 +145,8 @@
 /* Touch Target Sizing */
 button,
 textarea {
-  min-height: 44px; /* Apple HIG minimum */
+  min-height: 44px;
+  /* Apple HIG minimum */
   min-width: 44px;
 }
 
@@ -186,6 +193,26 @@ textarea:focus-visible {
 }
 
 /* ================================
+   Date Separator Fade (Story 8.12.4 AC#4)
+   ================================ */
+
+@keyframes dateSeparatorFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.date-separator-fade {
+  animation: dateSeparatorFadeIn 300ms ease-out both;
+}
+
+/* ================================
    Search Highlight (Story 8.5.4)
    ================================ */
 
@@ -195,6 +222,7 @@ textarea:focus-visible {
     background-color: rgba(59, 130, 246, 0.4);
     box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
   }
+
   100% {
     background-color: transparent;
     box-shadow: none;

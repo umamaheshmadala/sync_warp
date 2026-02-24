@@ -1,6 +1,5 @@
 // src/components/NavigationBadge.tsx
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 
 interface NavigationBadgeProps {
   count: number;
@@ -96,10 +95,10 @@ const NavigationBadge: React.FC<NavigationBadgeProps> = ({
   };
 
   return (
-    <AnimatePresence>
+    <>
       {show && (
-        <motion.div
-          className={`
+              <div
+                className={`
             absolute flex items-center justify-center
             ${positionClasses[position]}
             ${sizeClasses[size]}
@@ -109,41 +108,25 @@ const NavigationBadge: React.FC<NavigationBadgeProps> = ({
             shadow-lg border-2 border-white
             z-20
           `}
-          variants={badgeVariants}
-          initial="hidden"
-          animate={pulse ? ["visible", "pulse"] : "visible"}
-          exit="exit"
-          style={{
-            minWidth: size === 'sm' ? '20px' : size === 'md' ? '24px' : '28px'
-          }}
-        >
-          {/* Background glow effect */}
-          <motion.div
-            className={`absolute inset-0 ${color} rounded-full opacity-30 blur-sm`}
-            animate={{
-              scale: pulse ? [1, 1.3, 1] : 1,
-            }}
-            transition={{
-              duration: 2,
-              repeat: pulse ? Infinity : 0,
-              repeatType: "reverse"
-            }}
-          />
-          
-          {/* Count display with animation */}
-          <motion.span
-            key={count} // Key ensures animation on count change
-            className="relative z-10 px-1"
-            variants={countVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-          >
-            {displayCount}
-          </motion.span>
-        </motion.div>
-      )}
-    </AnimatePresence>
+                style={{
+                  minWidth: size === 'sm' ? '20px' : size === 'md' ? '24px' : '28px'
+                }}
+              >
+                {/* Background glow effect */}
+                <div
+                  className={`absolute inset-0 ${color} rounded-full opacity-30 blur-sm`}
+                />
+                
+                {/* Count display with animation */}
+                <span
+                  key={count} // Key ensures animation on count change
+                  className="relative z-10 px-1"
+                >
+                  {displayCount}
+                </span>
+              </div>
+            )}
+      </>
   );
 };
 

@@ -43,7 +43,7 @@ export function FriendLikedDealsSection() {
                         {/* Deal Image */}
                         <div className="h-48 bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center">
                             {deal.image_url ? (
-                                <img src={deal.image_url} alt={deal.title} className="w-full h-full object-cover" />
+                                <img loading="lazy" decoding="async" src={deal.image_url} alt={deal.title} className="w-full h-full object-cover" />
                             ) : (
                                 <Heart className="w-16 h-16 text-indigo-300" />
                             )}

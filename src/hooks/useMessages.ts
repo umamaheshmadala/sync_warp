@@ -1,12 +1,11 @@
-import { useEffect, useCallback, useRef } from 'react'
+import { useEffect, useCallback, useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useMessagingStore } from '../store/messagingStore'
 import { messagingService } from '../services/messagingService'
-import { messageDeleteService } from '../services/messageDeleteService'
 import { realtimeService } from '../services/realtimeService'
 import { useAuthStore } from '../store/authStore'
 import { toast } from 'react-hot-toast'
 import { usePlatform } from './usePlatform'
+import { supabase } from '../lib/supabase'
 import type { Message } from '../types/messaging'
 
 /**
@@ -44,13 +43,10 @@ export function useMessages(conversationId: string | null) {
   const currentUserId = useAuthStore((state) => state.user?.id)
   const queryClient = useQueryClient()
 
-  const {
-    addMessage,
-    updateMessage,
-  } = useMessagingStore()
 
   const hasMore = useRef(true)
-  const isLoadingMore = useRef(false)
+  const [isFetchingOlder, setIsFetchingOlder] = useState(false)
+  const isLoadingMoreRef = useRef(false) // Keep ref for preventing duplicate calls logic
   // isFetching is no longer needed as React Query handles fetching state
 
   // Platform-specific page size
@@ -74,7 +70,7 @@ export function useMessages(conversationId: string | null) {
     gcTime: 1000 * 60 * 60, // 1 hour cache
   })
 
-  const conversationMessages = messagesData?.messages || []
+  const conversationMessages: Message[] = messagesData?.messages || []
   hasMore.current = messagesData?.hasMore ?? true
 
   // DEBUG: Log cache state
@@ -84,18 +80,20 @@ export function useMessages(conversationId: string | null) {
     messageCount: conversationMessages.length,
     isLoading,
     isFetching,
+    isFetchingOlder,
     fromCache: !isLoading && !!messagesData
   })
 
   // Load more (older) messages
   const loadMore = useCallback(async () => {
-    if (!conversationId || !hasMore.current || isLoadingMore.current) return
+    if (!conversationId || !hasMore.current || isLoadingMoreRef.current) return
 
     const oldestMessage = conversationMessages[0] // Messages sorted DESC by created_at
     if (!oldestMessage) return
 
     try {
-      isLoadingMore.current = true
+      isLoadingMoreRef.current = true
+      setIsFetchingOlder(true)
 
       // Fetch messages (hidden filtering is now handled server-side)
       const { messages: olderMessages, hasMore: more } = await messagingService.fetchMessages(conversationId, pageSize, oldestMessage.id)
@@ -111,7 +109,8 @@ export function useMessages(conversationId: string | null) {
       console.error('Failed to load more messages:', error)
       toast.error('Failed to load older messages')
     } finally {
-      isLoadingMore.current = false
+      isLoadingMoreRef.current = false
+      setIsFetchingOlder(false)
     }
   }, [conversationId, conversationMessages, pageSize, queryClient])
 
@@ -119,55 +118,90 @@ export function useMessages(conversationId: string | null) {
   useEffect(() => {
     if (!conversationId) return
 
+    // Initialize the multiplexed active chat channel
+    realtimeService.setupActiveChatChannel(conversationId)
+
     const unsubscribeNew = realtimeService.subscribeToMessages(
       conversationId,
       (newMessage: Message) => {
-        // Populate parent_message for replies if missing
-        if (newMessage.reply_to_id && !newMessage.parent_message) {
-          // Get current messages directly from cache to avoid dependency on conversationMessages
-          const currentData = queryClient.getQueryData(['messages', conversationId]) as any
-          const currentMessages = currentData?.messages || []
+        const enrichMessageWithParent = async () => {
+          if (newMessage.reply_to_id && !newMessage.parent_message) {
+            // 1. Try Cache First
+            const currentData = queryClient.getQueryData(['messages', conversationId]) as any
+            const currentMessages = currentData?.messages || []
+            const parentMsg = currentMessages.find((m: Message) => m.id === newMessage.reply_to_id)
 
-          const parentMsg = currentMessages.find((m: Message) => m.id === newMessage.reply_to_id)
+            if (parentMsg) {
+              newMessage.parent_message = {
+                id: parentMsg.id,
+                content: parentMsg.content,
+                type: parentMsg.type,
+                sender_id: parentMsg.sender_id,
+                sender_name: parentMsg.sender_id === currentUserId ? 'You' : 'User', // Fallback
+                created_at: parentMsg.created_at
+              }
+            } else {
+              // 2. Fetch from DB if not in cache (Slow path, but ensures consistency)
+              try {
+                // Fetch message + sender profile name
+                const { data, error } = await supabase
+                  .from('messages')
+                  .select('content, type, sender_id, created_at, sender:sender_id(full_name)')
+                  .eq('id', newMessage.reply_to_id)
+                  .single()
 
-          if (parentMsg) {
-            newMessage.parent_message = {
-              id: parentMsg.id,
-              content: parentMsg.content,
-              type: parentMsg.type,
-              sender_id: parentMsg.sender_id,
-              sender_name: parentMsg.sender_id === currentUserId ? 'You' : 'User',
-              created_at: parentMsg.created_at
+                if (data && !error) {
+                  const senderName = (data.sender as any)?.full_name || 'User'
+                  newMessage.parent_message = {
+                    id: newMessage.reply_to_id!,
+                    content: data.content,
+                    type: data.type,
+                    sender_id: data.sender_id,
+                    sender_name: data.sender_id === currentUserId ? 'You' : senderName,
+                    created_at: data.created_at
+                  }
+                }
+              } catch (err) {
+                console.error('Failed to fetch reply context:', err)
+              }
             }
           }
         }
 
-        // Derive status for own messages arriving via realtime
-        if (newMessage.sender_id === currentUserId && !newMessage.status) {
-          newMessage.status = 'delivered'
-        }
+        // Execute enrichment then update state
+        enrichMessageWithParent().then(() => {
+          const processedMessage = { ...newMessage };
 
-        // Update React Query cache
-        // Update React Query cache with deduplication
-        queryClient.setQueryData(['messages', conversationId], (old: any) => {
-          const currentMessages = old?.messages || []
-
-          // Check if message with this ID already exists
-          if (currentMessages.some((m: Message) => m.id === newMessage.id)) {
-            return old
+          // Derive status for own messages arriving via realtime
+          if (processedMessage.sender_id === currentUserId && !processedMessage.status) {
+            processedMessage.status = 'delivered'
           }
 
-          // Check for optimistic version match (by temp ID match? No, usually handled by sender swapping ID)
-          // For now, simple ID deduplication matches typical optimistic flow where ID is swapped before realtime arrives
+          // Update React Query cache with deduplication
+          queryClient.setQueryData(['messages', conversationId], (old: any) => {
+            const currentMessages = old?.messages || []
 
-          return {
-            messages: [...currentMessages, newMessage],
-            hasMore: old?.hasMore ?? true
-          }
+            // If message already exists (e.g. optimistic), merge parent_message context
+            if (currentMessages.some((m: Message) => m.id === processedMessage.id)) {
+              return {
+                ...old,
+                messages: currentMessages.map((m: Message) => {
+                  if (m.id === processedMessage.id && !m.parent_message && processedMessage.parent_message) {
+                    return { ...m, parent_message: processedMessage.parent_message }
+                  }
+                  return m
+                })
+              }
+            }
+
+            return {
+              messages: [...currentMessages, processedMessage],
+              hasMore: old?.hasMore ?? true
+            }
+          })
         })
 
-        // Also update Zustand store for backwards compatibility
-        addMessage(conversationId, newMessage)
+
       }
     )
 
@@ -181,9 +215,6 @@ export function useMessages(conversationId: string | null) {
           ),
           hasMore: old?.hasMore ?? true
         }))
-
-        // Also update Zustand store
-        updateMessage(conversationId, updatedMessage.id, updatedMessage)
       }
     )
 
@@ -197,9 +228,6 @@ export function useMessages(conversationId: string | null) {
           ),
           hasMore: old?.hasMore ?? true
         }))
-
-        // Also update Zustand store
-        updateMessage(conversationId, receipt.message_id, { status: 'read' })
       }
     )
 
@@ -208,11 +236,12 @@ export function useMessages(conversationId: string | null) {
       unsubscribeUpdates()
       unsubscribeReadReceipts()
     }
-  }, [conversationId, addMessage, updateMessage, currentUserId, queryClient])
+  }, [conversationId, currentUserId, queryClient])
 
   return {
     messages: conversationMessages,
     isLoading: isLoading && conversationMessages.length === 0, // Only show loading if no cached data
+    isFetchingOlder, // Exposed for UI loading indicators
     hasMore: hasMore.current,
     loadMore,
     refresh: refetch

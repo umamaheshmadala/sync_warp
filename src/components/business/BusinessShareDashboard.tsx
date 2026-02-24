@@ -12,7 +12,6 @@
  */
 
 import React from 'react';
-import { motion } from 'framer-motion';
 import {
     Share2,
     TrendingUp,
@@ -272,17 +271,15 @@ function StatCard({ title, value, icon, color }: StatCardProps) {
     };
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-gray-50 rounded-lg p-4"
+        <div
+            className="bg-gray-50 rounded-lg p-4 animate-fadeIn"
         >
             <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-medium text-gray-500">{title}</span>
                 <span className={`p-1.5 rounded ${colorClasses[color]}`}>{icon}</span>
             </div>
             <p className="text-xl font-bold text-gray-900">{value}</p>
-        </motion.div>
+        </div>
     );
 }
 

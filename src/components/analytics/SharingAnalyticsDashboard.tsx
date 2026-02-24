@@ -93,7 +93,7 @@ export function SharingAnalyticsDashboard() {
                         <div className="space-y-4">
                             {analytics.most_shared_offers.map((offer) => (
                                 <div key={offer.id} className="flex items-center gap-4">
-                                    <img
+                                    <img loading="lazy" decoding="async" 
                                         src={offer.image_url || '/placeholder-offer.png'}
                                         alt={offer.title}
                                         className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
@@ -124,7 +124,7 @@ export function SharingAnalyticsDashboard() {
                         <div className="space-y-4">
                             {analytics.most_engaged_friends.map((friend) => (
                                 <div key={friend.id} className="flex items-center gap-4">
-                                    <img
+                                    <img loading="lazy" decoding="async" 
                                         src={friend.avatar_url || '/default-avatar.png'}
                                         alt={friend.full_name}
                                         className="w-12 h-12 rounded-full object-cover flex-shrink-0"

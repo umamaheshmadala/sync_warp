@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   Star,
   Package,
@@ -177,87 +176,75 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
       </div>
 
       {/* Product View Modal */}
-      <AnimatePresence>
-        {selectedProduct && (
-          <ProductView
-            product={selectedProduct}
-            isOwner={isOwner}
-            isModal={true}
-            onClose={() => setSelectedProduct(null)}
-            onEdit={isOwner ? () => handleEditProduct(selectedProduct) : undefined}
-          />
-        )}
-      </AnimatePresence>
+      <>
+          {selectedProduct && (
+                    <ProductView
+                      product={selectedProduct}
+                      isOwner={isOwner}
+                      isModal={true}
+                      onClose={() => setSelectedProduct(null)}
+                      onEdit={isOwner ? () => handleEditProduct(selectedProduct) : undefined}
+                    />
+                  )}
+          </>
 
 
 
       {/* Product Edit Form Modal */}
-      <AnimatePresence>
-        {editingProduct && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-            onClick={handleEditFormClose}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <ProductForm
-                businessId={businessId}
-                product={editingProduct}
-                onClose={handleEditFormClose}
-                onSuccess={handleEditFormSuccess}
-              />
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <>
+          {editingProduct && (
+                    <div
+                      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+                      onClick={handleEditFormClose}
+                    >
+                      <div
+                        className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <ProductForm
+                          businessId={businessId}
+                          product={editingProduct}
+                          onClose={handleEditFormClose}
+                          onSuccess={handleEditFormSuccess}
+                        />
+                      </div>
+                    </div>
+                  )}
+          </>
 
       {/* Delete Confirmation Modal */}
-      <AnimatePresence>
-        {deleteModalOpen && selectedProduct && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[60]"
-            onClick={() => setDeleteModalOpen(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white rounded-lg p-6 max-w-sm w-full shadow-xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Delete Product</h3>
-              <p className="text-sm text-gray-500 mb-6">
-                Are you sure you want to delete "{selectedProduct.name}"? This action cannot be undone.
-              </p>
-              <div className="flex justify-end space-x-3">
-                <button
-                  onClick={() => setDeleteModalOpen(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleDeleteConfirm}
-                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
-                >
-                  Delete
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <>
+          {deleteModalOpen && selectedProduct && (
+                    <div
+                      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[60]"
+                      onClick={() => setDeleteModalOpen(false)}
+                    >
+                      <div
+                        className="bg-white rounded-lg p-6 max-w-sm w-full shadow-xl"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">Delete Product</h3>
+                        <p className="text-sm text-gray-500 mb-6">
+                          Are you sure you want to delete "{selectedProduct.name}"? This action cannot be undone.
+                        </p>
+                        <div className="flex justify-end space-x-3">
+                          <button
+                            onClick={() => setDeleteModalOpen(false)}
+                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={handleDeleteConfirm}
+                            className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+          </>
 
       {/* Add Product Modal */}
       {/* Add Product Modal - Removed for Wizard */}

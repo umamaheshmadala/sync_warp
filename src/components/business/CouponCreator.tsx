@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useForm, Controller } from 'react-hook-form';
 import {
   X,
@@ -59,7 +58,7 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
 }) => {
   const { createCoupon, updateCoupon, loading, generateCouponCode } = useCoupons();
   const drafts = useCouponDrafts(businessId);
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const [currentStep, setCurrentStep] = useState(1);
   const [previewCode, setPreviewCode] = useState('');
   const [showDrafts, setShowDrafts] = useState(false);
@@ -273,14 +272,19 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
   // Save form state periodically and on changes
   useEffect(() => {
     if (isOpen) {
-      const interval = setInterval(() => {
+      let timeoutId: ReturnType<typeof setTimeout>;
+
+      const tick = () => {
         // Only save if there's actually form data to save
         const formData = watch();
         if (formData.title || formData.description || formData.type) {
           saveFormState();
         }
-      }, 60000); // Save every 60 seconds (much less frequent)
-      return () => clearInterval(interval);
+        timeoutId = setTimeout(tick, 60000);
+      };
+
+      timeoutId = setTimeout(tick, 60000); // Save every 60 seconds (much less frequent)
+      return () => clearTimeout(timeoutId);
     }
   }, [isOpen, watch, saveFormState]);
 
@@ -692,8 +696,8 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
                       render={({ field }) => (
                         <label
                           className={`relative border rounded-lg p-4 cursor-pointer transition-all ${field.value === type.value
-                              ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
-                              : 'border-gray-300 hover:border-gray-400'
+                            ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
+                            : 'border-gray-300 hover:border-gray-400'
                             }`}
                         >
                           <input
@@ -920,8 +924,8 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
                     render={({ field }) => (
                       <label
                         className={`relative border rounded-lg p-4 cursor-pointer transition-all ${field.value === audience.value
-                            ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
-                            : 'border-gray-300 hover:border-gray-400'
+                          ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
+                          : 'border-gray-300 hover:border-gray-400'
                           }`}
                       >
                         <input
@@ -1098,11 +1102,8 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <motion.div
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.95, opacity: 0 }}
-        className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden"
+      <div
+        className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden animate-fadeIn"
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
@@ -1163,10 +1164,10 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
                 >
                   <div
                     className={`flex items-center justify-center w-8 h-8 rounded-full border-2 ${currentStep === step.id
-                        ? 'border-blue-500 bg-blue-500 text-white'
-                        : currentStep > step.id
-                          ? 'border-green-500 bg-green-500 text-white'
-                          : 'border-gray-300 bg-white text-gray-500'
+                      ? 'border-blue-500 bg-blue-500 text-white'
+                      : currentStep > step.id
+                        ? 'border-green-500 bg-green-500 text-white'
+                        : 'border-gray-300 bg-white text-gray-500'
                       }`}
                   >
                     {currentStep > step.id ? (
@@ -1200,17 +1201,13 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
         {/* Content */}
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col h-full">
           <div className="flex-1 overflow-y-auto p-6">
-            <AnimatePresence mode="wait">
-              <motion.div
+            <>
+              <div
                 key={currentStep}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.2 }}
               >
                 {renderStep()}
-              </motion.div>
-            </AnimatePresence>
+              </div>
+            </>
           </div>
 
           {/* Actions */}
@@ -1249,11 +1246,9 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
                   ].length > 0;
 
                   return (
-                    <motion.button
+                    <button
                       type="submit"
                       disabled={loading || hasValidationErrors}
-                      whileHover={{ scale: (loading || hasValidationErrors) ? 1 : 1.05 }}
-                      whileTap={{ scale: (loading || hasValidationErrors) ? 1 : 0.95 }}
                       className={`inline-flex items-center px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed ${hasValidationErrors ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
                         }`}
                     >
@@ -1273,7 +1268,7 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
                           {isEditing ? 'Update Coupon' : 'Create Coupon'}
                         </>
                       )}
-                    </motion.button>
+                    </button>
                   );
                 })()
               ) : (
@@ -1289,15 +1284,12 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
             </div>
           </div>
         </form>
-      </motion.div>
+      </div>
 
       {/* Save Draft Dialog */}
       {showSaveDraftDialog && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+        <div
+          className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 animate-fadeIn"
         >
           <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -1341,16 +1333,13 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
               </button>
             </div>
           </div>
-        </motion.div>
+        </div>
       )}
 
       {/* Load Drafts Dialog */}
       {showDrafts && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+        <div
+          className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 animate-fadeIn"
         >
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
@@ -1423,7 +1412,7 @@ const CouponCreator: React.FC<CouponCreatorProps> = ({
               )}
             </div>
           </div>
-        </motion.div>
+        </div>
       )}
     </div>
   );

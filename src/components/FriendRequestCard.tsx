@@ -2,7 +2,6 @@
 // Reusable card component for displaying friend requests (Story 9.1.3)
 
 import React from 'react'
-import { motion } from 'framer-motion'
 import { Check, X, Clock, User } from 'lucide-react'
 import type { FriendRequest } from '../services/friendRequestService'
 
@@ -67,19 +66,15 @@ export const FriendRequestCard: React.FC<FriendRequestCardProps> = ({
   const expiryInfo = getExpiryInfo(request.expires_at)
 
   return (
-    <motion.div
-      className="p-4 bg-gray-50 rounded-xl"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, x: -100 }}
-      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+    <div
+      className="p-4 bg-gray-50 rounded-xl animate-fadeIn"
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3 flex-1">
           {/* Avatar */}
           <div className="relative">
             {profile?.avatar_url ? (
-              <img
+              <img loading="lazy" decoding="async" 
                 src={profile.avatar_url}
                 alt={profile.full_name}
                 className="h-12 w-12 rounded-full object-cover"
@@ -143,25 +138,21 @@ export const FriendRequestCard: React.FC<FriendRequestCardProps> = ({
         {variant === 'received' && (onAccept || onReject) && (
           <>
             {onReject && (
-              <motion.button
+              <button
                 onClick={() => onReject(request.id)}
                 disabled={isProcessing}
-                className="flex items-center space-x-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                className="flex items-center space-x-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors active:scale-95 transition-transform duration-150 safe-hover-scale transition-transform duration-150"
               >
                 <X className="h-4 w-4" />
                 <span>Decline</span>
-              </motion.button>
+              </button>
             )}
             
             {onAccept && (
-              <motion.button
+              <button
                 onClick={() => onAccept(request.id)}
                 disabled={isProcessing}
-                className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors active:scale-95 transition-transform duration-150 safe-hover-scale transition-transform duration-150"
               >
                 {isProcessing ? (
                   <>
@@ -174,18 +165,16 @@ export const FriendRequestCard: React.FC<FriendRequestCardProps> = ({
                     <span>Accept</span>
                   </>
                 )}
-              </motion.button>
+              </button>
             )}
           </>
         )}
 
         {variant === 'sent' && onCancel && (
-          <motion.button
+          <button
             onClick={() => onCancel(request.id)}
             disabled={isProcessing}
-            className="flex items-center space-x-2 px-4 py-2 bg-red-100 text-red-700 rounded-lg font-medium hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            className="flex items-center space-x-2 px-4 py-2 bg-red-100 text-red-700 rounded-lg font-medium hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors active:scale-95 transition-transform duration-150 safe-hover-scale transition-transform duration-150"
           >
             {isProcessing ? (
               <>
@@ -198,10 +187,10 @@ export const FriendRequestCard: React.FC<FriendRequestCardProps> = ({
                 <span>Cancel Request</span>
               </>
             )}
-          </motion.button>
+          </button>
         )}
       </div>
-    </motion.div>
+    </div>
   )
 }
 

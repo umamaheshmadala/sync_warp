@@ -1,6 +1,5 @@
 // src/components/ads/AdSlot.tsx
 import React from 'react';
-import { motion } from 'framer-motion';
 import { ExternalLink, TrendingUp, Check } from 'lucide-react';
 import type { AdSlotData } from '../../types/ads';
 
@@ -34,11 +33,8 @@ const AdSlot: React.FC<AdSlotProps> = ({ slot, onAdClick, onImpression }) => {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="relative"
+    <div
+      className="relative animate-fadeIn"
     >
       {/* Labels - positioned top right to avoid text overlap */}
       {(isOrganic || !isOrganic) && (
@@ -69,7 +65,7 @@ const AdSlot: React.FC<AdSlotProps> = ({ slot, onAdClick, onImpression }) => {
         {/* Image Section - Full Cover */}
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100">
           {content?.image_url ? (
-            <img
+            <img loading="lazy" decoding="async" 
               src={content.image_url}
               alt={content.title}
               className="w-full h-full object-cover"
@@ -95,7 +91,7 @@ const AdSlot: React.FC<AdSlotProps> = ({ slot, onAdClick, onImpression }) => {
           )}
         </div>
       </button>
-    </motion.div>
+    </div>
   );
 };
 

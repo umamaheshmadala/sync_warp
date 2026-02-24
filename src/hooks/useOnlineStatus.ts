@@ -51,7 +51,7 @@ export function useOnlineStatus() {
  * Uses the can_see_online_status RPC which respects privacy settings
  */
 export function useCanSeeOnlineStatus(targetUserId: string) {
-    const { user } = useAuthStore();
+    const user = useAuthStore((state) => state.user);
 
     const { data: canSee, isLoading } = useQuery({
         queryKey: ['canSeeOnlineStatus', user?.id, targetUserId],

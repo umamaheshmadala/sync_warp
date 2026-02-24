@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '../store/authStore';
 
 export const useDashboardData = () => {
-    const { user } = useAuthStore();
+    const user = useAuthStore((state) => state.user);
     const userId = user?.id;
     const isEnabled = !!userId;
 

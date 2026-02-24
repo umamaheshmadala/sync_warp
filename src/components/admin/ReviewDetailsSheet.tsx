@@ -55,7 +55,7 @@ export function ReviewDetailsModal({ review, readOnly, onClose, onApprove, onRej
                         <div className="flex items-center gap-4 mb-3">
                             <div className="h-12 w-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-lg">
                                 {review.user?.avatar_url ? (
-                                    <img src={review.user.avatar_url} alt="" className="h-12 w-12 rounded-full object-cover" />
+                                    <img loading="lazy" decoding="async" src={review.user.avatar_url} alt="" className="h-12 w-12 rounded-full object-cover" />
                                 ) : (
                                     (review.user?.full_name?.charAt(0) || 'U')
                                 )}

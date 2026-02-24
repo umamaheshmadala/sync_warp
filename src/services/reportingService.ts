@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import { useMessagingStore } from '../store/messagingStore';
+import { messageCacheManager } from '../utils/messageCacheManager';
 
 export type ReportReason =
     | 'spam' | 'harassment' | 'hate_speech' | 'self_harm'
@@ -61,7 +61,7 @@ export class ReportingService {
         }
 
         // Optimistic update: Mark message as reported in local store
-        useMessagingStore.getState().updateMessage(conversationId, messageId, {
+        messageCacheManager.updateMessage(conversationId, messageId, {
             viewer_has_reported: true
         });
 

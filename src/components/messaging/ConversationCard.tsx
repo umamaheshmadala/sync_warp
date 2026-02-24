@@ -129,7 +129,13 @@ export function ConversationCard({
             "text-sm truncate pr-2",
             unread_count > 0 ? "text-gray-900 font-medium" : "text-gray-500"
           )}>
-            {last_message_content || 'No messages yet'}
+            {last_message_content || (
+              conversation.last_message_type === 'image' ? '📷 Image' :
+                conversation.last_message_type === 'video' ? '🎥 Video' :
+                  conversation.last_message_type === 'audio' ? '🎵 Audio' :
+                    conversation.last_message_type === 'file' ? 'hc File' :
+                      'No messages yet'
+            )}
           </p>
           {unread_count > 0 && (
             <Badge

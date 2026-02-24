@@ -13,7 +13,7 @@ import { toast } from 'react-hot-toast';
  * Hook for PYMK recommendations
  */
 export function usePYMK(limit: number = 10) {
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
 
   return useQuery({
     queryKey: ['pymk', user?.id, 'v5'], // Bump version for count fix
@@ -32,7 +32,7 @@ export function usePYMK(limit: number = 10) {
  */
 export function useDismissPYMK() {
   const queryClient = useQueryClient();
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
 
   return useMutation({
     mutationFn: (suggestedUserId: string) => friendsService.dismissPymkSuggestion(suggestedUserId),
@@ -53,7 +53,7 @@ export function useDismissPYMK() {
  */
 export function useRefreshPYMK() {
   const queryClient = useQueryClient();
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
 
   return useMutation({
     mutationFn: async () => {

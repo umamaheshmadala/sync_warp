@@ -16,6 +16,7 @@ interface Props {
 export function ConversationFilterTabs({ activeFilter, onFilterChange, counts }: Props) {
   const tabs: Array<{ key: ConversationFilter; label: string; count: number; showBadge: boolean }> = [
     { key: 'all', label: 'Inbox', count: counts.unread, showBadge: true }, // Show unread badge on Inbox
+    { key: 'unread', label: 'Unread', count: counts.unread, showBadge: true }, // New Unread tab
     { key: 'archived', label: 'Archived', count: counts.archived, showBadge: false },
     { key: 'blocked', label: 'Blocked', count: counts.blocked, showBadge: false },
   ]

@@ -3,7 +3,6 @@
 // =====================================================
 
 import React from 'react';
-import { motion } from 'framer-motion';
 import {
   ThumbsUp,
   ThumbsDown,
@@ -90,11 +89,8 @@ export default function ReviewStats({ stats, loading = false }: ReviewStatsProps
         {stats.total_reviews > 0 && (
           <div className="mt-4">
             <div className="h-3 bg-white bg-opacity-20 rounded-full overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${stats.recommend_percentage}%` }}
-                transition={{ duration: 1, ease: 'easeOut' }}
-                className="h-full bg-white rounded-full"
+              <div
+                className="h-full bg-white rounded-full animate-fadeIn"
               />
             </div>
           </div>
@@ -113,12 +109,9 @@ export default function ReviewStats({ stats, loading = false }: ReviewStatsProps
           };
 
           return (
-            <motion.div
+            <div
               key={stat.label}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="bg-white p-6"
+              className="bg-white p-6 animate-fadeIn"
             >
               <div className={`w-10 h-10 rounded-lg ${colorClasses[stat.color as keyof typeof colorClasses]} flex items-center justify-center mb-3`}>
                 <Icon className="w-5 h-5" />
@@ -134,7 +127,7 @@ export default function ReviewStats({ stats, loading = false }: ReviewStatsProps
                 )}
               </div>
               <p className="text-sm text-gray-600 mt-1">{stat.label}</p>
-            </motion.div>
+            </div>
           );
         })}
       </div>

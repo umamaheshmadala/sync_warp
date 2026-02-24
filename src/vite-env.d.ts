@@ -11,10 +11,6 @@ interface ImportMeta {
   readonly env: ImportMetaEnv
 }
 
-interface Window {
-  gtag: (
-    command: 'event' | 'config' | 'js',
-    targetId: string,
-    config?: Record<string, any>
-  ) => void;
+declare module 'virtual:build-info' {
+  export const timestamp: string
 }

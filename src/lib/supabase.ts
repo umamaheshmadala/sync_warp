@@ -45,17 +45,19 @@ const supabaseConfig = {
       'x-auth-flow': 'pkce' // Indicate PKCE flow is enabled
     },
     // Increase timeout for mobile networks (60 seconds)
-    fetch: Capacitor.isNativePlatform() ? (
-      (url: RequestInfo | URL, options?: RequestInit) => {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
-
-        return fetch(url, {
-          ...options,
-          signal: controller.signal
-        }).finally(() => clearTimeout(timeoutId));
-      }
-    ) : undefined
+    // Increase timeout for mobile networks (60 seconds)
+    // fetch: Capacitor.isNativePlatform() ? (
+    //   (url: RequestInfo | URL, options?: RequestInit) => {
+    //     const controller = new AbortController();
+    //     const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
+    //
+    //     return fetch(url, {
+    //       ...options,
+    //       signal: controller.signal
+    //     }).finally(() => clearTimeout(timeoutId));
+    //   }
+    // ) : undefined
+    fetch: undefined
   }
 }
 

@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 import {
   Plus,
@@ -151,7 +150,7 @@ async function fetchUserBusinesses(userId: string): Promise<Business[]> {
 const BusinessDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { getBusinessUrl } = useBusinessUrl();
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); // Added useState for modal
 
   const queryClient = useQueryClient();
@@ -250,16 +249,14 @@ const BusinessDashboard: React.FC = () => {
 
   // Business card component
   const BusinessCard: React.FC<BusinessCardProps> = ({ business }) => (
-    <motion.div
-      initial={false}  // Prevent animation replay on parent re-renders
-      animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow duration-200 cursor-pointer group"
+    <div  // Prevent animation replay on parent re-renders
+      className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow duration-200 cursor-pointer group animate-fadeIn"
       onClick={() => navigate(getBusinessUrl(business.id, business.business_name))}
     >
       {/* Cover Image */}
       <div className="h-32 bg-gray-200 rounded-t-lg overflow-hidden relative">
         {business.cover_image_url ? (
-          <img
+          <img loading="lazy" decoding="async" 
             src={business.cover_image_url}
             alt={business.business_name}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -333,7 +330,7 @@ const BusinessDashboard: React.FC = () => {
 
 
       </div>
-    </motion.div>
+    </div>
   );
 
   // Statistics card component

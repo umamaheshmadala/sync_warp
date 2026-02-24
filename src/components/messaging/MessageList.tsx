@@ -1,15 +1,21 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import { MessageBubble } from './MessageBubble'
+import { DateSeparator } from './DateSeparator'
 import { Loader2 } from 'lucide-react'
 import type { Message } from '../../types/messaging'
+import { parseDatabaseDate } from '../../utils/dateUtils'
+import { format, isToday, isYesterday, isSameYear, differenceInCalendarDays } from 'date-fns'
+import { Virtuoso, VirtuosoHandle } from 'react-virtuoso'
 
 interface MessageListProps {
   messages: Message[]
   hasMore: boolean
   onLoadMore: () => void
-  isLoading?: boolean
+  isLoading: boolean
+  isFetchingOlder?: boolean // Optional for backward compatibility, but we should always pass it
+  initialScrollDone: boolean // Story 8.12.3: Prevent premature load more
   onRetry?: (message: Message) => void // Story 8.2.7 - Retry failed messages
   onReply?: (message: Message) => void // Story 8.10.5 - Reply to message
   onForward?: (message: Message) => void // Story 8.10.6 - Forward message
@@ -21,6 +27,7 @@ interface MessageListProps {
   isMessagePinned?: (messageId: string) => boolean
   lastReadAt?: string | null | undefined // For persistent unread divider
   friendReadReceiptsEnabled?: boolean
+  onInitialScrollComplete?: () => void
 }
 
 /**
@@ -31,37 +38,42 @@ interface MessageListProps {
  * - Load more (pagination) on scroll to top
  * - Own vs friend message differentiation
  * - Loading indicator for pagination
- * 
- * @example
- * ```tsx
- * <MessageList
- *   messages={messages}
- *   hasMore={hasMore}
- *   onLoadMore={loadMore}
- *   isLoading={isLoading}
- *   onRetry={(msg) => handleRetry(msg)}
- * />
- * ```
  */
-export function MessageList({
+export const MessageList = React.forwardRef<HTMLDivElement, MessageListProps>(({
   messages,
   hasMore,
   onLoadMore,
   isLoading = false,
+  isFetchingOlder = false,
+  initialScrollDone,
+  onInitialScrollComplete,
   onRetry,
   onReply,
   onForward,
   onEdit,
   onQuoteClick,
-  messagesEndRef,
+  messagesEndRef, // We might not need this anymore if we use the main container, but keeping for now
   onPin,
   onUnpin,
   isMessagePinned,
   lastReadAt,
   friendReadReceiptsEnabled = true
-}: MessageListProps) {
+}, ref) => {
   const currentUserId = useAuthStore(state => state.user?.id)
-  const scrollRef = useRef<HTMLDivElement>(null)
+
+  // O(N) deduplication + sorting via useMemo (Performance Fix)
+  // Previously this was O(N^2) inside the render body, causing 250k+ iterations per frame
+  const sortedMessages = useMemo(() => {
+    const seen = new Map<string, Message>()
+    for (const msg of messages) {
+      // Keep the latest version of each message (by id)
+      seen.set(msg.id, msg)
+    }
+    return Array.from(seen.values()).sort((a, b) =>
+      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    )
+  }, [messages])
+  const virtuosoRef = useRef<VirtuosoHandle>(null)
   const isLoadingMore = useRef(false)
   const prevScrollHeight = useRef(0)
   const { conversationId } = useParams<{ conversationId: string }>()
@@ -88,140 +100,127 @@ export function MessageList({
     }
   }, [lastReadAt, frozenReadAt])
 
-  // Handle scroll to load more messages
-  const handleScroll = () => {
-    if (!scrollRef.current || !hasMore || isLoadingMore.current) return
+  const viewModels = useMemo(() => {
+    let firstUnreadIndex = -1
+    const lastMessage = sortedMessages[sortedMessages.length - 1]
+    const isLastMessageOutgoing = lastMessage?.sender_id === currentUserId
 
-    const { scrollTop } = scrollRef.current
-
-    // Load more when scrolled near top (within 100px)
-    if (scrollTop < 100) {
-      isLoadingMore.current = true
-      prevScrollHeight.current = scrollRef.current.scrollHeight
-      onLoadMore()
-
-      // Reset loading flag after delay
-      setTimeout(() => {
-        isLoadingMore.current = false
-      }, 1000)
+    if (isLastMessageOutgoing) {
+      firstUnreadIndex = -1
+    } else if (frozenReadAt !== undefined && frozenReadAt !== null) {
+      firstUnreadIndex = sortedMessages.findIndex(m => {
+        return new Date(m.created_at).getTime() > new Date(frozenReadAt).getTime()
+      })
+    } else if (frozenReadAt === null && sortedMessages.length > 0) {
+      firstUnreadIndex = 0
     }
-  }
 
-  // Restore scroll position after loading more messages
+    let lastDate: string | null = null
+    return sortedMessages.map((message, index) => {
+      const showTimestamp = index === 0 || index % 10 === 0
+      const isIncoming = message.sender_id !== currentUserId
+      const showUnreadDivider = firstUnreadIndex >= 0 && index === firstUnreadIndex && isIncoming
+
+      const messageDate = parseDatabaseDate(message.created_at)
+      const dateKey = messageDate ? format(messageDate, 'yyyy-MM-dd') : null
+      let showDateSeparator = false
+      if (dateKey && dateKey !== lastDate) {
+        showDateSeparator = true
+        lastDate = dateKey
+      }
+
+      // Compute formatDateLabel logic manually here for performance
+      let dateLabel = ''
+      if (showDateSeparator && messageDate) {
+        if (isToday(messageDate)) dateLabel = 'Today'
+        else if (isYesterday(messageDate)) dateLabel = 'Yesterday'
+        else {
+          const now = new Date()
+          const diffInDays = differenceInCalendarDays(now, messageDate)
+          if (diffInDays < 7 && diffInDays > 0) dateLabel = format(messageDate, 'EEEE')
+          else if (isSameYear(messageDate, now)) dateLabel = format(messageDate, 'MMMM d')
+          else dateLabel = format(messageDate, 'MMMM d, yyyy')
+        }
+      }
+
+      return {
+        message,
+        showTimestamp,
+        showUnreadDivider,
+        showDateSeparator,
+        dateLabel
+      }
+    })
+  }, [sortedMessages, currentUserId, frozenReadAt])
+
+  // Fire onInitialScrollComplete once on mount since Virtuoso handles scroll
   useEffect(() => {
-    if (scrollRef.current && prevScrollHeight.current > 0) {
-      const newScrollHeight = scrollRef.current.scrollHeight
-      const heightDifference = newScrollHeight - prevScrollHeight.current
-
-      if (heightDifference > 0) {
-        scrollRef.current.scrollTop = heightDifference
-        prevScrollHeight.current = 0
+    // If not done AND we have messages AND frozenReadAt is settled
+    if (!initialScrollDone && messages.length > 0 && frozenReadAt !== undefined) {
+      if (onInitialScrollComplete) {
+        onInitialScrollComplete()
       }
     }
-  }, [messages.length])
+  }, [initialScrollDone, messages.length, frozenReadAt, onInitialScrollComplete])
 
-  // Add scroll listener
-  useEffect(() => {
-    const scrollElement = scrollRef.current
-    if (scrollElement) {
-      scrollElement.addEventListener('scroll', handleScroll)
-      return () => scrollElement.removeEventListener('scroll', handleScroll)
+  // Start reached callback
+  const handleStartReached = React.useCallback(() => {
+    if (hasMore && !isLoading && initialScrollDone) {
+      onLoadMore()
     }
-  }, [hasMore])
+  }, [hasMore, isLoading, initialScrollDone, onLoadMore])
 
-  // Empty state
-  if (!isLoading && messages.length === 0) {
-    return (
-      <div className="flex-1 flex items-center justify-center text-center px-4">
-        <div>
-          <p className="text-lg font-medium text-gray-700 mb-2">
-            No messages yet
-          </p>
-          <p className="text-sm text-gray-500">
-            Send a message to start the conversation
-          </p>
-        </div>
-      </div>
-    )
-  }
+  // Determine initial scroll index ONLY once per chat session
+  const initialTopMostItemIndex = useMemo(() => {
+    if (frozenReadAt === undefined || viewModels.length === 0) return undefined
+
+    // Find the first unread message to jump to
+    const index = viewModels.findIndex(v => v.showUnreadDivider)
+    if (index !== -1) return index
+
+    // If no unread messages, virtuoso auto-scrolls to bottom if we omit this or use 'LAST'
+    return viewModels.length - 1
+  }, [frozenReadAt, viewModels])
 
   return (
-    <div
-      ref={scrollRef}
-      className="flex-1 overflow-y-auto px-4 py-4 space-y-1 message-list-scroll bg-white"
-    >
-      {/* Load More Indicator */}
-      {hasMore && (
-        <div className="flex justify-center py-2">
-          <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
-        </div>
-      )}
-
-      {/* Message Bubbles */}
-      {(() => {
-        // Deduplicate messages by ID (handles optimistic + realtime duplicates)
-        const uniqueMessages = messages.reduce((acc, message) => {
-          if (!acc.find(m => m.id === message.id)) {
-            acc.push(message)
-          }
-          return acc
-        }, [] as Message[])
-
-        // Find index of first unread message using the FROZEN read timestamp
-        let firstUnreadIndex = -1
-
-        // Defensive check: If the latest message is sent by the current user, 
-        // effectively everything is "read" by us (we don't need a divider).
-        const lastMessage = uniqueMessages[uniqueMessages.length - 1]
-        const isLastMessageOutgoing = lastMessage?.sender_id === currentUserId
-
-        console.log('📊 MessageList Divider Calc:', {
-          frozenReadAt,
-          msgCount: uniqueMessages.length,
-          lastMsgOutgoing: isLastMessageOutgoing
-        })
-
-        if (isLastMessageOutgoing) {
-          firstUnreadIndex = -1
-        } else if (frozenReadAt === undefined) {
-          // Still loading read status, don't show divider yet
-          firstUnreadIndex = -1
-        } else if (frozenReadAt !== null) {
-          // We have a timestamp. Find first message NEWER than it.
-          const firstUnread = uniqueMessages.findIndex(m => {
-            const msgDate = new Date(m.created_at)
-            const readDate = new Date(frozenReadAt)
-            return msgDate > readDate
-          })
-
-          if (firstUnread !== -1) {
-            console.log('📍 Found first unread message at index:', firstUnread)
-            firstUnreadIndex = firstUnread
-          }
-        } else if (uniqueMessages.length > 0) {
-          // No read history found (frozenReadAt is null). Assume all unread.
-          // BUT only if we have messages.
-          console.log('⚠️ No frozenReadAt (null), treating start matching unread')
-          firstUnreadIndex = 0
-        }
-
-        return uniqueMessages.map((message, index) => {
-          // Show timestamp every 10 messages or on first message
-          const showTimestamp = index === 0 || index % 10 === 0
-
-          // Check if message is from another user to justify "New Messages" divider
-          const isIncoming = message.sender_id !== currentUserId;
-
-          // Show unread divider before this message if:
-          // 1. We have a valid unread index (>= 0)
-          // 2. This matches the index
-          // 3. The message is incoming
-          const showUnreadDivider = firstUnreadIndex >= 0 &&
-            index === firstUnreadIndex &&
-            isIncoming
-
-          return (
-            <React.Fragment key={message.id}>
+    <div className="relative flex-1 flex flex-col h-full min-h-0 bg-white">
+      {frozenReadAt !== undefined ? (
+        <Virtuoso
+          ref={virtuosoRef}
+          scrollerRef={(el) => {
+            if (typeof ref === 'function') ref(el as HTMLDivElement);
+            else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = el as HTMLDivElement;
+          }}
+          data={viewModels}
+          className="message-list-scroll scrollbar-hide"
+          initialTopMostItemIndex={initialTopMostItemIndex}
+          startReached={handleStartReached}
+          alignToBottom
+          followOutput={(isAtBottom) => isAtBottom ? 'smooth' : false}
+          components={{
+            Header: () => (
+              <div className="flex flex-col items-center">
+                {messagesEndRef && <div ref={messagesEndRef} className="hidden" />}
+                {(isFetchingOlder || (isLoading && hasMore)) && (
+                  <div className="flex justify-center py-4">
+                    <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+                  </div>
+                )}
+                {!hasMore && messages.length > 0 && (
+                  <div className="flex justify-center py-6 pb-8">
+                    <span className="text-xs font-medium text-gray-400 bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
+                      Start of conversation
+                    </span>
+                  </div>
+                )}
+              </div>
+            )
+          }}
+          itemContent={(index, { message, showTimestamp, showUnreadDivider, showDateSeparator, dateLabel }) => (
+            <div className="px-4 pb-1">
+              {showDateSeparator && (
+                <DateSeparator label={dateLabel} />
+              )}
               {showUnreadDivider && (
                 <div className="flex items-center gap-3 py-3 px-2">
                   <div className="flex-1 h-[1px] bg-gradient-to-r from-transparent via-blue-500 to-transparent" />
@@ -248,13 +247,14 @@ export function MessageList({
                   friendReadReceiptsEnabled={friendReadReceiptsEnabled}
                 />
               </div>
-            </React.Fragment>
-          )
-        })
-      })()}
-
-      {/* Scroll anchor - positioned at end of messages */}
-      {messagesEndRef && <div ref={messagesEndRef} />}
-    </div >
+            </div>
+          )}
+        />
+      ) : (
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-gray-300" />
+        </div>
+      )}
+    </div>
   )
-}
+})

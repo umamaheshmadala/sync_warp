@@ -63,7 +63,7 @@ export function CouponCollectButton({
   onCollectChange,
   onClick
 }: CouponCollectButtonProps) {
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const { collectCoupon } = useUserCoupons();
   const [isCollected, setIsCollected] = useState(false);
   const [loading, setLoading] = useState(false);

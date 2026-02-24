@@ -1,10 +1,9 @@
-import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 interface GlassCardProps {
   children: React.ReactNode;
   className?: string;
-  blur?: 'sm' | 'md' | 'lg' | 'xl';
+  blur?: 'none' | 'sm' | 'md' | 'lg' | 'xl';
   opacity?: number;
   gradient?: boolean;
   border?: boolean;
@@ -14,7 +13,7 @@ interface GlassCardProps {
 export default function GlassCard({
   children,
   className,
-  blur = 'md',
+  blur = 'none',
   opacity = 0.1,
   gradient = true,
   border = true,
@@ -22,19 +21,17 @@ export default function GlassCard({
 }: GlassCardProps) {
   const getBlurClass = () => {
     switch (blur) {
+      case 'none': return '';
       case 'sm': return 'backdrop-blur-sm';
       case 'md': return 'backdrop-blur-md';
       case 'lg': return 'backdrop-blur-lg';
       case 'xl': return 'backdrop-blur-xl';
-      default: return 'backdrop-blur-md';
+      default: return '';
     }
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
+    <div
       className={cn(
         'relative overflow-hidden rounded-2xl',
         getBlurClass(),
@@ -49,7 +46,7 @@ export default function GlassCard({
     >
       {/* Glass reflection effect */}
       <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-transparent opacity-50" />
-      
+
       {/* Content */}
       <div className="relative z-10">
         {children}
@@ -57,6 +54,6 @@ export default function GlassCard({
 
       {/* Bottom highlight */}
       <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
-    </motion.div>
+    </div>
   );
 }

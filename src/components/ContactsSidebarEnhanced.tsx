@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import { X, Search, UserPlus, MessageCircle, Users, User, Share2, Trash2, Filter } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../store/authStore';
 import { useNewFriends as useFriends } from '../hooks/useNewFriends';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
@@ -18,7 +17,7 @@ interface ContactsSidebarProps {
 }
 
 const ContactsSidebar: React.FC<ContactsSidebarProps> = ({ isOpen, onClose }) => {
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const {
     friends,
     friendRequests,
@@ -239,97 +238,77 @@ const ContactsSidebar: React.FC<ContactsSidebarProps> = ({ isOpen, onClose }) =>
                           </div>
                         ) : (
                           <div className="space-y-1">
-                            <AnimatePresence mode="popLayout">
-                              {filteredFriends.map((friendship) => {
-                                const friend = friendship.friend_profile;
-                                
-                                return (
-                                  <motion.div
-                                    key={friendship.id}
-                                    className="group flex items-center rounded-lg p-2 hover:bg-gray-50 transition-colors"
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, x: -20 }}
-                                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                                    layout
-                                  >
-                                    <div className="relative">
-                                      {friend.avatar_url ? (
-                                        <img
-                                          className="h-10 w-10 rounded-full object-cover"
-                                          src={friend.avatar_url}
-                                          alt={friend.full_name}
-                                        />
-                                      ) : (
-                                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-indigo-400 to-purple-500">
-                                          <span className="text-white font-medium text-sm">
-                                            {friend.full_name.charAt(0).toUpperCase()}
-                                          </span>
-                                        </div>
-                                      )}
-                                      <motion.div
-                                        className={`absolute -bottom-0 -right-0 h-3 w-3 rounded-full border-2 border-white ${
-                                          friend.is_online ? 'bg-green-400' : 'bg-gray-400'
-                                        }`}
-                                        animate={{
-                                          scale: friend.is_online ? [1, 1.2, 1] : 1
-                                        }}
-                                        transition={{
-                                          duration: 2,
-                                          repeat: friend.is_online ? Infinity : 0,
-                                          repeatType: "reverse"
-                                        }}
-                                      />
-                                    </div>
-                                    <div className="ml-3 flex-1 min-w-0">
-                                      <p className="text-sm font-medium text-gray-900 truncate">
-                                        {friend.full_name}
-                                      </p>
-                                      <div className="flex items-center space-x-2">
-                                        <p className="text-xs text-gray-500">
-                                          {friend.is_online ? 'Online' : `Active ${formatLastActive(friend.last_active)}`}
-                                        </p>
-                                        {friend.city && (
-                                          <>
-                                            <span className="text-xs text-gray-300">•</span>
-                                            <p className="text-xs text-gray-500 truncate">{friend.city}</p>
-                                          </>
-                                        )}
-                                      </div>
-                                    </div>
-                                    <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                      <motion.button
-                                        onClick={() => handleShareTap(friendship)}
-                                        className="rounded-full p-1.5 text-indigo-600 hover:bg-indigo-100 transition-colors"
-                                        title="Share deal"
-                                        whileHover={{ scale: 1.1 }}
-                                        whileTap={{ scale: 0.9 }}
-                                      >
-                                        <Share2 className="h-4 w-4" />
-                                      </motion.button>
-                                      <motion.button
-                                        onClick={() => handleMessageTap(friendship)}
-                                        className="rounded-full p-1.5 text-gray-600 hover:bg-gray-100 transition-colors"
-                                        title="Send message"
-                                        whileHover={{ scale: 1.1 }}
-                                        whileTap={{ scale: 0.9 }}
-                                      >
-                                        <MessageCircle className="h-4 w-4" />
-                                      </motion.button>
-                                      <motion.button
-                                        onClick={() => handleRemoveFriend(friendship)}
-                                        className="rounded-full p-1.5 text-red-600 hover:bg-red-100 transition-colors"
-                                        title="Remove friend"
-                                        whileHover={{ scale: 1.1 }}
-                                        whileTap={{ scale: 0.9 }}
-                                      >
-                                        <Trash2 className="h-4 w-4" />
-                                      </motion.button>
-                                    </div>
-                                  </motion.div>
-                                );
-                              })}
-                            </AnimatePresence>
+                            <>
+                                                              {filteredFriends.map((friendship) => {
+                                                                                              const friend = friendship.friend_profile;
+                                                                                              
+                                                                                              return (
+                                                                                                <div
+                                                                                                  key={friendship.id}
+                                                                                                  className="group flex items-center rounded-lg p-2 hover:bg-gray-50 transition-colors"
+                                                                                                >
+                                                                                                  <div className="relative">
+                                                                                                    {friend.avatar_url ? (
+                                                                                                      <img loading="lazy" decoding="async"                                                                                                         className="h-10 w-10 rounded-full object-cover"
+                                                                                                        src={friend.avatar_url}
+                                                                                                        alt={friend.full_name}
+                                                                                                      />
+                                                                                                    ) : (
+                                                                                                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-indigo-400 to-purple-500">
+                                                                                                        <span className="text-white font-medium text-sm">
+                                                                                                          {friend.full_name.charAt(0).toUpperCase()}
+                                                                                                        </span>
+                                                                                                      </div>
+                                                                                                    )}
+                                                                                                    <div
+                                                                                                      className={`absolute -bottom-0 -right-0 h-3 w-3 rounded-full border-2 border-white ${
+                                                                                                        friend.is_online ? 'bg-green-400' : 'bg-gray-400'
+                                                                                                      }`}
+                                                                                                    />
+                                                                                                  </div>
+                                                                                                  <div className="ml-3 flex-1 min-w-0">
+                                                                                                    <p className="text-sm font-medium text-gray-900 truncate">
+                                                                                                      {friend.full_name}
+                                                                                                    </p>
+                                                                                                    <div className="flex items-center space-x-2">
+                                                                                                      <p className="text-xs text-gray-500">
+                                                                                                        {friend.is_online ? 'Online' : `Active ${formatLastActive(friend.last_active)}`}
+                                                                                                      </p>
+                                                                                                      {friend.city && (
+                                                                                                        <>
+                                                                                                          <span className="text-xs text-gray-300">•</span>
+                                                                                                          <p className="text-xs text-gray-500 truncate">{friend.city}</p>
+                                                                                                        </>
+                                                                                                      )}
+                                                                                                    </div>
+                                                                                                  </div>
+                                                                                                  <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                                                    <button
+                                                                                                      onClick={() => handleShareTap(friendship)}
+                                                                                                      className="rounded-full p-1.5 text-indigo-600 hover:bg-indigo-100 transition-colors active:scale-95 transition-transform duration-150 safe-hover-scale transition-transform duration-150"
+                                                                                                      title="Share deal"
+                                                                                                    >
+                                                                                                      <Share2 className="h-4 w-4" />
+                                                                                                    </button>
+                                                                                                    <button
+                                                                                                      onClick={() => handleMessageTap(friendship)}
+                                                                                                      className="rounded-full p-1.5 text-gray-600 hover:bg-gray-100 transition-colors active:scale-95 transition-transform duration-150 safe-hover-scale transition-transform duration-150"
+                                                                                                      title="Send message"
+                                                                                                    >
+                                                                                                      <MessageCircle className="h-4 w-4" />
+                                                                                                    </button>
+                                                                                                    <button
+                                                                                                      onClick={() => handleRemoveFriend(friendship)}
+                                                                                                      className="rounded-full p-1.5 text-red-600 hover:bg-red-100 transition-colors active:scale-95 transition-transform duration-150 safe-hover-scale transition-transform duration-150"
+                                                                                                      title="Remove friend"
+                                                                                                    >
+                                                                                                      <Trash2 className="h-4 w-4" />
+                                                                                                    </button>
+                                                                                                  </div>
+                                                                                                </div>
+                                                                                              );
+                                                                                            })}
+                                                              </>
                           </div>
                         )}
                       </div>

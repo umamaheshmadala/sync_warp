@@ -3,7 +3,6 @@
 // =====================================================
 
 import React, { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   MessageSquare,
   ThumbsUp,
@@ -132,66 +131,52 @@ export default function MyReviewsPage() {
         {!statsLoading && (
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             {/* Total Reviews */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-xl border border-gray-200 p-4"
+            <div
+              className="bg-white rounded-xl border border-gray-200 p-4 animate-fadeIn"
             >
               <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center mb-2">
                 <MessageSquare className="w-5 h-5" />
               </div>
               <div className="text-2xl font-bold text-gray-900">{userActivity?.total_reviews || 0}</div>
               <div className="text-sm text-gray-600">Total Reviews</div>
-            </motion.div>
+            </div>
 
             {/* Helpful Votes */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.05 }}
-              className="bg-white rounded-xl border border-gray-200 p-4"
+            <div
+              className="bg-white rounded-xl border border-gray-200 p-4 animate-fadeIn"
             >
               <div className="w-10 h-10 rounded-lg bg-green-50 text-green-600 flex items-center justify-center mb-2">
                 <Heart className="w-5 h-5" />
               </div>
               <div className="text-2xl font-bold text-green-600">{userActivity?.total_helpful_votes || 0}</div>
               <div className="text-sm text-gray-600">Helpful Votes</div>
-            </motion.div>
+            </div>
 
             {/* Responses Received */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="bg-white rounded-xl border border-gray-200 p-4"
+            <div
+              className="bg-white rounded-xl border border-gray-200 p-4 animate-fadeIn"
             >
               <div className="w-10 h-10 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center mb-2">
                 <MessageSquare className="w-5 h-5" />
               </div>
               <div className="text-2xl font-bold text-gray-900">{userActivity?.responses_received || 0}</div>
               <div className="text-sm text-gray-600">Responses</div>
-            </motion.div>
+            </div>
 
             {/* Total Views */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15 }}
-              className="bg-white rounded-xl border border-gray-200 p-4"
+            <div
+              className="bg-white rounded-xl border border-gray-200 p-4 animate-fadeIn"
             >
               <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center mb-2">
                 <Eye className="w-5 h-5" />
               </div>
               <div className="text-2xl font-bold text-gray-900">{userActivity?.total_views || 0}</div>
               <div className="text-sm text-gray-600">Views</div>
-            </motion.div>
+            </div>
 
             {/* Recommend Split */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="bg-white rounded-xl border border-gray-200 p-4"
+            <div
+              className="bg-white rounded-xl border border-gray-200 p-4 animate-fadeIn"
             >
               <div className="flex justify-center gap-3 mb-2">
                 <span className="flex items-center gap-1 text-green-600">
@@ -204,7 +189,7 @@ export default function MyReviewsPage() {
                 </span>
               </div>
               <div className="text-sm text-gray-600 text-center">Recommend Split</div>
-            </motion.div>
+            </div>
           </div>
         )}
 
@@ -227,9 +212,7 @@ export default function MyReviewsPage() {
             <div className="flex flex-wrap items-center gap-2">
               <Filter className="w-5 h-5 text-gray-500" />
               <div className="flex gap-2 flex-1 flex-wrap">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                <button
                   onClick={() => setFilterType('all')}
                   className={`
                     px-4 py-2 rounded-lg text-sm font-medium transition-all
@@ -240,10 +223,8 @@ export default function MyReviewsPage() {
                   `}
                 >
                   All ({reviews.length})
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                </button>
+                <button
                   onClick={() => setFilterType('recommend')}
                   className={`
                     px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1
@@ -255,10 +236,8 @@ export default function MyReviewsPage() {
                 >
                   <ThumbsUp className="w-4 h-4" />
                   Positive ({reviews.filter(r => r.recommendation).length})
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                </button>
+                <button
                   onClick={() => setFilterType('not-recommend')}
                   className={`
                     px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1
@@ -270,7 +249,7 @@ export default function MyReviewsPage() {
                 >
                   <ThumbsDown className="w-4 h-4" />
                   Negative ({reviews.filter(r => !r.recommendation).length})
-                </motion.button>
+                </button>
               </div>
 
               {/* Year Filter Dropdown */}
@@ -313,37 +292,35 @@ export default function MyReviewsPage() {
           </div>
         ) : filteredReviews.length > 0 ? (
           <div className="space-y-4">
-            <AnimatePresence mode="popLayout">
-              {filteredReviews.map((review) => (
-                <div
-                  key={review.id}
-                  className={`rounded-xl transition-all ${isWellReceived(review)
-                    ? 'ring-2 ring-green-200 bg-green-50/30'
-                    : ''
-                    }`}
-                >
-                  {/* Well-received badge */}
-                  {isWellReceived(review) && (
-                    <div className="px-4 py-1.5 bg-green-100 rounded-t-xl border-b border-green-200 flex items-center gap-2 text-sm text-green-700">
-                      <Heart className="w-4 h-4 fill-current" />
-                      <span>Well-received review ({review.helpful_count}+ helpful votes)</span>
-                    </div>
-                  )}
-                  <ReviewCard
-                    review={review}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                    showBusinessName
-                  />
-                </div>
-              ))}
-            </AnimatePresence>
+            <>
+                              {filteredReviews.map((review) => (
+                                              <div
+                                                key={review.id}
+                                                className={`rounded-xl transition-all ${isWellReceived(review)
+                                                  ? 'ring-2 ring-green-200 bg-green-50/30'
+                                                  : ''
+                                                  }`}
+                                              >
+                                                {/* Well-received badge */}
+                                                {isWellReceived(review) && (
+                                                  <div className="px-4 py-1.5 bg-green-100 rounded-t-xl border-b border-green-200 flex items-center gap-2 text-sm text-green-700">
+                                                    <Heart className="w-4 h-4 fill-current" />
+                                                    <span>Well-received review ({review.helpful_count}+ helpful votes)</span>
+                                                  </div>
+                                                )}
+                                                <ReviewCard
+                                                  review={review}
+                                                  onEdit={handleEdit}
+                                                  onDelete={handleDelete}
+                                                  showBusinessName
+                                                />
+                                              </div>
+                                            ))}
+                              </>
           </div>
         ) : (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-center py-12 bg-white rounded-xl border-2 border-dashed border-gray-300"
+          <div
+            className="text-center py-12 bg-white rounded-xl border-2 border-dashed border-gray-300 animate-fadeIn"
           >
             <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-3" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -354,44 +331,38 @@ export default function MyReviewsPage() {
                 ? 'Try adjusting your search or filters'
                 : 'Start reviewing businesses you visit!'}
             </p>
-          </motion.div>
+          </div>
         )}
       </div>
 
       {/* Edit Review Modal */}
-      <AnimatePresence>
-        {editingReview && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
-            onClick={() => setEditingReview(null)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-2xl"
-            >
-              <BusinessReviewForm
-                businessId={editingReview.business_id}
-                businessName={editingReview.business_name || 'Business'}
-                checkinId={editingReview.checkin_id}
-                onSubmit={async (data) => {
-                  await handleUpdateReview(editingReview.id, {
-                    review_text: data.review_text,
-                    photo_urls: data.photo_urls,
-                    tags: data.tags,
-                  });
-                }}
-                onCancel={() => setEditingReview(null)}
-              />
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <>
+          {editingReview && (
+                    <div
+                      className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+                      onClick={() => setEditingReview(null)}
+                    >
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-full max-w-2xl"
+                      >
+                        <BusinessReviewForm
+                          businessId={editingReview.business_id}
+                          businessName={editingReview.business_name || 'Business'}
+                          checkinId={editingReview.checkin_id}
+                          onSubmit={async (data) => {
+                            await handleUpdateReview(editingReview.id, {
+                              review_text: data.review_text,
+                              photo_urls: data.photo_urls,
+                              tags: data.tags,
+                            });
+                          }}
+                          onCancel={() => setEditingReview(null)}
+                        />
+                      </div>
+                    </div>
+                  )}
+          </>
     </div>
   );
 }

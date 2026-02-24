@@ -61,10 +61,10 @@ export async function showDeleteConversationSheet({
     } else if (result.index === 1) {
       // Clear chat history
       await conversationManagementService.clearConversationMessages(conversationId)
-      
+
       // Haptic feedback for success
       await Haptics.impact({ style: ImpactStyle.Light })
-      
+
       toast.success('Chat history cleared', { duration: 3000 })
       onDeleted()
     }
@@ -93,25 +93,25 @@ function showUndoToast(
         <span>Conversation deleted</span>
         <button
           onClick={async () => {
-            clearInterval(intervalId)
+            clearTimeout(intervalId)
             try {
               // First, undo the deletion in the database
               await conversationManagementService.undoDeleteConversation(conversationId)
-              
+
               // Then fetch the restored conversation and add it back to store
               console.log('🔄 Fetching restored conversation:', conversationId)
-              
+
               const { data, error } = await supabase
                 .from('conversation_list')
                 .select('*')
                 .eq('conversation_id', conversationId)
                 .single()
-              
+
               if (error) {
                 console.error('❌ Failed to fetch restored conversation:', error)
                 throw new Error(`Failed to fetch conversation: ${error.message}`)
               }
-              
+
               if (data) {
                 console.log('✅ Restored conversation fetched:', data)
                 // Add it back to the store
@@ -120,10 +120,10 @@ function showUndoToast(
                 useMessagingStore.getState().setConversations(updatedConversations)
                 console.log('✅ Conversation added back to store')
               }
-              
+
               // Haptic feedback for success
               await Haptics.impact({ style: ImpactStyle.Light })
-              
+
               toast.dismiss(toastId)
               toast.success('Deletion undone', { duration: 3000 })
             } catch (error: any) {
@@ -145,14 +145,16 @@ function showUndoToast(
     { duration: 5000 }
   )
 
-  // Countdown timer
-  intervalId = setInterval(() => {
+  // Countdown timer with setTimeout
+  const tick = () => {
     countdown--
     if (countdown <= 0) {
-      clearInterval(intervalId)
       toast.dismiss(toastId)
+    } else {
+      intervalId = setTimeout(tick, 1000)
     }
-  }, 1000)
+  }
+  intervalId = setTimeout(tick, 1000)
 }
 
 // Helper for class names

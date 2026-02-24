@@ -7,9 +7,9 @@ const isProduction = process.env.VITE_APP_ENV === 'production';
 
 // App ID changes per environment for side-by-side installation
 const getAppId = () => {
-  if (isDevelopment) return 'com.syncapp.mobile.dev';
-  if (isStaging) return 'com.syncapp.mobile.staging';
-  return 'com.syncapp.mobile';
+  if (isDevelopment) return 'com.maheshsyncapp.mobile.dev';
+  if (isStaging) return 'com.maheshsyncapp.mobile.staging';
+  return 'com.maheshsyncapp.mobile';
 };
 
 // App name changes per environment
@@ -26,13 +26,15 @@ const getServerConfig = () => {
     iosScheme: 'https' as const,
   };
 
+  /*
   if (isDevelopment) {
     return {
       ...baseConfig,
       hostname: 'localhost',
       cleartext: true, // Allow HTTP in development
     };
-  }
+    */
+
 
   if (isStaging) {
     return {
@@ -59,9 +61,12 @@ const config: CapacitorConfig = {
   appName: getAppName(),
   webDir: 'dist',
   server: getServerConfig(),
+  ios: {
+    packageManager: 'Cocoapods',
+  },
   plugins: {
     Keyboard: {
-      resize: 'native',
+      resize: 'none',
       resizeOnFullScreen: true,
     },
     SplashScreen: {
@@ -69,14 +74,17 @@ const config: CapacitorConfig = {
       showSpinner: false,
       launchAutoHide: false,
       backgroundColor: "#ffffffff",
-      androidScaleType: "CENTER_CROP",
+      androidScaleType: "CENTER_INSIDE",
       splashFullScreen: true,
       splashImmersive: true
     },
     StatusBar: {
       overlay: true,
-      style: "DARK",
+      style: "LIGHT",
       backgroundColor: "#ffffffff"
+    },
+    CapacitorHttp: {
+      enabled: true,
     }
   }
 };

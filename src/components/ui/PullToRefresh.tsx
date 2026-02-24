@@ -10,6 +10,7 @@ interface PullToRefreshProps {
     threshold?: number;
     maxPull?: number;
     className?: string;
+    style?: React.CSSProperties;
 }
 
 export function PullToRefresh({
@@ -19,6 +20,7 @@ export function PullToRefresh({
     threshold = 80,
     maxPull = 120,
     className = '',
+    style,
 }: PullToRefreshProps) {
     const [pullDistance, setPullDistance] = useState(0);
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -135,7 +137,7 @@ export function PullToRefresh({
     const shouldShowSpinner = isRefreshing || pullDistance > 20;
 
     return (
-        <div ref={containerRef} className={`relative ${className}`}>
+        <div ref={containerRef} className={`relative ${className}`} style={style}>
             {/* Pull indicator */}
             {isMobile && (
                 <div

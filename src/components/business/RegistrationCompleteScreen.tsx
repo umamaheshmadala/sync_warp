@@ -6,7 +6,6 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import {
   CheckCircle,
   Target,
@@ -30,48 +29,33 @@ export const RegistrationCompleteScreen: React.FC<RegistrationCompleteScreenProp
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5 }}
-        className="max-w-2xl w-full"
+      <div
+        className="max-w-2xl w-full animate-fadeIn"
       >
         {/* Success Animation */}
         <div className="text-center mb-8">
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-            className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-4"
+          <div
+            className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-4 animate-fadeIn"
           >
             <CheckCircle className="w-12 h-12 text-green-600" />
-          </motion.div>
+          </div>
 
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="text-3xl font-bold text-gray-900 mb-2"
+          <h1
+            className="text-3xl font-bold text-gray-900 mb-2 animate-fadeIn"
           >
             🎉 Registration Successful!
-          </motion.h1>
+          </h1>
 
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="text-lg text-gray-600"
+          <p
+            className="text-lg text-gray-600 animate-fadeIn"
           >
             <span className="font-semibold text-gray-900">{businessName}</span> has been submitted for review
-          </motion.p>
+          </p>
         </div>
 
         {/* Main Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden"
+        <div
+          className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden animate-fadeIn"
         >
           {/* Header Section */}
           <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-8 py-6">
@@ -177,20 +161,17 @@ export const RegistrationCompleteScreen: React.FC<RegistrationCompleteScreenProp
               Your progress will be saved automatically. You can exit at any time and continue later.
             </p>
           </div>
-        </motion.div>
+        </div>
 
         {/* Bottom Note */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.7 }}
-          className="text-center mt-6"
+        <div
+          className="text-center mt-6 animate-fadeIn"
         >
           <p className="text-sm text-gray-600">
             You can always access profile setup from your business dashboard
           </p>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
     </div>
   );
 };

@@ -1,6 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus,
   Search,
@@ -315,8 +314,7 @@ const CouponManager: React.FC<CouponManagerProps> = ({
 
     if (isGridView) {
       return (
-        <motion.div
-          layout
+        <div
           className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200"
         >
           {/* Coupon Header */}
@@ -450,14 +448,13 @@ const CouponManager: React.FC<CouponManagerProps> = ({
               onClick={() => setShowDropdown(false)}
             />
           )}
-        </motion.div>
+        </div>
       );
     }
 
     // List view
     return (
-      <motion.div
-        layout
+      <div
         className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow duration-200"
       >
         <div className="flex items-center space-x-4">
@@ -579,7 +576,7 @@ const CouponManager: React.FC<CouponManagerProps> = ({
             </div>
           </div>
         </div>
-      </motion.div>
+      </div>
     );
   };
 
@@ -599,8 +596,7 @@ const CouponManager: React.FC<CouponManagerProps> = ({
 
     if (isGridView) {
       return (
-        <motion.div
-          layout
+        <div
           className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl shadow-sm border border-orange-200 overflow-hidden hover:shadow-md transition-shadow duration-200"
         >
           {/* Draft Header */}
@@ -699,14 +695,13 @@ const CouponManager: React.FC<CouponManagerProps> = ({
               onClick={() => setShowDropdown(false)}
             />
           )}
-        </motion.div>
+        </div>
       );
     }
 
     // List view
     return (
-      <motion.div
-        layout
+      <div
         className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-lg border border-orange-200 p-4 hover:shadow-md transition-shadow duration-200"
       >
         <div className="flex items-center space-x-4">
@@ -812,7 +807,7 @@ const CouponManager: React.FC<CouponManagerProps> = ({
             </div>
           </div>
         </div>
-      </motion.div>
+      </div>
     );
   };
 
@@ -841,12 +836,10 @@ const CouponManager: React.FC<CouponManagerProps> = ({
 
           {isOwner && (
             <div className="flex gap-2 mt-4 sm:mt-0">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+              <button
                 onClick={handleVerifyStats}
                 disabled={verifyingStats}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-transform duration-150 safe-hover-scale transition-transform duration-150"
                 title="Verify that coupon statistics are accurate"
               >
                 {verifyingStats ? (
@@ -860,16 +853,14 @@ const CouponManager: React.FC<CouponManagerProps> = ({
                     Verify Stats
                   </>
                 )}
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+              </button>
+              <button
                 onClick={handleCreateCoupon}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 active:scale-95 transition-transform duration-150 safe-hover-scale transition-transform duration-150"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Create Coupon
-              </motion.button>
+              </button>
             </div>
           )}
         </div>
@@ -877,12 +868,9 @@ const CouponManager: React.FC<CouponManagerProps> = ({
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
           {getStatsCards().map((stat, index) => (
-            <motion.div
+            <div
               key={stat.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="bg-white rounded-lg border border-gray-200 p-4"
+              className="bg-white rounded-lg border border-gray-200 p-4 animate-fadeIn"
             >
               <div className="flex items-center">
                 <div className={`flex-shrink-0 w-10 h-10 ${stat.color} rounded-lg flex items-center justify-center`}>
@@ -894,7 +882,7 @@ const CouponManager: React.FC<CouponManagerProps> = ({
                   <div className="text-xs text-gray-400">{stat.trend}</div>
                 </div>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
 
@@ -979,70 +967,67 @@ const CouponManager: React.FC<CouponManagerProps> = ({
           </div>
 
           {/* Filters Panel */}
-          <AnimatePresence>
-            {showFilters && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="bg-gray-50 rounded-lg p-4 border border-gray-200"
-              >
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Status Filter */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Status
-                    </label>
-                    <select
-                      multiple
-                      value={filters.status || []}
-                      onChange={(e) => setFilters({
-                        ...filters,
-                        status: Array.from(e.target.selectedOptions, option => option.value) as CouponStatus[]
-                      })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                    >
-                      <option value="active">Active</option>
-                      <option value="paused">Paused</option>
-                      <option value="expired">Expired</option>
-                      <option value="draft">Draft</option>
-                    </select>
-                  </div>
+          <>
+                  {showFilters && (
+                                <div
+                                  className="bg-gray-50 rounded-lg p-4 border border-gray-200"
+                                >
+                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    {/* Status Filter */}
+                                    <div>
+                                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Status
+                                      </label>
+                                      <select
+                                        multiple
+                                        value={filters.status || []}
+                                        onChange={(e) => setFilters({
+                                          ...filters,
+                                          status: Array.from(e.target.selectedOptions, option => option.value) as CouponStatus[]
+                                        })}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                      >
+                                        <option value="active">Active</option>
+                                        <option value="paused">Paused</option>
+                                        <option value="expired">Expired</option>
+                                        <option value="draft">Draft</option>
+                                      </select>
+                                    </div>
 
-                  {/* Type Filter */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Type
-                    </label>
-                    <select
-                      multiple
-                      value={filters.type || []}
-                      onChange={(e) => setFilters({
-                        ...filters,
-                        type: Array.from(e.target.selectedOptions, option => option.value) as CouponType[]
-                      })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                    >
-                      <option value="percentage">Percentage Off</option>
-                      <option value="fixed_amount">Fixed Amount</option>
-                      <option value="buy_x_get_y">Buy X Get Y</option>
-                      <option value="free_item">Free Item</option>
-                    </select>
-                  </div>
+                                    {/* Type Filter */}
+                                    <div>
+                                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Type
+                                      </label>
+                                      <select
+                                        multiple
+                                        value={filters.type || []}
+                                        onChange={(e) => setFilters({
+                                          ...filters,
+                                          type: Array.from(e.target.selectedOptions, option => option.value) as CouponType[]
+                                        })}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                      >
+                                        <option value="percentage">Percentage Off</option>
+                                        <option value="fixed_amount">Fixed Amount</option>
+                                        <option value="buy_x_get_y">Buy X Get Y</option>
+                                        <option value="free_item">Free Item</option>
+                                      </select>
+                                    </div>
 
-                  {/* Clear Filters */}
-                  <div className="flex items-end">
-                    <button
-                      onClick={clearFilters}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-                    >
-                      Clear Filters
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                                    {/* Clear Filters */}
+                                    <div className="flex items-end">
+                                      <button
+                                        onClick={clearFilters}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                                      >
+                                        Clear Filters
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                  </>
         </div>
       )}
 
@@ -1081,14 +1066,11 @@ const CouponManager: React.FC<CouponManagerProps> = ({
             : 'space-y-4'
             }`}>
             {filteredCoupons.map((coupon, index) => (
-              <motion.div
-                key={coupon.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
+              <div
+                key={coupon.id} className="animate-fadeIn"
               >
                 <CouponCard coupon={coupon} isGridView={viewMode === 'grid'} />
-              </motion.div>
+              </div>
             ))}
           </div>
         )
@@ -1124,14 +1106,11 @@ const CouponManager: React.FC<CouponManagerProps> = ({
             : 'space-y-4'
             }`}>
             {drafts.map((draft, index) => (
-              <motion.div
-                key={draft.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
+              <div
+                key={draft.id} className="animate-fadeIn"
               >
                 <DraftCard draft={draft} isGridView={viewMode === 'grid'} />
-              </motion.div>
+              </div>
             ))}
           </div>
         )

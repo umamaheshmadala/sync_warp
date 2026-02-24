@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import { FileText } from 'lucide-react';
 import { PrefilledFieldIndicator, usePrefilledFields } from '../components/PrefilledFieldIndicator';
 import { cn } from '@/lib/utils'; // Assuming this alias exists, if not I'll standard imports or check tsconfig. 
@@ -44,10 +43,8 @@ export function Step2_BasicDetails({
     return (
         <div className="space-y-6">
             {/* Header */}
-            <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mb-6"
+            <div
+                className="mb-6 animate-fadeIn"
             >
                 <div className="flex items-center gap-3 mb-2">
                     <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
@@ -58,7 +55,7 @@ export function Step2_BasicDetails({
                 <p className="text-gray-600">
                     Tell customers about your business
                 </p>
-            </motion.div>
+            </div>
 
             {/* Business Name */}
             <div>

@@ -66,6 +66,9 @@ export interface Message {
   type: MessageType;
   status?: MessageStatus; // Story 8.10.7
   media_urls?: string[] | null;
+  media_width?: number | null; // Story 8.12.5 - Zero Layout Shift
+  media_height?: number | null; // Story 8.12.5 - Zero Layout Shift
+  media_duration?: number | null; // Story 8.12.5 - Zero Layout Shift
   thumbnail_url?: string | null;
   link_previews?: LinkPreview[] | null;
   shared_coupon_id?: string | null;
@@ -162,11 +165,14 @@ export interface SendMessageParams {
   content: string;
   type?: MessageType;
   mediaUrls?: string[];
+  mediaWidth?: number;
+  mediaHeight?: number;
   thumbnailUrl?: string;
   linkPreviews?: LinkPreview[];
   sharedCouponId?: string;
   sharedDealId?: string;
   replyToId?: string;
+  replyToMessage?: Message; // Story 8.10.5 - For optimistic UI updates
   tempId?: string; // For retrying failed messages
 }
 

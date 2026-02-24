@@ -67,6 +67,9 @@ class MessagingService {
         console.warn('⚠️ Network monitoring unavailable:', error);
       }
     }
+
+    // Initialize spam detection (prefetch rules)
+    spamDetectionService.init().catch(err => console.error('Failed to init spam detection:', err));
   }
 
   /**
@@ -224,12 +227,12 @@ class MessagingService {
       // SPAM DETECTION: Client-side pre-flight checks
       // ============================================================
 
-      // 1. Rate limit check (prevent unnecessary network calls)
-      const rateLimitCheck = await spamDetectionService.checkRateLimits(params.conversationId)
-      if (!rateLimitCheck.allowed) {
-        console.warn('[SpamDetection] Rate limit check failed:', rateLimitCheck.reason)
-        throw new Error(rateLimitCheck.reason || 'Rate limit exceeded')
-      }
+      // 1. Rate limit check (OPTIMIZED: Rely on server-side limits to save 2 DB round-trips)
+      // const rateLimitCheck = await spamDetectionService.checkRateLimits(params.conversationId)
+      // if (!rateLimitCheck.allowed) {
+      //   console.warn('[SpamDetection] Rate limit check failed:', rateLimitCheck.reason)
+      //   throw new Error(rateLimitCheck.reason || 'Rate limit exceeded')
+      // }
 
       // 2. Spam content check
       const spamCheck = await spamDetectionService.isSpam(params.content, user.id)
@@ -257,17 +260,20 @@ class MessagingService {
       // SEND MESSAGE VIA RPC
       // ============================================================
 
-      const { data, error } = await supabase.rpc('send_message', {
+      const rpcParams: any = {
         p_conversation_id: params.conversationId,
         p_content: params.content,
-        p_type: params.type || 'text',
-        p_media_urls: params.mediaUrls || null,
-        p_thumbnail_url: params.thumbnailUrl || null,
-        p_link_previews: params.linkPreviews || null,
-        p_shared_coupon_id: params.sharedCouponId || null,
-        p_shared_deal_id: params.sharedDealId || null,
-        p_reply_to_id: params.replyToId || null
-      })
+        p_type: params.type || 'text'
+      }
+
+      if (params.mediaUrls) rpcParams.p_media_urls = params.mediaUrls
+      if (params.thumbnailUrl) rpcParams.p_thumbnail_url = params.thumbnailUrl
+      if (params.linkPreviews) rpcParams.p_link_previews = params.linkPreviews
+      if (params.sharedCouponId) rpcParams.p_shared_coupon_id = params.sharedCouponId
+      if (params.sharedDealId) rpcParams.p_shared_deal_id = params.sharedDealId
+      if (params.replyToId) rpcParams.p_reply_to_id = params.replyToId
+
+      const { data, error } = await supabase.rpc('send_message', rpcParams)
 
       if (error) {
         // Check if error is from rate limit triggers
@@ -507,7 +513,10 @@ class MessagingService {
 
           // Legacy fields normalization
           // read_at is less relevant now that we have read_by array, but mapping just in case
-          read_at: msg.read_at
+          read_at: msg.read_at,
+
+          // Reply context (Story 8.10.5) - populated by get_messages_v2 SQL LEFT JOIN
+          parent_message: msg.parent_message || null
         };
       });
 
@@ -518,6 +527,130 @@ class MessagingService {
       return { messages: finalMessages, hasMore };
     } catch (error) {
       console.error('❌ Error fetching messages (v2):', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Fetch messages around a specific target message (Story 8.12.2 AC#6-7)
+   * Used for jump-to-reply and jump-to-search-result when the target
+   * message is not in the currently loaded message window.
+   *
+   * @param conversationId - Conversation UUID
+   * @param messageId - Target message ID to center around
+   * @param limit - Total messages to fetch (split before/after)
+   * @returns Messages array in chronological order with hasMore flag
+   */
+  async fetchMessagesAround(
+    conversationId: string,
+    messageId: string,
+    limit: number = 50
+  ): Promise<FetchMessagesResponse> {
+    try {
+      console.log('📍 Fetching messages around:', messageId);
+
+      const { data: userData } = await supabase.auth.getUser();
+      const currentUserId = userData?.user?.id;
+
+      const halfLimit = Math.floor(limit / 2);
+
+      // 1. Fetch the target message to get its created_at timestamp
+      const { data: targetMsg, error: targetError } = await supabase
+        .from('messages')
+        .select('id, created_at')
+        .eq('id', messageId)
+        .eq('conversation_id', conversationId)
+        .single();
+
+      if (targetError || !targetMsg) {
+        console.warn('⚠️ Target message not found:', messageId);
+        return { messages: [], hasMore: false };
+      }
+
+      // 2. Fetch messages BEFORE the target (older) using the existing RPC
+      const rpcParams: any = {
+        p_conversation_id: conversationId,
+        p_limit: halfLimit + 1,
+        p_before_id: messageId
+      };
+      const { data: beforeData, error: beforeError } = await supabase
+        .rpc('get_messages_v2', rpcParams);
+
+      if (beforeError) throw beforeError;
+
+      // 3. Fetch messages AFTER the target (newer) — direct query since RPC only supports "before"
+      const { data: afterData, error: afterError } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('conversation_id', conversationId)
+        .eq('is_deleted', false)
+        .gte('created_at', targetMsg.created_at)
+        .order('created_at', { ascending: true })
+        .limit(halfLimit + 1);
+
+      if (afterError) throw afterError;
+
+      // 4. Map both sets through the same status-derivation logic
+      const mapMessage = (msg: any) => {
+        let status: 'sent' | 'delivered' | 'read' | undefined;
+        if (msg.sender_id === currentUserId) {
+          if (msg.read_by && msg.read_by.length > 0) {
+            status = 'read';
+          } else {
+            status = 'delivered';
+          }
+        }
+        return {
+          id: msg.id,
+          conversation_id: msg.conversation_id,
+          sender_id: msg.sender_id,
+          content: msg.content,
+          type: msg.type,
+          media_urls: msg.media_urls || [],
+          thumbnail_url: msg.thumbnail_url || null,
+          link_previews: msg.link_previews || null,
+          shared_coupon_id: msg.shared_coupon_id,
+          shared_deal_id: msg.shared_deal_id,
+          reply_to_id: msg.reply_to_id,
+          created_at: msg.created_at,
+          updated_at: msg.updated_at,
+          is_deleted: msg.is_deleted,
+          deleted_at: msg.deleted_at,
+          is_edited: msg.is_edited,
+          edited_at: msg.edited_at,
+          is_forwarded: msg.is_forwarded,
+          original_message_id: msg.original_message_id,
+          forward_count: msg.forward_count,
+          status,
+          viewer_has_reported: msg.viewer_has_reported,
+          read_at: msg.read_at
+        };
+      };
+
+      // Before data comes from RPC in DESC order, reverse for chronological
+      const beforeMessages = (beforeData || []).slice(0, halfLimit).map(mapMessage).reverse();
+      // After data is already ASC
+      const afterMessages = (afterData || []).slice(0, halfLimit).map(mapMessage);
+
+      // Deduplicate (target message may appear in both sets)
+      const seenIds = new Set<string>();
+      const combined: Message[] = [];
+      for (const msg of [...beforeMessages, ...afterMessages]) {
+        if (!seenIds.has(msg.id)) {
+          seenIds.add(msg.id);
+          combined.push(msg as Message);
+        }
+      }
+
+      // Sort chronologically
+      combined.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+
+      const hasMore = (beforeData || []).length > halfLimit;
+
+      console.log(`✅ Fetched ${combined.length} messages around target (${beforeMessages.length} before, ${afterMessages.length} after)`);
+      return { messages: combined, hasMore };
+    } catch (error) {
+      console.error('❌ Error fetching messages around:', error);
       throw error;
     }
   }
@@ -695,13 +828,23 @@ class MessagingService {
           .eq('id', otherUserId)
           .single();
 
+
+        // Fetch latest message to populate fields
+        const { data: latestMsg } = await supabase
+          .from('messages')
+          .select('id, content, type, sender_id, created_at')
+          .eq('conversation_id', conversationId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
         // Construct object
         conversationData = {
           conversation_id: rawConv.id,
           type: rawConv.type,
           participants: participantsArr,
           created_at: rawConv.created_at,
-          last_message_at: rawConv.created_at, // timestamps
+          last_message_at: latestMsg?.created_at || rawConv.created_at,
           unread_count: 0,
           // Participant specific
           is_archived: false,
@@ -712,12 +855,12 @@ class MessagingService {
           other_participant_name: otherProfile?.full_name,
           other_participant_avatar: otherProfile?.avatar_url,
           other_participant_online: otherProfile?.is_online,
-          // Nulls for messages
-          last_message_id: null,
-          last_message_content: null,
-          last_message_type: null,
-          last_message_sender_id: null,
-          last_message_timestamp: null,
+          // Message details
+          last_message_id: latestMsg?.id || null,
+          last_message_content: latestMsg?.content || null,
+          last_message_type: latestMsg?.type || null,
+          last_message_sender_id: latestMsg?.sender_id || null,
+          last_message_timestamp: latestMsg?.created_at || null,
           last_message_status: null
         };
       }

@@ -3,7 +3,6 @@ import { QuickImageUploader } from './QuickImageUploader';
 import { PendingChangesWarning } from './PendingChangesWarning';
 import { submitPendingEdits, applyInstantUpdates, isSensitiveField } from '../../services/businessEditService';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import { parseBusinessIdentifier } from '../../utils/slugUtils';
 import {
   Edit3,
@@ -88,7 +87,7 @@ const BusinessProfile: React.FC = () => {
   const { getBusinessUrl } = useBusinessUrl();
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
 
   // SWR: Fetch business data with caching (instant load on revisits)
   const {
@@ -1262,12 +1261,9 @@ const BusinessProfile: React.FC = () => {
   return (
     <>
       {/* Review Modal */}
-      <AnimatePresence>
+      <>
         {showReviewModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+          <div
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
             onClick={() => setShowReviewModal(false)}
           >
@@ -1290,15 +1286,9 @@ const BusinessProfile: React.FC = () => {
                 existingReview={editingReview}
               />
             </div>
-          </motion.div>
-        )}
-
-        {/* Info Detail Modal */}
-        {showInfoModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+          </div>
+        )}{/* Info Detail Modal */}{showInfoModal && (
+          <div
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
             onClick={() => setShowInfoModal(false)}
           >
@@ -1381,9 +1371,9 @@ const BusinessProfile: React.FC = () => {
                 </div>
               </div>
             </div>
-          </motion.div >
+          </div >
         )}
-      </AnimatePresence >
+      </>
 
       {/* Follower List Modal */}
       < FollowerListModal
@@ -1476,7 +1466,7 @@ const BusinessProfile: React.FC = () => {
                 </button>
 
                 {business?.cover_image_url ? (
-                  <img
+                  <img loading="eager" decoding="async"
                     src={business.cover_image_url}
                     alt={`${business.business_name} cover`}
                     className="w-full h-full object-cover"
@@ -1509,7 +1499,7 @@ const BusinessProfile: React.FC = () => {
               <div className="absolute -bottom-24 md:-bottom-[9.75rem] left-4 md:left-8 z-30">
                 <div className="rounded-full border-[4px] border-white bg-white shadow-md overflow-hidden w-32 h-32 md:w-52 md:h-52 relative group">
                   {business?.logo_url ? (
-                    <img
+                    <img loading="eager" decoding="async"
                       src={business.logo_url}
                       alt={`${business.business_name} logo`}
                       className="w-full h-full object-cover"
@@ -1687,7 +1677,7 @@ const BusinessProfile: React.FC = () => {
                           onClick={() => navigate(`/business/${business?.id}/manage/campaigns`)}
                           className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-pink-600 hover:bg-pink-700 transition-colors h-10"
                         >
-                          <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-trending-up'%3E%3Cpolyline points='22 7 13.5 15.5 8.5 10.5 2 17'/%3E%3Cpolyline points='16 7 22 7 22 13'/%3E%3C/svg%3E" alt="" className="w-4 h-4 mr-2" />
+                          <img loading="lazy" decoding="async" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-trending-up'%3E%3Cpolyline points='22 7 13.5 15.5 8.5 10.5 2 17'/%3E%3Cpolyline points='16 7 22 7 22 13'/%3E%3C/svg%3E" alt="" className="w-4 h-4 mr-2" />
                           Campaigns
                         </button>
 
@@ -1850,7 +1840,7 @@ const BusinessProfile: React.FC = () => {
                       onClick={() => navigate(`/business/${business?.id}/manage/campaigns`)}
                       className="flex-1 inline-flex justify-center items-center px-2 py-2 border border-transparent text-xs font-medium rounded-lg shadow-sm text-white bg-pink-600 hover:bg-pink-700 transition-colors h-10"
                     >
-                      <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-trending-up'%3E%3Cpolyline points='22 7 13.5 15.5 8.5 10.5 2 17'/%3E%3Cpolyline points='16 7 22 7 22 13'/%3E%3C/svg%3E" alt="" className="w-3.5 h-3.5 mr-1.5" />
+                      <img loading="lazy" decoding="async" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-trending-up'%3E%3Cpolyline points='22 7 13.5 15.5 8.5 10.5 2 17'/%3E%3Cpolyline points='16 7 22 7 22 13'/%3E%3C/svg%3E" alt="" className="w-3.5 h-3.5 mr-1.5" />
                       Campaigns
                     </button>
 
@@ -1985,13 +1975,9 @@ const BusinessProfile: React.FC = () => {
 
           {/* Tab Content */}
           <div className="max-w-7xl mx-auto px-[5px] pt-[25px] pb-2">
-            <AnimatePresence mode="wait">
-              <motion.div
+            <>
+              <div
                 key={activeTab}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}
               >
                 {activeTab === 'overview' && renderOverview()}
                 {activeTab === 'products' && (
@@ -2030,8 +2016,8 @@ const BusinessProfile: React.FC = () => {
                 {activeTab === 'activity' && (
                   <BusinessActivityLogsTab businessId={business?.id!} />
                 )}
-              </motion.div>
-            </AnimatePresence>
+              </div>
+            </>
           </div>
         </div>
       </div >

@@ -17,26 +17,23 @@ export function useVideoUpload() {
   })
 
   const uploadVideo = useCallback(async (
-    file: File, 
+    file: File | null,
     conversationId: string,
-    onProgress?: (progress: number) => void
+    onProgress?: (progress: number) => void,
+    nativePath?: string
   ) => {
     setUploadState({ isUploading: true, progress: 0, error: null })
 
     try {
-      // Validate file type
-      if (!file.type.startsWith('video/')) {
+      // Validate file type (only for web file)
+      if (file && !file.type.startsWith('video/')) {
         throw new Error('File must be a video')
       }
 
-      // Validate file size (max 25MB)
-      if (file.size > 25 * 1024 * 1024) {
-        throw new Error('Video size must be less than 25MB')
-      }
-
       // Upload with progress tracking
-      const { url, thumbnailUrl, duration } = await mediaUploadService.uploadVideo(
+      const { url, thumbnailUrl, duration, width, height } = await mediaUploadService.uploadVideo(
         file,
+        nativePath || null,
         conversationId,
         (progress) => {
           setUploadState(prev => ({ ...prev, progress }))
@@ -47,11 +44,14 @@ export function useVideoUpload() {
       setUploadState({ isUploading: false, progress: 100, error: null })
       toast.success('Video uploaded successfully!')
 
-      return { url, thumbnailUrl, duration }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Upload failed'
+      return { url, thumbnailUrl, duration, width, height }
+    } catch (error: any) {
+      const errorMessage = error.message || 'Upload failed'
+      // Don't toast for user cancellations
+      if (errorMessage !== 'Upload cancelled') {
+        toast.error(errorMessage)
+      }
       setUploadState({ isUploading: false, progress: 0, error: errorMessage })
-      toast.error(errorMessage)
       throw error
     }
   }, [])

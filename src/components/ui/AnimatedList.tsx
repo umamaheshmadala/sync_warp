@@ -1,5 +1,4 @@
-import { useRef } from 'react';
-import { motion, useInView } from 'framer-motion';
+import { useInView } from 'react-intersection-observer';
 import { cn } from '@/lib/utils';
 
 interface AnimatedListProps {
@@ -10,55 +9,41 @@ interface AnimatedListProps {
   direction?: 'up' | 'down' | 'left' | 'right';
 }
 
-const AnimatedItem = ({ 
-  children, 
-  delay = 0, 
+const AnimatedItem = ({
+  children,
+  delay = 0,
   className,
-  direction = 'up' 
-}: { 
-  children: React.ReactNode; 
-  delay?: number; 
+  direction = 'up'
+}: {
+  children: React.ReactNode;
+  delay?: number;
   className?: string;
   direction?: 'up' | 'down' | 'left' | 'right';
 }) => {
-  const ref = useRef(null);
-  const inView = useInView(ref, { amount: 0.3, once: true });
+  const { ref, inView } = useInView({ threshold: 0.3, triggerOnce: true });
 
-  const getInitialOffset = () => {
+  const getInitialOffsetClass = () => {
     switch (direction) {
-      case 'up': return { y: 50, x: 0 };
-      case 'down': return { y: -50, x: 0 };
-      case 'left': return { y: 0, x: 50 };
-      case 'right': return { y: 0, x: -50 };
-      default: return { y: 50, x: 0 };
+      case 'up': return 'translate-y-12';
+      case 'down': return '-translate-y-12';
+      case 'left': return 'translate-x-12';
+      case 'right': return '-translate-x-12';
+      default: return 'translate-y-12';
     }
   };
 
-  const initial = getInitialOffset();
-
   return (
-    <motion.div
+    <div
       ref={ref}
-      initial={{
-        ...initial,
-        opacity: 0,
-        scale: 0.8,
-      }}
-      animate={inView ? {
-        y: 0,
-        x: 0,
-        opacity: 1,
-        scale: 1,
-      } : {}}
-      transition={{
-        duration: 0.6,
-        delay: delay,
-        ease: [0.21, 0.47, 0.32, 0.98],
-      }}
-      className={className}
+      className={cn(
+        "transition-all duration-700 ease-out",
+        inView ? "opacity-100 translate-y-0 translate-x-0 scale-100" : `opacity-0 scale-95 ${getInitialOffsetClass()}`,
+        className
+      )}
+      style={{ transitionDelay: `${delay}s` }}
     >
       {children}
-    </motion.div>
+    </div>
   );
 };
 

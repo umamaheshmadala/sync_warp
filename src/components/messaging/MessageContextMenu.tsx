@@ -45,7 +45,7 @@ interface MessageContextMenuProps {
  * 
  * Story: 8.10.5 - Reply/Quote Messages
  */
-export function MessageContextMenu({
+export const MessageContextMenu = React.memo(function MessageContextMenu({
   message,
   position,
   isOwn,
@@ -319,4 +319,4 @@ export function MessageContextMenu({
       </div>
     </>
   )
-}
+})

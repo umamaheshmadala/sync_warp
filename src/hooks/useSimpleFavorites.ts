@@ -21,7 +21,7 @@ interface FavoritesState {
 }
 
 export const useSimpleFavorites = () => {
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const [state, setState] = useState<FavoritesState>({
     favorites: [],
     isLoading: false,

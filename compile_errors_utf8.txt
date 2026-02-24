@@ -1,0 +1,693 @@
+src/components/admin/RetentionMonitor.tsx(53,59): error TS2339: Property 'is_admin' does not exist on type 'Profile'.
+src/components/business/BadgeStatusCard.tsx(71,37): error TS2322: Type '{ children: Element[]; className: string; onAnimationComplete: () => Timeout; }' is not assignable to type 'DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>'.
+  Property 'onAnimationComplete' does not exist on type 'DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>'.
+src/components/business/BusinessAnalyticsPage.tsx(65,5): error TS2353: Object literal may only specify known properties, and 'enabled' does not exist in type 'UseReviewStatsOptions'.
+src/components/business/CampaignWizard.tsx(68,7): error TS2353: Object literal may only specify known properties, and 'demographics' does not exist in type 'TargetingRules'.
+src/components/business/CampaignWizard.tsx(155,32): error TS2339: Property 'behavior' does not exist on type 'TargetingRules'.
+src/components/business/CampaignWizard.tsx(445,64): error TS2339: Property 'follower' does not exist on type 'TargetingRules'.
+src/components/business/CampaignWizard.tsx(446,58): error TS2339: Property 'follower' does not exist on type 'TargetingRules'.
+src/components/business/CampaignWizard.tsx(447,60): error TS2339: Property 'follower' does not exist on type 'TargetingRules'.
+src/components/business/CampaignWizard.tsx(448,67): error TS2339: Property 'follower' does not exist on type 'TargetingRules'.
+src/components/business/CampaignWizard.tsx(453,19): error TS2353: Object literal may only specify known properties, and 'follower' does not exist in type 'TargetingRules'.
+src/components/business/CouponCreator.tsx(341,33): error TS2345: Argument of type 'CouponType' is not assignable to parameter of type 'DiscountType'.
+  Type '"free_shipping"' is not assignable to type 'DiscountType'.
+src/components/business/EnhancedProfileTab.tsx(4,31): error TS2307: Cannot find module '../../types/supabase' or its corresponding type declarations.
+src/components/business/FollowerAnalyticsDashboard.tsx(209,62): error TS2362: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+src/components/business/onboarding/steps/Step1_PhoneVerify.tsx(70,21): error TS2322: Type '{ phoneNumber: string; onPhoneChange: (phone: string) => void; onVerified: () => void; isVerified: boolean; }' is not assignable to type 'IntrinsicAttributes & Props'.
+  Property 'phoneNumber' does not exist on type 'IntrinsicAttributes & Props'.
+src/components/business/ProductCard.tsx(87,19): error TS17001: JSX elements cannot have multiple attributes with the same name.
+src/components/business/ProductCard.tsx(123,30): error TS2339: Property 'category' does not exist on type 'Product'.
+src/components/business/ProductCard.tsx(126,40): error TS2339: Property 'category' does not exist on type 'Product'.
+src/components/business/ProductCard.tsx(132,46): error TS2339: Property 'price' does not exist on type 'Product'.
+src/components/business/ProductCard.tsx(174,15): error TS17001: JSX elements cannot have multiple attributes with the same name.
+src/components/business/ProductCard.tsx(227,24): error TS2339: Property 'category' does not exist on type 'Product'.
+src/components/business/ProductCard.tsx(230,68): error TS2339: Property 'category' does not exist on type 'Product'.
+src/components/business/ProductCard.tsx(244,38): error TS2339: Property 'price' does not exist on type 'Product'.
+src/components/business/ProductForm.tsx(46,7): error TS2353: Object literal may only specify known properties, and 'category' does not exist in type 'AsyncDefaultValues<ProductFormData> | { name?: string; description?: string; currency?: string; is_available?: boolean; is_featured?: boolean; display_order?: number; image_urls?: string[]; status?: string; tags?: string[]; }'.
+src/components/business/ProductForm.tsx(46,26): error TS2339: Property 'category' does not exist on type 'Product'.
+src/components/business/ProductForm.tsx(47,23): error TS2339: Property 'price' does not exist on type 'Product'.
+src/components/business/ProductForm.tsx(169,36): error TS2345: Argument of type '(data: ProductFormData) => Promise<void>' is not assignable to parameter of type 'SubmitHandler<TFieldValues>'.
+  Types of parameters 'data' and 'data' are incompatible.
+    Type 'TFieldValues' is not assignable to type 'ProductFormData'.
+      Type 'FieldValues' is missing the following properties from type 'ProductFormData': name, currency, is_available, is_featured, display_order
+src/components/business/ProductForm.tsx(214,15): error TS2322: Type '"category"' is not assignable to type '"name" | "status" | "description" | "display_order" | "tags" | "currency" | "is_available" | "is_featured" | "image_urls" | `tags.${number}` | `image_urls.${number}`'.
+src/components/business/ProductForm.tsx(218,20): error TS2322: Type '{ children: (Element | Element[])[]; className: string; onChange: (...event: any[]) => void; onBlur: Noop; value: string | number | boolean | string[]; disabled?: boolean; name: "name" | ... 9 more ... | `image_urls.${number}`; ref: RefCallBack; }' is not assignable to type 'DetailedHTMLProps<SelectHTMLAttributes<HTMLSelectElement>, HTMLSelectElement>'.
+  Type '{ children: (Element | Element[])[]; className: string; onChange: (...event: any[]) => void; onBlur: Noop; value: string | number | boolean | string[]; disabled?: boolean; name: "name" | ... 9 more ... | `image_urls.${number}`; ref: RefCallBack; }' is not assignable to type 'SelectHTMLAttributes<HTMLSelectElement>'.
+    Types of property 'value' are incompatible.
+      Type 'string | number | boolean | string[]' is not assignable to type 'string | number | readonly string[]'.
+        Type 'boolean' is not assignable to type 'string | number | readonly string[]'.
+src/components/business/ProductForm.tsx(232,21): error TS2322: Type 'string | number | true | string[]' is not assignable to type 'string | number | readonly string[]'.
+  Type 'boolean' is not assignable to type 'string | number | readonly string[]'.
+src/components/business/ProductForm.tsx(268,30): error TS2345: Argument of type '"price"' is not assignable to parameter of type '"name" | "status" | "description" | "display_order" | "tags" | "currency" | "is_available" | "is_featured" | "image_urls" | `tags.${number}` | `image_urls.${number}`'.
+src/components/business/ProductForm.tsx(275,23): error TS2339: Property 'price' does not exist on type 'FieldErrors<ProductFormData>'.
+src/components/business/ProductForm.tsx(276,66): error TS2339: Property 'price' does not exist on type 'FieldErrors<ProductFormData>'.
+src/components/business/ProductManager.tsx(55,17): error TS2339: Property 'category' does not exist on type 'ProductFilters'.
+src/components/business/ProductManager.tsx(55,37): error TS2339: Property 'category' does not exist on type 'Product'.
+src/components/business/ProductManager.tsx(55,58): error TS2339: Property 'category' does not exist on type 'ProductFilters'.
+src/components/business/ProductManager.tsx(74,54): error TS2339: Property 'category' does not exist on type 'Product'.
+src/components/business/ProductManager.tsx(279,50): error TS2339: Property 'category' does not exist on type 'ProductFilters'.
+src/components/business/ProductManager.tsx(280,77): error TS2353: Object literal may only specify known properties, and 'category' does not exist in type 'SetStateAction<ProductFilters>'.
+src/components/business/ProductView.tsx(103,18): error TS2304: Cannot find name 'MoreVertical'.
+src/components/business/ProductView.tsx(158,15): error TS2322: Type '{ productId: string; productName: string; productPrice: any; productCurrency: string; productImage: string; businessId: string; businessName: string; businessSlug: string; variant: "outline"; size: "sm"; }' is not assignable to type 'IntrinsicAttributes & ProductShareButtonProps'.
+  Property 'productPrice' does not exist on type 'IntrinsicAttributes & ProductShareButtonProps'.
+src/components/business/ProductView.tsx(158,37): error TS2339: Property 'price' does not exist on type 'Product'.
+src/components/business/ProductView.tsx(258,22): error TS2339: Property 'category' does not exist on type 'Product'.
+src/components/business/ProductView.tsx(262,28): error TS2339: Property 'category' does not exist on type 'Product'.
+src/components/business/ProductView.tsx(270,38): error TS2339: Property 'price' does not exist on type 'Product'.
+src/components/campaign/CampaignTargetingForm.tsx(8,41): error TS2307: Cannot find module './FollowerSegmentSelector' or its corresponding type declarations.
+src/components/campaign/index.ts(4,41): error TS2307: Cannot find module './FollowerSegmentSelector' or its corresponding type declarations.
+src/components/campaign/index.ts(8,73): error TS2307: Cannot find module './FollowerSegmentSelector' or its corresponding type declarations.
+src/components/campaign/index.ts(9,15): error TS2724: '"./CampaignTargetingForm"' has no exported member named 'CampaignTargetingFormProps'. Did you mean 'CampaignTargetingForm'?
+src/components/campaign/index.ts(10,15): error TS2724: '"./CampaignAnalyticsDashboard"' has no exported member named 'CampaignAnalyticsDashboardProps'. Did you mean 'CampaignAnalyticsDashboard'?
+src/components/campaign/ReachSummaryCard.tsx(62,36): error TS2339: Property 'min_purchases' does not exist on type 'TargetingRules'.
+src/components/campaign/RecommendationCard.tsx(186,13): error TS2554: Expected 1 arguments, but got 2.
+src/components/campaign/TargetingEditor.tsx(135,14): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingEditor.tsx(135,30): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingEditor.tsx(149,15): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingEditor.tsx(149,31): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(350,30): error TS2339: Property 'demographics' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(351,26): error TS2339: Property 'location' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(352,26): error TS2339: Property 'behavior' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(353,25): error TS2339: Property 'vehicle' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(366,13): error TS2339: Property 'demographics' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(368,15): error TS2339: Property 'demographics' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(368,44): error TS2339: Property 'demographics' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(369,17): error TS2339: Property 'demographics' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(369,45): error TS2339: Property 'demographics' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(375,42): error TS2339: Property 'demographics' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(375,108): error TS2339: Property 'demographics' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(377,24): error TS2339: Property 'demographics' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(377,52): error TS2339: Property 'demographics' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(389,15): error TS2339: Property 'demographics' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(390,17): error TS2339: Property 'demographics' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(402,15): error TS2339: Property 'demographics' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(402,46): error TS2339: Property 'demographics' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(414,13): error TS2339: Property 'location' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(415,15): error TS2339: Property 'location' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(415,40): error TS2339: Property 'location' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(425,15): error TS2339: Property 'location' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(425,40): error TS2339: Property 'location' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(436,15): error TS2339: Property 'location' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(436,48): error TS2339: Property 'location' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(448,13): error TS2339: Property 'behavior' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(449,15): error TS2339: Property 'behavior' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(449,49): error TS2339: Property 'behavior' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(459,15): error TS2339: Property 'behavior' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(459,43): error TS2339: Property 'behavior' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(471,13): error TS2339: Property 'vehicle' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(472,15): error TS2339: Property 'vehicle' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(482,15): error TS2339: Property 'vehicle' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(482,40): error TS2339: Property 'vehicle' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(495,11): error TS2339: Property 'demographics' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(496,11): error TS2339: Property 'demographics' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(497,11): error TS2339: Property 'demographics' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(498,11): error TS2339: Property 'location' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(498,37): error TS2339: Property 'location' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(499,11): error TS2339: Property 'location' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(500,11): error TS2339: Property 'behavior' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(501,11): error TS2339: Property 'vehicle' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(501,35): error TS2339: Property 'vehicle' does not exist on type 'TargetingRules'.
+src/components/campaign/TargetingValidator.tsx(502,11): error TS2339: Property 'vehicle' does not exist on type 'TargetingRules'.
+src/components/categories/CategoryBrowserPage.tsx(225,19): error TS2739: Type 'BusinessSearchResult' is missing the following properties from type 'SearchBusiness': business_name, activeCouponsCount, relevanceScore
+src/components/categories/CategoryBrowserPage.tsx(226,97): error TS2339: Property 'business_name' does not exist on type 'BusinessSearchResult'.
+src/components/categories/CategoryBrowserPage.tsx(235,64): error TS2339: Property 'business_name' does not exist on type 'BusinessSearchResult'.
+src/components/categories/CategoryBrowserPage.tsx(236,68): error TS2339: Property 'business_type' does not exist on type 'BusinessSearchResult'.
+src/components/contacts/ContactMatchesList.tsx(53,42): error TS2345: Argument of type 'string' is not assignable to parameter of type '{ receiverId: string; message?: string; }'.
+src/components/ContactsSidebar.tsx(12,33): error TS2307: Cannot find module '../services/friendService' or its corresponding type declarations.
+src/components/ContactsSidebar.tsx(47,55): error TS2339: Property 'friend_profile' does not exist on type 'Friendship'.
+src/components/ContactsSidebar.tsx(53,11): error TS2339: Property 'friend_profile' does not exist on type 'Friendship'.
+src/components/ContactsSidebar.tsx(54,12): error TS2339: Property 'friend_profile' does not exist on type 'Friendship'.
+src/components/ContactsSidebar.tsx(54,37): error TS2339: Property 'friend_profile' does not exist on type 'Friendship'.
+src/components/ContactsSidebar.tsx(263,41): error TS2339: Property 'avatar_url' does not exist on type 'Friendship'.
+src/components/ContactsSidebar.tsx(266,49): error TS2339: Property 'avatar_url' does not exist on type 'Friendship'.
+src/components/ContactsSidebar.tsx(267,49): error TS2339: Property 'full_name' does not exist on type 'Friendship'.
+src/components/ContactsSidebar.tsx(274,41): error TS2339: Property 'is_online' does not exist on type 'Friendship'.
+src/components/ContactsSidebar.tsx(280,43): error TS2339: Property 'full_name' does not exist on type 'Friendship'.
+src/components/ContactsSidebar.tsx(283,43): error TS2339: Property 'is_online' does not exist on type 'Friendship'.
+src/components/ContactsSidebar.tsx(283,83): error TS2339: Property 'last_active' does not exist on type 'Friendship'.
+src/components/ContactsSidebarEnhanced.tsx(347,11): error TS2322: Type '{ friendId: string; isOpen: boolean; onClose: () => void; }' is not assignable to type 'IntrinsicAttributes & ShareDealProps'.
+  Property 'friendId' does not exist on type 'IntrinsicAttributes & ShareDealProps'.
+src/components/discovery/BusinessDiscoveryPage.tsx(124,39): error TS2339: Property 'latitude' does not exist on type 'Coordinates'.
+src/components/discovery/BusinessDiscoveryPage.tsx(125,39): error TS2339: Property 'longitude' does not exist on type 'Coordinates'.
+src/components/discovery/BusinessDiscoveryPage.tsx(206,43): error TS2339: Property 'message' does not exist on type 'string'.
+src/components/discovery/BusinessDiscoveryPage.tsx(293,17): error TS2322: Type '{ center: Coordinates; zoom: number; businesses: BusinessSearchResult[]; onBusinessClick: (business: any) => void; }' is not assignable to type 'IntrinsicAttributes & SimpleMapProps'.
+  Property 'businesses' does not exist on type 'IntrinsicAttributes & SimpleMapProps'.
+src/components/discovery/BusinessDiscoveryPage.tsx(418,99): error TS2339: Property 'latitude' does not exist on type 'Coordinates'.
+src/components/discovery/BusinessDiscoveryPage.tsx(418,140): error TS2339: Property 'longitude' does not exist on type 'Coordinates'.
+src/components/discovery/BusinessDiscoveryPage.tsx(454,19): error TS2322: Type '{ business: any; onClick: () => void; showDistance: boolean; showFavoriteButton: boolean; }' is not assignable to type 'IntrinsicAttributes & BusinessCardProps'.
+  Property 'onClick' does not exist on type 'IntrinsicAttributes & BusinessCardProps'.
+src/components/discovery/BusinessDiscoveryPage.tsx(511,21): error TS2739: Type 'BusinessSearchResult' is missing the following properties from type 'SearchBusiness': business_name, activeCouponsCount, relevanceScore
+src/components/discovery/BusinessDiscoveryPage.tsx(512,99): error TS2339: Property 'business_name' does not exist on type 'BusinessSearchResult'.
+src/components/discovery/BusinessDiscoveryPage.tsx(521,66): error TS2339: Property 'business_name' does not exist on type 'BusinessSearchResult'.
+src/components/discovery/BusinessDiscoveryPage.tsx(522,70): error TS2339: Property 'business_type' does not exist on type 'BusinessSearchResult'.
+src/components/drivers/DriverProfileCard.tsx(62,57): error TS2339: Property 'verification_status' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(81,23): error TS2339: Property 'driver_name' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(88,95): error TS2339: Property 'driver_score' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(89,19): error TS2339: Property 'driver_score' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(98,17): error TS2339: Property 'driver_tier' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(99,107): error TS2339: Property 'driver_tier' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(100,21): error TS2339: Property 'driver_tier' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(103,17): error TS2339: Property 'activity_level' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(105,21): error TS2339: Property 'activity_level' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(113,19): error TS2339: Property 'total_trips' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(116,67): error TS2339: Property 'total_trips' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(119,19): error TS2339: Property 'avg_rating' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(123,25): error TS2339: Property 'avg_rating' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(127,19): error TS2339: Property 'completion_rate' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(130,67): error TS2339: Property 'completion_rate' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(133,19): error TS2339: Property 'acceptance_rate' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(136,67): error TS2339: Property 'acceptance_rate' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(139,19): error TS2339: Property 'on_time_rate' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(142,67): error TS2339: Property 'on_time_rate' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(145,19): error TS2339: Property 'cancellation_rate' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(148,67): error TS2339: Property 'cancellation_rate' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(155,30): error TS2339: Property 'score_components' does not exist on type 'DriverProfile'.
+src/components/drivers/DriverProfileCard.tsx(159,36): error TS2339: Property 'score_components' does not exist on type 'DriverProfile'.
+src/components/EnhancedFavoritesPage.tsx(204,55): error TS2339: Property 'favorite' does not exist on type 'FavoriteShare'.
+src/components/EnhancedFavoritesPage.tsx(204,73): error TS2339: Property 'favorite' does not exist on type 'FavoriteShare'.
+src/components/favorites/FavoriteProductCard.tsx(71,25): error TS17001: JSX elements cannot have multiple attributes with the same name.
+src/components/FollowButton.tsx(3,25): error TS2307: Cannot find module '../contexts/AuthContext' or its corresponding type declarations.
+src/components/following/FollowerFeed.tsx(35,36): error TS2304: Cannot find name 'FollowerUpdate'.
+src/components/following/FollowerFeed.tsx(117,36): error TS2339: Property 'action_url' does not exist on type 'FollowerNotification'.
+src/components/following/FollowerFeed.tsx(156,25): error TS2339: Property 'message' does not exist on type 'FollowerNotification'.
+src/components/following/FollowerFeed.tsx(157,82): error TS2339: Property 'message' does not exist on type 'FollowerNotification'.
+src/components/following/FollowerFeed.tsx(161,25): error TS2339: Property 'metadata' does not exist on type 'FollowerNotification'.
+src/components/following/FollowerFeed.tsx(163,29): error TS2339: Property 'metadata' does not exist on type 'FollowerNotification'.
+src/components/following/FollowerFeed.tsx(164,62): error TS2339: Property 'metadata' does not exist on type 'FollowerNotification'.
+src/components/following/FollowerFeed.tsx(166,29): error TS2339: Property 'metadata' does not exist on type 'FollowerNotification'.
+src/components/following/FollowerFeed.tsx(168,33): error TS2339: Property 'metadata' does not exist on type 'FollowerNotification'.
+src/components/FriendActivityFeed.tsx(20,37): error TS2307: Cannot find module '../services/friendService' or its corresponding type declarations.
+src/components/FriendActivityFeed.tsx(35,11): error TS2339: Property 'friendActivities' does not exist on type 'UseFriendsReturn'.
+src/components/FriendActivityFeed.tsx(35,47): error TS2339: Property 'refreshActivities' does not exist on type 'UseFriendsReturn'.
+src/components/FriendActivityFeed.tsx(92,40): error TS2339: Property 'friend_profile' does not exist on type 'Friendship'.
+src/components/FriendActivityFeed.tsx(93,32): error TS2339: Property 'friend_profile' does not exist on type 'Friendship'.
+src/components/FriendActivityFeed.tsx(237,52): error TS2339: Property 'friend_profile' does not exist on type 'Friendship'.
+src/components/FriendActivityFeed.tsx(247,32): error TS2339: Property 'friend_profile' does not exist on type 'Friendship'.
+src/components/FriendActivityFeed.tsx(249,39): error TS2339: Property 'friend_profile' does not exist on type 'Friendship'.
+src/components/FriendActivityFeed.tsx(250,39): error TS2339: Property 'friend_profile' does not exist on type 'Friendship'.
+src/components/FriendActivityFeed.tsx(256,38): error TS2339: Property 'friend_profile' does not exist on type 'Friendship'.
+src/components/FriendIntegration.tsx(115,16): error TS2552: Cannot find name 'FriendManagement'. Did you mean 'showFriendManagement'?
+src/components/FriendRequestCard.tsx(6,36): error TS2307: Cannot find module '../services/friendRequestService' or its corresponding type declarations.
+src/components/friends/FriendCard.stories.tsx(28,3): error TS2353: Object literal may only specify known properties, and 'mutual_friends_count' does not exist in type 'Friend'.
+src/components/friends/FriendRequestCard.stories.tsx(24,3): error TS2353: Object literal may only specify known properties, and 'sender' does not exist in type 'FriendRequest'.
+src/components/friends/FriendRequestCard.stories.tsx(35,5): error TS2739: Type 'FriendRequest' is missing the following properties from type '{ id: string; sender: { id: string; full_name: string; email: string; avatar_url?: string; }; receiver: { id: string; full_name: string; email: string; avatar_url?: string; }; message?: string; created_at: string; mutual_friends_count?: number; }': sender, receiver
+src/components/friends/FriendRequestCard.stories.tsx(42,5): error TS2739: Type 'FriendRequest' is missing the following properties from type '{ id: string; sender: { id: string; full_name: string; email: string; avatar_url?: string; }; receiver: { id: string; full_name: string; email: string; avatar_url?: string; }; message?: string; created_at: string; mutual_friends_count?: number; }': sender, receiver
+src/components/friends/FriendRequestCard.stories.tsx(49,5): error TS2739: Type 'FriendRequest' is missing the following properties from type '{ id: string; sender: { id: string; full_name: string; email: string; avatar_url?: string; }; receiver: { id: string; full_name: string; email: string; avatar_url?: string; }; message?: string; created_at: string; mutual_friends_count?: number; }': sender, receiver
+src/components/friends/FriendRequestCard.stories.tsx(57,5): error TS2741: Property 'receiver' is missing in type '{ sender: any; id: string; sender_id: string; receiver_id: string; message?: string | null; status: "pending" | "accepted" | "rejected"; created_at: string; updated_at?: string; }' but required in type '{ id: string; sender: { id: string; full_name: string; email: string; avatar_url?: string; }; receiver: { id: string; full_name: string; email: string; avatar_url?: string; }; message?: string; created_at: string; mutual_friends_count?: number; }'.
+src/components/friends/FriendRequestCard.stories.tsx(60,24): error TS2339: Property 'sender' does not exist on type 'FriendRequest'.
+src/components/friends/FriendSearchResults.tsx(8,36): error TS2307: Cannot find module '@/services/friendSearchService' or its corresponding type declarations.
+src/components/friends/FriendsList.stories.tsx(30,5): error TS2353: Object literal may only specify known properties, and 'friends' does not exist in type 'Partial<FriendsListProps>'.
+src/components/friends/FriendsList.stories.tsx(37,5): error TS2353: Object literal may only specify known properties, and 'friends' does not exist in type 'Partial<FriendsListProps>'.
+src/components/friends/FriendsList.stories.tsx(44,5): error TS2353: Object literal may only specify known properties, and 'friends' does not exist in type 'Partial<FriendsListProps>'.
+src/components/friends/FriendsList.stories.tsx(51,5): error TS2353: Object literal may only specify known properties, and 'friends' does not exist in type 'Partial<FriendsListProps>'.
+src/components/friends/FriendsList.stories.tsx(53,16): error TS2351: This expression is not constructable.
+  Type 'BaseAnnotations<ReactRenderer, FriendsListProps> & { name?: string; storyName?: string; play?: PlayFunction<ReactRenderer, FriendsListProps>; globals?: Globals; story?: Omit<...>; } & { ...; }' has no construct signatures.
+src/components/friends/FriendsList.stories.tsx(53,16): error TS2448: Block-scoped variable 'Error' used before its declaration.
+src/components/friends/privacy/FriendRequestPrivacy.tsx(7,23): error TS2339: Property 'updateSetting' does not exist on type '{ settings: PrivacySettings; isLoading: boolean; error: Error; updateSettings: UseMutateAsyncFunction<any[], any, Partial<PrivacySettings>, { previousSettings: PrivacySettings; }>; isUpdating: boolean; }'.
+src/components/friends/privacy/OnlineStatusVisibility.tsx(7,23): error TS2339: Property 'updateSetting' does not exist on type '{ settings: PrivacySettings; isLoading: boolean; error: Error; updateSettings: UseMutateAsyncFunction<any[], any, Partial<PrivacySettings>, { previousSettings: PrivacySettings; }>; isUpdating: boolean; }'.
+src/components/friends/privacy/ProfileVisibilitySettings.tsx(8,23): error TS2339: Property 'updateSetting' does not exist on type '{ settings: PrivacySettings; isLoading: boolean; error: Error; updateSettings: UseMutateAsyncFunction<any[], any, Partial<PrivacySettings>, { previousSettings: PrivacySettings; }>; isUpdating: boolean; }'.
+src/components/friends/privacy/ProfileVisibilitySettings.tsx(93,25): error TS2322: Type '{ id: string; checked: boolean; onCheckedChange: (checked: boolean) => any; disabled: boolean; }' is not assignable to type 'IntrinsicAttributes & SwitchProps & RefAttributes<HTMLButtonElement>'.
+  Property 'id' does not exist on type 'IntrinsicAttributes & SwitchProps & RefAttributes<HTMLButtonElement>'.
+src/components/maps/GoogleMapsLocationPicker.tsx(272,12): error TS2769: No overload matches this call.
+  Overload 2 of 2, '(props: MarkerProps, context: any): Marker', gave the following error.
+    Type 'Size | { width: number; height: number; }' is not assignable to type 'Size'.
+      Property 'equals' is missing in type '{ width: number; height: number; }' but required in type 'Size'.
+  Overload 2 of 2, '(props: MarkerProps, context: any): Marker', gave the following error.
+    Type 'Point | { x: number; y: number; }' is not assignable to type '((name: string) => string) | Point'.
+      Type '{ x: number; y: number; }' is not assignable to type '((name: string) => string) | Point'.
+        Property 'equals' is missing in type '{ x: number; y: number; }' but required in type 'Point'.
+src/components/messaging/ConversationActionButtons.tsx(32,11): error TS2353: Object literal may only specify known properties, and 'action' does not exist in type 'Partial<Pick<Toast, "style" | "id" | "icon" | "className" | "position" | "duration" | "ariaProps" | "iconTheme" | "toasterId" | "removeDelay">>'.
+src/components/messaging/ConversationActionButtons.tsx(62,11): error TS2353: Object literal may only specify known properties, and 'action' does not exist in type 'Partial<Pick<Toast, "style" | "id" | "icon" | "className" | "position" | "duration" | "ariaProps" | "iconTheme" | "toasterId" | "removeDelay">>'.
+src/components/messaging/ConversationListBulkActions.tsx(62,9): error TS2353: Object literal may only specify known properties, and 'action' does not exist in type 'Partial<Pick<Toast, "style" | "id" | "icon" | "className" | "position" | "duration" | "ariaProps" | "iconTheme" | "toasterId" | "removeDelay">>'.
+src/components/messaging/ConversationListBulkActions.tsx(122,9): error TS2353: Object literal may only specify known properties, and 'action' does not exist in type 'Partial<Pick<Toast, "style" | "id" | "icon" | "className" | "position" | "duration" | "ariaProps" | "iconTheme" | "toasterId" | "removeDelay">>'.
+src/components/messaging/ImageMessage.tsx(79,13): error TS17001: JSX elements cannot have multiple attributes with the same name.
+src/components/messaging/MessageUserButton.tsx(13,23): error TS2307: Cannot find module 'react-toastify' or its corresponding type declarations.
+src/components/messaging/OfflineIndicatorEnhanced.tsx(244,29): error TS2367: This comparison appears to be unintentional because the types '"error" | "idle"' and '"syncing"' have no overlap.
+src/components/modals/CouponDetailsModal.tsx(487,48): error TS2304: Cannot find name 'businessName'.
+src/components/onboarding/Step1BasicInfo.tsx(16,43): error TS2339: Property 'phone' does not exist on type 'OnboardingData'.
+src/components/onboarding/Step1BasicInfo.tsx(18,49): error TS2339: Property 'date_of_birth' does not exist on type 'OnboardingData'.
+src/components/onboarding/Step1BasicInfo.tsx(47,18): error TS2353: Object literal may only specify known properties, and 'phone' does not exist in type 'Partial<OnboardingData>'.
+src/components/onboarding/Step1BasicInfo.tsx(55,16): error TS2353: Object literal may only specify known properties, and 'date_of_birth' does not exist in type 'Partial<OnboardingData>'.
+src/components/onboarding/Step1BasicInfo.tsx(102,16): error TS2353: Object literal may only specify known properties, and 'phone' does not exist in type 'Partial<OnboardingData>'.
+src/components/products/AllProducts.tsx(71,72): error TS2339: Property 'category' does not exist on type 'Product'.
+src/components/products/AllProducts.tsx(90,17): error TS2339: Property 'category' does not exist on type 'Product'.
+src/components/products/AllProducts.tsx(96,53): error TS2339: Property 'category' does not exist on type 'Product'.
+src/components/products/AllProducts.tsx(105,21): error TS2339: Property 'price' does not exist on type 'Product'.
+src/components/products/AllProducts.tsx(105,38): error TS2339: Property 'price' does not exist on type 'Product'.
+src/components/products/AllProducts.tsx(107,21): error TS2339: Property 'price' does not exist on type 'Product'.
+src/components/products/AllProducts.tsx(107,38): error TS2339: Property 'price' does not exist on type 'Product'.
+src/components/products/drafts/DraftCard.tsx(2,30): error TS2307: Cannot find module '../../types/productWizard' or its corresponding type declarations.
+src/components/products/grid/ProductCardImage.tsx(25,21): error TS17001: JSX elements cannot have multiple attributes with the same name.
+src/components/products/ProductCard.tsx(126,13): error TS17001: JSX elements cannot have multiple attributes with the same name.
+src/components/search/AdvancedSearchPage.tsx(120,47): error TS2339: Property 'latitude' does not exist on type 'Coordinates'.
+src/components/search/AdvancedSearchPage.tsx(121,48): error TS2339: Property 'longitude' does not exist on type 'Coordinates'.
+src/components/settings/ContactSyncSettings.tsx(13,10): error TS2305: Module '"../../services/contactSyncService"' has no exported member 'getLastSyncTime'.
+src/components/ShareDealSimple.tsx(47,5): error TS2339: Property 'permissionCheck' does not exist on type 'UseSharingLimitsReturn'.
+src/components/ShareDealSimple.tsx(48,5): error TS2339: Property 'isLoading' does not exist on type 'UseSharingLimitsReturn'.
+src/components/ShareDealSimple.tsx(49,5): error TS2339: Property 'checkPermission' does not exist on type 'UseSharingLimitsReturn'.
+src/components/ShareDealSimple.tsx(50,5): error TS2339: Property 'logShare' does not exist on type 'UseSharingLimitsReturn'.
+src/components/Sharing/LimitExceededModal.tsx(12,45): error TS2307: Cannot find module '../types/sharingLimits' or its corresponding type declarations.
+src/components/Sharing/ShareCouponModal.tsx(232,47): error TS2339: Property 'expires_at' does not exist on type 'Coupon'.
+src/components/Sharing/ShareCouponModal.tsx(238,47): error TS2339: Property 'minimum_purchase' does not exist on type 'Coupon'.
+src/components/Sharing/SharingStatsCard.tsx(11,35): error TS2307: Cannot find module '../types/sharingLimits' or its corresponding type declarations.
+src/components/user/CouponBrowser.tsx(75,11): error TS2339: Property 'collectCoupon' does not exist on type '{ coupons: Coupon[]; coupon: Coupon; loading: boolean; error: string; fetchCoupons: (targetBusinessId?: string, filters?: CouponFilters) => Promise<any[]>; ... 13 more ...; generateCouponCode: (type?: string) => string; }'.
+src/components/user/CouponBrowser.tsx(75,26): error TS2339: Property 'getUserCollectedCoupons' does not exist on type '{ coupons: Coupon[]; coupon: Coupon; loading: boolean; error: string; fetchCoupons: (targetBusinessId?: string, filters?: CouponFilters) => Promise<any[]>; ... 13 more ...; generateCouponCode: (type?: string) => string; }'.
+src/components/user/CouponBrowser.tsx(107,13): error TS2339: Property 'info' does not exist on type '{ (message: Message, opts?: Partial<Pick<Toast, "style" | "id" | "icon" | "className" | "position" | "duration" | "ariaProps" | "iconTheme" | "toasterId" | "removeDelay">>): string; ... 8 more ...; promise<T>(promise: Promise<...> | (() => Promise<...>), msgs: { ...; }, opts?: DefaultToastOptions): Promise<...>; }'.
+src/components/user/CouponBrowser.tsx(153,57): error TS2339: Property 'expires_at' does not exist on type 'Coupon'.
+src/components/user/CouponBrowser.tsx(189,48): error TS2339: Property 'expires_at' does not exist on type 'Coupon'.
+src/components/user/CouponBrowser.tsx(190,48): error TS2339: Property 'expires_at' does not exist on type 'Coupon'.
+src/components/user/CouponBrowser.tsx(198,51): error TS2339: Property 'business_latitude' does not exist on type 'Coupon'.
+src/components/user/CouponBrowser.tsx(198,77): error TS2339: Property 'business_longitude' does not exist on type 'Coupon'.
+src/components/user/CouponBrowser.tsx(199,51): error TS2339: Property 'business_latitude' does not exist on type 'Coupon'.
+src/components/user/CouponBrowser.tsx(199,77): error TS2339: Property 'business_longitude' does not exist on type 'Coupon'.
+src/components/user/CouponBrowser.tsx(257,53): error TS2339: Property 'expires_at' does not exist on type 'Coupon'.
+src/components/user/CouponBrowser.tsx(265,24): error TS2339: Property 'business' does not exist on type 'Coupon'.
+src/components/user/CouponBrowser.tsx(279,54): error TS2339: Property 'expires_at' does not exist on type 'Coupon'.
+src/components/user/CouponBrowser.tsx(280,59): error TS2339: Property 'business' does not exist on type 'Coupon'.
+src/components/user/CouponBrowser.tsx(281,30): error TS2339: Property 'business' does not exist on type 'Coupon'.
+src/components/user/CouponBrowser.tsx(518,54): error TS2339: Property 'business_latitude' does not exist on type 'Coupon'.
+src/components/user/CouponBrowser.tsx(519,54): error TS2339: Property 'business_longitude' does not exist on type 'Coupon'.
+src/components/user/CouponRedemption.tsx(98,32): error TS2339: Property 'business_id' does not exist on type 'UserCouponCollection'.
+src/components/user/CouponRedemption.tsx(129,16): error TS2339: Property 'expires_at' does not exist on type 'Coupon'.
+src/components/user/CouponRedemption.tsx(143,9): error TS2554: Expected 2 arguments, but got 3.
+src/components/user/CouponRedemption.tsx(202,48): error TS2339: Property 'minimum_purchase' does not exist on type 'Coupon'.
+src/components/user/CouponRedemption.tsx(204,17): error TS2339: Property 'value' does not exist on type 'Coupon'.
+src/components/user/CouponRedemption.tsx(204,39): error TS2339: Property 'minimum_purchase' does not exist on type 'Coupon'.
+src/components/user/CouponRedemption.tsx(205,16): error TS2339: Property 'maximum_discount' does not exist on type 'Coupon'.
+src/components/user/CouponRedemption.tsx(209,28): error TS2339: Property 'value' does not exist on type 'Coupon'.
+src/components/user/CouponRedemption.tsx(215,24): error TS2339: Property 'value' does not exist on type 'Coupon'.
+src/components/user/CouponRedemption.tsx(217,23): error TS2339: Property 'value' does not exist on type 'Coupon'.
+src/components/user/CouponRedemption.tsx(252,40): error TS2304: Cannot find name 'formatTimeRemaining'.
+src/components/user/CouponRedemption.tsx(274,23): error TS2339: Property 'business_address' does not exist on type 'Coupon'.
+src/components/user/CouponRedemption.tsx(277,33): error TS2339: Property 'business_address' does not exist on type 'Coupon'.
+src/components/user/CouponRedemption.tsx(366,25): error TS2339: Property 'minimum_purchase' does not exist on type 'Coupon'.
+src/components/user/CouponRedemption.tsx(369,54): error TS2339: Property 'minimum_purchase' does not exist on type 'Coupon'.
+src/components/user/CouponRedemption.tsx(372,25): error TS2339: Property 'maximum_discount' does not exist on type 'Coupon'.
+src/components/user/CouponRedemption.tsx(375,54): error TS2339: Property 'maximum_discount' does not exist on type 'Coupon'.
+src/hooks/index.ts(28,3): error TS2614: Module '"./useDrivers"' has no exported member 'DriverServiceError'. Did you mean to use 'import DriverServiceError from "./useDrivers"' instead?
+src/hooks/index.ts(31,8): error TS2614: Module '"./useDrivers"' has no exported member 'DriverListOptions'. Did you mean to use 'import DriverListOptions from "./useDrivers"' instead?
+src/hooks/index.ts(32,8): error TS2614: Module '"./useDrivers"' has no exported member 'DriverFilters'. Did you mean to use 'import DriverFilters from "./useDrivers"' instead?
+src/hooks/useAdvancedSearch.ts(127,49): error TS2339: Property 'latitude' does not exist on type 'Coordinates'.
+src/hooks/useAdvancedSearch.ts(128,50): error TS2339: Property 'longitude' does not exist on type 'Coordinates'.
+src/hooks/useAdvancedSearch.ts(200,47): error TS2339: Property 'latitude' does not exist on type 'Coordinates'.
+src/hooks/useAdvancedSearch.ts(201,48): error TS2339: Property 'longitude' does not exist on type 'Coordinates'.
+src/hooks/useAdvancedSearch.ts(296,47): error TS2339: Property 'latitude' does not exist on type 'Coordinates'.
+src/hooks/useAdvancedSearch.ts(297,48): error TS2339: Property 'longitude' does not exist on type 'Coordinates'.
+src/hooks/useCampaigns.ts(17,3): error TS2305: Module '"../types/campaigns"' has no exported member 'AdFormat'.
+src/hooks/useCheckins.ts(446,25): error TS2339: Property 'gtag' does not exist on type 'Window & typeof globalThis'.
+src/hooks/useCheckins.ts(447,16): error TS2339: Property 'gtag' does not exist on type 'Window & typeof globalThis'.
+src/hooks/useConversationKeyboardShortcuts.ts(31,15): error TS2353: Object literal may only specify known properties, and 'action' does not exist in type 'Partial<Pick<Toast, "style" | "id" | "icon" | "className" | "position" | "duration" | "ariaProps" | "iconTheme" | "toasterId" | "removeDelay">>'.
+src/hooks/useConversationKeyboardShortcuts.ts(52,15): error TS2353: Object literal may only specify known properties, and 'action' does not exist in type 'Partial<Pick<Toast, "style" | "id" | "icon" | "className" | "position" | "duration" | "ariaProps" | "iconTheme" | "toasterId" | "removeDelay">>'.
+src/hooks/useFollow.ts(5,3): error TS2614: Module '"../services/followService"' has no exported member 'followUser'. Did you mean to use 'import followUser from "../services/followService"' instead?
+src/hooks/useFollow.ts(6,3): error TS2614: Module '"../services/followService"' has no exported member 'unfollowUser'. Did you mean to use 'import unfollowUser from "../services/followService"' instead?
+src/hooks/useFollow.ts(7,3): error TS2614: Module '"../services/followService"' has no exported member 'isFollowing'. Did you mean to use 'import isFollowing from "../services/followService"' instead?
+src/hooks/useFollow.ts(8,3): error TS2614: Module '"../services/followService"' has no exported member 'getFollowers'. Did you mean to use 'import getFollowers from "../services/followService"' instead?
+src/hooks/useFollow.ts(9,3): error TS2614: Module '"../services/followService"' has no exported member 'getFollowing'. Did you mean to use 'import getFollowing from "../services/followService"' instead?
+src/hooks/useFollow.ts(10,3): error TS2614: Module '"../services/followService"' has no exported member 'getFollowerCount'. Did you mean to use 'import getFollowerCount from "../services/followService"' instead?
+src/hooks/useFollow.ts(11,3): error TS2614: Module '"../services/followService"' has no exported member 'getFollowingCount'. Did you mean to use 'import getFollowingCount from "../services/followService"' instead?
+src/hooks/useFollow.ts(12,3): error TS2614: Module '"../services/followService"' has no exported member 'getMutualFollowers'. Did you mean to use 'import getMutualFollowers from "../services/followService"' instead?
+src/hooks/useFollow.ts(13,3): error TS2614: Module '"../services/followService"' has no exported member 'subscribeToFollowChanges'. Did you mean to use 'import subscribeToFollowChanges from "../services/followService"' instead?
+src/hooks/useFollow.ts(15,25): error TS2307: Cannot find module '../contexts/AuthContext' or its corresponding type declarations.
+src/hooks/useFriendsList.ts(4,31): error TS2307: Cannot find module '../services/friendService' or its corresponding type declarations.
+src/hooks/useFriendsList.ts(6,33): error TS2307: Cannot find module '../services/friendService' or its corresponding type declarations.
+src/hooks/useProducts.ts(160,30): error TS2339: Property 'price' does not exist on type 'ProductFormData'.
+src/hooks/useProducts.ts(161,33): error TS2339: Property 'category' does not exist on type 'ProductFormData'.
+src/hooks/useProducts.ts(232,19): error TS2339: Property 'price' does not exist on type 'Partial<ProductFormData>'.
+src/hooks/useProducts.ts(232,70): error TS2339: Property 'price' does not exist on type 'Partial<ProductFormData>'.
+src/hooks/useProducts.ts(233,19): error TS2339: Property 'category' does not exist on type 'Partial<ProductFormData>'.
+src/hooks/useProducts.ts(233,76): error TS2339: Property 'category' does not exist on type 'Partial<ProductFormData>'.
+src/hooks/useProductSocial.ts(115,26): error TS2339: Property 'price' does not exist on type 'Product'.
+src/hooks/useProductSocial.ts(162,26): error TS2339: Property 'price' does not exist on type 'Product'.
+src/hooks/useProductSocial.ts(200,15): error TS2339: Property 'info' does not exist on type '{ (message: Message, opts?: Partial<Pick<Toast, "style" | "id" | "icon" | "className" | "position" | "duration" | "ariaProps" | "iconTheme" | "toasterId" | "removeDelay">>): string; ... 8 more ...; promise<T>(promise: Promise<...> | (() => Promise<...>), msgs: { ...; }, opts?: DefaultToastOptions): Promise<...>; }'.
+src/hooks/useProductSocial.ts(216,15): error TS2339: Property 'info' does not exist on type '{ (message: Message, opts?: Partial<Pick<Toast, "style" | "id" | "icon" | "className" | "position" | "duration" | "ariaProps" | "iconTheme" | "toasterId" | "removeDelay">>): string; ... 8 more ...; promise<T>(promise: Promise<...> | (() => Promise<...>), msgs: { ...; }, opts?: DefaultToastOptions): Promise<...>; }'.
+src/hooks/usePYMK.ts(8,32): error TS2307: Cannot find module '../services/friendService' or its corresponding type declarations.
+src/hooks/useReactions.ts(48,27): error TS2872: This kind of expression is always truthy.
+src/hooks/useSimpleFavorites.ts(230,15): error TS2339: Property 'info' does not exist on type '{ (message: Message, opts?: Partial<Pick<Toast, "style" | "id" | "icon" | "className" | "position" | "duration" | "ariaProps" | "iconTheme" | "toasterId" | "removeDelay">>): string; ... 8 more ...; promise<T>(promise: Promise<...> | (() => Promise<...>), msgs: { ...; }, opts?: DefaultToastOptions): Promise<...>; }'.
+src/pages/TempFriendRequests.tsx(147,35): error TS2339: Property 'avatar_url' does not exist on type '{ id: any; full_name: any; email: any; avatar_url: any; } | { id: any; full_name: string; email: string; }'.
+  Property 'avatar_url' does not exist on type '{ id: any; full_name: string; email: string; }'.
+src/pages/TempFriendRequests.tsx(149,43): error TS2339: Property 'avatar_url' does not exist on type '{ id: any; full_name: any; email: any; avatar_url: any; } | { id: any; full_name: string; email: string; }'.
+  Property 'avatar_url' does not exist on type '{ id: any; full_name: string; email: string; }'.
+src/pages/TestSearchFilters.tsx(14,49): error TS2339: Property 'removeFilter' does not exist on type '{ filters: FriendSearchFilters; updateFilters: (newFilters: Partial<FriendSearchFilters>) => void; clearFilters: () => void; hasActiveFilters: boolean; activeFilterCount: number; }'.
+src/pages/TestSearchFilters.tsx(14,63): error TS2339: Property 'filterCount' does not exist on type '{ filters: FriendSearchFilters; updateFilters: (newFilters: Partial<FriendSearchFilters>) => void; clearFilters: () => void; hasActiveFilters: boolean; activeFilterCount: number; }'.
+src/services/index.ts(8,3): error TS2300: Duplicate identifier 'driverService'.
+src/services/index.ts(27,3): error TS2300: Duplicate identifier 'targetingService'.
+src/services/index.ts(38,21): error TS2300: Duplicate identifier 'driverService'.
+src/services/index.ts(39,21): error TS2300: Duplicate identifier 'targetingService'.
+src/services/mockTargetingService.ts(28,31): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/services/mockTargetingService.ts(28,47): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/services/mockTargetingService.ts(55,11): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/services/mockTargetingService.ts(120,23): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/services/mockTargetingService.ts(120,49): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/services/mockTargetingService.ts(137,23): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/services/mockTargetingService.ts(137,49): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/services/mockTargetingService.ts(138,21): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/services/offlineQueueService.ts(389,13): error TS2561: Object literal may only specify known properties, but 'linkPreview' does not exist in type 'SendMessageParams'. Did you mean to write 'linkPreviews'?
+src/services/targetingService.ts(72,13): error TS2339: Property 'min_purchases' does not exist on type 'TargetingRules'.
+src/services/targetingService.ts(73,35): error TS2339: Property 'min_purchases' does not exist on type 'TargetingRules'.
+src/services/targetingService.ts(193,22): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/services/targetingService.ts(193,38): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/services/targetingService.ts(194,41): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/services/targetingService.ts(235,22): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/services/targetingService.ts(235,38): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/services/targetingService.ts(236,41): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/services/targetingService.ts(333,12): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/services/targetingService.ts(333,28): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/services/targetingService.ts(349,11): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/services/targetingService.ts(426,23): error TS2339: Property 'cities' does not exist on type 'Partial<TargetingRules>'.
+src/services/targetingService.ts(513,12): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/store/authStore.ts(215,17): error TS2345: Argument of type 'PromiseLike<any>' is not assignable to parameter of type 'Promise<any>'.
+  Type 'PromiseLike<any>' is missing the following properties from type 'Promise<any>': catch, finally, [Symbol.toStringTag]
+src/store/authStore.ts(246,27): error TS2345: Argument of type 'PromiseLike<PostgrestSingleResponse<null>>' is not assignable to parameter of type 'Promise<any>'.
+  Type 'PromiseLike<PostgrestSingleResponse<null>>' is missing the following properties from type 'Promise<any>': catch, finally, [Symbol.toStringTag]
+src/store/messagingStore.ts(205,13): error TS2345: Argument of type '(state: MessagingState) => { conversations: ConversationWithDetails[]; unreadCounts: Map<unknown, unknown>; totalUnreadCount: number; }' is not assignable to parameter of type 'MessagingState | Partial<MessagingState> | ((state: MessagingState) => MessagingState | Partial<MessagingState>)'.
+  Type '(state: MessagingState) => { conversations: ConversationWithDetails[]; unreadCounts: Map<unknown, unknown>; totalUnreadCount: number; }' is not assignable to type '(state: MessagingState) => MessagingState | Partial<MessagingState>'.
+    Type '{ conversations: ConversationWithDetails[]; unreadCounts: Map<unknown, unknown>; totalUnreadCount: number; }' is not assignable to type 'MessagingState | Partial<MessagingState>'.
+      Type '{ conversations: ConversationWithDetails[]; unreadCounts: Map<unknown, unknown>; totalUnreadCount: number; }' is not assignable to type 'Partial<MessagingState>'.
+        Types of property 'unreadCounts' are incompatible.
+          Type 'Map<unknown, unknown>' is not assignable to type 'Record<string, number>'.
+            Index signature for type 'string' is missing in type 'Map<unknown, unknown>'.
+src/store/messagingStore.ts(214,37): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(iterable?: Iterable<readonly [unknown, unknown]>): Map<unknown, unknown>', gave the following error.
+    Argument of type 'Record<string, number>' is not assignable to parameter of type 'Iterable<readonly [unknown, unknown]>'.
+      Property '[Symbol.iterator]' is missing in type 'Record<string, number>' but required in type 'Iterable<readonly [unknown, unknown]>'.
+  Overload 2 of 4, '(entries?: readonly (readonly [unknown, unknown])[]): Map<unknown, unknown>', gave the following error.
+    Argument of type 'Record<string, number>' is not assignable to parameter of type 'readonly (readonly [unknown, unknown])[]'.
+      Type 'Record<string, number>' is missing the following properties from type 'readonly (readonly [unknown, unknown])[]': length, concat, join, slice, and 20 more.
+src/store/messagingStore.ts(233,13): error TS2345: Argument of type '(state: MessagingState) => { conversations: ConversationWithDetails[]; unreadCounts: Map<unknown, unknown>; totalUnreadCount: number; }' is not assignable to parameter of type 'MessagingState | Partial<MessagingState> | ((state: MessagingState) => MessagingState | Partial<MessagingState>)'.
+  Type '(state: MessagingState) => { conversations: ConversationWithDetails[]; unreadCounts: Map<unknown, unknown>; totalUnreadCount: number; }' is not assignable to type '(state: MessagingState) => MessagingState | Partial<MessagingState>'.
+    Type '{ conversations: ConversationWithDetails[]; unreadCounts: Map<unknown, unknown>; totalUnreadCount: number; }' is not assignable to type 'MessagingState | Partial<MessagingState>'.
+      Type '{ conversations: ConversationWithDetails[]; unreadCounts: Map<unknown, unknown>; totalUnreadCount: number; }' is not assignable to type 'Partial<MessagingState>'.
+        Types of property 'unreadCounts' are incompatible.
+          Type 'Map<unknown, unknown>' is not assignable to type 'Record<string, number>'.
+            Index signature for type 'string' is missing in type 'Map<unknown, unknown>'.
+src/store/messagingStore.ts(238,35): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(iterable?: Iterable<readonly [unknown, unknown]>): Map<unknown, unknown>', gave the following error.
+    Argument of type 'Record<string, number>' is not assignable to parameter of type 'Iterable<readonly [unknown, unknown]>'.
+      Property '[Symbol.iterator]' is missing in type 'Record<string, number>' but required in type 'Iterable<readonly [unknown, unknown]>'.
+  Overload 2 of 4, '(entries?: readonly (readonly [unknown, unknown])[]): Map<unknown, unknown>', gave the following error.
+    Argument of type 'Record<string, number>' is not assignable to parameter of type 'readonly (readonly [unknown, unknown])[]'.
+      Type 'Record<string, number>' is missing the following properties from type 'readonly (readonly [unknown, unknown])[]': length, concat, join, slice, and 20 more.
+src/store/messagingStore.ts(304,15): error TS2322: Type 'Map<unknown, unknown>' is not assignable to type 'Record<string, number>'.
+  Index signature for type 'string' is missing in type 'Map<unknown, unknown>'.
+src/store/messagingStore.ts(304,38): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(iterable?: Iterable<readonly [unknown, unknown]>): Map<unknown, unknown>', gave the following error.
+    Argument of type 'Record<string, number>' is not assignable to parameter of type 'Iterable<readonly [unknown, unknown]>'.
+      Property '[Symbol.iterator]' is missing in type 'Record<string, number>' but required in type 'Iterable<readonly [unknown, unknown]>'.
+  Overload 2 of 4, '(entries?: readonly (readonly [unknown, unknown])[]): Map<unknown, unknown>', gave the following error.
+    Argument of type 'Record<string, number>' is not assignable to parameter of type 'readonly (readonly [unknown, unknown])[]'.
+      Type 'Record<string, number>' is missing the following properties from type 'readonly (readonly [unknown, unknown])[]': length, concat, join, slice, and 20 more.
+src/store/messagingStore.ts(305,28): error TS2349: This expression is not callable.
+  Type 'Number' has no call signatures.
+src/store/messagingStore.ts(330,13): error TS2345: Argument of type '(state: MessagingState) => { conversations: ConversationWithDetails[]; unreadCounts: Map<unknown, unknown>; totalUnreadCount: number; }' is not assignable to parameter of type 'MessagingState | Partial<MessagingState> | ((state: MessagingState) => MessagingState | Partial<MessagingState>)'.
+  Type '(state: MessagingState) => { conversations: ConversationWithDetails[]; unreadCounts: Map<unknown, unknown>; totalUnreadCount: number; }' is not assignable to type '(state: MessagingState) => MessagingState | Partial<MessagingState>'.
+    Type '{ conversations: ConversationWithDetails[]; unreadCounts: Map<unknown, unknown>; totalUnreadCount: number; }' is not assignable to type 'MessagingState | Partial<MessagingState>'.
+      Type '{ conversations: ConversationWithDetails[]; unreadCounts: Map<unknown, unknown>; totalUnreadCount: number; }' is not assignable to type 'Partial<MessagingState>'.
+        Types of property 'unreadCounts' are incompatible.
+          Type 'Map<unknown, unknown>' is not assignable to type 'Record<string, number>'.
+            Index signature for type 'string' is missing in type 'Map<unknown, unknown>'.
+src/store/messagingStore.ts(336,37): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(iterable?: Iterable<readonly [unknown, unknown]>): Map<unknown, unknown>', gave the following error.
+    Argument of type 'Record<string, number>' is not assignable to parameter of type 'Iterable<readonly [unknown, unknown]>'.
+      Property '[Symbol.iterator]' is missing in type 'Record<string, number>' but required in type 'Iterable<readonly [unknown, unknown]>'.
+  Overload 2 of 4, '(entries?: readonly (readonly [unknown, unknown])[]): Map<unknown, unknown>', gave the following error.
+    Argument of type 'Record<string, number>' is not assignable to parameter of type 'readonly (readonly [unknown, unknown])[]'.
+      Type 'Record<string, number>' is missing the following properties from type 'readonly (readonly [unknown, unknown])[]': length, concat, join, slice, and 20 more.
+src/store/messagingStore.ts(346,13): error TS2322: Type 'unknown' is not assignable to type 'number'.
+src/store/messagingStore.ts(373,13): error TS2345: Argument of type '(state: MessagingState) => { messages: Map<unknown, unknown>; }' is not assignable to parameter of type 'MessagingState | Partial<MessagingState> | ((state: MessagingState) => MessagingState | Partial<MessagingState>)'.
+  Type '(state: MessagingState) => { messages: Map<unknown, unknown>; }' is not assignable to type '(state: MessagingState) => MessagingState | Partial<MessagingState>'.
+    Type '{ messages: Map<unknown, unknown>; }' is not assignable to type 'MessagingState | Partial<MessagingState>'.
+      Type '{ messages: Map<unknown, unknown>; }' is not assignable to type 'Partial<MessagingState>'.
+        Types of property 'messages' are incompatible.
+          Type 'Map<unknown, unknown>' is not assignable to type 'Record<string, Message[]>'.
+            Index signature for type 'string' is missing in type 'Map<unknown, unknown>'.
+src/store/messagingStore.ts(374,39): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(iterable?: Iterable<readonly [unknown, unknown]>): Map<unknown, unknown>', gave the following error.
+    Argument of type 'Record<string, Message[]>' is not assignable to parameter of type 'Iterable<readonly [unknown, unknown]>'.
+      Property '[Symbol.iterator]' is missing in type 'Record<string, Message[]>' but required in type 'Iterable<readonly [unknown, unknown]>'.
+  Overload 2 of 4, '(entries?: readonly (readonly [unknown, unknown])[]): Map<unknown, unknown>', gave the following error.
+    Argument of type 'Record<string, Message[]>' is not assignable to parameter of type 'readonly (readonly [unknown, unknown])[]'.
+      Type 'Record<string, Message[]>' is missing the following properties from type 'readonly (readonly [unknown, unknown])[]': length, concat, join, slice, and 20 more.
+src/store/messagingStore.ts(378,54): error TS2339: Property 'filter' does not exist on type 'unknown'.
+src/store/messagingStore.ts(397,13): error TS2345: Argument of type '(state: MessagingState) => { messages?: undefined; } | { messages: Map<unknown, unknown>; }' is not assignable to parameter of type 'MessagingState | Partial<MessagingState> | ((state: MessagingState) => MessagingState | Partial<MessagingState>)'.
+  Type '(state: MessagingState) => { messages?: undefined; } | { messages: Map<unknown, unknown>; }' is not assignable to type '(state: MessagingState) => MessagingState | Partial<MessagingState>'.
+    Type '{ messages?: undefined; } | { messages: Map<unknown, unknown>; }' is not assignable to type 'MessagingState | Partial<MessagingState>'.
+      Type '{ messages: Map<unknown, unknown>; }' is not assignable to type 'MessagingState | Partial<MessagingState>'.
+        Type '{ messages: Map<unknown, unknown>; }' is not assignable to type 'Partial<MessagingState>'.
+          Types of property 'messages' are incompatible.
+            Type 'Map<unknown, unknown>' is not assignable to type 'Record<string, Message[]>'.
+              Index signature for type 'string' is missing in type 'Map<unknown, unknown>'.
+src/store/messagingStore.ts(398,39): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(iterable?: Iterable<readonly [unknown, unknown]>): Map<unknown, unknown>', gave the following error.
+    Argument of type 'Record<string, Message[]>' is not assignable to parameter of type 'Iterable<readonly [unknown, unknown]>'.
+      Property '[Symbol.iterator]' is missing in type 'Record<string, Message[]>' but required in type 'Iterable<readonly [unknown, unknown]>'.
+  Overload 2 of 4, '(entries?: readonly (readonly [unknown, unknown])[]): Map<unknown, unknown>', gave the following error.
+    Argument of type 'Record<string, Message[]>' is not assignable to parameter of type 'readonly (readonly [unknown, unknown])[]'.
+      Type 'Record<string, Message[]>' is missing the following properties from type 'readonly (readonly [unknown, unknown])[]': length, concat, join, slice, and 20 more.
+src/store/messagingStore.ts(402,36): error TS2339: Property 'some' does not exist on type 'unknown'.
+src/store/messagingStore.ts(424,56): error TS2339: Property 'find' does not exist on type 'unknown'.
+src/store/messagingStore.ts(437,52): error TS2339: Property 'map' does not exist on type 'unknown'.
+src/store/messagingStore.ts(442,58): error TS2339: Property 'find' does not exist on type 'unknown'.
+src/store/messagingStore.ts(452,35): error TS2488: Type 'unknown' must have a '[Symbol.iterator]()' method that returns an iterator.
+src/store/messagingStore.ts(457,31): error TS2339: Property 'slice' does not exist on type 'unknown'.
+src/store/messagingStore.ts(465,13): error TS2345: Argument of type '(state: MessagingState) => { messages?: undefined; } | { messages: Map<unknown, unknown>; }' is not assignable to parameter of type 'MessagingState | Partial<MessagingState> | ((state: MessagingState) => MessagingState | Partial<MessagingState>)'.
+  Type '(state: MessagingState) => { messages?: undefined; } | { messages: Map<unknown, unknown>; }' is not assignable to type '(state: MessagingState) => MessagingState | Partial<MessagingState>'.
+    Type '{ messages?: undefined; } | { messages: Map<unknown, unknown>; }' is not assignable to type 'MessagingState | Partial<MessagingState>'.
+      Type '{ messages: Map<unknown, unknown>; }' is not assignable to type 'MessagingState | Partial<MessagingState>'.
+        Type '{ messages: Map<unknown, unknown>; }' is not assignable to type 'Partial<MessagingState>'.
+          Types of property 'messages' are incompatible.
+            Type 'Map<unknown, unknown>' is not assignable to type 'Record<string, Message[]>'.
+              Index signature for type 'string' is missing in type 'Map<unknown, unknown>'.
+src/store/messagingStore.ts(468,39): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(iterable?: Iterable<readonly [unknown, unknown]>): Map<unknown, unknown>', gave the following error.
+    Argument of type 'Record<string, Message[]>' is not assignable to parameter of type 'Iterable<readonly [unknown, unknown]>'.
+      Property '[Symbol.iterator]' is missing in type 'Record<string, Message[]>' but required in type 'Iterable<readonly [unknown, unknown]>'.
+  Overload 2 of 4, '(entries?: readonly (readonly [unknown, unknown])[]): Map<unknown, unknown>', gave the following error.
+    Argument of type 'Record<string, Message[]>' is not assignable to parameter of type 'readonly (readonly [unknown, unknown])[]'.
+      Type 'Record<string, Message[]>' is missing the following properties from type 'readonly (readonly [unknown, unknown])[]': length, concat, join, slice, and 20 more.
+src/store/messagingStore.ts(482,49): error TS2339: Property 'map' does not exist on type 'unknown'.
+src/store/messagingStore.ts(492,26): error TS2339: Property 'created_at' does not exist on type 'unknown'.
+src/store/messagingStore.ts(492,61): error TS2339: Property 'created_at' does not exist on type 'unknown'.
+src/store/messagingStore.ts(507,13): error TS2345: Argument of type '(state: MessagingState) => { messages: Map<unknown, unknown>; }' is not assignable to parameter of type 'MessagingState | Partial<MessagingState> | ((state: MessagingState) => MessagingState | Partial<MessagingState>)'.
+  Type '(state: MessagingState) => { messages: Map<unknown, unknown>; }' is not assignable to type '(state: MessagingState) => MessagingState | Partial<MessagingState>'.
+    Type '{ messages: Map<unknown, unknown>; }' is not assignable to type 'MessagingState | Partial<MessagingState>'.
+      Type '{ messages: Map<unknown, unknown>; }' is not assignable to type 'Partial<MessagingState>'.
+        Types of property 'messages' are incompatible.
+          Type 'Map<unknown, unknown>' is not assignable to type 'Record<string, Message[]>'.
+            Index signature for type 'string' is missing in type 'Map<unknown, unknown>'.
+src/store/messagingStore.ts(508,39): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(iterable?: Iterable<readonly [unknown, unknown]>): Map<unknown, unknown>', gave the following error.
+    Argument of type 'Record<string, Message[]>' is not assignable to parameter of type 'Iterable<readonly [unknown, unknown]>'.
+      Property '[Symbol.iterator]' is missing in type 'Record<string, Message[]>' but required in type 'Iterable<readonly [unknown, unknown]>'.
+  Overload 2 of 4, '(entries?: readonly (readonly [unknown, unknown])[]): Map<unknown, unknown>', gave the following error.
+    Argument of type 'Record<string, Message[]>' is not assignable to parameter of type 'readonly (readonly [unknown, unknown])[]'.
+      Type 'Record<string, Message[]>' is missing the following properties from type 'readonly (readonly [unknown, unknown])[]': length, concat, join, slice, and 20 more.
+src/store/messagingStore.ts(512,34): error TS2339: Property 'map' does not exist on type 'unknown'.
+src/store/messagingStore.ts(520,13): error TS2345: Argument of type '(state: MessagingState) => { messages: Map<unknown, unknown>; }' is not assignable to parameter of type 'MessagingState | Partial<MessagingState> | ((state: MessagingState) => MessagingState | Partial<MessagingState>)'.
+  Type '(state: MessagingState) => { messages: Map<unknown, unknown>; }' is not assignable to type '(state: MessagingState) => MessagingState | Partial<MessagingState>'.
+    Type '{ messages: Map<unknown, unknown>; }' is not assignable to type 'MessagingState | Partial<MessagingState>'.
+      Type '{ messages: Map<unknown, unknown>; }' is not assignable to type 'Partial<MessagingState>'.
+        Types of property 'messages' are incompatible.
+          Type 'Map<unknown, unknown>' is not assignable to type 'Record<string, Message[]>'.
+            Index signature for type 'string' is missing in type 'Map<unknown, unknown>'.
+src/store/messagingStore.ts(521,39): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(iterable?: Iterable<readonly [unknown, unknown]>): Map<unknown, unknown>', gave the following error.
+    Argument of type 'Record<string, Message[]>' is not assignable to parameter of type 'Iterable<readonly [unknown, unknown]>'.
+      Property '[Symbol.iterator]' is missing in type 'Record<string, Message[]>' but required in type 'Iterable<readonly [unknown, unknown]>'.
+  Overload 2 of 4, '(entries?: readonly (readonly [unknown, unknown])[]): Map<unknown, unknown>', gave the following error.
+    Argument of type 'Record<string, Message[]>' is not assignable to parameter of type 'readonly (readonly [unknown, unknown])[]'.
+      Type 'Record<string, Message[]>' is missing the following properties from type 'readonly (readonly [unknown, unknown])[]': length, concat, join, slice, and 20 more.
+src/store/messagingStore.ts(525,34): error TS2339: Property 'filter' does not exist on type 'unknown'.
+src/store/messagingStore.ts(531,13): error TS2345: Argument of type '(state: MessagingState) => { messages: Map<unknown, unknown>; }' is not assignable to parameter of type 'MessagingState | Partial<MessagingState> | ((state: MessagingState) => MessagingState | Partial<MessagingState>)'.
+  Type '(state: MessagingState) => { messages: Map<unknown, unknown>; }' is not assignable to type '(state: MessagingState) => MessagingState | Partial<MessagingState>'.
+    Type '{ messages: Map<unknown, unknown>; }' is not assignable to type 'MessagingState | Partial<MessagingState>'.
+      Type '{ messages: Map<unknown, unknown>; }' is not assignable to type 'Partial<MessagingState>'.
+        Types of property 'messages' are incompatible.
+          Type 'Map<unknown, unknown>' is not assignable to type 'Record<string, Message[]>'.
+            Index signature for type 'string' is missing in type 'Map<unknown, unknown>'.
+src/store/messagingStore.ts(532,39): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(iterable?: Iterable<readonly [unknown, unknown]>): Map<unknown, unknown>', gave the following error.
+    Argument of type 'Record<string, Message[]>' is not assignable to parameter of type 'Iterable<readonly [unknown, unknown]>'.
+      Property '[Symbol.iterator]' is missing in type 'Record<string, Message[]>' but required in type 'Iterable<readonly [unknown, unknown]>'.
+  Overload 2 of 4, '(entries?: readonly (readonly [unknown, unknown])[]): Map<unknown, unknown>', gave the following error.
+    Argument of type 'Record<string, Message[]>' is not assignable to parameter of type 'readonly (readonly [unknown, unknown])[]'.
+      Type 'Record<string, Message[]>' is missing the following properties from type 'readonly (readonly [unknown, unknown])[]': length, concat, join, slice, and 20 more.
+src/store/messagingStore.ts(534,45): error TS2488: Type 'unknown' must have a '[Symbol.iterator]()' method that returns an iterator.
+src/store/messagingStore.ts(550,13): error TS2345: Argument of type '(state: MessagingState) => { messages: Map<unknown, unknown>; }' is not assignable to parameter of type 'MessagingState | Partial<MessagingState> | ((state: MessagingState) => MessagingState | Partial<MessagingState>)'.
+  Type '(state: MessagingState) => { messages: Map<unknown, unknown>; }' is not assignable to type '(state: MessagingState) => MessagingState | Partial<MessagingState>'.
+    Type '{ messages: Map<unknown, unknown>; }' is not assignable to type 'MessagingState | Partial<MessagingState>'.
+      Type '{ messages: Map<unknown, unknown>; }' is not assignable to type 'Partial<MessagingState>'.
+        Types of property 'messages' are incompatible.
+          Type 'Map<unknown, unknown>' is not assignable to type 'Record<string, Message[]>'.
+            Index signature for type 'string' is missing in type 'Map<unknown, unknown>'.
+src/store/messagingStore.ts(551,39): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(iterable?: Iterable<readonly [unknown, unknown]>): Map<unknown, unknown>', gave the following error.
+    Argument of type 'Record<string, Message[]>' is not assignable to parameter of type 'Iterable<readonly [unknown, unknown]>'.
+      Property '[Symbol.iterator]' is missing in type 'Record<string, Message[]>' but required in type 'Iterable<readonly [unknown, unknown]>'.
+  Overload 2 of 4, '(entries?: readonly (readonly [unknown, unknown])[]): Map<unknown, unknown>', gave the following error.
+    Argument of type 'Record<string, Message[]>' is not assignable to parameter of type 'readonly (readonly [unknown, unknown])[]'.
+      Type 'Record<string, Message[]>' is missing the following properties from type 'readonly (readonly [unknown, unknown])[]': length, concat, join, slice, and 20 more.
+src/store/messagingStore.ts(562,39): error TS2488: Type 'unknown' must have a '[Symbol.iterator]()' method that returns an iterator.
+src/store/messagingStore.ts(574,13): error TS2345: Argument of type '(state: MessagingState) => { messages: Map<unknown, unknown>; }' is not assignable to parameter of type 'MessagingState | Partial<MessagingState> | ((state: MessagingState) => MessagingState | Partial<MessagingState>)'.
+  Type '(state: MessagingState) => { messages: Map<unknown, unknown>; }' is not assignable to type '(state: MessagingState) => MessagingState | Partial<MessagingState>'.
+    Type '{ messages: Map<unknown, unknown>; }' is not assignable to type 'MessagingState | Partial<MessagingState>'.
+      Type '{ messages: Map<unknown, unknown>; }' is not assignable to type 'Partial<MessagingState>'.
+        Types of property 'messages' are incompatible.
+          Type 'Map<unknown, unknown>' is not assignable to type 'Record<string, Message[]>'.
+            Index signature for type 'string' is missing in type 'Map<unknown, unknown>'.
+src/store/messagingStore.ts(575,39): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(iterable?: Iterable<readonly [unknown, unknown]>): Map<unknown, unknown>', gave the following error.
+    Argument of type 'Record<string, Message[]>' is not assignable to parameter of type 'Iterable<readonly [unknown, unknown]>'.
+      Property '[Symbol.iterator]' is missing in type 'Record<string, Message[]>' but required in type 'Iterable<readonly [unknown, unknown]>'.
+  Overload 2 of 4, '(entries?: readonly (readonly [unknown, unknown])[]): Map<unknown, unknown>', gave the following error.
+    Argument of type 'Record<string, Message[]>' is not assignable to parameter of type 'readonly (readonly [unknown, unknown])[]'.
+      Type 'Record<string, Message[]>' is missing the following properties from type 'readonly (readonly [unknown, unknown])[]': length, concat, join, slice, and 20 more.
+src/store/messagingStore.ts(579,58): error TS2339: Property 'some' does not exist on type 'unknown'.
+src/store/messagingStore.ts(586,56): error TS2339: Property 'find' does not exist on type 'unknown'.
+src/store/messagingStore.ts(589,52): error TS2339: Property 'filter' does not exist on type 'unknown'.
+src/store/messagingStore.ts(603,52): error TS2339: Property 'map' does not exist on type 'unknown'.
+src/store/messagingStore.ts(613,13): error TS2345: Argument of type '(state: MessagingState) => { messages: Map<unknown, unknown>; }' is not assignable to parameter of type 'MessagingState | Partial<MessagingState> | ((state: MessagingState) => MessagingState | Partial<MessagingState>)'.
+  Type '(state: MessagingState) => { messages: Map<unknown, unknown>; }' is not assignable to type '(state: MessagingState) => MessagingState | Partial<MessagingState>'.
+    Type '{ messages: Map<unknown, unknown>; }' is not assignable to type 'MessagingState | Partial<MessagingState>'.
+      Type '{ messages: Map<unknown, unknown>; }' is not assignable to type 'Partial<MessagingState>'.
+        Types of property 'messages' are incompatible.
+          Type 'Map<unknown, unknown>' is not assignable to type 'Record<string, Message[]>'.
+            Index signature for type 'string' is missing in type 'Map<unknown, unknown>'.
+src/store/messagingStore.ts(614,39): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(iterable?: Iterable<readonly [unknown, unknown]>): Map<unknown, unknown>', gave the following error.
+    Argument of type 'Record<string, Message[]>' is not assignable to parameter of type 'Iterable<readonly [unknown, unknown]>'.
+      Property '[Symbol.iterator]' is missing in type 'Record<string, Message[]>' but required in type 'Iterable<readonly [unknown, unknown]>'.
+  Overload 2 of 4, '(entries?: readonly (readonly [unknown, unknown])[]): Map<unknown, unknown>', gave the following error.
+    Argument of type 'Record<string, Message[]>' is not assignable to parameter of type 'readonly (readonly [unknown, unknown])[]'.
+      Type 'Record<string, Message[]>' is missing the following properties from type 'readonly (readonly [unknown, unknown])[]': length, concat, join, slice, and 20 more.
+src/store/messagingStore.ts(618,56): error TS2339: Property 'map' does not exist on type 'unknown'.
+src/store/messagingStore.ts(633,13): error TS2345: Argument of type '(state: MessagingState) => { messages: Map<unknown, unknown>; }' is not assignable to parameter of type 'MessagingState | Partial<MessagingState> | ((state: MessagingState) => MessagingState | Partial<MessagingState>)'.
+  Type '(state: MessagingState) => { messages: Map<unknown, unknown>; }' is not assignable to type '(state: MessagingState) => MessagingState | Partial<MessagingState>'.
+    Type '{ messages: Map<unknown, unknown>; }' is not assignable to type 'MessagingState | Partial<MessagingState>'.
+      Type '{ messages: Map<unknown, unknown>; }' is not assignable to type 'Partial<MessagingState>'.
+        Types of property 'messages' are incompatible.
+          Type 'Map<unknown, unknown>' is not assignable to type 'Record<string, Message[]>'.
+            Index signature for type 'string' is missing in type 'Map<unknown, unknown>'.
+src/store/messagingStore.ts(634,39): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(iterable?: Iterable<readonly [unknown, unknown]>): Map<unknown, unknown>', gave the following error.
+    Argument of type 'Record<string, Message[]>' is not assignable to parameter of type 'Iterable<readonly [unknown, unknown]>'.
+      Property '[Symbol.iterator]' is missing in type 'Record<string, Message[]>' but required in type 'Iterable<readonly [unknown, unknown]>'.
+  Overload 2 of 4, '(entries?: readonly (readonly [unknown, unknown])[]): Map<unknown, unknown>', gave the following error.
+    Argument of type 'Record<string, Message[]>' is not assignable to parameter of type 'readonly (readonly [unknown, unknown])[]'.
+      Type 'Record<string, Message[]>' is missing the following properties from type 'readonly (readonly [unknown, unknown])[]': length, concat, join, slice, and 20 more.
+src/store/messagingStore.ts(638,56): error TS2339: Property 'map' does not exist on type 'unknown'.
+src/store/messagingStore.ts(653,13): error TS2345: Argument of type '(state: MessagingState) => { unreadCounts: Map<unknown, unknown>; }' is not assignable to parameter of type 'MessagingState | Partial<MessagingState> | ((state: MessagingState) => MessagingState | Partial<MessagingState>)'.
+  Type '(state: MessagingState) => { unreadCounts: Map<unknown, unknown>; }' is not assignable to type '(state: MessagingState) => MessagingState | Partial<MessagingState>'.
+    Type '{ unreadCounts: Map<unknown, unknown>; }' is not assignable to type 'MessagingState | Partial<MessagingState>'.
+      Type '{ unreadCounts: Map<unknown, unknown>; }' is not assignable to type 'Partial<MessagingState>'.
+        Types of property 'unreadCounts' are incompatible.
+          Type 'Map<unknown, unknown>' is not assignable to type 'Record<string, number>'.
+            Index signature for type 'string' is missing in type 'Map<unknown, unknown>'.
+src/store/messagingStore.ts(654,37): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(iterable?: Iterable<readonly [unknown, unknown]>): Map<unknown, unknown>', gave the following error.
+    Argument of type 'Record<string, number>' is not assignable to parameter of type 'Iterable<readonly [unknown, unknown]>'.
+      Property '[Symbol.iterator]' is missing in type 'Record<string, number>' but required in type 'Iterable<readonly [unknown, unknown]>'.
+  Overload 2 of 4, '(entries?: readonly (readonly [unknown, unknown])[]): Map<unknown, unknown>', gave the following error.
+    Argument of type 'Record<string, number>' is not assignable to parameter of type 'readonly (readonly [unknown, unknown])[]'.
+      Type 'Record<string, number>' is missing the following properties from type 'readonly (readonly [unknown, unknown])[]': length, concat, join, slice, and 20 more.
+src/store/messagingStore.ts(668,13): error TS2345: Argument of type '(state: MessagingState) => { unreadCounts: Map<unknown, unknown>; totalUnreadCount: number; }' is not assignable to parameter of type 'MessagingState | Partial<MessagingState> | ((state: MessagingState) => MessagingState | Partial<MessagingState>)'.
+  Type '(state: MessagingState) => { unreadCounts: Map<unknown, unknown>; totalUnreadCount: number; }' is not assignable to type '(state: MessagingState) => MessagingState | Partial<MessagingState>'.
+    Type '{ unreadCounts: Map<unknown, unknown>; totalUnreadCount: number; }' is not assignable to type 'MessagingState | Partial<MessagingState>'.
+      Type '{ unreadCounts: Map<unknown, unknown>; totalUnreadCount: number; }' is not assignable to type 'Partial<MessagingState>'.
+        Types of property 'unreadCounts' are incompatible.
+          Type 'Map<unknown, unknown>' is not assignable to type 'Record<string, number>'.
+            Index signature for type 'string' is missing in type 'Map<unknown, unknown>'.
+src/store/messagingStore.ts(669,37): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(iterable?: Iterable<readonly [unknown, unknown]>): Map<unknown, unknown>', gave the following error.
+    Argument of type 'Record<string, number>' is not assignable to parameter of type 'Iterable<readonly [unknown, unknown]>'.
+      Property '[Symbol.iterator]' is missing in type 'Record<string, number>' but required in type 'Iterable<readonly [unknown, unknown]>'.
+  Overload 2 of 4, '(entries?: readonly (readonly [unknown, unknown])[]): Map<unknown, unknown>', gave the following error.
+    Argument of type 'Record<string, number>' is not assignable to parameter of type 'readonly (readonly [unknown, unknown])[]'.
+      Type 'Record<string, number>' is missing the following properties from type 'readonly (readonly [unknown, unknown])[]': length, concat, join, slice, and 20 more.
+src/store/messagingStore.ts(671,41): error TS2365: Operator '+' cannot be applied to types 'unknown' and '1'.
+src/store/messagingStore.ts(691,13): error TS2345: Argument of type '(state: MessagingState) => { unreadCounts: Map<unknown, unknown>; totalUnreadCount: number; }' is not assignable to parameter of type 'MessagingState | Partial<MessagingState> | ((state: MessagingState) => MessagingState | Partial<MessagingState>)'.
+  Type '(state: MessagingState) => { unreadCounts: Map<unknown, unknown>; totalUnreadCount: number; }' is not assignable to type '(state: MessagingState) => MessagingState | Partial<MessagingState>'.
+    Type '{ unreadCounts: Map<unknown, unknown>; totalUnreadCount: number; }' is not assignable to type 'MessagingState | Partial<MessagingState>'.
+      Type '{ unreadCounts: Map<unknown, unknown>; totalUnreadCount: number; }' is not assignable to type 'Partial<MessagingState>'.
+        Types of property 'unreadCounts' are incompatible.
+          Type 'Map<unknown, unknown>' is not assignable to type 'Record<string, number>'.
+            Index signature for type 'string' is missing in type 'Map<unknown, unknown>'.
+src/store/messagingStore.ts(692,37): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(iterable?: Iterable<readonly [unknown, unknown]>): Map<unknown, unknown>', gave the following error.
+    Argument of type 'Record<string, number>' is not assignable to parameter of type 'Iterable<readonly [unknown, unknown]>'.
+      Property '[Symbol.iterator]' is missing in type 'Record<string, number>' but required in type 'Iterable<readonly [unknown, unknown]>'.
+  Overload 2 of 4, '(entries?: readonly (readonly [unknown, unknown])[]): Map<unknown, unknown>', gave the following error.
+    Argument of type 'Record<string, number>' is not assignable to parameter of type 'readonly (readonly [unknown, unknown])[]'.
+      Type 'Record<string, number>' is missing the following properties from type 'readonly (readonly [unknown, unknown])[]': length, concat, join, slice, and 20 more.
+src/store/messagingStore.ts(705,68): error TS2363: The right-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+src/store/messagingStore.ts(748,13): error TS2345: Argument of type '(state: MessagingState) => { typingUsers: Map<unknown, unknown>; }' is not assignable to parameter of type 'MessagingState | Partial<MessagingState> | ((state: MessagingState) => MessagingState | Partial<MessagingState>)'.
+  Type '(state: MessagingState) => { typingUsers: Map<unknown, unknown>; }' is not assignable to type '(state: MessagingState) => MessagingState | Partial<MessagingState>'.
+    Type '{ typingUsers: Map<unknown, unknown>; }' is not assignable to type 'MessagingState | Partial<MessagingState>'.
+      Type '{ typingUsers: Map<unknown, unknown>; }' is not assignable to type 'Partial<MessagingState>'.
+        Types of property 'typingUsers' are incompatible.
+          Type 'Map<unknown, unknown>' is not assignable to type 'Record<string, string[]>'.
+            Index signature for type 'string' is missing in type 'Map<unknown, unknown>'.
+src/store/messagingStore.ts(749,37): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(iterable?: Iterable<readonly [unknown, unknown]>): Map<unknown, unknown>', gave the following error.
+    Argument of type 'Record<string, string[]>' is not assignable to parameter of type 'Iterable<readonly [unknown, unknown]>'.
+      Property '[Symbol.iterator]' is missing in type 'Record<string, string[]>' but required in type 'Iterable<readonly [unknown, unknown]>'.
+  Overload 2 of 4, '(entries?: readonly (readonly [unknown, unknown])[]): Map<unknown, unknown>', gave the following error.
+    Argument of type 'Record<string, string[]>' is not assignable to parameter of type 'readonly (readonly [unknown, unknown])[]'.
+      Type 'Record<string, string[]>' is missing the following properties from type 'readonly (readonly [unknown, unknown])[]': length, concat, join, slice, and 20 more.
+src/store/messagingStore.ts(750,41): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(iterable?: Iterable<string>): Set<string>', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'Iterable<string>'.
+      Property '[Symbol.iterator]' is missing in type '{}' but required in type 'Iterable<string>'.
+  Overload 2 of 2, '(values?: readonly string[]): Set<string>', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'readonly string[]'.
+      Type '{}' is missing the following properties from type 'readonly string[]': length, concat, join, slice, and 20 more.
+src/store/messagingStore.ts(757,13): error TS2345: Argument of type '(state: MessagingState) => { typingUsers: Map<unknown, unknown>; }' is not assignable to parameter of type 'MessagingState | Partial<MessagingState> | ((state: MessagingState) => MessagingState | Partial<MessagingState>)'.
+  Type '(state: MessagingState) => { typingUsers: Map<unknown, unknown>; }' is not assignable to type '(state: MessagingState) => MessagingState | Partial<MessagingState>'.
+    Type '{ typingUsers: Map<unknown, unknown>; }' is not assignable to type 'MessagingState | Partial<MessagingState>'.
+      Type '{ typingUsers: Map<unknown, unknown>; }' is not assignable to type 'Partial<MessagingState>'.
+        Types of property 'typingUsers' are incompatible.
+          Type 'Map<unknown, unknown>' is not assignable to type 'Record<string, string[]>'.
+            Index signature for type 'string' is missing in type 'Map<unknown, unknown>'.
+src/store/messagingStore.ts(758,37): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(iterable?: Iterable<readonly [unknown, unknown]>): Map<unknown, unknown>', gave the following error.
+    Argument of type 'Record<string, string[]>' is not assignable to parameter of type 'Iterable<readonly [unknown, unknown]>'.
+      Property '[Symbol.iterator]' is missing in type 'Record<string, string[]>' but required in type 'Iterable<readonly [unknown, unknown]>'.
+  Overload 2 of 4, '(entries?: readonly (readonly [unknown, unknown])[]): Map<unknown, unknown>', gave the following error.
+    Argument of type 'Record<string, string[]>' is not assignable to parameter of type 'readonly (readonly [unknown, unknown])[]'.
+      Type 'Record<string, string[]>' is missing the following properties from type 'readonly (readonly [unknown, unknown])[]': length, concat, join, slice, and 20 more.
+src/store/messagingStore.ts(759,41): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(iterable?: Iterable<string>): Set<string>', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'Iterable<string>'.
+      Property '[Symbol.iterator]' is missing in type '{}' but required in type 'Iterable<string>'.
+  Overload 2 of 2, '(values?: readonly string[]): Set<string>', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'readonly string[]'.
+      Type '{}' is missing the following properties from type 'readonly string[]': length, concat, join, slice, and 20 more.
+src/store/messagingStore.ts(766,41): error TS2349: This expression is not callable.
+  Type 'string[]' has no call signatures.
+src/store/messagingStore.ts(813,19): error TS2322: Type 'Map<string, number>' is not assignable to type 'Record<string, number>'.
+  Index signature for type 'string' is missing in type 'Map<string, number>'.
+src/types/campaigns.ts(700,13): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/types/campaigns.ts(700,29): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/types/campaigns.ts(701,25): error TS2339: Property 'cities' does not exist on type 'TargetingRules'.
+src/types/index.ts(13,1): error TS2308: Module './campaigns' has already exported a member named 'AGE_RANGES'. Consider explicitly re-exporting to resolve the ambiguity.
+src/types/index.ts(13,1): error TS2308: Module './campaigns' has already exported a member named 'AgeRange'. Consider explicitly re-exporting to resolve the ambiguity.
+src/types/index.ts(13,1): error TS2308: Module './campaigns' has already exported a member named 'CAMPAIGN_TYPES'. Consider explicitly re-exporting to resolve the ambiguity.
+src/types/index.ts(13,1): error TS2308: Module './campaigns' has already exported a member named 'CampaignType'. Consider explicitly re-exporting to resolve the ambiguity.
+src/types/index.ts(13,1): error TS2308: Module './campaigns' has already exported a member named 'DAYS_OF_WEEK'. Consider explicitly re-exporting to resolve the ambiguity.
+src/types/index.ts(13,1): error TS2308: Module './campaigns' has already exported a member named 'DayOfWeek'. Consider explicitly re-exporting to resolve the ambiguity.
+src/types/index.ts(13,1): error TS2308: Module './campaigns' has already exported a member named 'INCOME_LEVELS'. Consider explicitly re-exporting to resolve the ambiguity.
+src/types/index.ts(13,1): error TS2308: Module './campaigns' has already exported a member named 'INTEREST_CATEGORIES'. Consider explicitly re-exporting to resolve the ambiguity.
+src/types/index.ts(13,1): error TS2308: Module './campaigns' has already exported a member named 'IncomeLevel'. Consider explicitly re-exporting to resolve the ambiguity.
+src/types/index.ts(13,1): error TS2308: Module './campaigns' has already exported a member named 'InterestCategory'. Consider explicitly re-exporting to resolve the ambiguity.
+src/types/sharingLimits.ts(120,3): error TS2484: Export declaration conflicts with exported declaration of 'SharingLimitConfig'.
+src/types/sharingLimits.ts(121,3): error TS2484: Export declaration conflicts with exported declaration of 'SharingLimits'.
+src/types/sharingLimits.ts(122,3): error TS2484: Export declaration conflicts with exported declaration of 'CanShareResult'.
+src/types/sharingLimits.ts(123,3): error TS2484: Export declaration conflicts with exported declaration of 'SharingStatsToday'.
+src/types/sharingLimits.ts(124,3): error TS2484: Export declaration conflicts with exported declaration of 'FriendShareCount'.
+src/types/sharingLimits.ts(125,3): error TS2484: Export declaration conflicts with exported declaration of 'CouponSharingLogEntry'.
+src/types/sharingLimits.ts(126,3): error TS2484: Export declaration conflicts with exported declaration of 'LogCouponShareInput'.
+src/types/sharingLimits.ts(127,3): error TS2484: Export declaration conflicts with exported declaration of 'SharingAnalytics'.
+src/types/sharingLimits.ts(128,3): error TS2484: Export declaration conflicts with exported declaration of 'LimitExceededModalProps'.
+src/types/sharingLimits.ts(129,3): error TS2484: Export declaration conflicts with exported declaration of 'SharingStatsCardProps'.
+src/utils/performanceMonitoring.ts(1,17): error TS2305: Module '"web-vitals"' has no exported member 'onFID'.
+src/utils/registerServiceWorker.ts(1,28): error TS2307: Cannot find module 'virtual:pwa-register' or its corresponding type declarations.
+src/utils/test/checkinTestUtils.ts(209,11): error TS2741: Property 'toJSON' is missing in type '{ latitude: number; longitude: number; accuracy: number; altitude: null; altitudeAccuracy: null; heading: null; speed: null; }' but required in type 'GeolocationCoordinates'.

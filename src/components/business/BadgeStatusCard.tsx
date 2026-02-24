@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useQuery } from '@tanstack/react-query';
 import { getBusinessBadge, BADGE_CONFIG } from '@/services/badgeService';
 import { RecommendationBadge } from './RecommendationBadge';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Trophy, ArrowUpCircle } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -65,26 +64,21 @@ export function BadgeStatusCard({ businessId }: BadgeStatusCardProps) {
 
     return (
         <Card className="relative overflow-hidden border-2 border-indigo-50">
-            <AnimatePresence>
-                {showCelebration && (
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="absolute inset-0 bg-white/90 z-10 flex flex-col items-center justify-center text-center p-4"
-                        onAnimationComplete={() => setTimeout(() => setShowCelebration(false), 3000)}
-                    >
-                        <motion.div
-                            animate={{ rotate: [0, 10, -10, 0] }}
-                            transition={{ duration: 0.5, repeat: Infinity }}
-                        >
-                            <Trophy className="w-16 h-16 text-yellow-500 mb-2" />
-                        </motion.div>
-                        <h3 className="text-2xl font-bold text-indigo-900">Badge Upgrade!</h3>
-                        <p className="text-indigo-600">You earned the {config?.label} Badge!</p>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            <>
+            {showCelebration && (
+                                <div
+                                    className="absolute inset-0 bg-white/90 z-10 flex flex-col items-center justify-center text-center p-4"
+                                    onAnimationComplete={() => setTimeout(() => setShowCelebration(false), 3000)}
+                                >
+                                    <div
+                                    >
+                                        <Trophy className="w-16 h-16 text-yellow-500 mb-2" />
+                                    </div>
+                                    <h3 className="text-2xl font-bold text-indigo-900">Badge Upgrade!</h3>
+                                    <p className="text-indigo-600">You earned the {config?.label} Badge!</p>
+                                </div>
+                            )}
+            </>
 
             <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex justify-between items-center">

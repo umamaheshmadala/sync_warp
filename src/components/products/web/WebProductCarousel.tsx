@@ -40,7 +40,7 @@ export const WebProductCarousel: React.FC<WebProductCarouselProps> = ({
             {/* Main Image */}
             <div className="w-full h-full flex items-center justify-center">
                 {imageList[currentIndex] ? (
-                    <img
+                    <img loading="lazy" decoding="async" 
                         src={imageList[currentIndex].url}
                         alt={imageList[currentIndex].alt_text || productName}
                         className="max-w-full max-h-full object-contain"

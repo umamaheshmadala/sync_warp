@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   User,
   MapPin,
@@ -96,7 +95,7 @@ interface SelectedImages {
 
 const BusinessRegistration: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const queryClient = useQueryClient();
   const [currentStep, setCurrentStep] = useState(0); // Start at Step 0 (Search)
   const [loading, setLoading] = useState(false);
@@ -850,22 +849,18 @@ const BusinessRegistration: React.FC = () => {
 
         {/* Form Content */}
         <div className={`${currentStep >= 2 && currentStep <= 5 ? 'bg-transparent shadow-none p-0' : 'bg-white rounded-lg shadow-md p-6'} mb-6 transition-all duration-300`}>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentStep}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3 }}
-            >
-              {currentStep === 0 && renderStep0()}
-              {currentStep === 1 && renderStep1()}
-              {currentStep === 2 && renderStep2()}
-              {currentStep === 3 && renderStep3()}
-              {currentStep === 4 && renderStep4()}
-              {currentStep === 5 && renderStep5()}
-            </motion.div>
-          </AnimatePresence>
+          <>
+                  <div
+                                key={currentStep}
+                              >
+                                {currentStep === 0 && renderStep0()}
+                                {currentStep === 1 && renderStep1()}
+                                {currentStep === 2 && renderStep2()}
+                                {currentStep === 3 && renderStep3()}
+                                {currentStep === 4 && renderStep4()}
+                                {currentStep === 5 && renderStep5()}
+                              </div>
+                  </>
         </div>
 
         {/* Navigation - Hide on Step 0 */}

@@ -17,7 +17,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 export default function AdminAuditLogPage() {
     const navigate = useNavigate();
-    const { profile } = useAuthStore();
+    const profile = useAuthStore((state) => state.profile);
     const queryClient = useQueryClient();
     const [page, setPage] = useState(1);
     const [pageSize] = useState(50);

@@ -19,8 +19,10 @@ html {
 /* Custom Typography System configured in main.tsx and tailwind.config.js */
 
 html {
-  scroll-behavior: smooth;
-  overscroll-behavior-y: none; /* Prevent pull-to-refresh on mobile webviews if not needed */
+  /* scroll-behavior: smooth — REMOVED to prevent animation on chat load (Epic 8.12 fix) */
+  /* overscroll-behavior-y: removed from html — Story 8.12.1 AC#7
+     Native rubber-band bounce must be preserved for nested scroll containers (chat list).
+     Pull-to-refresh prevention is scoped to #root instead. */
 }
 
 @layer base {
@@ -189,4 +191,182 @@ body,
   min-height: 100vh;
   overflow-y: auto;
   overflow-x: hidden;
+  overscroll-behavior-y: none;
+  /* Prevent pull-to-refresh on app shell — Story 8.12.1 AC#7 */
+}
+
+/* Hide Emoji Picker Category Navigation to reduce clutter */
+.epr-category-nav {
+  display: none !important;
+}
+
+/* Safe hover effect - only apply hover styles on devices that support hover */
+/* Safe hover effect - only apply hover styles on devices that support hover AND have a fine pointer (mouse) */
+@media (hover: hover) and (pointer: fine) {
+  .safe-hover-bg:hover {
+    background-color: #f9fafb;
+    /* gray-50 */
+  }
+}
+
+/* Bottom Navigation CSS animations */
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+.bottom-nav-enter {
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes navRipple {
+  0% {
+    background: rgba(99, 102, 241, 0);
+  }
+
+  50% {
+    background: rgba(99, 102, 241, 0.1);
+  }
+
+  100% {
+    background: rgba(99, 102, 241, 0);
+  }
+}
+
+.nav-ripple {
+  animation: navRipple 0.3s ease-out;
+}
+
+/* Shared animation utilities for framer-motion replacement */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+.animate-fadeInDown {
+  animation: fadeInDown 0.3s ease-out;
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.2s ease-out;
+}
+
+.animate-slideInRight {
+  animation: slideInRight 0.3s ease-out;
+}
+
+/* ============================================================
+   WCAG 2.1 AA — Global 'Reduce Motion' Guard
+   Disables ALL CSS animations and transitions when the user
+   has enabled "Reduce Motion" in their OS accessibility settings.
+   Individual component guards in OfflineBanner.css, etc. still
+   apply for their own scoped animations.
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================
+   EPIC 14 — Story 14.3: Disable backdrop-blur on mobile
+   GPU composite layers cause battery drain & frame drops
+   Desktop keeps blur; mobile gets solid rgba() fallback
+   ============================================ */
+@media (max-width: 768px) {
+
+  *,
+  *::before,
+  *::after {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+}
+
+.native-platform *,
+.native-platform *::before,
+.native-platform *::after {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+/* ============================================
+   EPIC 14 — Story 14.7: GPU-accelerate scroll containers
+   Hint the browser to pre-promote these to composite layers
+   ============================================ */
+.will-change-scroll {
+  will-change: transform;
+  -webkit-overflow-scrolling: touch;
 }

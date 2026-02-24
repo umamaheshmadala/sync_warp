@@ -42,7 +42,7 @@ export function OptimisticVideoMessage({
     <div className="space-y-2">
       {/* Video Container - with overflow hidden to contain progress indicator */}
       <div className="relative inline-block max-w-full min-w-[120px] overflow-hidden rounded-lg">
-        <img
+        <img decoding="async" 
           src={thumbnailUrl}
           alt="Video thumbnail"
           className={cn(

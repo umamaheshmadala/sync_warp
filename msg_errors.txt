@@ -1,0 +1,65 @@
+src/store/messagingStore.ts(205,13): error TS2345: Argument of type '(state: MessagingState) => { conversations: ConversationWithDetails[]; unreadCounts: Map<unknown, unknown>; totalUnreadCount: number; }' is not assignable to parameter of type 'MessagingState | Partial<MessagingState> | ((state: MessagingState) => MessagingState | Partial<MessagingState>)'.
+src/store/messagingStore.ts(214,37): error TS2769: No overload matches this call.
+src/store/messagingStore.ts(233,13): error TS2345: Argument of type '(state: MessagingState) => { conversations: ConversationWithDetails[]; unreadCounts: Map<unknown, unknown>; totalUnreadCount: number; }' is not assignable to parameter of type 'MessagingState | Partial<MessagingState> | ((state: MessagingState) => MessagingState | Partial<MessagingState>)'.
+src/store/messagingStore.ts(238,35): error TS2769: No overload matches this call.
+src/store/messagingStore.ts(304,15): error TS2322: Type 'Map<unknown, unknown>' is not assignable to type 'Record<string, number>'.
+src/store/messagingStore.ts(304,38): error TS2769: No overload matches this call.
+src/store/messagingStore.ts(305,28): error TS2349: This expression is not callable.
+src/store/messagingStore.ts(330,13): error TS2345: Argument of type '(state: MessagingState) => { conversations: ConversationWithDetails[]; unreadCounts: Map<unknown, unknown>; totalUnreadCount: number; }' is not assignable to parameter of type 'MessagingState | Partial<MessagingState> | ((state: MessagingState) => MessagingState | Partial<MessagingState>)'.
+src/store/messagingStore.ts(336,37): error TS2769: No overload matches this call.
+src/store/messagingStore.ts(346,13): error TS2322: Type 'unknown' is not assignable to type 'number'.
+src/store/messagingStore.ts(373,13): error TS2345: Argument of type '(state: MessagingState) => { messages: Map<unknown, unknown>; }' is not assignable to parameter of type 'MessagingState | Partial<MessagingState> | ((state: MessagingState) => MessagingState | Partial<MessagingState>)'.
+src/store/messagingStore.ts(374,39): error TS2769: No overload matches this call.
+src/store/messagingStore.ts(378,54): error TS2339: Property 'filter' does not exist on type 'unknown'.
+src/store/messagingStore.ts(397,13): error TS2345: Argument of type '(state: MessagingState) => { messages?: undefined; } | { messages: Map<unknown, unknown>; }' is not assignable to parameter of type 'MessagingState | Partial<MessagingState> | ((state: MessagingState) => MessagingState | Partial<MessagingState>)'.
+src/store/messagingStore.ts(398,39): error TS2769: No overload matches this call.
+src/store/messagingStore.ts(402,36): error TS2339: Property 'some' does not exist on type 'unknown'.
+src/store/messagingStore.ts(424,56): error TS2339: Property 'find' does not exist on type 'unknown'.
+src/store/messagingStore.ts(437,52): error TS2339: Property 'map' does not exist on type 'unknown'.
+src/store/messagingStore.ts(442,58): error TS2339: Property 'find' does not exist on type 'unknown'.
+src/store/messagingStore.ts(452,35): error TS2488: Type 'unknown' must have a '[Symbol.iterator]()' method that returns an iterator.
+src/store/messagingStore.ts(457,31): error TS2339: Property 'slice' does not exist on type 'unknown'.
+src/store/messagingStore.ts(465,13): error TS2345: Argument of type '(state: MessagingState) => { messages?: undefined; } | { messages: Map<unknown, unknown>; }' is not assignable to parameter of type 'MessagingState | Partial<MessagingState> | ((state: MessagingState) => MessagingState | Partial<MessagingState>)'.
+src/store/messagingStore.ts(468,39): error TS2769: No overload matches this call.
+src/store/messagingStore.ts(482,49): error TS2339: Property 'map' does not exist on type 'unknown'.
+src/store/messagingStore.ts(492,26): error TS2339: Property 'created_at' does not exist on type 'unknown'.
+src/store/messagingStore.ts(492,61): error TS2339: Property 'created_at' does not exist on type 'unknown'.
+src/store/messagingStore.ts(507,13): error TS2345: Argument of type '(state: MessagingState) => { messages: Map<unknown, unknown>; }' is not assignable to parameter of type 'MessagingState | Partial<MessagingState> | ((state: MessagingState) => MessagingState | Partial<MessagingState>)'.
+src/store/messagingStore.ts(508,39): error TS2769: No overload matches this call.
+src/store/messagingStore.ts(512,34): error TS2339: Property 'map' does not exist on type 'unknown'.
+src/store/messagingStore.ts(520,13): error TS2345: Argument of type '(state: MessagingState) => { messages: Map<unknown, unknown>; }' is not assignable to parameter of type 'MessagingState | Partial<MessagingState> | ((state: MessagingState) => MessagingState | Partial<MessagingState>)'.
+src/store/messagingStore.ts(521,39): error TS2769: No overload matches this call.
+src/store/messagingStore.ts(525,34): error TS2339: Property 'filter' does not exist on type 'unknown'.
+src/store/messagingStore.ts(531,13): error TS2345: Argument of type '(state: MessagingState) => { messages: Map<unknown, unknown>; }' is not assignable to parameter of type 'MessagingState | Partial<MessagingState> | ((state: MessagingState) => MessagingState | Partial<MessagingState>)'.
+src/store/messagingStore.ts(532,39): error TS2769: No overload matches this call.
+src/store/messagingStore.ts(534,45): error TS2488: Type 'unknown' must have a '[Symbol.iterator]()' method that returns an iterator.
+src/store/messagingStore.ts(550,13): error TS2345: Argument of type '(state: MessagingState) => { messages: Map<unknown, unknown>; }' is not assignable to parameter of type 'MessagingState | Partial<MessagingState> | ((state: MessagingState) => MessagingState | Partial<MessagingState>)'.
+src/store/messagingStore.ts(551,39): error TS2769: No overload matches this call.
+src/store/messagingStore.ts(562,39): error TS2488: Type 'unknown' must have a '[Symbol.iterator]()' method that returns an iterator.
+src/store/messagingStore.ts(574,13): error TS2345: Argument of type '(state: MessagingState) => { messages: Map<unknown, unknown>; }' is not assignable to parameter of type 'MessagingState | Partial<MessagingState> | ((state: MessagingState) => MessagingState | Partial<MessagingState>)'.
+src/store/messagingStore.ts(575,39): error TS2769: No overload matches this call.
+src/store/messagingStore.ts(579,58): error TS2339: Property 'some' does not exist on type 'unknown'.
+src/store/messagingStore.ts(586,56): error TS2339: Property 'find' does not exist on type 'unknown'.
+src/store/messagingStore.ts(589,52): error TS2339: Property 'filter' does not exist on type 'unknown'.
+src/store/messagingStore.ts(603,52): error TS2339: Property 'map' does not exist on type 'unknown'.
+src/store/messagingStore.ts(613,13): error TS2345: Argument of type '(state: MessagingState) => { messages: Map<unknown, unknown>; }' is not assignable to parameter of type 'MessagingState | Partial<MessagingState> | ((state: MessagingState) => MessagingState | Partial<MessagingState>)'.
+src/store/messagingStore.ts(614,39): error TS2769: No overload matches this call.
+src/store/messagingStore.ts(618,56): error TS2339: Property 'map' does not exist on type 'unknown'.
+src/store/messagingStore.ts(633,13): error TS2345: Argument of type '(state: MessagingState) => { messages: Map<unknown, unknown>; }' is not assignable to parameter of type 'MessagingState | Partial<MessagingState> | ((state: MessagingState) => MessagingState | Partial<MessagingState>)'.
+src/store/messagingStore.ts(634,39): error TS2769: No overload matches this call.
+src/store/messagingStore.ts(638,56): error TS2339: Property 'map' does not exist on type 'unknown'.
+src/store/messagingStore.ts(653,13): error TS2345: Argument of type '(state: MessagingState) => { unreadCounts: Map<unknown, unknown>; }' is not assignable to parameter of type 'MessagingState | Partial<MessagingState> | ((state: MessagingState) => MessagingState | Partial<MessagingState>)'.
+src/store/messagingStore.ts(654,37): error TS2769: No overload matches this call.
+src/store/messagingStore.ts(668,13): error TS2345: Argument of type '(state: MessagingState) => { unreadCounts: Map<unknown, unknown>; totalUnreadCount: number; }' is not assignable to parameter of type 'MessagingState | Partial<MessagingState> | ((state: MessagingState) => MessagingState | Partial<MessagingState>)'.
+src/store/messagingStore.ts(669,37): error TS2769: No overload matches this call.
+src/store/messagingStore.ts(671,41): error TS2365: Operator '+' cannot be applied to types 'unknown' and '1'.
+src/store/messagingStore.ts(691,13): error TS2345: Argument of type '(state: MessagingState) => { unreadCounts: Map<unknown, unknown>; totalUnreadCount: number; }' is not assignable to parameter of type 'MessagingState | Partial<MessagingState> | ((state: MessagingState) => MessagingState | Partial<MessagingState>)'.
+src/store/messagingStore.ts(692,37): error TS2769: No overload matches this call.
+src/store/messagingStore.ts(705,68): error TS2363: The right-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+src/store/messagingStore.ts(748,13): error TS2345: Argument of type '(state: MessagingState) => { typingUsers: Map<unknown, unknown>; }' is not assignable to parameter of type 'MessagingState | Partial<MessagingState> | ((state: MessagingState) => MessagingState | Partial<MessagingState>)'.
+src/store/messagingStore.ts(749,37): error TS2769: No overload matches this call.
+src/store/messagingStore.ts(750,41): error TS2769: No overload matches this call.
+src/store/messagingStore.ts(757,13): error TS2345: Argument of type '(state: MessagingState) => { typingUsers: Map<unknown, unknown>; }' is not assignable to parameter of type 'MessagingState | Partial<MessagingState> | ((state: MessagingState) => MessagingState | Partial<MessagingState>)'.
+src/store/messagingStore.ts(758,37): error TS2769: No overload matches this call.
+src/store/messagingStore.ts(759,41): error TS2769: No overload matches this call.
+src/store/messagingStore.ts(766,41): error TS2349: This expression is not callable.

@@ -5,7 +5,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Users, TrendingUp, Calendar, Activity, Download, Target, ArrowUp, ArrowDown } from 'lucide-react';
 import { useBusinessUrl } from '../../hooks/useBusinessUrl';
-import { motion } from 'framer-motion';
 import { useFollowerAnalytics } from '../../hooks/useFollowerAnalytics';
 import { cn } from '../../lib/utils';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -107,10 +106,8 @@ const FollowerAnalyticsDashboard: React.FC = () => {
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {/* Total Followers */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-lg shadow-sm border p-6"
+        <div
+          className="bg-white rounded-lg shadow-sm border p-6 animate-fadeIn"
         >
           <div className="flex items-center justify-between mb-2">
             <div className="p-2 bg-indigo-100 rounded-lg">
@@ -121,14 +118,11 @@ const FollowerAnalyticsDashboard: React.FC = () => {
             {analytics.total_followers}
           </div>
           <div className="text-sm text-gray-600">Total Followers</div>
-        </motion.div>
+        </div>
 
         {/* New This Week */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-white rounded-lg shadow-sm border p-6"
+        <div
+          className="bg-white rounded-lg shadow-sm border p-6 animate-fadeIn"
         >
           <div className="flex items-center justify-between mb-2">
             <div className="p-2 bg-green-100 rounded-lg">
@@ -146,14 +140,11 @@ const FollowerAnalyticsDashboard: React.FC = () => {
             +{analytics.new_followers_this_week}
           </div>
           <div className="text-sm text-gray-600">New This Week</div>
-        </motion.div>
+        </div>
 
         {/* Active Followers */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-white rounded-lg shadow-sm border p-6"
+        <div
+          className="bg-white rounded-lg shadow-sm border p-6 animate-fadeIn"
         >
           <div className="flex items-center justify-between mb-2">
             <div className="p-2 bg-purple-100 rounded-lg">
@@ -167,14 +158,11 @@ const FollowerAnalyticsDashboard: React.FC = () => {
           <div className="text-xs text-gray-500 mt-1">
             {analytics.engagement_rate.toFixed(0)}% engagement rate
           </div>
-        </motion.div>
+        </div>
 
         {/* New This Month */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="bg-white rounded-lg shadow-sm border p-6"
+        <div
+          className="bg-white rounded-lg shadow-sm border p-6 animate-fadeIn"
         >
           <div className="flex items-center justify-between mb-2">
             <div className="p-2 bg-yellow-100 rounded-lg">
@@ -185,7 +173,7 @@ const FollowerAnalyticsDashboard: React.FC = () => {
             +{analytics.new_followers_this_month}
           </div>
           <div className="text-sm text-gray-600">New This Month</div>
-        </motion.div>
+        </div>
       </div>
 
       {/* Charts Section */}

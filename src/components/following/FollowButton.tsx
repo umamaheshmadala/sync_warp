@@ -3,7 +3,6 @@
 
 import React, { useState } from 'react';
 import { UserPlus, UserCheck } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { useBusinessFollowing } from '../../hooks/useBusinessFollowing';
 import { cn } from '../../lib/utils';
 
@@ -110,21 +109,16 @@ export const FollowButton: React.FC<FollowButtonProps> = ({
   };
 
   return (
-    <motion.button
+    <button
       onClick={handleClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       disabled={isAnimating}
       className={cn(getButtonStyles(), className)}
-      whileTap={{ scale: 0.95 }}
       aria-label={following ? 'Unfollow business' : 'Follow business'}
     >
       {/* Icon */}
-      <motion.div
-        animate={{
-          scale: isAnimating ? [1, 1.2, 1] : 1,
-        }}
-        transition={{ duration: 0.3 }}
+      <div
         className="flex items-center justify-center"
       >
         {following ? (
@@ -132,7 +126,7 @@ export const FollowButton: React.FC<FollowButtonProps> = ({
         ) : (
           <UserPlus size={iconSize} className={showLabel ? "mr-2" : ""} />
         )}
-      </motion.div>
+      </div>
 
       {/* Label */}
       {showLabel && (
@@ -143,15 +137,13 @@ export const FollowButton: React.FC<FollowButtonProps> = ({
 
       {/* Loading indicator */}
       {isAnimating && (
-        <motion.div
+        <div
           className="ml-2"
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
         >
           <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full" />
-        </motion.div>
+        </div>
       )}
-    </motion.button>
+    </button>
   );
 };
 

@@ -3,7 +3,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import {
   ArrowLeft,
   Download,
@@ -48,7 +47,7 @@ interface QROptions {
 
 const BusinessQRCodePage: React.FC = () => {
   const { businessId } = useParams<{ businessId: string }>();
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const [business, setBusiness] = useState<Business | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -386,7 +385,7 @@ const BusinessQRCodePage: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 {business.logo_url ? (
-                  <img
+                  <img loading="lazy" decoding="async" 
                     src={business.logo_url}
                     alt={business.business_name}
                     className="w-12 h-12 rounded-lg object-cover border"
@@ -453,7 +452,7 @@ const BusinessQRCodePage: React.FC = () => {
                           style={{ maxWidth: '400px', maxHeight: '400px' }}
                         />
                         {/* Always show simple QR code as backup - hidden by default */}
-                        <img
+                        <img loading="lazy" decoding="async" 
                           src={qrDataUrl}
                           alt="QR Code Simple"
                           className="border rounded-lg shadow-sm"
@@ -462,7 +461,7 @@ const BusinessQRCodePage: React.FC = () => {
                         />
                       </>
                     ) : (
-                      <img
+                      <img loading="lazy" decoding="async" 
                         src={qrDataUrl}
                         alt="QR Code"
                         className="border rounded-lg shadow-sm"

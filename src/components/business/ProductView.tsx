@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
   Star,
@@ -104,53 +103,50 @@ const ProductView: React.FC<ProductViewProps> = ({
                 <MoreVertical className="w-5 h-5" />
               </button>
 
-              <AnimatePresence>
-                {showMenu && (
-                  <>
-                    {/* Backdrop to close - lower z-index than menu but high enough */}
-                    <div
-                      className="fixed inset-0 z-[55] cursor-default"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowMenu(false);
-                      }}
-                    />
+              <>
+                          {showMenu && (
+                                            <>
+                                              {/* Backdrop to close - lower z-index than menu but high enough */}
+                                              <div
+                                                className="fixed inset-0 z-[55] cursor-default"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  setShowMenu(false);
+                                                }}
+                                              />
 
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                      className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 z-[60] py-1"
-                    >
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowMenu(false);
-                          handleEditProduct();
-                        }}
-                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                        Edit Product
-                      </button>
+                                              <div
+                                                className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 z-[60] py-1"
+                                              >
+                                                <button
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setShowMenu(false);
+                                                    handleEditProduct();
+                                                  }}
+                                                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                                                >
+                                                  <Edit3 className="w-4 h-4" />
+                                                  Edit Product
+                                                </button>
 
-                      {onDelete && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setShowMenu(false);
-                            onDelete();
-                          }}
-                          className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                          Delete Product
-                        </button>
-                      )}
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
+                                                {onDelete && (
+                                                  <button
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      setShowMenu(false);
+                                                      onDelete();
+                                                    }}
+                                                    className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                                                  >
+                                                    <Trash2 className="w-4 h-4" />
+                                                    Delete Product
+                                                  </button>
+                                                )}
+                                              </div>
+                                            </>
+                                          )}
+                          </>
             </div>
           )}
 
@@ -187,7 +183,7 @@ const ProductView: React.FC<ProductViewProps> = ({
           <div className="space-y-4">
             {/* Main Image */}
             <div className="relative aspect-w-16 aspect-h-9 bg-gray-100 rounded-lg overflow-hidden">
-              <img
+              <img loading="lazy" decoding="async" 
                 src={product.image_urls[currentImageIndex]}
                 alt={product.name}
                 className="w-full h-96 object-cover"
@@ -223,7 +219,7 @@ const ProductView: React.FC<ProductViewProps> = ({
                       : 'border-gray-200 hover:border-gray-300'
                       }`}
                   >
-                    <img
+                    <img loading="lazy" decoding="async" 
                       src={url}
                       alt={`${product.name} ${index + 1}`}
                       className="w-full h-full object-cover"
@@ -305,23 +301,17 @@ const ProductView: React.FC<ProductViewProps> = ({
 
   if (isModal) {
     return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+      <div
+        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 animate-fadeIn"
         onClick={onClose}
       >
-        <motion.div
-          initial={{ scale: 0.95, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.95, opacity: 0 }}
-          className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+        <div
+          className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto animate-fadeIn"
           onClick={(e) => e.stopPropagation()}
         >
           {content}
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
     );
   }
 

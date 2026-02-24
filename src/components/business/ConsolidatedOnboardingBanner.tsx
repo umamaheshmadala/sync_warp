@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Target, X, ChevronDown, ChevronUp, CheckCircle, ArrowRight } from 'lucide-react';
 import { useBusinessUrl } from '@/hooks/useBusinessUrl';
 
@@ -69,10 +68,8 @@ export const ConsolidatedOnboardingBanner: React.FC<ConsolidatedOnboardingBanner
         const enhancedProfileUrl = `${getBusinessUrl(business.id, business.business_name)}?tab=enhanced-profile`;
 
         return (
-            <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mb-4 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg px-4 py-3 shadow-sm"
+            <div
+                className="mb-4 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg px-4 py-3 shadow-sm animate-fadeIn"
             >
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -99,16 +96,13 @@ export const ConsolidatedOnboardingBanner: React.FC<ConsolidatedOnboardingBanner
                         </button>
                     </div>
                 </div>
-            </motion.div>
+            </div>
         );
     }
 
     return (
-        <motion.div
-            layout
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-4 bg-white border border-purple-100 rounded-xl shadow-sm overflow-hidden"
+        <div
+            className="mb-4 bg-white border border-purple-100 rounded-xl shadow-sm overflow-hidden animate-fadeIn"
         >
             {/* Header - Always visible */}
             <div
@@ -148,42 +142,39 @@ export const ConsolidatedOnboardingBanner: React.FC<ConsolidatedOnboardingBanner
             </div>
 
             {/* Expanded Content */}
-            <AnimatePresence>
-                {isExpanded && (
-                    <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        className="border-t border-purple-100"
-                    >
-                        <div className="divide-y divide-gray-50 max-h-60 overflow-y-auto">
-                            {relevantBusinesses.map(business => (
-                                <div key={business.id} className="px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors">
-                                    <span className="text-sm text-gray-700 font-medium truncate max-w-[200px]">
-                                        {business.business_name}
-                                    </span>
-                                    <div className="flex items-center gap-3">
-                                        <Link
-                                            to={`${getBusinessUrl(business.id, business.business_name)}?tab=enhanced-profile`}
-                                            className="text-xs font-medium text-purple-600 hover:text-purple-800 hover:underline flex items-center gap-1"
-                                        >
-                                            Complete Now
-                                            <ArrowRight className="w-3 h-3" />
-                                        </Link>
-                                        <button
-                                            onClick={(e) => handleDismiss(e, business.id)}
-                                            className="text-gray-300 hover:text-gray-500"
-                                            title="Dismiss"
-                                        >
-                                            <X className="w-3 h-3" />
-                                        </button>
+            <>
+            {isExpanded && (
+                                <div
+                                    className="border-t border-purple-100"
+                                >
+                                    <div className="divide-y divide-gray-50 max-h-60 overflow-y-auto">
+                                        {relevantBusinesses.map(business => (
+                                            <div key={business.id} className="px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors">
+                                                <span className="text-sm text-gray-700 font-medium truncate max-w-[200px]">
+                                                    {business.business_name}
+                                                </span>
+                                                <div className="flex items-center gap-3">
+                                                    <Link
+                                                        to={`${getBusinessUrl(business.id, business.business_name)}?tab=enhanced-profile`}
+                                                        className="text-xs font-medium text-purple-600 hover:text-purple-800 hover:underline flex items-center gap-1"
+                                                    >
+                                                        Complete Now
+                                                        <ArrowRight className="w-3 h-3" />
+                                                    </Link>
+                                                    <button
+                                                        onClick={(e) => handleDismiss(e, business.id)}
+                                                        className="text-gray-300 hover:text-gray-500"
+                                                        title="Dismiss"
+                                                    >
+                                                        <X className="w-3 h-3" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
-                            ))}
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-        </motion.div>
+                            )}
+            </>
+        </div>
     );
 };

@@ -84,7 +84,7 @@ export function PYMKCard({ recommendation, onProfileClick }: PYMKCardProps) {
 
       {/* Avatar */}
       <div className="flex flex-col items-center mb-2 w-full mt-2">
-        <img
+        <img loading="lazy" decoding="async" 
           src={recommendation.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(recommendation.full_name)}&background=random`}
           alt={recommendation.full_name}
           className="w-14 h-14 rounded-full object-cover mb-2 border border-gray-100"
@@ -99,7 +99,7 @@ export function PYMKCard({ recommendation, onProfileClick }: PYMKCardProps) {
         {recommendation.mutual_friends && recommendation.mutual_friends.length > 0 ? (
           <div className="flex -space-x-2">
             {recommendation.mutual_friends.slice(0, 3).map(mf => (
-              <img
+              <img loading="lazy" decoding="async" 
                 key={mf.id}
                 src={mf.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(mf.full_name)}`}
                 className="w-6 h-6 rounded-full border-2 border-white bg-gray-100"

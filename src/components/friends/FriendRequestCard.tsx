@@ -66,7 +66,7 @@ export function FriendRequestCard({ request, type, onProfileClick }: FriendReque
         <div className="flex items-start gap-4">
           {/* Avatar */}
           {otherUser.avatar_url ? (
-            <img
+            <img loading="lazy" decoding="async" 
               src={otherUser.avatar_url}
               alt={otherUser.full_name}
               className="w-14 h-14 rounded-full object-cover"

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Heart } from 'lucide-react';
 
 interface ProductLikeButtonProps {
@@ -29,10 +28,7 @@ export const ProductLikeButton: React.FC<ProductLikeButtonProps> = ({
             className={`group relative focus:outline-none transition-transform active:scale-95 ${className}`}
             aria-label={isLiked ? "Unlike" : "Like"}
         >
-            <motion.div
-                initial={false}
-                animate={isLiked ? { scale: [1, 1.2, 1] } : { scale: 1 }}
-                transition={{ duration: 0.3 }}
+            <div className="animate-fadeIn"
             >
                 <Heart
                     size={size}
@@ -42,7 +38,7 @@ export const ProductLikeButton: React.FC<ProductLikeButtonProps> = ({
                         }`}
                     style={{ color: isLiked ? undefined : color }}
                 />
-            </motion.div>
+            </div>
         </button>
     );
 };

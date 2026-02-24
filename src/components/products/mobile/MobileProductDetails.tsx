@@ -14,7 +14,7 @@ interface MobileProductDetailsProps {
 export const MobileProductDetails: React.FC<MobileProductDetailsProps> = ({ product }) => {
     // Use the hook to get distinct, configured tags (includes New Arrival logic, formatting)
     const { tags } = useProductTags(product);
-    const { user } = useAuthStore();
+    const user = useAuthStore((state) => state.user);
     const { updateNotificationSetting } = useProducts();
 
     // Analytics: Track view

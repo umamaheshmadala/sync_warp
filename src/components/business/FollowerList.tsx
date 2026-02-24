@@ -4,7 +4,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { Search, Filter, UserX, Flag, Calendar, MapPin, TrendingUp, X } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { supabase } from '../../lib/supabase';
 import { cn } from '../../lib/utils';
 import { formatDistanceToNow } from 'date-fns';
@@ -214,11 +213,8 @@ const FollowerList: React.FC = () => {
 
         {/* Advanced Filters */}
         {showFilters && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="mt-4 pt-4 border-t grid grid-cols-1 md:grid-cols-3 gap-4"
+          <div
+            className="mt-4 pt-4 border-t grid grid-cols-1 md:grid-cols-3 gap-4 animate-fadeIn"
           >
             {/* Age Range */}
             <div>
@@ -268,7 +264,7 @@ const FollowerList: React.FC = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
               />
             </div>
-          </motion.div>
+          </div>
         )}
       </div>
 
@@ -280,11 +276,9 @@ const FollowerList: React.FC = () => {
       ) : (
         <div className="space-y-4">
           {filteredFollowers.map((follower) => (
-            <motion.div
+            <div
               key={follower.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-lg shadow-sm border p-6 hover:shadow-md transition-shadow"
+              className="bg-white rounded-lg shadow-sm border p-6 hover:shadow-md transition-shadow animate-fadeIn"
             >
               <div className="flex items-start justify-between">
                 {/* Follower Info */}
@@ -383,7 +377,7 @@ const FollowerList: React.FC = () => {
                   </button>
                 </div>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
       )}
@@ -411,10 +405,8 @@ const FollowerList: React.FC = () => {
       {removeConfirmOpen && followerToRemove && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => !isRemoving && setRemoveConfirmOpen(false)} />
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6"
+          <div
+            className="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6 animate-fadeIn"
           >
             <div className="text-center">
               <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
@@ -453,7 +445,7 @@ const FollowerList: React.FC = () => {
                 </button>
               </div>
             </div>
-          </motion.div>
+          </div>
         </div>
       )}
     </div>

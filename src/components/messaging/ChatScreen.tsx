@@ -1,5 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { useMessages } from '../../hooks/useMessages'
 import { useTypingIndicator } from '../../hooks/useTypingIndicator'
 import { useSendMessage } from '../../hooks/useSendMessage'
@@ -25,9 +26,12 @@ import type { PinDuration } from '../../services/pinnedMessageService'
 import { supabase } from '../../lib/supabase'
 import { useAuthStore } from '../../store/authStore'
 import { useMessagingStore } from '../../store/messagingStore'
+import { useConversations } from '../../hooks/useConversations'
 import './ChatScreen.css'
 import { friendsService } from '../../services/friendsService'
 import { useFriendProfile } from '../../hooks/friends/useFriendProfile'
+import { useScrollPosition } from '../../hooks/useScrollPosition'
+import { ScrollToBottomFAB } from './ScrollToBottomFAB'
 
 /**
  * ChatScreen Component
@@ -56,13 +60,50 @@ export default function ChatScreen() {
   const { conversationId } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
-  const { updateConversation } = useMessagingStore() // For clearing unread count
-  const { messages, isLoading, hasMore, loadMore } = useMessages(conversationId || null)
+  const queryClient = useQueryClient()
+  const setActiveConversation = useMessagingStore((state) => state.setActiveConversation); // For clearing unread count and tracking active
+  // Set active conversation on mount
+  useEffect(() => {
+    if (conversationId) {
+      setActiveConversation(conversationId)
+    }
+    return () => setActiveConversation(null)
+  }, [conversationId, setActiveConversation])
+
+  const {
+    messages,
+    isLoading,
+    hasMore,
+    loadMore,
+    isFetchingOlder
+  } = useMessages(conversationId || null)
+  const { scrollContainerRef, isAtBottom, scrollToBottom: scrollToBottomHook, showScrollButton: showScrollButtonFromHook } = useScrollPosition()
   const { isTyping, typingUserIds, handleTyping } = useTypingIndicator(conversationId || null)
   const { retryMessage } = useSendMessage() // For retrying failed messages (Story 8.2.7)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const prevMessageCount = useRef(messages.length)
+  const prevLastMessageId = useRef<string | null>(null)
+  const prevMessageCount = useRef<number>(0)
+
+  // Ref to lock scroll to bottom during initial load phase
+  const stickyBottomLockRef = useRef(false)
+
+  // Ref to track isAtBottom for event listeners (avoids stale closures) — Story 8.12.1 AC#5
+  const isAtBottomRef = useRef(isAtBottom)
+  useEffect(() => { isAtBottomRef.current = isAtBottom }, [isAtBottom])
+
+  // Throttle ref for bulk message auto-scroll — Story 8.12.1 AC#9
+  const scrollThrottleRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Local unread count for FAB (Story 8.12.2)
+  const [unreadCountSinceScroll, setUnreadCountSinceScroll] = useState(0)
+
+  // Reset local unread count when we scroll to bottom
+  useEffect(() => {
+    if (isAtBottom) {
+      setUnreadCountSinceScroll(0)
+    }
+  }, [isAtBottom])
 
   // Reply state (Story 8.10.5)
   const [replyToMessage, setReplyToMessage] = useState<Message | null>(null)
@@ -124,7 +165,7 @@ export default function ChatScreen() {
   } = useMessageSearch(conversationId || undefined)
 
   // Determine Other User ID
-  const { conversations } = useMessagingStore()
+  const { conversations } = useConversations();
   const conversation = conversations.find(c => c.conversation_id === conversationId)
   const otherUserId = conversation
     ? (conversation.participant1_id === currentUserId ? conversation.participant2_id : conversation.participant1_id)
@@ -159,37 +200,59 @@ export default function ChatScreen() {
     return () => window.removeEventListener('friends-updated', checkFriendship)
   }, [conversationId, currentUserId, otherUserId])
 
-  // Scroll to bottom helper
+  // Scroll to bottom helper (adapts hook to expected interface)
   const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({
-        behavior: Capacitor.isNativePlatform() ? 'auto' : behavior,
-        block: 'end'
-      })
-    }
+    scrollToBottomHook(behavior)
   }
 
-  // Auto-scroll to bottom on new messages
+  // Auto-scroll to bottom on new messages (Smart Scroll)
   useEffect(() => {
+    // If we have no messages, nothing to do
+    if (messages.length === 0) return
+
+    // Get the last message
     const lastMessage = messages[messages.length - 1]
-    const isUserMessage = lastMessage?.sender_id === 'current_user' || (lastMessage?._optimistic)
 
-    // Scroll if new message added OR if it's a user message (ensure visibility)
-    if (messages.length > prevMessageCount.current || isUserMessage) {
-      // Use a small timeout to ensure DOM is updated with new message height
-      setTimeout(() => {
-        scrollToBottom('smooth')
-      }, 100)
+    // Check if the current user sent it
+    const isUserMessage = lastMessage?.sender_id === currentUserId || (lastMessage?._optimistic)
+
+    // Check if the last message has changed (indicates new message at bottom vs history loaded at top)
+    const isNewMessageAtBottom = lastMessage?.id !== prevLastMessageId.current
+
+    // Scroll automatically if:
+    // 1. We have more messages than before AND the last message is new
+    if (messages.length > prevMessageCount.current && isNewMessageAtBottom) {
+      if (isUserMessage || isAtBottom) {
+        console.log('📜 Smart Scroll: Scrolling to bottom', { isUserMessage, isAtBottom })
+        // Throttle auto-scroll for burst messages (Story 8.12.1 AC#9)
+        // During rapid message arrival, only the final scroll fires after 150ms of quiet
+        if (scrollThrottleRef.current) clearTimeout(scrollThrottleRef.current)
+        scrollThrottleRef.current = setTimeout(() => {
+          scrollToBottomHook('smooth')
+          scrollThrottleRef.current = null
+        }, 150)
+      } else {
+        // We are not at bottom and received a new message -> increment unread count
+        // Only if it's NOT a user message (user messages auto-scroll anyway)
+        if (!isUserMessage) {
+          setUnreadCountSinceScroll(prev => prev + 1)
+        }
+        console.log('📜 Smart Scroll: staying put (not at bottom)', { isUserMessage, isAtBottom })
+      }
     }
+
     prevMessageCount.current = messages.length
-  }, [messages.length, messages[messages.length - 1]?.id])
+    prevLastMessageId.current = lastMessage?.id || null
+  }, [messages.length, messages[messages.length - 1]?.id, isAtBottom, scrollToBottomHook, currentUserId])
 
-  // Initial scroll to latest message
+  // Initial scroll handling (Smart Load)
+  // Handled synchronously in MessageList now for Zero Layout Shift
+  const [initialScrollDone, setInitialScrollDone] = useState(false)
+
+  // Reset initial scroll state when conversation changes (Story 8.12.3 fix)
   useEffect(() => {
-    if (messages.length > 0 && !isLoading && messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'instant', block: 'end' })
-    }
-  }, [isLoading])
+    setInitialScrollDone(false)
+  }, [conversationId])
 
   // Mark conversation as read ONLY when user is actively viewing
   useEffect(() => {
@@ -223,8 +286,10 @@ export default function ChatScreen() {
             console.log('✅ Updated last_read_at to:', now)
           }
 
-          // 3. Update store to clear unread count (fixes badge not updating)
-          updateConversation(conversationId, { unread_count: 0 })
+          // 3. Update React Query cache to clear unread count (fixes badge not updating)
+          queryClient.setQueryData<typeof conversations>(['conversations'], (old = []) =>
+            old.map(c => c.conversation_id === conversationId ? { ...c, unread_count: 0 } : c)
+          )
           console.log('✅ Cleared unread count in store for conversation:', conversationId)
 
         } catch (err) {
@@ -273,12 +338,19 @@ export default function ChatScreen() {
       showListener = await Keyboard.addListener('keyboardWillShow', () => {
         console.log('⌨️ Keyboard showing')
 
-        // Auto-scroll to bottom when keyboard shows
-        setTimeout(() => scrollToBottom('auto'), 100)
+        // Only auto-scroll when user is already at bottom (Story 8.12.1 AC#5)
+        // Prevents yanking user away from history when tapping input
+        if (isAtBottomRef.current) {
+          setTimeout(() => scrollToBottom('auto'), 100)
+        }
       })
 
       hideListener = await Keyboard.addListener('keyboardWillHide', () => {
         console.log('⌨️ Keyboard hiding')
+        // Maintain bottom anchor when keyboard dismisses interactively (Story 8.12.1 AC#8)
+        if (isAtBottomRef.current) {
+          setTimeout(() => scrollToBottom('auto'), 100)
+        }
       })
     }
 
@@ -311,76 +383,104 @@ export default function ChatScreen() {
   }, [navigate])
 
   // Retry handler for failed messages
-  const handleRetry = (message: Message) => {
+  const handleRetry = useCallback((message: Message) => {
     console.log('🔄 Retrying message:', message.id)
     retryMessage(message)
-  }
+  }, [retryMessage])
 
   // Reply handler (Story 8.10.5)
-  const handleReply = (message: Message) => {
+  const handleReply = useCallback((message: Message) => {
     console.log('💬 Replying to message:', message.id)
     setReplyToMessage(message)
-  }
+  }, [])
 
   // Cancel reply handler (Story 8.10.5)
-  const handleCancelReply = () => {
+  const handleCancelReply = useCallback(() => {
     console.log('❌ Cancelled reply')
     setReplyToMessage(null)
-  }
+  }, [])
 
   // Edit handler (Story 8.5.2 - WhatsApp-style)
-  const handleEdit = (message: Message) => {
+  const handleEdit = useCallback((message: Message) => {
     console.log('✏️ Editing message:', message.id)
     setEditingMessage(message)
     // Clear reply if any
     setReplyToMessage(null)
-  }
+  }, [])
 
   // Cancel edit handler (Story 8.5.2)
-  const handleCancelEdit = () => {
+  const handleCancelEdit = useCallback(() => {
     console.log('❌ Cancelled edit')
     setEditingMessage(null)
-  }
+  }, [])
 
-  // Scroll to message handler (Story 8.10.5)
-  const handleQuoteClick = (messageId: string) => {
-    console.log('📍 Scrolling to message:', messageId)
-    scrollToMessage(messageId)
-  }
+  // Scroll to message with highlight (Story 8.5.4 / 8.12.2 AC#6-7)
+  const scrollToMessage = useCallback(async (messageId: string) => {
+    // Helper to highlight a found element
+    const highlightElement = (el: HTMLElement) => {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      el.classList.add('search-highlight-flash')
+      setTimeout(() => {
+        el.classList.remove('search-highlight-flash')
+      }, 2000)
+    }
 
-  // Scroll to message with highlight (Story 8.5.4 - Search)
-  const scrollToMessage = (messageId: string) => {
+    // 1. Fast path: message already in DOM
     const messageElement = document.getElementById(`message-${messageId}`)
     if (messageElement) {
-      messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      // Highlight the message briefly
-      messageElement.classList.add('search-highlight-flash')
-      setTimeout(() => {
-        messageElement.classList.remove('search-highlight-flash')
-      }, 2000)
-    } else {
-      console.warn('Message not found in current view:', messageId)
+      highlightElement(messageElement)
+      return
     }
-  }
+
+    // 2. Slow path: fetch messages around the target (Story 8.12.2 AC#6-7)
+    if (!conversationId) return
+    try {
+      console.log('📍 Fetching context for message:', messageId)
+      const { messages: aroundMessages } = await messagingService.fetchMessagesAround(
+        conversationId, messageId
+      )
+      if (aroundMessages.length > 0) {
+        // Replace current message window in store
+        queryClient.setQueryData(['messages', conversationId], (old: any) => ({ ...old, messages: aroundMessages }))
+        // Wait for React to render the new messages
+        await new Promise(resolve => setTimeout(resolve, 300))
+        const el = document.getElementById(`message-${messageId}`)
+        if (el) {
+          highlightElement(el)
+          return
+        }
+      }
+    } catch (err) {
+      console.error('❌ Failed to fetch messages around target:', err)
+    }
+
+    console.warn('⚠️ Message not found even after fetch-around:', messageId)
+  }, [conversationId])
+
+  // Scroll to message handler (Story 8.10.5)
+  const handleQuoteClick = useCallback((messageId: string) => {
+    console.log('📍 Scrolling to message:', messageId)
+    scrollToMessage(messageId)
+  }, [scrollToMessage])
 
   // Handle search result click
-  const handleSearchResultClick = (result: { id: string }) => {
+  const handleSearchResultClick = useCallback((result: { id: string }) => {
     scrollToMessage(result.id)
     setShowSearch(false)
     clearSearch()
-  }
+  }, [scrollToMessage, clearSearch])
 
   // Pin handlers (Story 8.5.7)
-  const handlePinRequest = (messageId: string) => {
+  const handlePinRequest = useCallback((messageId: string) => {
     setPinningMessageId(messageId)
     setShowPinDialog(true)
-  }
+  }, [])
 
-  const handleConfirmPin = (duration: PinDuration) => {
+  const handleConfirmPin = useCallback((duration: PinDuration) => {
     if (pinningMessageId) {
       pinMessage(pinningMessageId, duration)
     }
-  }
+  }, [pinningMessageId, pinMessage])
 
   // Keyboard shortcut for search (Ctrl/Cmd+F)
   useEffect(() => {
@@ -413,10 +513,10 @@ export default function ChatScreen() {
 
 
   // Forward handler (Story 8.10.6)
-  const handleForward = (message: Message) => {
+  const handleForward = useCallback((message: Message) => {
     console.log('↪️ Forwarding message:', message.id)
     setForwardMessage(message)
-  }
+  }, [])
 
 
 
@@ -483,10 +583,14 @@ export default function ChatScreen() {
         </div>
       ) : (
         <MessageList
+          ref={scrollContainerRef}
           messages={messages}
           hasMore={hasMore}
           onLoadMore={loadMore}
           isLoading={isLoading}
+          initialScrollDone={initialScrollDone}
+          onInitialScrollComplete={() => setInitialScrollDone(true)}
+          isFetchingOlder={isFetchingOlder} // New prop for pagination loading
           onRetry={handleRetry}
           onReply={handleReply}
           onForward={handleForward}
@@ -500,6 +604,12 @@ export default function ChatScreen() {
           friendReadReceiptsEnabled={friendReadReceiptsEnabled}
         />
       )}
+
+      <ScrollToBottomFAB
+        isVisible={showScrollButtonFromHook}
+        unreadCount={unreadCountSinceScroll}
+        onPress={() => scrollToBottom('smooth')}
+      />
 
       {isTyping && (
         <TypingIndicator
@@ -558,6 +668,8 @@ export default function ChatScreen() {
         onOpenChange={setShowPinDialog}
         onConfirm={handleConfirmPin}
       />
+
+
     </div>
   )
 }

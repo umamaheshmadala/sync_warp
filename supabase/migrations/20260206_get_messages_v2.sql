@@ -27,7 +27,8 @@ RETURNS TABLE (
   forward_count INTEGER,
   link_previews JSONB,
   read_by UUID[],
-  viewer_has_reported BOOLEAN
+  viewer_has_reported BOOLEAN,
+  parent_message JSONB
 ) AS $$
 DECLARE
   v_user_id UUID;
@@ -35,7 +36,7 @@ DECLARE
 BEGIN
   v_user_id := auth.uid();
   IF p_before_id IS NOT NULL THEN
-    SELECT created_at INTO v_before_ts FROM messages WHERE id = p_before_id;
+    SELECT m.created_at INTO v_before_ts FROM messages m WHERE m.id = p_before_id;
   END IF;
   RETURN QUERY
   SELECT 
@@ -71,7 +72,20 @@ BEGIN
       FROM message_reports mr 
       WHERE mr.message_id = m.id 
       AND mr.reporter_id = v_user_id
-    ) AS viewer_has_reported
+    ) AS viewer_has_reported,
+    (
+      SELECT jsonb_build_object(
+        'id', pm.id,
+        'content', pm.content,
+        'type', pm.type,
+        'sender_id', pm.sender_id,
+        'sender_name', COALESCE(p.full_name, 'User'),
+        'created_at', pm.created_at
+      )
+      FROM messages pm
+      LEFT JOIN profiles p ON p.id = pm.sender_id
+      WHERE pm.id = m.reply_to_id
+    ) AS parent_message
   FROM messages m
   WHERE 
     m.conversation_id = p_conversation_id

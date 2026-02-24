@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { AnimatePresence, motion } from 'framer-motion';
 import { useProductWizardStore } from '../../../stores/useProductWizardStore';
 import { MediaSelectionStep } from './steps/MediaSelectionStep';
 import { EditArrangeStep } from './steps/EditArrangeStep';
@@ -48,11 +47,8 @@ export const ProductCreationWizard: React.FC = () => {
             <Dialog.Portal>
                 <Dialog.Overlay className="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm" />
                 <Dialog.Content className="fixed z-50 left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] w-full h-full md:w-[800px] md:h-[80vh] md:max-h-[900px] outline-none">
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        className="bg-white w-full h-full md:rounded-2xl overflow-hidden flex flex-col shadow-2xl relative"
+                    <div
+                        className="bg-white w-full h-full md:rounded-2xl overflow-hidden flex flex-col shadow-2xl relative animate-fadeIn"
                     >
                         <Dialog.Title className="sr-only">Product Creation Wizard</Dialog.Title>
 
@@ -79,7 +75,7 @@ export const ProductCreationWizard: React.FC = () => {
                             )}
                         </div>
 
-                    </motion.div>
+                    </div>
 
                     <DiscardDialog
                         open={showDiscardDialog}

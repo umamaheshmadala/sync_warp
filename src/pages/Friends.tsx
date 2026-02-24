@@ -7,7 +7,6 @@
  */
 
 import React, { useState, useRef } from 'react';
-import { Users, RefreshCw, User, Check, X, ArrowRight, ChevronDown } from 'lucide-react';
 import { FriendsList } from '../components/friends/FriendsList';
 import { FriendSearchBar } from '../components/friends/FriendSearchBar';
 import { FriendActivityFeed } from '../components/friends/FriendActivityFeed';
@@ -15,8 +14,6 @@ import { FriendRequestsList } from '../components/friends/FriendRequestsList';
 import { FriendRequestGridCard } from '../components/friends/FriendRequestGridCard';
 import { BlockedUsersList } from '../components/BlockedUsersList';
 // Tabs removed
-import { useDrag } from '@use-gesture/react';
-import { useQueryClient } from '@tanstack/react-query';
 import { useRealtimeOnlineStatus } from '../hooks/friends/useRealtimeOnlineStatus';
 import { useReceivedFriendRequests } from '../hooks/friends/useFriendRequests';
 import { useFriendActions } from '../hooks/friends/useFriendActions';
@@ -32,15 +29,13 @@ import {
 } from "../components/ui/select";
 
 export function FriendsPage() {
-  const [currentView, setCurrentView] = useState('friends');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [pullDistance, setPullDistance] = useState(0);
-  const queryClient = useQueryClient();
+  // const queryClient = useQueryClient(); // Unused if we depend on global PRT
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Profile Modal State
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentView, setCurrentView] = useState('friends');
 
   // Data hooks
   // Cast to any to bypass inference issue, or define interface. 
@@ -57,53 +52,11 @@ export function FriendsPage() {
     setSelectedProfileId(userId);
   };
 
-  // Pull-to-refresh gesture
-  const bind = useDrag(
-    ({ movement: [, my], last, memo = window.scrollY }) => {
-      // Only trigger if at top of page and pulling down
-      if (memo > 10) return;
 
-      if (!last && my > 0) {
-        setPullDistance(Math.min(my, 80));
-      } else if (last) {
-        if (my > 60) {
-          // Trigger refresh
-          setIsRefreshing(true);
-          queryClient.invalidateQueries({ queryKey: ['friends-list'] }).then(() => {
-            setTimeout(() => {
-              setIsRefreshing(false);
-              setPullDistance(0);
-            }, 500);
-          });
-        } else {
-          setPullDistance(0);
-        }
-      }
-    },
-    {
-      axis: 'y',
-      filterTaps: true,
-      pointer: { touch: true }
-    }
-  );
 
   return (
-    <div className="min-h-screen bg-gray-50" ref={containerRef}>
-      {/* Pull-to-refresh indicator */}
-      {(pullDistance > 0 || isRefreshing) && (
-        <div
-          className="flex justify-center items-center transition-all duration-200"
-          style={{
-            height: isRefreshing ? '60px' : `${pullDistance}px`,
-            opacity: Math.min(pullDistance / 60, 1)
-          }}
-        >
-          <RefreshCw
-            className={`w-6 h-6 text-blue-600 ${isRefreshing ? 'animate-spin' : ''}`}
-            style={{ transform: `rotate(${pullDistance * 3}deg)` }}
-          />
-        </div>
-      )}
+    <div className="bg-gray-50 h-full" ref={containerRef}>
+
 
       <div className="max-w-4xl mx-auto px-4 md:px-6 py-4">
         {/* Header Control Row: Search + View Filter */}

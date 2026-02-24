@@ -1,5 +1,4 @@
-import { useRef } from 'react';
-import { motion, useMotionValue, useSpring } from 'framer-motion';
+import { useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 interface TiltedCardProps {
@@ -9,25 +8,17 @@ interface TiltedCardProps {
   scaleOnHover?: number;
 }
 
-const springValues = {
-  damping: 30,
-  stiffness: 100,
-  mass: 2
-};
-
-export default function TiltedCard({ 
-  children, 
+export default function TiltedCard({
+  children,
   className,
   rotateAmplitude = 14,
   scaleOnHover = 1.05
 }: TiltedCardProps) {
   const ref = useRef<HTMLDivElement>(null);
 
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-  const rotateX = useSpring(0, springValues);
-  const rotateY = useSpring(0, springValues);
-  const scale = useSpring(1, springValues);
+  const [rotateX, setRotateX] = useState(0);
+  const [rotateY, setRotateY] = useState(0);
+  const [scale, setScale] = useState(1);
 
   const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
     if (!ref.current) return;
@@ -35,49 +26,45 @@ export default function TiltedCard({
     const rect = ref.current.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
-    
+
     const mouseX = event.clientX - centerX;
     const mouseY = event.clientY - centerY;
-    
+
     const rotateXValue = (mouseY / (rect.height / 2)) * -rotateAmplitude;
     const rotateYValue = (mouseX / (rect.width / 2)) * rotateAmplitude;
-    
-    rotateX.set(rotateXValue);
-    rotateY.set(rotateYValue);
+
+    setRotateX(rotateXValue);
+    setRotateY(rotateYValue);
   };
 
   const handleMouseEnter = () => {
-    scale.set(scaleOnHover);
+    setScale(scaleOnHover);
   };
 
   const handleMouseLeave = () => {
-    rotateX.set(0);
-    rotateY.set(0);
-    scale.set(1);
+    setRotateX(0);
+    setRotateY(0);
+    setScale(1);
   };
 
   return (
-    <motion.div
+    <div
       ref={ref}
       className={cn(
-        "relative transform-gpu cursor-pointer",
+        "relative transform-gpu cursor-pointer transition-transform duration-100 ease-out active:scale-95",
         className
       )}
       style={{
-        rotateX,
-        rotateY,
-        scale,
+        transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(${scale})`,
         transformStyle: 'preserve-3d',
-        transformPerspective: 1000,
       }}
       onMouseMove={handleMouseMove}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      whileTap={{ scale: 0.95 }}
     >
       <div className="relative w-full h-full">
         {children}
       </div>
-    </motion.div>
+    </div>
   );
 }

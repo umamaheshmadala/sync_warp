@@ -32,6 +32,8 @@ export const notificationService = {
       .from('in_app_notifications')
       .select('*', { count: 'exact' })
       .eq('user_id', user.id)
+      .neq('notification_type', 'message')     // Exclude messages
+      .neq('notification_type', 'new_message') // Exclude new_message
       .order('sent_at', { ascending: false })
       .range(from, to);
 
@@ -80,7 +82,9 @@ export const notificationService = {
       .from('in_app_notifications')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', user.id)
-      .eq('opened', false);
+      .eq('opened', false)
+      .neq('notification_type', 'message')     // Exclude messages
+      .neq('notification_type', 'new_message'); // Exclude new_message
 
     if (error) {
       console.error('Error fetching unread count:', error);

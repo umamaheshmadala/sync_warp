@@ -7,7 +7,6 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Building2, MapPin, Loader2, AlertCircle, Plus } from 'lucide-react';
 import { useJsApiLoader } from '@react-google-maps/api';
 import { useBusinessSearch } from '@/hooks/useBusinessSearch';
@@ -210,68 +209,64 @@ export function BusinessSearchInput({
             )}
 
             {/* Suggestions Dropdown */}
-            <AnimatePresence>
-                {showSuggestions && (suggestions.length > 0 || query.length >= 3) && (
-                    <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.15 }}
-                        className="absolute z-50 w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden"
-                    >
-                        {/* Suggestions List */}
-                        {suggestions.slice(0, 5).map((suggestion) => (
-                            <button
-                                key={suggestion.place_id}
-                                type="button"
-                                onClick={() => handleSelectSuggestion(suggestion)}
-                                className="w-full px-4 py-3 hover:bg-gray-50 flex items-start gap-3 text-left transition-colors border-b border-gray-100 last:border-b-0"
-                                disabled={isSelecting}
-                            >
-                                <Building2 className="w-5 h-5 text-indigo-600 flex-shrink-0 mt-0.5" />
-                                <div className="flex-1 min-w-0">
-                                    <p className="font-medium text-gray-900 truncate">
-                                        {suggestion.structured_formatting.main_text}
-                                    </p>
-                                    <p className="text-sm text-gray-500 truncate flex items-center gap-1">
-                                        <MapPin className="w-3 h-3" />
-                                        {suggestion.structured_formatting.secondary_text}
-                                    </p>
-                                </div>
-                            </button>
-                        ))}
+            <>
+            {showSuggestions && (suggestions.length > 0 || query.length >= 3) && (
+                                <div
+                                    className="absolute z-50 w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden"
+                                >
+                                    {/* Suggestions List */}
+                                    {suggestions.slice(0, 5).map((suggestion) => (
+                                        <button
+                                            key={suggestion.place_id}
+                                            type="button"
+                                            onClick={() => handleSelectSuggestion(suggestion)}
+                                            className="w-full px-4 py-3 hover:bg-gray-50 flex items-start gap-3 text-left transition-colors border-b border-gray-100 last:border-b-0"
+                                            disabled={isSelecting}
+                                        >
+                                            <Building2 className="w-5 h-5 text-indigo-600 flex-shrink-0 mt-0.5" />
+                                            <div className="flex-1 min-w-0">
+                                                <p className="font-medium text-gray-900 truncate">
+                                                    {suggestion.structured_formatting.main_text}
+                                                </p>
+                                                <p className="text-sm text-gray-500 truncate flex items-center gap-1">
+                                                    <MapPin className="w-3 h-3" />
+                                                    {suggestion.structured_formatting.secondary_text}
+                                                </p>
+                                            </div>
+                                        </button>
+                                    ))}
 
-                        {/* Add as New Business Option */}
-                        {query.length >= 3 && (
-                            <button
-                                type="button"
-                                onClick={handleManualEntry}
-                                className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 flex items-center gap-3 text-left transition-colors"
-                                disabled={isSelecting}
-                            >
-                                <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
-                                    <Plus className="w-4 h-4 text-indigo-600" />
-                                </div>
-                                <div>
-                                    <p className="font-medium text-indigo-600">
-                                        Add "{query}" as new business
-                                    </p>
-                                    <p className="text-sm text-gray-500">
-                                        Not finding your business? Add it manually
-                                    </p>
-                                </div>
-                            </button>
-                        )}
+                                    {/* Add as New Business Option */}
+                                    {query.length >= 3 && (
+                                        <button
+                                            type="button"
+                                            onClick={handleManualEntry}
+                                            className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 flex items-center gap-3 text-left transition-colors"
+                                            disabled={isSelecting}
+                                        >
+                                            <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+                                                <Plus className="w-4 h-4 text-indigo-600" />
+                                            </div>
+                                            <div>
+                                                <p className="font-medium text-indigo-600">
+                                                    Add "{query}" as new business
+                                                </p>
+                                                <p className="text-sm text-gray-500">
+                                                    Not finding your business? Add it manually
+                                                </p>
+                                            </div>
+                                        </button>
+                                    )}
 
-                        {/* No Results State */}
-                        {suggestions.length === 0 && query.length >= 3 && !isLoading && !error && (
-                            <div className="px-4 py-3 text-center text-gray-500">
-                                <p className="text-sm">No businesses found matching "{query}"</p>
-                            </div>
-                        )}
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                                    {/* No Results State */}
+                                    {suggestions.length === 0 && query.length >= 3 && !isLoading && !error && (
+                                        <div className="px-4 py-3 text-center text-gray-500">
+                                            <p className="text-sm">No businesses found matching "{query}"</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+            </>
         </div>
     );
 }

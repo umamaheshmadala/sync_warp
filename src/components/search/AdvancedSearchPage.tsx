@@ -271,7 +271,7 @@ const AdvancedSearchPage: React.FC<AdvancedSearchPageProps> = ({ className = '' 
 
         {/* Search Suggestions */}
         {showSuggestions && suggestions.length > 0 && (
-          <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-lg z-10 max-h-60 overflow-y-auto">
+          <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-lg z-10 max-h-60 overflow-y-auto will-change-scroll">
             {suggestions.map((suggestion, index) => (
               <button
                 key={index}
@@ -390,7 +390,7 @@ const AdvancedSearchPage: React.FC<AdvancedSearchPageProps> = ({ className = '' 
             {/* Categories */}
             <div>
               <h3 className="font-medium text-gray-900 mb-3">Categories</h3>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
+              <div className="space-y-2 max-h-48 overflow-y-auto will-change-scroll">
                 {categories.map(category => (
                   <label key={category.name} className="flex items-center">
                     <input

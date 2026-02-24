@@ -45,7 +45,7 @@ export function useDeleteMessage(messageId: string): UseDeleteMessageReturn {
   const [remainingMs, setRemainingMs] = useState(0);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  
+
   const timerRef = useRef<NodeJS.Timeout>();
   const undoToastIdRef = useRef<string>();
 
@@ -61,11 +61,20 @@ export function useDeleteMessage(messageId: string): UseDeleteMessageReturn {
     checkDeletability();
 
     // Update every second if within window
-    timerRef.current = setInterval(checkDeletability, 1000);
+    const tick = () => {
+      checkDeletability().then(() => {
+        timerRef.current = setTimeout(tick, 1000);
+      });
+    };
+
+    // Start the timer loop after initial check
+    checkDeletability().then(() => {
+      timerRef.current = setTimeout(tick, 1000);
+    });
 
     return () => {
       if (timerRef.current) {
-        clearInterval(timerRef.current);
+        clearTimeout(timerRef.current);
       }
     };
   }, [messageId]);
@@ -78,10 +87,10 @@ export function useDeleteMessage(messageId: string): UseDeleteMessageReturn {
     setIsDeleting(true);
     try {
       const result = await messageDeleteService.deleteMessage(messageId);
-      
+
       if (result.success) {
         setShowConfirmDialog(false);
-        
+
         // Show undo toast
         undoToastIdRef.current = toast(
           (t) => (
@@ -103,12 +112,12 @@ export function useDeleteMessage(messageId: string): UseDeleteMessageReturn {
               </button>
             </div>
           ),
-          { 
+          {
             duration: 5000,
             icon: '🗑️'
           }
         );
-        
+
         return true;
       } else {
         toast.error(result.message || 'Failed to delete');
@@ -130,7 +139,7 @@ export function useDeleteMessage(messageId: string): UseDeleteMessageReturn {
     }
 
     const result = await messageDeleteService.undoDelete(messageId);
-    
+
     if (result.success) {
       toast.success('Message restored');
       return true;

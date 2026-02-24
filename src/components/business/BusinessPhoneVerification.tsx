@@ -16,7 +16,7 @@ export const BusinessPhoneVerification: React.FC<Props> = ({
     onVerified,
     onSkip
 }) => {
-    const { user } = useAuthStore();
+    const user = useAuthStore((state) => state.user);
     // Normalize initial phone (strip spaces/dashes)
     const [phoneNumber, setPhoneNumber] = useState(initialPhone || '9876543210');
     const [otp, setOtp] = useState('123456');

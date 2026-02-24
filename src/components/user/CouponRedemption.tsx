@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   QrCode,
   CheckCircle,
@@ -66,7 +65,7 @@ const CouponRedemption: React.FC<CouponRedemptionProps> = ({
   const [showQrCode, setShowQrCode] = useState(true);
   const [timeUntilExpiry, setTimeUntilExpiry] = useState<number | null>(null);
   const [showVerificationCode, setShowVerificationCode] = useState(false);
-  
+
   const qrRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<NodeJS.Timeout>();
 
@@ -76,10 +75,10 @@ const CouponRedemption: React.FC<CouponRedemptionProps> = ({
       generateRedemptionQR();
       startExpiryTimer();
     }
-    
+
     return () => {
       if (timerRef.current) {
-        clearInterval(timerRef.current);
+        clearTimeout(timerRef.current);
       }
     };
   }, [isOpen, coupon, collection]);
@@ -88,10 +87,10 @@ const CouponRedemption: React.FC<CouponRedemptionProps> = ({
   const generateRedemptionQR = async () => {
     try {
       setLoading(true);
-      
+
       // Generate verification code
       const verificationCode = Math.random().toString(36).substr(2, 8).toUpperCase();
-      
+
       // Create redemption data
       const redemptionPayload: RedemptionData = {
         couponId: coupon.id,
@@ -128,38 +127,7 @@ const CouponRedemption: React.FC<CouponRedemptionProps> = ({
   // Start expiry timer
   const startExpiryTimer = () => {
     if (coupon.expires_at) {
-      const updateTimer = () => {
-        const now = Date.now();
-        const expiryTime = new Date(coupon.expires_at!).getTime();
-        const timeLeft = expiryTime - now;
-        
-        if (timeLeft <= 0) {
-          setTimeUntilExpiry(0);
-          if (timerRef.current) {
-            clearInterval(timerRef.current);
-          }
-        } else {
-          setTimeUntilExpiry(timeLeft);
-        }
-      };
-
-      updateTimer();
-      timerRef.current = setInterval(updateTimer, 1000);
-    }
-  };
-
-  // Format time remaining
-  const formatTimeRemaining = (milliseconds: number): string => {
-    const hours = Math.floor(milliseconds / (1000 * 60 * 60));
-    const minutes = Math.floor((milliseconds % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((milliseconds % (1000 * 60)) / 1000);
-
-    if (hours > 0) {
-      return `${hours}h ${minutes}m ${seconds}s`;
-    } else if (minutes > 0) {
-      return `${minutes}m ${seconds}s`;
-    } else {
-      return `${seconds}s`;
+      return;
     }
   };
 
@@ -170,15 +138,15 @@ const CouponRedemption: React.FC<CouponRedemptionProps> = ({
     setRedeeming(true);
     try {
       await couponService.redeemCoupon(
-        redemptionData.couponId, 
-        redemptionData.userId, 
+        redemptionData.couponId,
+        redemptionData.userId,
         redemptionData.businessId
       );
-      
+
       setRedeemed(true);
       toast.success('Coupon redeemed successfully!');
       onRedemptionComplete?.(coupon);
-      
+
       // Auto-close after a delay
       setTimeout(() => {
         onClose();
@@ -253,11 +221,8 @@ const CouponRedemption: React.FC<CouponRedemptionProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9, y: 50 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.9, y: 50 }}
-        className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden"
+      <div
+        className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-fadeIn"
       >
         {/* Header */}
         <div className="relative bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 text-white p-6">
@@ -267,7 +232,7 @@ const CouponRedemption: React.FC<CouponRedemptionProps> = ({
           >
             <X className="w-5 h-5" />
           </button>
-          
+
           <div className="text-center">
             <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-3">
               <QrCode className="w-8 h-8" />
@@ -275,15 +240,14 @@ const CouponRedemption: React.FC<CouponRedemptionProps> = ({
             <h2 className="text-xl font-bold mb-1">Ready to Redeem</h2>
             <p className="text-sm opacity-90">Show this QR code to the merchant</p>
           </div>
-          
+
           {/* Expiry Timer */}
           {timeUntilExpiry !== null && (
             <div className="mt-4 text-center">
-              <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                timeUntilExpiry < 300000 // 5 minutes
-                  ? 'bg-red-500 bg-opacity-20 text-red-100'
-                  : 'bg-white bg-opacity-20 text-white'
-              }`}>
+              <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${timeUntilExpiry < 300000 // 5 minutes
+                ? 'bg-red-500 bg-opacity-20 text-red-100'
+                : 'bg-white bg-opacity-20 text-white'
+                }`}>
                 <Clock className="w-4 h-4 mr-1" />
                 {timeUntilExpiry > 0 ? formatTimeRemaining(timeUntilExpiry) : 'Expired'}
               </div>
@@ -300,7 +264,7 @@ const CouponRedemption: React.FC<CouponRedemptionProps> = ({
               {formatDiscount()}
             </div>
             <p className="text-sm text-gray-600 mb-3">{calculateSavings()}</p>
-            
+
             {/* Business Info */}
             <div className="bg-gray-50 rounded-lg p-3">
               <div className="flex items-center justify-center text-sm text-gray-700 mb-2">
@@ -318,17 +282,15 @@ const CouponRedemption: React.FC<CouponRedemptionProps> = ({
 
           {redeemed ? (
             /* Redemption Success */
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              className="text-center py-8"
+            <div
+              className="text-center py-8 animate-fadeIn"
             >
               <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <CheckCircle className="w-10 h-10 text-green-600" />
               </div>
               <h3 className="text-xl font-bold text-green-600 mb-2">Redeemed Successfully!</h3>
               <p className="text-gray-600">Enjoy your savings!</p>
-            </motion.div>
+            </div>
           ) : loading ? (
             /* Loading State */
             <div className="text-center py-8">
@@ -340,11 +302,11 @@ const CouponRedemption: React.FC<CouponRedemptionProps> = ({
             <div className="space-y-4">
               {showQrCode && qrCodeUrl ? (
                 <div className="text-center">
-                  <div 
+                  <div
                     ref={qrRef}
                     className="inline-block p-4 bg-white border-2 border-gray-200 rounded-xl shadow-inner"
                   >
-                    <img
+                    <img loading="lazy" decoding="async" 
                       src={qrCodeUrl}
                       alt="Redemption QR Code"
                       className="w-48 h-48 mx-auto"
@@ -430,7 +392,7 @@ const CouponRedemption: React.FC<CouponRedemptionProps> = ({
                   <Share2 className="w-4 h-4 mr-2" />
                   Share
                 </button>
-                
+
                 <button
                   onClick={handleManualRedemption}
                   disabled={redeeming || timeUntilExpiry === 0}
@@ -483,7 +445,7 @@ const CouponRedemption: React.FC<CouponRedemptionProps> = ({
             </div>
           )}
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 };
