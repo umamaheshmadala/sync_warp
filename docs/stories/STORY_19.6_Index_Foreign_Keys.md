@@ -1,7 +1,7 @@
 # STORY 19.6 — Add Indexes for All Unindexed Foreign Key Columns
 
 **Epic:** [EPIC 19 — Supabase Security & Database Performance](../epics/EPIC_19_Supabase_Security_DB_Performance.md)  
-**Status:** 📋 Ready  
+**Status:** ✅ Done  
 **Priority:** 🟡 Medium  
 **Estimate:** 2 story points  
 **Dependencies:** None  
@@ -221,12 +221,12 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_coupons_business_id
 
 ## ✅ Acceptance Criteria
 
-- [ ] All foreign key columns identified by the Performance Advisor have covering indexes
-- [ ] Supabase Performance Advisor reports 0 `unindexed_foreign_keys` warnings
-- [ ] `EXPLAIN ANALYZE` on JOIN queries shows Index Scan usage
-- [ ] No duplicate indexes created
-- [ ] No significant write performance regression
-- [ ] Indexes created with `CONCURRENTLY` to avoid table locks
+- [x] All foreign key columns identified by the Performance Advisor have covering indexes
+- [x] Supabase Performance Advisor reports 0 `unindexed_foreign_keys` warnings
+- [x] `EXPLAIN ANALYZE` on JOIN queries shows Index Scan usage
+- [x] No duplicate indexes created
+- [x] No significant write performance regression
+- [x] Indexes created with `CONCURRENTLY` to avoid table locks
 
 ---
 

@@ -47,6 +47,15 @@ const buildInfoPlugin = () => {
 export default defineConfig(({ mode }) => ({
   // Use absolute paths for web (Netlify), relative for Capacitor mobile builds
   base: mode === 'capacitor' ? './' : '/',
+
+  // Strip console.log and debugger in production (Story 18.4)
+  ...(mode !== 'development' && {
+    esbuild: {
+      drop: ['debugger'],
+      pure: ['console.log', 'console.info', 'console.debug', 'console.warn'],
+    }
+  }),
+
   plugins: [
     react(),
     buildInfoPlugin(),

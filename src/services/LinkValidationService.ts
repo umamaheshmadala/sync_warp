@@ -145,37 +145,13 @@ class LinkValidationService {
         }
 
         try {
-            const apiKey = import.meta.env.VITE_GOOGLE_SAFE_BROWSING_KEY
-            if (!apiKey) {
-                // Warn only once or in debug to avoid console spam, effectively failing open
-                // console.warn('Safe Browsing API key not configured. Skipping API check.')
-                return true
-            }
-
-            const response = await fetch(
-                `https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${apiKey}`,
-                {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        client: {
-                            clientId: 'sync-app',
-                            clientVersion: '1.0.0'
-                        },
-                        threatInfo: {
-                            threatTypes: [
-                                'MALWARE',
-                                'SOCIAL_ENGINEERING',
-                                'UNWANTED_SOFTWARE',
-                                'POTENTIALLY_HARMFUL_APPLICATION'
-                            ],
-                            platformTypes: ['ANY_PLATFORM'],
-                            threatEntryTypes: ['URL'],
-                            threatEntries: [{ url }]
-                        }
-                    })
-                }
-            )
+            // Route through proxy to keep API key server-side (Story 18.7)
+            const proxyUrl = import.meta.env.VITE_API_PROXY_URL || '/api'
+            const response = await fetch(`${proxyUrl}/safe-browsing`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url })
+            })
 
             if (!response.ok) {
                 throw new Error(`Safe Browsing API Error: ${response.statusText}`)

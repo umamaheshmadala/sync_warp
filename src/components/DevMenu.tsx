@@ -4,35 +4,14 @@
 
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Capacitor } from '@capacitor/core'
 import { timestamp } from 'virtual:build-info'
 
 const DevMenu = () => {
   const [isOpen, setIsOpen] = useState(false)
   const navigate = useNavigate()
 
-  // Show in development mode OR on native platforms (for testing)
-  const isDevelopment = import.meta.env.MODE === 'development'
-  const isNativePlatform = Capacitor.isNativePlatform()
-
-  // Use the push hook to get sync function (pass null as user ID since we just want the function, 
-  // though ideally pass real ID if context avail. But DevMenu might be standalone. 
-  // Actually, usePushNotifications requires userId. Let's see if we can get it from session or just suppress.
-  // Ideally, DevMenu should use the session. Let's assume we can get it from supabase.auth 
-  // OR just skip if not available.
-  // For quick debug, we can't easily get userId here without context.
-  // Let's Skip hook usage here and just trust the auto-sync for now, OR rely on user to be logged in.
-  // Actually, I can import { useAuth } if it exists? No.
-  // Let's just create a simple button that calls the logic manually or leave it as is.
-  // Wait, I promised a button.
-  // Let's skip the button in DevMenu for now to avoid complexity of getting UserID, 
-  // unless I use `supabase.auth.getUser()`.
-
-  // Let's stick to the code fix in usePushNotifications.ts first. The logic fix (onConflict) is strong.
-
-
-  // Show menu in dev mode or on mobile apps
-  if (!isDevelopment && !isNativePlatform) {
+  // Only show in development mode — never in production
+  if (!import.meta.env.DEV) {
     return null
   }
 

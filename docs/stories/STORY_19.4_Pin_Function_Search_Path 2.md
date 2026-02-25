@@ -286,11 +286,11 @@ SELECT public.send_message(
 
 ## ✅ Acceptance Criteria
 
-- [x] All 200+ functions have `SET search_path = ''` in their config
-- [x] Supabase Security Advisor reports 0 `function_search_path_mutable` warnings
-- [x] All existing function calls still work correctly (no unqualified reference errors)
-- [x] Overloaded functions are individually pinned
-- [x] Application smoke tests pass for messaging, social, coupons, admin, and notification features
+- [ ] All 200+ functions have `SET search_path = ''` in their config
+- [ ] Supabase Security Advisor reports 0 `function_search_path_mutable` warnings
+- [ ] All existing function calls still work correctly (no unqualified reference errors)
+- [ ] Overloaded functions are individually pinned
+- [ ] Application smoke tests pass for messaging, social, coupons, admin, and notification features
 
 ---
 

@@ -20,9 +20,8 @@ html {
 
 html {
   /* scroll-behavior: smooth — REMOVED to prevent animation on chat load (Epic 8.12 fix) */
-  /* overscroll-behavior-y: removed from html — Story 8.12.1 AC#7
-     Native rubber-band bounce must be preserved for nested scroll containers (chat list).
-     Pull-to-refresh prevention is scoped to #root instead. */
+  /* overscroll-behavior-y: removed — Story 8.12.1 AC#7, Story 18.1
+     Pull-to-refresh prevention is now scoped to .native-platform #root only. */
 }
 
 @layer base {
@@ -203,8 +202,13 @@ body,
   min-height: 100vh;
   overflow-y: auto;
   overflow-x: hidden;
+}
+
+/* Prevent pull-to-refresh ONLY on native Capacitor apps (Story 18.1)
+   Web users get the native browser pull-to-refresh behavior.
+   Native apps handle refresh via their own mechanisms. */
+.native-platform #root {
   overscroll-behavior-y: none;
-  /* Prevent pull-to-refresh on app shell — Story 8.12.1 AC#7 */
 }
 
 /* Hide Emoji Picker Category Navigation to reduce clutter */

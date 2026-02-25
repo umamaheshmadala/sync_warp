@@ -73,23 +73,49 @@ export const supabase = createClient(
 export const isNativePlatform = Capacitor.isNativePlatform()
 export const platform = Capacitor.getPlatform()
 
+/**
+ * Clear only auth-related keys from localStorage.
+ * Preserves user preferences, cached data, and Zustand stores.
+ * Story 18.5 — scoped localStorage cleanup.
+ */
+function clearAuthStorage(): void {
+  // Auth-specific key patterns
+  const authPrefixes = ['supabase.auth', 'sb-']
+  const authExactKeys = ['supabase.auth.token']
+
+  const keysToRemove: string[] = []
+
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i)
+    if (key && authPrefixes.some(prefix => key.startsWith(prefix))) {
+      keysToRemove.push(key)
+    }
+  }
+
+  // Also add any exact keys that might not match prefixes
+  authExactKeys.forEach(key => {
+    if (!keysToRemove.includes(key)) {
+      keysToRemove.push(key)
+    }
+  })
+
+  keysToRemove.forEach(key => localStorage.removeItem(key))
+  sessionStorage.clear() // sessionStorage is ephemeral, safe to clear entirely
+}
+
 // Listen for auth errors and auto-logout on token issues
 supabase.auth.onAuthStateChange((event, session) => {
   // Handle refresh token errors
   if (event === 'TOKEN_REFRESHED' && !session) {
     console.error('Token refresh failed - logging out')
-    // Clear local storage and redirect to login
-    localStorage.clear()
-    sessionStorage.clear()
+    clearAuthStorage()
     window.location.href = '/auth/login'
   }
 
   // Handle signed out event
   if (event === 'SIGNED_OUT') {
     console.log('User signed out')
-    // Clear all local data
-    localStorage.clear()
-    sessionStorage.clear()
+    clearAuthStorage()
   }
 })
 

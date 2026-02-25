@@ -1,7 +1,7 @@
 # STORY 18.3 — Gate Debug Panels Behind `import.meta.env.DEV`
 
 **Epic:** [EPIC 18 — Native Mobile Feel & Production Hardening](../epics/EPIC_18_Native_Mobile_Feel_Production_Hardening.md)  
-**Status:** 📋 Ready  
+**Status:** ✅ Done  
 **Priority:** 🟠 High  
 **Estimate:** 1 story point  
 **Dependencies:** None  
@@ -174,13 +174,13 @@ Also clean up the long block of unused comments (lines 18-31) about push notific
 
 ## ✅ Acceptance Criteria
 
-- [ ] `DevMenu` uses `import.meta.env.DEV` guard (not `isNativePlatform`)
-- [ ] DevMenu hidden on native production builds (verified on device)
-- [ ] DevMenu still visible in development mode
-- [ ] `ReachDebugPanel.tsx` deleted (dead code) OR guarded with `import.meta.env.DEV`
-- [ ] `PageDebugPanel` guard unchanged (already correct)
-- [ ] Production bundle does not contain debug panel code (verified via grep on dist/)
-- [ ] Unused Capacitor import and comment block removed from DevMenu
+- [x] `DevMenu` uses `import.meta.env.DEV` guard (not `isNativePlatform`)
+- [x] DevMenu hidden on native production builds (verified on device)
+- [x] DevMenu still visible in development mode
+- [x] `ReachDebugPanel.tsx` deleted (dead code) OR guarded with `import.meta.env.DEV`
+- [x] `PageDebugPanel` guard unchanged (already correct)
+- [x] Production bundle does not contain debug panel code (verified via grep on dist/)
+- [x] Unused Capacitor import and comment block removed from DevMenu
 
 ---
 

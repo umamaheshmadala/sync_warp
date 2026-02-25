@@ -1,7 +1,7 @@
 # STORY 19.1 — Enable RLS on `contact_hashes` Table
 
 **Epic:** [EPIC 19 — Supabase Security & Database Performance](../epics/EPIC_19_Supabase_Security_DB_Performance.md)  
-**Status:** 📋 Ready  
+**Status:** ✅ Done  
 **Priority:** 🔴 Critical  
 **Estimate:** 1 story point  
 **Dependencies:** None  
@@ -106,11 +106,11 @@ Expected output should show three policies with `USING (user_id = auth.uid())` c
 
 ## ✅ Acceptance Criteria
 
-- [ ] RLS is enabled on `public.contact_hashes` (`relrowsecurity = true`)
-- [ ] Existing policies are enforced — users can only access their own hashes
-- [ ] Supabase Security Advisor no longer reports `policy_exists_rls_disabled` for `contact_hashes`
-- [ ] Contact sync flow works correctly in the application
-- [ ] Contact matching features work correctly
+- [x] RLS is enabled on `public.contact_hashes` (`relrowsecurity = true`)
+- [x] Existing policies are enforced — users can only access their own hashes
+- [x] Supabase Security Advisor no longer reports `policy_exists_rls_disabled` for `contact_hashes`
+- [x] Contact sync flow works correctly in the application
+- [x] Contact matching features work correctly
 
 ---
 

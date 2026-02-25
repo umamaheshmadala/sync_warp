@@ -1,7 +1,7 @@
 # STORY 18.5 — Scope `localStorage.clear()` to Auth Keys Only
 
 **Epic:** [EPIC 18 — Native Mobile Feel & Production Hardening](../epics/EPIC_18_Native_Mobile_Feel_Production_Hardening.md)  
-**Status:** 📋 Ready  
+**Status:** ✅ Done  
 **Priority:** 🟠 High  
 **Estimate:** 1 story point  
 **Dependencies:** None  
@@ -220,13 +220,13 @@ Optionally keep a `clearAll()` method for factory reset scenarios, but rename th
 
 ## ✅ Acceptance Criteria
 
-- [ ] `localStorage.clear()` replaced with `clearAuthStorage()` in `supabase.ts` (both call sites)
-- [ ] `SecureStorage.clear()` renamed to `clearAuth()` with scoped key removal
-- [ ] Auth keys (`supabase.auth.*`, `sb-*`) are properly cleared on sign-out
-- [ ] Non-auth keys (theme, favorites, offline queue) survive sign-out
-- [ ] Non-auth keys survive token refresh failures
-- [ ] `sessionStorage.clear()` still called (ephemeral data, safe to clear)
-- [ ] Test keys set before logout persist after re-login
+- [x] `localStorage.clear()` replaced with `clearAuthStorage()` in `supabase.ts` (both call sites)
+- [x] `SecureStorage.clear()` renamed to `clearAuth()` with scoped key removal
+- [x] Auth keys (`supabase.auth.*`, `sb-*`) are properly cleared on sign-out
+- [x] Non-auth keys (theme, favorites, offline queue) survive sign-out
+- [x] Non-auth keys survive token refresh failures
+- [x] `sessionStorage.clear()` still called (ephemeral data, safe to clear)
+- [x] Test keys set before logout persist after re-login
 
 ---
 

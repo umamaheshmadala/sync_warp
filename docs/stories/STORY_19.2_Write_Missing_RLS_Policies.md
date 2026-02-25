@@ -1,7 +1,7 @@
 # STORY 19.2 — Write RLS Policies for Tables with RLS Enabled but No Policies
 
 **Epic:** [EPIC 19 — Supabase Security & Database Performance](../epics/EPIC_19_Supabase_Security_DB_Performance.md)  
-**Status:** 📋 Ready  
+**Status:** ✅ Done  
 **Priority:** 🔴 Critical  
 **Estimate:** 3 story points  
 **Dependencies:** None  
@@ -240,12 +240,12 @@ CREATE POLICY "Users can delete own wishlist items"
 
 ## ✅ Acceptance Criteria
 
-- [ ] All 10 tables have at least one RLS policy
-- [ ] Supabase Security Advisor reports 0 `rls_enabled_no_policy` warnings
-- [ ] Authenticated users can only access data they are authorized to see
-- [ ] Service-role access to `retention_archives` and `retention_audit_log` still works
-- [ ] Application smoke tests pass for activities, checkins, wishlist, billing, and coupon features
-- [ ] All policies use the optimized `(select auth.uid())` pattern
+- [x] All 10 tables have at least one RLS policy
+- [x] Supabase Security Advisor reports 0 `rls_enabled_no_policy` warnings
+- [x] Authenticated users can only access data they are authorized to see
+- [x] Service-role access to `retention_archives` and `retention_audit_log` still works
+- [x] Application smoke tests pass for activities, checkins, wishlist, billing, and coupon features
+- [x] All policies use the optimized `(select auth.uid())` pattern
 
 ---
 

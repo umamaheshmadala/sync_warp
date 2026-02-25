@@ -1,6 +1,6 @@
 # 📱 EPIC 18: Native Mobile Feel & Production Hardening
 
-**Status:** 📋 Planning  
+**Status:** ✅ Done  
 **Created:** 2026-02-21  
 **Owner:** Frontend Engineering / DevOps  
 **Audit Reference:** [Codebase Audit Report — Category 6 + Findings 5.6, 5.7](../../.gemini/antigravity/brain/4990934d-85a5-413b-9a20-e2901b49f1fe/codebase_audit_report.md)  
@@ -102,11 +102,11 @@ Make the app feel truly native on iOS and Android by restoring platform-specific
 
 ## ✅ Definition of Done
 
-- [ ] iOS rubber-band bounce restored on all scrollable areas
-- [ ] SplashScreen dismisses in ≤3s on cold start
-- [ ] Debug panel completely absent from production builds
-- [ ] Zero `console.log` in production bundle
-- [ ] `localStorage.clear()` replaced with key-specific removal
-- [ ] `googleapis` removed from `package.json` and bundle
-- [ ] Cloudflare Worker proxy operational; all API keys server-side
-- [ ] No API keys visible in client network requests
+- [x] iOS rubber-band bounce restored on all scrollable areas
+- [x] SplashScreen dismisses in ≤3s on cold start
+- [x] Debug panel completely absent from production builds
+- [x] Zero `console.log` in production bundle
+- [x] `localStorage.clear()` replaced with key-specific removal
+- [x] `googleapis` removed from `package.json` and bundle
+- [x] Cloudflare Worker proxy operational; all API keys server-side
+- [x] No API keys visible in client network requests

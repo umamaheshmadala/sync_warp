@@ -1,7 +1,7 @@
 # STORY 18.2 — Reduce SplashScreen Fallback from 10s to 3s
 
 **Epic:** [EPIC 18 — Native Mobile Feel & Production Hardening](../epics/EPIC_18_Native_Mobile_Feel_Production_Hardening.md)  
-**Status:** 📋 Ready  
+**Status:** ✅ Done  
 **Priority:** 🟠 High  
 **Estimate:** 1 story point  
 **Dependencies:** None  
@@ -145,11 +145,11 @@ Maximum splash time: **3 seconds** (down from 10 seconds).
 
 ## ✅ Acceptance Criteria
 
-- [ ] `launchShowDuration` changed from `10000` to `3000` in `capacitor.config.ts`
-- [ ] JS safety timeout changed from `7000` to `3000` in `AppDataPrefetcher.tsx`
-- [ ] Cold start splash dismisses in ≤3s on all network conditions
-- [ ] Normal cold start still shows splash for 500ms minimum (no flash)
-- [ ] Dashboard shows loading skeletons if data hasn't arrived by splash dismiss time
+- [x] `launchShowDuration` changed from `10000` to `3000` in `capacitor.config.ts`
+- [x] JS safety timeout changed from `7000` to `3000` in `AppDataPrefetcher.tsx`
+- [x] Cold start splash dismisses in ≤3s on all network conditions
+- [x] Normal cold start still shows splash for 500ms minimum (no flash)
+- [x] Dashboard shows loading skeletons if data hasn't arrived by splash dismiss time
 
 ---
 

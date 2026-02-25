@@ -1,7 +1,7 @@
 # STORY 18.4 — Strip `console.log` in Production via Terser
 
 **Epic:** [EPIC 18 — Native Mobile Feel & Production Hardening](../epics/EPIC_18_Native_Mobile_Feel_Production_Hardening.md)  
-**Status:** 📋 Ready  
+**Status:** ✅ Done  
 **Priority:** 🟠 High  
 **Estimate:** 1 story point  
 **Dependencies:** None  
@@ -127,12 +127,12 @@ build: {
 
 ## ✅ Acceptance Criteria
 
-- [ ] `console.log`, `console.info`, `console.debug`, `console.warn` stripped from production bundle
-- [ ] `console.error` preserved in production (for error tracking)
-- [ ] `debugger` statements stripped from production
-- [ ] Development mode console logging unchanged
-- [ ] Build time not significantly impacted (esbuild approach preferred over terser)
-- [ ] No runtime errors caused by missing console calls
+- [x] `console.log`, `console.info`, `console.debug`, `console.warn` stripped from production bundle
+- [x] `console.error` preserved in production (for error tracking)
+- [x] `debugger` statements stripped from production
+- [x] Development mode console logging unchanged
+- [x] Build time not significantly impacted (esbuild approach preferred over terser)
+- [x] No runtime errors caused by missing console calls
 
 ---
 

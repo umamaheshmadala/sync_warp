@@ -1,7 +1,7 @@
 # STORY 19.7 — Optimize RLS Policies: Replace `auth.uid()` with `(select auth.uid())`
 
 **Epic:** [EPIC 19 — Supabase Security & Database Performance](../epics/EPIC_19_Supabase_Security_DB_Performance.md)  
-**Status:** 📋 Ready  
+**Status:** ✅ Done  
 **Priority:** 🟡 Medium  
 **Estimate:** 2 story points  
 **Dependencies:** 19.2, 19.5 (policies must exist first)  

@@ -37,13 +37,13 @@ export const AppDataPrefetcher = () => {
     };
 
     useEffect(() => {
-        // Safety timeout - ensure splash always hides after 7s max
+        // Safety timeout - ensure splash always hides after 3s max
         const timer = setTimeout(() => {
             if (!hasHiddenSplash.current) {
                 console.warn('⚠️ [AppDataPrefetcher] Force hiding splash due to timeout');
                 hideSplash();
             }
-        }, 7000);
+        }, 3000);
 
         return () => clearTimeout(timer);
     }, []);
@@ -136,7 +136,7 @@ export const AppDataPrefetcher = () => {
                     // Wait for dashboard data or 2 seconds, whichever is faster
                     // We don't want to block too long if network is slow
                     const minWait = new Promise(resolve => setTimeout(resolve, 500)); // Min splash time to prevent flash
-                    const maxWait = new Promise(resolve => setTimeout(resolve, 2500)); // Max wait for data
+                    const maxWait = new Promise(resolve => setTimeout(resolve, 2000)); // Max wait for data
 
                     await Promise.all([
                         minWait,

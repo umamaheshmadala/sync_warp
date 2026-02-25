@@ -1,7 +1,7 @@
 # STORY 18.6 — Remove `googleapis` Package from Client Bundle
 
 **Epic:** [EPIC 18 — Native Mobile Feel & Production Hardening](../epics/EPIC_18_Native_Mobile_Feel_Production_Hardening.md)  
-**Status:** 📋 Ready  
+**Status:** ✅ Done  
 **Priority:** 🟠 High  
 **Estimate:** 3 story points  
 **Dependencies:** STORY 18.7 (Cloudflare Worker proxy must be operational first)  
@@ -178,13 +178,13 @@ The key moves to the Cloudflare Worker environment variables (Story 18.7).
 
 ## ✅ Acceptance Criteria
 
-- [ ] `googleapis` removed from `package.json` and `node_modules`
-- [ ] Build succeeds with zero errors after removal
-- [ ] No `googleapis` string in production bundle (verified via grep on dist/)
-- [ ] Safe Browsing API call routed through proxy (no API key in client Network tab)
-- [ ] `VITE_GOOGLE_SAFE_BROWSING_KEY` removed from `.env` / client code
-- [ ] Safe Browsing URL check still works via proxy
-- [ ] `@react-google-maps/api` unchanged (uses script tag, not npm googleapis)
+- [x] `googleapis` removed from `package.json` and `node_modules`
+- [x] Build succeeds with zero errors after removal
+- [x] No `googleapis` string in production bundle (verified via grep on dist/)
+- [x] Safe Browsing API call routed through proxy (no API key in client Network tab)
+- [x] `VITE_GOOGLE_SAFE_BROWSING_KEY` removed from `.env` / client code
+- [x] Safe Browsing URL check still works via proxy
+- [x] `@react-google-maps/api` unchanged (uses script tag, not npm googleapis)
 
 ---
 

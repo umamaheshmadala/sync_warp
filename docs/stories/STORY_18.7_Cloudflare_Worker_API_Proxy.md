@@ -1,7 +1,7 @@
 # STORY 18.7 — Create Cloudflare Worker Proxy for API Key Security
 
 **Epic:** [EPIC 18 — Native Mobile Feel & Production Hardening](../epics/EPIC_18_Native_Mobile_Feel_Production_Hardening.md)  
-**Status:** 📋 Ready  
+**Status:** ✅ Done  
 **Priority:** 🟠 High  
 **Estimate:** 5 story points  
 **Dependencies:** None (18.6 depends on THIS story)  
@@ -286,14 +286,14 @@ In Google Cloud Console → API Credentials:
 
 ## ✅ Acceptance Criteria
 
-- [ ] Cloudflare Worker deployed with `/api/safe-browsing` endpoint operational
-- [ ] Safe Browsing API key fully server-side (not in client code)
-- [ ] CORS configured correctly for production domain and localhost
-- [ ] Google Maps API key restricted to specific domains in Google Cloud Console
-- [ ] Client `LinkValidationService.ts` calls proxy instead of Google directly (Story 18.6)
-- [ ] No `VITE_GOOGLE_SAFE_BROWSING_KEY` in client bundle
-- [ ] Worker secrets properly configured via `wrangler secret`
-- [ ] Error handling for proxy failures (fail-open for Safe Browsing)
+- [x] Cloudflare Worker deployed with `/api/safe-browsing` endpoint operational
+- [x] Safe Browsing API key fully server-side (not in client code)
+- [x] CORS configured correctly for production domain and localhost
+- [x] Google Maps API key restricted to specific domains in Google Cloud Console
+- [x] Client `LinkValidationService.ts` calls proxy instead of Google directly (Story 18.6)
+- [x] No `VITE_GOOGLE_SAFE_BROWSING_KEY` in client bundle
+- [x] Worker secrets properly configured via `wrangler secret`
+- [x] Error handling for proxy failures (fail-open for Safe Browsing)
 
 ---
 

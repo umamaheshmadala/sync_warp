@@ -1,7 +1,7 @@
 # STORY 19.3 — Audit SECURITY DEFINER Views and Convert to SECURITY INVOKER
 
 **Epic:** [EPIC 19 — Supabase Security & Database Performance](../epics/EPIC_19_Supabase_Security_DB_Performance.md)  
-**Status:** 📋 Ready  
+**Status:** ✅ Done  
 **Priority:** 🟠 High  
 **Estimate:** 3 story points  
 **Dependencies:** None  
@@ -149,12 +149,12 @@ For each view, document whether it was converted and any justification if not:
 
 ## ✅ Acceptance Criteria
 
-- [ ] All 10 views have `security_invoker = on`
-- [ ] Supabase Security Advisor reports 0 `security_definer_view` warnings
-- [ ] Each view still returns correct data for authorized users
-- [ ] No unauthorized data leakage through views
-- [ ] Decision log documenting each view's conversion status is maintained
-- [ ] Application features that use these views work correctly
+- [x] All 10 views have `security_invoker = on`
+- [x] Supabase Security Advisor reports 0 `security_definer_view` warnings
+- [x] Each view still returns correct data for authorized users
+- [x] No unauthorized data leakage through views
+- [x] Decision log documenting each view's conversion status is maintained
+- [x] Application features that use these views work correctly
 
 ---
 

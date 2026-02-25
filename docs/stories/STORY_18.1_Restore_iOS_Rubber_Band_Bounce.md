@@ -1,7 +1,7 @@
 # STORY 18.1 — Restore iOS Rubber-Band Bounce
 
 **Epic:** [EPIC 18 — Native Mobile Feel & Production Hardening](../epics/EPIC_18_Native_Mobile_Feel_Production_Hardening.md)  
-**Status:** 📋 Ready  
+**Status:** ✅ Done  
 **Priority:** 🟠 High  
 **Estimate:** 1 story point  
 **Dependencies:** None  
@@ -137,11 +137,11 @@ This ensures:
 
 ## ✅ Acceptance Criteria
 
-- [ ] `overscroll-behavior-y: none` removed from the `body, #root` rule
-- [ ] iOS rubber-band bounce restored on web
-- [ ] Pull-to-refresh still prevented on native Capacitor apps (`.native-platform` guard)
-- [ ] Conversation list scroll containment unchanged
-- [ ] No regression in Android overscroll behavior
+- [x] `overscroll-behavior-y: none` removed from the `body, #root` rule
+- [x] iOS rubber-band bounce restored on web
+- [x] Pull-to-refresh still prevented on native Capacitor apps (`.native-platform` guard)
+- [x] Conversation list scroll containment unchanged
+- [x] No regression in Android overscroll behavior
 
 ---
 
