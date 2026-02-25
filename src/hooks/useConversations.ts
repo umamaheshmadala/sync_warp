@@ -27,7 +27,9 @@ export function useConversations() {
       return await messagingService.fetchConversations()
     },
     enabled: isAuthReady, // Automatically pauses when unauthenticated
-    staleTime: 1000 * 60 * 5, // 5 minutes cache freshness
+    // Set staleTime to 0. With IndexedDB offline caching, if we set this > 0, the app
+    // might boot up showing stale unread counts from a previous session and refuse to background-fetch updates!
+    staleTime: 0,
   })
 
   // 2. Subscribe to real-time conversation updates

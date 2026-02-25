@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react'
+import React, { useEffect, useRef, useState, useMemo, useImperativeHandle } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import { MessageBubble } from './MessageBubble'
@@ -8,6 +8,10 @@ import type { Message } from '../../types/messaging'
 import { parseDatabaseDate } from '../../utils/dateUtils'
 import { format, isToday, isYesterday, isSameYear, differenceInCalendarDays } from 'date-fns'
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso'
+
+export interface MessageListHandle {
+  scrollToMessage: (messageId: string) => boolean;
+}
 
 interface MessageListProps {
   messages: Message[]
@@ -28,6 +32,7 @@ interface MessageListProps {
   lastReadAt?: string | null | undefined // For persistent unread divider
   friendReadReceiptsEnabled?: boolean
   onInitialScrollComplete?: () => void
+  listHandleRef?: React.Ref<MessageListHandle>
 }
 
 /**
@@ -57,9 +62,12 @@ export const MessageList = React.forwardRef<HTMLDivElement, MessageListProps>(({
   onUnpin,
   isMessagePinned,
   lastReadAt,
-  friendReadReceiptsEnabled = true
+  friendReadReceiptsEnabled = true,
+  listHandleRef
 }, ref) => {
   const currentUserId = useAuthStore(state => state.user?.id)
+
+  const virtuosoRef = useRef<VirtuosoHandle>(null)
 
   // O(N) deduplication + sorting via useMemo (Performance Fix)
   // Previously this was O(N^2) inside the render body, causing 250k+ iterations per frame
@@ -73,7 +81,29 @@ export const MessageList = React.forwardRef<HTMLDivElement, MessageListProps>(({
       new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
     )
   }, [messages])
-  const virtuosoRef = useRef<VirtuosoHandle>(null)
+
+  useImperativeHandle(listHandleRef, () => ({
+    scrollToMessage: (messageId: string) => {
+      if (!virtuosoRef.current) return false;
+      const index = sortedMessages.findIndex(m => m.id === messageId);
+      if (index !== -1) {
+        virtuosoRef.current.scrollToIndex({ index, align: 'center', behavior: 'smooth' });
+        // Give Virtuoso time to render the DOM node, then apply flash
+        setTimeout(() => {
+          const el = document.getElementById(`message-${messageId}`);
+          if (el) {
+            el.classList.add('search-highlight-flash');
+            setTimeout(() => {
+              el.classList.remove('search-highlight-flash');
+            }, 2000);
+          }
+        }, 100); // 100ms should be enough for virtualization engine
+        return true;
+      }
+      return false;
+    }
+  }), [sortedMessages]);
+
   const isLoadingMore = useRef(false)
   const prevScrollHeight = useRef(0)
   const { conversationId } = useParams<{ conversationId: string }>()

@@ -167,6 +167,7 @@ export interface SendMessageParams {
   mediaUrls?: string[];
   mediaWidth?: number;
   mediaHeight?: number;
+  mediaDuration?: number;
   thumbnailUrl?: string;
   linkPreviews?: LinkPreview[];
   sharedCouponId?: string;

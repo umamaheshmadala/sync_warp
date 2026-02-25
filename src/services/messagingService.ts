@@ -267,6 +267,9 @@ class MessagingService {
       }
 
       if (params.mediaUrls) rpcParams.p_media_urls = params.mediaUrls
+      if (params.mediaWidth !== undefined) rpcParams.p_media_width = params.mediaWidth
+      if (params.mediaHeight !== undefined) rpcParams.p_media_height = params.mediaHeight
+      if (params.mediaDuration !== undefined) rpcParams.p_media_duration = params.mediaDuration
       if (params.thumbnailUrl) rpcParams.p_thumbnail_url = params.thumbnailUrl
       if (params.linkPreviews) rpcParams.p_link_previews = params.linkPreviews
       if (params.sharedCouponId) rpcParams.p_shared_coupon_id = params.sharedCouponId
@@ -490,6 +493,9 @@ class MessagingService {
           content: msg.content,
           type: msg.type,
           media_urls: msg.media_urls || [],
+          media_width: msg.media_width || null,
+          media_height: msg.media_height || null,
+          media_duration: msg.media_duration || null,
           thumbnail_url: msg.thumbnail_url || null, // Ensure explicit null if missing
           link_previews: msg.link_previews || null,
           shared_coupon_id: msg.shared_coupon_id,
@@ -607,11 +613,15 @@ class MessagingService {
           content: msg.content,
           type: msg.type,
           media_urls: msg.media_urls || [],
+          media_width: msg.media_width || null,
+          media_height: msg.media_height || null,
+          media_duration: msg.media_duration || null,
           thumbnail_url: msg.thumbnail_url || null,
           link_previews: msg.link_previews || null,
           shared_coupon_id: msg.shared_coupon_id,
           shared_deal_id: msg.shared_deal_id,
           reply_to_id: msg.reply_to_id,
+          parent_message: msg.parent_message || null,
           created_at: msg.created_at,
           updated_at: msg.updated_at,
           is_deleted: msg.is_deleted,

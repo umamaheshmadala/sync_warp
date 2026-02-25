@@ -159,7 +159,13 @@ function App() {
   useEffect(() => {
     const migrateCache = async () => {
       const key = 'REACT_QUERY_OFFLINE_CACHE'
-      const oldData = window.localStorage.getItem(key)
+      let oldData = null;
+
+      try {
+        oldData = window.localStorage.getItem(key)
+      } catch (err) {
+        console.warn('⚠️ Could not access localStorage (possible iOS privacy restriction):', err)
+      }
 
       if (oldData) {
         console.log('📦 Found legacy cache in localStorage. Migrating to IndexedDB...')
@@ -167,7 +173,7 @@ function App() {
           await asyncStorage.setItem(key, oldData)
           window.localStorage.removeItem(key)
           console.log('✅ Migration to IndexedDB successful!')
-          toast.success('App upgraded to high-capacity storage', { icon: '🚀' })
+          // Avoid toast on app boot, can cause visual clutter or errors if DOM isn't ready
         } catch (e) {
           console.error('❌ Storage migration failed:', e)
         }

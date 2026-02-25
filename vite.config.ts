@@ -59,7 +59,7 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     buildInfoPlugin(),
-    ...(mode !== 'capacitor' ? [VitePWA({
+    ...(mode !== 'capacitor' && process.env.CAPACITOR_BUILD !== 'true' ? [VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['logo.svg', 'favicon.ico'],
       workbox: {
@@ -171,7 +171,7 @@ export default defineConfig(({ mode }) => ({
       overlay: false
     },
     watch: {
-      ignored: ['**/android/**', '**/ios/**']
+      ignored: ['**/android/**', '**/ios/**', '**/docs/**', '**/*.md']
     },
     fs: {
       deny: ['**/.git/**', '**/android/**', '**/ios/**']
@@ -196,48 +196,11 @@ export default defineConfig(({ mode }) => ({
         warn(warning)
       },
       output: {
-        manualChunks(id: string) {
-          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom') || id.includes('node_modules/react-router')) {
-            return 'react-vendor';
-          }
-          if (id.includes('node_modules/@supabase')) {
-            return 'supabase-vendor';
-          }
-          if (id.includes('node_modules/zustand')) {
-            return 'zustand-vendor';
-          }
-          if (id.includes('node_modules/recharts') || id.includes('node_modules/d3-')) {
-            return 'recharts-vendor';
-          }
-          if (id.includes('node_modules/emoji-picker-react')) {
-            return 'emoji-vendor';
-          }
-          if (id.includes('node_modules/@dnd-kit')) {
-            return 'dnd-vendor';
-          }
-          if (id.includes('node_modules/xlsx')) {
-            return 'xlsx-vendor';
-          }
-          if (id.includes('node_modules/@tanstack')) {
-            return 'tanstack-vendor';
-          }
-          if (id.includes('node_modules/@radix-ui')) {
-            return 'radix-vendor';
-          }
-          if (id.includes('node_modules/@react-google-maps/api')) {
-            return 'maps-vendor';
-          }
-          if (id.includes('node_modules/browser-image-compression')) {
-            return 'image-vendor';
-          }
-          if (id.includes('node_modules/date-fns')) {
-            return 'date-vendor';
-          }
-        },
-        // Preserve module names to prevent mangling
-        preserveModules: false,
-        // Ensure exports are preserved
-        exports: 'named'
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'supabase-vendor': ['@supabase/supabase-js'],
+          'ui-vendor': ['lucide-react', 'react-hot-toast']
+        }
       }
     }
   }

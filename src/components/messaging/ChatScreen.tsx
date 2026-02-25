@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useMessages } from '../../hooks/useMessages'
 import { useTypingIndicator } from '../../hooks/useTypingIndicator'
 import { useSendMessage } from '../../hooks/useSendMessage'
-import { MessageList } from './MessageList'
+import { MessageList, type MessageListHandle } from './MessageList'
 import { MessageComposer } from './MessageComposer'
 import { ChatHeader } from './ChatHeader'
 import { TypingIndicator } from './TypingIndicator'
@@ -82,6 +82,7 @@ export default function ChatScreen() {
   const { retryMessage } = useSendMessage() // For retrying failed messages (Story 8.2.7)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const listHandleRef = useRef<MessageListHandle>(null)
   const prevLastMessageId = useRef<string | null>(null)
   const prevMessageCount = useRef<number>(0)
 
@@ -416,19 +417,8 @@ export default function ChatScreen() {
 
   // Scroll to message with highlight (Story 8.5.4 / 8.12.2 AC#6-7)
   const scrollToMessage = useCallback(async (messageId: string) => {
-    // Helper to highlight a found element
-    const highlightElement = (el: HTMLElement) => {
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      el.classList.add('search-highlight-flash')
-      setTimeout(() => {
-        el.classList.remove('search-highlight-flash')
-      }, 2000)
-    }
-
-    // 1. Fast path: message already in DOM
-    const messageElement = document.getElementById(`message-${messageId}`)
-    if (messageElement) {
-      highlightElement(messageElement)
+    // 1. Fast path: try to scroll natively using Virtuoso's imperative handle
+    if (listHandleRef.current?.scrollToMessage(messageId)) {
       return
     }
 
@@ -442,11 +432,12 @@ export default function ChatScreen() {
       if (aroundMessages.length > 0) {
         // Replace current message window in store
         queryClient.setQueryData(['messages', conversationId], (old: any) => ({ ...old, messages: aroundMessages }))
-        // Wait for React to render the new messages
+
+        // Wait for React and Virtuoso to render the new state array
         await new Promise(resolve => setTimeout(resolve, 300))
-        const el = document.getElementById(`message-${messageId}`)
-        if (el) {
-          highlightElement(el)
+
+        // Try to scroll natively again now that the data is loaded in Virtuoso
+        if (listHandleRef.current?.scrollToMessage(messageId)) {
           return
         }
       }
@@ -602,6 +593,7 @@ export default function ChatScreen() {
           isMessagePinned={isMessagePinned}
           lastReadAt={lastReadAt}
           friendReadReceiptsEnabled={friendReadReceiptsEnabled}
+          listHandleRef={listHandleRef}
         />
       )}
 
