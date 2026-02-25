@@ -45,8 +45,8 @@ const buildInfoPlugin = () => {
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  // Use absolute paths for web (Netlify), relative for Capacitor mobile builds
-  base: mode === 'capacitor' ? './' : '/',
+  // Use relative paths so builds work on both web (Netlify) and native (Capacitor)
+  base: './',
 
   // Strip console.log and debugger in production (Story 18.4)
   ...(mode !== 'development' && {
