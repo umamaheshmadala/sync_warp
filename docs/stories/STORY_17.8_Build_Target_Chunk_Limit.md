@@ -1,7 +1,7 @@
 # STORY 17.8 — Change Build Target to `es2020` & Lower `chunkSizeWarningLimit` to 500
 
 **Epic:** [EPIC 17 — FAANG UX, Accessibility & Build Config](../epics/EPIC_17_FAANG_UX_Accessibility_Build_Config.md)  
-**Status:** 📋 Ready  
+**Status:** ✅ Done
 **Priority:** 🟡 Medium  
 **Estimate:** 1 story point  
 **Dependencies:** STORY 17.5 (chunk splitting must be done first so the warning limit is useful)  
@@ -105,13 +105,13 @@ This restores Vite's default threshold. After Story 17.5 splits `recharts`, `emo
 
 ## ✅ Acceptance Criteria
 
-- [ ] `build.target` changed from `'es2015'` to `'es2020'`
-- [ ] `chunkSizeWarningLimit` changed from `1000` to `500`
-- [ ] Total bundle size reduced (measured before/after)
-- [ ] No polyfill wrappers for `async/await`, `?.`, `??` in output
-- [ ] `npm run build` completes without chunk size warnings (after Story 17.5)
-- [ ] App works correctly in Chrome 80+, Safari 14+, Firefox 80+
-- [ ] Capacitor builds work on Android 8+ and iOS 14+
+- [x] `build.target` changed from `'es2015'` to `'es2020'`
+- [x] `chunkSizeWarningLimit` changed from `1000` to `500`
+- [x] Total bundle size reduced (measured before/after)
+- [x] No polyfill wrappers for `async/await`, `?.`, `??` in output
+- [x] `npm run build` completes without chunk size warnings (after Story 17.5)
+- [x] App works correctly in Chrome 80+, Safari 14+, Firefox 80+
+- [x] Capacitor builds work on Android 8+ and iOS 14+
 
 ---
 

@@ -1,7 +1,7 @@
 # STORY 17.9 — Connect `web-vitals` to Analytics Endpoint
 
 **Epic:** [EPIC 17 — FAANG UX, Accessibility & Build Config](../epics/EPIC_17_FAANG_UX_Accessibility_Build_Config.md)  
-**Status:** 📋 Ready  
+**Status:** ✅ Done
 **Priority:** 🟡 Medium  
 **Estimate:** 2 story points  
 **Dependencies:** None  
@@ -231,15 +231,15 @@ No other code changes are needed — `onINP` has the same callback signature as 
 
 ## ✅ Acceptance Criteria
 
-- [ ] `sendToAnalytics()` updated to use `navigator.sendBeacon()` for reliable delivery
-- [ ] Web Vitals payload includes: name, value, rating, delta, url, userAgent
-- [ ] Metrics are sent in production only (not in development — dev uses console.log)
-- [ ] `gtag` integration preserved as a fallback (for future Google Analytics setup)
-- [ ] `performanceMonitor` singleton initializes on app startup
-- [ ] Console logs Web Vitals in development mode (already working)
-- [ ] Network tab shows beacon requests to analytics endpoint in production
-- [ ] `onFID` replaced with `onINP` for web-vitals v5 compatibility
-- [ ] Optional: Supabase `web_vitals` table created for persistent storage
+- [x] `sendToAnalytics()` updated to use `navigator.sendBeacon()` for reliable delivery
+- [x] Web Vitals payload includes: name, value, rating, delta, url, userAgent
+- [x] Metrics are sent in production only (not in development — dev uses console.log)
+- [x] `gtag` integration preserved as a fallback (for future Google Analytics setup)
+- [x] `performanceMonitor` singleton initializes on app startup
+- [x] Console logs Web Vitals in development mode (already working)
+- [x] Network tab shows beacon requests to analytics endpoint in production
+- [x] `onFID` replaced with `onINP` for web-vitals v5 compatibility
+- [x] Optional: Supabase `web_vitals` table created for persistent storage (Created Netlify endpoint instead)
 
 ---
 

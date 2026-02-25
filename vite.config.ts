@@ -174,11 +174,11 @@ export default defineConfig(({ mode }) => ({
   },
   // Production build optimization
   build: {
-    target: 'es2015',
+    target: 'es2020',
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: false,
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 500,
     rollupOptions: {
       onwarn(warning, warn) {
         if (warning.message.includes('is dynamically imported by')) {
@@ -208,6 +208,21 @@ export default defineConfig(({ mode }) => ({
           }
           if (id.includes('node_modules/xlsx')) {
             return 'xlsx-vendor';
+          }
+          if (id.includes('node_modules/@tanstack')) {
+            return 'tanstack-vendor';
+          }
+          if (id.includes('node_modules/@radix-ui')) {
+            return 'radix-vendor';
+          }
+          if (id.includes('node_modules/@react-google-maps/api')) {
+            return 'maps-vendor';
+          }
+          if (id.includes('node_modules/browser-image-compression')) {
+            return 'image-vendor';
+          }
+          if (id.includes('node_modules/date-fns')) {
+            return 'date-vendor';
           }
         },
         // Preserve module names to prevent mangling

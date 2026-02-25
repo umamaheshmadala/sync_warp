@@ -1,4 +1,4 @@
-import { onCLS, onFID, onFCP, onLCP, onTTFB, Metric } from 'web-vitals';
+import { onCLS, onINP, onFCP, onLCP, onTTFB, Metric } from 'web-vitals';
 
 /**
  * Performance Monitoring Utility
@@ -40,7 +40,7 @@ class PerformanceMonitor {
 
     // Track Core Web Vitals
     onCLS(this.handleMetric.bind(this));
-    onFID(this.handleMetric.bind(this));
+    onINP(this.handleMetric.bind(this));
     onFCP(this.handleMetric.bind(this));
     onLCP(this.handleMetric.bind(this));
     onTTFB(this.handleMetric.bind(this));
@@ -256,10 +256,24 @@ class PerformanceMonitor {
    * Send metrics to analytics service
    */
   private sendToAnalytics(metric: PerformanceMetric) {
-    // Implement your analytics service integration here
-    // Example: Google Analytics, custom backend, etc.
-    
-    // For now, we'll just store it
+    // Send Web Vitals via beacon API (non-blocking, survives page unload)
+    const body = JSON.stringify({
+      name: metric.name,
+      value: Math.round(metric.value * 100) / 100,
+      rating: metric.rating,
+      delta: metric.delta,
+      id: metric.id,
+      timestamp: metric.timestamp,
+      url: window.location.pathname,
+      userAgent: navigator.userAgent,
+    });
+
+    // Use sendBeacon for reliability (fires even during page unload)
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon('/api/web-vitals', body);
+    }
+
+    // Also fire gtag if available (Google Analytics integration)
     if (typeof window !== 'undefined' && (window as any).gtag) {
       (window as any).gtag('event', 'web_vitals', {
         event_category: 'Web Vitals',

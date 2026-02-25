@@ -163,6 +163,7 @@
   "devDependencies": {
     "@capacitor/assets": "^3.0.5",
     "@chromatic-com/storybook": "^4.1.3",
+    "@netlify/functions": "^5.1.2",
     "@playwright/experimental-ct-react": "^1.58.0",
     "@playwright/test": "^1.58.0",
     "@storybook/addon-a11y": "^10.1.2",
