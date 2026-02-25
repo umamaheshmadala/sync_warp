@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "postinstall": "npx patch-package",
     "dev": "vite",
     "build": "vite build",
     "build:check": "tsc && vite build",
