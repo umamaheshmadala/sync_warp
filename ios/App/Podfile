@@ -39,4 +39,11 @@ end
 
 post_install do |installer|
   assertDeploymentTarget(installer)
+  installer.pods_project.targets.each do |target|
+    target.build_phases.each do |build_phase|
+      if build_phase.class == Xcodeproj::Project::Object::PBXShellScriptBuildPhase
+        build_phase.always_out_of_date = "1"
+      end
+    end
+  end
 end

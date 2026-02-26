@@ -98,7 +98,7 @@ export function useMessages(conversationId: string | null) {
       // Fetch messages (hidden filtering is now handled server-side)
       const { messages: olderMessages, hasMore: more } = await messagingService.fetchMessages(conversationId, pageSize, oldestMessage.id)
 
-      // Update React Query cache by prepending messages
+      // Update React Query cache by prepending messages (both arrays are already sorted chronologcally)
       queryClient.setQueryData(['messages', conversationId], (old: any) => ({
         messages: [...olderMessages, ...(old?.messages || [])],
         hasMore: more

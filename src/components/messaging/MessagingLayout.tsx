@@ -22,7 +22,7 @@ export function MessagingLayout() {
   // - Always show Chat (or Empty State)
 
   return (
-    <div className="flex h-full bg-gray-50"> {/* Fill parent container which is already sized correctly by AppLayout */}
+    <div className="flex h-full bg-gray-50 overflow-x-hidden w-full max-w-full"> {/* Fill parent container which is already sized correctly by AppLayout */}
       {/* Sidebar Area */}
       <div className={cn(
         "w-full md:w-[350px] lg:w-[380px] border-r bg-white flex flex-col h-full z-10",
@@ -33,7 +33,7 @@ export function MessagingLayout() {
 
       {/* Main Content Area */}
       <div className={cn(
-        "flex-1 flex flex-col h-full min-w-0 bg-white",
+        "flex-1 flex flex-col h-full min-w-0 bg-white overflow-x-hidden max-w-full",
         !conversationId ? "hidden md:flex" : "flex"
       )}>
         <Outlet />

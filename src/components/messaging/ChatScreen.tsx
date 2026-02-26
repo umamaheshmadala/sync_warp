@@ -517,7 +517,11 @@ export default function ChatScreen() {
 
   return (
     <div
-      className="flex flex-col flex-1 bg-white chat-screen !pb-0 !mb-0"
+      className="flex flex-col flex-1 bg-white chat-screen !pb-0 !mb-0 overflow-x-hidden w-full max-w-full"
+      style={{
+        paddingLeft: 'env(safe-area-inset-left)',
+        paddingRight: 'env(safe-area-inset-right)'
+      }}
     >
       <ChatHeader
         conversationId={conversationId}

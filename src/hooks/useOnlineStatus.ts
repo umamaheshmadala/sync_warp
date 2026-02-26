@@ -74,9 +74,11 @@ export function useCanSeeOnlineStatus(targetUserId: string) {
             return data as boolean;
         },
         enabled: !!user?.id && !!targetUserId,
-        staleTime: 10 * 1000, // Cache for 10 seconds
-        gcTime: 60 * 1000, // Keep in cache for 1 minute
-        refetchInterval: 10 * 1000, // Auto-refresh every 10 seconds
+        staleTime: 60 * 1000, // Cache for 1 minute
+        gcTime: 2 * 60 * 1000, // Keep in cache for 2 minutes
+        refetchInterval: 60 * 1000, // Auto-refresh every 60 seconds
+        refetchOnWindowFocus: true, // Only refresh when app is active
+        refetchIntervalInBackground: false, // Vital for iOS battery
     });
 
     return { canSee: canSee ?? false, isLoading };
