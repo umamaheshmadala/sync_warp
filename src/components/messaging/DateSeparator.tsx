@@ -5,6 +5,8 @@ interface DateSeparatorProps {
 }
 
 export const DateSeparator: React.FC<DateSeparatorProps> = ({ label }) => {
+    if (!label) return null;
+
     return (
         <div
             className="flex justify-center py-4 pointer-events-none relative z-40"

@@ -189,6 +189,13 @@ export const MessageList = React.forwardRef<HTMLDivElement, MessageListProps>(({
       }
     })
 
+    // We no longer push a trailing group count here because Virtuoso expects the 
+    // total elements in groupCounts to match the exact number of times the DateKey changed.
+    // The previous loop already records whenever currentGroupLabel shifts. 
+    // We just need to make sure the VERY FIRST group is captured if the array isn't empty.
+
+    // Actually, to make GroupedVirtuoso work, the sum of `groupCounts` must equal `flatViewModels.length`.
+    // So we DO need to flush the final `currentGroupCount` at the end of the array!
     if (currentGroupLabel !== null) {
       groupCounts.push(currentGroupCount)
       groupLabels.push(currentGroupLabel)
@@ -214,7 +221,6 @@ export const MessageList = React.forwardRef<HTMLDivElement, MessageListProps>(({
     }
   }, [hasMore, isLoading, initialScrollDone, onLoadMore])
 
-  // Determine initial scroll index ONLY once per chat session
   const initialTopMostItemIndex = useMemo(() => {
     if (frozenReadAt === undefined || viewModels.flatViewModels.length === 0) return undefined
 
@@ -236,23 +242,30 @@ export const MessageList = React.forwardRef<HTMLDivElement, MessageListProps>(({
             else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = el as HTMLDivElement;
           }}
           data={viewModels.flatViewModels}
-          className="message-list-scroll scrollbar-hide"
+          className="message-list-scroll scrollbar-hide flex-1 h-full w-full max-w-full"
           groupCounts={viewModels.groupCounts}
           groupContent={(index) => {
             return <DateSeparator label={viewModels.groupLabels[index]} />
           }}
-          initialTopMostItemIndex={initialTopMostItemIndex}
+          initialTopMostItemIndex={initialTopMostItemIndex || { index: 'LAST' as const, align: 'end' as const }}
           startReached={handleStartReached}
-          alignToBottom
+          increaseViewportBy={600}
           followOutput={(isAtBottom) => isAtBottom ? 'smooth' : false}
           components={{
             TopItemList: React.forwardRef(({ style, ...props }: React.HTMLAttributes<HTMLDivElement>, ref) => (
               <div
-                {...props}
                 ref={ref as any}
-                style={{ ...style, zIndex: 50 }}
-                className="pointer-events-none"
-              />
+                style={{ ...style, minHeight: '40px' }}
+                className="flex items-center justify-center py-2"
+                {...props}
+              >
+                {isLoading && (
+                  <div className="flex bg-neutral-100 rounded-full px-4 py-1.5 items-center justify-center gap-2">
+                    <Loader2 className="w-4 h-4 text-primary animate-spin" />
+                    <span className="text-xs text-neutral-500 font-medium">Loading older messages...</span>
+                  </div>
+                )}
+              </div>
             )),
             Group: React.forwardRef(({ style, ...props }: React.HTMLAttributes<HTMLDivElement>, ref) => (
               <div
@@ -265,15 +278,22 @@ export const MessageList = React.forwardRef<HTMLDivElement, MessageListProps>(({
             Header: () => (
               <div className="flex flex-col items-center">
                 {messagesEndRef && <div ref={messagesEndRef} className="hidden" />}
-                {(isFetchingOlder || (isLoading && hasMore)) && (
-                  <div className="flex justify-center py-4">
-                    <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
-                  </div>
-                )}
+                {/* The loading indicator for older messages is now in TopItemList */}
                 {!hasMore && messages.length > 0 && (
                   <div className="flex justify-center py-6 pb-8">
                     <span className="text-xs font-medium text-gray-400 bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
                       Start of conversation
+                    </span>
+                  </div>
+                )}
+              </div>
+            ),
+            Footer: () => (
+              <div className="flex flex-col items-center">
+                {messages.length > 0 && (
+                  <div className="flex justify-center py-4 pt-2">
+                    <span className="text-xs font-medium text-gray-400 bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
+                      End of conversation
                     </span>
                   </div>
                 )}
