@@ -220,9 +220,13 @@ export default function ChatScreen() {
     // Check if the last message has changed (indicates new message at bottom vs history loaded at top)
     const isNewMessageAtBottom = lastMessage?.id !== prevLastMessageId.current
 
+    // Is this the very first load of messages for this conversation?
+    const isInitialLoad = prevMessageCount.current === 0;
+
     // Scroll automatically if:
     // 1. We have more messages than before AND the last message is new
-    if (messages.length > prevMessageCount.current && isNewMessageAtBottom) {
+    // 2. We are NOT on the initial load (Virtuoso handles initial load statically)
+    if (!isInitialLoad && messages.length > prevMessageCount.current && isNewMessageAtBottom) {
       if (isUserMessage || isAtBottom) {
         console.log('📜 Smart Scroll: Scrolling to bottom', { isUserMessage, isAtBottom })
         // Throttle auto-scroll for burst messages (Story 8.12.1 AC#9)
