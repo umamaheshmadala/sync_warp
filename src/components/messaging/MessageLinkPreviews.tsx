@@ -5,15 +5,36 @@ import { LinkPreviewCard } from './LinkPreviewCard'
 import type { LinkPreview } from '../../services/linkPreviewService'
 
 interface MessageLinkPreviewsProps {
-    previews: LinkPreview[] | undefined | null
+    previews: LinkPreview[] | any | undefined | null
 }
 
 export const MessageLinkPreviews = React.memo(function MessageLinkPreviews({ previews }: MessageLinkPreviewsProps) {
-    if (!previews || previews.length === 0) return null
+    if (!previews) return null
 
-    const firstPreview = previews[0]
-    const isReview = firstPreview.metadata?.type === 'review'
-    const isOffer = firstPreview.type === 'sync-offer' || firstPreview.metadata?.type === 'offer'
+    // Defensively parse previews to guarantee it's an array
+    let previewArray: LinkPreview[] = []
+
+    if (typeof previews === 'string') {
+        try {
+            const parsed = JSON.parse(previews)
+            previewArray = Array.isArray(parsed) ? parsed : [parsed]
+        } catch (e) {
+            console.error('Failed to parse link_previews string:', e)
+            return null
+        }
+    } else if (Array.isArray(previews)) {
+        previewArray = previews
+    } else if (typeof previews === 'object') {
+        previewArray = [previews]
+    }
+
+    if (previewArray.length === 0) return null
+
+    const firstPreview = previewArray[0]
+    if (!firstPreview) return null
+
+    const isReview = firstPreview.metadata?.type === 'review' || firstPreview.type === 'sync-review'
+    const isOffer = firstPreview.type === 'sync-offer' || firstPreview.metadata?.type === 'offer' || firstPreview.type === 'sync-deal' || firstPreview.type === 'sync-coupon'
 
     return (
         <>
@@ -31,9 +52,9 @@ export const MessageLinkPreviews = React.memo(function MessageLinkPreviews({ pre
 
             {!isReview && !isOffer && (
                 <div className="space-y-2 w-full max-w-[75vw]">
-                    {previews.map((preview, index) => (
+                    {previewArray.map((preview, index) => (
                         <LinkPreviewCard
-                            key={`${preview.url}-${index}`}
+                            key={`${preview.url || 'preview'}-${index}`}
                             preview={preview}
                             showRemoveButton={false}
                         />

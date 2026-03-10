@@ -29,6 +29,8 @@ import { useTheme } from './hooks/useTheme'
 
 import { queryClient } from './lib/react-query'
 
+// @ts-ignore
+window.queryClient = queryClient;
 // Create persister for IndexedDB (Async Storage)
 // This replaces the old localStorage (Sync) persister to remove the 5MB limit
 const persister = createAsyncStoragePersister({

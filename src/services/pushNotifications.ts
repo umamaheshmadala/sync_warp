@@ -24,6 +24,11 @@ class PushNotificationServiceImpl implements PushNotificationService {
       return
     }
 
+    if (Capacitor.getPlatform() === 'android') {
+      console.warn('[PushNotifications] Warning: Skipping Push Notifications on Android. Firebase google-services.json is missing.');
+      return
+    }
+
     console.log('[PushNotifications] Initializing...')
 
     // Listen for registration success
@@ -55,6 +60,11 @@ class PushNotificationServiceImpl implements PushNotificationService {
 
   async requestPermissions(): Promise<boolean> {
     if (!Capacitor.isNativePlatform()) {
+      return false
+    }
+
+    if (Capacitor.getPlatform() === 'android') {
+      console.warn('[PushNotifications] Warning: Skipping Push Notifications on Android. Firebase google-services.json is missing.');
       return false
     }
 

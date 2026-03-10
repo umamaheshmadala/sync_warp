@@ -69,7 +69,7 @@ export const MobileProductModal: React.FC<MobileProductModalProps> = ({ isOpen, 
             {/* Modal Content */}
             <div
                 className={`relative w-full h-full sm:h-[90vh] sm:max-w-md sm:rounded-xl bg-white overflow-hidden shadow-2xl touch-none ${isClosing ? 'translate-y-full transition-transform duration-300' :
-                        (isDragging ? 'transition-none' : 'animate-fadeInUp transition-transform duration-300')
+                    (isDragging ? 'transition-none' : 'animate-fadeInUp transition-transform duration-300')
                     }`}
                 style={isDragging || (!isClosing && yOffset > 0) ? { transform: `translateY(${yOffset}px)` } : undefined}
                 onTouchStart={handleTouchStart}
@@ -77,7 +77,10 @@ export const MobileProductModal: React.FC<MobileProductModalProps> = ({ isOpen, 
                 onTouchEnd={handleTouchEnd}
             >
                 {/* Drag Handle for visual affordance */}
-                <div className="absolute top-2 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-gray-300 rounded-full z-10 sm:hidden pointer-events-none" />
+                <div
+                    className="absolute left-1/2 -translate-x-1/2 w-12 h-1.5 bg-gray-300 rounded-full z-10 sm:hidden pointer-events-none"
+                    style={{ top: 'calc(0.5rem + env(safe-area-inset-top, 0px))' }}
+                />
 
                 {/* Content Container */}
                 <div
@@ -85,7 +88,7 @@ export const MobileProductModal: React.FC<MobileProductModalProps> = ({ isOpen, 
                     onTouchStart={(e) => e.stopPropagation()}
                     onPointerDown={(e) => e.stopPropagation()}
                 >
-                    <div className="pt-14">
+                    <div style={{ paddingTop: 'calc(3.5rem + env(safe-area-inset-top, 0px))' }}>
                         {children}
                     </div>
                 </div>

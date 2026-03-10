@@ -88,7 +88,7 @@ export function useMessages(conversationId: string | null) {
   const loadMore = useCallback(async () => {
     if (!conversationId || !hasMore.current || isLoadingMoreRef.current) return
 
-    const oldestMessage = conversationMessages[0] // Messages sorted DESC by created_at
+    const oldestMessage = conversationMessages[conversationMessages.length - 1] // Messages sorted DESC by created_at
     if (!oldestMessage) return
 
     try {
@@ -98,9 +98,9 @@ export function useMessages(conversationId: string | null) {
       // Fetch messages (hidden filtering is now handled server-side)
       const { messages: olderMessages, hasMore: more } = await messagingService.fetchMessages(conversationId, pageSize, oldestMessage.id)
 
-      // Update React Query cache by prepending messages (both arrays are already sorted chronologcally)
+      // Update React Query cache by appending messages (both arrays are already sorted chronologically DESC)
       queryClient.setQueryData(['messages', conversationId], (old: any) => ({
-        messages: [...olderMessages, ...(old?.messages || [])],
+        messages: [...(old?.messages || []), ...olderMessages],
         hasMore: more
       }))
 
@@ -195,7 +195,7 @@ export function useMessages(conversationId: string | null) {
             }
 
             return {
-              messages: [...currentMessages, processedMessage],
+              messages: [processedMessage, ...currentMessages],
               hasMore: old?.hasMore ?? true
             }
           })

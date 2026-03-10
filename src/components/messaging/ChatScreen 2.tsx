@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useMessages } from '../../hooks/useMessages'
 import { useTypingIndicator } from '../../hooks/useTypingIndicator'
 import { useSendMessage } from '../../hooks/useSendMessage'
-import { MessageList, type MessageListHandle } from './MessageList'
+import { MessageList } from './MessageList'
 import { MessageComposer } from './MessageComposer'
 import { ChatHeader } from './ChatHeader'
 import { TypingIndicator } from './TypingIndicator'
@@ -82,7 +82,6 @@ export default function ChatScreen() {
   const { retryMessage } = useSendMessage() // For retrying failed messages (Story 8.2.7)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const listHandleRef = useRef<MessageListHandle>(null)
   const prevLastMessageId = useRef<string | null>(null)
   const prevMessageCount = useRef<number>(0)
 
@@ -202,8 +201,8 @@ export default function ChatScreen() {
   }, [conversationId, currentUserId, otherUserId])
 
   // Scroll to bottom helper (adapts hook to expected interface)
-  const scrollToBottom = (behavior: 'auto' | 'smooth' = 'smooth') => {
-    listHandleRef.current?.scrollToBottom(behavior)
+  const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
+    scrollToBottomHook(behavior)
   }
 
   // Auto-scroll to bottom on new messages (Smart Scroll)
@@ -211,8 +210,8 @@ export default function ChatScreen() {
     // If we have no messages, nothing to do
     if (messages.length === 0) return
 
-    // Get the last message (newest is at index 0 because the array is sorted DESC)
-    const lastMessage = messages[0]
+    // Get the last message
+    const lastMessage = messages[messages.length - 1]
 
     // Check if the current user sent it
     const isUserMessage = lastMessage?.sender_id === currentUserId || (lastMessage?._optimistic)
@@ -220,20 +219,16 @@ export default function ChatScreen() {
     // Check if the last message has changed (indicates new message at bottom vs history loaded at top)
     const isNewMessageAtBottom = lastMessage?.id !== prevLastMessageId.current
 
-    // Is this the very first load of messages for this conversation?
-    const isInitialLoad = prevMessageCount.current === 0;
-
     // Scroll automatically if:
     // 1. We have more messages than before AND the last message is new
-    // 2. We are NOT on the initial load (Virtuoso handles initial load statically)
-    if (!isInitialLoad && messages.length > prevMessageCount.current && isNewMessageAtBottom) {
+    if (messages.length > prevMessageCount.current && isNewMessageAtBottom) {
       if (isUserMessage || isAtBottom) {
         console.log('📜 Smart Scroll: Scrolling to bottom', { isUserMessage, isAtBottom })
         // Throttle auto-scroll for burst messages (Story 8.12.1 AC#9)
         // During rapid message arrival, only the final scroll fires after 150ms of quiet
         if (scrollThrottleRef.current) clearTimeout(scrollThrottleRef.current)
         scrollThrottleRef.current = setTimeout(() => {
-          scrollToBottom('smooth')
+          scrollToBottomHook('smooth')
           scrollThrottleRef.current = null
         }, 150)
       } else {
@@ -421,8 +416,19 @@ export default function ChatScreen() {
 
   // Scroll to message with highlight (Story 8.5.4 / 8.12.2 AC#6-7)
   const scrollToMessage = useCallback(async (messageId: string) => {
-    // 1. Fast path: try to scroll natively using Virtuoso's imperative handle
-    if (listHandleRef.current?.scrollToMessage(messageId)) {
+    // Helper to highlight a found element
+    const highlightElement = (el: HTMLElement) => {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      el.classList.add('search-highlight-flash')
+      setTimeout(() => {
+        el.classList.remove('search-highlight-flash')
+      }, 2000)
+    }
+
+    // 1. Fast path: message already in DOM
+    const messageElement = document.getElementById(`message-${messageId}`)
+    if (messageElement) {
+      highlightElement(messageElement)
       return
     }
 
@@ -436,12 +442,11 @@ export default function ChatScreen() {
       if (aroundMessages.length > 0) {
         // Replace current message window in store
         queryClient.setQueryData(['messages', conversationId], (old: any) => ({ ...old, messages: aroundMessages }))
-
-        // Wait for React and Virtuoso to render the new state array
+        // Wait for React to render the new messages
         await new Promise(resolve => setTimeout(resolve, 300))
-
-        // Try to scroll natively again now that the data is loaded in Virtuoso
-        if (listHandleRef.current?.scrollToMessage(messageId)) {
+        const el = document.getElementById(`message-${messageId}`)
+        if (el) {
+          highlightElement(el)
           return
         }
       }
@@ -517,11 +522,7 @@ export default function ChatScreen() {
 
   return (
     <div
-      className="flex flex-col flex-1 bg-white chat-screen !pb-0 !mb-0 overflow-x-hidden w-full max-w-full"
-      style={{
-        paddingLeft: 'env(safe-area-inset-left)',
-        paddingRight: 'env(safe-area-inset-right)'
-      }}
+      className="flex flex-col flex-1 bg-white chat-screen !pb-0 !mb-0"
     >
       <ChatHeader
         conversationId={conversationId}
@@ -601,7 +602,6 @@ export default function ChatScreen() {
           isMessagePinned={isMessagePinned}
           lastReadAt={lastReadAt}
           friendReadReceiptsEnabled={friendReadReceiptsEnabled}
-          listHandleRef={listHandleRef}
         />
       )}
 

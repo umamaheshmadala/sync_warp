@@ -12,7 +12,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Search, Check, Clock, Send, Loader2, Link } from 'lucide-react';
+import { X, Search, Check, Clock, Send, Loader2 } from 'lucide-react';
 import { useOptimizedSearch } from '../../hooks/useOptimizedSearch';
 import { useFriends } from '../../hooks/friends/useFriends';
 import { useUnifiedShare } from '../../hooks/useUnifiedShare';
@@ -52,9 +52,8 @@ export function ShareFriendPickerModal({
     const [selectedFriends, setSelectedFriends] = useState<string[]>([]);
     const [customMessage, setCustomMessage] = useState('');
     const [recentlySharedWithIds, setRecentlySharedWithIds] = useState<string[]>([]);
-    const [copied, setCopied] = useState(false);
 
-    const { shareToChat, isSharing, shareClipboard } = useUnifiedShare();
+    const { shareToChat, isSharing } = useUnifiedShare();
 
     // Use optimized search hook
     const { data: searchData, isLoading: isSearching } = useOptimizedSearch(searchQuery);
@@ -173,28 +172,6 @@ export function ShareFriendPickerModal({
         }
     };
 
-    const handleCopyLink = async () => {
-        try {
-            const result = await shareClipboard({
-                entityType: entityType,
-                entityId: entityId,
-                entityData: {
-                    title: entityData.title,
-                    description: entityData.description || '',
-                    imageUrl: entityData.imageUrl,
-                    url: entityData.url,
-                }
-            });
-            if (result.success) {
-                setCopied(true);
-                toast.success('Link copied to clipboard!');
-                setTimeout(() => setCopied(false), 2000);
-            }
-        } catch (err) {
-            toast.error('Failed to copy link');
-        }
-    };
-
     if (!isOpen) return null;
 
     const modalContent = (
@@ -205,52 +182,41 @@ export function ShareFriendPickerModal({
             onPointerDown={(e) => e.stopPropagation()}
         >
             <div className="w-full bg-white md:max-w-lg md:rounded-lg rounded-t-2xl max-h-[90vh] overflow-hidden flex flex-col animate-in slide-in-from-bottom-4 duration-200">
-                {/* Header with Title and Copy Link */}
+                {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b">
-                    <div className="flex items-center gap-3 flex-1 min-w-0 mr-2">
+                    <div>
+                        <h2 className="text-lg font-semibold">Send to Friends</h2>
+                        <p className="text-sm text-gray-500">Share this {getEntityLabel()} with friends</p>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="p-2 hover:bg-gray-100 rounded-full transition"
+                        aria-label="Close"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
+
+                {/* Entity Preview */}
+                <div className="p-4 border-b bg-gray-50">
+                    <div className="flex items-center gap-3">
                         {entityData.imageUrl ? (
-                            <img loading="lazy" decoding="async"
+                            <img loading="lazy" decoding="async" 
                                 src={entityData.imageUrl}
                                 alt={entityData.title}
-                                className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
+                                className="w-12 h-12 rounded-lg object-cover"
                             />
                         ) : (
-                            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <Send className="w-5 h-5 text-purple-600" />
+                            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                                <Send className="w-6 h-6 text-purple-600" />
                             </div>
                         )}
-                        <h2 className="text-base font-semibold truncate" title={entityData.title}>
-                            {entityData.title}
-                        </h2>
-                    </div>
-
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                        <button
-                            onClick={handleCopyLink}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-colors ${copied ? 'bg-green-50 border-green-200 text-green-700' : 'bg-white border-gray-200 hover:bg-gray-50 text-gray-700'
-                                }`}
-                            aria-label="Copy link"
-                        >
-                            {copied ? (
-                                <>
-                                    <Check className="w-4 h-4" />
-                                    <span className="text-xs font-medium">Copied</span>
-                                </>
-                            ) : (
-                                <>
-                                    <Link className="w-4 h-4" />
-                                    <span className="text-xs font-medium">Copy Link</span>
-                                </>
+                        <div className="flex-1 min-w-0">
+                            <p className="font-medium text-gray-900 truncate">{entityData.title}</p>
+                            {entityData.description && (
+                                <p className="text-sm text-gray-500 truncate">{entityData.description}</p>
                             )}
-                        </button>
-
-                        <button
-                            onClick={onClose}
-                            className="p-1.5 hover:bg-gray-100 rounded-full transition text-gray-500"
-                            aria-label="Close"
-                        >
-                            <X className="w-5 h-5" />
-                        </button>
+                        </div>
                     </div>
                 </div>
 
@@ -414,7 +380,7 @@ function CompactFriendItem({
         >
             <div className="relative">
                 {avatarUrl && !imageError ? (
-                    <img loading="lazy" decoding="async"
+                    <img loading="lazy" decoding="async" 
                         src={avatarUrl}
                         alt={name}
                         className={`w-12 h-12 rounded-full object-cover transition ${isSelected ? 'ring-2 ring-purple-600 ring-offset-2' : 'group-hover:ring-2 group-hover:ring-gray-200 group-hover:ring-offset-2'

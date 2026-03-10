@@ -60,6 +60,10 @@ export const usePushNotifications = (userId: string | null) => {
 
   const registerPushNotifications = async () => {
     try {
+      if (Capacitor.getPlatform() === 'android') {
+        return;
+      }
+
       console.log('[usePushNotifications] Starting registration for user:', userId);
       console.log('[usePushNotifications] Platform:', Capacitor.getPlatform());
 
@@ -159,6 +163,11 @@ export const usePushNotifications = (userId: string | null) => {
     // Only run on native platforms
     if (!Capacitor.isNativePlatform()) {
       console.log('[usePushNotifications] Skipping - not a native platform');
+      return;
+    }
+
+    if (Capacitor.getPlatform() === 'android') {
+      console.warn('[usePushNotifications] Warning: Skipping Push Notifications on Android. Firebase google-services.json is missing.');
       return;
     }
 

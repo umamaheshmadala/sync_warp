@@ -10,10 +10,9 @@ const DevMenu = () => {
   const [isOpen, setIsOpen] = useState(false)
   const navigate = useNavigate()
 
-  // Only show in development mode — never in production
-  if (!import.meta.env.DEV) {
-    return null
-  }
+  // The user explicitly requested to bring back this Dev Menu (which has the build timestamp).
+  // Previously this was hidden in production via:
+  // if (!import.meta.env.DEV) { return null }
 
   const testPages = [
     // { name: '📱 Contact Sync Test', path: '/test/contact-sync' },

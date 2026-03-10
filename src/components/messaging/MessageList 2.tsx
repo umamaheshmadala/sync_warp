@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo, useImperativeHandle } from 'react'
+import React, { useEffect, useRef, useState, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import { MessageBubble } from './MessageBubble'
@@ -7,12 +7,7 @@ import { Loader2 } from 'lucide-react'
 import type { Message } from '../../types/messaging'
 import { parseDatabaseDate } from '../../utils/dateUtils'
 import { format, isToday, isYesterday, isSameYear, differenceInCalendarDays } from 'date-fns'
-import { GroupedVirtuoso, GroupedVirtuosoHandle } from 'react-virtuoso'
-
-export interface MessageListHandle {
-  scrollToMessage: (messageId: string) => boolean;
-  scrollToBottom: (behavior?: 'auto' | 'smooth') => void;
-}
+import { Virtuoso, VirtuosoHandle } from 'react-virtuoso'
 
 interface MessageListProps {
   messages: Message[]
@@ -33,7 +28,6 @@ interface MessageListProps {
   lastReadAt?: string | null | undefined // For persistent unread divider
   friendReadReceiptsEnabled?: boolean
   onInitialScrollComplete?: () => void
-  listHandleRef?: React.Ref<MessageListHandle>
 }
 
 /**
@@ -63,12 +57,9 @@ export const MessageList = React.forwardRef<HTMLDivElement, MessageListProps>(({
   onUnpin,
   isMessagePinned,
   lastReadAt,
-  friendReadReceiptsEnabled = true,
-  listHandleRef
+  friendReadReceiptsEnabled = true
 }, ref) => {
   const currentUserId = useAuthStore(state => state.user?.id)
-
-  const virtuosoRef = useRef<GroupedVirtuosoHandle>(null)
 
   // O(N) deduplication + sorting via useMemo (Performance Fix)
   // Previously this was O(N^2) inside the render body, causing 250k+ iterations per frame
@@ -82,9 +73,7 @@ export const MessageList = React.forwardRef<HTMLDivElement, MessageListProps>(({
       new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
     )
   }, [messages])
-
-
-
+  const virtuosoRef = useRef<VirtuosoHandle>(null)
   const isLoadingMore = useRef(false)
   const prevScrollHeight = useRef(0)
   const { conversationId } = useParams<{ conversationId: string }>()
@@ -126,22 +115,23 @@ export const MessageList = React.forwardRef<HTMLDivElement, MessageListProps>(({
       firstUnreadIndex = 0
     }
 
-    let lastDateKey: string | null = null
-    const groupLabels: string[] = []
-    const groupCounts: number[] = []
-    let currentGroupCount = 0
-    let currentGroupLabel: string | null = null
-
-    const flatViewModels = sortedMessages.map((message, index) => {
+    let lastDate: string | null = null
+    return sortedMessages.map((message, index) => {
       const showTimestamp = index === 0 || index % 10 === 0
       const isIncoming = message.sender_id !== currentUserId
       const showUnreadDivider = firstUnreadIndex >= 0 && index === firstUnreadIndex && isIncoming
 
       const messageDate = parseDatabaseDate(message.created_at)
       const dateKey = messageDate ? format(messageDate, 'yyyy-MM-dd') : null
+      let showDateSeparator = false
+      if (dateKey && dateKey !== lastDate) {
+        showDateSeparator = true
+        lastDate = dateKey
+      }
 
-      let dateLabel = currentGroupLabel || ''
-      if (dateKey !== lastDateKey && messageDate) {
+      // Compute formatDateLabel logic manually here for performance
+      let dateLabel = ''
+      if (showDateSeparator && messageDate) {
         if (isToday(messageDate)) dateLabel = 'Today'
         else if (isYesterday(messageDate)) dateLabel = 'Yesterday'
         else {
@@ -151,72 +141,17 @@ export const MessageList = React.forwardRef<HTMLDivElement, MessageListProps>(({
           else if (isSameYear(messageDate, now)) dateLabel = format(messageDate, 'MMMM d')
           else dateLabel = format(messageDate, 'MMMM d, yyyy')
         }
-
-        if (lastDateKey !== null && currentGroupLabel !== null) {
-          groupCounts.push(currentGroupCount)
-          groupLabels.push(currentGroupLabel)
-        }
-        currentGroupCount = 0
-        currentGroupLabel = dateLabel
-        lastDateKey = dateKey
       }
-
-      currentGroupCount++;
 
       return {
         message,
         showTimestamp,
         showUnreadDivider,
+        showDateSeparator,
         dateLabel
       }
     })
-
-    if (currentGroupLabel !== null) {
-      groupCounts.push(currentGroupCount)
-      groupLabels.push(currentGroupLabel)
-    }
-
-    console.log('🐞 [MessageList DEBUG] Data passed to Virtuoso:', {
-      totalMessages: sortedMessages.length,
-      groupCountsSum: groupCounts.reduce((a, b) => a + b, 0),
-      groupCounts,
-      groupLabels,
-      lastMessages: sortedMessages.slice(-5).map(m => m.created_at)
-    })
-
-    return { flatViewModels, groupCounts, groupLabels }
   }, [sortedMessages, currentUserId, frozenReadAt])
-
-  useImperativeHandle(listHandleRef, () => ({
-    scrollToMessage: (messageId: string) => {
-      if (!virtuosoRef.current) return false;
-      const index = sortedMessages.findIndex(m => m.id === messageId);
-      if (index !== -1) {
-        virtuosoRef.current.scrollToIndex({ index, align: 'center', behavior: 'smooth' });
-        // Give Virtuoso time to render the DOM node, then apply flash
-        setTimeout(() => {
-          const el = document.getElementById(`message-${messageId}`);
-          if (el) {
-            el.classList.add('search-highlight-flash');
-            setTimeout(() => {
-              el.classList.remove('search-highlight-flash');
-            }, 2000);
-          }
-        }, 100); // 100ms should be enough for virtualization engine
-        return true;
-      }
-      return false;
-    },
-    scrollToBottom: (behavior: 'auto' | 'smooth' = 'smooth') => {
-      if (virtuosoRef.current && viewModels.flatViewModels.length > 0) {
-        virtuosoRef.current.scrollToIndex({
-          index: viewModels.flatViewModels.length - 1,
-          align: 'end',
-          behavior
-        });
-      }
-    }
-  }), [sortedMessages, viewModels]);
 
   // Fire onInitialScrollComplete once on mount since Virtuoso handles scroll
   useEffect(() => {
@@ -235,63 +170,42 @@ export const MessageList = React.forwardRef<HTMLDivElement, MessageListProps>(({
     }
   }, [hasMore, isLoading, initialScrollDone, onLoadMore])
 
+  // Determine initial scroll index ONLY once per chat session
   const initialTopMostItemIndex = useMemo(() => {
-    if (frozenReadAt === undefined || viewModels.flatViewModels.length === 0) return undefined
+    if (frozenReadAt === undefined || viewModels.length === 0) return undefined
 
     // Find the first unread message to jump to
-    const index = viewModels.flatViewModels.findIndex(v => v.showUnreadDivider)
-    if (index !== -1) return { index, align: 'center' as const }
+    const index = viewModels.findIndex(v => v.showUnreadDivider)
+    if (index !== -1) return index
 
     // If no unread messages, virtuoso auto-scrolls to bottom if we omit this or use 'LAST'
-    return { index: 'LAST' as const, align: 'end' as const }
+    return viewModels.length - 1
   }, [frozenReadAt, viewModels])
 
   return (
     <div className="relative flex-1 flex flex-col h-full min-h-0 bg-white">
       {frozenReadAt !== undefined ? (
-        <GroupedVirtuoso
+        <Virtuoso
           ref={virtuosoRef}
           scrollerRef={(el) => {
             if (typeof ref === 'function') ref(el as HTMLDivElement);
             else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = el as HTMLDivElement;
           }}
-          className="message-list-scroll scrollbar-hide flex-1 h-full w-full max-w-full"
-          groupCounts={viewModels.groupCounts}
-          groupContent={(index) => {
-            return <DateSeparator label={viewModels.groupLabels[index]} />
-          }}
-          initialTopMostItemIndex={initialTopMostItemIndex || { index: 'LAST' as const, align: 'end' as const }}
+          data={viewModels}
+          className="message-list-scroll scrollbar-hide"
+          initialTopMostItemIndex={initialTopMostItemIndex}
           startReached={handleStartReached}
-          increaseViewportBy={600}
+          alignToBottom
           followOutput={(isAtBottom) => isAtBottom ? 'smooth' : false}
           components={{
-            TopItemList: React.forwardRef(({ style, ...props }: React.HTMLAttributes<HTMLDivElement>, ref) => (
-              <div
-                ref={ref as any}
-                style={{ ...style, minHeight: '40px' }}
-                className="flex items-center justify-center py-2"
-                {...props}
-              >
-                {isLoading && (
-                  <div className="flex bg-neutral-100 rounded-full px-4 py-1.5 items-center justify-center gap-2">
-                    <Loader2 className="w-4 h-4 text-primary animate-spin" />
-                    <span className="text-xs text-neutral-500 font-medium">Loading older messages...</span>
-                  </div>
-                )}
-              </div>
-            )),
-            Group: React.forwardRef(({ style, ...props }: React.HTMLAttributes<HTMLDivElement>, ref) => (
-              <div
-                {...props}
-                ref={ref as any}
-                style={{ ...style, zIndex: 20 }}
-                className="pointer-events-none"
-              />
-            )),
             Header: () => (
               <div className="flex flex-col items-center">
                 {messagesEndRef && <div ref={messagesEndRef} className="hidden" />}
-                {/* The loading indicator for older messages is now in TopItemList */}
+                {(isFetchingOlder || (isLoading && hasMore)) && (
+                  <div className="flex justify-center py-4">
+                    <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+                  </div>
+                )}
                 {!hasMore && messages.length > 0 && (
                   <div className="flex justify-center py-6 pb-8">
                     <span className="text-xs font-medium text-gray-400 bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
@@ -300,54 +214,41 @@ export const MessageList = React.forwardRef<HTMLDivElement, MessageListProps>(({
                   </div>
                 )}
               </div>
-            ),
-            Footer: () => (
-              <div className="flex flex-col items-center">
-                {messages.length > 0 && (
-                  <div className="flex justify-center py-4 pt-2">
-                    <span className="text-xs font-medium text-gray-400 bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
-                      End of conversation
-                    </span>
-                  </div>
-                )}
-              </div>
             )
           }}
-          itemContent={(index, groupIndex) => {
-            const vm = viewModels.flatViewModels[index];
-            if (!vm) return null;
-            const { message, showTimestamp, showUnreadDivider } = vm;
-            return (
-              <div className="px-4 pb-1">
-                {showUnreadDivider && (
-                  <div className="flex items-center gap-3 py-3 px-2">
-                    <div className="flex-1 h-[1px] bg-gradient-to-r from-transparent via-blue-500 to-transparent" />
-                    <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-3 py-1 rounded-full shadow-sm">
-                      New Messages
-                    </span>
-                    <div className="flex-1 h-[1px] bg-gradient-to-r from-transparent via-blue-500 to-transparent" />
-                  </div>
-                )}
-                <div id={`message-${message.id}`}>
-                  <MessageBubble
-                    message={message}
-                    isOwn={message.sender_id === currentUserId}
-                    showTimestamp={showTimestamp}
-                    onRetry={onRetry}
-                    onReply={onReply}
-                    onForward={onForward}
-                    onEdit={onEdit}
-                    onQuoteClick={onQuoteClick}
-                    currentUserId={currentUserId || ''}
-                    onPin={onPin}
-                    onUnpin={onUnpin}
-                    isMessagePinned={isMessagePinned}
-                    friendReadReceiptsEnabled={friendReadReceiptsEnabled}
-                  />
+          itemContent={(index, { message, showTimestamp, showUnreadDivider, showDateSeparator, dateLabel }) => (
+            <div className="px-4 pb-1">
+              {showDateSeparator && (
+                <DateSeparator label={dateLabel} />
+              )}
+              {showUnreadDivider && (
+                <div className="flex items-center gap-3 py-3 px-2">
+                  <div className="flex-1 h-[1px] bg-gradient-to-r from-transparent via-blue-500 to-transparent" />
+                  <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-3 py-1 rounded-full shadow-sm">
+                    New Messages
+                  </span>
+                  <div className="flex-1 h-[1px] bg-gradient-to-r from-transparent via-blue-500 to-transparent" />
                 </div>
+              )}
+              <div id={`message-${message.id}`}>
+                <MessageBubble
+                  message={message}
+                  isOwn={message.sender_id === currentUserId}
+                  showTimestamp={showTimestamp}
+                  onRetry={onRetry}
+                  onReply={onReply}
+                  onForward={onForward}
+                  onEdit={onEdit}
+                  onQuoteClick={onQuoteClick}
+                  currentUserId={currentUserId || ''}
+                  onPin={onPin}
+                  onUnpin={onUnpin}
+                  isMessagePinned={isMessagePinned}
+                  friendReadReceiptsEnabled={friendReadReceiptsEnabled}
+                />
               </div>
-            )
-          }}
+            </div>
+          )}
         />
       ) : (
         <div className="flex-1 flex items-center justify-center">

@@ -62,7 +62,7 @@ export function useSendMessage() {
         const currentMessages = old?.messages || []
         return {
           ...old,
-          messages: [...currentMessages, optimisticMessage]
+          messages: [optimisticMessage, ...currentMessages]
         }
       })
 

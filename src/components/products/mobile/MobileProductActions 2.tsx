@@ -9,7 +9,6 @@ import { ProductLikedBy } from '../social/ProductLikedBy';
 
 import { useUnifiedShare } from '../../../hooks/useUnifiedShare';
 import { toast } from 'react-hot-toast';
-import { ShareFriendPickerModal } from '../../Sharing/ShareFriendPickerModal';
 
 interface MobileProductActionsProps {
     product: Product;
@@ -29,10 +28,24 @@ export const MobileProductActions: React.FC<MobileProductActionsProps> = ({
     onComment
 }) => {
     // Share Logic
-    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+    const { shareNative, isSharing } = useUnifiedShare();
 
-    const handleShare = () => {
-        setIsShareModalOpen(true);
+    const handleShare = async () => {
+        try {
+            await shareNative({
+                entityType: 'product',
+                entityId: product.id,
+                entityData: {
+                    title: product.name,
+                    description: product.description?.slice(0, 100),
+                    url: `/product/${product.id}`, // Unified share will construct full URL
+                    imageUrl: product.image_urls?.[0] || product.image_url
+                }
+            });
+        } catch (error) {
+            console.error('Share failed', error);
+            toast.error('Failed to share');
+        }
     };
     // Like Logic
     const { isLiked, likeCount, likedByFriends, toggleLike, isLoading: isLikeLoading } = useProductLike(product.id, product.like_count || 0);
@@ -71,7 +84,8 @@ export const MobileProductActions: React.FC<MobileProductActionsProps> = ({
                     {/* Share Button */}
                     <button
                         onClick={handleShare}
-                        className="flex flex-col items-center gap-1 p-1"
+                        disabled={isSharing}
+                        className="flex flex-col items-center gap-1 p-1 disabled:opacity-50"
                     >
                         <Send size={28} className="text-gray-900" strokeWidth={1.5} />
                         <span className="text-xs font-medium text-gray-900">Share</span>
@@ -95,19 +109,6 @@ export const MobileProductActions: React.FC<MobileProductActionsProps> = ({
             <ProductLikedBy
                 friends={likedByFriends}
                 totalLikes={likeCount}
-            />
-
-            <ShareFriendPickerModal
-                isOpen={isShareModalOpen}
-                onClose={() => setIsShareModalOpen(false)}
-                entityType="product"
-                entityId={product.id}
-                entityData={{
-                    title: product.name,
-                    description: product.description?.slice(0, 100) || undefined,
-                    imageUrl: product.image_urls?.[0] || product.image_url,
-                    url: `${window.location.origin}/product/${product.id}`
-                }}
             />
         </div>
     );

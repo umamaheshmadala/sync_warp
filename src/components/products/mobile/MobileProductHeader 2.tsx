@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { ArrowLeft, MoreVertical, Share, Flag, Edit, Trash, Archive, RotateCcw } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Menu } from '@headlessui/react';
 import { Product } from '../../../types/product';
 import { useAuthStore } from '../../../store/authStore';
 import { ProductTagDisplay } from '../tags/ProductTagDisplay';
-import { ShareFriendPickerModal } from '../../Sharing/ShareFriendPickerModal';
 
 interface MobileProductHeaderProps {
     product: Product;
@@ -27,8 +26,6 @@ export const MobileProductHeader: React.FC<MobileProductHeaderProps> = ({
     editUrl
 }) => {
     const user = useAuthStore((state) => state.user);
-    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-
     // Assuming product.business_id availability or we check ownership via props parent passes
     const isOwner = user?.id && product.business_id; // Simpler check needed or pass isOwner prop
 
@@ -47,10 +44,7 @@ export const MobileProductHeader: React.FC<MobileProductHeaderProps> = ({
     const displayName = businessNameStr;
 
     return (
-        <div
-            className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 pb-3 bg-white/95 backdrop-blur-md border-b border-gray-100"
-            style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))' }}
-        >
+        <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-3 bg-white/95 backdrop-blur-md border-b border-gray-100">
             <button
                 onClick={onClose}
                 className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors"
@@ -79,10 +73,7 @@ export const MobileProductHeader: React.FC<MobileProductHeaderProps> = ({
                 <Menu.Items className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-100 focus:outline-none overflow-hidden">
                     <Menu.Item>
                         {({ active }) => (
-                            <button
-                                onClick={() => setIsShareModalOpen(true)}
-                                className={`${active ? 'bg-gray-50' : ''} flex items-center w-full px-4 py-3 text-sm text-gray-700`}
-                            >
+                            <button className={`${active ? 'bg-gray-50' : ''} flex items-center w-full px-4 py-3 text-sm text-gray-700`}>
                                 <Share className="w-4 h-4 mr-3" />
                                 Share
                             </button>
@@ -155,19 +146,6 @@ export const MobileProductHeader: React.FC<MobileProductHeaderProps> = ({
                     )}
                 </Menu.Items>
             </Menu>
-
-            <ShareFriendPickerModal
-                isOpen={isShareModalOpen}
-                onClose={() => setIsShareModalOpen(false)}
-                entityType="product"
-                entityId={product.id}
-                entityData={{
-                    title: product.name,
-                    description: product.description?.slice(0, 100) || undefined,
-                    imageUrl: product.image_urls?.[0] || product.image_url,
-                    url: `${window.location.origin}/product/${product.id}`
-                }}
-            />
         </div>
     );
 };
