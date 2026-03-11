@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft, MoreVertical, Share, Flag, Edit, Trash, Archive, RotateCcw } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { Menu } from '@headlessui/react';
 import { Product } from '../../../types/product';
 import { useAuthStore } from '../../../store/authStore';
@@ -96,14 +97,14 @@ export const MobileProductHeader: React.FC<MobileProductHeaderProps> = ({
                                 editUrl ? (
                                     <Link
                                         to={editUrl}
-                                        className={`${active ? 'bg-gray-50' : ''} flex items-center w-full px-4 py-3 text-sm text-gray-700`}
+                                        className={`${active ? 'bg-blue-50' : ''} flex items-center w-full px-4 py-3 text-sm font-medium text-gray-900`}
                                     >
-                                        <Edit className="w-4 h-4 mr-3" />
+                                        <Edit className="w-4 h-4 mr-3 text-blue-600" />
                                         Edit Product
                                     </Link>
                                 ) : (
-                                    <button onClick={onEdit} className={`${active ? 'bg-gray-50' : ''} flex items-center w-full px-4 py-3 text-sm text-gray-700`}>
-                                        <Edit className="w-4 h-4 mr-3" />
+                                    <button onClick={onEdit} className={`${active ? 'bg-blue-50' : ''} flex items-center w-full px-4 py-3 text-sm font-medium text-gray-900`}>
+                                        <Edit className="w-4 h-4 mr-3 text-blue-600" />
                                         Edit Product
                                     </button>
                                 )
@@ -114,15 +115,15 @@ export const MobileProductHeader: React.FC<MobileProductHeaderProps> = ({
                     {onArchive && (
                         <Menu.Item>
                             {({ active }) => (
-                                <button onClick={onArchive} className={`${active ? 'bg-gray-50' : ''} flex items-center w-full px-4 py-3 text-sm text-gray-700`}>
+                                <button onClick={onArchive} className={`${active ? 'bg-amber-50' : ''} flex items-center w-full px-4 py-3 text-sm font-medium text-gray-900`}>
                                     {product.status === 'archived' ? (
                                         <>
-                                            <RotateCcw className="w-4 h-4 mr-3" />
+                                            <RotateCcw className="w-4 h-4 mr-3 text-blue-600" />
                                             Unarchive
                                         </>
                                     ) : (
                                         <>
-                                            <Archive className="w-4 h-4 mr-3" />
+                                            <Archive className="w-4 h-4 mr-3 text-amber-600" />
                                             Archive
                                         </>
                                     )}
@@ -134,8 +135,8 @@ export const MobileProductHeader: React.FC<MobileProductHeaderProps> = ({
                     {onDelete && (
                         <Menu.Item>
                             {({ active }) => (
-                                <button onClick={onDelete} className={`${active ? 'bg-red-50' : ''} flex items-center w-full px-4 py-3 text-sm text-red-600`}>
-                                    <Trash className="w-4 h-4 mr-3" />
+                                <button onClick={onDelete} className={`${active ? 'bg-red-50' : ''} flex items-center w-full px-4 py-3 text-sm font-medium text-red-600`}>
+                                    <Trash className="w-4 h-4 mr-3 text-red-600" />
                                     Delete
                                 </button>
                             )}
@@ -146,9 +147,12 @@ export const MobileProductHeader: React.FC<MobileProductHeaderProps> = ({
                     {(!onEdit && !editUrl) && (
                         <Menu.Item>
                             {({ active }) => (
-                                <button className={`${active ? 'bg-gray-50' : ''} flex items-center w-full px-4 py-3 text-sm text-gray-700`}>
-                                    <Flag className="w-4 h-4 mr-3" />
-                                    Report
+                                <button 
+                                    onClick={() => toast('Reporting system coming soon', { icon: '🛡️' })}
+                                    className={`${active ? 'bg-gray-50' : ''} flex items-center w-full px-4 py-3 text-sm font-medium text-gray-900 border-t border-gray-50`}
+                                >
+                                    <Flag className="w-4 h-4 mr-3 text-red-500" />
+                                    Report Product
                                 </button>
                             )}
                         </Menu.Item>

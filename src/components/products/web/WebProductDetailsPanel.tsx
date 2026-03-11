@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MessageCircle, Share2, MoreHorizontal, Loader2, Bell, BellOff, Archive, RotateCcw, AlertTriangle } from 'lucide-react';
+import { MessageCircle, Share2, MoreHorizontal, Loader2, Bell, BellOff, Archive, RotateCcw, AlertTriangle, Flag, Share } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Product } from '../../../types/product';
 import { useAuthStore } from '../../../store/authStore';
@@ -19,6 +19,7 @@ import { ProductNotificationToggle } from '../controls/ProductNotificationToggle
 
 import { useProductWizardStore } from '../../../stores/useProductWizardStore';
 import { Edit3, Trash2 } from 'lucide-react';
+import { ShareFriendPickerModal } from '../../Sharing/ShareFriendPickerModal';
 
 interface WebProductDetailsPanelProps {
     product: Product;
@@ -57,6 +58,8 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [deleteInput, setDeleteInput] = useState('');
     const [isDeleting, setIsDeleting] = useState(false);
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+    const [showNonOwnerMenu, setShowNonOwnerMenu] = useState(false);
 
     const user = useAuthStore((state) => state.user);
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
@@ -65,8 +68,8 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
     const businessName = (product.businesses as any)?.business_name || 'Business Name';
     const businessLogo = (product.businesses as any)?.logo_url;
 
-    const handleShare = () => toast.success('Shared (Demo)', { icon: '🔗' });
-    const handleReport = (id: string) => console.log('Report', id); // Mock
+    const handleShare = () => setIsShareModalOpen(true);
+    const handleReport = () => toast('Reporting system coming soon', { icon: '🛡️' });
 
     // Description Truncation
     const description = product.description || '';
@@ -132,7 +135,7 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
     const canDelete = !hasInteractions || deleteInput === 'DELETE';
 
     return (
-        <div className="flex flex-col h-full bg-white border-l border-gray-100 relative" onClick={() => setShowMenu(false)}>
+        <div className="flex flex-col h-full bg-white border-l border-gray-100 relative" onClick={() => { setShowMenu(false); setShowNonOwnerMenu(false); }}>
             {/* Delete Confirmation Overlay */}
             {showDeleteConfirm && (
                 <div className="absolute inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
@@ -223,15 +226,17 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
 
                         {/* Dropdown Menu */}
                         {showMenu && (
-                            <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-100 z-50 overflow-hidden py-1">
+                            <div className="absolute right-0 top-full mt-1 w-52 bg-white rounded-lg shadow-xl border border-gray-100 z-50 overflow-hidden py-1.5 ring-1 ring-black ring-opacity-5">
                                 <button
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         handleEditProduct();
                                     }}
-                                    className="w-full px-4 py-2.5 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 transition-colors"
+                                    className="w-full px-4 py-2.5 text-left text-sm font-medium text-gray-900 hover:bg-blue-50 flex items-center gap-3 transition-colors group"
                                 >
-                                    <Edit3 className="w-4 h-4" />
+                                    <div className="p-1.5 rounded-md bg-blue-50 text-blue-600 group-hover:bg-blue-100">
+                                        <Edit3 className="w-4 h-4" />
+                                    </div>
                                     Edit Product
                                 </button>
 
@@ -241,9 +246,11 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                                             e.stopPropagation();
                                             handleUnarchive();
                                         }}
-                                        className="w-full px-4 py-2.5 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 transition-colors"
+                                        className="w-full px-4 py-2.5 text-left text-sm font-medium text-gray-900 hover:bg-blue-50 flex items-center gap-3 transition-colors group"
                                     >
-                                        <RotateCcw className="w-4 h-4" />
+                                        <div className="p-1.5 rounded-md bg-blue-50 text-blue-600 group-hover:bg-blue-100">
+                                            <RotateCcw className="w-4 h-4" />
+                                        </div>
                                         Unarchive
                                     </button>
                                 ) : (
@@ -252,14 +259,32 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                                             e.stopPropagation();
                                             handleArchive();
                                         }}
-                                        className="w-full px-4 py-2.5 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 transition-colors"
+                                        className="w-full px-4 py-2.5 text-left text-sm font-medium text-gray-900 hover:bg-amber-50 flex items-center gap-3 transition-colors group"
                                     >
-                                        <Archive className="w-4 h-4" />
+                                        <div className="p-1.5 rounded-md bg-amber-50 text-amber-600 group-hover:bg-amber-100">
+                                            <Archive className="w-4 h-4" />
+                                        </div>
                                         Archive
                                     </button>
                                 )}
 
-                                <div className="h-px bg-gray-100 dark:bg-gray-700 my-1" />
+                                <div className="h-px bg-gray-100 my-1" />
+
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsShareModalOpen(true);
+                                        setShowMenu(false);
+                                    }}
+                                    className="w-full px-4 py-2.5 text-left text-sm font-medium text-gray-900 hover:bg-green-50 flex items-center gap-3 transition-colors group"
+                                >
+                                    <div className="p-1.5 rounded-md bg-green-50 text-green-600 group-hover:bg-green-100">
+                                        <Share className="w-4 h-4" />
+                                    </div>
+                                    Share
+                                </button>
+
+                                <div className="h-px bg-gray-100 my-1" />
 
                                 <button
                                     onClick={(e) => {
@@ -267,9 +292,11 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                                         setShowMenu(false);
                                         setShowDeleteConfirm(true);
                                     }}
-                                    className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors"
+                                    className="w-full px-4 py-2.5 text-left text-sm font-medium text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors group"
                                 >
-                                    <Trash2 className="w-4 h-4" />
+                                    <div className="p-1.5 rounded-md bg-red-50 text-red-600 group-hover:bg-red-100">
+                                        <Trash2 className="w-4 h-4" />
+                                    </div>
                                     Delete Product
                                 </button>
                             </div>
@@ -277,9 +304,49 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                     </div>
                 )}
                 {!isOwner && product.status !== 'draft' && (
-                    <button className="p-2 hover:bg-gray-100 rounded-full">
-                        <MoreHorizontal className="w-5 h-5 text-gray-600" />
-                    </button>
+                    <div className="relative">
+                        <button
+                            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setShowNonOwnerMenu(!showNonOwnerMenu);
+                            }}
+                        >
+                            <MoreHorizontal className="w-5 h-5 text-gray-600" />
+                        </button>
+
+                        {showNonOwnerMenu && (
+                            <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-xl border border-gray-100 z-50 overflow-hidden py-1.5 ring-1 ring-black ring-opacity-5">
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleShare();
+                                        setShowNonOwnerMenu(false);
+                                    }}
+                                    className="w-full px-4 py-2.5 text-left text-sm font-medium text-gray-900 hover:bg-gray-50 flex items-center gap-3 transition-colors group"
+                                >
+                                    <div className="p-1.5 rounded-md bg-green-50 text-green-600 group-hover:bg-green-100">
+                                        <Share className="w-4 h-4" />
+                                    </div>
+                                    Share Product
+                                </button>
+
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleReport();
+                                        setShowNonOwnerMenu(false);
+                                    }}
+                                    className="w-full px-4 py-2.5 text-left text-sm font-medium text-gray-900 hover:bg-gray-50 flex items-center gap-3 transition-colors group"
+                                >
+                                    <div className="p-1.5 rounded-md bg-red-50 text-red-600 group-hover:bg-red-100">
+                                        <Flag className="w-4 h-4" />
+                                    </div>
+                                    Report Product
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 )}
             </div>
 
@@ -443,6 +510,19 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                     </div>
                 </div>
             )}
-        </div >
+
+            <ShareFriendPickerModal
+                isOpen={isShareModalOpen}
+                onClose={() => setIsShareModalOpen(false)}
+                entityType="product"
+                entityId={product.id}
+                entityData={{
+                    title: product.name,
+                    description: product.description?.slice(0, 100) || undefined,
+                    imageUrl: product.image_urls?.[0] || product.image_url,
+                    url: `${window.location.origin}/product/${product.id}`
+                }}
+            />
+        </div>
     );
 };
