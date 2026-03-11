@@ -8,7 +8,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Edit3,
-  Trash2
+  Trash2,
+  MoreVertical
 } from 'lucide-react';
 import { Product, CURRENCIES } from '../../types/product';
 import { useNavigate } from 'react-router-dom';
@@ -155,8 +156,6 @@ const ProductView: React.FC<ProductViewProps> = ({
             <ProductShareButton
               productId={product.id}
               productName={product.name}
-              productPrice={product.price}
-              productCurrency={product.currency || 'INR'}
               productImage={product.image_urls?.[0]}
               businessId={product.business_id}
               businessName={product.business?.name || ''}

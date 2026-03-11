@@ -20,6 +20,8 @@ export interface Product {
   share_count?: number;
   new_arrival_expires_at?: string;
   notifications_enabled?: boolean;
+  price?: number;
+  category?: string;
 
   image_urls: string[]; // Legacy
   image_url?: string; // Legacy

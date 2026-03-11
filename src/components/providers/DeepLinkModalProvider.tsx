@@ -11,7 +11,7 @@
 import React, { useEffect, useState } from 'react';
 import { useDeepLinkStore } from '../../store/deepLinkStore';
 import { FriendProfileModal } from '../friends/FriendProfileModal';
-import ProductView from '../business/ProductView';
+import { WebProductModal } from '../products/web/WebProductModal';
 import { supabase } from '../../lib/supabase';
 import { X } from 'lucide-react';
 import { OfferShareButton } from '../Sharing/OfferShareButton';
@@ -236,10 +236,11 @@ export function DeepLinkModalProvider() {
                         </div>
                     </div>
                 ) : product ? (
-                    <ProductView
-                        product={product}
-                        isModal={true}
+                    <WebProductModal
+                        isOpen={true}
                         onClose={closeAll}
+                        product={product}
+                        isOwner={false}
                     />
                 ) : null
             )}
