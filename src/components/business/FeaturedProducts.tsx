@@ -187,7 +187,6 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
                 product={selectedProduct}
                 onClose={handleCloseModal}
                 onEdit={isOwner ? () => handleEditProduct(selectedProduct) : undefined}
-                editUrl={isOwner ? `/business/products/edit/${selectedProduct.id}` : undefined}
                 onDelete={isOwner ? async () => { await deleteProduct(selectedProduct.id); handleCloseModal(); } : undefined}
                 onArchive={isOwner ? async () => { await archiveProduct(selectedProduct.id); handleCloseModal(); } : undefined}
               />

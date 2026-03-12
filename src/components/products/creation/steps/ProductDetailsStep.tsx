@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useProductWizardStore } from '../../../../stores/useProductWizardStore';
 import { useProductDraft } from '../../../../hooks/products/useProductDraft';
 import { useProducts } from '../../../../hooks/useProducts';
-import { ArrowLeft, Share, Save, Loader2, Info, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ArrowLeft, Share, Save, Loader2, Info, ChevronLeft, ChevronRight } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { ProductDescriptionInput } from '../ProductDescriptionInput';
 import { ProductTagSelector } from '../ProductTagSelector';
@@ -234,57 +234,26 @@ export const ProductDetailsStep: React.FC = () => {
 
     return (
         <div className="flex flex-col h-full bg-gray-50">
-            {/* Header */}
-            <div className="h-16 flex items-center justify-between border-b border-gray-100 bg-white px-4 shrink-0">
-                <div className="flex items-center gap-2">
-                    <button onClick={() => setStep('edit')} className="p-2 hover:bg-gray-100 rounded-full">
-                        <ArrowLeft className="w-6 h-6 text-gray-900" />
-                    </button>
-                    <button
-                        onClick={() => setShowDiscardDialog(true)}
-                        className="text-sm font-medium text-gray-500 hover:text-red-600 px-2 transition-colors hidden sm:block"
-                    >
-                        Discard
-                    </button>
-                    <DiscardDialog
-                        open={showDiscardDialog}
-                        onOpenChange={setShowDiscardDialog}
-                        onConfirm={() => {
-                            closeWizard();
-                            reset();
-                        }}
-                        title={editMode ? "Discard unsaved changes?" : "Discard product creation?"}
-                        description={editMode ? "All unsaved changes will be lost." : "Are you sure you want to stop creating this product? All progress will be lost."}
-                    />
-                </div>
-
-                <h1 className="font-semibold text-lg text-gray-900 truncate max-w-[200px]">
+            {/* Header — back arrow + product name only */}
+            <div className="h-16 flex items-center border-b border-gray-100 bg-white px-4 shrink-0 gap-3">
+                <button onClick={() => setStep('edit')} className="p-2 hover:bg-gray-100 rounded-full shrink-0">
+                    <ArrowLeft className="w-6 h-6 text-gray-900" />
+                </button>
+                <h1 className="font-semibold text-lg text-gray-900 truncate flex-1">
                     {editMode && name ? name : 'New Product'}
                 </h1>
-
-                <div className="flex items-center gap-2">
-                    {/* Mobile Cancel Icon */}
-                    <button
-                        onClick={() => setShowDiscardDialog(true)}
-                        className="sm:hidden p-2 hover:bg-gray-100 rounded-full text-gray-500"
-                    >
-                        <X className="w-6 h-6" />
-                    </button>
-
-                    <button
-                        onClick={handlePublish}
-                        disabled={isPublishing}
-                        className="bg-black text-white px-4 py-1.5 rounded-full font-medium text-sm hover:opacity-90 disabled:opacity-50 flex items-center gap-2 transition-opacity"
-                    >
-                        {isPublishing ? (
-                            <div className="flex items-center gap-2">
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                                <span>{uploadProgress}%</span>
-                            </div>
-                        ) : (editMode ? 'Save Changes' : 'Publish')}
-                    </button>
-                </div>
             </div>
+
+            <DiscardDialog
+                open={showDiscardDialog}
+                onOpenChange={setShowDiscardDialog}
+                onConfirm={() => {
+                    closeWizard();
+                    reset();
+                }}
+                title={editMode ? "Discard unsaved changes?" : "Discard product creation?"}
+                description={editMode ? "All unsaved changes will be lost." : "Are you sure you want to stop creating this product? All progress will be lost."}
+            />
 
             <div className="flex-1 overflow-y-auto bg-gray-50">
                 <div className="max-w-4xl mx-auto w-full min-h-full p-4 md:p-8 flex flex-col md:flex-row gap-8 items-start">
@@ -292,7 +261,7 @@ export const ProductDetailsStep: React.FC = () => {
                     {/* Preview Section (Mobile: Top, Web: Left) */}
                     <div className="w-full md:w-1/2 max-w-sm mx-auto md:mx-0">
                         <ImagePreviewCarousel images={images} />
-                        <div className="mt-4 flex justify-center">
+                        <div className="mt-1 flex justify-center">
                             <button onClick={() => setStep('edit')} className="text-sm text-gray-500 hover:text-gray-900 underline">
                                 Edit images
                             </button>
@@ -300,7 +269,7 @@ export const ProductDetailsStep: React.FC = () => {
                     </div>
 
                     {/* Form Section */}
-                    <div className="w-full md:w-1/2 space-y-6">
+                    <div className="w-full md:w-1/2 space-y-3">
 
                         {/* Name */}
                         <div>
@@ -333,11 +302,11 @@ export const ProductDetailsStep: React.FC = () => {
                         />
 
                         {/* Notification Toggle */}
-                        <div className="bg-white p-4 rounded-lg border border-gray-100">
+                        <div className="bg-white rounded-xl border border-gray-100 px-4 py-3">
                             <ProductNotificationToggle
                                 isEnabled={notificationsEnabled}
                                 onToggle={(val) => updateDetails({ notificationsEnabled: val })}
-                                productId="new" // Virtual ID for UI
+                                productId="new"
                                 isOwner={true}
                             />
                         </div>
@@ -359,6 +328,28 @@ export const ProductDetailsStep: React.FC = () => {
                     </div>
                 </div>
             </div>
-        </div >
+            {/* Bottom Action Footer */}
+            <div className="shrink-0 bg-white border-t border-gray-100 px-4 py-3 flex gap-3">
+                <button
+                    onClick={() => setShowDiscardDialog(true)}
+                    disabled={isPublishing}
+                    className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+                >
+                    Discard
+                </button>
+                <button
+                    onClick={handlePublish}
+                    disabled={isPublishing}
+                    className="flex-1 py-3 rounded-xl bg-black text-white font-medium hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center justify-center gap-2"
+                >
+                    {isPublishing ? (
+                        <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>{uploadProgress}%</span>
+                        </>
+                    ) : editMode ? 'Save Changes' : 'Publish'}
+                </button>
+            </div>
+        </div>
     );
 };

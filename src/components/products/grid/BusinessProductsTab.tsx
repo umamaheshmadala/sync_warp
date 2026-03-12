@@ -124,8 +124,9 @@ export const BusinessProductsTab: React.FC<BusinessProductsTabProps> = ({ busine
     const handleCloseModal = () => setSelectedProductId(null);
 
     const handleEditProduct = () => {
-        if (!selectedProductId) return;
-        navigate(`/business/products/edit/${selectedProductId}`);
+        if (!selectedProduct) return;
+        handleCloseModal();
+        openWizard(businessId, undefined, selectedProduct);
     };
 
     const handleDeleteProduct = () => {
@@ -351,7 +352,6 @@ export const BusinessProductsTab: React.FC<BusinessProductsTabProps> = ({ busine
                                 product={selectedProduct}
                                 onClose={handleCloseModal}
                                 onEdit={isOwner ? handleEditProduct : undefined}
-                                editUrl={isOwner && selectedProduct ? `/business/products/edit/${selectedProduct.id}` : undefined}
                                 onDelete={isOwner ? handleDeleteProduct : undefined}
                                 onArchive={isOwner ? handleArchiveProduct : undefined}
                             />
