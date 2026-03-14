@@ -63,8 +63,7 @@ const config: CapacitorConfig = {
   server: getServerConfig(),
   plugins: {
     Keyboard: {
-      resize: 'ionic',
-      resizeOnFullScreen: true,
+      resize: 'none',
     },
     SplashScreen: {
       launchShowDuration: 3000,

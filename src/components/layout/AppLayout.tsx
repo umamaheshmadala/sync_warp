@@ -136,10 +136,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             style={{
               paddingTop: 'calc(54px + env(safe-area-inset-top, 0px))',
               // Adjust bottom padding:
-              // 1. If keyboard visible -> specific keyboard height
+              // 1. If keyboard visible (non-Android) -> specific keyboard height
               // 2. If nav visible -> nav height + safe area
               // 3. Otherwise -> 0
-              paddingBottom: isKeyboardVisible
+              paddingBottom: (isKeyboardVisible && Capacitor.getPlatform() !== 'android')
                 ? `${keyboardHeight}px`
                 : (shouldShowBottomNav ? 'calc(56px + env(safe-area-inset-bottom, 0px))' : '0px'),
               transition: 'padding-bottom 0.2s cubic-bezier(0.2, 0.0, 0, 1.0)' // match iOS keyboard timing roughly
