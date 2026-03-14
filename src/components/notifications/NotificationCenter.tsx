@@ -101,7 +101,7 @@ export function NotificationCenter() {
                 </Button>
             </DropdownMenuTrigger>
 
-            <DropdownMenuContent align="end" className="w-80 sm:w-96 p-0 z-50">
+            <DropdownMenuContent align="end" alignOffset={-8} className="w-[calc(100vw-2rem)] max-w-sm sm:w-96 p-0 z-50">
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b bg-gray-50/50">
                     <h3 className="font-semibold text-sm text-gray-900">Notifications</h3>
