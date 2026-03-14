@@ -10,27 +10,6 @@ const DashboardSkeleton: React.FC = () => {
                   <div className="w-full aspect-[21/9] md:aspect-[3/1] bg-gray-200 rounded-xl md:rounded-2xl shadow-sm" />
                </section>
 
-               {/* Friend Liked Deals Skeleton */}
-               <section className="mb-4">
-                  <div className="space-y-4">
-                     <div className="h-7 w-56 bg-gray-200 rounded" />
-                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {[1, 2, 3].map((i) => (
-                           <div key={i} className="bg-white rounded-xl shadow-sm overflow-hidden">
-                              <div className="h-48 bg-gray-200" />
-                              <div className="p-4 space-y-2">
-                                 <div className="h-5 w-3/4 bg-gray-200 rounded" />
-                                 <div className="h-4 w-full bg-gray-200 rounded" />
-                                 <div className="flex items-center justify-between mt-2">
-                                    <div className="h-4 w-20 bg-gray-200 rounded" />
-                                    <div className="h-4 w-4 bg-gray-200 rounded" />
-                                 </div>
-                              </div>
-                           </div>
-                        ))}
-                     </div>
-                  </div>
-               </section>
 
                {/* Special Offer Banner Skeleton - Matched to "Weekend Deal" */}
                <section className="mb-4">
