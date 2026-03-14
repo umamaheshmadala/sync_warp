@@ -10,10 +10,12 @@ import BottomNavigation from '../BottomNavigation';
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 import { notificationSettingsService } from '@/services/notificationSettingsService';
 import { PullToRefresh } from '@/components/ui/PullToRefresh';
+import { useThemeStore } from '@/store/themeStore';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  const { resolvedTheme } = useThemeStore();
 
   // Initialize Realtime Notifications
   useRealtimeNotifications();
@@ -29,15 +31,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   // Story 8.12.1: We use resize: 'none' in config and handle layout manually for better interactive dismissal
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
+  // Dynamic Status Bar Theme based on resolvedTheme
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
 
-    // Fix Android Safe Area / Status Bar Overlap
     if (Capacitor.getPlatform() === 'android') {
+      const isDark = resolvedTheme === 'dark';
       StatusBar.setOverlaysWebView({ overlay: false }).catch(() => { });
-      StatusBar.setBackgroundColor({ color: '#ffffff' }).catch(() => { });
-      StatusBar.setStyle({ style: Style.Light }).catch(() => { });
+      StatusBar.setBackgroundColor({ color: isDark ? '#1f2937' : '#ffffff' }).catch(() => { });
+      StatusBar.setStyle({ style: isDark ? Style.Dark : Style.Light }).catch(() => { });
     }
+  }, [resolvedTheme]);
+
+  // Keyboard Listeners
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
 
     // Note: 'resize: none' is set in capacitor.config.ts
     // We intentionally do NOT set it here to avoid race conditions overriding the config
