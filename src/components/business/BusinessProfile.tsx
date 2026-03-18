@@ -1041,8 +1041,42 @@ const BusinessProfile: React.FC = () => {
 
         {!editing && (
           <>
-
-
+            {/* Category Warning Banner for Owners */}
+            {isOwner && businessCategories.length === 0 && (
+              <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-lg mb-6 shadow-sm">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <AlertCircle className="h-5 w-5 text-amber-500" aria-hidden="true" />
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-amber-800">
+                      Product Categories Missing
+                    </h3>
+                    <div className="mt-2 text-sm text-amber-700">
+                      <p>
+                        Set product categories to enable trending features for your products.
+                      </p>
+                    </div>
+                    <div className="mt-4">
+                      <div className="-mx-2 -my-1.5 flex">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditing(true);
+                            setTimeout(() => {
+                              window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                            }, 100);
+                          }}
+                          className="px-3 py-2 rounded-md text-sm font-medium text-amber-800 bg-amber-100 hover:bg-amber-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-amber-50 focus:ring-amber-600 transition-colors"
+                        >
+                          Set Categories Now
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Tags */}
             {
