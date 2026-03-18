@@ -1,4 +1,4 @@
-# Story 12.20c: Product Category Picker
+# Story 12.20c: Product Category Picker in Creation Wizard
 
 **EPIC**: [EPIC 12 - Instagram-Style Products](../epics/EPIC_12_Instagram_Style_Products.md)  
 **Status**: 📋 Planning  
@@ -11,52 +11,47 @@
 ## ⛔ Dependency Verification — Complete Before Starting
 
 > [!CAUTION]
-> **Do NOT start this story until Stories 12.20a AND 12.20b are verified complete.**
-> This story is a blocker for Stories 12.21 and 12.19.
+> **Do NOT start this story until Story 12.20b is verified complete.**
+> This story requires business product categories to exist in order to filter product categories correctly.
 
 | Dependency | How to Verify | Expected Result |
 |------------|-------------|----------------|
-| **12.20a** — Taxonomy seeded | `mcp_supabase-mcp-server_execute_sql("SELECT level, COUNT(*) FROM product_category_master GROUP BY level")` | level 1=11, level 2=48, level 3=3958 |
-| **12.20b** — Junction table exists | `mcp_supabase-mcp-server_execute_sql("SELECT COUNT(*) FROM business_product_categories")` | Table exists (count ≥ 0) |
-| **12.20b** — Onboarding step ships | Read `src/components/business/onboarding/EnhancedOnboardingWizard.tsx` | `ProductCategoryStep` is present as a wizard step |
-| **12.20b** — At least one business has categories | `mcp_supabase-mcp-server_execute_sql("SELECT COUNT(*) FROM business_product_categories")` | Count > 0 (test data seeded) — category picker will show empty without this |
+| **12.20b** — Business Categories Table | `mcp_supabase-mcp-server_list_tables()` | `business_product_categories` exists |
+| **12.20b** — Service Layer | File check | `src/services/businessCategoryService.ts` exists |
 
 ---
 
 ## User Story
 
-**As a** business owner creating a product  
-**I want to** assign up to 3 specific categories to my product  
-**So that** it can appear in the right trending leaderboard and is correctly discoverable
+**As a** business owner  
+**I want to** categorize my individual products using a 3-level selection  
+**So that** my products can appear in the correct trending feeds and users can find them easily
 
 ---
 
 > [!IMPORTANT]
 > **Pre-Implementation Mandatory Checks**
 > Before writing any code:
-> 1. Read `src/components/products/creation/steps/ProductDetailsStep.tsx` — fully understand form fields (Name, Description, Tags, Notifications, Save/Publish). Category picker slots between Tags and Notifications.
-> 2. Read `src/stores/useProductWizardStore.ts` — check exact store shape before adding new fields
-> 3. Read `src/hooks/useProducts.ts` — understand `createProduct()` and `updateProduct()` signatures
-> 4. Read `src/components/products/creation/ProductCreationWizard.tsx` — overall wizard flow
-> 5. Run `mcp_supabase-mcp-server_execute_sql("SELECT column_name FROM information_schema.columns WHERE table_name = 'products'")` → verify current products schema
-> 6. Run `mcp_supabase-mcp-server_list_tables()` → confirm `product_categories` does NOT exist
-> 7. Confirm `business_product_categories` is seeded (12.20b must be done first)
+> 1. Read `src/components/products/creation/steps/ProductDetailsStep.tsx` (FULLY)
+> 2. Read `src/stores/useProductWizardStore.ts`
+> 3. Read `src/hooks/useProducts.ts` -> `createProduct()` and `updateProduct()` signatures
+> 4. Run `mcp_supabase-mcp-server_execute_sql("SELECT column_name FROM information_schema.columns WHERE table_name = 'products'")` → Verify current schema
+> 5. Run `mcp_supabase-mcp-server_list_tables()` → Confirm `product_categories` does NOT exist
 
 ---
 
 ## Scope
 
 ### In Scope
-- Create `product_categories` junction table (product ↔ L3 category, ranked)
-- `ProductCategorySelector` component in Creation Wizard Step 2
-- Filter: shows only Level 3 entries under the business's chosen Level 2 categories
-- Primary required; Secondary and Tertiary optional
-- Pre-populate categories in Edit Wizard (load existing selections)
-- `productCategoryService.ts` for DB queries
+- Create `product_categories` junction table mapping products to `product_category_master` entries
+- Add 3-level category selector (Primary, Secondary, Tertiary) to `ProductDetailsStep.tsx`
+- Build `productCategoryService.ts` for bridging products to categories
+- Modify `useProductWizardStore.ts` to manage selected category state
+- Update `createProduct` and `updateProduct` workflows in `useProducts.ts` to persist category data
 
 ### Out of Scope
-- Business category selection (Story 12.20b)
-- Trending calculation (Story 12.21)
+- Displaying these categories on the user-facing product feed (future stories)
+- Trending Engine integration (Story 12.21)
 
 ---
 
@@ -69,18 +64,18 @@
 CREATE TABLE product_categories (
   id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   product_id  UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-  category_id UUID NOT NULL REFERENCES product_category_master(id),  -- Level 3 entry
+  category_id UUID NOT NULL REFERENCES product_category_master(id), -- Level 3 entry
   rank        INTEGER NOT NULL CHECK (rank IN (1, 2, 3)),  -- 1=Primary, 2=Secondary, 3=Tertiary
   created_at  TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(product_id, rank)
 );
 
-CREATE INDEX idx_pc_product  ON product_categories(product_id);
+CREATE INDEX idx_pc_product ON product_categories(product_id);
 CREATE INDEX idx_pc_category ON product_categories(category_id);
 
 ALTER TABLE product_categories ENABLE ROW LEVEL SECURITY;
 
--- Business owner can manage their product categories
+-- Business owner can manage product categories
 CREATE POLICY "owner_manage_product_categories" ON product_categories
   FOR ALL USING (
     product_id IN (
@@ -90,7 +85,6 @@ CREATE POLICY "owner_manage_product_categories" ON product_categories
     )
   );
 
--- Anyone authenticated can read
 CREATE POLICY "read_product_categories" ON product_categories
   FOR SELECT USING (true);
 ```
@@ -98,99 +92,35 @@ CREATE POLICY "read_product_categories" ON product_categories
 ### New Service: `src/services/productCategoryService.ts`
 
 ```typescript
-// Get Level 3 options filtered to business's L2 selections
-getProductCategoryOptions(businessId: string): Promise<GroupedL3Categories>
-// → SELECT pcm_l3.* FROM product_category_master pcm_l3
-//   JOIN product_category_master pcm_l2 ON pcm_l2.id = pcm_l3.parent_id
-//   JOIN business_product_categories bpc ON bpc.category_id = pcm_l2.id
-//   WHERE bpc.business_id = $1 AND pcm_l3.level = 3
-//   ORDER BY pcm_l2.sort_order, pcm_l3.sort_order
+getProductCategoryOptions(businessId: string): Promise<L3Category[]>
+// → Returns Level 3 categories whose Level 2 parent was selected by the business
 
-// Get existing product categories (for edit mode)
-getProductCategories(productId: string): Promise<{primary, secondary?, tertiary?}>
-// → SELECT * FROM product_categories WHERE product_id = $1 ORDER BY rank
+getProductCategories(productId: string): Promise<ProductCategorySelection>
+// → Returns Primary, Secondary, Tertiary for a product
 
-// Save/upsert product categories
-saveProductCategories(productId: string, {primaryId, secondaryId?, tertiaryId?}): Promise<void>
-// → DELETE existing, INSERT new
+saveProductCategories(productId: string, selections: {primary: string, secondary?: string, tertiary?: string}): Promise<void>
+// → Delete existing for product ID, insert new rows adhering to rank constraints
 ```
 
-**React Query key**: `['product-category-options', businessId]`  
-**staleTime**: 24 hours
+### UI Component: `ProductCategorySelector.tsx`
 
-### Category Picker UI (`ProductCategorySelector`)
-
-```
-Primary Category *
-  [ Fashion & Clothing ▾ ]    ← Level 2 group header (dropdown section)
-    ● Women's Clothing          ← Level 3 entries (radio-style, one per rank)
-    ○ Men's Clothing
-    ○ Footwear
-
-Secondary Category (optional)
-  [ Select a category... ▾ ]  ← only shown after Primary is selected
-
-Tertiary Category (optional)
-  [ Select a category... ▾ ]  ← only shown after Secondary is selected
-```
-
-### Store Update: `src/stores/useProductWizardStore.ts`
-Add fields:
-```typescript
-primaryCategoryId: string | null;
-secondaryCategoryId: string | null;
-tertiaryCategoryId: string | null;
-```
-
-### TypeScript Type Update: `src/types/product.ts`
-Add to `Product` interface:
-```typescript
-primary_category_id?: string;
-primary_category_name?: string;
-primary_category_l2_id?: string;   // parent Level 2 — used for trending
-secondary_category_id?: string;
-tertiary_category_id?: string;
-```
-
----
-
-## Component Structure
-
-```
-src/components/products/
-└── creation/
-    ├── steps/
-    │   └── ProductDetailsStep.tsx     [MODIFY] — add ProductCategorySelector
-    └── ProductCategorySelector.tsx    [NEW]
-
-src/services/
-└── productCategoryService.ts          [NEW]
-
-src/stores/
-└── useProductWizardStore.ts           [MODIFY] — add category fields
-
-src/types/
-└── product.ts                         [MODIFY] — add category fields
-```
+Located inside `src/components/products/creation/`.
+Requirements:
+- 3 dropdown rows
+- Primary Category (Required)
+- Secondary Category (Optional - appears after Primary selected)
+- Tertiary Category (Optional - appears after Secondary selected)
+- Options in dropdowns are populated via `getProductCategoryOptions(businessId)`
+- Integrated tightly with `useProductWizardStore.ts`
 
 ---
 
 ## Acceptance Criteria
 
-- [ ] `product_categories` table exists with correct schema and RLS policies
-- [ ] Category selector appears in ProductDetailsStep between Tags and Notifications
-- [ ] Picker shows ONLY Level 3 entries under the business's chosen Level 2 categories
-- [ ] Entries are grouped by their Level 2 parent (as section header)
-- [ ] Primary category is required — publish is blocked if not selected
-- [ ] Secondary and Tertiary are optional; each only reveals after the previous is selected
-- [ ] On publish (create), categories are saved to `product_categories`
-- [ ] On edit wizard open, existing categories pre-populate the selectors correctly
-- [ ] On update (edit), categories are re-saved (DELETE + INSERT)
-- [ ] `mcp_supabase-mcp-server_get_advisors` shows no security issues
-
----
-
-## Dependencies
-
-- [Story 12.20a](STORY_12.20a_Taxonomy_DB_Seeding.md) — `product_category_master` seeded
-- [Story 12.20b](STORY_12.20b_Business_Category_Onboarding.md) — `business_product_categories` populated
+- [ ] DB Migration applied successfully for `product_categories`
+- [ ] Category selector visible in the Create/Edit wizard, between Tags and Notifications
+- [ ] Dropdown options successfully filtered down to the business's Level 2 category tree
+- [ ] Primary category is marked mandatory; validation blocks publishing without it
+- [ ] Secondary and Tertiary selectors appear conditionally
+- [ ] Successfully saving a product correctly inserts up to 3 rows in `product_categories`
+- [ ] Editing an existing product correctly re-hydrates the category dropdown state

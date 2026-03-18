@@ -43,6 +43,7 @@ import FeaturedProducts from './FeaturedProducts';
 import { BusinessProductsTab } from '../products/grid/BusinessProductsTab';
 import { ProductCreationWizard } from '../products/creation/ProductCreationWizard';
 import { BusinessCategoryEditor } from './settings/BusinessCategoryEditor';
+import { BusinessCategoryService } from '../../services/businessCategoryService';
 import FeaturedOffers from './FeaturedOffers';
 import GoogleMapsLocationPicker from '../maps/GoogleMapsLocationPicker';
 import BusinessReviews from '../reviews/BusinessReviews';
@@ -219,6 +220,7 @@ const BusinessProfile: React.FC = () => {
 
   // Editable form state - initialize when business loads
   const [editForm, setEditForm] = useState<Partial<Business>>({});
+  const [editCategoryIds, setEditCategoryIds] = useState<string[]>([]);
 
   // Sync editForm when business data loads/updates
   useEffect(() => {
@@ -229,6 +231,13 @@ const BusinessProfile: React.FC = () => {
       });
     }
   }, [business]);
+
+  // Sync editCategoryIds when business categories load
+  useEffect(() => {
+    if (businessCategories) {
+      setEditCategoryIds(businessCategories.map(c => c.id));
+    }
+  }, [businessCategories, editing]);
 
   // Image upload states
   const [imageUploads, setImageUploads] = useState({
@@ -544,6 +553,14 @@ const BusinessProfile: React.FC = () => {
         }
       });
 
+      const originalCatIds = businessCategories.map(c => c.id).sort().join(',');
+      const newCatIds = [...editCategoryIds].sort().join(',');
+      const categoriesChanged = originalCatIds !== newCatIds;
+      
+      if (categoriesChanged) {
+        hasChanges = true;
+      }
+
       if (!hasChanges) {
         setEditing(false);
         return;
@@ -554,6 +571,17 @@ const BusinessProfile: React.FC = () => {
         await submitPendingEdits(business!.id, sensitiveChanges);
         toast.success('Core business details submitted for admin review.');
       }
+      
+      let categoriesUpdated = false;
+      if (categoriesChanged) {
+        if (editCategoryIds.length === 0) {
+          toast.error('You must select at least one product category');
+          setSaving(false);
+          return;
+        }
+        await BusinessCategoryService.updateBusinessCategories(business!.id, editCategoryIds);
+        categoriesUpdated = true;
+      }
 
       // Apply instant updates
       if (Object.keys(instantChanges).length > 0) {
@@ -563,6 +591,8 @@ const BusinessProfile: React.FC = () => {
         if (Object.keys(sensitiveChanges).length === 0) {
           toast.success('Business profile updated successfully!');
         }
+      } else if (categoriesUpdated) {
+        toast.success('Business categories updated successfully!');
       }
 
       // Refetch to sync cache with database
@@ -1011,30 +1041,29 @@ const BusinessProfile: React.FC = () => {
               </div>
             </div>
 
+            <div className="mt-8 mb-6 border-t border-gray-100 pt-8">
+              <BusinessCategoryEditor 
+                selectedCategoryIds={editCategoryIds}
+                onChange={setEditCategoryIds}
+              />
+            </div>
+
             <div className="flex space-x-3">
               <button
                 onClick={handleSave}
-                disabled={saving}
-                className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                disabled={saving || editCategoryIds.length === 0}
+                className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
               >
                 <Save className="w-4 h-4 mr-1" />
-                {saving ? 'Saving...' : 'Save'}
+                {saving ? 'Saving...' : 'Save All Changes'}
               </button>
               <button
                 onClick={handleCancel}
-                className="flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                className="flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 <X className="w-4 h-4 mr-1" />
                 Cancel
               </button>
-            </div>
-
-            <div className="mt-8 border-t pt-8">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Category Settings</h3>
-              <BusinessCategoryEditor 
-                businessId={business.id}
-                onUpdate={() => refetchBusiness()}
-              />
             </div>
           </div>
         )}
