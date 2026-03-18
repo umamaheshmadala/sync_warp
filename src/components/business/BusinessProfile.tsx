@@ -42,6 +42,7 @@ import { toast } from 'react-hot-toast';
 import FeaturedProducts from './FeaturedProducts';
 import { BusinessProductsTab } from '../products/grid/BusinessProductsTab';
 import { ProductCreationWizard } from '../products/creation/ProductCreationWizard';
+import { BusinessCategoryEditor } from './settings/BusinessCategoryEditor';
 import FeaturedOffers from './FeaturedOffers';
 import GoogleMapsLocationPicker from '../maps/GoogleMapsLocationPicker';
 import BusinessReviews from '../reviews/BusinessReviews';
@@ -1026,6 +1027,14 @@ const BusinessProfile: React.FC = () => {
                 <X className="w-4 h-4 mr-1" />
                 Cancel
               </button>
+            </div>
+
+            <div className="mt-8 border-t pt-8">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Category Settings</h3>
+              <BusinessCategoryEditor 
+                businessId={business.id}
+                onUpdate={() => refetchBusiness()}
+              />
             </div>
           </div>
         )}
