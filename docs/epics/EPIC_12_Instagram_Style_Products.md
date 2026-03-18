@@ -304,7 +304,7 @@ ALTER TABLE products
 | 12.18 | Price Field Deprecation | P0 | 2 pts | ✅ Done |
 | 12.19 | Action Bar Redesign | P0 | 8 pts | 📋 Planning |
 | 12.20a | Taxonomy DB Seeding | P0 | 5 pts | ✅ Done |
-| 12.20b | Business Category Onboarding | P0 | 5 pts | 📋 Planning |
+| 12.20b | Business Category Onboarding | P0 | 5 pts | ✅ Done |
 | 12.20c | Product Category Picker | P0 | 5 pts | 📋 Planning |
 | 12.21 | Trending Engine | P0 | 8 pts | 📋 Planning |
 | 12.22 | Real-Time Likes | P0 | 3 pts | 📋 Planning |

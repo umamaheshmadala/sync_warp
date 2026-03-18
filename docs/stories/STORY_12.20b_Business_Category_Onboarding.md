@@ -1,7 +1,7 @@
 # Story 12.20b: Business Product Category Onboarding
 
 **EPIC**: [EPIC 12 - Instagram-Style Products](../epics/EPIC_12_Instagram_Style_Products.md)  
-**Status**: 📋 Planning  
+**Status**: ✅ Completed  
 **Priority**: P0  
 **Estimate**: 5 points  
 **Depends on**: [Story 12.20a — Taxonomy DB Seeding](STORY_12.20a_Taxonomy_DB_Seeding.md)
@@ -167,15 +167,18 @@ src/components/business/
 
 ## Acceptance Criteria
 
-- [ ] New "Product Categories" step appears in the business onboarding wizard
-- [ ] Step shows all 48 Level 2 categories grouped under 11 Level 1 headers
-- [ ] Minimum 1 selection required (validation blocks proceeding without a selection)
-- [ ] Selections are saved to `business_product_categories` on step completion
-- [ ] Existing businesses with no categories see a banner: "Set product categories to enable trending"
-- [ ] Business Settings page shows `BusinessCategoryEditor` (same grouped multi-select)
-- [ ] Business can edit/update their categories at any time from Settings
-- [ ] React Query caches the category list for 24 hours
-- [ ] `mcp_supabase-mcp-server_get_advisors(type: "security")` shows no RLS issues
+- [x] New "Product Categories" step appears in the business onboarding wizard
+- [x] Step shows all 48 Level 2 categories grouped under 11 Level 1 headers
+- [x] Minimum 1 selection required (validation blocks proceeding without a selection)
+- [x] Selections are saved to `business_product_categories` on step completion
+- [x] Existing businesses with no categories see a banner: "Set product categories to enable trending"
+- [x] Business Settings page shows `BusinessCategoryEditor` (same grouped multi-select)
+- [x] Business can edit/update their categories at any time from Settings
+- [x] React Query caches the category list for 24 hours
+- [x] `mcp_supabase-mcp-server_get_advisors(type: "security")` shows no RLS issues
+
+> [!TIP]
+> **Implementation Note**: Fixed a mismatch between onboarding step numbers and table persistence logic in `useOnboarding.ts`. All steps (Basics, Categories, Profile, Metrics, Goals) now correctly map to their database counterparts.
 
 ---
 
