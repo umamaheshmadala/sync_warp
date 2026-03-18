@@ -64,12 +64,10 @@ export interface ProductFormData {
 export interface ProductCategory {
   id: string;
   name: string;
-  display_name: string;
-  description?: string;
-  icon_name?: string;
-  parent_category_id?: string;
-  is_active: boolean;
+  level: number;
+  parent_id?: string;
   sort_order: number;
+  is_active: boolean;
   created_at: string;
 }
 

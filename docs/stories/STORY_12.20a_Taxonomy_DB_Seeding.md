@@ -105,14 +105,14 @@ CREATE POLICY "read_all_categories" ON product_category_master
 
 ## Acceptance Criteria
 
-- [ ] `product_category_master` table exists in Supabase
-- [ ] Row counts: Level 1 = 11, Level 2 = 48, Level 3 = 3,958 (total 4,017)
-- [ ] All Level 2 rows have valid `parent_id` pointing to a Level 1 row
-- [ ] All Level 3 rows have valid `parent_id` pointing to a Level 2 row
-- [ ] RLS: `SELECT` allowed for all authenticated users; no write access for regular users
-- [ ] `mcp_supabase-mcp-server_get_advisors(type: "security")` shows no issues on this table
-- [ ] Seed script is idempotent (safe to run multiple times)
-- [ ] Existing `ProductCategory` TypeScript type in `src/types/product.ts` updated to match new schema
+- [x] `product_category_master` table exists in Supabase
+- [x] Row counts: Level 1 = 11, Level 2 = 48, Level 3 = 3,958 (total 4,017)
+- [x] All Level 2 rows have valid `parent_id` pointing to a Level 1 row
+- [x] All Level 3 rows have valid `parent_id` pointing to a Level 2 row
+- [x] RLS: `SELECT` allowed for all authenticated users; no write access for regular users
+- [x] `mcp_supabase-mcp-server_get_advisors(type: "security")` shows no issues on this table
+- [x] Seed script is idempotent (safe to run multiple times)
+- [x] Existing `ProductCategory` TypeScript type in `src/types/product.ts` updated to match new schema
 
 ---
 
