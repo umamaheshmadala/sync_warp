@@ -71,7 +71,7 @@ import { FollowerMetricsWidget } from './FollowerMetricsWidget';
 import { BusinessShareDashboard } from './BusinessShareDashboard';
 import { BusinessEngagementLog } from './analytics/BusinessEngagementLog';
 import BusinessCheckinAnalytics from '../checkins/BusinessCheckinAnalytics';
-import { useBusinessProfile, useBusinessCategories, type Business, type BusinessCategory } from '../../hooks/business';
+import { useBusinessProfile, type Business, type BusinessCategory } from '../../hooks/business';
 import { VerificationBadge } from './VerificationBadge';
 import { ClaimBusinessButton } from './ClaimBusinessButton';
 import ReviewAnalyticsDashboard from '../../pages/business/ReviewAnalyticsDashboard';
@@ -99,8 +99,16 @@ const BusinessProfile: React.FC = () => {
     refetch: refetchBusiness
   } = useBusinessProfile(businessIdParam);
 
-  // SWR: Fetch business categories with caching
-  const { data: businessCategories = [] } = useBusinessCategories();
+  // Track the current business's product categories (from product_category_master)
+  // These are different from the legacy business_categories table
+  const [businessProductCategoryIds, setBusinessProductCategoryIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!business?.id) return;
+    BusinessCategoryService.getBusinessCategories(business.id)
+      .then(cats => setBusinessProductCategoryIds(cats.map(c => c.id)))
+      .catch(err => console.error('Error loading business product categories:', err));
+  }, [business?.id]);
 
   // Handle business fetch error
   useEffect(() => {
@@ -232,12 +240,13 @@ const BusinessProfile: React.FC = () => {
     }
   }, [business]);
 
-  // Sync editCategoryIds when business categories load
+  // Sync editCategoryIds when business categories load or when opening/closing edit mode
   useEffect(() => {
-    if (businessCategories) {
-      setEditCategoryIds(businessCategories.map(c => c.id));
-    }
-  }, [businessCategories, editing]);
+    if (!business?.id) return;
+    BusinessCategoryService.getBusinessCategories(business.id)
+      .then(cats => setEditCategoryIds(cats.map(c => c.id)))
+      .catch(err => console.error('Error loading categories for editing:', err));
+  }, [business?.id, editing]);
 
   // Image upload states
   const [imageUploads, setImageUploads] = useState({
@@ -553,7 +562,7 @@ const BusinessProfile: React.FC = () => {
         }
       });
 
-      const originalCatIds = businessCategories.map(c => c.id).sort().join(',');
+      const originalCatIds = businessProductCategoryIds.slice().sort().join(',');
       const newCatIds = [...editCategoryIds].sort().join(',');
       const categoriesChanged = originalCatIds !== newCatIds;
       
@@ -1071,7 +1080,7 @@ const BusinessProfile: React.FC = () => {
         {!editing && (
           <>
             {/* Category Warning Banner for Owners */}
-            {isOwner && businessCategories.length === 0 && (
+            {isOwner && businessProductCategoryIds.length === 0 && (
               <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-lg mb-6 shadow-sm">
                 <div className="flex">
                   <div className="flex-shrink-0">

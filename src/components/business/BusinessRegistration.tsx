@@ -33,6 +33,7 @@ import { parseOpeningHours, parseWeekdayTextToHours } from '@/services/businessS
 import { useQueryClient } from '@tanstack/react-query';
 import { env } from '../../config/environment';
 import GoogleMapsLocationPicker from '../maps/GoogleMapsLocationPicker';
+import { BusinessCategoryService } from '../../services/businessCategoryService';
 
 // TypeScript interfaces
 interface OperatingHours {
@@ -100,6 +101,7 @@ const BusinessRegistration: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(0); // Start at Step 0 (Search)
   const [loading, setLoading] = useState(false);
   const [businessCategories, setBusinessCategories] = useState<BusinessCategory[]>([]);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [selectedImages, setSelectedImages] = useState<SelectedImages>({ logo: null, cover: null, gallery: [] });
   const [showCompletionScreen, setShowCompletionScreen] = useState(false);
   const [registeredBusinessId, setRegisteredBusinessId] = useState<string | null>(null);
@@ -284,7 +286,7 @@ const BusinessRegistration: React.FC = () => {
       case 2:
         if (!formData.businessName.trim()) newErrors.businessName = 'Business name is required';
 
-        if (!formData.category) newErrors.category = 'Category is required';
+        if (selectedCategoryIds.length === 0) newErrors.category = 'Please select at least one product category';
 
         if (formData.businessEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.businessEmail)) {
           newErrors.businessEmail = 'Please enter a valid email';
@@ -412,6 +414,16 @@ const BusinessRegistration: React.FC = () => {
       // Show transition screen instead of navigating directly
       setRegisteredBusinessId(newBusiness.id);
 
+      // Save product categories to the junction table
+      if (selectedCategoryIds.length > 0) {
+        try {
+          await BusinessCategoryService.updateBusinessCategories(newBusiness.id, selectedCategoryIds);
+        } catch (catError) {
+          console.error('[Registration] Failed to save categories:', catError);
+          // Non-fatal — business already created. User can update categories from profile later.
+        }
+      }
+
       // Invalidate dashboard query to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ['businessDashboard'] });
 
@@ -462,7 +474,8 @@ const BusinessRegistration: React.FC = () => {
       formData={formData}
       onFieldChange={handleInputChange}
       prefilledFields={prefilledFields}
-      categories={businessCategories}
+      selectedCategoryIds={selectedCategoryIds}
+      onCategoryIdsChange={setSelectedCategoryIds}
       errors={errors}
     />
   );
