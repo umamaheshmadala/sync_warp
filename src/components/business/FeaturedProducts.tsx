@@ -16,7 +16,8 @@ import {
   MobileProductCarousel,
   MobileProductActions,
   MobileProductDetails,
-  MobileProductComments
+  MobileProductComments,
+  StickyCommentInput
 } from '../products/mobile';
 import { useMediaQuery } from '../../hooks/use-media-query';
 // ProductForm removed — editing now goes through the 3-step ProductCreationWizard
@@ -180,6 +181,7 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
         <MobileProductModal
           isOpen={!!selectedProduct}
           onClose={handleCloseModal}
+          stickyFooter={selectedProduct ? <StickyCommentInput productId={selectedProduct.id} /> : undefined}
         >
           {selectedProduct && (
             <>
@@ -205,6 +207,7 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
                 productId={selectedProduct.id}
                 initialCount={selectedProduct.comment_count || 0}
                 isOwner={isOwner}
+                hideInput
               />
             </>
           )}

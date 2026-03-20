@@ -12,7 +12,8 @@ import {
     MobileProductCarousel,
     MobileProductActions,
     MobileProductDetails,
-    MobileProductComments
+    MobileProductComments,
+    StickyCommentInput
 } from '../mobile';
 import { WebProductModal } from '../web/WebProductModal'; // Import Desktop Modal
 import { useMediaQuery } from '../../../hooks/use-media-query';
@@ -345,6 +346,7 @@ export const BusinessProductsTab: React.FC<BusinessProductsTabProps> = ({ busine
                 <MobileProductModal
                     isOpen={!!selectedProductId}
                     onClose={handleCloseModal}
+                    stickyFooter={selectedProduct ? <StickyCommentInput productId={selectedProduct.id} /> : undefined}
                 >
                     {selectedProduct && (
                         <>
@@ -371,6 +373,7 @@ export const BusinessProductsTab: React.FC<BusinessProductsTabProps> = ({ busine
                                 productId={selectedProduct.id}
                                 initialCount={selectedProduct.comment_count || 0}
                                 isOwner={isOwner}
+                                hideInput
                             />
                             {/* Notification toggle moved to header */}
                         </>

@@ -30,15 +30,17 @@ export function TrendingCategorySheet({
 
   const handleProductClick = (productBusinessId: string, productId: string) => {
     onOpenChange(false);
-    navigate(`/business/${productBusinessId}/product/${productId}`);
+    // Navigate to business page with productId query param (deep-links into the product modal)
+    navigate(`/business/${productBusinessId}?productId=${productId}`);
   };
 
   return (
-    <DrawerPrimitive.Root open={isOpen} onOpenChange={onOpenChange} shouldScaleBackground>
+    <DrawerPrimitive.Root open={isOpen} onOpenChange={onOpenChange} shouldScaleBackground dismissible>
       <DrawerPrimitive.Portal>
-        <DrawerPrimitive.Overlay className="fixed inset-0 z-[200] bg-black/80" />
+        {/* z-[300] — above MobileProductModal (z-[100]) so the overlay is tappable for dismiss */}
+        <DrawerPrimitive.Overlay className="fixed inset-0 z-[300] bg-black/80" />
         <DrawerPrimitive.Content
-          className="fixed inset-x-0 bottom-0 z-[200] mt-24 flex max-h-[85vh] flex-col rounded-t-[10px] border bg-white shadow-2xl"
+          className="fixed inset-x-0 bottom-0 z-[300] mt-24 flex max-h-[85vh] flex-col rounded-t-[10px] border bg-white shadow-2xl"
         >
           <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />
 
@@ -71,7 +73,7 @@ export function TrendingCategorySheet({
                 {trendingProducts?.map((p) => (
                   <div
                     key={p.product_id}
-                    onClick={() => handleProductClick(p.business_name, p.product_id)}
+                    onClick={() => handleProductClick(p.business_id, p.product_id)}
                     className="flex items-center gap-4 bg-white p-3 rounded-xl border cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-all"
                   >
                     <div className="w-8 text-center font-bold flex flex-col items-center">
@@ -83,7 +85,7 @@ export function TrendingCategorySheet({
                         <span className="text-muted-foreground">#{p.rank}</span>
                       )}
                     </div>
-                    
+
                     <div className="h-16 w-16 bg-gray-100 rounded-md overflow-hidden flex-shrink-0 border">
                       {p.image_url ? (
                         <img
@@ -96,13 +98,13 @@ export function TrendingCategorySheet({
                         <div className="w-full h-full bg-gray-200" />
                       )}
                     </div>
-                    
+
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-base truncate">{p.product_name}</h3>
                       <p className="text-sm text-muted-foreground truncate">{p.business_name}</p>
                       <p className="text-xs text-muted-foreground/75 truncate">{p.l3_category}</p>
                     </div>
-                    
+
                     <div className="text-xs font-medium text-orange-500 bg-orange-50 px-2 py-1 rounded-full">
                       {p.trending_score} pts
                     </div>

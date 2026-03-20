@@ -4,6 +4,7 @@ export interface TrendingProduct {
   product_id: string;
   product_name: string;
   image_url: string;
+  business_id: string;
   business_name: string;
   l3_category: string;
   trending_score: number;

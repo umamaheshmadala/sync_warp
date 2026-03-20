@@ -9,13 +9,16 @@ interface MobileProductCommentsProps {
     initialCount?: number;
     focusInput?: boolean;
     isOwner?: boolean;
+    /** When true, only the comment list is rendered (input is handled externally in a sticky footer) */
+    hideInput?: boolean;
 }
 
 export const MobileProductComments: React.FC<MobileProductCommentsProps> = ({
     productId,
     initialCount = 0,
     focusInput,
-    isOwner
+    isOwner,
+    hideInput
 }) => {
     const { comments, commentCount, loading, hasMore, loadMore, postComment, deleteComment } = useProductComments(productId, initialCount);
 
@@ -85,12 +88,14 @@ export const MobileProductComments: React.FC<MobileProductCommentsProps> = ({
                 )}
             </div>
 
-            {/* Input */}
-            <ProductCommentInput
-                onPost={postComment}
-                id="mobile-comment-input"
-                autoFocus={focusInput}
-            />
+            {/* Input (only if not managed externally) */}
+            {!hideInput && (
+                <ProductCommentInput
+                    onPost={postComment}
+                    id="mobile-comment-input"
+                    autoFocus={focusInput}
+                />
+            )}
         </div>
     );
 };

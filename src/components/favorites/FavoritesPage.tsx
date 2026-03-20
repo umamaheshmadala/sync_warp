@@ -27,7 +27,8 @@ import {
   MobileProductCarousel,
   MobileProductActions,
   MobileProductDetails,
-  MobileProductComments
+  MobileProductComments,
+  StickyCommentInput
 } from '../products/mobile';
 import { WebProductModal } from '../products/web/WebProductModal';
 import { useMediaQuery } from '../../hooks/use-media-query';
@@ -365,6 +366,7 @@ const FavoritesPage: React.FC = () => {
         <MobileProductModal
           isOpen={!!selectedProduct}
           onClose={handleCloseModal}
+          stickyFooter={selectedProduct ? <StickyCommentInput productId={selectedProduct.id} /> : undefined}
         >
           {selectedProduct && (
             <>
@@ -391,6 +393,7 @@ const FavoritesPage: React.FC = () => {
               <MobileProductComments
                 productId={selectedProduct.id}
                 initialCount={selectedProduct.comment_count || 0}
+                hideInput
               />
             </>
           )}

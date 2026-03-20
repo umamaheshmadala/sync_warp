@@ -6,9 +6,11 @@ interface MobileProductModalProps {
     isOpen: boolean;
     onClose: () => void;
     children: React.ReactNode;
+    /** Content rendered in a sticky, non-scrolling zone at the bottom (e.g. comment input) */
+    stickyFooter?: React.ReactNode;
 }
 
-export const MobileProductModal: React.FC<MobileProductModalProps> = ({ isOpen, onClose, children }) => {
+export const MobileProductModal: React.FC<MobileProductModalProps> = ({ isOpen, onClose, children, stickyFooter }) => {
     const [yOffset, setYOffset] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
@@ -66,9 +68,9 @@ export const MobileProductModal: React.FC<MobileProductModalProps> = ({ isOpen, 
                 onClick={handleClose}
             />
 
-            {/* Modal Content */}
+            {/* Modal Content — flex column: scrollable area + sticky footer */}
             <div
-                className={`relative w-full h-full sm:h-[90vh] sm:max-w-md sm:rounded-xl bg-white overflow-hidden shadow-2xl touch-none ${isClosing ? 'translate-y-full transition-transform duration-300' :
+                className={`relative w-full h-full sm:h-[90vh] sm:max-w-md sm:rounded-xl bg-white overflow-hidden shadow-2xl touch-none flex flex-col ${isClosing ? 'translate-y-full transition-transform duration-300' :
                     (isDragging ? 'transition-none' : 'animate-fadeInUp transition-transform duration-300')
                     }`}
                 style={isDragging || (!isClosing && yOffset > 0) ? { transform: `translateY(${yOffset}px)` } : undefined}
@@ -76,15 +78,15 @@ export const MobileProductModal: React.FC<MobileProductModalProps> = ({ isOpen, 
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
             >
-                {/* Drag Handle for visual affordance */}
+                {/* Drag Handle */}
                 <div
                     className="absolute left-1/2 -translate-x-1/2 w-12 h-1.5 bg-gray-300 rounded-full z-10 sm:hidden pointer-events-none"
                     style={{ top: 'calc(0.5rem + env(safe-area-inset-top, 0px))' }}
                 />
 
-                {/* Content Container */}
+                {/* Scrollable Content */}
                 <div
-                    className="h-full overflow-y-auto no-scrollbar bg-white"
+                    className="flex-1 overflow-y-auto no-scrollbar bg-white"
                     onTouchStart={(e) => e.stopPropagation()}
                     onPointerDown={(e) => e.stopPropagation()}
                 >
@@ -93,6 +95,17 @@ export const MobileProductModal: React.FC<MobileProductModalProps> = ({ isOpen, 
                     </div>
                 </div>
 
+                {/* Sticky Footer (e.g. comment input) */}
+                {stickyFooter && (
+                    <div
+                        className="flex-shrink-0 border-t border-gray-100 bg-white"
+                        style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom, 0px))' }}
+                        onTouchStart={(e) => e.stopPropagation()}
+                        onPointerDown={(e) => e.stopPropagation()}
+                    >
+                        {stickyFooter}
+                    </div>
+                )}
             </div>
         </div>
     );
