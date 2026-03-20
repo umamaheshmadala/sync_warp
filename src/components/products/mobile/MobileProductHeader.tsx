@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ArrowLeft, MoreVertical, Share, Flag, Edit, Trash, Archive, RotateCcw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Menu } from '@headlessui/react';
+import { useNavigate } from 'react-router-dom';
 import { Product } from '../../../types/product';
 import { useAuthStore } from '../../../store/authStore';
 import { ProductTagDisplay } from '../tags/ProductTagDisplay';
@@ -26,6 +27,15 @@ export const MobileProductHeader: React.FC<MobileProductHeaderProps> = ({
 }) => {
     const user = useAuthStore((state) => state.user);
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+    const navigate = useNavigate();
+
+    const handleBack = () => {
+        if (window.history.length > 2) {
+            navigate(-1);
+        } else {
+            onClose();
+        }
+    };
 
     // Assuming product.business_id availability or we check ownership via props parent passes
     const isOwner = user?.id && product.business_id; // Simpler check needed or pass isOwner prop
@@ -50,7 +60,7 @@ export const MobileProductHeader: React.FC<MobileProductHeaderProps> = ({
             style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))' }}
         >
             <button
-                onClick={onClose}
+                onClick={handleBack}
                 className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors"
                 aria-label="Back"
             >

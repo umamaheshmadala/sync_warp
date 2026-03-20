@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MessageCircle, Share2, MoreHorizontal, Loader2, Bell, BellOff, Archive, RotateCcw, AlertTriangle, Flag, Share, ArrowLeft } from 'lucide-react';
+import { MessageCircle, Share2, MoreHorizontal, Loader2, Bell, BellOff, Archive, RotateCcw, AlertTriangle, Flag, Share } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Product } from '../../../types/product';
 import { useAuthStore } from '../../../store/authStore';
@@ -203,13 +203,6 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 relative">
                 <div className="flex items-center gap-3">
-                    <button 
-                        onClick={onClose}
-                        className="p-1 -ml-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors flex items-center justify-center"
-                        aria-label="Go back"
-                    >
-                        <ArrowLeft className="w-5 h-5" />
-                    </button>
                     <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden">
                         {businessLogo ? (
                             <img loading="lazy" decoding="async" src={businessLogo} alt={businessName} className="w-full h-full object-cover" />

@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { X } from 'lucide-react';
+import { X, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Product } from '../../../types/product';
 import { WebProductCarousel } from './WebProductCarousel';
 import { WebProductDetailsPanel } from './WebProductDetailsPanel';
@@ -28,7 +29,16 @@ export const WebProductModal: React.FC<WebProductModalProps> = ({
     // Analytics: Track view
     useProductViewTracking(isOpen ? product.id : undefined);
 
+    const navigate = useNavigate();
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+    const handleBack = () => {
+        if (window.history.length > 2) {
+            navigate(-1);
+        } else {
+            onClose();
+        }
+    };
 
     // Reset index when product changes
     useEffect(() => {
@@ -81,9 +91,19 @@ export const WebProductModal: React.FC<WebProductModalProps> = ({
                             onClick={onClose}
                             className="fixed inset-0 bg-black/60 backdrop-blur-sm cursor-pointer"
                         >
+                            {/* Back Button (floating top left) */}
+                            <button
+                                onClick={(e) => { e.stopPropagation(); handleBack(); }}
+                                className="absolute top-4 left-4 p-2 text-white/70 hover:text-white transition-colors z-[110]"
+                                aria-label="Go back"
+                            >
+                                <ArrowLeft className="w-8 h-8" />
+                            </button>
+
                             {/* Close Button (floating top right) */}
                             <button
-                                className="absolute top-4 right-4 p-2 text-white/70 hover:text-white transition-colors"
+                                onClick={(e) => { e.stopPropagation(); onClose(); }}
+                                className="absolute top-4 right-4 p-2 text-white/70 hover:text-white transition-colors z-[110]"
                                 aria-label="Close modal"
                             >
                                 <X className="w-8 h-8" />
