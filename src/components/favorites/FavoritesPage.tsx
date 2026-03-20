@@ -5,7 +5,7 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  Heart,
+  Star,
   Search as SearchIcon,
   RefreshCw,
   Tag,
@@ -167,9 +167,9 @@ const FavoritesPage: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <Heart className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Sign in to view favorites</h2>
-          <p className="text-gray-600 mb-6">Save your favorite offers and products</p>
+          <Star className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Sign in to view Favourites</h2>
+          <p className="text-gray-600 mb-6">Save your favourite offers and products</p>
           <button
             onClick={() => navigate('/auth/login')}
             className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
@@ -309,12 +309,12 @@ const FavoritesPage: React.FC = () => {
               )}
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No {activeTab} favorited yet
+              No {activeTab} favourited yet
             </h3>
             <p className="text-gray-600 mb-6">
               {searchQuery.trim()
                 ? `No ${activeTab} match your search "${searchQuery}"`
-                : `Start favoriting ${activeTab} to see them here`}
+                : `Start favouriting ${activeTab} to see them here`}
             </p>
 
           </div>

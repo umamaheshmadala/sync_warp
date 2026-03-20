@@ -302,13 +302,13 @@ ALTER TABLE products
 | 12.16 | Product Archive & Delete Flows | P0 | 5 pts | ✅ Done |
 | 12.17 | Product Drafts System | P0 | 5 pts | 🔴 Buggy (See Story) |
 | 12.18 | Price Field Deprecation | P0 | 2 pts | ✅ Done |
-| 12.19 | Action Bar Redesign | P0 | 8 pts | 📋 Planning |
+| 12.19 | Action Bar Redesign | P0 | 8 pts | ✅ Done |
 | 12.20a | Taxonomy DB Seeding | P0 | 5 pts | ✅ Done |
 | 12.20b | Business Category Onboarding | P0 | 5 pts | ✅ Done |
 | 12.20c | Product Category Picker | P0 | 5 pts | ✅ Done |
 | 12.21 | Trending Engine | P0 | 8 pts | ✅ Done |
 | 12.22 | Real-Time Likes | P0 | 3 pts | ✅ Done |
-| 12.23 | Star Icon Global Replace | P1 | 3 pts | 📋 Planning |
+| 12.23 | Star Icon Global Replace | P1 | 3 pts | ✅ Done |
 
 **Total Estimate**: ~109 points
 

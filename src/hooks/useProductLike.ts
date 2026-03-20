@@ -27,7 +27,7 @@ export const useProductLike = (productId: string, initialLikeCount: number = 0) 
                 // Parallel fetch
                 const [liked, friends] = await Promise.all([
                     productLikeService.checkIsLiked(productId, user.id),
-                    productLikeService.getFriendsWhoLiked(productId, user.id)
+                    productLikeService.getFriendsWhoLiked(productId, user.id, 100)
                 ]);
 
                 setIsLiked(liked);

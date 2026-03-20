@@ -27,9 +27,12 @@ export const MobileProductComments: React.FC<MobileProductCommentsProps> = ({
         <div className="px-4 py-2 border-t border-gray-100 dark:border-gray-800">
             {/* Header / Count */}
             {commentCount > 0 && (
-                <div className="text-gray-500 dark:text-gray-400 text-sm mb-3">
-                    {commentCount} {commentCount === 1 ? 'comment' : 'comments'}
-                </div>
+                <button 
+                    onClick={() => document.getElementById('mobile-comment-input')?.focus()}
+                    className="text-gray-500 dark:text-gray-400 text-sm mb-3 hover:underline text-left block"
+                >
+                    View all {commentCount} {commentCount === 1 ? 'comment' : 'comments'}
+                </button>
             )}
 
             {/* Comments List (Preview - max 3 for mobile modal usually, unless viewing all) */}

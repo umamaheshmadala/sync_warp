@@ -1,5 +1,5 @@
 import React from 'react';
-import { Heart } from 'lucide-react';
+import { Star } from 'lucide-react';
 
 interface ProductFavoriteButtonProps {
     isFavorite: boolean;
@@ -26,20 +26,20 @@ export const ProductFavoriteButton: React.FC<ProductFavoriteButtonProps> = ({
             }}
             disabled={isLoading}
             className={`flex items-center justify-center relative ${className}`}
-            aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+            aria-label={isFavorite ? "Remove from Favourites" : "Add to Favourites"}
         >
             <>
             {isFavorite ? (
                                 <div
-                                    key="filled-heart"
+                                    key="filled-star"
                                 >
-                                    <Heart
+                                    <Star
                                         size={size}
                                         className={`fill-yellow-400 text-yellow-400 ${iconClassName}`}
                                         strokeWidth={0} // Filled style
                                     />
-                                    {/* Outline overlay for crispness if desired, or just fill */}
-                                    <Heart
+                                    {/* Outline overlay for crispness */}
+                                    <Star
                                         size={size}
                                         className={`absolute top-0 left-0 text-yellow-500 opacity-20 pointer-events-none ${iconClassName}`}
                                         strokeWidth={1.5}
@@ -47,11 +47,11 @@ export const ProductFavoriteButton: React.FC<ProductFavoriteButtonProps> = ({
                                 </div>
                             ) : (
                                 <div
-                                    key="outline-heart"
+                                    key="outline-star"
                                 >
-                                    <Heart
+                                    <Star
                                         size={size}
-                                        className={`text-gray-900 ${iconClassName}`}
+                                        className={`text-gray-400 ${iconClassName}`}
                                         strokeWidth={1.5}
                                     />
                                 </div>
@@ -62,3 +62,4 @@ export const ProductFavoriteButton: React.FC<ProductFavoriteButtonProps> = ({
         </button>
     );
 };
+

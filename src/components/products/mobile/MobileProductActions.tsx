@@ -1,20 +1,19 @@
 import React, { useState } from 'react';
-import { MessageCircle, Share2, Send } from 'lucide-react';
+import { Send } from 'lucide-react';
 import { Product } from '../../../types/product';
 import { useProductLike } from '../../../hooks/useProductLike';
 import { useProductFavorite } from '../../../hooks/useProductFavorite';
 import { ProductLikeButton } from '../social/ProductLikeButton';
 import { ProductFavoriteButton } from '../actions/ProductFavoriteButton';
+import { FriendsLikeButton } from '../social/FriendsLikeButton';
+import { FriendsLikeSheet } from '../social/FriendsLikeSheet';
 import { ProductLikedBy } from '../social/ProductLikedBy';
-
-import { useUnifiedShare } from '../../../hooks/useUnifiedShare';
-import { toast } from 'react-hot-toast';
+import { TrendingButton } from '../social/TrendingButton';
 import { ShareFriendPickerModal } from '../../Sharing/ShareFriendPickerModal';
 
 interface MobileProductActionsProps {
     product: Product;
     onComment?: () => void;
-    // onShare removed - handled internally
 }
 
 // Utility for formatting counts
@@ -28,12 +27,13 @@ export const MobileProductActions: React.FC<MobileProductActionsProps> = ({
     product,
     onComment
 }) => {
-    // Share Logic
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+    const [isFriendsSheetOpen, setIsFriendsSheetOpen] = useState(false);
 
     const handleShare = () => {
         setIsShareModalOpen(true);
     };
+
     // Like Logic
     const { isLiked, likeCount, likedByFriends, toggleLike, isLoading: isLikeLoading } = useProductLike(product.id, product.like_count || 0);
 
@@ -44,7 +44,7 @@ export const MobileProductActions: React.FC<MobileProductActionsProps> = ({
         <div className="flex flex-col px-4 py-2">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-6">
-                    {/* Like Button */}
+                    {/* 1. Like Button */}
                     <div className="flex flex-col items-center gap-1 group">
                         <ProductLikeButton
                             isLiked={isLiked}
@@ -57,18 +57,26 @@ export const MobileProductActions: React.FC<MobileProductActionsProps> = ({
                         </span>
                     </div>
 
-                    {/* Comment Button */}
-                    <button
-                        onClick={onComment}
-                        className="flex flex-col items-center gap-1 p-1"
-                    >
-                        <MessageCircle size={28} className="text-gray-900" strokeWidth={1.5} />
+                    {/* 2. Friends Like Button */}
+                    <div className="flex flex-col items-center gap-1">
+                        <FriendsLikeButton
+                            size={28}
+                            className="p-1"
+                            onClick={() => setIsFriendsSheetOpen(true)}
+                        />
                         <span className="text-xs font-medium text-gray-900">
-                            {product.comment_count > 0 ? formatCount(product.comment_count) : 'Comment'}
+                            {likedByFriends.length} {likedByFriends.length === 1 ? 'Friend' : 'Friends'}
                         </span>
-                    </button>
+                    </div>
 
-                    {/* Share Button */}
+                    {/* 3. Trending Button */}
+                    <TrendingButton
+                        productId={product.id}
+                        businessId={product.business_id}
+                        variant="action-bar"
+                    />
+
+                    {/* 4. Share Button */}
                     <button
                         onClick={handleShare}
                         className="flex flex-col items-center gap-1 p-1"
@@ -78,7 +86,7 @@ export const MobileProductActions: React.FC<MobileProductActionsProps> = ({
                     </button>
                 </div>
 
-                {/* Favorite Button (Right Aligned) */}
+                {/* 5. Favorite Button (Right Aligned) */}
                 <div className="flex flex-col items-center gap-1">
                     <ProductFavoriteButton
                         isFavorite={isFavorite}
@@ -92,9 +100,18 @@ export const MobileProductActions: React.FC<MobileProductActionsProps> = ({
             </div>
 
             {/* Liked By Section */}
-            <ProductLikedBy
+            <div className="px-2 pb-1">
+                <ProductLikedBy
+                    friends={likedByFriends}
+                    totalLikes={likeCount}
+                    onClick={() => setIsFriendsSheetOpen(true)}
+                />
+            </div>
+
+            <FriendsLikeSheet
+                isOpen={isFriendsSheetOpen}
+                onOpenChange={setIsFriendsSheetOpen}
                 friends={likedByFriends}
-                totalLikes={likeCount}
             />
 
             <ShareFriendPickerModal

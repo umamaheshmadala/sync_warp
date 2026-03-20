@@ -1,9 +1,9 @@
 // FavoriteProductButton.tsx
 // Reusable favorite button component for products
-// Story 4.13
+// Story 4.13 + Story 12.23: Star icon for favourites
 
 import React, { useState, useEffect } from 'react';
-import { Heart } from 'lucide-react';
+import { Star } from 'lucide-react';
 import { useFavoritesContext } from '../../contexts/FavoritesContext';
 
 interface FavoriteProductButtonProps {
@@ -37,7 +37,7 @@ export const FavoriteProductButton: React.FC<FavoriteProductButtonProps> = ({
             const result = await favorites.toggleFavorite('product', productId);
             // State will update via context
         } catch (error) {
-            console.error('Error toggling favorite:', error);
+            console.error('Error toggling favourite:', error);
         } finally {
             setIsLoading(false);
         }
@@ -50,21 +50,22 @@ export const FavoriteProductButton: React.FC<FavoriteProductButtonProps> = ({
             className={`flex items-center justify-center transition-colors disabled:opacity-50 ${iconOnly
                 ? `p-1 bg-transparent hover:scale-110 rounded-full hover:bg-black/5`
                 : `px-2 py-1 border rounded-md ${isFavorited
-                    ? 'bg-red-50 border-red-200 text-red-600 hover:bg-red-100'
+                    ? 'bg-yellow-50 border-yellow-200 text-yellow-600 hover:bg-yellow-100'
                     : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
                 }`
                 } ${className}`}
-            aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+            aria-label={isFavorited ? 'Remove from Favourites' : 'Add to Favourites'}
         >
-            <Heart
-                className={`${iconOnly ? 'w-5 h-5 drop-shadow-sm' : 'w-4 h-4'} transition-all ${isFavorited ? 'fill-red-500 text-red-500' : 'text-current'
+            <Star
+                className={`${iconOnly ? 'w-5 h-5 drop-shadow-sm' : 'w-4 h-4'} transition-all ${isFavorited ? 'fill-yellow-400 text-yellow-400' : 'text-current'
                     } ${!iconOnly && 'mr-2'}`}
             />
             {!iconOnly && (
                 <span className="text-xs">
-                    {isFavorited ? 'Favorited' : 'Favorite'}
+                    {isFavorited ? 'Favourited' : 'Favourite'}
                 </span>
             )}
         </button>
     );
 };
+

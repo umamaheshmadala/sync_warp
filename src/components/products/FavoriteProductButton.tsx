@@ -1,10 +1,10 @@
 // =====================================================
-// Story 4.10: Storefront Minor Enhancements
-// Component: FavoriteProductButton - Toggle product favorites
+// Story 4.10 + Story 12.23: Star Icon for Favourites
+// Component: FavoriteProductButton - Toggle product favourites
 // =====================================================
 
 import React from 'react';
-import { Heart, Loader2 } from 'lucide-react';
+import { Star, Loader2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { useFavoriteProduct } from '../../hooks/useFavoriteProduct';
 import { cn } from '../../lib/utils';
@@ -75,22 +75,22 @@ export function FavoriteProductButton({
           toggleFavorite();
         }}
         disabled={loading || checking}
-        aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+        aria-label={isFavorited ? 'Remove from Favourites' : 'Add to Favourites'}
         className={cn(
           'relative transition-all duration-200',
           'hover:scale-110 active:scale-95',
           className
         )}
-        title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+        title={isFavorited ? 'Remove from Favourites' : 'Add to Favourites'}
       >
         {loading ? (
           <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
         ) : (
-          <Heart
+          <Star
             className={cn(
               'h-5 w-5 transition-all duration-200',
-              isFavorited && 'fill-red-500 text-red-500 scale-110',
-              !isFavorited && 'text-gray-400 hover:text-red-500'
+              isFavorited && 'fill-yellow-400 text-yellow-400 scale-110',
+              !isFavorited && 'text-gray-400 hover:text-yellow-500'
             )}
           />
         )}
@@ -111,7 +111,7 @@ export function FavoriteProductButton({
       size={buttonSize}
       className={cn(
         'transition-all duration-200',
-        isFavorited && 'bg-red-50 hover:bg-red-100 text-red-600 border-red-200',
+        isFavorited && 'bg-yellow-50 hover:bg-yellow-100 text-yellow-600 border-yellow-200',
         className
       )}
     >
@@ -122,13 +122,13 @@ export function FavoriteProductButton({
         </>
       ) : (
         <>
-          <Heart
+          <Star
             className={cn(
               'mr-2 h-4 w-4 transition-all duration-200',
               isFavorited && 'fill-current scale-110'
             )}
           />
-          {isFavorited ? 'Favorited' : 'Favorite'}
+          {isFavorited ? 'Favourited' : 'Favourite'}
         </>
       )}
     </Button>

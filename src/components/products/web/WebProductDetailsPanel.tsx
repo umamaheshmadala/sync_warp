@@ -8,11 +8,13 @@ import { useProductComments } from '../../../hooks/useProductComments';
 import { useProductFavorite } from '../../../hooks/useProductFavorite';
 import { useProducts } from '../../../hooks/useProducts';
 import { ProductLikeButton } from '../social/ProductLikeButton';
-import { ProductLikedBy } from '../social/ProductLikedBy';
 import { ProductCommentItem } from '../social/ProductCommentItem';
 import { ProductCommentInput } from '../social/ProductCommentInput';
 import { ProductFavoriteButton } from '../actions/ProductFavoriteButton';
 import { ProductShareButton } from '../../Sharing/ProductShareButton';
+import { FriendsLikeButton } from '../social/FriendsLikeButton';
+import { FriendsLikeSheet } from '../social/FriendsLikeSheet';
+import { ProductLikedBy } from '../social/ProductLikedBy';
 import { ProductTagDisplay } from '../tags/ProductTagDisplay';
 import { ProductDescription } from '../details/ProductDescription';
 import { ProductNotificationToggle } from '../controls/ProductNotificationToggle';
@@ -60,6 +62,7 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
     const [deleteInput, setDeleteInput] = useState('');
     const [isDeleting, setIsDeleting] = useState(false);
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+    const [isFriendsSheetOpen, setIsFriendsSheetOpen] = useState(false);
     const [showNonOwnerMenu, setShowNonOwnerMenu] = useState(false);
 
     const user = useAuthStore((state) => state.user);
@@ -393,7 +396,6 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
 
                     <div className="flex items-center gap-2">
                         <ProductTagDisplay product={product} size="sm" />
-                        <TrendingButton productId={product.id} businessId={product.business_id} />
                     </div>
 
                     {product.status === 'sold_out' && (
@@ -427,6 +429,9 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                 {/* Comments List - Hidden for Drafts */}
                 {product.status !== 'draft' && (
                     <div className="space-y-4 pb-4">
+                        <h3 className="font-semibold text-gray-900 border-b pb-2 mb-4">
+                            {comments.length} {comments.length === 1 ? 'Comment' : 'Comments'}
+                        </h3>
                         {commentsLoading && comments.length === 0 ? (
                             <div className="flex justify-center py-8">
                                 <Loader2 className="w-6 h-6 animate-spin text-gray-300" />
@@ -466,9 +471,18 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                                 onToggle={toggleLike}
                                 size={24}
                             />
-                            <button className="group" onClick={() => document.getElementById('web-comment-input')?.focus()}>
-                                <MessageCircle className="w-6 h-6 text-gray-900 group-hover:text-blue-500 transition-colors" />
-                            </button>
+                            
+                            <FriendsLikeButton
+                                onClick={() => setIsFriendsSheetOpen(true)}
+                                size={24}
+                            />
+
+                            <TrendingButton
+                                productId={product.id}
+                                businessId={product.business_id}
+                                variant="web-action-bar"
+                            />
+
                             <ProductShareButton
                                 productId={product.id}
                                 productName={product.name}
@@ -495,6 +509,7 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                         <ProductLikedBy
                             friends={likedByFriends}
                             totalLikes={likeCount}
+                            onClick={() => setIsFriendsSheetOpen(true)}
                         />
                     </div>
 
@@ -524,6 +539,12 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                     imageUrl: product.image_urls?.[0] || product.image_url,
                     url: `${window.location.origin}/product/${product.id}`
                 }}
+            />
+
+            <FriendsLikeSheet
+                isOpen={isFriendsSheetOpen}
+                onOpenChange={setIsFriendsSheetOpen}
+                friends={likedByFriends}
             />
         </div>
     );
