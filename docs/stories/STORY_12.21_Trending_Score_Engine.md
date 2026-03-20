@@ -1,8 +1,11 @@
-# Story 12.21: Trending Score Engine & Category Leaderboard
-
+# **Story:** 12.21
+**Title:** Trending Score Engine
+**Status:** Completed
+**Priority:** High
+**Owner:** @Manchumaharam
 **EPIC**: [EPIC 12 - Instagram-Style Products](../epics/EPIC_12_Instagram_Style_Products.md)  
-**Status**: 📋 Planning  
-**Priority**: P0  
+**Status**: Completed  
+**Priority**: High  
 **Estimate**: 8 points  
 **Depends on**: [Story 12.20c — Product Category Picker](STORY_12.20c_Product_Category_Picker.md) *(products need categories before trending works)*
 

@@ -1,7 +1,7 @@
 # Story 12.22: Real-Time Like Counter
 
 **EPIC**: [EPIC 12 - Instagram-Style Products](../epics/EPIC_12_Instagram_Style_Products.md)  
-**Status**: 📋 Planning  
+**Status**: ✅ Completed  
 **Priority**: P1  
 **Estimate**: 3 points  
 **Depends on**: Nothing — can be built in parallel with 12.20 chain  

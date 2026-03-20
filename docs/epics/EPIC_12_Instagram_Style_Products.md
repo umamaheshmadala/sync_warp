@@ -306,8 +306,8 @@ ALTER TABLE products
 | 12.20a | Taxonomy DB Seeding | P0 | 5 pts | ✅ Done |
 | 12.20b | Business Category Onboarding | P0 | 5 pts | ✅ Done |
 | 12.20c | Product Category Picker | P0 | 5 pts | ✅ Done |
-| 12.21 | Trending Engine | P0 | 8 pts | 📋 Planning |
-| 12.22 | Real-Time Likes | P0 | 3 pts | 📋 Planning |
+| 12.21 | Trending Engine | P0 | 8 pts | ✅ Done |
+| 12.22 | Real-Time Likes | P0 | 3 pts | ✅ Done |
 | 12.23 | Star Icon Global Replace | P1 | 3 pts | 📋 Planning |
 
 **Total Estimate**: ~109 points

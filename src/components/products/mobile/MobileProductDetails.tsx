@@ -6,6 +6,7 @@ import { useProductTags } from '../../../hooks/useProductTags';
 import { useProductViewTracking } from '../../../hooks/useProductAnalytics';
 import { useProducts } from '../../../hooks/useProducts';
 import { useAuthStore } from '../../../store/authStore';
+import { TrendingButton } from '../social/TrendingButton';
 
 interface MobileProductDetailsProps {
     product: Product;
@@ -96,6 +97,7 @@ export const MobileProductDetails: React.FC<MobileProductDetailsProps> = ({ prod
                         {tagItem.config.label}
                     </span>
                 ))}
+                <TrendingButton productId={product.id} businessId={product.business_id} />
             </div>
 
             {/* Description */}

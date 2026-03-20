@@ -16,6 +16,7 @@ import { ProductShareButton } from '../../Sharing/ProductShareButton';
 import { ProductTagDisplay } from '../tags/ProductTagDisplay';
 import { ProductDescription } from '../details/ProductDescription';
 import { ProductNotificationToggle } from '../controls/ProductNotificationToggle';
+import { TrendingButton } from '../social/TrendingButton';
 
 import { useProductWizardStore } from '../../../stores/useProductWizardStore';
 import { Edit3, Trash2 } from 'lucide-react';
@@ -392,6 +393,7 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
 
                     <div className="flex items-center gap-2">
                         <ProductTagDisplay product={product} size="sm" />
+                        <TrendingButton productId={product.id} businessId={product.business_id} />
                     </div>
 
                     {product.status === 'sold_out' && (
