@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MessageCircle, Share2, MoreHorizontal, Loader2, Bell, BellOff, Archive, RotateCcw, AlertTriangle, Flag, Share } from 'lucide-react';
+import { MessageCircle, Share2, MoreHorizontal, Loader2, Bell, BellOff, Archive, RotateCcw, AlertTriangle, Flag, Share, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Product } from '../../../types/product';
 import { useAuthStore } from '../../../store/authStore';
@@ -23,6 +23,13 @@ import { TrendingButton } from '../social/TrendingButton';
 import { useProductWizardStore } from '../../../stores/useProductWizardStore';
 import { Edit3, Trash2 } from 'lucide-react';
 import { ShareFriendPickerModal } from '../../Sharing/ShareFriendPickerModal';
+
+// Utility for formatting counts
+const formatCount = (count: number): string => {
+    if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
+    if (count >= 1000) return `${(count / 1000).toFixed(1)}k`;
+    return count.toString();
+};
 
 interface WebProductDetailsPanelProps {
     product: Product;
@@ -196,6 +203,13 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 relative">
                 <div className="flex items-center gap-3">
+                    <button 
+                        onClick={onClose}
+                        className="p-1 -ml-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors flex items-center justify-center"
+                        aria-label="Go back"
+                    >
+                        <ArrowLeft className="w-5 h-5" />
+                    </button>
                     <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden">
                         {businessLogo ? (
                             <img loading="lazy" decoding="async" src={businessLogo} alt={businessName} className="w-full h-full object-cover" />
@@ -466,16 +480,22 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                     {/* Actions Row */}
                     <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-4">
-                            <ProductLikeButton
-                                isLiked={isLiked}
-                                onToggle={toggleLike}
-                                size={24}
-                            />
+                            <div className="flex items-center gap-1.5 min-w-[40px]">
+                                <ProductLikeButton
+                                    isLiked={isLiked}
+                                    onToggle={toggleLike}
+                                    size={24}
+                                />
+                                {likeCount > 0 && <span className="text-sm font-medium text-gray-900">{formatCount(likeCount)}</span>}
+                            </div>
                             
-                            <FriendsLikeButton
-                                onClick={() => setIsFriendsSheetOpen(true)}
-                                size={24}
-                            />
+                            <div className="flex items-center gap-1.5 min-w-[40px]">
+                                <FriendsLikeButton
+                                    onClick={() => setIsFriendsSheetOpen(true)}
+                                    size={24}
+                                />
+                                {likedByFriends.length > 0 && <span className="text-sm font-medium text-gray-900">{formatCount(likedByFriends.length)}</span>}
+                            </div>
 
                             <TrendingButton
                                 productId={product.id}

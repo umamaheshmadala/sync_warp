@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { messagingService } from "../../services/messagingService";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Drawer, DrawerContent } from "@/components/ui/drawer";
+import { Drawer as UIDrawer, DrawerContent as UIDrawerContent } from "@/components/ui/drawer";
+import { Drawer as DrawerPrimitive } from "vaul";
 import { useFriendProfile } from "../../hooks/friends/useFriendProfile";
 import { useFriendActions } from "../../hooks/friends/useFriendActions";
 import { FriendProfileContent } from "./FriendProfileContent";
@@ -143,12 +144,18 @@ export function FriendProfileModal({ friendId, isOpen, onClose }: FriendProfileM
                     </DialogContent>
                 </Dialog>
             ) : (
-                <Drawer open={isOpen} onOpenChange={onClose}>
-                    <DrawerContent className="p-6 pt-0 max-h-[90vh] bg-white rounded-t-xl" aria-describedby="friend-profile-description-drawer">
-                        <span id="friend-profile-description-drawer" className="sr-only">Friend profile information and actions</span>
-                        <FriendProfileContent {...contentProps} />
-                    </DrawerContent>
-                </Drawer>
+                <DrawerPrimitive.Root open={isOpen} onOpenChange={onClose} fixed>
+                    <DrawerPrimitive.Portal>
+                        <DrawerPrimitive.Overlay className="fixed inset-0 z-[400] bg-black/80" />
+                        <DrawerPrimitive.Content 
+                            className="fixed inset-x-0 bottom-0 z-[401] mt-24 flex h-auto flex-col rounded-t-xl border bg-white p-6 pt-0 max-h-[90vh]" 
+                            aria-describedby="friend-profile-description-drawer"
+                        >
+                            <span id="friend-profile-description-drawer" className="sr-only">Friend profile information and actions</span>
+                            <FriendProfileContent {...contentProps} />
+                        </DrawerPrimitive.Content>
+                    </DrawerPrimitive.Portal>
+                </DrawerPrimitive.Root>
             )}
 
             {/* Unfriend Confirmation */}
