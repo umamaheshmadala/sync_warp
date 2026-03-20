@@ -15,6 +15,9 @@ const initialState = {
     editMode: false,
     editingProductId: null,
     isDirty: false,
+    primaryCategoryId: null as string | null,
+    secondaryCategoryId: null as string | null,
+    tertiaryCategoryId: null as string | null,
 };
 
 export const useProductWizardStore = create<WizardState>((set) => ({
@@ -57,7 +60,10 @@ export const useProductWizardStore = create<WizardState>((set) => ({
                 notificationsEnabled: productToEdit.notifications_enabled ?? true,
                 images: productImages,
                 draftId: null,
-                isDirty: false // Reset dirty state
+                isDirty: false, // Reset dirty state
+                primaryCategoryId: productToEdit.primary_category_id || null,
+                secondaryCategoryId: null, // Note: We don't fetch full secondary/tertiary on initial openWizard yet, product hook will handle hydration
+                tertiaryCategoryId: null,
             });
         } else if (draft) {
             // Resume Draft
@@ -75,7 +81,10 @@ export const useProductWizardStore = create<WizardState>((set) => ({
                 businessId: businessId,
                 editMode: false,
                 editingProductId: null,
-                isDirty: false
+                isDirty: false,
+                primaryCategoryId: null,
+                secondaryCategoryId: null,
+                tertiaryCategoryId: null,
             });
         } else {
             // New Product

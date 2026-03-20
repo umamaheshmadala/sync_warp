@@ -35,6 +35,9 @@ export interface WizardState {
     editMode: boolean;
     editingProductId: string | null;
     isDirty: boolean;
+    primaryCategoryId: string | null;
+    secondaryCategoryId: string | null;
+    tertiaryCategoryId: string | null;
 
     // Actions
     openWizard: (businessId: string, draft?: ProductDraft, productToEdit?: any) => void;
@@ -46,6 +49,6 @@ export interface WizardState {
     reorderImages: (activeId: string, overId: string) => void;
     updateImageCrop: (id: string, crop: ProductImage['crop'], preview: string) => void;
 
-    updateDetails: (details: Partial<{ name: string; description: string; tags: string[]; notificationsEnabled: boolean }>) => void;
+    updateDetails: (details: Partial<{ name: string; description: string; tags: string[]; notificationsEnabled: boolean; primaryCategoryId: string | null; secondaryCategoryId: string | null; tertiaryCategoryId: string | null }>) => void;
     reset: () => void;
 }

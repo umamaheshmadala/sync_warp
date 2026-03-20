@@ -10,6 +10,8 @@ import { ProductNotificationToggle } from '../../controls/ProductNotificationTog
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../../../store/authStore';
 import imageCompression from 'browser-image-compression';
+import { ProductCategorySelector } from '../ProductCategorySelector';
+import { productCategoryService } from '../../../../services/productCategoryService';
 
 // Simple Image Carousel for Preview
 const ImagePreviewCarousel = ({ images }: { images: any[] }) => {
@@ -82,6 +84,7 @@ import { DiscardDialog } from '../DiscardDialog';
 export const ProductDetailsStep: React.FC = () => {
     const {
         setStep, images, name, description, tags, notificationsEnabled,
+        primaryCategoryId, secondaryCategoryId, tertiaryCategoryId,
         updateDetails, draftId, closeWizard, reset, businessId,
         editMode, editingProductId
     } = useProductWizardStore();
@@ -101,6 +104,10 @@ export const ProductDetailsStep: React.FC = () => {
         }
         if (images.length === 0) {
             toast.error("At least one image is required");
+            return false;
+        }
+        if (!primaryCategoryId) {
+            toast.error("Primary category is required");
             return false;
         }
         return true;
@@ -167,6 +174,23 @@ export const ProductDetailsStep: React.FC = () => {
         return uploadedUrls;
     };
 
+    // Hydrate categories
+    const hasHydrated = React.useRef(false);
+    React.useEffect(() => {
+        if (editMode && editingProductId && !hasHydrated.current) {
+            hasHydrated.current = true;
+            productCategoryService.getProductCategories(editingProductId)
+                .then(cats => {
+                    updateDetails({
+                        primaryCategoryId: cats.primary || null,
+                        secondaryCategoryId: cats.secondary || null,
+                        tertiaryCategoryId: cats.tertiary || null,
+                    });
+                })
+                .catch(err => console.error("Failed to hydrate categories:", err));
+        }
+    }, [editMode, editingProductId, updateDetails]);
+
     const handleSaveDraft = async () => {
         if (!businessId) {
             toast.error("Business ID missing");
@@ -192,15 +216,21 @@ export const ProductDetailsStep: React.FC = () => {
                 throw new Error("Image upload failed");
             }
 
+            const categorySelections = primaryCategoryId ? {
+                primary: primaryCategoryId,
+                secondary: secondaryCategoryId || undefined,
+                tertiary: tertiaryCategoryId || undefined
+            } : undefined;
+
             // 2. Create or Update Product
             if (editMode && editingProductId) {
                 await updateProduct(editingProductId, {
                     name,
                     description,
                     tags,
-                    // Preserve existing values for fields not in wizard if needed, but here we just update what we have
                     is_available: true,
                     image_urls: uploadedUrls,
+                    category_selections: categorySelections
                 });
                 toast.success("Product updated!");
             } else {
@@ -213,6 +243,7 @@ export const ProductDetailsStep: React.FC = () => {
                     currency: 'INR',
                     display_order: 0,
                     image_urls: uploadedUrls,
+                    category_selections: categorySelections
                 }, businessId!);
                 toast.success("Product published!");
             }
@@ -300,6 +331,26 @@ export const ProductDetailsStep: React.FC = () => {
                             selectedTags={tags}
                             onChange={(newTags) => updateDetails({ tags: newTags })}
                         />
+
+                        {/* Category Selector */}
+                        <div className="bg-white rounded-xl border border-gray-100 px-4 py-4 pt-3">
+                            <h3 className="text-base font-semibold text-gray-900 mb-3">Categorization</h3>
+                            {businessId && (
+                                <ProductCategorySelector
+                                    businessId={businessId}
+                                    primaryId={primaryCategoryId}
+                                    secondaryId={secondaryCategoryId}
+                                    tertiaryId={tertiaryCategoryId}
+                                    onChange={({ primary, secondary, tertiary }) => 
+                                        updateDetails({ 
+                                            primaryCategoryId: primary, 
+                                            secondaryCategoryId: secondary, 
+                                            tertiaryCategoryId: tertiary 
+                                        })
+                                    }
+                                />
+                            )}
+                        </div>
 
                         {/* Notification Toggle */}
                         <div className="bg-white rounded-xl border border-gray-100 px-4 py-3">

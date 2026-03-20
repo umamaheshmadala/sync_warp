@@ -1,8 +1,8 @@
 # Story 12.20c: Product Category Picker in Creation Wizard
 
 **EPIC**: [EPIC 12 - Instagram-Style Products](../epics/EPIC_12_Instagram_Style_Products.md)  
-**Status**: 📋 Planning  
-**Priority**: P0  
+**Status**: ✅ Completed  
+**Priority**: High  
 **Estimate**: 5 points  
 **Depends on**: [Story 12.20b — Business Category Onboarding](STORY_12.20b_Business_Category_Onboarding.md)
 

@@ -23,6 +23,11 @@ export interface Product {
   price?: number;
   category?: string;
 
+  // Epic 12.20c Category Picker
+  primary_category_id?: string;
+  primary_category_name?: string;
+  primary_category_l2_id?: string;
+
   image_urls: string[]; // Legacy
   image_url?: string; // Legacy
   last_updated_at?: string;
@@ -56,9 +61,16 @@ export interface ProductFormData {
   is_available: boolean;
   is_featured: boolean; // Featured products show in storefront
   display_order: number; // Only used for trending products
+  price?: number;
+  category?: string;
   image_urls?: string[];
   status?: string;
   tags?: string[];
+  category_selections?: {
+    primary: string;
+    secondary?: string;
+    tertiary?: string;
+  };
 }
 
 export interface ProductCategory {
