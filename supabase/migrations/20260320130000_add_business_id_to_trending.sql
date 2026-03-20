@@ -1,6 +1,8 @@
 -- Migration: add business_id to get_trending_products_by_category
 -- Fixes navigation bug where business_name (TEXT) was used instead of business_id (UUID)
 
+DROP FUNCTION IF EXISTS get_trending_products_by_category(UUID, INT);
+
 CREATE OR REPLACE FUNCTION get_trending_products_by_category(
   p_l2_category_id UUID,
   p_limit INT DEFAULT 100
