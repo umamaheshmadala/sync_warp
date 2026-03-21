@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Bell, BellOff, Loader2 } from 'lucide-react';
 import { Product } from '../../../types/product';
-import { ProductDescription } from '../details/ProductDescription';
+import { ProductTagDisplay } from '../tags/ProductTagDisplay';
 import { useProductTags } from '../../../hooks/useProductTags';
 import { useProductViewTracking } from '../../../hooks/useProductAnalytics';
 import { useProducts } from '../../../hooks/useProducts';
 import { useAuthStore } from '../../../store/authStore';
-import { TrendingButton } from '../social/TrendingButton';
+import { ProductDescription } from '../details/ProductDescription';
 
 interface MobileProductDetailsProps {
     product: Product;
@@ -88,16 +88,16 @@ export const MobileProductDetails: React.FC<MobileProductDetailsProps> = ({ prod
                 {tags.map((tagItem, i) => (
                     <span
                         key={i}
-                        className="px-2.5 py-0.5 rounded-full text-xs font-medium"
+                        className="inline-flex items-center justify-center px-3 py-1 rounded-full text-[11px] font-medium leading-none whitespace-nowrap"
                         style={{
                             backgroundColor: tagItem.config.bgColor,
-                            color: tagItem.config.color || '#000' // Fallback
+                            color: tagItem.config.color || '#000',
+                            border: `1px solid ${tagItem.config.color || '#000'}20` // Subtle border using color + 20% opacity
                         }}
                     >
                         {tagItem.config.label}
                     </span>
                 ))}
-                <TrendingButton productId={product.id} businessId={product.business_id} />
             </div>
 
             {/* Description */}

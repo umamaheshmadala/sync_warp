@@ -7,6 +7,7 @@ interface ProductLikeButtonProps {
     size?: number; // Icon size (default 24)
     color?: string; // Optional override
     className?: string;
+    children?: React.ReactNode;
 }
 
 export const ProductLikeButton: React.FC<ProductLikeButtonProps> = ({
@@ -14,7 +15,8 @@ export const ProductLikeButton: React.FC<ProductLikeButtonProps> = ({
     onToggle,
     size = 24,
     color,
-    className = ""
+    className = "",
+    children
 }) => {
     // Just wrap the toggle
     const handleClick = (e: React.MouseEvent) => {
@@ -25,7 +27,7 @@ export const ProductLikeButton: React.FC<ProductLikeButtonProps> = ({
     return (
         <button
             onClick={handleClick}
-            className={`group relative focus:outline-none transition-transform active:scale-95 ${className}`}
+            className={`group relative flex items-center justify-center focus:outline-none transition-transform active:scale-95 ${className}`}
             aria-label={isLiked ? "Unlike" : "Like"}
         >
             <div className="animate-fadeIn"
@@ -39,6 +41,7 @@ export const ProductLikeButton: React.FC<ProductLikeButtonProps> = ({
                     style={{ color: isLiked ? undefined : color }}
                 />
             </div>
+            {children}
         </button>
     );
 };

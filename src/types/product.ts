@@ -18,6 +18,7 @@ export interface Product {
   like_count?: number;
   comment_count?: number;
   share_count?: number;
+  favorite_count?: number;
   new_arrival_expires_at?: string;
   notifications_enabled?: boolean;
   price?: number;

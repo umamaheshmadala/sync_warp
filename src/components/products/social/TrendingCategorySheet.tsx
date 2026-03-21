@@ -12,6 +12,24 @@ interface TrendingCategorySheetProps {
   businessId: string;
 }
 
+const getValidImageUrl = (url: any) => {
+  if (!url) return undefined;
+  
+  // If it's already a clean string URL
+  if (typeof url === 'string' && url.startsWith('http') && !url.includes('{') && !url.includes('[')) {
+    return url;
+  }
+  
+  // Try to extract any http/https URL from the stringified version
+  const str = typeof url === 'string' ? url : JSON.stringify(url);
+  const match = str.match(/https?:\/\/[^"'\s\]\}]+/);
+  if (match) {
+      return match[0];
+  }
+
+  return undefined;
+};
+
 export function TrendingCategorySheet({
   isOpen,
   onOpenChange,
@@ -87,9 +105,9 @@ export function TrendingCategorySheet({
                     </div>
 
                     <div className="h-16 w-16 bg-gray-100 rounded-md overflow-hidden flex-shrink-0 border">
-                      {p.image_url ? (
+                      {getValidImageUrl(p.image_url) ? (
                         <img
-                          src={p.image_url}
+                          src={getValidImageUrl(p.image_url)}
                           alt={p.product_name}
                           className="h-full w-full object-cover"
                           loading="lazy"

@@ -23,6 +23,7 @@ import { TrendingButton } from '../social/TrendingButton';
 import { useProductWizardStore } from '../../../stores/useProductWizardStore';
 import { Edit3, Trash2 } from 'lucide-react';
 import { ShareFriendPickerModal } from '../../Sharing/ShareFriendPickerModal';
+import { useProductStats } from '../../../hooks/useProductStats';
 
 // Utility for formatting counts
 const formatCount = (count: number): string => {
@@ -53,7 +54,14 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
     // Comments Logic
     const { comments, loading: commentsLoading, postComment, deleteComment } = useProductComments(product.id);
     // Favorite Logic
-    const { isFavorite, toggleFavorite, isLoading: isFavLoading } = useProductFavorite(product.id);
+    const { isFavorite, toggleFavorite, isLoading: isFavLoading } = useProductFavorite(product.id, false);
+
+    // Realtime Stats
+    const { shareCount, favoriteCount } = useProductStats(product.id, {
+        share_count: product.share_count,
+        favorite_count: product.favorite_count,
+        like_count: product.like_count
+    });
 
     // Edit Logic
     const { openWizard } = useProductWizardStore();
@@ -78,6 +86,8 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
     // Derived Business Info
     const businessName = (product.businesses as any)?.business_name || 'Business Name';
     const businessLogo = (product.businesses as any)?.logo_url;
+    // Check if the business logic isn't overriding anything
+    const displayBusinessName = businessName || product.businesses?.[0]?.business_name || 'Business';
 
     const handleShare = () => setIsShareModalOpen(true);
     const handleReport = () => toast('Reporting system coming soon', { icon: '🛡️' });
@@ -471,31 +481,35 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
             {product.status !== 'draft' && (
                 <div className={`border-t border-gray-100 bg-white p-4 pb-3 ${product.status === 'archived' ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
                     {/* Actions Row */}
-                    <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-1.5 min-w-[40px]">
-                                <ProductLikeButton
-                                    isLiked={isLiked}
-                                    onToggle={toggleLike}
-                                    size={24}
-                                />
-                                {likeCount > 0 && <span className="text-sm font-medium text-gray-900">{formatCount(likeCount)}</span>}
-                            </div>
-                            
-                            <div className="flex items-center gap-1.5 min-w-[40px]">
-                                <FriendsLikeButton
-                                    onClick={() => setIsFriendsSheetOpen(true)}
-                                    size={24}
-                                />
-                                {likedByFriends.length > 0 && <span className="text-sm font-medium text-gray-900">{formatCount(likedByFriends.length)}</span>}
-                            </div>
-
-                            <TrendingButton
-                                productId={product.id}
-                                businessId={product.business_id}
-                                variant="web-action-bar"
+                    <div className="flex items-center justify-between mb-3 w-full px-1">
+                        {/* 1. Like Button */}
+                        <div className="flex items-center gap-1.5 min-w-[40px]">
+                            <ProductLikeButton
+                                isLiked={isLiked}
+                                onToggle={toggleLike}
+                                size={24}
                             />
+                            {likeCount > 0 && <span className="text-sm font-medium text-gray-900">{formatCount(likeCount)}</span>}
+                        </div>
+                        
+                        {/* 2. Friends Like Button */}
+                        <div className="flex items-center gap-1.5 min-w-[40px]">
+                            <FriendsLikeButton
+                                onClick={() => setIsFriendsSheetOpen(true)}
+                                size={24}
+                            />
+                            {likedByFriends.length > 0 && <span className="text-sm font-medium text-gray-900">{formatCount(likedByFriends.length)}</span>}
+                        </div>
 
+                        {/* 3. Trending Button */}
+                        <TrendingButton
+                            productId={product.id}
+                            businessId={product.business_id}
+                            variant="web-action-bar"
+                        />
+
+                        {/* 4. Share Button */}
+                        <div className="flex items-center gap-1.5 min-w-[40px]">
                             <ProductShareButton
                                 productId={product.id}
                                 productName={product.name}
@@ -507,14 +521,18 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                                 variant="icon"
                                 className="text-gray-900 hover:text-green-500 transition-colors bg-transparent shadow-none"
                             />
+                            {shareCount > 0 && <span className="text-sm font-medium text-gray-900">{formatCount(shareCount)}</span>}
                         </div>
-                        {/* Favorite Button */}
-                        <ProductFavoriteButton
-                            isFavorite={isFavorite}
-                            onToggle={toggleFavorite}
-                            isLoading={isFavLoading}
-                            size={24}
-                        />
+                        {/* 5. Favorite Button */}
+                        <div className="flex items-center gap-1.5 min-w-[40px]">
+                            <ProductFavoriteButton
+                                isFavorite={isFavorite}
+                                onToggle={toggleFavorite}
+                                isLoading={isFavLoading}
+                                size={24}
+                            />
+                            {favoriteCount > 0 && <span className="text-sm font-medium text-gray-900">{formatCount(favoriteCount)}</span>}
+                        </div>
                     </div>
 
                     {/* Liked By */}

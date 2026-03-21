@@ -8,6 +8,7 @@ interface ProductFavoriteButtonProps {
     size?: number;
     className?: string;
     iconClassName?: string;
+    children?: React.ReactNode;
 }
 
 export const ProductFavoriteButton: React.FC<ProductFavoriteButtonProps> = ({
@@ -16,7 +17,8 @@ export const ProductFavoriteButton: React.FC<ProductFavoriteButtonProps> = ({
     isLoading = false,
     size = 24,
     className = "",
-    iconClassName = ""
+    iconClassName = "",
+    children
 }) => {
     return (
         <button
@@ -25,7 +27,7 @@ export const ProductFavoriteButton: React.FC<ProductFavoriteButtonProps> = ({
                 onToggle();
             }}
             disabled={isLoading}
-            className={`flex items-center justify-center relative ${className}`}
+            className={`flex items-center justify-center gap-1.5 relative ${className}`}
             aria-label={isFavorite ? "Remove from Favourites" : "Add to Favourites"}
         >
             <>
@@ -58,6 +60,7 @@ export const ProductFavoriteButton: React.FC<ProductFavoriteButtonProps> = ({
                             )}
             </>
 
+            {children}
             {/* Click Ripple/Burst Effect (Optional Polish) */}
         </button>
     );

@@ -10,6 +10,7 @@ import { FriendsLikeSheet } from '../social/FriendsLikeSheet';
 import { ProductLikedBy } from '../social/ProductLikedBy';
 import { TrendingButton } from '../social/TrendingButton';
 import { ShareFriendPickerModal } from '../../Sharing/ShareFriendPickerModal';
+import { useProductStats } from '../../../hooks/useProductStats';
 
 interface MobileProductActionsProps {
     product: Product;
@@ -38,65 +39,73 @@ export const MobileProductActions: React.FC<MobileProductActionsProps> = ({
     const { isLiked, likeCount, likedByFriends, toggleLike, isLoading: isLikeLoading } = useProductLike(product.id, product.like_count || 0);
 
     // Favorite Logic
-    const { isFavorite, toggleFavorite, isLoading: isFavLoading } = useProductFavorite(product.id);
+    const { isFavorite, toggleFavorite, isLoading: isFavLoading } = useProductFavorite(product.id, false);
+
+    // Realtime Stats
+    const { shareCount, favoriteCount } = useProductStats(product.id, {
+        share_count: product.share_count,
+        favorite_count: product.favorite_count, // Fallback if missing? 
+        like_count: product.like_count
+    });
 
     return (
-        <div className="flex flex-col px-4 py-2">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-6">
-                    {/* 1. Like Button */}
-                    <div className="flex flex-col items-center gap-1 group">
-                        <ProductLikeButton
-                            isLiked={isLiked}
-                            onToggle={toggleLike}
-                            size={28}
-                            className="p-1"
-                        />
-                        <span className="text-xs font-medium text-gray-900">
-                            {likeCount > 0 ? formatCount(likeCount) : 'Like'}
-                        </span>
-                    </div>
+        <div className="flex flex-col px-2 py-2">
+            <div className="flex items-center justify-between w-full">
+                {/* 1. Like Button */}
+                <ProductLikeButton
+                    isLiked={isLiked}
+                    onToggle={toggleLike}
+                    size={26}
+                    className="p-0.5 min-w-fit"
+                >
+                    <span className="text-[13px] font-medium text-gray-900">
+                        {likeCount > 0 ? formatCount(likeCount) : 'Like'}
+                    </span>
+                </ProductLikeButton>
 
-                    {/* 2. Friends Like Button */}
-                    <div className="flex flex-col items-center gap-1">
-                        <FriendsLikeButton
-                            size={28}
-                            className="p-1"
-                            onClick={() => setIsFriendsSheetOpen(true)}
-                        />
-                        <span className="text-xs font-medium text-gray-900">
-                            {likedByFriends.length} {likedByFriends.length === 1 ? 'Friend' : 'Friends'}
-                        </span>
-                    </div>
+                {/* 2. Friends Like Button */}
+                <FriendsLikeButton
+                    size={26}
+                    className="p-0.5 min-w-fit gap-1.5"
+                    onClick={() => setIsFriendsSheetOpen(true)}
+                >
+                    <span className="text-[13px] font-medium text-gray-900">
+                        {likedByFriends.length > 0 ? formatCount(likedByFriends.length) : '0'}
+                    </span>
+                </FriendsLikeButton>
 
-                    {/* 3. Trending Button */}
-                    <TrendingButton
-                        productId={product.id}
-                        businessId={product.business_id}
-                        variant="action-bar"
-                    />
-
-                    {/* 4. Share Button */}
-                    <button
-                        onClick={handleShare}
-                        className="flex flex-col items-center gap-1 p-1"
-                    >
-                        <Send size={28} className="text-gray-900" strokeWidth={1.5} />
-                        <span className="text-xs font-medium text-gray-900">Share</span>
-                    </button>
+                {/* 3. Trending Button */}
+                <div className="flex items-center justify-center gap-1.5 min-w-fit">
+                     <TrendingButton
+                         productId={product.id}
+                         businessId={product.business_id}
+                         variant="action-bar"
+                     />
                 </div>
 
-                {/* 5. Favorite Button (Right Aligned) */}
-                <div className="flex flex-col items-center gap-1">
-                    <ProductFavoriteButton
-                        isFavorite={isFavorite}
-                        onToggle={toggleFavorite}
-                        isLoading={isFavLoading}
-                        size={28}
-                        className="p-1"
-                    />
-                    <span className="text-xs font-medium text-gray-900">Save</span>
-                </div>
+                {/* 4. Share Button */}
+                <button
+                    onClick={handleShare}
+                    className="flex items-center justify-center gap-1.5 p-0.5 min-w-fit"
+                >
+                    <Send size={26} className="text-gray-900" strokeWidth={1.5} />
+                    <span className="text-[13px] font-medium text-gray-900">
+                        {shareCount > 0 ? formatCount(shareCount) : 'Share'}
+                    </span>
+                </button>
+
+                {/* 5. Favorite Button */}
+                <ProductFavoriteButton
+                    isFavorite={isFavorite}
+                    onToggle={toggleFavorite}
+                    isLoading={isFavLoading}
+                    size={26}
+                    className="p-0.5 min-w-fit"
+                >
+                    <span className="text-[13px] font-medium text-gray-900">
+                        {favoriteCount > 0 ? formatCount(favoriteCount) : 'Save'}
+                    </span>
+                </ProductFavoriteButton>
             </div>
 
             {/* Liked By Section */}

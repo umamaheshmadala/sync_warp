@@ -30,11 +30,7 @@ export const MobileProductHeader: React.FC<MobileProductHeaderProps> = ({
     const navigate = useNavigate();
 
     const handleBack = () => {
-        if (window.history.length > 2) {
-            navigate(-1);
-        } else {
-            onClose();
-        }
+        onClose();
     };
 
     // Assuming product.business_id availability or we check ownership via props parent passes
