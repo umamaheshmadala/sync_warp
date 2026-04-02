@@ -341,79 +341,41 @@ export const BusinessProductsTab: React.FC<BusinessProductsTabProps> = ({ busine
                Let's implement a simple useMediaQuery right here or imported.
             */}
 
-            {/* Mobile Product Modal - Render ONLY on Mobile */}
-            {!isDesktop && (
-                <MobileProductModal
-                    isOpen={!!selectedProductId}
-                    onClose={handleCloseModal}
-                    stickyFooter={selectedProduct ? <StickyCommentInput productId={selectedProduct.id} /> : undefined}
-                >
-                    {selectedProduct && (
-                        <>
-                            <MobileProductHeader
-                                product={selectedProduct}
-                                onClose={handleCloseModal}
-                                onEdit={isOwner ? handleEditProduct : undefined}
-                                onDelete={isOwner ? handleDeleteProduct : undefined}
-                                onArchive={isOwner ? handleArchiveProduct : undefined}
-                            />
-                            <MobileProductCarousel
-                                images={selectedProduct.images || []}
-                                productName={selectedProduct.name}
-                            />
-                            <MobileProductActions
-                                product={selectedProduct}
-                                // Handlers to be implemented in future stories
-                                onComment={() => {
-                                    document.getElementById('comment-input')?.focus(); // Focus input
-                                }}
-                            />
-                            <MobileProductDetails product={selectedProduct} />
-                            <MobileProductComments
-                                productId={selectedProduct.id}
-                                initialCount={selectedProduct.comment_count || 0}
-                                isOwner={isOwner}
-                                hideInput
-                            />
-                            {/* Notification toggle moved to header */}
-                        </>
-                    )}
-                </MobileProductModal>
-            )}
-
-            {/* Product Creation Modal (Simplified Overlay for now) */}
-            {/* Product Creation Modal (Simplified Overlay for now) - REMOVED FOR WIZARD */}
-            {/* {isCreatingProduct && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                    <div className="bg-white dark:bg-gray-900 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-xl">
-                        <ProductForm
-                            businessId={businessId}
-                            onClose={() => setIsCreatingProduct(false)}
-                            onSuccess={() => {
-                                setIsCreatingProduct(false);
-                                fetchProducts(businessId); // Refresh list
+            {/* Product View Modal - ALWAYS Use Mobile View (Standard for App) */}
+            <MobileProductModal
+                isOpen={!!selectedProductId}
+                onClose={handleCloseModal}
+                stickyFooter={selectedProduct ? <StickyCommentInput productId={selectedProduct.id} /> : undefined}
+            >
+                {selectedProduct && (
+                    <>
+                        <MobileProductHeader
+                            product={selectedProduct}
+                            onClose={handleCloseModal}
+                            onEdit={isOwner ? handleEditProduct : undefined}
+                            onDelete={isOwner ? handleDeleteProduct : undefined}
+                            onArchive={isOwner ? handleArchiveProduct : undefined}
+                        />
+                        <MobileProductCarousel
+                            images={selectedProduct.images || []}
+                            productName={selectedProduct.name}
+                        />
+                        <MobileProductActions
+                            product={selectedProduct}
+                            onComment={() => {
+                                document.getElementById('comment-input')?.focus(); // Focus input
                             }}
                         />
-                    </div>
-                </div>
-            )} */}
-
-            {/* Desktop Modal - Render ONLY on Desktop */}
-            {isDesktop && (
-                <>
-                    {selectedProduct && (
-                        <WebProductModal
-                            isOpen={!!selectedProductId}
-                            onClose={handleCloseModal}
-                            product={selectedProduct}
+                        <MobileProductDetails product={selectedProduct} />
+                        <MobileProductComments
+                            productId={selectedProduct.id}
+                            initialCount={selectedProduct.comment_count || 0}
                             isOwner={isOwner}
-                            onArchive={archiveProduct}
-                            onUnarchive={unarchiveProduct}
-                            onDelete={deleteProduct}
+                            hideInput
                         />
-                    )}
-                </>
-            )}
+                    </>
+                )}
+            </MobileProductModal>
         </div>
     );
 };

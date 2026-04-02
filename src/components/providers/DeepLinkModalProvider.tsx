@@ -240,7 +240,7 @@ export function DeepLinkModalProvider() {
                 </div>
             )}
 
-            {/* Product View Modal */}
+            {/* Product View Modal - ALWAYS Use Mobile View (Standard for App/Links) */}
             {productModalOpen && (
                 productLoading ? (
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -249,42 +249,33 @@ export function DeepLinkModalProvider() {
                         </div>
                     </div>
                 ) : product ? (
-                    isDesktop ? (
-                        <WebProductModal
-                            isOpen={true}
-                            onClose={closeAll}
+                    <MobileProductModal
+                        isOpen={true}
+                        onClose={closeAll}
+                        stickyFooter={<StickyCommentInput productId={product.id} />}
+                    >
+                        <MobileProductHeader
                             product={product}
-                            isOwner={false}
-                        />
-                    ) : (
-                        <MobileProductModal
-                            isOpen={true}
                             onClose={closeAll}
-                            stickyFooter={<StickyCommentInput productId={product.id} />}
-                        >
-                            <MobileProductHeader
-                                product={product}
-                                onClose={closeAll}
-                            />
-                            <MobileProductCarousel
-                                images={product.images || product.image_urls || []}
-                                productName={product.name}
-                            />
-                            <MobileProductActions
-                                product={product}
-                                onComment={() => {
-                                    document.getElementById('comment-input')?.focus();
-                                }}
-                            />
-                            <MobileProductDetails product={product} />
-                            <MobileProductComments
-                                productId={product.id}
-                                initialCount={product.comment_count || 0}
-                                isOwner={false}
-                                hideInput
-                            />
-                        </MobileProductModal>
-                    )
+                        />
+                        <MobileProductCarousel
+                            images={product.images || product.image_urls || []}
+                            productName={product.name}
+                        />
+                        <MobileProductActions
+                            product={product}
+                            onComment={() => {
+                                document.getElementById('comment-input')?.focus();
+                            }}
+                        />
+                        <MobileProductDetails product={product} />
+                        <MobileProductComments
+                            productId={product.id}
+                            initialCount={product.comment_count || 0}
+                            isOwner={false}
+                            hideInput
+                        />
+                    </MobileProductModal>
                 ) : null
             )}
         </>

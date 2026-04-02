@@ -163,56 +163,41 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
         )}
       </div>
 
-      {/* Desktop Product Modal */}
-      {isDesktop && selectedProduct && (
-        <WebProductModal
-          isOpen={!!selectedProduct}
-          onClose={handleCloseModal}
-          product={selectedProduct}
-          isOwner={isOwner}
-          onArchive={archiveProduct}
-          onUnarchive={unarchiveProduct}
-          onDelete={deleteProduct}
-        />
-      )}
-
-      {/* Mobile Product Modal */}
-      {!isDesktop && (
-        <MobileProductModal
-          isOpen={!!selectedProduct}
-          onClose={handleCloseModal}
-          stickyFooter={selectedProduct ? <StickyCommentInput productId={selectedProduct.id} /> : undefined}
-        >
-          {selectedProduct && (
-            <>
-              <MobileProductHeader
-                product={selectedProduct}
-                onClose={handleCloseModal}
-                onEdit={isOwner ? () => handleEditProduct(selectedProduct) : undefined}
-                onDelete={isOwner ? async () => { await deleteProduct(selectedProduct.id); handleCloseModal(); } : undefined}
-                onArchive={isOwner ? async () => { await archiveProduct(selectedProduct.id); handleCloseModal(); } : undefined}
-              />
-              <MobileProductCarousel
-                images={selectedProduct.images || []}
-                productName={selectedProduct.name}
-              />
-              <MobileProductActions
-                product={selectedProduct}
-                onComment={() => {
-                  document.getElementById('comment-input')?.focus();
-                }}
-              />
-              <MobileProductDetails product={selectedProduct} />
-              <MobileProductComments
-                productId={selectedProduct.id}
-                initialCount={selectedProduct.comment_count || 0}
-                isOwner={isOwner}
-                hideInput
-              />
-            </>
-          )}
-        </MobileProductModal>
-      )}
+      {/* Product View Modal - ALWAYS Use Mobile View (Standard for App) */}
+      <MobileProductModal
+        isOpen={!!selectedProduct}
+        onClose={handleCloseModal}
+        stickyFooter={selectedProduct ? <StickyCommentInput productId={selectedProduct.id} /> : undefined}
+      >
+        {selectedProduct && (
+          <>
+            <MobileProductHeader
+              product={selectedProduct}
+              onClose={handleCloseModal}
+              onEdit={isOwner ? () => handleEditProduct(selectedProduct) : undefined}
+              onDelete={isOwner ? async () => { await deleteProduct(selectedProduct.id); handleCloseModal(); } : undefined}
+              onArchive={isOwner ? async () => { await archiveProduct(selectedProduct.id); handleCloseModal(); } : undefined}
+            />
+            <MobileProductCarousel
+              images={selectedProduct.images || []}
+              productName={selectedProduct.name}
+            />
+            <MobileProductActions
+              product={selectedProduct}
+              onComment={() => {
+                document.getElementById('comment-input')?.focus();
+              }}
+            />
+            <MobileProductDetails product={selectedProduct} />
+            <MobileProductComments
+              productId={selectedProduct.id}
+              initialCount={selectedProduct.comment_count || 0}
+              isOwner={isOwner}
+              hideInput
+            />
+          </>
+        )}
+      </MobileProductModal>
     </>
   );
 };

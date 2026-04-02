@@ -7,9 +7,9 @@ const isProduction = process.env.VITE_APP_ENV === 'production';
 
 // App ID changes per environment for side-by-side installation
 const getAppId = () => {
-  if (isDevelopment) return 'com.maheshsyncapp.mobile.dev';
-  if (isStaging) return 'com.maheshsyncapp.mobile.staging';
-  return 'com.maheshsyncapp.mobile';
+  if (isDevelopment) return 'com.syncapp.mobile.dev';
+  if (isStaging) return 'com.syncapp.mobile.staging';
+  return 'com.syncapp.mobile';
 };
 
 // App name changes per environment
