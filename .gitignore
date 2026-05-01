@@ -83,3 +83,6 @@ client_secret.json
 
 # Storybook
 storybook-static/
+
+# Graphify output
+graphify-out/
