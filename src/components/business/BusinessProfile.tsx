@@ -121,7 +121,7 @@ const BusinessProfile: React.FC = () => {
 
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('products');
 
   // Handle URL tab selection
   useEffect(() => {
@@ -280,7 +280,7 @@ const BusinessProfile: React.FC = () => {
       setActiveTab('products');
     } else if (isCouponsRoute) {
       setActiveTab('coupons');
-    } else if (tabParam && ['overview', 'reviews', 'statistics', 'enhanced-profile', 'offers', 'activity'].includes(tabParam)) {
+    } else if (tabParam && ['overview', 'products', 'reviews', 'statistics', 'enhanced-profile', 'offers', 'activity'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
     // Note: When clicking tabs manually, the URL won't have these paths, so activeTab won't be overridden
@@ -1327,7 +1327,7 @@ const BusinessProfile: React.FC = () => {
 
   // Filter tabs based on ownership - only owners see Statistics and Enhanced Profile
   const allTabs = [
-    { id: 'overview', label: 'Overview', count: null, ownerOnly: false, icon: LayoutGrid },
+    // { id: 'overview', label: 'Overview', count: null, ownerOnly: false, icon: LayoutGrid },
     { id: 'products', label: 'Products', count: null, ownerOnly: false, icon: Package },
     { id: 'offers', label: 'Offers', count: null, ownerOnly: false, icon: Tag },
     { id: 'reviews', label: 'Reviews', count: null, ownerOnly: false, icon: MessageSquare },
@@ -1336,7 +1336,7 @@ const BusinessProfile: React.FC = () => {
     { id: 'activity', label: 'Activity', count: null, ownerOnly: true, icon: History }
   ];
 
-  // Filter tabs: non-owners only see Overview and Reviews
+  // Filter tabs
   const tabs = allTabs.filter(tab => !tab.ownerOnly || isOwner);
 
   return (
@@ -1745,31 +1745,52 @@ const BusinessProfile: React.FC = () => {
                           window.open(`https://www.google.com/maps/search/?api=1&query=${query}`);
                         }
                       }}
-                      className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 h-10"
+                      className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-indigo-200 shadow-sm text-sm font-medium rounded-lg text-indigo-700 bg-indigo-50 hover:bg-indigo-100 h-10"
                       title="Navigate"
                     >
                       <Navigation className="w-4 h-4 mr-2" />
                       <span>Navigate</span>
                     </button>
 
-                    {isOwner && (
+                    {isOwner ? (
                       <>
                         <button
-                          onClick={() => navigate(`/business/${business?.id}/manage/campaigns`)}
-                          className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-pink-600 hover:bg-pink-700 transition-colors h-10"
+                          onClick={() => setShowInfoModal(true)}
+                          className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-indigo-200 shadow-sm text-sm font-medium rounded-lg text-indigo-700 bg-indigo-50 hover:bg-indigo-100 h-10"
                         >
-                          <img loading="lazy" decoding="async" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-trending-up'%3E%3Cpolyline points='22 7 13.5 15.5 8.5 10.5 2 17'/%3E%3Cpolyline points='16 7 22 7 22 13'/%3E%3C/svg%3E" alt="" className="w-4 h-4 mr-2" />
-                          Campaigns
+                          <Info className="w-4 h-4 mr-2" />
+                          More Info
                         </button>
 
                         <button
-                          onClick={() => navigate(`/business/${business?.id}/manage/coupons`)}
-                          className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 h-10"
+                          onClick={() => {
+                            // Switch to overview tab first, then enable editing
+                            setSearchParams(prev => {
+                              const newParams = new URLSearchParams(prev);
+                              newParams.set('tab', 'overview');
+                              return newParams;
+                            });
+                            setEditing(true);
+                          }}
+                          className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 h-10"
                         >
-                          <Tag className="w-4 h-4 mr-2" />
-                          Coupons
+                          <Edit3 className="w-4 h-4 mr-2" />
+                          Profile
                         </button>
                       </>
+                    ) : (
+                      <StorefrontShareButton
+                        businessId={business.id}
+                        businessName={business.business_name}
+                        businessDescription={business.description}
+                        variant="primary"
+                        showLabel={true}
+                        showIcon={true}
+                        className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 h-10"
+                        onShareSuccess={() => {
+                          console.log('Shared');
+                        }}
+                      />
                     )}
 
                     {/* More Options Dropdown */}
@@ -1789,69 +1810,35 @@ const BusinessProfile: React.FC = () => {
                           />
                           <div className="absolute right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-20 py-1 min-w-[160px]">
 
-                            {/* Share Button (Always in dropdown for non-owners now) */}
+                            {/* Share Button for Owners (Non-owners have it in main row) */}
+                            {isOwner && (
+                              <StorefrontShareButton
+                                businessId={business.id}
+                                businessName={business.business_name}
+                                businessDescription={business.description}
+                                variant="ghost"
+                                showLabel={true}
+                                showIcon={true}
+                                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 h-auto justify-start rounded-none gap-2"
+                                onShareSuccess={() => {
+                                  setShowMoreDropdown(false);
+                                  console.log('Shared');
+                                }}
+                              />
+                            )}
+
                             {!isOwner && (
-                              <StorefrontShareButton
-                                businessId={business.id}
-                                businessName={business.business_name}
-                                businessDescription={business.description}
-                                variant="ghost"
-                                showLabel={true}
-                                showIcon={true}
-                                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 h-auto justify-start rounded-none gap-2"
-                                onShareSuccess={() => {
-                                  setShowMoreDropdown(false);
-                                  console.log('Shared');
-                                }}
-                              />
-                            )}
-
-
-                            {isOwner && (
-                              <StorefrontShareButton
-                                businessId={business.id}
-                                businessName={business.business_name}
-                                businessDescription={business.description}
-                                variant="ghost"
-                                showLabel={true}
-                                showIcon={true}
-                                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 h-auto justify-start rounded-none gap-2"
-                                onShareSuccess={() => {
-                                  setShowMoreDropdown(false);
-                                  console.log('Shared');
-                                }}
-                              />
-                            )}
-
-                            {isOwner && (
                               <button
                                 onClick={() => {
+                                  setShowInfoModal(true);
                                   setShowMoreDropdown(false);
-                                  // Switch to overview tab first, then enable editing
-                                  setSearchParams(prev => {
-                                    const newParams = new URLSearchParams(prev);
-                                    newParams.set('tab', 'overview');
-                                    return newParams;
-                                  });
-                                  setEditing(true);
                                 }}
                                 className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                               >
-                                <Edit3 className="w-4 h-4" />
-                                Edit Profile
+                                <Info className="w-4 h-4" />
+                                More Info
                               </button>
                             )}
-
-                            <button
-                              onClick={() => {
-                                setShowInfoModal(true);
-                                setShowMoreDropdown(false);
-                              }}
-                              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-                            >
-                              <Info className="w-4 h-4" />
-                              More Info
-                            </button>
                             <ClaimBusinessButton
                               businessId={business.id}
                               businessName={business.business_name}
@@ -1908,31 +1895,52 @@ const BusinessProfile: React.FC = () => {
                       window.open(`https://www.google.com/maps/search/?api=1&query=${query}`);
                     }
                   }}
-                  className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 h-10"
+                  className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-indigo-200 shadow-sm text-sm font-medium rounded-lg text-indigo-700 bg-indigo-50 hover:bg-indigo-100 h-10"
                   title="Navigate"
                 >
                   <Navigation className="w-4 h-4 mr-2" />
                   <span>Navigate</span>
                 </button>
 
-                {isOwner && (
+                {isOwner ? (
                   <>
                     <button
-                      onClick={() => navigate(`/business/${business?.id}/manage/campaigns`)}
-                      className="flex-1 inline-flex justify-center items-center px-2 py-2 border border-transparent text-xs font-medium rounded-lg shadow-sm text-white bg-pink-600 hover:bg-pink-700 transition-colors h-10"
+                      onClick={() => setShowInfoModal(true)}
+                      className="flex-1 inline-flex justify-center items-center px-2 py-2 border border-indigo-200 shadow-sm text-xs font-medium rounded-lg text-indigo-700 bg-indigo-50 hover:bg-indigo-100 h-10"
                     >
-                      <img loading="lazy" decoding="async" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-trending-up'%3E%3Cpolyline points='22 7 13.5 15.5 8.5 10.5 2 17'/%3E%3Cpolyline points='16 7 22 7 22 13'/%3E%3C/svg%3E" alt="" className="w-3.5 h-3.5 mr-1.5" />
-                      Campaigns
+                      <Info className="w-3.5 h-3.5 mr-1.5" />
+                      More Info
                     </button>
 
                     <button
-                      onClick={() => navigate(`/business/${business?.id}/manage/coupons`)}
-                      className="flex-1 inline-flex justify-center items-center px-2 py-2 border border-gray-300 shadow-sm text-xs font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 h-10"
+                      onClick={() => {
+                        // Switch to overview tab first, then enable editing
+                        setSearchParams(prev => {
+                          const newParams = new URLSearchParams(prev);
+                          newParams.set('tab', 'overview');
+                          return newParams;
+                        });
+                        setEditing(true);
+                      }}
+                      className="flex-1 inline-flex justify-center items-center px-2 py-2 border border-transparent shadow-sm text-xs font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 h-10"
                     >
-                      <Tag className="w-3.5 h-3.5 mr-1.5" />
-                      Coupons
+                      <Edit3 className="w-3.5 h-3.5 mr-1.5" />
+                      Profile
                     </button>
                   </>
+                ) : (
+                  <StorefrontShareButton
+                    businessId={business.id}
+                    businessName={business.business_name}
+                    businessDescription={business.description}
+                    variant="primary"
+                    showLabel={true}
+                    showIcon={true}
+                    className="flex-1 inline-flex justify-center items-center px-2 py-2 border border-transparent shadow-sm text-xs font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 h-10"
+                    onShareSuccess={() => {
+                      console.log('Shared');
+                    }}
+                  />
                 )}
 
                 {/* More Options Dropdown - Mobile */}
@@ -1951,32 +1959,35 @@ const BusinessProfile: React.FC = () => {
                       />
                       <div className="absolute right-0 top-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-20 py-1 min-w-[160px]">
 
-                        {/* Show Share in dropdown for everyone except Owner (who has dedicated logic above? No, owner share also here) */}
-                        {/* Actually, share is always here now for uniformity */}
-                        <StorefrontShareButton
-                          businessId={business.id}
-                          businessName={business.business_name}
-                          businessDescription={business.description}
-                          variant="ghost"
-                          showLabel={true}
-                          showIcon={true}
-                          className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 h-auto justify-start rounded-none gap-2"
-                          onShareSuccess={() => {
-                            setShowMoreDropdown(false);
-                            console.log('Shared');
-                          }}
-                        />
+                        {/* Share Button for Owners (Non-owners have it in main row) */}
+                        {isOwner && (
+                          <StorefrontShareButton
+                            businessId={business.id}
+                            businessName={business.business_name}
+                            businessDescription={business.description}
+                            variant="ghost"
+                            showLabel={true}
+                            showIcon={true}
+                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 h-auto justify-start rounded-none gap-2"
+                            onShareSuccess={() => {
+                              setShowMoreDropdown(false);
+                              console.log('Shared');
+                            }}
+                          />
+                        )}
 
-                        <button
-                          onClick={() => {
-                            setShowInfoModal(true);
-                            setShowMoreDropdown(false);
-                          }}
-                          className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-                        >
-                          <Info className="w-4 h-4" />
-                          More Info
-                        </button>
+                        {!isOwner && (
+                          <button
+                            onClick={() => {
+                              setShowInfoModal(true);
+                              setShowMoreDropdown(false);
+                            }}
+                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                          >
+                            <Info className="w-4 h-4" />
+                            More Info
+                          </button>
+                        )}
                         <ClaimBusinessButton
                           businessId={business.id}
                           businessName={business.business_name}

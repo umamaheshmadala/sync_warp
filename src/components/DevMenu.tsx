@@ -17,6 +17,8 @@ const DevMenu = () => {
   const testPages = [
     // { name: '📱 Contact Sync Test', path: '/test/contact-sync' },
     // { name: '🎟️ Standard Designs', path: '/test/standard-designs' },
+    { name: '📣 Create Campaign Example', path: '/business/campaigns/new' },
+    { name: '🏷️ Manage Coupons Example', path: '/business/tu1-test-business-3-687597da/manage/coupons' },
   ]
 
   // Build/Sync timestamp for identification (IST) - shows when files were synced with Capacitor

@@ -373,16 +373,7 @@ const BusinessDashboard: React.FC = () => {
             </div>
 
             <div className="flex items-center space-x-2 w-full md:w-auto justify-center md:justify-end">
-              {/* Create Campaign Button - shows if there is at least one active business */}
-              {businesses.some(b => b.status === 'active') && (
-                <Link
-                  to={`${getBusinessUrl(businesses.find(b => b.status === 'active')!.id, businesses.find(b => b.status === 'active')!.business_name)}/campaigns/create`}
-                  className="flex items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-medium rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all shadow-sm"
-                >
-                  <TrendingUp className="w-4 h-4 mr-1.5" />
-                  Create Campaign
-                </Link>
-              )}
+              {/* Create Campaign button removed for MVP. Re-enable in future releases. */}
 
               <Link
                 to="/business/register"

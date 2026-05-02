@@ -92,13 +92,7 @@ const FollowerAnalyticsDashboard: React.FC = () => {
               <Activity className="h-4 w-4" />
               <span>Refresh</span>
             </button>
-            <button
-              onClick={() => navigate(`${getBusinessUrl(businessId!)}/campaigns/create?target=followers`)}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center space-x-2"
-            >
-              <Target className="h-4 w-4" />
-              <span>Create Campaign</span>
-            </button>
+            {/* Create Campaign button removed for MVP */}
           </div>
         </div>
       </div>
@@ -291,12 +285,7 @@ const FollowerAnalyticsDashboard: React.FC = () => {
           Create targeted campaigns based on these insights
         </p>
         <div className="flex items-center justify-center space-x-4">
-          <button
-            onClick={() => navigate(`${getBusinessUrl(businessId!)}/campaigns/create?target=followers`)}
-            className="px-6 py-3 bg-white text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors font-medium"
-          >
-            Create Campaign for Followers
-          </button>
+          {/* Create Campaign for Followers button removed for MVP */}
           <button
             onClick={() => navigate(`${getBusinessUrl(businessId!)}/followers/list`)}
             className="px-6 py-3 bg-indigo-700 text-white rounded-lg hover:bg-indigo-800 transition-colors font-medium"
