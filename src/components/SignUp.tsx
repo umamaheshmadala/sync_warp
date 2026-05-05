@@ -173,7 +173,7 @@ export default function SignUp() {
         <div className="text-center">
           <div className="mx-auto flex justify-center mb-2">
             <img loading="lazy" decoding="async" 
-              src="/Logo/Logo Text Transparent PNG 2.png"
+              src="/Logo/Logo Text Transparent SVG.svg"
               alt="Sync"
               className="h-16 sm:h-24 w-auto"
             />

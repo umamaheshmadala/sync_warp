@@ -60,6 +60,8 @@ export const BusinessProductsTab: React.FC<BusinessProductsTabProps> = ({ busine
         const productIdParam = searchParams.get('productId');
         if (productIdParam && productIdParam !== selectedProductId) {
             setSelectedProductId(productIdParam);
+        } else if (!productIdParam && selectedProductId) {
+            setSelectedProductId(null);
         }
     }, [searchParams]);
 
@@ -121,8 +123,14 @@ export const BusinessProductsTab: React.FC<BusinessProductsTabProps> = ({ busine
     // Find full product data for modal
     const selectedProduct = products.find(p => p.id === selectedProductId);
 
-    // Handlers for modal actions
-    const handleCloseModal = () => setSelectedProductId(null);
+    const handleCloseModal = () => {
+        setSelectedProductId(null);
+        if (searchParams.has('productId')) {
+            const newParams = new URLSearchParams(searchParams);
+            newParams.delete('productId');
+            setSearchParams(newParams, { replace: true });
+        }
+    };
 
     const handleEditProduct = () => {
         if (!selectedProduct) return;

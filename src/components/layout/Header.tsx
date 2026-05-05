@@ -326,7 +326,7 @@ export default function Header() {
           >
             {/* Logo with text for desktop */}
             <img loading="eager" decoding="async"
-              src="/Logo/Logo Text Transparent PNG 2.png"
+              src="/Logo/Logo Text Transparent SVG.svg"
               alt="Sync"
               className="h-[40px]"
             />

@@ -24,6 +24,7 @@ export const MobileProductModal: React.FC<MobileProductModalProps> = ({ isOpen, 
             document.body.style.overflow = 'hidden';
         } else {
             document.body.style.overflow = '';
+            setIsClosing(false);
         }
         return () => {
             document.body.style.overflow = '';
