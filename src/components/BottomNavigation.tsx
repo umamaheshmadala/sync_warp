@@ -58,15 +58,6 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentRoute }) => 
       activeColor: 'text-green-600'
     },
     {
-      id: 'wallet',
-      label: 'Wallet',
-      icon: Wallet,
-      route: '/wallet',
-      badge: 3, // Example: 3 new coupons
-      color: 'text-gray-500',
-      activeColor: 'text-purple-600'
-    },
-    {
       id: 'friends',
       label: 'Friends',
       icon: Users,

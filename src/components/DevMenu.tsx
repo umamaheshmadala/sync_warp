@@ -19,6 +19,7 @@ const DevMenu = () => {
     // { name: '🎟️ Standard Designs', path: '/test/standard-designs' },
     { name: '📣 Create Campaign Example', path: '/business/campaigns/new' },
     { name: '🏷️ Manage Coupons Example', path: '/business/tu1-test-business-3-687597da/manage/coupons' },
+    { name: '💳 Wallet / Coupons (Phase 2)', path: '/wallet' },
   ]
 
   // Build/Sync timestamp for identification (IST) - shows when files were synced with Capacitor
