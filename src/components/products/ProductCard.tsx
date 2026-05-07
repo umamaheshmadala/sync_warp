@@ -86,9 +86,6 @@ const ProductCardBase = ({
     large: 'h-72'
   };
 
-  // Check for multiple images count from either source
-  const imageCount = (product.images?.length || 0) || (product.image_urls?.length || 0);
-
   return (
     <Card
       className={cn(
@@ -101,8 +98,8 @@ const ProductCardBase = ({
       }}
     >
       <CardContent className="p-0">
-        {/* Image Container - 9:16 Portrait Aspect Ratio */}
-        <div className="relative overflow-hidden bg-gray-100 aspect-[9/16]">
+        {/* Image Container - 4:5 Portrait Aspect Ratio */}
+        <div className="relative overflow-hidden bg-gray-100 aspect-[4/5]">
           {/* Blur placeholder (Instagram-style) - shows gradient while loading */}
           {imageLoading && (
             <div
@@ -129,22 +126,6 @@ const ProductCardBase = ({
           {product.is_featured && (
             <div className="absolute left-2 top-2">
               <Star className="w-[25px] h-[25px] text-yellow-400 fill-yellow-400 drop-shadow-lg" />
-            </div>
-          )}
-
-          {/* Multiple Images Indicator - Top Right */}
-          {imageCount > 1 && (
-            <div className="absolute right-2 top-2">
-              <div className="rounded-md p-1 bg-black/40">
-                <svg width="25" height="25" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  {/* Back card */}
-                  <rect x="3" y="2" width="10" height="12" rx="1.5" fill="white" fillOpacity="0.6" />
-                  {/* Middle card */}
-                  <rect x="2" y="3" width="10" height="12" rx="1.5" fill="white" fillOpacity="0.8" />
-                  {/* Front card */}
-                  <rect x="1" y="4" width="10" height="12" rx="1.5" fill="white" stroke="white" strokeWidth="0.5" />
-                </svg>
-              </div>
             </div>
           )}
 

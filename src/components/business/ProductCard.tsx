@@ -187,13 +187,8 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
             {isOwner ? 'OWNER' : 'GUEST'}
           </div>
 
-          {/* Multiple Images Indicator - Top Right */}
+          {/* Action Buttons - Top Right */}
           <div className="absolute top-2 right-2 z-20 flex gap-2">
-            {product.image_urls && product.image_urls.length > 1 && (
-              <div className="bg-black/50 backdrop-blur-sm rounded-full p-1.5 text-white">
-                <Layers className="w-4 h-4" />
-              </div>
-            )}
             {isOwner && (
               <button
                 onClick={(e) => {
