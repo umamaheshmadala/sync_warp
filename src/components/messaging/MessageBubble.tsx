@@ -1,13 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react'
 
 import { createPortal } from 'react-dom'
-import { motion } from 'framer-motion'
 import { useLongPress } from '../../hooks/useLongPress'
 import { useSwipeToReply } from '../../hooks/useSwipeToReply'
 import { hapticService } from '../../services/hapticService'
 import { RefreshCw, CornerDownRight, Forward, Pin } from 'lucide-react'
 import { MessageStatusIcon } from './MessageStatusIcon'
+import { MessageStatus } from './MessageStatus'
+import { MessageMedia } from './MessageMedia'
 import { OptimisticImageMessage } from './OptimisticImageMessage'
+import { MediaPlaceholder } from './MediaPlaceholder'
 import { OptimisticVideoMessage } from './OptimisticVideoMessage'
 import { VideoPlayer } from './VideoPlayer'
 import { LinkPreviewCard } from './LinkPreviewCard'
@@ -23,27 +25,25 @@ import { Capacitor } from '@capacitor/core'
 import { Haptics, ImpactStyle } from '@capacitor/haptics'
 import toast from 'react-hot-toast'
 import { useMessagingStore } from '../../store/messagingStore'
+import { useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { mediaUploadService } from '../../services/mediaUploadService'
 import { messagingService } from '../../services/messagingService'
 import type { LinkPreview } from '../../services/linkPreviewService'
-import { useShare } from '../../hooks/useShare'
+import { useMessageActions } from '../../hooks/useMessageActions'
 import { usePrivacySettings } from '../../hooks/usePrivacySettings'
-import { messageEditService } from '../../services/messageEditService'
-import { messageDeleteService } from '../../services/messageDeleteService'
 import { EditedBadge } from './EditedBadge'
-import { DeleteConfirmationDialog } from './DeleteConfirmationDialog'
+import { MessageDialogs } from './MessageDialogs'
+import { MessageLinkPreviews } from './MessageLinkPreviews'
 import { DeletedMessagePlaceholder } from './DeletedMessagePlaceholder'
 import { useReactions } from '../../hooks/useReactions'
 import { QuickReactionBar } from './QuickReactionBar'
 import { MessageReactions } from './MessageReactions'
-import { ReactionUserList } from './ReactionUserList'
-import { MessageEmojiPicker } from './MessageEmojiPicker'
-import { ReportDialog } from '../reporting/ReportDialog'
 import { ClickableUrl } from './ClickableUrl'
-import { parseMessageContent } from '../../utils/urlUtils'
-import { ReviewLinkPreview } from '../chat/ReviewLinkPreview'
-import { OfferLinkPreview } from '../chat/OfferLinkPreview'
+import { ExpandableText } from './ExpandableText'
+import { MessageTextContent } from './MessageTextContent'
+import { QuotedMessage } from './QuotedMessage'
+import { useMessageRetry } from '../../hooks/useMessageRetry'
 
 interface MessageBubbleProps {
   message: Message
@@ -90,7 +90,7 @@ interface MessageBubbleProps {
  * />
  * ```
  */
-export function MessageBubble({
+export const MessageBubble = React.memo(function MessageBubble({
   message,
   isOwn,
   showTimestamp = true,
@@ -112,8 +112,10 @@ export function MessageBubble({
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [lightboxImages, setLightboxImages] = useState<string[]>([])
   const [lightboxInitialIndex, setLightboxInitialIndex] = useState(0)
+  const [imageLoadedStates, setImageLoadedStates] = useState<Record<string, boolean>>({})
   // const [showReactionBar, setShowReactionBar] = useState(false) // Removed per user feedback
   const [showPicker, setShowPicker] = useState(false)
+  const queryClient = useQueryClient()
 
   // Custom Hook for long press
   const {
@@ -127,23 +129,7 @@ export function MessageBubble({
     onLongPress: () => setShowContextMenu(true)
   });
 
-  // Long message expansion state (Story 8.6.7)
-  const [isExpanded, setIsExpanded] = useState(false)
-  const [needsReadMore, setNeedsReadMore] = useState(false)
-  const textRef = useRef<HTMLParagraphElement>(null)
-
-  // Check text height on mount/content change
-  useEffect(() => {
-    if (message.type === 'text' && textRef.current) {
-      // 140px is approx 7 lines of text (20px line-height)
-      const MAX_COLLAPSED_HEIGHT = 140
-      if (textRef.current.scrollHeight > MAX_COLLAPSED_HEIGHT) {
-        setNeedsReadMore(true)
-      } else {
-        setNeedsReadMore(false)
-      }
-    }
-  }, [message.content, message.type])
+  // Long message expansion state (Story 8.6.7) - Moved to MessageTextContent
 
   const content = message.content || ''
   const isDeleted = !!message.deleted_at
@@ -187,20 +173,19 @@ export function MessageBubble({
     viewReactionUsers(emoji)
   }
 
-  // Edit eligibility - calculate inline without a hook to avoid database calls per message
-  // Only own text messages within 15-minute window can be edited
-  const EDIT_WINDOW_MS = 15 * 60 * 1000 // 15 minutes
-  const messageAge = Date.now() - new Date(message.created_at).getTime()
-  const canEditMessage = isOwn &&
-    message.type === 'text' &&
-    !message._optimistic &&
-    !message._failed &&
-    !message.is_deleted &&
-    messageAge < EDIT_WINDOW_MS
-
-  const editRemainingTime = canEditMessage
-    ? messageEditService.formatRemainingTime(EDIT_WINDOW_MS - messageAge)
-    : ''
+  const {
+    canEditMessage,
+    editRemainingTime,
+    canDeleteMessage,
+    deleteRemainingTime,
+    isDeleting,
+    showDeleteConfirm,
+    setShowDeleteConfirm,
+    handleCopy,
+    handleShare,
+    handleDeleteForMe,
+    handleDeleteForEveryone
+  } = useMessageActions({ message, isOwn, content: content || '' })
 
   // -- Gesture Hooks --
 
@@ -209,9 +194,9 @@ export function MessageBubble({
   // 2. Swipe to Reply
   const {
     x: swipeX,
-    controls: swipeControls,
-    onDrag: onSwipeDrag,
-    onDragEnd: onSwipeDragEnd
+    isTriggered: isSwipeTriggered,
+    isDragging: isSwipeDragging,
+    handlers: swipeHandlers
   } = useSwipeToReply({
     onReply: () => {
       hapticService.trigger('selection'); // Ensure haptic
@@ -219,21 +204,7 @@ export function MessageBubble({
     }
   });
 
-  // Delete eligibility - similar to edit, 15-minute window for "Delete for Everyone"
-  const DELETE_WINDOW_MS = 15 * 60 * 1000 // 15 minutes
-  const canDeleteMessage = isOwn &&
-    !message._optimistic &&
-    !message._failed &&
-    !message.is_deleted &&
-    messageAge < DELETE_WINDOW_MS
-
-  const deleteRemainingTime = canDeleteMessage
-    ? messageDeleteService.formatRemainingTime(DELETE_WINDOW_MS - messageAge)
-    : ''
-
-  // Delete confirmation dialog state
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
+  // Delete eligibility Handled by useMessageActions
 
   // Determine styling based on sender
   const isSystem = message.type === 'system'
@@ -246,93 +217,7 @@ export function MessageBubble({
   } = message
 
   // Handle retry for failed image uploads
-  const handleRetryUpload = async () => {
-    if (!message.media_urls?.[0]) return
-
-    console.log('🔄 Retrying message:', message._tempId)
-    const blobUrl = message.media_urls[0]
-    const conversationId = message.conversation_id
-    const tempId = message._tempId
-
-    try {
-      // 1. Reset state to uploading
-      useMessagingStore.getState().updateMessage(conversationId, tempId!, {
-        _failed: false,
-        _uploadProgress: 0
-      })
-
-      // 2. Fetch blob
-      const response = await fetch(blobUrl)
-      const blob = await response.blob()
-      const file = new File([blob], "retry_image.jpg", { type: blob.type })
-
-      // 3. Upload
-      const { url, thumbnailUrl } = await mediaUploadService.uploadImage(
-        file,
-        conversationId,
-        (progress) => {
-          // Check for cancellation during retry
-          const currentMessages = useMessagingStore.getState().messages.get(conversationId) || []
-          const currentMsg = currentMessages.find(m => m._tempId === tempId)
-          if (currentMsg?._failed) {
-            throw new Error('Cancelled')
-          }
-
-          useMessagingStore.getState().updateMessage(conversationId, tempId!, {
-            _uploadProgress: progress.percentage
-          })
-        }
-      )
-
-      // Check for cancellation AFTER upload completes
-      const currentMsg = useMessagingStore.getState().messages.get(conversationId)?.find(m => m._tempId === tempId)
-      if (currentMsg?._failed) {
-        console.log('🛑 Retry cancelled after upload, aborting send')
-        await mediaUploadService.deleteImage(url)
-        await mediaUploadService.deleteImage(thumbnailUrl)
-        return
-      }
-
-      // 4. Get Public URLs
-      const { data: { publicUrl } } = supabase.storage
-        .from('message-attachments')
-        .getPublicUrl(url)
-
-      const { data: { publicUrl: thumbPublicUrl } } = supabase.storage
-        .from('message-attachments')
-        .getPublicUrl(thumbnailUrl)
-
-      console.log('🔄 Retry sending message with mediaUrls:', [publicUrl])
-
-      // 5. Send Message
-      await messagingService.sendMessage({
-        conversationId,
-        content: message.content || '',
-        type: 'image',
-        mediaUrls: [publicUrl],
-        thumbnailUrl: thumbPublicUrl
-      })
-
-      // 6. Remove optimistic message
-      useMessagingStore.getState().removeMessage(conversationId, tempId!)
-
-      toast.success('Image sent successfully')
-
-    } catch (error) {
-      console.error('Retry failed:', error)
-      if (error instanceof Error && error.message === 'Cancelled') {
-        console.log('⏹️ Retry cancelled')
-      } else {
-        toast.error('Retry failed')
-      }
-
-      // Mark as failed again
-      useMessagingStore.getState().updateMessage(conversationId, tempId!, {
-        _failed: true,
-        _uploadProgress: 0
-      })
-    }
-  }
+  const { handleRetryUpload } = useMessageRetry({ message })
 
   // Refactored Context Menu Handler (works with both native context menu event and our Long Press)
   const handleContextMenu = (e: React.MouseEvent | React.TouchEvent | Event) => {
@@ -363,113 +248,7 @@ export function MessageBubble({
 
   // NOTE: Previous long press handlers removed in favor of useLongPress hook below
 
-  /* 
-   * Long press logic is now handled by usage of useLongPress hook in the render method 
-   * and the modified useLongPress signature that captures coordinates would be better 
-   * but for now we rely on the native hook.
-   * 
-   * Actually, my useLongPress hook doesn't pass coordinates to onLongPress.
-   * That is a limitation. 
-   * However, we can track the touch start in the wrapper.
-   */
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(content)
-    toast.success('Message copied')
-  }
-
-  // Share handlers
-  const { shareImage, shareVideo, shareLink } = useShare()
-
-  const handleShare = async () => {
-    try {
-      if (message.type === 'image' && message.media_urls?.[0]) {
-        await shareImage(message.media_urls[0], message.id)
-      } else if (message.type === 'video' && message.media_urls?.[0]) {
-        await shareVideo(message.media_urls[0], message.id)
-      } else if (message.link_previews?.[0]?.url) {
-        await shareLink(
-          message.link_previews[0].url,
-          message.link_previews[0].title || 'Check this out!',
-          message.id
-        )
-      } else if (content) {
-        // Share text message content
-        await shareLink(
-          window.location.href,
-          content,
-          message.id
-        )
-      }
-    } catch (error) {
-      console.error('Share failed:', error)
-    }
-  }
-
-  // Handle "Delete for me" - hides in database (synced across devices)
-  const handleDeleteForMe = async () => {
-    try {
-      const result = await messageDeleteService.deleteForMe(message.id)
-      if (result.success) {
-        // Optimistic UI: Remove message from local state immediately
-        useMessagingStore.getState().removeMessage(message.conversation_id, message.id)
-        toast.success('Message deleted for you', { icon: '🙈' })
-      } else {
-        toast.error(result.message || 'Failed to delete message')
-      }
-    } catch (error) {
-      console.error('Delete for me failed:', error)
-      toast.error('Failed to delete message')
-    }
-  }
-
-  // Handle "Delete for everyone" confirmation (WhatsApp-style)
-  const handleDeleteForEveryone = async () => {
-    setIsDeleting(true)
-    try {
-      const result = await messageDeleteService.deleteMessage(message.id)
-      if (result.success) {
-        setShowDeleteConfirm(false)
-        // Optimistic UI: Update message to show deleted placeholder immediately
-        useMessagingStore.getState().updateMessage(message.conversation_id, message.id, {
-          is_deleted: true,
-          deleted_at: new Date().toISOString()
-        })
-        // Show undo toast for 5 seconds
-        toast((t) => (
-          <div className="flex items-center gap-3">
-            <span>Message deleted for everyone</span>
-            <button
-              onClick={async () => {
-                const undoResult = await messageDeleteService.undoDelete(message.id)
-                toast.dismiss(t.id)
-                if (undoResult.success) {
-                  // Restore message in local state
-                  useMessagingStore.getState().updateMessage(message.conversation_id, message.id, {
-                    is_deleted: false,
-                    deleted_at: null
-                  })
-                  toast.success('Message restored')
-                } else {
-                  toast.error('Could not restore message')
-                }
-              }}
-              className="text-blue-500 underline text-sm font-medium"
-            >
-              Undo
-            </button>
-          </div>
-        ), { duration: 5000, icon: '🗑️' })
-      } else {
-        toast.error(result.message || 'Failed to delete message')
-      }
-    } catch (error) {
-      console.error('Delete failed:', error)
-      toast.error('Failed to delete message')
-    } finally {
-      setIsDeleting(false)
-    }
-  }
+  // Action Handlers (Delete, Share, Copy) handled by useMessageActions hook
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -552,31 +331,7 @@ export function MessageBubble({
         )}
 
         {/* Quoted Message (if reply) */}
-        {message.parent_message && (
-          <button
-            onClick={() => onQuoteClick?.(message.parent_message!.id)}
-            className={cn(
-              'flex items-start gap-2 p-2 rounded text-xs max-w-full',
-              'border-l-2 hover:bg-gray-100 transition-colors text-left',
-              isOwn
-                ? 'bg-blue-100 border-blue-400 self-end'
-                : 'bg-gray-100 border-gray-400 self-start'
-            )}
-          >
-            <CornerDownRight className="w-3 h-3 mt-0.5 flex-shrink-0 text-gray-500" />
-            <div className="flex-1 min-w-0">
-              <div className="font-medium text-gray-700 truncate">
-                {message.parent_message.sender_name}
-              </div>
-              <div className="text-gray-600 truncate">
-                {message.parent_message.type === 'text'
-                  ? message.parent_message.content
-                  : `[${message.parent_message.type}]`
-                }
-              </div>
-            </div>
-          </button>
-        )}
+        <QuotedMessage message={message} isOwn={isOwn} onQuoteClick={onQuoteClick} />
 
         <div className="flex items-end gap-2">
           {/* Failed Retry Button */}
@@ -595,49 +350,52 @@ export function MessageBubble({
           <div className="flex flex-col relative">
             {/* Added relative wrapper for swipe context */}
 
-            <motion.div
+            <div
               id={`message-${message.id}`}
               role="article"
               aria-label={ariaLabel}
               tabIndex={0}
 
-              // Gestures
-              drag="x"
-              dragConstraints={{ left: 0, right: 80 }} // Allow drag right to reply
-              dragElastic={0.1} // Rubber band effect
-              onDrag={onSwipeDrag}
-              onDragEnd={onSwipeDragEnd}
-              style={{ x: swipeX }}
-              animate={swipeControls}
+              style={{
+                transform: `translateX(${swipeX}px)`,
+                transition: isSwipeDragging ? 'none' : 'transform 0.2s cubic-bezier(0.2, 0, 0, 1)'
+              }}
 
-              // Long Press & Mouse Events
-              // We combine manual handlers with hook handlers
+              // Long Press & Mouse Events combined with swipe handlers
               onContextMenu={handleContextMenu}
               onMouseDown={(e) => {
                 onLPMouseDown(e);
-                // Also capture position for potential long press?
                 setContextMenuPosition({
                   x: Math.min(e.clientX, window.innerWidth - 220),
                   y: Math.min(e.clientY, window.innerHeight - 300)
                 });
+                swipeHandlers.onMouseDown(e);
               }}
-              onMouseUp={onLPMouseUp}
-              onMouseLeave={onLPMouseLeave}
+              onMouseUp={(e) => {
+                onLPMouseUp(e);
+                swipeHandlers.onMouseUp();
+              }}
+              onMouseLeave={(e) => {
+                onLPMouseLeave(e);
+                swipeHandlers.onMouseLeave();
+              }}
               onTouchStart={(e) => {
                 onLPTouchStart(e);
-                // Capture touch position for menu
                 const touch = e.touches[0];
                 setContextMenuPosition({
                   x: Math.min(touch.clientX, window.innerWidth - 220),
                   y: Math.min(touch.clientY, window.innerHeight - 300)
                 });
+                swipeHandlers.onTouchStart(e);
               }}
-              onTouchEnd={onLPTouchEnd}
-              // onTouchMove is handled by onDrag usually, but we need strictly for long press cancel
-              // If dragging starts, onTouchMove might fire.
-              // But we actually want dragging to Cancel long press.
-              // Our useLongPress hook cancels on movement > 10px.
-              onTouchMove={onLPTouchMove}
+              onTouchEnd={(e) => {
+                onLPTouchEnd(e);
+                swipeHandlers.onTouchEnd();
+              }}
+              onTouchMove={(e) => {
+                onLPTouchMove(e);
+                swipeHandlers.onTouchMove(e);
+              }}
 
               className={cn(
                 "px-4 py-2 rounded-2xl break-words text-[15px] leading-relaxed shadow-sm cursor-pointer select-none relative z-10 touch-pan-y", // touch-pan-y allows vertical scroll but captures horizontal
@@ -650,370 +408,113 @@ export function MessageBubble({
               )}
             >
               {/* Message Content */}
-              {message.type === 'image' ? (
-                message.media_urls && message.media_urls.length > 0 ? (
-                  message._optimistic ? (
-                    // Optimistic UI: Show thumbnail with loading state
-                    <OptimisticImageMessage
-                      thumbnailUrl={message.thumbnail_url || message.media_urls[0]}
-                      fullResUrl={message.media_urls[0]}
-                      uploadProgress={message._uploadProgress || 0}
-                      status={message._failed ? 'failed' : 'uploading'}
-                      caption={content}
-                      isOwn={isOwn}
-                      onRetry={handleRetryUpload}
-                      onCancel={() => {
-                        // Cancel upload by marking as failed (WhatsApp style)
-                        if (message._tempId) {
-                          console.log('🛑 User cancelled upload via UI')
-                          useMessagingStore.getState().updateMessage(message.conversation_id, message._tempId, {
-                            _failed: true,
-                            _uploadProgress: 0
-                          })
+              {message.type === 'image' || message.type === 'video' ? (
+                <MessageMedia
+                  message={message}
+                  isOwn={isOwn}
+                  content={content}
+                  onRetryUpload={handleRetryUpload}
+                  onImageClick={(index) => {
+                    const queryData = queryClient.getQueryData(['messages', message.conversation_id]) as any
+                    const conversationMessages = queryData?.messages || []
+                    const allImages = []
+                    let globalIndex = 0
+                    let found = false
+
+                    conversationMessages.forEach((msg) => {
+                      if (msg.type === 'image' && Array.isArray(msg.media_urls) && msg.media_urls.length > 0 && !msg._optimistic) {
+                        if (msg.id === message.id) {
+                          globalIndex = allImages.length + index
+                          found = true
                         }
-                      }}
-                    />
-                  ) : (
-                    // Regular image display with lightbox
-                    <div className="space-y-2">
-                      <ImageMessage
-                        imageUrl={message.media_urls[0]}
-                        thumbnailUrl={message.thumbnail_url}
-                        alt="Shared image"
-                        onImageClick={() => {
-                          // Get all images from the conversation for gallery navigation
-                          const conversationMessages = useMessagingStore.getState().messages.get(message.conversation_id) || []
-                          const allImages: string[] = []
-                          let currentImageIndex = 0
+                        allImages.push(...msg.media_urls)
+                      }
+                    })
 
-                          conversationMessages.forEach((msg) => {
-                            if (msg.type === 'image' && Array.isArray(msg.media_urls) && msg.media_urls.length > 0 && !msg._optimistic) {
-                              // Track the index of the current image
-                              if (msg.id === message.id) {
-                                currentImageIndex = allImages.length
-                              }
-                              allImages.push(...msg.media_urls)
-                            }
-                          })
+                    if (!found && message.media_urls) {
+                      allImages.push(...message.media_urls)
+                      globalIndex = index
+                    }
 
-                          // Fallback: If for some reason we didn't find any (e.g. current message missing from store),
-                          // at least show the current image.
-                          if (allImages.length === 0 && message.media_urls?.[0]) {
-                            console.warn('⚠️ Lightbox: Could not find images in store, falling back to current message image')
-                            allImages.push(message.media_urls[0])
-                            currentImageIndex = 0
-                          }
-
-                          console.log('🖼️ Opening lightbox with images:', allImages.length, 'Current index:', currentImageIndex)
-                          setLightboxImages(allImages)
-                          setLightboxInitialIndex(currentImageIndex)
-                          setLightboxOpen(true)
-                        }}
-                      />
-                      {content && <p className="whitespace-pre-wrap mt-2">{content}</p>}
-                    </div>
-                  )
-                ) : (
-                  // Fallback for missing media URLs
-                  <div className="p-4 bg-gray-100 rounded-lg border border-gray-200 text-center min-w-[200px]">
-                    <p className="text-sm text-gray-500 italic">Image unavailable</p>
-                    <p className="text-xs text-gray-400 mt-1">Media URL missing</p>
-                    {content && <p className="whitespace-pre-wrap mt-2 text-left">{content}</p>}
-                  </div>
-                )
-              ) : message.type === 'video' ? (
-                // Video message display
-                message.media_urls && message.media_urls.length > 0 ? (
-                  message._optimistic ? (
-                    // Optimistic UI: Show thumbnail with loading state
-                    <OptimisticVideoMessage
-                      thumbnailUrl={message.thumbnail_url || message.media_urls[0]}
-                      fullResUrl={message.media_urls[0]}
-                      uploadProgress={message._uploadProgress || 0}
-                      status={message._failed ? 'failed' : 'uploading'}
-                      caption={content}
-                      isOwn={isOwn}
-                      onCancel={() => {
-                        // Cancel upload by marking as failed
-                        if (message._tempId) {
-                          console.log('🛑 User cancelled video upload via UI')
-                          useMessagingStore.getState().updateMessage(message.conversation_id, message._tempId, {
-                            _failed: true,
-                            _uploadProgress: 0
-                          })
-                        }
-                      }}
-                    />
-                  ) : (
-                    // Regular video display with controls
-                    <div className="space-y-2">
-                      <VideoMessage
-                        videoUrl={message.media_urls[0]}
-                        thumbnailUrl={message.thumbnail_url}
-                        duration={undefined}
-                      />
-                      {content && <p className="whitespace-pre-wrap mt-2">{content}</p>}
-                    </div>
-                  )
-                ) : (
-                  // Fallback for missing video URLs
-                  <div className="p-4 bg-gray-100 rounded-lg border border-gray-200 text-center min-w-[200px]">
-                    <p className="text-sm text-gray-500 italic">Video unavailable</p>
-                    <p className="text-xs text-gray-400 mt-1">Media URL missing</p>
-                    {content && <p className="whitespace-pre-wrap mt-2 text-left">{content}</p>}
-                  </div>
-                )
+                    setLightboxImages(allImages)
+                    setLightboxInitialIndex(globalIndex)
+                    setLightboxOpen(true)
+                  }}
+                  onVideoFullscreen={() => setShowVideoPlayer(true)}
+                />
               ) : (
                 <div className="flex flex-col gap-2">
-                  {/* Review Preview */}
-                  {message.link_previews &&
-                    message.link_previews.length > 0 &&
-                    message.link_previews[0].metadata?.type === 'review' && (
-                      <div className="mt-2">
-                        <ReviewLinkPreview preview={message.link_previews[0]} />
-                      </div>
-                    )}
-
-                  {/* Offer Preview (Ticket Style) */}
-                  {message.link_previews &&
-                    message.link_previews.length > 0 &&
-                    (message.link_previews[0].type === 'sync-offer' || message.link_previews[0].metadata?.type === 'offer') && (
-                      <div className="mt-2 text-left">
-                        <OfferLinkPreview preview={message.link_previews[0]} />
-                      </div>
-                    )}
-
-                  {/* Standard Link Previews (Exclude review and offer types) */}
-                  {message.link_previews &&
-                    message.link_previews.length > 0 &&
-                    message.link_previews[0].metadata?.type !== 'review' &&
-                    message.link_previews[0].type !== 'sync-offer' &&
-                    message.link_previews[0].metadata?.type !== 'offer' && (
-                      <div className="space-y-2 w-full max-w-[75vw]">
-                        {message.link_previews.map((preview, index) => (
-                          <LinkPreviewCard
-                            key={`${preview.url}-${index}`}
-                            preview={preview}
-                            showRemoveButton={false}
-                          />
-                        ))}
-                      </div>
-                    )}
+                  {/* Link Previews */}
+                  <MessageLinkPreviews previews={message.link_previews} />
 
                   {/* Text content with Read More expansion (Story 8.6.7) */}
-                  <div className="relative">
-                    <p
-                      ref={textRef}
-                      className={cn(
-                        "whitespace-pre-wrap break-words break-all transition-all duration-200",
-                        !isExpanded && needsReadMore ? "line-clamp-7 max-h-[140px] overflow-hidden" : ""
-                      )}
-                    >
-                      {/* Parse content and render URLs as clickable links (AC-14 through AC-17) */}
-                      {parseMessageContent(content).map((segment, index) =>
-                        segment.type === 'url' ? (
-                          <ClickableUrl
-                            key={`url-${index}`}
-                            url={segment.fullUrl || segment.content}
-                            isOwnMessage={isOwn}
-                          />
-                        ) : (
-                          <React.Fragment key={`text-${index}`}>
-                            {segment.content}
-                          </React.Fragment>
-                        )
-                      )}
-                    </p>
+                  <MessageTextContent message={message} isOwn={isOwn} />
 
-                    {!isExpanded && needsReadMore && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation() // Prevent bubbling to message click
-                          setIsExpanded(true)
-                        }}
-                        className={cn(
-                          "mt-1 text-sm font-medium hover:underline focus:outline-none",
-                          isOwn ? "text-blue-100 opacity-90" : "text-blue-600"
-                        )}
-                      >
-                        Read more
-                      </button>
-                    )}
-                  </div>
+                  {/* Timestamp & Status Row */}
+                  <MessageStatus
+                    message={message}
+                    isOwn={isOwn}
+                    isPinned={isMessagePinned?.(message.id)}
+                    showReadAsDelivered={showReadAsDelivered}
+                  />
                 </div>
               )}
-              {/* Timestamp & Status Row */}
-              <div className={cn(
-                "flex items-center justify-end gap-1 mt-0.5",
-                isOwn ? "text-blue-100/80" : "text-gray-400"
-              )}>
-                {is_edited && (
-                  <EditedBadge
-                    editedAt={message.edited_at || message.updated_at || ''}
-                    isOwnMessage={isOwn}
-                  />
-                )}
 
-                {/* Pin Icon (if message is pinned) */}
-                {isMessagePinned?.(message.id) && (
-                  <Pin className={cn(
-                    "w-3 h-3 rotate-45",
-                    isOwn ? "text-blue-200" : "text-gray-400"
-                  )} />
-                )}
-
-                <span className="text-[10px]">
-                  {formatMessageTime(created_at)}
-                </span>
-
-                {/* Reported Indicator */}
-                {message.viewer_has_reported && (
-                  <span className="text-[10px] text-orange-600 font-medium ml-1">
-                    Reported
-                  </span>
-                )}
-
-                {/* Message Status Icons (for own messages) */}
-                {isOwn && (
-                  <span className="ml-0.5">
-                    <MessageStatusIcon
-                      status={_failed ? 'failed' : _optimistic ? 'sending' : (
-                        // Reciprocal privacy: if user disabled read receipts, they can't see 'read' status
-                        // Downgrade 'read' to 'delivered' to enforce fairness
-                        message.status === 'read' && showReadAsDelivered
-                          ? 'delivered'
-                          : message.status || 'sent'
-                      )}
-                      className={cn(
-                        "h-3 w-3",
-                        isOwn ? "text-blue-100/80" : "text-gray-400"
-                      )}
-                    />
-                  </span>
-                )}
-              </div>
-            </motion.div>
-            {/* Message Reactions (Displays below bubble) */}
-            <MessageReactions
-              reactions={reactionsSummary}
-              currentUserId={currentUserId || ''}
-              onReactionClick={toggleReaction}
-              onViewUsers={(emoji, e) => handleViewReactionUsers(emoji, e)}  // Pass event for positioning
-              isOwnMessage={isOwn}
-            />
+              {/* Message Reactions (Displays below bubble) */}
+              <MessageReactions
+                reactions={reactionsSummary}
+                currentUserId={currentUserId || ''}
+                onReactionClick={toggleReaction}
+                onViewUsers={(emoji, e) => handleViewReactionUsers(emoji, e)}  // Pass event for positioning
+                isOwnMessage={isOwn}
+              />
+            </div>
           </div>
-        </div >
-      </div >
+        </div>
 
-      {/* Context Menu - Rendered at document body level to avoid scroll container issues */}
-      {
-        showContextMenu && createPortal(
-          <MessageContextMenu
-            message={message}
-            position={contextMenuPosition}
-            isOwn={isOwn}
-            onClose={() => setShowContextMenu(false)}
-            onReply={() => onReply?.(message)}
-            onForward={() => onForward?.(message)}
-            onCopy={handleCopy}
-            onShare={handleShare}
-            onEdit={() => onEdit?.(message)}
-            canEdit={canEditMessage}
-            editRemainingTime={editRemainingTime}
-            onDeleteForMe={handleDeleteForMe}
-            onDeleteForEveryone={() => handleDeleteForEveryone()}
-            canDeleteForEveryone={canDeleteMessage}
-            deleteRemainingTime={deleteRemainingTime}
-            onReact={toggleReaction}
-            onOpenPicker={() => {
-              setShowContextMenu(false)
-              setShowPicker(true)
-            }}
-            userReactions={userReactions}
-            onPin={() => onPin?.(message.id)}
-            onUnpin={() => onUnpin?.(message.id)}
-            isPinned={isMessagePinned?.(message.id)}
-            onReport={() => {
-              setShowContextMenu(false)
-              setShowReportDialog(true)
-            }}
-          />,
-          document.body
-        )
-      }
-
-      {/* Report Dialog */}
-      <ReportDialog
-        messageId={message.id}
-        conversationId={message.conversation_id}
-        senderId={message.sender_id}
-        isOpen={showReportDialog}
-        onClose={() => setShowReportDialog(false)}
-      />
-
-      {/* Reaction User List Dialog */}
-      <ReactionUserList
-        isOpen={!!selectedEmoji}
-        onClose={closeReactionUsers}
-        emoji={selectedEmoji}
-        users={emojiUsers}
-        isLoading={loadingUsers}
-        currentUserId={currentUserId}
-        position={popupPosition}
-        onRemoveReaction={() => {
-          if (selectedEmoji) {
-            toggleReaction(selectedEmoji);
-            closeReactionUsers(); // Optional: close list after removing? Or keep open?
-            // WhatsApp keeps open if there are other reactions, but if I remove mine, maybe I want to close or see updated list.
-            // Since toggleReaction updates state, the list *should* update if we re-fetch or if optimistic updates propagate.
-            // But `emojiUsers` in `useReactions` is fetched on `viewReactionUsers`.
-            // If I remove reaction, `emojiUsers` needs to be updated or closed.
-            // Closing is safer to avoid stale state for now.
-            closeReactionUsers();
-          }
-        }}
-      />
-
-      {/* Full Emoji Picker Dialog */}
-      <MessageEmojiPicker
-        isOpen={showPicker}
-        onClose={() => setShowPicker(false)}
-        onEmojiClick={toggleReaction}
-      />
-
-      {/* Video Player Modal */}
-      {
-        showVideoPlayer && message.type === 'video' && message.media_urls && message.media_urls.length > 0 && (
-          <VideoPlayer
-            videoUrl={message.media_urls[0]}
-            thumbnailUrl={message.thumbnail_url || message.media_urls[0]}
-            onClose={() => setShowVideoPlayer(false)}
-          />
-        )
-      }
-
-      {/* Image Lightbox */}
-      <ImageLightbox
-        images={lightboxImages}
-        initialIndex={lightboxInitialIndex}
-        isOpen={lightboxOpen}
-        onClose={() => setLightboxOpen(false)}
-      />
-
-      {/* Delete Confirmation Dialog (Story 8.5.3) */}
-      {
-        showDeleteConfirm && createPortal(
-          <DeleteConfirmationDialog
-            isOpen={showDeleteConfirm}
-            onClose={() => setShowDeleteConfirm(false)}
-            onConfirm={handleDeleteForEveryone}
-            remainingTime={deleteRemainingTime}
-            isDeleting={isDeleting}
-            showDeleteForMe={false}
-          />,
-          document.body
-        )
-      }
-    </div >
+        <MessageDialogs
+          message={message}
+          isOwn={isOwn}
+          currentUserId={currentUserId}
+          showContextMenu={showContextMenu}
+          contextMenuPosition={contextMenuPosition}
+          setShowContextMenu={setShowContextMenu}
+          onReply={() => onReply?.(message)}
+          onForward={() => onForward?.(message)}
+          handleCopy={handleCopy}
+          handleShare={handleShare}
+          onEdit={() => onEdit?.(message)}
+          canEditMessage={canEditMessage}
+          editRemainingTime={editRemainingTime}
+          handleDeleteForMe={handleDeleteForMe}
+          handleDeleteForEveryone={handleDeleteForEveryone}
+          canDeleteMessage={canDeleteMessage}
+          deleteRemainingTime={deleteRemainingTime}
+          toggleReaction={toggleReaction}
+          setShowPicker={setShowPicker}
+          userReactions={userReactions}
+          onPin={() => onPin?.(message.id)}
+          onUnpin={() => onUnpin?.(message.id)}
+          isPinned={isMessagePinned?.(message.id)}
+          setShowReportDialog={setShowReportDialog}
+          showReportDialog={showReportDialog}
+          selectedEmoji={selectedEmoji}
+          closeReactionUsers={closeReactionUsers}
+          emojiUsers={emojiUsers}
+          loadingUsers={loadingUsers}
+          popupPosition={popupPosition}
+          showPicker={showPicker}
+          showVideoPlayer={showVideoPlayer}
+          setShowVideoPlayer={setShowVideoPlayer}
+          lightboxImages={lightboxImages}
+          lightboxInitialIndex={lightboxInitialIndex}
+          lightboxOpen={lightboxOpen}
+          setLightboxOpen={setLightboxOpen}
+          showDeleteConfirm={showDeleteConfirm}
+          setShowDeleteConfirm={setShowDeleteConfirm}
+          isDeleting={isDeleting}
+        />
+      </div>
+    </div>
   )
-}
+})

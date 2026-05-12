@@ -1,29 +1,23 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import { FileText } from 'lucide-react';
 import { PrefilledFieldIndicator, usePrefilledFields } from '../components/PrefilledFieldIndicator';
-import { cn } from '@/lib/utils'; // Assuming this alias exists, if not I'll standard imports or check tsconfig. 
-// Actually, looking at previous files, I don't see exact path for utils. I'll check BusinessRegistration imports. 
-// BusinessRegistration doesn't use cn. I'll use standard className strings or check if a utility exists.
-// Re-checking Step1_PhoneVerify.tsx... it didn't use 'cn'. 
-// I will just use template literals for classNames to be safe and avoid missing dependency errors.
+import { BusinessCategoryEditor } from '../../settings/BusinessCategoryEditor';
 
 interface Step2_BasicDetailsProps {
     formData: {
         businessName: string;
-
-        category: string;
         description: string;
         businessEmail: string;
         businessPhone: string;
-        address?: string; // For preview
-        city?: string;    // For preview
-        state?: string;   // For preview
-        websiteUrl?: string; // For preview
+        address?: string;
+        city?: string;
+        state?: string;
+        websiteUrl?: string;
     };
     onFieldChange: (field: string, value: string) => void;
     prefilledFields: string[];
-    categories: Array<{ id: string; name: string; display_name: string }>;
+    selectedCategoryIds: string[];
+    onCategoryIdsChange: (ids: string[]) => void;
     errors: Record<string, string>;
 }
 
@@ -31,7 +25,8 @@ export function Step2_BasicDetails({
     formData,
     onFieldChange,
     prefilledFields,
-    categories,
+    selectedCategoryIds,
+    onCategoryIdsChange,
     errors
 }: Step2_BasicDetailsProps) {
     const { isPrefilled, markAsEdited } = usePrefilledFields(prefilledFields);
@@ -44,11 +39,7 @@ export function Step2_BasicDetails({
     return (
         <div className="space-y-6">
             {/* Header */}
-            <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mb-6"
-            >
+            <div className="mb-6 animate-fadeIn">
                 <div className="flex items-center gap-3 mb-2">
                     <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
                         <FileText className="w-5 h-5 text-indigo-600" />
@@ -58,7 +49,7 @@ export function Step2_BasicDetails({
                 <p className="text-gray-600">
                     Tell customers about your business
                 </p>
-            </motion.div>
+            </div>
 
             {/* Business Name */}
             <div>
@@ -81,32 +72,21 @@ export function Step2_BasicDetails({
                 )}
             </div>
 
-
-
-            {/* Category */}
+            {/* Product Categories - Accordion Picker */}
             <div>
-                <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                        Category *
-                    </label>
-                    <PrefilledFieldIndicator isPrefilled={isPrefilled('category')} />
-                </div>
-                <select
-                    value={formData.category}
-                    onChange={(e) => handleChange('category', e.target.value)}
-                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 ${isPrefilled('category') ? "border-blue-300 bg-blue-50" : "border-gray-200"
-                        } ${errors.category ? "border-red-500" : ""}`}
-                >
-                    <option value="">Select category</option>
-                    {categories.map(cat => (
-                        <option key={cat.id} value={cat.name}>
-                            {cat.display_name}
-                        </option>
-                    ))}
-                </select>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Product Categories *
+                </label>
+                <p className="text-xs text-gray-500 mb-3">
+                    Select all categories that apply to your business. This is critical for trending and discoverability.
+                </p>
                 {errors.category && (
-                    <p className="mt-1 text-sm text-red-600">{errors.category}</p>
+                    <p className="mb-2 text-sm text-red-600">{errors.category}</p>
                 )}
+                <BusinessCategoryEditor
+                    selectedCategoryIds={selectedCategoryIds}
+                    onChange={onCategoryIdsChange}
+                />
             </div>
 
             {/* Description */}

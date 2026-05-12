@@ -1,6 +1,5 @@
 // src/components/friends/GlobalUserSearch.tsx
 import React, { useState, useCallback, useRef, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import { Search, UserPlus, MapPin, Heart, Check } from 'lucide-react'
 import { useNewFriends as useFriends } from '../../hooks/useNewFriends'
 import { useSendFriendRequest } from '../../hooks/useFriendRequests'
@@ -141,16 +140,14 @@ export const GlobalUserSearch: React.FC<GlobalUserSearchProps> = ({ query, onEmp
                 const wasSuccessful = successMessages.has(user.user_id)
 
                 return (
-                    <motion.div
+                    <div
                         key={user.user_id}
-                        className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-xl hover:shadow-md transition-shadow"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
+                        className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-xl hover:shadow-md transition-shadow animate-fadeIn"
                     >
                         <div className="flex items-center space-x-3">
                             <div className="relative">
                                 {user.avatar_url ? (
-                                    <img
+                                    <img loading="lazy" decoding="async" 
                                         src={user.avatar_url}
                                         alt={user.full_name}
                                         className="h-10 w-10 rounded-full object-cover"
@@ -180,15 +177,13 @@ export const GlobalUserSearch: React.FC<GlobalUserSearchProps> = ({ query, onEmp
                             </div>
                         </div>
 
-                        <motion.button
+                        <button
                             onClick={() => handleSendRequest(user.user_id)}
                             disabled={isSending || wasSuccessful}
                             className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${isSending || wasSuccessful
                                 ? 'bg-green-50 text-green-700 cursor-not-allowed'
                                 : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
                                 }`}
-                            whileHover={{ scale: isSending || wasSuccessful ? 1 : 1.02 }}
-                            whileTap={{ scale: isSending || wasSuccessful ? 1 : 0.98 }}
                         >
                             {isSending ? (
                                 <>
@@ -206,8 +201,8 @@ export const GlobalUserSearch: React.FC<GlobalUserSearchProps> = ({ query, onEmp
                                     <span>Add</span>
                                 </>
                             )}
-                        </motion.button>
-                    </motion.div>
+                        </button>
+                    </div>
                 )
             })}
         </div>

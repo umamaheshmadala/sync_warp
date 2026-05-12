@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
 import {
   Edit3,
   Trash2,
@@ -14,7 +13,6 @@ import {
 } from 'lucide-react';
 import { Product, CURRENCIES } from '../../types/product';
 import ProductView from './ProductView';
-import { AnimatePresence } from 'framer-motion';
 import { getOptimizedImageUrl } from '../../utils/imageUtils';
 import { FavoriteProductButton } from '../favorites/FavoriteProductButton';
 
@@ -81,13 +79,11 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
             {/* Product Image - Portrait */}
             <div className="flex-shrink-0 w-24 aspect-[9/16] overflow-hidden rounded-lg bg-gray-100">
               {getImageUrl() && !imageError ? (
-                <img
+                <img loading="lazy" decoding="async"
                   src={getImageUrl()}
                   alt={product.name}
                   className="w-full h-full object-cover rounded-lg"
                   onError={() => setImageError(true)}
-                  decoding="async"
-                  loading="lazy"
                 />
               ) : (
                 <div className="w-full h-full bg-gray-100 rounded-lg flex items-center justify-center">
@@ -143,7 +139,7 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
         </div>
 
         {/* Product View Modal */}
-        <AnimatePresence>
+        <>
           {showProductView && (
             <ProductView
               product={product}
@@ -153,7 +149,7 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
               onEdit={onEdit}
             />
           )}
-        </AnimatePresence>
+        </>
       </>
     );
   }
@@ -168,13 +164,11 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
         {/* Product Image - Aspect Ratio */}
         <div className="relative bg-gray-100 overflow-hidden aspect-[4/5] sm:aspect-[1/1]">
           {getImageUrl() && !imageError ? (
-            <img
+            <img loading="lazy" decoding="async"
               src={getImageUrl()}
               alt={product.name}
               className="w-full h-full object-cover"
               onError={() => setImageError(true)}
-              decoding="async"
-              loading="lazy"
             />
           ) : (
             <div className="w-full h-full bg-gray-100 flex items-center justify-center">
@@ -193,13 +187,8 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
             {isOwner ? 'OWNER' : 'GUEST'}
           </div>
 
-          {/* Multiple Images Indicator - Top Right */}
+          {/* Action Buttons - Top Right */}
           <div className="absolute top-2 right-2 z-20 flex gap-2">
-            {product.image_urls && product.image_urls.length > 1 && (
-              <div className="bg-black/50 backdrop-blur-sm rounded-full p-1.5 text-white">
-                <Layers className="w-4 h-4" />
-              </div>
-            )}
             {isOwner && (
               <button
                 onClick={(e) => {
@@ -256,7 +245,7 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
       </div>
 
       {/* Product View Modal */}
-      <AnimatePresence>
+      <>
         {
           showProductView && (
             <ProductView
@@ -269,7 +258,7 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
             />
           )
         }
-      </AnimatePresence >
+      </>
     </>
   );
 };

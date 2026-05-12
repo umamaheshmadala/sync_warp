@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
@@ -27,7 +26,7 @@ export function ClaimBusinessButton({
     onClaimed,
     className
 }: ClaimBusinessButtonProps) {
-    const { user } = useAuthStore();
+    const user = useAuthStore((state) => state.user);
     const navigate = useNavigate();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [claimId, setClaimId] = useState<string | null>(null);
@@ -155,19 +154,13 @@ export function ClaimBusinessButton({
             )}
 
             {/* Claim Modal */}
-            <AnimatePresence>
+            <>
                 {isModalOpen && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
+                    <div
                         className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4"
                         onClick={() => !loading && setIsModalOpen(false)}
                     >
-                        <motion.div
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.9, opacity: 0 }}
+                        <div
                             className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl"
                             onClick={(e) => e.stopPropagation()}
                         >
@@ -187,7 +180,13 @@ export function ClaimBusinessButton({
                                     <div className="bg-gray-50 rounded-xl p-4 mb-6">
                                         <p className="text-sm text-gray-600 mb-1">Phone on file:</p>
                                         <p className="font-medium text-gray-900">
-                                            {businessPhone ? `+91 ${businessPhone}` : 'No phone on file'}
+                                            {businessPhone ? (
+                                                <a href={`tel:+91${businessPhone}`} className="text-indigo-600 hover:underline">
+                                                    +91 {businessPhone}
+                                                </a>
+                                            ) : (
+                                                'No phone on file'
+                                            )}
                                         </p>
                                         {!businessPhone && (
                                             <p className="text-sm text-amber-600 mt-2">
@@ -260,10 +259,10 @@ export function ClaimBusinessButton({
                                     </p>
                                 </div>
                             )}
-                        </motion.div>
-                    </motion.div>
+                        </div>
+                    </div>
                 )}
-            </AnimatePresence>
+            </>
         </>
     );
 }

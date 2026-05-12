@@ -35,7 +35,7 @@ export interface FavoriteProduct {
  * @returns Object with products array, loading state, error, and refetch function
  */
 export function useFavoriteProducts() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const queryClient = useQueryClient();
 
   // Query key

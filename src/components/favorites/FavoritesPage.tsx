@@ -5,13 +5,12 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  Heart,
+  Star,
   Search as SearchIcon,
   RefreshCw,
   Tag,
   Package
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 import { useFavoritesContext } from '../../contexts/FavoritesContext';
 // Using storefront OfferCard for visual consistency
@@ -28,7 +27,8 @@ import {
   MobileProductCarousel,
   MobileProductActions,
   MobileProductDetails,
-  MobileProductComments
+  MobileProductComments,
+  StickyCommentInput
 } from '../products/mobile';
 import { WebProductModal } from '../products/web/WebProductModal';
 import { useMediaQuery } from '../../hooks/use-media-query';
@@ -168,9 +168,9 @@ const FavoritesPage: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <Heart className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Sign in to view favorites</h2>
-          <p className="text-gray-600 mb-6">Save your favorite offers and products</p>
+          <Star className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Sign in to view Favourites</h2>
+          <p className="text-gray-600 mb-6">Save your favourite offers and products</p>
           <button
             onClick={() => navigate('/auth/login')}
             className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
@@ -299,10 +299,8 @@ const FavoritesPage: React.FC = () => {
           </div>
         ) : currentData.length === 0 ? (
           // Empty state
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center py-12"
+          <div
+            className="text-center py-12 animate-fadeIn"
           >
             <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
               {activeTab === 'offers' ? (
@@ -312,22 +310,19 @@ const FavoritesPage: React.FC = () => {
               )}
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No {activeTab} favorited yet
+              No {activeTab} favourited yet
             </h3>
             <p className="text-gray-600 mb-6">
               {searchQuery.trim()
                 ? `No ${activeTab} match your search "${searchQuery}"`
-                : `Start favoriting ${activeTab} to see them here`}
+                : `Start favouriting ${activeTab} to see them here`}
             </p>
 
-          </motion.div>
+          </div>
         ) : (
           // Grid of items
-          <motion.div
+          <div
             key={activeTab}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.2 }}
             className={`grid gap-4 ${activeTab === 'offers'
               ? 'grid-cols-1 lg:grid-cols-2'
               : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'
@@ -351,26 +346,27 @@ const FavoritesPage: React.FC = () => {
                   onClick={() => handleProductClick(mapFavoriteToProduct(product))}
                 />
               ))}
-          </motion.div>
+          </div>
         )}
       </div>
 
       {/* Offer Detail Modal */}
-      <AnimatePresence>
-        {selectedOffer && (
-          <OfferDetailModal
-            offer={selectedOffer}
-            onClose={() => setSelectedOffer(null)}
-            showStats={false}
-          />
-        )}
-      </AnimatePresence>
+      <>
+          {selectedOffer && (
+                    <OfferDetailModal
+                      offer={selectedOffer}
+                      onClose={() => setSelectedOffer(null)}
+                      showStats={false}
+                    />
+                  )}
+          </>
 
       {/* Mobile Product Modal */}
       {!isDesktop && (
         <MobileProductModal
           isOpen={!!selectedProduct}
           onClose={handleCloseModal}
+          stickyFooter={selectedProduct ? <StickyCommentInput productId={selectedProduct.id} /> : undefined}
         >
           {selectedProduct && (
             <>
@@ -397,6 +393,7 @@ const FavoritesPage: React.FC = () => {
               <MobileProductComments
                 productId={selectedProduct.id}
                 initialCount={selectedProduct.comment_count || 0}
+                hideInput
               />
             </>
           )}

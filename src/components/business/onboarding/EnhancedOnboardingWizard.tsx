@@ -10,6 +10,7 @@ import { useOnboarding } from '@/hooks/useOnboarding';
 import { useNavigate } from 'react-router-dom';
 import { ONBOARDING_STEPS } from '@/types/business-onboarding';
 import { CustomerProfileStep } from './steps/CustomerProfileStep';
+import { ProductCategoryStep } from './ProductCategoryStep';
 import { BusinessMetricsStep } from './steps/BusinessMetricsStep';
 import { MarketingGoalsStep } from './steps/MarketingGoalsStep';
 import { ReviewStep } from './steps/ReviewStep';
@@ -34,11 +35,13 @@ export function EnhancedOnboardingWizard({
     completionPercentage,
     currentStepInfo,
     allSteps,
+    stepData,
     goToStep,
     nextStep,
     previousStep,
     canGoNext,
     canGoPrevious,
+    updateCurrentStepData,
     completeOnboarding,
     loading,
     saving,
@@ -307,18 +310,25 @@ export function EnhancedOnboardingWizard({
             )}
 
             {currentStep === 2 && (
-              <CustomerProfileStep businessId={businessId} />
+              <ProductCategoryStep 
+                initialData={{ categories: stepData[2]?.categories || [] }}
+                onUpdate={(data) => updateCurrentStepData(data)}
+              />
             )}
 
             {currentStep === 3 && (
-              <BusinessMetricsStep businessId={businessId} />
+              <CustomerProfileStep businessId={businessId} />
             )}
 
             {currentStep === 4 && (
-              <MarketingGoalsStep businessId={businessId} />
+              <BusinessMetricsStep businessId={businessId} />
             )}
 
             {currentStep === 5 && (
+              <MarketingGoalsStep businessId={businessId} />
+            )}
+
+            {currentStep === 6 && (
               <ReviewStep businessId={businessId} />
             )}
           </div>

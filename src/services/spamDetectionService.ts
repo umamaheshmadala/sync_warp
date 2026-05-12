@@ -72,6 +72,17 @@ class SpamDetectionService {
     private readonly CACHE_TTL = 5 * 60 * 1000 // 5 minutes
 
     /**
+     * Initialize service and prefetch rules
+     */
+    async init(): Promise<void> {
+        console.log('[SpamDetection] Initializing and prefetching rules...')
+        await Promise.all([
+            this.fetchKeywords(),
+            this.fetchPatterns()
+        ])
+    }
+
+    /**
      * Main spam check - combines keyword and pattern detection
      * @param content Message content to check
      * @param senderId User ID of sender

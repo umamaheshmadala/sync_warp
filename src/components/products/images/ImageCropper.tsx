@@ -100,20 +100,22 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
                             variant="outline"
                             size="sm"
                             onClick={handleRotate}
-                            className="flex items-center gap-2"
+                            className="p-2"
+                            title="Rotate 90°"
+                            aria-label="Rotate 90 degrees"
                         >
                             <RotateCw className="w-4 h-4" />
-                            Rotate 90°
                         </Button>
 
                         <Button
                             variant={showGrid ? "default" : "outline"}
                             size="sm"
                             onClick={() => setShowGrid(!showGrid)}
-                            className="flex items-center gap-2"
+                            className="p-2"
+                            title={showGrid ? 'Hide grid' : 'Show grid'}
+                            aria-label={showGrid ? 'Hide grid' : 'Show grid'}
                         >
                             <Grid3X3 className="w-4 h-4" />
-                            Grid: {showGrid ? 'ON' : 'OFF'}
                         </Button>
                     </div>
 

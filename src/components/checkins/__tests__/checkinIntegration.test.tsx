@@ -28,8 +28,8 @@ jest.mock('../../../lib/supabase', () => ({
       single: jest.fn().mockResolvedValue({ data: null, error: null }),
     })),
     auth: {
-      getSession: jest.fn().mockResolvedValue({ 
-        data: { session: { user: { id: 'test-user' } } } 
+      getSession: jest.fn().mockResolvedValue({
+        data: { session: { user: { id: 'test-user' } } }
       }),
     },
   },
@@ -55,12 +55,6 @@ jest.mock('recharts', () => ({
   ),
 }));
 
-// Mock framer-motion
-jest.mock('framer-motion', () => ({
-  motion: {
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-  },
-}));
 
 // Test wrapper component
 const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -85,7 +79,7 @@ describe('Check-in System Integration Tests', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Setup geolocation mock
     mockGeolocation = CheckinTestUtils.mockGeolocation({
       latitude: 40.7589,
@@ -172,8 +166,8 @@ describe('Check-in System Integration Tests', () => {
 
       render(
         <TestWrapper>
-          <CheckinRewards 
-            checkins={mockCheckins} 
+          <CheckinRewards
+            checkins={mockCheckins}
             onPointsEarned={mockOnPointsEarned}
           />
         </TestWrapper>
@@ -189,8 +183,8 @@ describe('Check-in System Integration Tests', () => {
 
       render(
         <TestWrapper>
-          <CheckinRewards 
-            checkins={mockCheckins} 
+          <CheckinRewards
+            checkins={mockCheckins}
             onPointsEarned={mockOnPointsEarned}
           />
         </TestWrapper>
@@ -210,8 +204,8 @@ describe('Check-in System Integration Tests', () => {
 
       render(
         <TestWrapper>
-          <CheckinRewards 
-            checkins={checkinsWithAchievements} 
+          <CheckinRewards
+            checkins={checkinsWithAchievements}
             onPointsEarned={mockOnPointsEarned}
           />
         </TestWrapper>
@@ -232,7 +226,7 @@ describe('Check-in System Integration Tests', () => {
       );
 
       expect(screen.getByText('Check-in Analytics (Last 7 Days)')).toBeInTheDocument();
-      
+
       await waitFor(() => {
         expect(screen.getByTestId('responsive-container')).toBeInTheDocument();
       });
@@ -333,7 +327,7 @@ describe('Check-in System Integration Tests', () => {
 
       // Filter for check-in eligible businesses
       const eligibleBusinesses = searchResultsWithCheckInStatus.filter(b => b.canCheckIn);
-      
+
       expect(eligibleBusinesses.length).toBeGreaterThan(0);
       expect(eligibleBusinesses.every(b => b.distance <= 100)).toBe(true);
       expect(eligibleBusinesses.every(b => b.status === 'active')).toBe(true);
@@ -364,7 +358,7 @@ describe('Check-in System Integration Tests', () => {
       const nearbyBusinesses = await mockCheckinFlow.findNearbyBusinesses();
       expect(nearbyBusinesses.length).toBeGreaterThan(0);
 
-      const eligibleBusiness = nearbyBusinesses.find(b => 
+      const eligibleBusiness = nearbyBusinesses.find(b =>
         CheckinTestUtils.calculateDistance(
           location.latitude,
           location.longitude,
@@ -406,7 +400,7 @@ describe('Check-in System Integration Tests', () => {
       const businesses = testScenarios[0].businesses;
       const userLocation = testScenarios[0].userLocation;
 
-      const validationPromises = businesses.map(business => 
+      const validationPromises = businesses.map(business =>
         Promise.resolve(CheckinTestUtils.validateCheckInRequirements(
           userLocation.latitude,
           userLocation.longitude,
@@ -420,7 +414,7 @@ describe('Check-in System Integration Tests', () => {
 
       expect(results).toHaveLength(businesses.length);
       expect(endTime - startTime).toBeLessThan(100); // Should complete in under 100ms
-      
+
       results.forEach((result, index) => {
         expect(result).toHaveProperty('canCheckIn');
         expect(result).toHaveProperty('distance');
@@ -438,18 +432,18 @@ describe('Check-in System Integration Tests', () => {
       const mockOnPointsEarned = jest.fn();
 
       const startTime = performance.now();
-      
+
       render(
         <TestWrapper>
-          <CheckinRewards 
-            checkins={largeCheckinHistory} 
+          <CheckinRewards
+            checkins={largeCheckinHistory}
             onPointsEarned={mockOnPointsEarned}
           />
         </TestWrapper>
       );
 
       const endTime = performance.now();
-      
+
       // Component should render efficiently even with large datasets
       expect(endTime - startTime).toBeLessThan(1000); // Under 1 second
       expect(screen.getByText('Check-in Rewards')).toBeInTheDocument();
@@ -478,9 +472,9 @@ describe('Check-in System Integration Tests', () => {
 
       const runButton = screen.getByText('Run All Tests');
       runButton.focus();
-      
+
       expect(document.activeElement).toBe(runButton);
-      
+
       // Simulate Enter key press
       fireEvent.keyDown(runButton, { key: 'Enter', code: 'Enter' });
       // Would trigger the same action as click in real implementation

@@ -25,7 +25,8 @@ export const productService = {
             const { data, error } = await supabase.storage
                 .from('business-assets')
                 .upload(filePath, file, {
-                    cacheControl: '3600',
+                    cacheControl: '31536000',
+                    contentType: file.type || 'image/jpeg',
                     upsert: false
                 });
 

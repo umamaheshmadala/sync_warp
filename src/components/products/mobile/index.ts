@@ -4,3 +4,5 @@ export * from './MobileProductCarousel';
 export * from './MobileProductActions';
 export * from './MobileProductDetails';
 export * from './MobileProductComments';
+export * from './StickyCommentInput';
+

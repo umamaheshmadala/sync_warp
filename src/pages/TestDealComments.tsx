@@ -8,7 +8,7 @@ import { useAuthStore } from '../store/authStore';
 export function TestDealComments() {
     const dealId = 'dummy-deal-123';
     const [comments, setComments] = useState<Comment[]>([]);
-    const { user } = useAuthStore();
+    const user = useAuthStore((state) => state.user);
 
     const loadComments = async () => {
         try {

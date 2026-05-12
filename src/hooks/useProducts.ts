@@ -10,9 +10,10 @@ import { Product, ProductFormData, ProductFilters, PRODUCT_LIMITS } from '../typ
 import { followedBusinessNotificationTrigger } from '../services/followedBusinessNotificationTrigger';
 import { productService } from '../services/productService';
 import { logActivity } from '../services/businessActivityLogService';
+import { productCategoryService } from '../services/productCategoryService';
 
 export const useProducts = (businessId?: string) => {
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const [products, setProducts] = useState<Product[]>([]);
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(false);
@@ -170,6 +171,16 @@ export const useProducts = (businessId?: string) => {
 
       if (createError) throw createError;
 
+      // Save Epic 12 Categories
+      if (productData.category_selections?.primary) {
+          try {
+              await productCategoryService.saveProductCategories(data.id, productData.category_selections);
+          } catch (catErr) {
+              console.error('Failed to save product categories:', catErr);
+              toast.error('Product created, but failed to save categories');
+          }
+      }
+
       // Notify followers (Fire and forget)
       followedBusinessNotificationTrigger.notifyNewProduct(businessIdToUse, data as Product).catch(console.error);
 
@@ -267,6 +278,16 @@ export const useProducts = (businessId?: string) => {
         .single();
 
       if (updateError) throw updateError;
+
+      // Save Epic 12 Categories
+      if (updates.category_selections?.primary) {
+          try {
+              await productCategoryService.saveProductCategories(productId, updates.category_selections);
+          } catch (catErr) {
+              console.error('Failed to update product categories:', catErr);
+              toast.error('Product updated, but failed to save categories');
+          }
+      }
 
       // Update local state
       setProducts(prev => prev.map(p => p.id === productId ? data : p));

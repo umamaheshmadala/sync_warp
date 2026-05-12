@@ -16,7 +16,9 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
   currentAvatar,
   onUploadComplete
 }) => {
-  const { user, profile, updateProfile } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
+  const profile = useAuthStore((state) => state.profile);
+  const updateProfile = useAuthStore(s => s.updateProfile);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -132,7 +134,8 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, compressedFile, {
-          cacheControl: '3600',
+          cacheControl: '31536000',
+          contentType: file.type || 'image/jpeg',
           upsert: false
         });
 
@@ -179,7 +182,7 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
         >
           <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-800 ring-4 ring-cyan-400 shadow-2xl transition-transform transform group-hover:scale-105 relative">
             {avatarUrl ? (
-              <img
+              <img loading="lazy" decoding="async" 
                 src={avatarUrl}
                 alt="Avatar"
                 className="w-full h-full object-cover"
@@ -255,7 +258,7 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
             >
               <X className="w-8 h-8" />
             </button>
-            <img
+            <img loading="lazy" decoding="async" 
               src={avatarUrl}
               alt="Profile"
               className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"

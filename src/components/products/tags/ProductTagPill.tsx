@@ -1,8 +1,16 @@
 
 import React from 'react';
 import { ProductTagConfig, ProductTagType } from '../../../types/product';
-import * as Icons from 'lucide-react';
+import { Sparkles, AlertTriangle, Tag, TrendingUp, Star } from 'lucide-react';
 import { cn } from '../../../lib/utils'; // Assuming utils exist, or I can use clsx/tailwind directly
+
+const ICON_MAP: Record<string, React.ElementType> = {
+    Sparkles,
+    AlertTriangle,
+    Tag,
+    TrendingUp,
+    Star
+};
 
 interface ProductTagPillProps {
     type: ProductTagType;
@@ -13,7 +21,7 @@ interface ProductTagPillProps {
 
 export const ProductTagPill: React.FC<ProductTagPillProps> = ({ type, config, className, size = 'md' }) => {
     // Dynamically get icon component
-    const IconComponent = config.icon ? (Icons as any)[config.icon] : null;
+    const IconComponent = config.icon ? ICON_MAP[config.icon] : null;
 
     return (
         <div

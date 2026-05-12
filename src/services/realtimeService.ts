@@ -47,6 +47,22 @@ class RealtimeService {
   private appStateListener?: any;
   private networkListener?: any;
   private lastSyncTimestamp?: string;
+  private activeConversationId?: string;
+
+  // Multiplexed callback registries
+  private globalCallbacks: {
+    onConversationUpdate?: ConversationUpdateCallback; // List updates via participants
+    onNotification?: (payload: any) => void;
+    onMuteUpdate?: (payload: any) => void;
+  } = {};
+
+  private chatCallbacks: {
+    onNewMessage?: MessageCallback;
+    onMessageUpdate?: MessageCallback;
+    onReadReceipt?: (payload: any) => void;
+    onTypingChange?: TypingCallback;
+    onConversationUpdate?: (payload: any) => void; // Specific conversation updates
+  } = {};
 
   /**
    * Initialize the realtime service with platform-specific handlers
@@ -142,13 +158,13 @@ class RealtimeService {
       // Need dynamic import to avoid circular dependency since messagingService uses us? 
       // Or simply import it at the top (messagingService doesn't import realtimeService usually)
       const { messagingService } = await import('./messagingService');
-      const { useMessagingStore } = await import('../store/messagingStore');
+      const { messageCacheManager } = await import('../utils/messageCacheManager');
 
       const missedMessages = await messagingService.fetchMessagesSince(this.lastSyncTimestamp);
 
       if (missedMessages.length > 0) {
         console.log(`📥 Upserting ${missedMessages.length} missed messages...`);
-        useMessagingStore.getState().upsertMessages(missedMessages);
+        messageCacheManager.upsertMessages(missedMessages);
 
         // Story 8.11.4 Fix: Invalidate React Query cache to reflect new messages in UI
         console.log('🔄 Invalidating text query cache to reflect catch-up...');
@@ -158,8 +174,8 @@ class RealtimeService {
       }
 
       this.lastSyncTimestamp = new Date().toISOString();
-    } catch (error) {
-      console.error('❌ Catch-up sync failed:', error);
+    } catch (error: any) {
+      console.error('❌ Catch-up sync failed:', error instanceof Error ? error.message : JSON.stringify(error));
     }
   }
 
@@ -231,6 +247,179 @@ class RealtimeService {
   }
 
   // ============================================================================
+  // Multiplexed Channels
+  // ============================================================================
+
+  /**
+   * Setup the single global channel for the user's conversation list and notifications
+   * @param userId - ID of the authenticated user
+   */
+  setupGlobalChannel(userId: string): void {
+    const channelName = 'user-global';
+
+    // Prevent duplicated setup
+    if (this.channels.has(channelName)) return;
+
+    console.log(`🌐 [RealtimeService] Setting up global multiplexed channel for user: ${userId}`);
+
+    const channel = supabase
+      .channel(channelName)
+      // 1. Conversation list updates
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'conversation_participants',
+          filter: `user_id=eq.${userId}`
+        },
+        (payload) => {
+          this.globalCallbacks.onConversationUpdate?.(payload);
+        }
+      )
+      // 2. In-app notifications
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notification_log',
+          filter: `user_id=eq.${userId}`
+        },
+        (payload) => {
+          this.globalCallbacks.onNotification?.(payload);
+        }
+      )
+      // 3. Mute status updates
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'conversation_mutes',
+          filter: `user_id=eq.${userId}`
+        },
+        (payload) => {
+          console.log('🔕 Mute update:', payload.eventType);
+          this.globalCallbacks.onMuteUpdate?.(payload);
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ [RealtimeService] Global channel subscribed');
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.error(`❌ [RealtimeService] Global channel error: ${status}`);
+          setTimeout(() => channel.subscribe(), 5000);
+        }
+      });
+
+    this.channels.set(channelName, channel);
+  }
+
+  /**
+   * Setup the single multiplexed channel for the currently active chat
+   * @param conversationId - Conversation UUID
+   */
+  setupActiveChatChannel(conversationId: string): void {
+    const channelName = 'chat-active';
+
+    // Avoid reconnecting if already on this chat
+    if (this.activeConversationId === conversationId && this.channels.has(channelName)) {
+      return;
+    }
+
+    this.unsubscribe(channelName);
+    this.activeConversationId = conversationId;
+
+    // Reset callbacks for the new chat
+    this.chatCallbacks = {};
+
+    console.log(`💬 [RealtimeService] Setting up active chat multiplexed channel for: ${conversationId}`);
+
+    const channel = supabase
+      .channel(channelName)
+      // 1. New messages
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${conversationId}`
+        },
+        (payload) => {
+          const newMessage = payload.new as Message;
+          // Client-side safety filter
+          if (newMessage.conversation_id === this.activeConversationId) {
+            this.chatCallbacks.onNewMessage?.(newMessage);
+          }
+        }
+      )
+      // 2. Message updates (edits, deletions)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${conversationId}`
+        },
+        (payload) => {
+          const updatedMessage = payload.new as Message;
+          if (updatedMessage.conversation_id === this.activeConversationId) {
+            this.chatCallbacks.onMessageUpdate?.(updatedMessage);
+          }
+        }
+      )
+      // 3. Read receipts
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'message_read_receipts',
+          filter: `conversation_id=eq.${conversationId}`
+        },
+        (payload) => {
+          this.chatCallbacks.onReadReceipt?.(payload.new);
+        }
+      )
+      // 4. Typing indicators (broadcast)
+      .on(
+        'broadcast',
+        { event: 'typing' },
+        (payload) => {
+          const { userId, isTyping } = payload.payload;
+          this.chatCallbacks.onTypingChange?.(userId, isTyping);
+        }
+      )
+      // 5. Conversation specific updates (e.g., pin, archive triggered by other devices)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'conversations',
+          filter: `id=eq.${conversationId}`
+        },
+        (payload) => {
+          console.log('📊 Active chat conversation updated:', payload.new.id);
+          this.chatCallbacks.onConversationUpdate?.(payload.new);
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log(`✅ [RealtimeService] Active chat channel subscribed (${conversationId})`);
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.error(`❌ [RealtimeService] Active chat channel error: ${status}`);
+          setTimeout(() => channel.subscribe(), 5000);
+        }
+      });
+
+    this.channels.set(channelName, channel);
+  }
+
+  // ============================================================================
   // Message Subscriptions
   // ============================================================================
 
@@ -249,56 +438,15 @@ class RealtimeService {
     conversationId: string,
     onNewMessage: MessageCallback
   ): () => void {
-    const channelName = `messages:${conversationId}`;
-
-    // Remove existing subscription if any
-    this.unsubscribe(channelName);
-
-    console.log(`🔔 [RealtimeService] Setting up message subscription for conversation: ${conversationId}`);
-
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `conversation_id=eq.${conversationId}` // Granular subscription to reduce "firehose" effect
-        },
-        (payload: RealtimePostgresChangesPayload<Message>) => {
-          const newMessage = payload.new as Message;
-
-          // Client-side filter: Only process messages for this conversation
-          if (newMessage.conversation_id === conversationId) {
-            console.log('📨 [RealtimeService] New message received for conversation:', {
-              messageId: newMessage.id,
-              conversationId: newMessage.conversation_id,
-              content: newMessage.content?.substring(0, 30) + '...'
-            });
-            onNewMessage(newMessage);
-          }
+    if (this.activeConversationId === conversationId) {
+      this.chatCallbacks.onNewMessage = onNewMessage;
+      return () => {
+        if (this.chatCallbacks.onNewMessage === onNewMessage) {
+          this.chatCallbacks.onNewMessage = undefined;
         }
-      )
-      .subscribe((status) => {
-        console.log(`🔔 [RealtimeService] Message subscription status [${channelName}]:`, status);
-        if (status === 'SUBSCRIBED') {
-          console.log(`✅ [RealtimeService] Successfully subscribed to messages for ${conversationId}`);
-        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          console.error(`❌ [RealtimeService] Channel error/timeout for ${channelName}: ${status}`);
-          // Story 8.11.1 Fix: Fallback Logic
-          // Try to resubscribe after a short delay
-          setTimeout(() => {
-            console.log(`🔄 Attempting to resubscribe to ${channelName}...`);
-            channel.subscribe();
-          }, 5000);
-        }
-      });
-
-    this.channels.set(channelName, channel);
-
-    // Return unsubscribe function
-    return () => this.unsubscribe(channelName);
+      };
+    }
+    return () => { };
   }
 
   /**
@@ -312,32 +460,15 @@ class RealtimeService {
     conversationId: string,
     onMessageUpdate: MessageCallback
   ): () => void {
-    const channelName = `message-updates:${conversationId}`;
-
-    // Remove existing subscription if any
-    this.unsubscribe(channelName);
-
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'messages',
-          filter: `conversation_id=eq.${conversationId}`
-        },
-        (payload: RealtimePostgresChangesPayload<Message>) => {
-          const newMessage = payload.new as Message;
-          console.log('✏️ Message updated:', newMessage.id);
-          onMessageUpdate(newMessage);
+    if (this.activeConversationId === conversationId) {
+      this.chatCallbacks.onMessageUpdate = onMessageUpdate;
+      return () => {
+        if (this.chatCallbacks.onMessageUpdate === onMessageUpdate) {
+          this.chatCallbacks.onMessageUpdate = undefined;
         }
-      )
-      .subscribe();
-
-    this.channels.set(channelName, channel);
-
-    return () => this.unsubscribe(channelName);
+      };
+    }
+    return () => { };
   }
 
   /**
@@ -354,44 +485,15 @@ class RealtimeService {
     conversationId: string,
     onReadReceipt: (payload: any) => void
   ): () => void {
-    const channelName = `read-receipts:${conversationId}`;
-
-    // Remove existing subscription if any
-    this.unsubscribe(channelName);
-
-    console.log(`🔔 [RealtimeService] Setting up read receipt subscription for conversation: ${conversationId}`);
-
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'message_read_receipts',
-          filter: `conversation_id=eq.${conversationId}` // Granular subscription
-        },
-        (payload) => {
-          const receipt = payload.new as any;
-          console.log('✓ [RealtimeService] Read receipt received:', {
-            messageId: receipt.message_id,
-            readBy: receipt.user_id,
-            readAt: receipt.read_at
-          });
-          // Pass all receipts - the callback will handle filtering by message IDs
-          onReadReceipt(receipt);
+    if (this.activeConversationId === conversationId) {
+      this.chatCallbacks.onReadReceipt = onReadReceipt;
+      return () => {
+        if (this.chatCallbacks.onReadReceipt === onReadReceipt) {
+          this.chatCallbacks.onReadReceipt = undefined;
         }
-      )
-      .subscribe((status) => {
-        console.log(`🔔 [RealtimeService] Read receipt subscription status [${channelName}]:`, status);
-        if (status === 'SUBSCRIBED') {
-          console.log(`✅ [RealtimeService] Successfully subscribed to read receipts for ${conversationId}`);
-        }
-      });
-
-    this.channels.set(channelName, channel);
-
-    return () => this.unsubscribe(channelName);
+      };
+    }
+    return () => { };
   }
 
   /**
@@ -405,29 +507,15 @@ class RealtimeService {
     conversationId: string,
     onUpdate: (payload: any) => void
   ): () => void {
-    const channelName = `conversation-updates:${conversationId}`;
-
-    this.unsubscribe(channelName);
-
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'conversations',
-          filter: `id=eq.${conversationId}`
-        },
-        (payload) => {
-          console.log('📊 Conversation updated:', payload.new.id);
-          onUpdate(payload.new);
+    if (this.activeConversationId === conversationId) {
+      this.chatCallbacks.onConversationUpdate = onUpdate;
+      return () => {
+        if (this.chatCallbacks.onConversationUpdate === onUpdate) {
+          this.chatCallbacks.onConversationUpdate = undefined;
         }
-      )
-      .subscribe();
-
-    this.channels.set(channelName, channel);
-    return () => this.unsubscribe(channelName);
+      };
+    }
+    return () => { };
   }
 
   /**
@@ -441,53 +529,15 @@ class RealtimeService {
     userId: string,
     onMuteUpdate: (payload: any) => void
   ): () => void {
-    const channelName = `mute-updates:${userId}`;
-
-    this.unsubscribe(channelName);
-
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'conversation_mutes',
-          filter: `user_id=eq.${userId}`
-        },
-        (payload) => {
-          console.log('🔕 Mute update:', payload.eventType);
-          onMuteUpdate(payload);
-        }
-      )
-      .subscribe();
-
-    this.channels.set(channelName, channel);
-    return () => this.unsubscribe(channelName);
+    this.globalCallbacks.onMuteUpdate = onMuteUpdate;
+    return () => {
+      if (this.globalCallbacks.onMuteUpdate === onMuteUpdate) {
+        this.globalCallbacks.onMuteUpdate = undefined;
+      }
+    };
   }
 
-  /**
-   * Subscribe to conversation list updates (granular)
-   * 
-   * @param userId - User UUID
-   * @param onListUpdate - Callback with payload
-   * @returns Unsubscribe function
-   */
-  subscribeToConversationList(
-    userId: string,
-    onListUpdate: (payload: any) => void
-  ): () => void {
-    const channelName = `conversation-list:${userId}`;
-
-    this.unsubscribe(channelName);
-
-    // Note: We can't easily filter conversations by user_id in the participants array via realtime filter.
-    // Usually we rely on RLS to only send events for rows the user can see.
-    // Or we subscribe to `conversation_participants` table.
-    // For now, let's assume we subscribe to conversations and RLS handles visibility, or we accept some noise.
-    // For now, let's assume we subscribe to conversations and RLS handles visibility, or we accept some noise.
-    return () => this.unsubscribe(channelName);
-  }
+  // Note: The deprecated `subscribeToConversationList` stub has been removed.
 
   /**
    * Subscribe to in-app notifications (toasts)
@@ -501,60 +551,17 @@ class RealtimeService {
     userId: string,
     onNotification: (payload: any) => void
   ): () => void {
-    // Unique channel name to prevent conflicts with other listeners
-    const channelName = `realtime-notifications-toast-${userId}`;
+    if (!userId) {
+      console.warn('[RealtimeService] ⚠️ Cannot subscribe to notifications: userId is missing');
+      return () => { };
+    }
 
-    this.unsubscribe(channelName);
-
-    console.log(`[RealtimeService] 🚀 Setting up in-app notification subscription for user: ${userId}`);
-    console.log(`[RealtimeService] 📡 Channel name: ${channelName}`);
-    console.log(`[RealtimeService] 📊 Current active channels: ${this.getActiveChannelCount()}`);
-
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notification_log'
-          // Filter removed: Relying on RLS policy to filter rows by user_id. 
-          // Explicit filters can sometimes cause issues if types don't match perfectly.
-        },
-        (payload) => {
-          console.log('🔔 [RealtimeService] ✅ In-app notification event received!');
-          console.log('🔔 [RealtimeService] 📦 Payload:', {
-            id: payload.new.id,
-            type: payload.new.notification_type,
-            userId: payload.new.user_id,
-            timestamp: new Date().toISOString()
-          });
-          onNotification(payload);
-        }
-      )
-      .subscribe((status) => {
-        console.log(`🔔 [RealtimeService] 📡 Subscription status update [${channelName}]:`, status);
-
-        if (status === 'SUBSCRIBED') {
-          console.log(`✅ [RealtimeService] 🎉 Successfully subscribed to in-app notifications!`);
-          console.log(`✅ [RealtimeService] Listening for INSERT events on notification_log`);
-          console.log(`✅ [RealtimeService] User filter: ${userId} (via RLS)`);
-        } else if (status === 'CHANNEL_ERROR') {
-          console.error(`❌ [RealtimeService] Channel error for ${channelName}`);
-          console.error(`❌ [RealtimeService] This might indicate a network or permission issue`);
-        } else if (status === 'TIMED_OUT') {
-          console.error(`⏱️ [RealtimeService] Channel subscription timed out: ${channelName}`);
-        } else if (status === 'CLOSED') {
-          console.warn(`🔌 [RealtimeService] Channel closed: ${channelName}`);
-        } else {
-          console.log(`📊 [RealtimeService] Status: ${status} for channel: ${channelName}`);
-        }
-      });
-
-    this.channels.set(channelName, channel);
-    console.log(`[RealtimeService] 💾 Channel registered. Total channels: ${this.getActiveChannelCount()}`);
-
-    return () => this.unsubscribe(channelName);
+    this.globalCallbacks.onNotification = onNotification;
+    return () => {
+      if (this.globalCallbacks.onNotification === onNotification) {
+        this.globalCallbacks.onNotification = undefined;
+      }
+    };
   }
 
   // ============================================================================
@@ -572,23 +579,15 @@ class RealtimeService {
     conversationId: string,
     onTypingChange: TypingCallback
   ): () => void {
-    const channelName = `typing:${conversationId}`;
-
-    // Remove existing subscription if any
-    this.unsubscribe(channelName);
-
-    const channel = supabase
-      .channel(channelName)
-      .on('broadcast', { event: 'typing' }, (payload) => {
-        const { userId, isTyping } = payload.payload;
-        console.log('⌨️ Typing indicator:', userId, isTyping);
-        onTypingChange(userId, isTyping);
-      })
-      .subscribe();
-
-    this.channels.set(channelName, channel);
-
-    return () => this.unsubscribe(channelName);
+    if (this.activeConversationId === conversationId) {
+      this.chatCallbacks.onTypingChange = onTypingChange;
+      return () => {
+        if (this.chatCallbacks.onTypingChange === onTypingChange) {
+          this.chatCallbacks.onTypingChange = undefined;
+        }
+      };
+    }
+    return () => { };
   }
 
   /**
@@ -598,10 +597,10 @@ class RealtimeService {
    * @param isTyping - Whether user is typing
    */
   async broadcastTyping(conversationId: string, isTyping: boolean): Promise<void> {
-    const channelName = `typing:${conversationId}`;
+    const channelName = 'chat-active';
     const channel = this.channels.get(channelName);
 
-    if (channel) {
+    if (channel && this.activeConversationId === conversationId) {
       try {
         const user = (await supabase.auth.getUser()).data.user;
         await channel.send({
@@ -613,7 +612,7 @@ class RealtimeService {
         console.error('❌ Failed to broadcast typing:', error);
       }
     } else {
-      console.warn('⚠️ Typing channel not found. Call subscribeToTyping first.');
+      console.warn('⚠️ Typing channel not found or inactive. Call subscribeToTyping first.');
     }
   }
 
@@ -683,42 +682,20 @@ class RealtimeService {
   // ============================================================================
 
   /**
-   * Subscribe to conversation list updates
-   * Triggers on new conversations and new messages
-   * 
-   * @param onUpdate - Callback when conversation list should refresh
-   * @returns Unsubscribe function
-   */
-  subscribeToConversations(onUpdate: ConversationUpdateCallback): () => void {
-    const channelName = 'user-conversations';
-
-    // Remove existing subscription if any
-    this.unsubscribe(channelName);
-
-    // Subscribe to both conversations and messages tables
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'conversations' },
-        (payload) => {
-          console.log('🔄 Conversations table updated');
-          onUpdate(payload); // Pass payload for future optimization
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'notification_log' },
-        (payload) => {
-          console.log('🔄 New notification log (updating conversation list)');
-          onUpdate(payload); // Pass payload for future optimization
-        }
-      )
-      .subscribe();
-
-    this.channels.set(channelName, channel);
-
-    return () => this.unsubscribe(channelName);
+ * Subscribe to conversation list updates
+ * Triggers on new conversations and changes relevant to the current user
+ * 
+ * @param userId - The ID of the authenticated user
+ * @param onUpdate - Callback when conversation list should refresh
+ * @returns Unsubscribe function
+ */
+  subscribeToConversations(userId: string, onUpdate: ConversationUpdateCallback): () => void {
+    this.globalCallbacks.onConversationUpdate = onUpdate;
+    return () => {
+      if (this.globalCallbacks.onConversationUpdate === onUpdate) {
+        this.globalCallbacks.onConversationUpdate = undefined;
+      }
+    };
   }
 
   // ============================================================================

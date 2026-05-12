@@ -7,22 +7,18 @@ import { StatusBar, Style } from '@capacitor/status-bar';
 import { useQueryClient } from '@tanstack/react-query';
 import Header from './Header';
 import BottomNavigation from '../BottomNavigation';
-import { useNavigate } from 'react-router-dom';
-import { useNavigationPreferences } from '../../hooks/useNavigationState';
-import GestureHandler from '../GestureHandler';
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 import { notificationSettingsService } from '@/services/notificationSettingsService';
 import { PullToRefresh } from '@/components/ui/PullToRefresh';
+import { useThemeStore } from '@/store/themeStore';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  const { resolvedTheme } = useThemeStore();
 
   // Initialize Realtime Notifications
   useRealtimeNotifications();
-
-  const navigate = useNavigate();
-  const { preferences } = useNavigationPreferences();
 
   // Don't show header/nav on auth pages and admin pages (admin has its own layout)
   const isAuthPage = location.pathname.startsWith('/auth');
@@ -32,31 +28,42 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const isMessagesRoute = location.pathname.includes('/messages');
 
   // Configure Keyboard and Listeners
+  // Story 8.12.1: We use resize: 'none' in config and handle layout manually for better interactive dismissal
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  // Dynamic Status Bar Theme based on resolvedTheme
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
 
-    // Fix Android Safe Area / Status Bar Overlap - Re-applied as Runtime Fix works best for Physical Devices
     if (Capacitor.getPlatform() === 'android') {
+      const isDark = resolvedTheme === 'dark';
       StatusBar.setOverlaysWebView({ overlay: false }).catch(() => { });
-      StatusBar.setBackgroundColor({ color: '#ffffff' }).catch(() => { });
-      StatusBar.setStyle({ style: Style.Light }).catch(() => { });
+      StatusBar.setBackgroundColor({ color: isDark ? '#1f2937' : '#ffffff' }).catch(() => { });
+      StatusBar.setStyle({ style: isDark ? Style.Dark : Style.Light }).catch(() => { });
     }
+  }, [resolvedTheme]);
 
-    // Set Keyboard Resize Mode to Native as requested by user
-    Keyboard.setResizeMode({ mode: KeyboardResize.Native });
-    // Disable webview scroll to let our CSS handle scrolling within containers
-    Keyboard.setScroll({ isDisabled: true });
+  // Keyboard Listeners
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    // Note: 'resize: none' is set in capacitor.config.ts
+    // We intentionally do NOT set it here to avoid race conditions overriding the config
 
     let showListener: any;
     let hideListener: any;
 
     const setupListeners = async () => {
-      showListener = await Keyboard.addListener('keyboardWillShow', () => {
+      showListener = await Keyboard.addListener('keyboardWillShow', (info) => {
+        console.log('[AppLayout] ⌨️ keyboardWillShow', info.keyboardHeight);
         setIsKeyboardVisible(true);
+        setKeyboardHeight(info.keyboardHeight);
       });
 
       hideListener = await Keyboard.addListener('keyboardWillHide', () => {
+        console.log('[AppLayout] ⌨️ keyboardWillHide');
         setIsKeyboardVisible(false);
+        setKeyboardHeight(0);
       });
     };
 
@@ -113,59 +120,56 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const shouldShowBottomNav = !isKeyboardVisible && !isAuthPage;
 
   return (
-    <GestureHandler
-      onSwipeRight={() => {
-        if (preferences.swipeGesturesEnabled) {
-          console.log('[AppLayout] Swipe Right Detected -> Go Back');
-          navigate(-1);
-        }
-      }}
-      disabled={!preferences.swipeGesturesEnabled}
-      enableHaptics={preferences.enableHapticFeedback}
-      className="w-full h-full"
-    >
-      <div className="fixed inset-0 w-full h-full flex flex-col overflow-hidden bg-gray-50">
-        <Header />
-        <main
-          className={`flex-1 flex flex-col min-h-0 relative ${isMessagesRoute ? 'overflow-hidden' : 'overflow-y-auto'}`}
-          style={{
-            overscrollBehaviorY: 'none', // Prevent bounce effects
-            WebkitOverflowScrolling: 'touch' // Ensure momentum scrolling
-          }}
-        >
-          {/* Messages route needs full-width layout without PullToRefresh constraints */}
-          {isMessagesRoute ? (
+    <div className="fixed inset-0 w-full h-full flex flex-col overflow-hidden bg-gray-50">
+      <Header />
+      <main
+        className={`flex-1 flex flex-col min-h-0 relative ${isMessagesRoute ? 'overflow-hidden' : 'overflow-y-auto will-change-scroll'}`}
+        style={{
+          overscrollBehaviorY: 'none', // Prevent bounce effects
+          WebkitOverflowScrolling: 'touch' // Ensure momentum scrolling
+        }}
+      >
+        {/* Messages route needs full-width layout without PullToRefresh constraints */}
+        {isMessagesRoute ? (
+          <div
+            className="w-full flex-1 min-h-0 flex flex-col"
+            style={{
+              paddingTop: 'calc(54px + env(safe-area-inset-top, 0px))',
+              // Adjust bottom padding:
+              // 1. If keyboard visible (non-Android) -> specific keyboard height
+              // 2. If nav visible -> nav height + safe area
+              // 3. Otherwise -> 0
+              paddingBottom: (isKeyboardVisible && Capacitor.getPlatform() !== 'android')
+                ? `${keyboardHeight}px`
+                : (shouldShowBottomNav ? 'calc(56px + env(safe-area-inset-bottom, 0px))' : '0px'),
+              transition: 'padding-bottom 0.2s cubic-bezier(0.2, 0.0, 0, 1.0)' // match iOS keyboard timing roughly
+            }}
+          >
+            {children}
+          </div>
+        ) : (
+          <PullToRefresh
+            onRefresh={handlePullToRefresh}
+            disabled={false}
+            className="w-full max-w-4xl mx-auto min-h-full"
+            style={{ paddingTop: 'calc(54px + env(safe-area-inset-top, 0px))' }}
+          >
+            {children}
+            {/* Spacer for Bottom Navigation - Physical element ensures scroll clearance */}
             <div
-              className="w-full h-full flex flex-col"
-              style={{ paddingTop: 'calc(54px + env(safe-area-inset-top, 0px))' }}
-            >
-              {children}
-            </div>
-          ) : (
-            <PullToRefresh
-              onRefresh={handlePullToRefresh}
-              disabled={false}
-              className="w-full max-w-4xl mx-auto min-h-full"
-            >
-              <div style={{ paddingTop: 'calc(54px + env(safe-area-inset-top, 0px))' }}>
-                {children}
-                {/* Spacer for Bottom Navigation - Physical element ensures scroll clearance */}
-                <div
-                  className="w-full transition-all duration-200"
-                  style={{
-                    height: shouldShowBottomNav
-                      ? 'calc(56px + env(safe-area-inset-bottom, 0px) + 3px)'
-                      : '0px'
-                  }}
-                />
-              </div>
-            </PullToRefresh>
-          )}
-        </main>
+              className="w-full transition-all duration-200"
+              style={{
+                height: shouldShowBottomNav
+                  ? 'calc(56px + env(safe-area-inset-bottom, 0px) + 3px)'
+                  : '0px',
+              }}
+            />
+          </PullToRefresh>
+        )}
+      </main>
 
-        {/* Fixed Bottom Navigation */}
-        {shouldShowBottomNav && <BottomNavigation currentRoute={location.pathname} />}
-      </div>
-    </GestureHandler>
+      {/* Fixed Bottom Navigation */}
+      {shouldShowBottomNav && <BottomNavigation currentRoute={location.pathname} />}
+    </div >
   );
 }

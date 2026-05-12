@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
+import './utils/performanceMonitoring' // Ensure Web Vitals singleton auto-initializes
 
 // Custom Typography System - using system fonts as per new philosophy
 console.log('🚀 App Version: Built at 2025-12-25 11:15'); // Manual Timestamp for Verification

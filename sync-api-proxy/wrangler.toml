@@ -1,0 +1,9 @@
+name = "sync-api-proxy"
+main = "src/index.ts"
+compatibility_date = "2024-03-29"
+
+[observability]
+enabled = true
+
+# The environment variables are set securely via `npx wrangler secret put X`
+# DO NOT include production secrets in this file.

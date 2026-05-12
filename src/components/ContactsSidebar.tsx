@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import { X, Search, UserPlus, MessageCircle, Users, User, Share2, Trash2, Filter } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../store/authStore';
 import { useFriends } from '../hooks/useFriends';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
@@ -19,7 +18,7 @@ interface ContactsSidebarProps {
 }
 
 const ContactsSidebar: React.FC<ContactsSidebarProps> = ({ isOpen, onClose }) => {
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const {
     friends,
     friendRequests,
@@ -262,7 +261,7 @@ const ContactsSidebar: React.FC<ContactsSidebarProps> = ({ isOpen, onClose }) =>
                             >
                               <div className="relative">
                                 {friend.avatar_url ? (
-                                  <img
+                                  <img loading="lazy" decoding="async" 
                                     className="h-10 w-10 rounded-full"
                                     src={friend.avatar_url}
                                     alt={friend.full_name}

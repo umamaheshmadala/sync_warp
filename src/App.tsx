@@ -17,7 +17,6 @@ import { CustomToast } from './components/ui/CustomToast'
 import { useAuthStore } from './store/authStore'
 import { OfflineBanner } from './components/ui/OfflineBanner'
 import DevMenu from './components/DevMenu'
-import { useUpdateOnlineStatus } from './hooks/useUpdateOnlineStatus'
 import { usePresence } from './hooks/usePresence'
 import { useRealtimeFriends } from './hooks/friends/useRealtimeFriends'
 import { AppDataPrefetcher } from './components/AppDataPrefetcher'
@@ -26,9 +25,12 @@ import { spamConfigService } from './services/SpamConfigService'
 import { FavoritesProvider } from './contexts/FavoritesContext'
 import { DeepLinkModalProvider } from './components/providers/DeepLinkModalProvider'
 import { ShareClickTracker } from './components/analytics/ShareClickTracker'
+import { useTheme } from './hooks/useTheme'
 
 import { queryClient } from './lib/react-query'
 
+// @ts-ignore
+window.queryClient = queryClient;
 // Create persister for IndexedDB (Async Storage)
 // This replaces the old localStorage (Sync) persister to remove the 5MB limit
 const persister = createAsyncStoragePersister({
@@ -40,11 +42,11 @@ const persister = createAsyncStoragePersister({
 function AppContent() {
   const user = useAuthStore(state => state.user)
 
+  // Initialize theme detection on mount (Story 17.4)
+  useTheme()
+
   // Automatically register push notifications when user logs in
   const pushState = usePushNotifications(user?.id ?? null)
-
-  // Track user's online status in database
-  useUpdateOnlineStatus()
 
   // Track real-time presence via Supabase Realtime
   usePresence()
@@ -69,6 +71,9 @@ function AppContent() {
     initRealtime();
 
     if (!Capacitor.isNativePlatform()) return
+
+    // Disable backdrop-blur on native mobile for GPU performance (Story 14.3)
+    document.body.classList.add('native-platform');
 
     // Cap Text Zoom to 1.2x to prevent UI clutter
     TextZoom.getPreferred().then((value) => {
@@ -156,7 +161,13 @@ function App() {
   useEffect(() => {
     const migrateCache = async () => {
       const key = 'REACT_QUERY_OFFLINE_CACHE'
-      const oldData = window.localStorage.getItem(key)
+      let oldData = null;
+
+      try {
+        oldData = window.localStorage.getItem(key)
+      } catch (err) {
+        console.warn('⚠️ Could not access localStorage (possible iOS privacy restriction):', err)
+      }
 
       if (oldData) {
         console.log('📦 Found legacy cache in localStorage. Migrating to IndexedDB...')
@@ -164,7 +175,7 @@ function App() {
           await asyncStorage.setItem(key, oldData)
           window.localStorage.removeItem(key)
           console.log('✅ Migration to IndexedDB successful!')
-          toast.success('App upgraded to high-capacity storage', { icon: '🚀' })
+          // Avoid toast on app boot, can cause visual clutter or errors if DOM isn't ready
         } catch (e) {
           console.error('❌ Storage migration failed:', e)
         }

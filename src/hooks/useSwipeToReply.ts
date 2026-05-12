@@ -1,6 +1,5 @@
-import { useMotionValue, useAnimation, PanInfo } from "framer-motion";
+import { useState, useRef } from "react";
 import { hapticService } from "../services/hapticService";
-import { useState } from "react";
 
 interface SwipeToReplyOptions {
   onReply?: () => void;
@@ -8,40 +7,61 @@ interface SwipeToReplyOptions {
 }
 
 export function useSwipeToReply({ onReply, threshold = 60 }: SwipeToReplyOptions) {
-  const x = useMotionValue(0);
-  const controls = useAnimation();
+  const [x, setX] = useState(0);
   const [isTriggered, setIsTriggered] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const startX = useRef<number | null>(null);
 
-  const onDrag = (event: any, info: PanInfo) => {
-    // Only allow dragging to the right (positive x)
-    if (info.offset.x < 0) return;
+  const onTouchStart = (e: React.TouchEvent | React.MouseEvent) => {
+    const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    startX.current = clientX;
+    setIsDragging(true);
+  };
+
+  const onTouchMove = (e: React.TouchEvent | React.MouseEvent) => {
+    if (startX.current === null) return;
+
+    const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    const deltaX = clientX - startX.current;
+
+    // Only allow dragging to the right (positive x) with resistance (elasticity)
+    const newX = deltaX > 0 ? deltaX * 0.4 : 0;
+
+    setX(newX);
 
     // Haptic feedback when crossing threshold
-    if (!isTriggered && info.offset.x > threshold) {
+    if (!isTriggered && newX > threshold) {
       setIsTriggered(true);
       hapticService.onSwipeSnap();
-    } else if (isTriggered && info.offset.x < threshold) {
+    } else if (isTriggered && newX < threshold) {
       setIsTriggered(false);
     }
   };
 
-  const onDragEnd = async (event: any, info: PanInfo) => {
-    if (info.offset.x > threshold) {
+  const onTouchEnd = () => {
+    if (x > threshold) {
       onReply?.();
     }
-    
-    // Reset state
+
+    // Reset state and snap back
+    setX(0);
     setIsTriggered(false);
-    
-    // Snap back animation
-    controls.start({ x: 0, transition: { type: "spring", stiffness: 400, damping: 25 } });
+    setIsDragging(false);
+    startX.current = null;
   };
 
   return {
     x,
-    controls,
-    onDrag,
-    onDragEnd,
-    isTriggered // Can be used to show/highlight the reply icon
+    isTriggered,
+    isDragging,
+    handlers: {
+      onTouchStart,
+      onTouchMove,
+      onTouchEnd,
+      onMouseDown: onTouchStart,
+      onMouseMove: onTouchMove,
+      onMouseUp: onTouchEnd,
+      onMouseLeave: onTouchEnd
+    }
   };
 }

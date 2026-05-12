@@ -1,13 +1,13 @@
-// src/components/notifications/NotificationList.tsx
 import React, { useState } from 'react';
 import { Check, Inbox } from 'lucide-react';
 import { NotificationItem } from './NotificationItem';
 import { InAppNotification } from '../../services/notificationService';
+import { groupNotifications, NotificationGroup } from '../../utils/notificationGrouping';
 
 interface NotificationListProps {
   notifications: InAppNotification[];
   loading: boolean;
-  onNotificationClick: (notification: InAppNotification) => void;
+  onNotificationClick: (notification: InAppNotification | NotificationGroup) => void;
   onDeleteNotification?: (id: string) => void;
   onMarkAllAsRead?: () => void;
   maxHeight?: string;
@@ -25,6 +25,9 @@ export function NotificationList({
 
   const unreadCount = notifications.filter(n => !n.opened).length;
   const hasUnread = unreadCount > 0;
+
+  // Group notifications
+  const groupedNotifications = groupNotifications(notifications);
 
   const handleMarkAllAsRead = async () => {
     if (!onMarkAllAsRead || !hasUnread) return;
@@ -99,7 +102,7 @@ export function NotificationList({
         className="overflow-y-auto bg-white"
         style={{ maxHeight }}
       >
-        {notifications.map(notification => (
+        {groupedNotifications.map(notification => (
           <NotificationItem
             key={notification.id}
             notification={notification}

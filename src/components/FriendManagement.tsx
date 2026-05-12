@@ -1,6 +1,5 @@
 // src/components/FriendManagement.tsx
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
 import { Users, UserPlus, Activity, MessageSquare, RefreshCw } from 'lucide-react';
 import { useFriends } from '../hooks/friends/useFriends';
 import { useReceivedFriendRequests } from '../hooks/friends/useFriendRequests';
@@ -39,10 +38,8 @@ const FriendManagement: React.FC<FriendManagementProps> = ({ className = '' }) =
         </div>
       )}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <motion.div
-          className="bg-white p-4 rounded-lg shadow-sm border border-gray-200"
-          whileHover={{ scale: 1.02 }}
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        <div
+          className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 safe-hover-scale transition-transform duration-150"
         >
           <div className="flex items-center">
             <div className="flex-shrink-0">
@@ -55,12 +52,10 @@ const FriendManagement: React.FC<FriendManagementProps> = ({ className = '' }) =
               <p className="text-sm font-medium text-gray-500">Total Friends</p>
             </div>
           </div>
-        </motion.div>
+        </div>
 
-        <motion.div
-          className="bg-white p-4 rounded-lg shadow-sm border border-gray-200"
-          whileHover={{ scale: 1.02 }}
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        <div
+          className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 safe-hover-scale transition-transform duration-150"
         >
           <div className="flex items-center">
             <div className="flex-shrink-0">
@@ -75,12 +70,10 @@ const FriendManagement: React.FC<FriendManagementProps> = ({ className = '' }) =
               <p className="text-sm font-medium text-gray-500">Online Now</p>
             </div>
           </div>
-        </motion.div>
+        </div>
 
-        <motion.div
-          className="bg-white p-4 rounded-lg shadow-sm border border-gray-200"
-          whileHover={{ scale: 1.02 }}
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        <div
+          className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 safe-hover-scale transition-transform duration-150"
         >
           <div className="flex items-center">
             <div className="flex-shrink-0">
@@ -93,12 +86,10 @@ const FriendManagement: React.FC<FriendManagementProps> = ({ className = '' }) =
               <p className="text-sm font-medium text-gray-500">Pending Requests</p>
             </div>
           </div>
-        </motion.div>
+        </div>
 
-        <motion.div
-          className="bg-white p-4 rounded-lg shadow-sm border border-gray-200"
-          whileHover={{ scale: 1.02 }}
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        <div
+          className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 safe-hover-scale transition-transform duration-150"
         >
           <div className="flex items-center">
             <div className="flex-shrink-0">
@@ -111,40 +102,34 @@ const FriendManagement: React.FC<FriendManagementProps> = ({ className = '' }) =
               <p className="text-sm font-medium text-gray-500">Recent Activities</p>
             </div>
           </div>
-        </motion.div>
+        </div>
       </div>
 
       {/* Quick Actions */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <h3 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <motion.button
+          <button
             onClick={() => setShowContactsSidebar(true)}
-            className="flex flex-col items-center p-4 bg-indigo-50 rounded-lg border border-indigo-200 hover:bg-indigo-100 transition-colors"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            className="flex flex-col items-center p-4 bg-indigo-50 rounded-lg border border-indigo-200 hover:bg-indigo-100 transition-colors active:scale-95 transition-transform duration-150 safe-hover-scale transition-transform duration-150"
           >
             <Users className="h-8 w-8 text-indigo-600 mb-2" />
             <span className="text-sm font-medium text-indigo-900">View Friends</span>
             <span className="text-xs text-indigo-600">{totalFriends} friends</span>
-          </motion.button>
+          </button>
 
-          <motion.button
+          <button
             onClick={() => setShowAddFriend(true)}
-            className="flex flex-col items-center p-4 bg-blue-50 rounded-lg border border-blue-200 hover:bg-blue-100 transition-colors"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            className="flex flex-col items-center p-4 bg-blue-50 rounded-lg border border-blue-200 hover:bg-blue-100 transition-colors active:scale-95 transition-transform duration-150 safe-hover-scale transition-transform duration-150"
           >
             <UserPlus className="h-8 w-8 text-blue-600 mb-2" />
             <span className="text-sm font-medium text-blue-900">Add Friends</span>
             <span className="text-xs text-blue-600">Find new connections</span>
-          </motion.button>
+          </button>
 
-          <motion.button
+          <button
             onClick={() => setShowFriendRequests(true)}
-            className="flex flex-col items-center p-4 bg-green-50 rounded-lg border border-green-200 hover:bg-green-100 transition-colors relative"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            className="flex flex-col items-center p-4 bg-green-50 rounded-lg border border-green-200 hover:bg-green-100 transition-colors relative active:scale-95 transition-transform duration-150 safe-hover-scale transition-transform duration-150"
           >
             <MessageSquare className="h-8 w-8 text-green-600 mb-2" />
             <span className="text-sm font-medium text-green-900">Friend Requests</span>
@@ -156,16 +141,15 @@ const FriendManagement: React.FC<FriendManagementProps> = ({ className = '' }) =
                 {receivedRequests.length}
               </div>
             )}
-          </motion.button>
+          </button>
 
-          <motion.div
-            className="flex flex-col items-center p-4 bg-purple-50 rounded-lg border border-purple-200"
-            whileHover={{ scale: 1.05 }}
+          <div
+            className="flex flex-col items-center p-4 bg-purple-50 rounded-lg border border-purple-200 safe-hover-scale transition-transform duration-150"
           >
             <Activity className="h-8 w-8 text-purple-600 mb-2" />
             <span className="text-sm font-medium text-purple-900">Activity Feed</span>
             <span className="text-xs text-purple-600">See friend activities</span>
-          </motion.div>
+          </div>
         </div>
       </div>
 

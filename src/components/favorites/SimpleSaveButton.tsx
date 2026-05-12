@@ -3,7 +3,6 @@
 
 import React, { useState } from 'react';
 import { Heart } from 'lucide-react';
-import { motion } from 'framer-motion';
 import useUnifiedFavorites from '../../hooks/useUnifiedFavorites';
 import { cn } from '../../lib/utils';
 
@@ -103,7 +102,7 @@ const SimpleSaveButton: React.FC<SimpleSaveButtonProps> = ({
 
   return (
     <div className={cn("inline-flex items-center", className)}>
-      <motion.button
+      <button
         onClick={handleToggle}
         disabled={disabled || isAnimating || !favorites.isAuthenticated}
         className={cn(
@@ -115,16 +114,11 @@ const SimpleSaveButton: React.FC<SimpleSaveButtonProps> = ({
           !favorites.isAuthenticated && "opacity-60 cursor-not-allowed",
           "active:scale-95"
         )}
-        whileTap={{ scale: 0.95 }}
         aria-label={isFavorited ? `Remove from favorites` : `Add to favorites`}
         title={isFavorited ? `Remove from favorites` : `Add to favorites`}
       >
         {/* Heart Icon */}
-        <motion.div
-          animate={{
-            scale: isAnimating ? [1, 1.2, 1] : 1,
-          }}
-          transition={{ duration: 0.3 }}
+        <div
           className="flex items-center justify-center"
         >
           <Heart
@@ -134,30 +128,23 @@ const SimpleSaveButton: React.FC<SimpleSaveButtonProps> = ({
               isFavorited ? "fill-current text-red-600" : "text-current"
             )}
           />
-        </motion.div>
+        </div>
 
         {/* Loading indicator */}
         {isAnimating && (
-          <motion.div
-            className="absolute inset-0 rounded-full bg-current opacity-20"
-            initial={{ scale: 0 }}
-            animate={{ scale: 2, opacity: 0 }}
-            transition={{ duration: 0.4 }}
+          <div
+            className="absolute inset-0 rounded-full bg-current opacity-20 animate-fadeIn"
           />
         )}
-      </motion.button>
+      </button>
 
       {/* Optional label */}
       {showLabel && (
-        <motion.span
-          animate={{ 
-            opacity: isFavorited ? 1 : 0.7,
-            color: isFavorited ? "#dc2626" : "#6b7280"
-          }}
+        <span
           className="ml-2 text-sm font-medium transition-colors duration-200"
         >
           {isFavorited ? savedLabel : unsavedLabel}
-        </motion.span>
+        </span>
       )}
     </div>
   );

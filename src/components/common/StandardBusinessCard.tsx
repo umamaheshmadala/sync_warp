@@ -192,7 +192,7 @@ export const StandardBusinessCard: React.FC<StandardBusinessCardProps> = ({
         {/* Pop-out Avatar */}
         <div className="absolute -left-8 top-1/2 -translate-y-1/2 w-20 h-20 rounded-full border-4 border-white shadow-lg bg-white overflow-hidden flex-shrink-0 z-20">
           {business.logo_url ? (
-            <img
+            <img loading="lazy" decoding="async" 
               src={business.logo_url}
               alt={businessName}
               className="w-full h-full object-cover"
@@ -209,7 +209,7 @@ export const StandardBusinessCard: React.FC<StandardBusinessCardProps> = ({
           {/* Row 1: Name + Badge */}
           <div className="flex items-center gap-2">
             <h3
-              className="font-bold text-gray-900 text-lg truncate leading-tight group-hover:text-indigo-600 transition-colors"
+              className="font-semibold text-gray-900 text-base truncate leading-tight group-hover:text-indigo-600 transition-colors"
               dangerouslySetInnerHTML={{ __html: displayName }}
             />
 
@@ -253,7 +253,7 @@ export const StandardBusinessCard: React.FC<StandardBusinessCardProps> = ({
         {/* Action button container - mimicking SearchBusinessCard's right section */}
         {actionButton && (
           <div
-            className="flex items-center gap-2 pl-4 border-l border-gray-100 self-stretch"
+            className="flex items-center gap-2 pl-4 self-stretch"
             onClick={(e) => e.stopPropagation()}
           >
             {actionButton}
@@ -282,7 +282,7 @@ export const StandardBusinessCard: React.FC<StandardBusinessCardProps> = ({
       {/* Cover Image or Gradient - Hidden on mobile, shown on desktop */}
       <div className="hidden md:block relative h-32 bg-gradient-to-br from-indigo-500 to-purple-600 overflow-hidden rounded-t-lg">
         {business.cover_image_url ? (
-          <img
+          <img loading="lazy" decoding="async" 
             src={business.cover_image_url}
             alt={businessName}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
@@ -303,7 +303,7 @@ export const StandardBusinessCard: React.FC<StandardBusinessCardProps> = ({
           {/* Logo - smaller on mobile, positioned above cover on desktop */}
           <div className="flex-shrink-0 md:-mt-8 relative z-20">
             {business.logo_url ? (
-              <img
+              <img loading="lazy" decoding="async" 
                 src={business.logo_url}
                 alt={businessName}
                 className="w-10 h-10 md:w-16 md:h-16 rounded-lg object-cover border-2 md:border-4 border-white shadow-md md:shadow-lg"
@@ -318,7 +318,7 @@ export const StandardBusinessCard: React.FC<StandardBusinessCardProps> = ({
           {/* Title & Category */}
           <div className="flex-1 min-w-0 md:pt-2">
             <h3
-              className="text-base font-semibold text-gray-900 truncate group-hover:text-indigo-600 transition-colors"
+              className="text-[15px] font-semibold text-gray-900 truncate group-hover:text-indigo-600 transition-colors"
               dangerouslySetInnerHTML={{ __html: displayName }}
             />
             {businessType && (

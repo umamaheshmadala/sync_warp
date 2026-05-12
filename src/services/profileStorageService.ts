@@ -56,7 +56,8 @@ export async function uploadProfilePicture(
     const { data, error } = await supabase.storage
       .from('avatars')
       .upload(filePath, file, {
-        cacheControl: '3600',
+        cacheControl: '31536000',
+        contentType: file.type || 'image/jpeg',
         upsert: true
       });
 

@@ -145,7 +145,7 @@ export function TempFriendRequests() {
                 <div key={request.id} className="bg-white rounded-lg shadow p-4 flex items-center gap-4">
                   {/* Avatar */}
                   {request.sender.avatar_url ? (
-                    <img
+                    <img loading="lazy" decoding="async" 
                       src={request.sender.avatar_url}
                       alt={request.sender.full_name}
                       className="w-12 h-12 rounded-full object-cover"

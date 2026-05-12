@@ -274,6 +274,19 @@ export interface EnhancedBusinessData {
   metrics?: BusinessMetrics;
   marketing_goals?: BusinessMarketingGoals;
   onboarding_progress?: BusinessOnboardingProgress[];
+  categories?: string[]; // Story 12.20b
+}
+
+export interface BusinessOnboardingData extends EnhancedBusinessData {
+  address: string;
+  city_id: string;
+  state: string;
+  zip_code: string;
+  phone: string;
+  website: string;
+  location_lat: number | null;
+  location_lng: number | null;
+  business_name: string;
 }
 
 // ============================================================================
@@ -291,6 +304,14 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
   },
   {
     number: 2,
+    name: 'product_categories',
+    title: 'Product Categories',
+    description: 'Select the categories of products you offer',
+    required: true,
+    estimatedMinutes: 3
+  },
+  {
+    number: 3,
     name: 'customer_profile',
     title: 'Target Customers',
     description: 'Tell us about your ideal customers',
@@ -298,7 +319,7 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     estimatedMinutes: 7
   },
   {
-    number: 3,
+    number: 4,
     name: 'metrics',
     title: 'Business Metrics',
     description: 'Share your performance data',
@@ -306,7 +327,7 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     estimatedMinutes: 8
   },
   {
-    number: 4,
+    number: 5,
     name: 'marketing_goals',
     title: 'Marketing Goals',
     description: 'Define your marketing objectives',
@@ -314,7 +335,7 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     estimatedMinutes: 5
   },
   {
-    number: 5,
+    number: 6,
     name: 'review',
     title: 'Review & Launch',
     description: 'Review your profile and start marketing',
@@ -672,7 +693,13 @@ export function validateStepData(
   }
   
   switch (stepNumber) {
-    case 2: // Customer Profile
+    case 2: // Product Categories
+      if (!data.categories || data.categories.length === 0) {
+        errors.push('Please select at least one product category');
+      }
+      break;
+
+    case 3: // Customer Profile
       if (!data.primary_age_ranges || data.primary_age_ranges.length === 0) {
         errors.push('Please select at least one age range');
       }
@@ -681,11 +708,11 @@ export function validateStepData(
       }
       break;
       
-    case 3: // Business Metrics (optional, no hard requirements)
+    case 4: // Business Metrics (optional, no hard requirements)
       // Metrics are optional, so no validation errors
       break;
       
-    case 4: // Marketing Goals (optional step)
+    case 5: // Marketing Goals (optional step)
       // Marketing goals are optional, no hard requirements
       // If user provides a primary goal, that's great, but not required to proceed
       break;

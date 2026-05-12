@@ -39,7 +39,7 @@ export function ReviewPhotoGallery({ photos, compact = false }: ReviewPhotoGalle
             <div className="mt-2">
                 {validPhotos.length === 1 ? (
                     // Single photo - larger display, but respect compact
-                    <img
+                    <img loading="lazy" decoding="async" 
                         src={validPhotos[0]}
                         alt="Review photo"
                         className={`${compact ? 'w-32 h-20' : 'w-full max-h-64'} object-cover rounded-lg cursor-zoom-in border border-gray-100`}
@@ -54,7 +54,7 @@ export function ReviewPhotoGallery({ photos, compact = false }: ReviewPhotoGalle
                                 className={`relative flex-shrink-0 ${sizeClass} cursor-pointer group`}
                                 onClick={() => openLightbox(index)}
                             >
-                                <img
+                                <img loading="lazy" decoding="async" 
                                     src={url}
                                     alt={`Photo ${index + 1}`}
                                     className="w-full h-full object-cover rounded-lg border border-gray-100 transition-transform group-hover:scale-[1.02]"
@@ -92,7 +92,7 @@ export function ReviewPhotoGallery({ photos, compact = false }: ReviewPhotoGalle
                         </div>
 
                         {/* Main image */}
-                        <img
+                        <img loading="lazy" decoding="async" 
                             src={validPhotos[currentIndex]}
                             alt={`Photo ${currentIndex + 1}`}
                             className="max-w-full max-h-full object-contain select-none"

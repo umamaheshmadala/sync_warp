@@ -70,17 +70,28 @@ export class SecureStorage {
   }
 
   /**
-   * Clear all secure storage (use with caution!)
+   * Clear auth-related storage only (not all app data).
+   * For a full wipe, use clearAll() instead.
    */
-  static async clear(): Promise<void> {
+  static async clearAuth(): Promise<void> {
     try {
       if (this.isNative) {
-        await Preferences.clear();
+        // Remove auth-specific keys only
+        await Preferences.remove({ key: STORAGE_KEYS.AUTH_SESSION });
       } else {
-        localStorage.clear();
+        // Remove auth-specific keys from localStorage
+        const authPrefixes = ['supabase.auth', 'sb-'];
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && authPrefixes.some(prefix => key.startsWith(prefix))) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(key => localStorage.removeItem(key));
       }
     } catch (error) {
-      console.error('[SecureStorage] Error clearing storage:', error);
+      console.error('[SecureStorage] Error clearing auth storage:', error);
       throw error;
     }
   }

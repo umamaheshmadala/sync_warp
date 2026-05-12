@@ -18,8 +18,16 @@ export interface Product {
   like_count?: number;
   comment_count?: number;
   share_count?: number;
+  favorite_count?: number;
   new_arrival_expires_at?: string;
   notifications_enabled?: boolean;
+  price?: number;
+  category?: string;
+
+  // Epic 12.20c Category Picker
+  primary_category_id?: string;
+  primary_category_name?: string;
+  primary_category_l2_id?: string;
 
   image_urls: string[]; // Legacy
   image_url?: string; // Legacy
@@ -54,20 +62,25 @@ export interface ProductFormData {
   is_available: boolean;
   is_featured: boolean; // Featured products show in storefront
   display_order: number; // Only used for trending products
+  price?: number;
+  category?: string;
   image_urls?: string[];
   status?: string;
   tags?: string[];
+  category_selections?: {
+    primary: string;
+    secondary?: string;
+    tertiary?: string;
+  };
 }
 
 export interface ProductCategory {
   id: string;
   name: string;
-  display_name: string;
-  description?: string;
-  icon_name?: string;
-  parent_category_id?: string;
-  is_active: boolean;
+  level: number;
+  parent_id?: string;
   sort_order: number;
+  is_active: boolean;
   created_at: string;
 }
 

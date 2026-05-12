@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
 import { Clock } from 'lucide-react';
 import { QuickHoursTemplate } from '../components/QuickHoursTemplate';
 import { Switch } from '@/components/ui/switch';
@@ -37,10 +36,8 @@ export function Step4_OperatingHours({
 
     return (
         <div className="space-y-6">
-            <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mb-6"
+            <div
+                className="mb-6 animate-fadeIn"
             >
                 <div className="flex items-center gap-3 mb-2">
                     <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center">
@@ -51,7 +48,7 @@ export function Step4_OperatingHours({
                 <p className="text-gray-600">
                     When can customers visit your business?
                 </p>
-            </motion.div>
+            </div>
 
             {/* Templates */}
             <QuickHoursTemplate

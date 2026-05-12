@@ -1,5 +1,4 @@
 import { useState, useRef } from 'react';
-import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 interface BentoItem {
@@ -81,7 +80,7 @@ export default function MagicBento({
       )}
     >
       {items.map((item) => (
-        <motion.div
+        <div
           key={item.id}
           className={cn(
             'relative overflow-hidden rounded-2xl bg-white border border-gray-200 shadow-sm',
@@ -93,21 +92,10 @@ export default function MagicBento({
           )}
           onMouseEnter={() => setHoveredId(item.id)}
           onMouseLeave={() => setHoveredId(null)}
-          whileHover={{ 
-            scale: 1.02,
-            transition: { duration: 0.2 }
-          }}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
         >
           {/* Background glow effect */}
-          <motion.div
+          <div
             className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-blue-500/10"
-            animate={{
-              opacity: hoveredId === item.id ? 1 : 0,
-            }}
-            transition={{ duration: 0.3 }}
           />
 
           {/* Content */}
@@ -135,47 +123,27 @@ export default function MagicBento({
             </div>
 
             {/* Hover particles effect */}
-            <motion.div
+            <div
               className="absolute inset-0 pointer-events-none"
-              animate={{
-                opacity: hoveredId === item.id ? 1 : 0,
-              }}
-              transition={{ duration: 0.3 }}
             >
               {[...Array(3)].map((_, i) => (
-                <motion.div
+                <div
                   key={i}
                   className="absolute w-1 h-1 bg-blue-400 rounded-full"
-                  animate={{
-                    x: [0, 100, 0],
-                    y: [0, -50, 0],
-                    opacity: [0, 1, 0],
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    delay: i * 0.3,
-                  }}
                   style={{
                     left: `${20 + i * 30}%`,
                     top: `${80}%`,
                   }}
                 />
               ))}
-            </motion.div>
+            </div>
           </div>
 
           {/* Border glow */}
-          <motion.div
+          <div
             className="absolute inset-0 rounded-2xl border-2 border-blue-400/0"
-            animate={{
-              borderColor: hoveredId === item.id 
-                ? 'rgba(59, 130, 246, 0.3)' 
-                : 'rgba(59, 130, 246, 0)',
-            }}
-            transition={{ duration: 0.3 }}
           />
-        </motion.div>
+        </div>
       ))}
     </div>
   );

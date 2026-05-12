@@ -22,19 +22,19 @@ interface UseSharingLimitsReturn {
   loading: boolean;
   error: string | null;
   isDriver: boolean;
-  
+
   // Actions
   refreshStats: () => Promise<void>;
   checkCanShare: (recipientId: string) => Promise<CanShareResult>;
-  shareWithValidation: (recipientId: string, couponId: string, senderCollectionId: string) => Promise<{ 
-    success: boolean; 
-    message: string; 
-    message_id?: string; 
-    conversation_id?: string; 
+  shareWithValidation: (recipientId: string, couponId: string, senderCollectionId: string) => Promise<{
+    success: boolean;
+    message: string;
+    message_id?: string;
+    conversation_id?: string;
     error?: string;
     canShareResult?: CanShareResult;
   }>;
-  
+
   // Computed values
   canShareMore: boolean;
   remainingTotal: number;
@@ -130,11 +130,11 @@ export function useSharingLimits(options: UseSharingLimitsOptions = {}): UseShar
     recipientId: string,
     couponId: string,
     senderCollectionId: string
-  ): Promise<{ 
-    success: boolean; 
-    message: string; 
-    message_id?: string; 
-    conversation_id?: string; 
+  ): Promise<{
+    success: boolean;
+    message: string;
+    message_id?: string;
+    conversation_id?: string;
     error?: string;
     canShareResult?: CanShareResult;
   }> => {
@@ -142,7 +142,7 @@ export function useSharingLimits(options: UseSharingLimitsOptions = {}): UseShar
 
     try {
       const result = await sharingLimitsService.shareWithLimitValidation(recipientId, couponId, senderCollectionId);
-      
+
       // Refresh stats after successful share
       if (result.success) {
         await loadStats();
@@ -170,13 +170,20 @@ export function useSharingLimits(options: UseSharingLimitsOptions = {}): UseShar
 
     console.log(`🔄 Setting up auto-refresh every ${refreshInterval}ms`);
 
-    const interval = setInterval(() => {
-      loadStats();
-    }, refreshInterval);
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    const tick = () => {
+      loadStats().finally(() => {
+        timeoutId = setTimeout(tick, refreshInterval);
+      });
+    };
+
+    // Start the timer
+    timeoutId = setTimeout(tick, refreshInterval);
 
     return () => {
       console.log('🔄 Cleaning up auto-refresh');
-      clearInterval(interval);
+      clearTimeout(timeoutId);
     };
   }, [refreshInterval, loadStats]);
 

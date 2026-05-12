@@ -20,7 +20,7 @@ export const TopProductsList: React.FC<TopProductsListProps> = ({ viewsData, eng
             </div>
             <div className="flex-shrink-0 w-10 h-10 bg-gray-200 rounded-md overflow-hidden">
                 {product.image_url ? (
-                    <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+                    <img loading="lazy" decoding="async" src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
                 ) : (
                     <div className="w-full h-full flex items-center justify-center text-gray-400">
                         <ImageIcon size={16} />

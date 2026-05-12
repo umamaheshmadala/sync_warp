@@ -197,7 +197,7 @@ export default function StorageTest() {
             <div className="mb-6 p-4 bg-gray-50 rounded-md">
               <h3 className="font-semibold mb-2">Preview (via signed URL):</h3>
               {file?.type.startsWith('image/') ? (
-                <img src={signedUrl} alt="Preview" className="max-w-full h-auto rounded" />
+                <img loading="lazy" decoding="async" src={signedUrl} alt="Preview" className="max-w-full h-auto rounded" />
               ) : (
                 <video src={signedUrl} controls className="max-w-full h-auto rounded" />
               )}

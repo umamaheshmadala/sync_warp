@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { AnimatePresence, motion } from 'framer-motion';
-import { X } from 'lucide-react';
+import { X, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Product } from '../../../types/product';
 import { WebProductCarousel } from './WebProductCarousel';
 import { WebProductDetailsPanel } from './WebProductDetailsPanel';
@@ -29,7 +29,16 @@ export const WebProductModal: React.FC<WebProductModalProps> = ({
     // Analytics: Track view
     useProductViewTracking(isOpen ? product.id : undefined);
 
+    const navigate = useNavigate();
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+    const handleBack = () => {
+        if (window.history.length > 2) {
+            navigate(-1);
+        } else {
+            onClose();
+        }
+    };
 
     // Reset index when product changes
     useEffect(() => {
@@ -75,58 +84,61 @@ export const WebProductModal: React.FC<WebProductModalProps> = ({
     if (!isOpen) return null;
 
     const modalContent = (
-        <AnimatePresence>
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 md:p-10">
-                {/* Backdrop */}
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    onClick={onClose}
-                    className="fixed inset-0 bg-black/60 backdrop-blur-sm cursor-pointer"
-                >
-                    {/* Close Button (floating top right) */}
-                    <button
-                        className="absolute top-4 right-4 p-2 text-white/70 hover:text-white transition-colors"
-                        aria-label="Close modal"
-                    >
-                        <X className="w-8 h-8" />
-                    </button>
-                </motion.div>
+        <>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 md:p-10">
+                        {/* Backdrop */}
+                        <div
+                            onClick={onClose}
+                            className="fixed inset-0 bg-black/60 backdrop-blur-sm cursor-pointer"
+                        >
+                            {/* Back Button (floating top left) */}
+                            <button
+                                onClick={(e) => { e.stopPropagation(); handleBack(); }}
+                                className="absolute top-4 left-4 p-2 text-white/70 hover:text-white transition-colors z-[110]"
+                                aria-label="Go back"
+                            >
+                                <ArrowLeft className="w-8 h-8" />
+                            </button>
 
-                {/* Modal Card */}
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                    transition={{ duration: 0.2, ease: "easeOut" }}
-                    onClick={(e) => e.stopPropagation()} // Prevent closing when clicking modal content
-                    className="relative w-full max-w-6xl h-[85vh] bg-white rounded-lg overflow-hidden shadow-2xl flex flex-row"
-                >
-                    {/* Left: Image Carousel (65% width) */}
-                    <div className="w-[60%] lg:w-[65%] h-full bg-black relative group">
-                        <WebProductCarousel
-                            images={product.images || (product.image_url ? [product.image_url] : [])}
-                            currentIndex={currentImageIndex}
-                            onChangeIndex={setCurrentImageIndex}
-                            productName={product.name}
-                        />
-                    </div>
+                            {/* Close Button (floating top right) */}
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onClose(); }}
+                                className="absolute top-4 right-4 p-2 text-white/70 hover:text-white transition-colors z-[110]"
+                                aria-label="Close modal"
+                            >
+                                <X className="w-8 h-8" />
+                            </button>
+                        </div>
 
-                    {/* Right: Details Panel (35% width) */}
-                    <div className="w-[40%] lg:w-[35%] h-full">
-                        <WebProductDetailsPanel
-                            product={product}
-                            isOwner={isOwner}
-                            onClose={onClose}
-                            onArchive={onArchive}
-                            onUnarchive={onUnarchive}
-                            onDelete={onDelete}
-                        />
+                        {/* Modal Card */}
+                        <div
+                            onClick={(e) => e.stopPropagation()} // Prevent closing when clicking modal content
+                            className="relative w-full max-w-6xl h-[85vh] bg-white rounded-lg overflow-hidden shadow-2xl flex flex-row"
+                        >
+                            {/* Left: Image Carousel (65% width) */}
+                            <div className="w-[60%] lg:w-[65%] h-full bg-black relative group">
+                                <WebProductCarousel
+                                    images={product.images || (product.image_url ? [product.image_url] : [])}
+                                    currentIndex={currentImageIndex}
+                                    onChangeIndex={setCurrentImageIndex}
+                                    productName={product.name}
+                                />
+                            </div>
+
+                            {/* Right: Details Panel (35% width) */}
+                            <div className="w-[40%] lg:w-[35%] h-full">
+                                <WebProductDetailsPanel
+                                    product={product}
+                                    isOwner={isOwner}
+                                    onClose={onClose}
+                                    onArchive={onArchive}
+                                    onUnarchive={onUnarchive}
+                                    onDelete={onDelete}
+                                />
+                            </div>
+                        </div>
                     </div>
-                </motion.div>
-            </div>
-        </AnimatePresence>
+        </>
     );
 
     return createPortal(modalContent, document.body);

@@ -11,9 +11,19 @@
 import React, { useEffect, useState } from 'react';
 import { useDeepLinkStore } from '../../store/deepLinkStore';
 import { FriendProfileModal } from '../friends/FriendProfileModal';
-import ProductView from '../business/ProductView';
+import { WebProductModal } from '../products/web/WebProductModal';
 import { supabase } from '../../lib/supabase';
 import { X } from 'lucide-react';
+import { useMediaQuery } from '../../hooks/use-media-query';
+import { 
+    MobileProductModal, 
+    MobileProductHeader, 
+    MobileProductCarousel, 
+    MobileProductActions, 
+    MobileProductDetails, 
+    MobileProductComments, 
+    StickyCommentInput 
+} from '../products/mobile';
 import { OfferShareButton } from '../Sharing/OfferShareButton';
 import type { Offer } from '../../types/offers';
 
@@ -38,6 +48,8 @@ export function DeepLinkModalProvider() {
     // Product data state
     const [product, setProduct] = useState<any>(null);
     const [productLoading, setProductLoading] = useState(false);
+
+    const isDesktop = useMediaQuery('(min-width: 768px)');
 
     // Fetch offer when modal opens
     useEffect(() => {
@@ -90,16 +102,17 @@ export function DeepLinkModalProvider() {
 
                     if (error) throw error;
 
-                    // Adapt DB schema (image_url) to Component Prop (image_urls)
+                    // Adapt DB schema to Component Prop (image_urls/images)
                     // Fallback to preview image from store if both are missing
-                    const finalImageUrls = data.image_urls || (data.image_url ? [data.image_url] : []);
+                    const finalImageUrls = data.images || data.image_urls || (data.image_url ? [data.image_url] : []);
 
                     if (finalImageUrls.length === 0 && productPreviewImage) {
-                        finalImageUrls.push(productPreviewImage);
+                        finalImageUrls.push({ url: productPreviewImage });
                     }
 
                     const adaptedProduct = {
                         ...data,
+                        images: finalImageUrls,
                         image_urls: finalImageUrls
                     };
 
@@ -227,7 +240,7 @@ export function DeepLinkModalProvider() {
                 </div>
             )}
 
-            {/* Product View Modal */}
+            {/* Product View Modal - ALWAYS Use Mobile View (Standard for App/Links) */}
             {productModalOpen && (
                 productLoading ? (
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -236,11 +249,33 @@ export function DeepLinkModalProvider() {
                         </div>
                     </div>
                 ) : product ? (
-                    <ProductView
-                        product={product}
-                        isModal={true}
+                    <MobileProductModal
+                        isOpen={true}
                         onClose={closeAll}
-                    />
+                        stickyFooter={<StickyCommentInput productId={product.id} />}
+                    >
+                        <MobileProductHeader
+                            product={product}
+                            onClose={closeAll}
+                        />
+                        <MobileProductCarousel
+                            images={product.images || product.image_urls || []}
+                            productName={product.name}
+                        />
+                        <MobileProductActions
+                            product={product}
+                            onComment={() => {
+                                document.getElementById('comment-input')?.focus();
+                            }}
+                        />
+                        <MobileProductDetails product={product} />
+                        <MobileProductComments
+                            productId={product.id}
+                            initialCount={product.comment_count || 0}
+                            isOwner={false}
+                            hideInput
+                        />
+                    </MobileProductModal>
                 ) : null
             )}
         </>

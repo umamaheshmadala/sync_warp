@@ -90,19 +90,19 @@ export function BusinessDetailsTab({ business }: BusinessDetailsTabProps) {
                     {business.logo_url && (
                         <div className="flex-shrink-0">
                             <p className="text-xs text-center text-gray-500 mb-1">Logo</p>
-                            <img src={business.logo_url} alt="Logo" className="w-24 h-24 object-cover rounded-md border" />
+                            <img loading="lazy" decoding="async" src={business.logo_url} alt="Logo" className="w-24 h-24 object-cover rounded-md border" />
                         </div>
                     )}
                     {business.cover_image_url && (
                         <div className="flex-shrink-0">
                             <p className="text-xs text-center text-gray-500 mb-1">Cover</p>
-                            <img src={business.cover_image_url} alt="Cover" className="w-40 h-24 object-cover rounded-md border" />
+                            <img loading="lazy" decoding="async" src={business.cover_image_url} alt="Cover" className="w-40 h-24 object-cover rounded-md border" />
                         </div>
                     )}
                     {business.images && business.images.length > 0 && business.images.map((img, idx) => (
                         <div key={idx} className="flex-shrink-0">
                             <p className="text-xs text-center text-gray-500 mb-1">Gallery {idx + 1}</p>
-                            <img src={img} alt={`Gallery ${idx}`} className="w-32 h-24 object-cover rounded-md border" />
+                            <img loading="lazy" decoding="async" src={img} alt={`Gallery ${idx}`} className="w-32 h-24 object-cover rounded-md border" />
                         </div>
                     ))}
                     {!business.logo_url && !business.cover_image_url && (!business.images || business.images.length === 0) && (

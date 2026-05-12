@@ -49,7 +49,7 @@ export function FriendRequestGridCard({ request, onProfileClick }: FriendRequest
                 {/* Avatar */}
                 <div className="flex flex-col items-center mb-2 w-full mt-2">
                     {request.sender.avatar_url ? (
-                        <img
+                        <img loading="lazy" decoding="async" 
                             src={request.sender.avatar_url}
                             alt={request.sender.full_name}
                             className="w-16 h-16 rounded-full object-cover mb-2 border border-gray-100"

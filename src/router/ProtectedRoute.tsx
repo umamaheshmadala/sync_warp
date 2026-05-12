@@ -25,7 +25,11 @@ export default function ProtectedRoute({
   requireOnboarding = false,
   debugMode = false
 }: ProtectedRouteProps) {
-  const { user, profile, initialized, loading, checkUser } = useAuthStore()
+  const user = useAuthStore((state) => state.user);
+  const profile = useAuthStore((state) => state.profile);
+  const initialized = useAuthStore((state) => state.initialized);
+  const loading = useAuthStore((state) => state.loading);
+  const checkUser = useAuthStore(s => s.checkUser);
   const location = useLocation()
   const [retryCount, setRetryCount] = useState(0)
   const [sessionChecked, setSessionChecked] = useState(false)
@@ -199,7 +203,10 @@ export function withProtection<T extends object>(
 
 // Enhanced hook for checking authentication status in components
 export function useRequireAuth(debugMode = false) {
-  const { user, profile, initialized, loading } = useAuthStore()
+  const user = useAuthStore((state) => state.user);
+  const profile = useAuthStore((state) => state.profile);
+  const initialized = useAuthStore((state) => state.initialized);
+  const loading = useAuthStore((state) => state.loading);
   const location = useLocation()
   const [authChecked, setAuthChecked] = useState(false)
 
@@ -235,7 +242,10 @@ export function useRequireAuth(debugMode = false) {
 
 // Debug component for development
 export function AuthDebugPanel() {
-  const { user, profile, initialized, loading } = useAuthStore()
+  const user = useAuthStore((state) => state.user);
+  const profile = useAuthStore((state) => state.profile);
+  const initialized = useAuthStore((state) => state.initialized);
+  const loading = useAuthStore((state) => state.loading);
   const location = useLocation()
   const [testResult, setTestResult] = useState<string>('Not tested')
 

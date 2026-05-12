@@ -62,7 +62,7 @@ const SortableItem = ({
             style={style}
             className={`relative group aspect-[4/5] bg-gray-100 rounded-lg overflow-hidden border border-gray-200 ${isDragging ? 'z-50 shadow-xl scale-105' : ''}`}
         >
-            <img
+            <img loading="lazy" decoding="async" 
                 src={image.previewUrl}
                 alt={`Product image ${index + 1}`}
                 className="w-full h-full object-cover"

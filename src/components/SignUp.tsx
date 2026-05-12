@@ -22,7 +22,8 @@ interface FormErrors {
 
 export default function SignUp() {
   const navigate = useNavigate()
-  const { signUp, loading } = useAuthStore()
+  const loading = useAuthStore((state) => state.loading);
+  const signUp = useAuthStore(s => s.signUp);
 
   const [formData, setFormData] = useState<FormData>({
     email: '',
@@ -171,8 +172,8 @@ export default function SignUp() {
         {/* Header */}
         <div className="text-center">
           <div className="mx-auto flex justify-center mb-2">
-            <img
-              src="/Logo/Logo Text Transparent PNG 2.png"
+            <img loading="lazy" decoding="async" 
+              src="/Logo/Logo Text Transparent SVG.svg"
               alt="Sync"
               className="h-16 sm:h-24 w-auto"
             />

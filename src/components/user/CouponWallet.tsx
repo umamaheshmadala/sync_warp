@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   Wallet,
   Search,
@@ -399,11 +398,7 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
     });
 
     return (
-      <motion.div
-        layout
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.9 }}
+      <div className="animate-fadeIn"
       >
         <UnifiedCouponCard
           coupon={{
@@ -425,7 +420,7 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
           showStatusBadge={true}
           statusText={status}
         />
-      </motion.div>
+      </div>
     );
   };
 
@@ -503,32 +498,31 @@ const CouponWallet: React.FC<CouponWalletProps> = ({
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
           </div>
         ) : filteredCoupons.length > 0 ? (
-          <motion.div
-            layout
+          <div
             className={`grid gap-6 ${viewMode === 'grid'
               ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
               : 'grid-cols-1'
               }`}
           >
-            <AnimatePresence>
-              {filteredCoupons.map((collection) => (
-                <CouponWalletCard
-                  key={collection.id}
-                  collection={collection}
-                  coupon={collection.coupon}
-                  onRedeem={handleRedeemCoupon}
-                  onRemove={handleRemoveCoupon}
-                  onView={(coupon) => {
-                    setSelectedCouponForView(coupon);
-                    setShowDetailsModal(true);
-                  }}
-                  onShare={handleShareCoupon}
-                  isLoading={loadingActions.has(collection.coupon_id)}
-                  isShareable={isCouponShareable(collection)}
-                />
-              ))}
-            </AnimatePresence>
-          </motion.div>
+            <>
+                          {filteredCoupons.map((collection) => (
+                                          <CouponWalletCard
+                                            key={collection.id}
+                                            collection={collection}
+                                            coupon={collection.coupon}
+                                            onRedeem={handleRedeemCoupon}
+                                            onRemove={handleRemoveCoupon}
+                                            onView={(coupon) => {
+                                              setSelectedCouponForView(coupon);
+                                              setShowDetailsModal(true);
+                                            }}
+                                            onShare={handleShareCoupon}
+                                            isLoading={loadingActions.has(collection.coupon_id)}
+                                            isShareable={isCouponShareable(collection)}
+                                          />
+                                        ))}
+                          </>
+          </div>
         ) : (
           <div className="text-center py-12">
             <Wallet className="w-16 h-16 text-gray-300 mx-auto mb-4" />

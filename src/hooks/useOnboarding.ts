@@ -254,7 +254,14 @@ export function useOnboarding({
   const saveStepToTables = async (stepNumber: number, data: any) => {
     try {
       switch (stepNumber) {
-        case 2: // Customer Profile
+        case 2: // Product Categories (Story 12.20b)
+          if (data.categories && data.categories.length > 0) {
+            const { BusinessCategoryService } = await import('@/services/businessCategoryService');
+            await BusinessCategoryService.updateBusinessCategories(businessId, data.categories);
+          }
+          break;
+
+        case 3: // Customer Profile
           await supabase
             .from('business_customer_profiles')
             .upsert({
@@ -265,7 +272,7 @@ export function useOnboarding({
             });
           break;
 
-        case 3: // Business Metrics
+        case 4: // Business Metrics
           await supabase
             .from('business_metrics')
             .upsert({
@@ -276,7 +283,7 @@ export function useOnboarding({
             });
           break;
 
-        case 4: // Marketing Goals
+        case 5: // Marketing Goals
           await supabase
             .from('business_marketing_goals')
             .upsert({

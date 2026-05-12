@@ -19,8 +19,9 @@ html {
 /* Custom Typography System configured in main.tsx and tailwind.config.js */
 
 html {
-  scroll-behavior: smooth;
-  overscroll-behavior-y: none; /* Prevent pull-to-refresh on mobile webviews if not needed */
+  /* scroll-behavior: smooth — REMOVED to prevent animation on chat load (Epic 8.12 fix) */
+  /* overscroll-behavior-y: removed — Story 8.12.1 AC#7, Story 18.1
+     Pull-to-refresh prevention is now scoped to .native-platform #root only. */
 }
 
 @layer base {
@@ -93,6 +94,18 @@ body {
 
 /* Ensure container classes don't exceed viewport */
 
+
+/* Prevent iOS Safari auto-zoom on input focus (Story 17.2)
+   Set minimum 16px on inputs so iOS doesn't zoom when focusing.
+   This does NOT prevent manual pinch-to-zoom (WCAG compliant). */
+@supports (-webkit-touch-callout: none) {
+
+  input,
+  select,
+  textarea {
+    font-size: max(16px, 1em);
+  }
+}
 
 /* Prevent iOS Safari from moving fixed elements during scroll */
 @supports (-webkit-touch-callout: none) {
@@ -189,4 +202,224 @@ body,
   min-height: 100vh;
   overflow-y: auto;
   overflow-x: hidden;
+}
+
+/* Prevent pull-to-refresh ONLY on native Capacitor apps (Story 18.1)
+   Web users get the native browser pull-to-refresh behavior.
+   Native apps handle refresh via their own mechanisms. */
+.native-platform #root {
+  overscroll-behavior-y: none;
+}
+
+/* Hide Emoji Picker Category Navigation to reduce clutter */
+.epr-category-nav {
+  display: none !important;
+}
+
+/* Safe hover effect - only apply hover styles on devices that support hover */
+/* Safe hover effect - only apply hover styles on devices that support hover AND have a fine pointer (mouse) */
+@media (hover: hover) and (pointer: fine) {
+  .safe-hover-bg:hover {
+    background-color: #f9fafb;
+    /* gray-50 */
+  }
+}
+
+/* Bottom Navigation CSS animations */
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+.bottom-nav-enter {
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes navRipple {
+  0% {
+    background: rgba(99, 102, 241, 0);
+  }
+
+  50% {
+    background: rgba(99, 102, 241, 0.1);
+  }
+
+  100% {
+    background: rgba(99, 102, 241, 0);
+  }
+}
+
+.nav-ripple {
+  animation: navRipple 0.3s ease-out;
+}
+
+/* Shared animation utilities for framer-motion replacement */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+.animate-fadeInDown {
+  animation: fadeInDown 0.3s ease-out;
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.2s ease-out;
+}
+
+.animate-slideInRight {
+  animation: slideInRight 0.3s ease-out;
+}
+
+/* ============================================================
+   WCAG 2.1 AA — Global 'Reduce Motion' Guard
+   Disables ALL CSS animations and transitions when the user
+   has enabled "Reduce Motion" in their OS accessibility settings.
+   Individual component guards in OfflineBanner.css, etc. still
+   apply for their own scoped animations.
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================
+   EPIC 14 — Story 14.3: Disable backdrop-blur on mobile
+   GPU composite layers cause battery drain & frame drops
+   Desktop keeps blur; mobile gets solid rgba() fallback
+   ============================================ */
+@media (max-width: 768px) {
+
+  *,
+  *::before,
+  *::after {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+}
+
+.native-platform *,
+.native-platform *::before,
+.native-platform *::after {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+/* ============================================
+   EPIC 14 — Story 14.7: GPU-accelerate scroll containers
+   Hint the browser to pre-promote these to composite layers
+   ============================================ */
+.will-change-scroll {
+  will-change: transform;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ============================================
+   STORY 17.7 — WCAG 2.2 / Material 3
+   48px minimum touch targets on touch devices.
+   Only applies when the primary pointer is coarse
+   (finger) to avoid bloating desktop UI.
+   ============================================ */
+@media (pointer: coarse) {
+
+  button,
+  [role="button"],
+  a,
+  input[type="checkbox"],
+  input[type="radio"],
+  select,
+  summary,
+  .touch-target {
+    min-height: 48px;
+    min-width: 48px;
+  }
+
+  /* Ensure icon-only buttons have adequate padding */
+  button:not(:has(span)):not(:has(p)) {
+    padding: max(12px, 0.75rem);
+  }
+}
+
+/* Exclude dense UI elements that must stay compact */
+@media (pointer: coarse) {
+
+  .touch-compact,
+  .touch-compact button,
+  .touch-compact a {
+    min-height: unset;
+    min-width: unset;
+  }
 }

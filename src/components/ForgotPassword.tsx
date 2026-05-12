@@ -15,7 +15,8 @@ const forgotPasswordSchema = z.object({
 type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 
 const ForgotPassword: React.FC = () => {
-  const { forgotPassword, loading } = useAuthStore();
+  const loading = useAuthStore((state) => state.loading);
+  const forgotPassword = useAuthStore(s => s.forgotPassword);
   const [authError, setAuthError] = useState<string | null>(null);
   const [isEmailSent, setIsEmailSent] = useState(false);
   const [emailSentTo, setEmailSentTo] = useState<string>('');

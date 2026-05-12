@@ -24,7 +24,7 @@ const DEFAULT_PREFERENCES: NotificationPreferences = {
 };
 
 export function useNotificationPreferences() {
-    const { user } = useAuthStore();
+    const user = useAuthStore((state) => state.user);
     const queryClient = useQueryClient();
 
     // Fetch current preferences

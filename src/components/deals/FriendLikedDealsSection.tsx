@@ -12,16 +12,7 @@ export function FriendLikedDealsSection() {
     });
 
     if (isLoading) {
-        return (
-            <div className="space-y-4">
-                <h2 className="text-2xl font-bold">Deals Your Friends Liked</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {[1, 2, 3].map((i) => (
-                        <Skeleton key={i} className="h-64 w-full" />
-                    ))}
-                </div>
-            </div>
-        );
+        return null;
     }
 
     if (!deals || deals.length === 0) {
@@ -43,7 +34,7 @@ export function FriendLikedDealsSection() {
                         {/* Deal Image */}
                         <div className="h-48 bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center">
                             {deal.image_url ? (
-                                <img src={deal.image_url} alt={deal.title} className="w-full h-full object-cover" />
+                                <img loading="lazy" decoding="async" src={deal.image_url} alt={deal.title} className="w-full h-full object-cover" />
                             ) : (
                                 <Heart className="w-16 h-16 text-indigo-300" />
                             )}

@@ -142,7 +142,7 @@ export function ShareToFriendsModal({
                 <div className="p-4 bg-gray-50 border-b">
                     <div className="bg-white border rounded-lg p-3 flex gap-3">
                         {previewData.businessImage ? (
-                            <img src={previewData.businessImage} alt="" className="w-12 h-12 rounded-full object-cover border" />
+                            <img loading="lazy" decoding="async" src={previewData.businessImage} alt="" className="w-12 h-12 rounded-full object-cover border" />
                         ) : (
                             <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
                                 {previewData.businessName.charAt(0)}
@@ -179,7 +179,7 @@ export function ShareToFriendsModal({
                                 <div key={id} className="flex-shrink-0 flex items-center gap-1.5 bg-white border border-blue-100 pl-1 pr-2 py-0.5 rounded-full shadow-sm animate-in zoom-in duration-200">
                                     <div className="w-5 h-5 rounded-full bg-gray-100 overflow-hidden">
                                         {friend.avatar_url ? (
-                                            <img src={friend.avatar_url} alt="" className="w-full h-full object-cover" />
+                                            <img loading="lazy" decoding="async" src={friend.avatar_url} alt="" className="w-full h-full object-cover" />
                                         ) : (
                                             <User className="w-3 h-3 text-gray-400 m-auto" />
                                         )}
@@ -234,7 +234,7 @@ export function ShareToFriendsModal({
                                         {/* Avatar */}
                                         <div className="w-10 h-10 rounded-full bg-gray-100 flex-shrink-0 overflow-hidden border border-gray-100">
                                             {friend.avatar_url ? (
-                                                <img
+                                                <img loading="lazy" decoding="async" 
                                                     src={friend.avatar_url}
                                                     alt={friend.full_name}
                                                     className="w-full h-full object-cover"

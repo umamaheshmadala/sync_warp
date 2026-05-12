@@ -21,7 +21,7 @@ import {
 export function useConversationsWithStatus(): UseQueryResult<ConversationWithFriendStatus[]> {
   return useQuery({
     queryKey: ['conversations-with-status'],
-    queryFn: getConversationsWithFriendStatus,
+    queryFn: ({ signal }) => getConversationsWithFriendStatus(signal),
     staleTime: 30000, // 30 seconds
     refetchInterval: 60000, // Refetch every minute
     refetchOnWindowFocus: true,

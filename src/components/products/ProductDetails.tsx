@@ -11,6 +11,7 @@ import { Skeleton } from '../ui/skeleton';
 import { ProductCard } from './ProductCard';
 
 import { ProductShareButton } from '../Sharing/ProductShareButton';
+import { TrendingButton } from './social/TrendingButton';
 import { cn } from '../../lib/utils';
 
 export function ProductDetails() {
@@ -163,7 +164,7 @@ export function ProductDetails() {
                 <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
               </div>
             )}
-            <img
+            <img loading="lazy" decoding="async" 
               src={selectedImage}
               alt={product.name}
               className="h-full w-full object-contain"
@@ -202,7 +203,7 @@ export function ProductDetails() {
                     : 'border-gray-200 hover:border-gray-300'
                     }`}
                 >
-                  <img
+                  <img loading="lazy" decoding="async" 
                     src={image}
                     alt={`${product.name} - ${index + 1}`}
                     className="h-full w-full object-cover"
@@ -222,6 +223,7 @@ export function ProductDetails() {
               <Badge variant={product.is_available ? 'default' : 'secondary'}>
                 {product.is_available ? 'In Stock' : 'Out of Stock'}
               </Badge>
+              <TrendingButton productId={product.id} businessId={businessId!} />
             </div>
           </div>
 

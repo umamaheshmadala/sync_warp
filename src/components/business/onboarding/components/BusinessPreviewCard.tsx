@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import { Star, MapPin, Phone, Globe, Image, ShieldCheck, Users, Navigation, Clock, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -116,9 +115,7 @@ export function BusinessPreviewCard({
     const status = getOpenStatus();
 
     return (
-        <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
+        <div
             className={cn(
                 "bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden font-sans",
                 className
@@ -127,7 +124,7 @@ export function BusinessPreviewCard({
             {/* Cover Image Area */}
             <div className="h-40 bg-gray-200 relative">
                 {coverUrl ? (
-                    <img
+                    <img loading="lazy" decoding="async"
                         src={coverUrl}
                         alt="Cover"
                         className="w-full h-full object-cover"
@@ -152,7 +149,7 @@ export function BusinessPreviewCard({
                 <div className="absolute -top-16 left-4">
                     <div className="w-28 h-28 rounded-full border-4 border-white bg-white shadow-md overflow-hidden">
                         {logoUrl ? (
-                            <img
+                            <img loading="lazy" decoding="async"
                                 src={logoUrl}
                                 alt="Logo"
                                 className="w-full h-full object-cover"
@@ -214,7 +211,9 @@ export function BusinessPreviewCard({
                     {phone && (
                         <div className="mt-2 flex items-center gap-2 text-sm text-gray-600">
                             <Phone className="w-4 h-4 flex-shrink-0 text-gray-400" />
-                            <span>{phone}</span>
+                            <a href={`tel:${phone}`} className="text-indigo-600 hover:underline">
+                                {phone}
+                            </a>
                         </div>
                     )}
 
@@ -265,7 +264,7 @@ export function BusinessPreviewCard({
                     Live Storefront Preview
                 </span>
             </div>
-        </motion.div>
+        </div>
     );
 }
 

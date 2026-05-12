@@ -3,7 +3,6 @@ import React, { useState } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import { Fragment } from 'react'
 import { X, Send, Search, Tag, Clock, Star, AlertCircle, Heart } from 'lucide-react'
-import { motion } from 'framer-motion'
 import { useSharingLimits } from '@/hooks/useSharingLimits'
 import { SharingStatsCard } from '@/components/Sharing/SharingStatsCard'
 import { LimitExceededModal } from '@/components/Sharing/LimitExceededModal'
@@ -266,11 +265,8 @@ const ShareDealSimple: React.FC<ShareDealProps> = ({
                   )}
 
                   {shareSuccess ? (
-                    <motion.div
-                      className="text-center py-8"
-                      initial={{ scale: 0.8, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                    <div
+                      className="text-center py-8 animate-fadeIn"
                     >
                       <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-4">
                         <Send className="h-8 w-8 text-green-600" />
@@ -279,7 +275,7 @@ const ShareDealSimple: React.FC<ShareDealProps> = ({
                       <p className="text-gray-600">
                         {friendName} will be notified about this amazing deal.
                       </p>
-                    </motion.div>
+                    </div>
                   ) : (
                     <div className="space-y-6">
                       {/* Deal Selection */}
@@ -312,12 +308,10 @@ const ShareDealSimple: React.FC<ShareDealProps> = ({
                               </div>
                             ) : (
                               availableDeals.map((deal) => (
-                                <motion.button
+                                <button
                                   key={deal.id}
                                   onClick={() => handleDealSelect(deal)}
-                                  className="w-full text-left p-3 rounded-lg border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group"
-                                  whileHover={{ scale: 1.02 }}
-                                  whileTap={{ scale: 0.98 }}
+                                  className="w-full text-left p-3 rounded-lg border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group active:scale-95 transition-transform duration-150 safe-hover-scale transition-transform duration-150"
                                 >
                                   <div className="flex items-center space-x-3">
                                     <div className="w-12 h-12 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -342,7 +336,7 @@ const ShareDealSimple: React.FC<ShareDealProps> = ({
                                       </div>
                                     </div>
                                   </div>
-                                </motion.button>
+                                </button>
                               ))
                             )}
                           </div>

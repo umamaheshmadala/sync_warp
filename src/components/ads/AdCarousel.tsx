@@ -1,6 +1,5 @@
 // src/components/ads/AdCarousel.tsx
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, TrendingUp } from 'lucide-react';
 import AdSlot from './AdSlot';
 import { useAdSlots } from '../../hooks/useAdSlots';
@@ -14,11 +13,16 @@ const AdCarousel: React.FC = () => {
   useEffect(() => {
     if (!autoplay || slots.length === 0) return;
 
-    const timer = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % slots.length);
-    }, 5000);
+    let timeoutId: ReturnType<typeof setTimeout>;
 
-    return () => clearInterval(timer);
+    const tick = () => {
+      setCurrentIndex((prev) => (prev + 1) % slots.length);
+      timeoutId = setTimeout(tick, 5000);
+    };
+
+    timeoutId = setTimeout(tick, 5000);
+
+    return () => clearTimeout(timeoutId);
   }, [autoplay, slots.length]);
 
   const goToPrevious = () => {
@@ -57,21 +61,16 @@ const AdCarousel: React.FC = () => {
     <div className="relative">
       {/* Carousel Container */}
       <div className="relative overflow-hidden rounded-2xl group">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentIndex}
-            initial={{ opacity: 0, x: 100 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -100 }}
-            transition={{ duration: 0.3 }}
-          >
-            <AdSlot
-              slot={slots[currentIndex]}
-              onAdClick={trackClick}
-              onImpression={trackImpression}
-            />
-          </motion.div>
-        </AnimatePresence>
+        <div
+          key={currentIndex}
+          className="animate-fadeIn"
+        >
+          <AdSlot
+            slot={slots[currentIndex]}
+            onAdClick={trackClick}
+            onImpression={trackImpression}
+          />
+        </div>
 
         {/* Navigation Buttons */}
         {slots.length > 1 && (

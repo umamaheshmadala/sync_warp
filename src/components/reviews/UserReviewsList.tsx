@@ -4,7 +4,6 @@
 // Displays all reviews written by the user across all businesses
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, AlertCircle, Loader, Trash2, Edit2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import ReviewCard from './ReviewCard';
@@ -14,7 +13,7 @@ import { useAuthStore } from '../../store/authStore';
 import type { BusinessReviewWithDetails } from '../../types/review';
 
 export default function UserReviewsList() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const [editingReview, setEditingReview] = useState<BusinessReviewWithDetails | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
 
@@ -93,32 +92,29 @@ export default function UserReviewsList() {
   return (
     <>
       {/* Edit Review Modal */}
-      <AnimatePresence>
-        {showEditModal && editingReview && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
-            onClick={handleCloseEditModal}
-          >
-            <div onClick={(e) => e.stopPropagation()}>
-              <BusinessReviewForm
-                businessId={editingReview.business_id}
-                businessName="" // Will be fetched if needed
-                checkinId={editingReview.checkin_id}
-                onSubmit={async () => {
-                  await refreshReviews();
-                  handleCloseEditModal();
-                }}
-                onCancel={handleCloseEditModal}
-                editMode={true}
-                existingReview={editingReview}
-              />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <>
+          {showEditModal && editingReview && (
+                    <div
+                      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+                      onClick={handleCloseEditModal}
+                    >
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <BusinessReviewForm
+                          businessId={editingReview.business_id}
+                          businessName="" // Will be fetched if needed
+                          checkinId={editingReview.checkin_id}
+                          onSubmit={async () => {
+                            await refreshReviews();
+                            handleCloseEditModal();
+                          }}
+                          onCancel={handleCloseEditModal}
+                          editMode={true}
+                          existingReview={editingReview}
+                        />
+                      </div>
+                    </div>
+                  )}
+          </>
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-6">
@@ -138,33 +134,31 @@ export default function UserReviewsList() {
 
         {/* Reviews List */}
         <div className="space-y-4">
-          <AnimatePresence mode="popLayout">
-            {reviews.length > 0 ? (
-              reviews.map((review) => (
-                <ReviewCard
-                  key={review.id}
-                  review={review}
-                  onEdit={handleEditReview}
-                  onDelete={handleDeleteReview}
-                  showBusinessName={true}
-                  isBusinessOwner={false}
-                />
-              ))
-            ) : (
-              // Empty State
-              // Compact Empty State
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="py-6 text-center"
-              >
-                <p className="text-sm font-medium text-gray-900">No Reviews Yet</p>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  Your reviews will appear here.
-                </p>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <>
+                  {reviews.length > 0 ? (
+                                reviews.map((review) => (
+                                  <ReviewCard
+                                    key={review.id}
+                                    review={review}
+                                    onEdit={handleEditReview}
+                                    onDelete={handleDeleteReview}
+                                    showBusinessName={true}
+                                    isBusinessOwner={false}
+                                  />
+                                ))
+                              ) : (
+                                // Empty State
+                                // Compact Empty State
+                                <div
+                                  className="py-6 text-center"
+                                >
+                                  <p className="text-sm font-medium text-gray-900">No Reviews Yet</p>
+                                  <p className="text-xs text-gray-500 mt-0.5">
+                                    Your reviews will appear here.
+                                  </p>
+                                </div>
+                              )}
+                  </>
         </div>
       </div>
     </>

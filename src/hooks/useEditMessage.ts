@@ -56,7 +56,7 @@ export function useEditMessage(
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(originalContent);
   const [isSaving, setIsSaving] = useState(false);
-  
+
   const timerRef = useRef<NodeJS.Timeout>();
 
   // Check edit eligibility and update countdown
@@ -71,11 +71,20 @@ export function useEditMessage(
     checkEditability();
 
     // Update every second if within window
-    timerRef.current = setInterval(checkEditability, 1000);
+    const tick = () => {
+      checkEditability().then(() => {
+        timerRef.current = setTimeout(tick, 1000);
+      });
+    };
+
+    // Start the timer loop after initial check
+    checkEditability().then(() => {
+      timerRef.current = setTimeout(tick, 1000);
+    });
 
     return () => {
       if (timerRef.current) {
-        clearInterval(timerRef.current);
+        clearTimeout(timerRef.current);
       }
     };
   }, [messageId]);
@@ -105,7 +114,7 @@ export function useEditMessage(
     setIsSaving(true);
     try {
       const result = await messageEditService.editMessage(messageId, editedContent);
-      
+
       if (result.success) {
         toast.success('Message edited');
         setIsEditing(false);

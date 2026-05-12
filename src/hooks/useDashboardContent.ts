@@ -33,7 +33,7 @@ export interface TrendingProduct {
 }
 
 export const useDashboardContent = () => {
-  const { profile } = useAuthStore();
+  const profile = useAuthStore((state) => state.profile);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   

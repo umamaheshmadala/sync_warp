@@ -1,5 +1,5 @@
 import { useEffect, useCallback, useRef } from 'react'
-import { useMessagingStore } from '../store/messagingStore'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { messagingService } from '../services/messagingService'
 import { realtimeService } from '../services/realtimeService'
 import { useAuthStore } from '../store/authStore'
@@ -8,159 +8,80 @@ import { usePlatform } from './usePlatform'
 import type { ConversationWithDetails } from '../types/messaging'
 import { App } from '@capacitor/app'
 
-/**
- * Hook to manage conversation list with realtime updates
- * 
- * Features:
- * - Fetches conversations on mount
- * - Subscribes to realtime conversation updates
- * - Mobile lifecycle handling (pauses updates in background)
- * - Platform-specific polling intervals (30s mobile / 10s web)
- * - Automatic cleanup on unmount
- * 
- * @returns Conversation list and loading state
- * 
- * @example
- * ```tsx
- * function ConversationList() {
- *   const { conversations, isLoading, refresh } = useConversations()
- *   
- *   return (
- *     <div>
- *       {isLoading && <Spinner />}
- *       {conversations.map(c => <ConversationItem key={c.id} {...c} />)}
- *       <button onClick={refresh}>Refresh</button>
- *     </div>
- *   )
- * }
- * ```
- */
 export function useConversations() {
   const { isMobile } = usePlatform()
-  const {
-    conversations,
-    isLoadingConversations,
-    setLoadingConversations,
-    setConversations,
-    upsertConversation,
-    updateConversation,
-    addConversation,
-    removeConversation
-  } = useMessagingStore()
-
+  const queryClient = useQueryClient()
   const isAppActive = useRef(true)
-  const pollInterval = useRef<NodeJS.Timeout>()
-  const isFetchingRef = useRef(false)
-  const shouldRefetchRef = useRef(false)
 
-  const { user, loading: authLoading, initialized: authInitialized } = useAuthStore()
+  const user = useAuthStore((state) => state.user);
+  const authLoading = useAuthStore((state) => state.loading);
+  const authInitialized = useAuthStore((state) => state.initialized);
 
-  // Fetch conversations - using useRef to make it stable
-  const fetchConversationsRef = useRef(async () => {
-    // Skip if auth is not ready
-    const authState = useAuthStore.getState()
-    if (authState.loading || !authState.initialized) {
-      console.log('⏭️ Skipping conversation fetch - auth not ready')
-      return
-    }
+  const isAuthReady = !authLoading && authInitialized && !!user?.id
 
-    // Skip if user is not authenticated
-    if (!authState.user?.id) {
-      console.log('⏭️ Skipping conversation fetch - not authenticated')
-      return
-    }
-
-    // Prevent concurrent fetches but mark for retry
-    if (isFetchingRef.current) {
-      console.log('⏭️ Fetch in progress - marking for retry')
-      shouldRefetchRef.current = true
-      return
-    }
-
-    try {
-      isFetchingRef.current = true
-      setLoadingConversations(true)
-
-      // Loop to handle queued refreshes (e.g., block action while polling)
-      do {
-        shouldRefetchRef.current = false
-        const data = await messagingService.fetchConversations()
-        setConversations(data)
-      } while (shouldRefetchRef.current)
-
-    } catch (error: any) {
-      // Check if this is an auth error - silently ignore these
-      const isAuthError = error?.message?.includes('Not authenticated') || error?.message?.includes('auth')
-      if (isAuthError) {
-        // Silently ignore auth errors - user is not logged in
-        return
-      }
-
-      console.error('Failed to fetch conversations:', error)
-      // Only show toast for real errors when user is authenticated
-      if (useAuthStore.getState().user?.id) {
-        toast.error('Failed to load conversations')
-      }
-    } finally {
-      setLoadingConversations(false)
-      isFetchingRef.current = false
-    }
+  // 1. React Query handles all fetching, caching, deduplication, and loading states
+  const { data: conversations = [], isLoading, refetch } = useQuery({
+    queryKey: ['conversations'],
+    queryFn: async () => {
+      console.log('🔄 [useConversations] Fetching conversations via React Query...')
+      return await messagingService.fetchConversations()
+    },
+    enabled: isAuthReady, // Automatically pauses when unauthenticated
+    // Set staleTime to 0. With IndexedDB offline caching, if we set this > 0, the app
+    // might boot up showing stale unread counts from a previous session and refuse to background-fetch updates!
+    staleTime: 0,
   })
 
-  // Stable fetch function
-  const fetchConversations = useCallback(() => {
-    return fetchConversationsRef.current()
-  }, [])
-
-  // Subscribe to real-time conversation updates (conversations + new messages)
+  // 2. Subscribe to real-time conversation updates
   useEffect(() => {
-    if (!user?.id) return
+    if (!user?.id) {
+      console.log('⏭️ Skipping realtime subscriptions - user not authenticated')
+      return
+    }
+
+    // Set up the single global multiplexed channel
+    realtimeService.setupGlobalChannel(user.id)
 
     // Use subscribeToConversations which subscribes to BOTH:
-    // 1. Conversation table changes (INSERT/UPDATE/DELETE)
-    // 2. Message INSERT events (to update last_message_content in sidebar)
+    // 1. Conversation participant table changes (INSERT/UPDATE/DELETE)
+    // 2. Message INSERT events (via notification log for updates)
     const unsubscribeConversations = realtimeService.subscribeToConversations(
+      user.id,
       async (payload) => {
         console.log('🔄 [useConversations] Realtime update received:', payload?.table)
 
-        // OPTIMIZED: Fetch only the updated conversation instead of entire list
         try {
           let conversationId: string | null = null;
 
           // Extract conversation ID from payload
-          if (payload?.table === 'conversations') {
-            conversationId = payload.new?.id || payload.old?.id;
+          if (payload?.table === 'conversation_participants' || payload?.table === 'conversations') {
+            conversationId = payload.new?.conversation_id || payload.old?.conversation_id || payload.new?.id || payload.old?.id;
           } else if (payload?.table === 'notification_log') {
             conversationId = payload.new?.data?.conversation_id;
           }
 
           if (conversationId) {
             console.log(`✨ [useConversations] Fetching single conversation: ${conversationId}`);
-
-            // Fetch only this conversation
             const updatedConversation = await messagingService.fetchSingleConversation(conversationId);
 
             if (updatedConversation) {
-              // Upsert into store (add if new, update and move to top if exists)
-              upsertConversation(updatedConversation);
-              console.log(`✅ [useConversations] Single conversation updated successfully`);
-            } else {
-              console.log(`ℹ️ [useConversations] Conversation ${conversationId} not found, might be deleted`);
-              // Could potentially remove from list here if needed
+              // React Query Cache Mutation: Upsert and move to top
+              queryClient.setQueryData<ConversationWithDetails[]>(['conversations'], (old = []) => {
+                const filtered = old.filter(c => c.conversation_id !== updatedConversation.conversation_id);
+                return [updatedConversation, ...filtered];
+              });
+              console.log(`✅ [useConversations] RQ Cache updated successfully`);
             }
           } else {
-            // Fallback: If we can't extract ID, do full refresh
-            console.log('⚠️ [useConversations] Could not extract conversation ID, doing full refresh');
-            fetchConversations();
+            console.log('⚠️ [useConversations] Could not extract conversation ID, doing full refetch');
+            refetch();
           }
         } catch (err) {
           console.error('Failed to handle conversation update:', err);
-          // On error, fall back to full refresh
-          fetchConversations();
+          refetch();
         }
       }
     )
-
 
     const unsubscribeMute = realtimeService.subscribeToMuteUpdates(
       user.id,
@@ -168,7 +89,10 @@ export function useConversations() {
         const conversationId = payload.new?.conversation_id || payload.old?.conversation_id
         if (conversationId) {
           const isMuted = payload.eventType !== 'DELETE'
-          updateConversation(conversationId, { is_muted: isMuted })
+          // React Query Cache Mutation: Update mute status
+          queryClient.setQueryData<ConversationWithDetails[]>(['conversations'], (old = []) =>
+            old.map(c => c.conversation_id === conversationId ? { ...c, is_muted: isMuted } : c)
+          );
         }
       }
     )
@@ -177,9 +101,9 @@ export function useConversations() {
       unsubscribeConversations()
       unsubscribeMute()
     }
-  }, [user?.id, fetchConversations, updateConversation])
+  }, [user?.id, queryClient, refetch])
 
-  // Mobile lifecycle: pause/resume updates based on app state
+  // 3. Mobile lifecycle: resume updates based on app state
   useEffect(() => {
     if (!isMobile) return
 
@@ -188,65 +112,36 @@ export function useConversations() {
     const setupListener = async () => {
       appStateListener = await App.addListener('appStateChange', ({ isActive }) => {
         isAppActive.current = isActive
-
-        if (isActive) {
-          // App came to foreground - refresh conversations
-          console.log('📱 App active - refreshing conversations')
-          fetchConversations()
-        } else {
-          // App went to background - stop polling
-          console.log('📱 App inactive - pausing conversation updates')
-          if (pollInterval.current) {
-            clearInterval(pollInterval.current)
-          }
+        if (isActive && isAuthReady) {
+          console.log('📱 App active - refetching conversations')
+          refetch()
         }
       })
     }
 
     setupListener()
-
     return () => {
-      if (appStateListener) {
-        appStateListener.remove()
-      }
+      if (appStateListener) appStateListener.remove()
     }
-  }, [isMobile, fetchConversations])
+  }, [isMobile, isAuthReady, refetch])
 
-  // Initial fetch and manual refresh event listener
+  // 4. Global manual refresh listener
   useEffect(() => {
-    // Wait for auth to be initialized and not loading
-    if (authLoading || !authInitialized) {
-      console.log('⏭️ Skipping conversation fetch - auth loading or not initialized')
-      return
-    }
-
-    // Skip if not authenticated
-    if (!user?.id) {
-      console.log('⏭️ Skipping initial conversation fetch - not authenticated')
-      return
-    }
-
-    // Initial fetch only when authenticated and auth is ready
-    fetchConversations()
-
-    // Listen for manual refresh events (e.g., after blocking/unblocking)
     const handleConversationUpdate = () => {
-      console.log('🔄 Conversation updated - refreshing list')
-      fetchConversations()
+      console.log('🔄 Manual Global Event - refreshing conversations')
+      refetch()
     }
-
     window.addEventListener('conversation-updated', handleConversationUpdate)
+    return () => window.removeEventListener('conversation-updated', handleConversationUpdate)
+  }, [refetch])
 
-    // Cleanup function
-    return () => {
-      window.removeEventListener('conversation-updated', handleConversationUpdate)
-    }
-  }, [user?.id, authLoading, authInitialized, fetchConversations])
+  // Expose stable callback signatures to prevent consumer disruption
+  const fetchConversationsWrapper = useCallback(() => refetch().then(() => { }), [refetch])
 
   return {
     conversations,
-    isLoading: isLoadingConversations,
-    fetchConversations,
-    refresh: fetchConversations
+    isLoading,
+    fetchConversations: fetchConversationsWrapper,
+    refresh: fetchConversationsWrapper
   }
 }

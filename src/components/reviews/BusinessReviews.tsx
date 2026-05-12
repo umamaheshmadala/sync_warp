@@ -4,7 +4,6 @@
 // =====================================================
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, AlertCircle, Loader2, CheckCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import InfiniteScroll from 'react-infinite-scroll-component';
@@ -45,7 +44,7 @@ export default function BusinessReviews({
   businessImage,
   userReview,
 }: BusinessReviewsProps) {
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
 
   // Filter States
   const [filters, setFilters] = useState<ReviewFiltersType>({
@@ -285,10 +284,8 @@ export default function BusinessReviews({
           </InfiniteScroll>
         ) : (
           // Empty State
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300"
+          <div
+            className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300 animate-fadeIn"
           >
             <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-3" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -307,33 +304,30 @@ export default function BusinessReviews({
             >
               Clear All Filters
             </button>
-          </motion.div>
+          </div>
         )}
       </div>
 
       {/* Response Modal */}
-      <AnimatePresence>
-        {responseModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
-            onClick={() => setResponseModal(null)}
-          >
-            <div onClick={(e) => e.stopPropagation()}>
-              <ReviewResponseForm
-                reviewId={responseModal.reviewId}
-                businessId={responseModal.businessId}
-                existingResponse={responseModal.existingResponse}
-                onSubmit={handleResponseSubmit}
-                onCancel={() => setResponseModal(null)}
-                loading={isSubmittingResponse}
-              />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <>
+          {responseModal && (
+                    <div
+                      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+                      onClick={() => setResponseModal(null)}
+                    >
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <ReviewResponseForm
+                          reviewId={responseModal.reviewId}
+                          businessId={responseModal.businessId}
+                          existingResponse={responseModal.existingResponse}
+                          onSubmit={handleResponseSubmit}
+                          onCancel={() => setResponseModal(null)}
+                          loading={isSubmittingResponse}
+                        />
+                      </div>
+                    </div>
+                  )}
+          </>
     </div>
   );
 }

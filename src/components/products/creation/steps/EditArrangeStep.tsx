@@ -4,7 +4,7 @@ import { useProductDraft } from '../../../../hooks/products/useProductDraft';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, horizontalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { ArrowLeft, ArrowRight, Crop as CropIcon, RotateCw, Trash2, Plus, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Crop as CropIcon, RotateCw, Trash2, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ImageCropper } from '../../images/ImageCropper';
 import { useImagePicker } from '../../../../hooks/products/creation/useImagePicker';
 import { v4 as uuidv4 } from 'uuid';
@@ -24,9 +24,9 @@ const SortableImageItem = ({ id, url, isActive, onClick }: any) => {
             {...attributes}
             {...listeners}
             onClick={onClick}
-            className={`relative flex-shrink-0 w-20 h-24 rounded-lg overflow-hidden border-2 cursor-pointer transition-all ${isActive ? 'border-primary ring-2 ring-primary/20' : 'border-gray-200 bg-gray-100'}`}
+            className={`relative flex-shrink-0 w-16 h-20 rounded-lg overflow-hidden border-2 cursor-pointer transition-all ${isActive ? 'border-primary ring-2 ring-primary/20' : 'border-gray-200 bg-gray-100'}`}
         >
-            <img src={url} alt="Thumbnail" className="w-full h-full object-contain" />
+            <img loading="lazy" decoding="async" src={url} alt="Thumbnail" className="w-full h-full object-contain" />
         </div>
     );
 };
@@ -47,11 +47,13 @@ export const EditArrangeStep: React.FC = () => {
 
     const activeImage = images.find(img => img.id === activeId);
 
-    // DND Sensors
+    // DND Sensors — use a delay-based activation so short taps select image
+    // and horizontal swipe scrolls the strip. Drag only fires on deliberate long-press.
     const sensors = useSensors(
         useSensor(PointerSensor, {
             activationConstraint: {
-                distance: 8, // 8px movement required to start drag, allows clicks
+                delay: 200,        // Must hold for 200ms before drag starts
+                tolerance: 5,      // Allow 5px movement during the delay
             },
         }),
         useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -117,40 +119,26 @@ export const EditArrangeStep: React.FC = () => {
 
     return (
         <div className="flex flex-col h-full bg-gray-50">
-            {/* Header */}
-            <div className="h-16 flex items-center justify-between border-b border-gray-100 bg-white px-4 shrink-0">
-                <div className="flex items-center gap-2">
-                    <button onClick={() => setStep('media')} className="p-2 hover:bg-gray-100 rounded-full">
-                        <ArrowLeft className="w-6 h-6 text-gray-900" />
-                    </button>
-                    <button
-                        onClick={() => setShowDiscardDialog(true)}
-                        className="text-sm font-medium text-gray-500 hover:text-red-600 px-2 hidden sm:block"
-                    >
-                        Discard
-                    </button>
-                </div>
-
-                <h1 className="font-semibold text-lg text-gray-900 truncate max-w-[200px]">
+            {/* Header — back arrow + title only */}
+            <div className="h-16 flex items-center border-b border-gray-100 bg-white px-4 shrink-0 gap-3">
+                <button onClick={() => setStep('media')} className="p-2 hover:bg-gray-100 rounded-full shrink-0">
+                    <ArrowLeft className="w-6 h-6 text-gray-900" />
+                </button>
+                <h1 className="font-semibold text-lg text-gray-900 truncate flex-1">
                     {editMode ? 'Edit Product' : 'Create Product'}
                 </h1>
-
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={() => setShowDiscardDialog(true)}
-                        className="sm:hidden p-2 hover:bg-gray-100 rounded-full"
-                    >
-                        <X className="w-6 h-6 text-gray-500" />
-                    </button>
-
-                    <button
-                        onClick={() => setStep('details')}
-                        className="bg-black text-white px-4 py-1.5 rounded-full font-medium text-sm hover:opacity-90 transition-opacity"
-                    >
-                        Next
-                    </button>
-                </div>
             </div>
+
+            <DiscardDialog
+                open={showDiscardDialog}
+                onOpenChange={setShowDiscardDialog}
+                onConfirm={() => {
+                    closeWizard();
+                    reset();
+                }}
+                title={editMode ? "Discard unsaved changes?" : "Discard product creation?"}
+                description={editMode ? "All unsaved changes will be lost." : "Are you sure you want to stop creating this product? All progress will be lost."}
+            />
 
             {/* Main Preview Area */}
             <div className="flex-1 flex items-center justify-center p-4 overflow-hidden relative">
@@ -165,7 +153,7 @@ export const EditArrangeStep: React.FC = () => {
                     </div>
                 ) : (
                     <div className="relative w-full max-w-md aspect-[4/5] bg-black shadow-lg rounded-lg overflow-hidden group">
-                        <img
+                        <img loading="lazy" decoding="async" 
                             src={activeImage.preview || activeImage.url}
                             alt="Preview"
                             className="w-full h-full object-contain bg-black"
@@ -225,7 +213,8 @@ export const EditArrangeStep: React.FC = () => {
             <div className="h-40 bg-white border-t border-gray-100 shrink-0 flex flex-col items-center justify-center p-4">
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                     <SortableContext items={images.map(i => i.id)} strategy={horizontalListSortingStrategy}>
-                        <div className="flex gap-3 overflow-x-auto pb-2 w-full max-w-2xl px-2 justify-center">
+                        {/* No justify-center so overflow-x-auto can actually scroll */}
+                        <div className="flex gap-2 overflow-x-auto pb-2 w-full px-2" style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
                             {images.map(img => (
                                 <SortableImageItem
                                     key={img.id}
@@ -238,9 +227,9 @@ export const EditArrangeStep: React.FC = () => {
                             {images.length < 5 && (
                                 <button
                                     onClick={handleAddMore}
-                                    className="flex-shrink-0 w-20 h-24 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 hover:text-gray-600 hover:border-gray-400"
+                                    className="flex-shrink-0 w-16 h-20 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 hover:text-gray-600 hover:border-gray-400"
                                 >
-                                    <Plus className="w-6 h-6 mb-1" />
+                                    <Plus className="w-5 h-5 mb-1" />
                                     <span className="text-xs">Add</span>
                                 </button>
                             )}
@@ -249,16 +238,22 @@ export const EditArrangeStep: React.FC = () => {
                 </DndContext>
             </div>
 
-            <DiscardDialog
-                open={showDiscardDialog}
-                onOpenChange={setShowDiscardDialog}
-                onConfirm={() => {
-                    closeWizard();
-                    reset();
-                }}
-                title={editMode ? "Discard unsaved changes?" : "Discard product creation?"}
-                description={editMode ? "All unsaved changes will be lost." : "Are you sure you want to stop creating this product? All progress will be lost."}
-            />
+            {/* Bottom Action Footer */}
+            <div className="shrink-0 bg-white border-t border-gray-100 px-4 py-3 flex gap-3">
+                <button
+                    onClick={() => setShowDiscardDialog(true)}
+                    className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+                >
+                    Discard
+                </button>
+                <button
+                    onClick={() => setStep('details')}
+                    className="flex-1 py-3 rounded-xl bg-black text-white font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+                >
+                    Next
+                    <ArrowRight className="w-4 h-4" />
+                </button>
+            </div>
         </div>
     );
 };

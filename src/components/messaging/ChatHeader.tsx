@@ -17,6 +17,7 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu'
 import { useMessagingStore } from '../../store/messagingStore'
+import { useConversations } from '../../hooks/useConversations'
 import { useNewFriends } from '../../hooks/useNewFriends'
 import { conversationManagementService } from '../../services/conversationManagementService'
 import { DeleteConversationDialog } from './DeleteConversationDialog'
@@ -38,7 +39,7 @@ interface ChatHeaderProps {
 export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { conversations, togglePinOptimistic, toggleArchiveOptimistic } = useMessagingStore()
+  const { conversations } = useConversations();
   const { friends } = useNewFriends()
   const [showDeleteDialog, setShowDeleteDialog] = React.useState(false)
   const [showClearDialog, setShowClearDialog] = React.useState(false)
@@ -53,15 +54,25 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
   const conversationFromStore = conversations.find(c => c.conversation_id === conversationId)
 
   // Fallback: Fetch conversation if not in store (race condition with navigation)
+  // Fallback: Fetch conversation if not in store (race condition with navigation)
+  // Fix: Removed isLoadingConversation from deps to prevent infinite loop (Story 8.12.4 fix)
+  const fetchAttemptedRef = React.useRef<string | null>(null)
+
   React.useEffect(() => {
+    // Reset attempt tracker if conversation changes
+    if (fetchAttemptedRef.current !== conversationId) {
+      fetchAttemptedRef.current = null
+    }
+
     // If conversation is already in store, no need to fetch
     if (conversationFromStore) return
 
-    // Prevent duplicate fetches
-    if (isLoadingConversation) return
+    // Prevent duplicate fetches or infinite loops
+    if (isLoadingConversation || fetchAttemptedRef.current === conversationId) return
 
     const fetchConversation = async () => {
       setIsLoadingConversation(true)
+      fetchAttemptedRef.current = conversationId // Mark as attempted
       console.log('🔄 [ChatHeader] Conversation not in store, fetching:', conversationId)
 
       try {
@@ -69,7 +80,10 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
         const conv = await messagingService.fetchSingleConversation(conversationId)
         if (conv) {
           console.log('✅ [ChatHeader] Fetched and upserting conversation')
-          useMessagingStore.getState().upsertConversation(conv)
+          queryClient.setQueryData<typeof conversations>(['conversations'], (old = []) => {
+            const filtered = old.filter(c => c.conversation_id !== conversationId)
+            return [conv, ...filtered]
+          })
         }
       } catch (error) {
         console.error('❌ [ChatHeader] Failed to fetch conversation:', error)
@@ -79,7 +93,7 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
     }
 
     fetchConversation()
-  }, [conversationId, conversationFromStore, isLoadingConversation])
+  }, [conversationId, conversationFromStore]) // Removed isLoadingConversation
 
   // Use conversation from store (will update when fetched)
   const conversation = conversationFromStore
@@ -187,7 +201,10 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
     try {
       switch (action) {
         case 'pin':
-          togglePinOptimistic(conversationId)
+          // Optimistic update
+          queryClient.setQueryData<typeof conversations>(['conversations'], (old = []) =>
+            old.map(c => c.conversation_id === conversationId ? { ...c, is_pinned: !c.is_pinned } : c)
+          )
           if (conversation.is_pinned) {
             await conversationManagementService.unpinConversation(conversationId)
             toast.success('Conversation unpinned', { duration: 3000 })
@@ -198,7 +215,10 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
           break
 
         case 'archive':
-          toggleArchiveOptimistic(conversationId)
+          // Optimistic update
+          queryClient.setQueryData<typeof conversations>(['conversations'], (old = []) =>
+            old.map(c => c.conversation_id === conversationId ? { ...c, is_archived: !c.is_archived } : c)
+          )
           if (conversation.is_archived) {
             await conversationManagementService.unarchiveConversation(conversationId)
             toast.success('Conversation unarchived', { duration: 3000 })
@@ -347,11 +367,10 @@ export function ChatHeader({ conversationId, onSearchClick }: ChatHeaderProps) {
   // ...
 
   const handleDeleted = () => {
-    // Remove deleted conversation from store for instant UI update
-    const updatedConversations = conversations.filter(
-      (c) => c.conversation_id !== conversationId
+    // Remove deleted conversation from React Query cache for instant UI update
+    queryClient.setQueryData<typeof conversations>(['conversations'], (old = []) =>
+      old.filter(c => c.conversation_id !== conversationId)
     )
-    useMessagingStore.getState().setConversations(updatedConversations)
 
     // CRITICAL FIX: Remove messages from React Query cache to prevent stale messages appearing if re-created
     queryClient.removeQueries({ queryKey: ['messages', conversationId] })

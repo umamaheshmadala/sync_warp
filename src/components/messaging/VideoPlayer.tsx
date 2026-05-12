@@ -1,6 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Loader2, Play, X } from 'lucide-react'
+import { Loader2, Play, X, Download, Share2, Save } from 'lucide-react'
 import { createPortal } from 'react-dom'
+import { Capacitor } from '@capacitor/core'
+import { Haptics, ImpactStyle } from '@capacitor/haptics'
+import { Filesystem, Directory } from '@capacitor/filesystem'
+import toast from 'react-hot-toast'
 
 interface VideoPlayerProps {
   videoUrl: string
@@ -13,6 +17,7 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, onClose }: VideoPlayerProp
   const [loadProgress, setLoadProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
+  const isMobile = Capacitor.isNativePlatform()
 
   useEffect(() => {
     const video = videoRef.current
@@ -60,60 +65,150 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, onClose }: VideoPlayerProp
     return () => window.removeEventListener('keydown', handleEscape)
   }, [onClose])
 
+  const handleSaveVideo = async () => {
+    try {
+      if (isMobile) {
+        // Mobile: Save to device storage
+        await Haptics.impact({ style: ImpactStyle.Light })
+
+        const response = await fetch(videoUrl)
+        const blob = await response.blob()
+        const reader = new FileReader()
+
+        reader.onloadend = async () => {
+          const base64 = reader.result as string
+          const base64Data = base64.split(',')[1]
+
+          await Filesystem.writeFile({
+            path: `sync-video-${Date.now()}.mp4`,
+            data: base64Data,
+            directory: Directory.Documents
+          })
+
+          toast.success('Video saved to device')
+        }
+
+        reader.readAsDataURL(blob)
+      } else {
+        // Web: Traditional download
+        const response = await fetch(videoUrl)
+        const blob = await response.blob()
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `video-${Date.now()}.mp4`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+        toast.success('Video downloaded')
+      }
+    } catch (error) {
+      console.error('Save/download failed:', error)
+      toast.error('Failed to save video')
+    }
+  }
+
+  const handleShareVideo = async () => {
+    try {
+      if (isMobile) {
+        await Haptics.impact({ style: ImpactStyle.Light })
+      }
+
+      // Use shareService for cross-platform sharing with tracking
+      const { shareService } = await import('../../services/shareService')
+      await shareService.shareVideo(videoUrl, 'video-player-share')
+    } catch (error) {
+      console.log('Share cancelled or failed:', error)
+    }
+  }
+
   return createPortal(
-    <div 
-      className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
+    <div
+      className="fixed inset-0 bg-black/95 z-[60] flex items-center justify-center p-4 animate-in fade-in duration-200"
       onClick={onClose}
     >
-      {/* Close button */}
-      <button
-        onClick={onClose}
-        className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
-        aria-label="Close video"
+      {/* Top Bar Actions - Fixed to viewport to ensure visibility regardless of video size */}
+      <div
+        className="fixed top-4 right-4 z-[70] flex items-center gap-4"
+        onClick={(e) => e.stopPropagation()}
       >
-        <X className="w-6 h-6 text-white" />
-      </button>
+        {/* Share Button */}
+        {(isMobile || navigator.share) && (
+          <button
+            onClick={handleShareVideo}
+            className="p-3 bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-full text-white transition-all shadow-lg border border-white/10"
+            aria-label="Share"
+            title="Share"
+          >
+            <Share2 className="w-6 h-6" />
+          </button>
+        )}
 
-      {/* Video container */}
-      <div 
-        className="relative max-w-4xl w-full"
+        {/* Download Button */}
+        <button
+          onClick={handleSaveVideo}
+          className="p-3 bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-full text-white transition-all shadow-lg border border-white/10"
+          aria-label={isMobile ? "Save video" : "Download"}
+          title={isMobile ? "Save video" : "Download"}
+        >
+          {isMobile ? (
+            <Save className="w-6 h-6" />
+          ) : (
+            <Download className="w-6 h-6" />
+          )}
+        </button>
+
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          className="p-3 bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-full text-white transition-all shadow-lg border border-white/10"
+          aria-label="Close video"
+        >
+          <X className="w-6 h-6" />
+        </button>
+      </div>
+
+      {/* Video container - Removing aspect-video to allow natural aspect ratio, especialy for vertical videos */}
+      <div
+        className="relative w-full max-w-5xl h-full flex items-center justify-center overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Loading overlay */}
         {isLoading && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 rounded-lg z-10">
-            <div className="flex flex-col items-center gap-3">
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 z-10 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-4">
               {/* Circular progress */}
-              <div className="relative w-20 h-20">
-                <svg className="w-20 h-20 transform -rotate-90">
+              <div className="relative w-16 h-16">
+                <svg className="w-16 h-16 transform -rotate-90">
                   <circle
-                    cx="40"
-                    cy="40"
-                    r="36"
+                    cx="32"
+                    cy="32"
+                    r="28"
                     stroke="white"
-                    strokeOpacity="0.3"
+                    strokeOpacity="0.2"
                     strokeWidth="4"
                     fill="none"
                   />
                   <circle
-                    cx="40"
-                    cy="40"
-                    r="36"
+                    cx="32"
+                    cy="32"
+                    r="28"
                     stroke="white"
                     strokeWidth="4"
                     fill="none"
-                    strokeDasharray={`${2 * Math.PI * 36}`}
-                    strokeDashoffset={`${2 * Math.PI * 36 * (1 - loadProgress / 100)}`}
-                    className="transition-all duration-300"
+                    strokeDasharray={`${2 * Math.PI * 28}`}
+                    strokeDashoffset={`${2 * Math.PI * 28 * (1 - loadProgress / 100)}`}
+                    className="transition-all duration-300 ease-out"
                   />
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-white text-sm font-semibold">
+                  <span className="text-white text-xs font-bold">
                     {loadProgress}%
                   </span>
                 </div>
               </div>
-              <span className="text-white text-sm font-medium">
+              <span className="text-white/80 text-sm font-medium animate-pulse">
                 Loading video...
               </span>
             </div>
@@ -122,12 +217,13 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, onClose }: VideoPlayerProp
 
         {/* Error overlay */}
         {error && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-lg z-10">
-            <div className="text-center">
-              <p className="text-white text-lg font-medium">{error}</p>
+          <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-10">
+            <div className="text-center p-6 bg-zinc-900 rounded-xl border border-white/10">
+              <p className="text-red-400 text-lg font-medium mb-4">{error}</p>
               <button
                 onClick={onClose}
-                className="mt-4 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-white transition-colors"
+                className="px-6 py-2 bg-white text-black font-medium rounded-lg hover:bg-gray-200 transition-colors"
+                aria-label="Close error"
               >
                 Close
               </button>
@@ -142,8 +238,8 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, onClose }: VideoPlayerProp
           poster={thumbnailUrl}
           controls
           autoPlay
-          className="w-full h-auto rounded-lg shadow-2xl"
-          style={{ maxHeight: '80vh' }}
+          playsInline
+          className="max-w-full max-h-[90vh] object-contain shadow-2xl rounded-lg"
         />
       </div>
     </div>,

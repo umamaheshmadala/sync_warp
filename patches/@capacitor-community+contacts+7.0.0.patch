@@ -1,0 +1,31 @@
+diff --git a/node_modules/@capacitor-community/contacts/ios/Plugin/ContactsPlugin.swift b/node_modules/@capacitor-community/contacts/ios/Plugin/ContactsPlugin.swift
+index 4376bb6..e77c275 100644
+--- a/node_modules/@capacitor-community/contacts/ios/Plugin/ContactsPlugin.swift
++++ b/node_modules/@capacitor-community/contacts/ios/Plugin/ContactsPlugin.swift
+@@ -29,8 +29,12 @@ public class ContactsPlugin: CAPPlugin, CNContactPickerDelegate {
+             permissionState = "denied"
+         case .authorized:
+             permissionState = "granted"
+-        @unknown default:
+-            permissionState = "prompt"
++        default:
++            if #available(iOS 18, *), CNContactStore.authorizationStatus(for: .contacts) == .limited {
++                permissionState = "granted"
++            } else {
++                permissionState = "prompt"
++            }
+         }
+ 
+         call.resolve([
+@@ -61,7 +65,10 @@ public class ContactsPlugin: CAPPlugin, CNContactPickerDelegate {
+             return false
+         case .authorized:
+             return true
+-        @unknown default:
++        default:
++            if #available(iOS 18, *), CNContactStore.authorizationStatus(for: .contacts) == .limited {
++                return true
++            }
+             return false
+         }
+     }

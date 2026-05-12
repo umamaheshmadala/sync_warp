@@ -4,7 +4,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { Heart } from 'lucide-react';
-import { motion } from 'framer-motion';
 import useFavorites from '../../hooks/useFavorites';
 import { cn } from '../../lib/utils';
 
@@ -12,16 +11,16 @@ interface SaveButtonProps {
   // Item identification
   itemId: string;
   itemType: 'business' | 'coupon';
-  
+
   // Visual customization
   variant?: 'default' | 'compact' | 'large';
   showLabel?: boolean;
   className?: string;
-  
+
   // Behavior
   disabled?: boolean;
   onClick?: (isFavorited: boolean) => void;
-  
+
   // Custom labels
   savedLabel?: string;
   unsavedLabel?: string;
@@ -49,34 +48,39 @@ const SaveButton: React.FC<SaveButtonProps> = ({
 
   const [isAnimating, setIsAnimating] = useState(false);
   const [, forceUpdate] = useState({});
-  
+
   // Check if item is favorited directly from cache - no local state needed
-  const isFavorited = itemType === 'business' 
+  const isFavorited = itemType === 'business'
     ? isBusinessFavorited(itemId)
     : isCouponFavorited(itemId);
-  
+
   // Force re-render when cache updates
   useEffect(() => {
     // This effect will run when the favorites state changes
     const timer = setTimeout(() => forceUpdate({}), 10);
     return () => clearTimeout(timer);
   }, [favorites.counts, favorites.totalFavorites]);
-  
+
   // Additional effect to handle cache timestamp changes with more aggressive polling during animation
   useEffect(() => {
     const pollInterval = isAnimating ? 50 : 200; // Poll more frequently during animation
-    
-    const interval = setInterval(() => {
-      const currentState = itemType === 'business' 
+
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    const tick = () => {
+      const currentState = itemType === 'business'
         ? isBusinessFavorited(itemId)
         : isCouponFavorited(itemId);
       // Force update only if needed
       if (currentState !== isFavorited) {
         forceUpdate({});
       }
-    }, pollInterval);
-    
-    return () => clearInterval(interval);
+      timeoutId = setTimeout(tick, pollInterval);
+    };
+
+    timeoutId = setTimeout(tick, pollInterval);
+
+    return () => clearTimeout(timeoutId);
   }, [itemType, itemId, isFavorited, isBusinessFavorited, isCouponFavorited, isAnimating]);
 
   // Handle save/unsave action
@@ -95,7 +99,7 @@ const SaveButton: React.FC<SaveButtonProps> = ({
 
     try {
       let result: boolean;
-      
+
       if (itemType === 'business') {
         result = await toggleBusinessFavorite(itemId);
       } else {
@@ -103,7 +107,7 @@ const SaveButton: React.FC<SaveButtonProps> = ({
       }
 
       // Result will be reflected in cache immediately
-      
+
       // Call optional callback
       onClick?.(result);
     } catch (error) {
@@ -117,7 +121,7 @@ const SaveButton: React.FC<SaveButtonProps> = ({
   // Get button styles based on variant
   const getButtonStyles = () => {
     const baseStyles = "relative flex items-center justify-center transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-full";
-    
+
     switch (variant) {
       case 'compact':
         return cn(baseStyles, "w-8 h-8 text-sm");
@@ -144,18 +148,18 @@ const SaveButton: React.FC<SaveButtonProps> = ({
 
   // Animation variants for the heart
   const heartVariants = {
-    idle: { 
-      scale: 1, 
+    idle: {
+      scale: 1,
       rotate: 0,
       transition: { duration: 0.2 }
     },
-    favorited: { 
-      scale: [1, 1.3, 1], 
+    favorited: {
+      scale: [1, 1.3, 1],
       rotate: [0, -10, 10, 0],
       transition: { duration: 0.4, times: [0, 0.5, 1] }
     },
-    unfavorited: { 
-      scale: [1, 0.8, 1], 
+    unfavorited: {
+      scale: [1, 0.8, 1],
       transition: { duration: 0.3 }
     }
   };
@@ -170,7 +174,7 @@ const SaveButton: React.FC<SaveButtonProps> = ({
 
   return (
     <div className={cn("inline-flex items-center", className)}>
-      <motion.button
+      <button
         onClick={handleToggle}
         disabled={disabled || isAnimating || !isAuthenticated}
         className={cn(
@@ -182,18 +186,11 @@ const SaveButton: React.FC<SaveButtonProps> = ({
           !isAuthenticated && "opacity-60 cursor-not-allowed",
           "active:scale-95"
         )}
-        whileTap={{ scale: 0.95 }}
         aria-label={isFavorited ? `Remove from favorites` : `Add to favorites`}
         title={isFavorited ? `Remove from favorites` : `Add to favorites`}
       >
         {/* Heart Icon with Animation */}
-        <motion.div
-          variants={isAnimating ? pulseVariants : heartVariants}
-          animate={
-            isAnimating ? "pulse" :
-            isFavorited ? "favorited" : 
-            "idle"
-          }
+        <div
           className="flex items-center justify-center"
         >
           <Heart
@@ -203,48 +200,32 @@ const SaveButton: React.FC<SaveButtonProps> = ({
               isFavorited ? "fill-current text-red-600" : "text-current"
             )}
           />
-        </motion.div>
+        </div>
 
         {/* Ripple effect on click */}
         {isAnimating && (
-          <motion.div
-            className="absolute inset-0 rounded-full bg-current opacity-20"
-            initial={{ scale: 0 }}
-            animate={{ scale: 2, opacity: 0 }}
-            transition={{ duration: 0.4 }}
+          <div
+            className="absolute inset-0 rounded-full bg-current opacity-20 animate-fadeIn"
           />
         )}
-      </motion.button>
+      </button>
 
       {/* Optional label */}
       {showLabel && (
-        <motion.span
-          initial={{ opacity: 0.7 }}
-          animate={{ 
-            opacity: isFavorited ? 1 : 0.7,
-            color: isFavorited ? "#dc2626" : "#6b7280"
-          }}
-          className="ml-2 text-sm font-medium transition-colors duration-200"
+        <span
+          className="ml-2 text-sm font-medium transition-colors duration-200 animate-fadeIn"
         >
           {isFavorited ? savedLabel : unsavedLabel}
-        </motion.span>
+        </span>
       )}
 
       {/* Floating heart animation on save */}
       {isAnimating && isFavorited && (
-        <motion.div
-          className="absolute pointer-events-none"
-          initial={{ opacity: 0, scale: 0.5, y: 0 }}
-          animate={{ 
-            opacity: [0, 1, 0], 
-            scale: [0.5, 1, 0.8], 
-            y: [-20, -40],
-            x: [0, 10, -5]
-          }}
-          transition={{ duration: 0.8 }}
+        <div
+          className="absolute pointer-events-none animate-fadeIn"
         >
           <Heart size={16} className="fill-red-500 text-red-500" />
-        </motion.div>
+        </div>
       )}
     </div>
   );

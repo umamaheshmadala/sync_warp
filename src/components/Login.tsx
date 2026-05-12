@@ -17,7 +17,8 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { signIn, loading } = useAuthStore();
+  const loading = useAuthStore((state) => state.loading);
+  const signIn = useAuthStore(s => s.signIn);
   const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
@@ -65,8 +66,8 @@ const Login: React.FC = () => {
         {/* Header */}
         <div className="text-center">
           <div className="mx-auto flex justify-center mb-2">
-            <img
-              src="/Logo/Logo Text Transparent PNG 2.png"
+            <img loading="lazy" decoding="async" 
+              src="/Logo/Logo Text Transparent SVG.svg"
               alt="Sync"
               className="h-16 sm:h-24 w-auto"
             />

@@ -5,7 +5,7 @@ import UserReviewsList from '../reviews/UserReviewsList';
 import { useAuthStore } from '@/store/authStore';
 
 export const MyActivityTab: React.FC = () => {
-    const { user } = useAuthStore();
+    const user = useAuthStore((state) => state.user);
 
     if (!user) return null;
 

@@ -9,13 +9,16 @@ interface MobileProductCommentsProps {
     initialCount?: number;
     focusInput?: boolean;
     isOwner?: boolean;
+    /** When true, only the comment list is rendered (input is handled externally in a sticky footer) */
+    hideInput?: boolean;
 }
 
 export const MobileProductComments: React.FC<MobileProductCommentsProps> = ({
     productId,
     initialCount = 0,
     focusInput,
-    isOwner
+    isOwner,
+    hideInput
 }) => {
     const { comments, commentCount, loading, hasMore, loadMore, postComment, deleteComment } = useProductComments(productId, initialCount);
 
@@ -27,9 +30,12 @@ export const MobileProductComments: React.FC<MobileProductCommentsProps> = ({
         <div className="px-4 py-2 border-t border-gray-100 dark:border-gray-800">
             {/* Header / Count */}
             {commentCount > 0 && (
-                <div className="text-gray-500 dark:text-gray-400 text-sm mb-3">
-                    {commentCount} {commentCount === 1 ? 'comment' : 'comments'}
-                </div>
+                <button 
+                    onClick={() => document.getElementById('mobile-comment-input')?.focus()}
+                    className="text-gray-500 dark:text-gray-400 text-sm mb-3 hover:underline text-left block"
+                >
+                    View all {commentCount} {commentCount === 1 ? 'comment' : 'comments'}
+                </button>
             )}
 
             {/* Comments List (Preview - max 3 for mobile modal usually, unless viewing all) */}
@@ -82,12 +88,14 @@ export const MobileProductComments: React.FC<MobileProductCommentsProps> = ({
                 )}
             </div>
 
-            {/* Input */}
-            <ProductCommentInput
-                onPost={postComment}
-                id="mobile-comment-input"
-                autoFocus={focusInput}
-            />
+            {/* Input (only if not managed externally) */}
+            {!hideInput && (
+                <ProductCommentInput
+                    onPost={postComment}
+                    id="mobile-comment-input"
+                    autoFocus={focusInput}
+                />
+            )}
         </div>
     );
 };

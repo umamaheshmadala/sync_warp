@@ -60,10 +60,10 @@ export const FavoriteProductCard: React.FC<FavoriteProductCardProps> = ({
             onClick={handleCardClick}
             className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-all cursor-pointer group"
         >
-            {/* Product Image - Portrait 9:16 */}
-            <div className="relative overflow-hidden bg-gray-100 aspect-[9/16]">
+            {/* Product Image - Portrait 4:5 */}
+            <div className="relative overflow-hidden bg-gray-100 aspect-[4/5]">
                 {getImageUrl() && !imageError ? (
-                    <img
+                    <img loading="lazy" decoding="async" 
                         src={getImageUrl()}
                         alt={product.name}
                         className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"

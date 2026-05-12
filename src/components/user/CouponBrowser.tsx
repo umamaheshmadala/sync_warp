@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search,
   Filter,
@@ -268,11 +267,7 @@ const CouponBrowser: React.FC<CouponBrowserProps> = ({
     });
 
     return (
-      <motion.div
-        layout
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.9 }}
+      <div className="animate-fadeIn"
       >
         <UnifiedCouponCard
           coupon={{
@@ -289,7 +284,7 @@ const CouponBrowser: React.FC<CouponBrowserProps> = ({
           onClick={() => onView(coupon)}
           isExpired={isExpired || false}
         />
-      </motion.div>
+      </div>
     );
   };
 
@@ -375,106 +370,103 @@ const CouponBrowser: React.FC<CouponBrowserProps> = ({
             </div>
 
             {/* Advanced Filters */}
-            <AnimatePresence>
-              {showFilters && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="bg-white border border-gray-200 rounded-lg p-4 space-y-4"
-                >
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
-                      <select
-                        value={filters.sortBy}
-                        onChange={(e) => setFilters(prev => ({ ...prev, sortBy: e.target.value as any }))}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                      >
-                        <option value="popular">Most Popular</option>
-                        <option value="newest">Newest</option>
-                        <option value="expiring">Expiring Soon</option>
-                        <option value="discount">Highest Discount</option>
-                        {userLocation && <option value="distance">Nearest</option>}
-                      </select>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Min Discount (₹)</label>
-                      <input
-                        type="number"
-                        placeholder="0"
-                        value={filters.minDiscount || ''}
-                        onChange={(e) => setFilters(prev => ({ ...prev, minDiscount: Number(e.target.value) || 0 }))}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                      />
-                    </div>
+            <>
+                      {showFilters && (
+                                      <div
+                                        className="bg-white border border-gray-200 rounded-lg p-4 space-y-4"
+                                      >
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                          <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
+                                            <select
+                                              value={filters.sortBy}
+                                              onChange={(e) => setFilters(prev => ({ ...prev, sortBy: e.target.value as any }))}
+                                              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                                            >
+                                              <option value="popular">Most Popular</option>
+                                              <option value="newest">Newest</option>
+                                              <option value="expiring">Expiring Soon</option>
+                                              <option value="discount">Highest Discount</option>
+                                              {userLocation && <option value="distance">Nearest</option>}
+                                            </select>
+                                          </div>
+                                          
+                                          <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">Min Discount (₹)</label>
+                                            <input
+                                              type="number"
+                                              placeholder="0"
+                                              value={filters.minDiscount || ''}
+                                              onChange={(e) => setFilters(prev => ({ ...prev, minDiscount: Number(e.target.value) || 0 }))}
+                                              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                                            />
+                                          </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Business Name</label>
-                      <input
-                        type="text"
-                        placeholder="Search businesses..."
-                        value={filters.businessName}
-                        onChange={(e) => setFilters(prev => ({ ...prev, businessName: e.target.value }))}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                      />
-                    </div>
+                                          <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">Business Name</label>
+                                            <input
+                                              type="text"
+                                              placeholder="Search businesses..."
+                                              value={filters.businessName}
+                                              onChange={(e) => setFilters(prev => ({ ...prev, businessName: e.target.value }))}
+                                              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                                            />
+                                          </div>
 
-                    {userLocation && (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Max Distance (km)</label>
-                        <input
-                          type="number"
-                          placeholder="10"
-                          value={filters.maxDistance || ''}
-                          onChange={(e) => setFilters(prev => ({ ...prev, maxDistance: Number(e.target.value) || 10 }))}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                        />
-                      </div>
-                    )}
-                  </div>
+                                          {userLocation && (
+                                            <div>
+                                              <label className="block text-sm font-medium text-gray-700 mb-2">Max Distance (km)</label>
+                                              <input
+                                                type="number"
+                                                placeholder="10"
+                                                value={filters.maxDistance || ''}
+                                                onChange={(e) => setFilters(prev => ({ ...prev, maxDistance: Number(e.target.value) || 10 }))}
+                                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                                              />
+                                            </div>
+                                          )}
+                                        </div>
 
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <label className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={filters.isActive}
-                          onChange={(e) => setFilters(prev => ({ ...prev, isActive: e.target.checked }))}
-                          className="rounded border-gray-300 text-blue-600 mr-2"
-                        />
-                        <span className="text-sm text-gray-700">Active only</span>
-                      </label>
-                      <label className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={filters.hasStock}
-                          onChange={(e) => setFilters(prev => ({ ...prev, hasStock: e.target.checked }))}
-                          className="rounded border-gray-300 text-blue-600 mr-2"
-                        />
-                        <span className="text-sm text-gray-700">Available</span>
-                      </label>
-                    </div>
-                    <button
-                      onClick={() => setFilters({
-                        categories: [],
-                        types: [],
-                        minDiscount: 0,
-                        maxDistance: 10,
-                        isActive: true,
-                        hasStock: true,
-                        businessName: '',
-                        sortBy: 'popular'
-                      })}
-                      className="text-sm text-blue-600 hover:text-blue-800"
-                    >
-                      Reset Filters
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                                        <div className="flex items-center justify-between">
+                                          <div className="flex items-center space-x-4">
+                                            <label className="flex items-center">
+                                              <input
+                                                type="checkbox"
+                                                checked={filters.isActive}
+                                                onChange={(e) => setFilters(prev => ({ ...prev, isActive: e.target.checked }))}
+                                                className="rounded border-gray-300 text-blue-600 mr-2"
+                                              />
+                                              <span className="text-sm text-gray-700">Active only</span>
+                                            </label>
+                                            <label className="flex items-center">
+                                              <input
+                                                type="checkbox"
+                                                checked={filters.hasStock}
+                                                onChange={(e) => setFilters(prev => ({ ...prev, hasStock: e.target.checked }))}
+                                                className="rounded border-gray-300 text-blue-600 mr-2"
+                                              />
+                                              <span className="text-sm text-gray-700">Available</span>
+                                            </label>
+                                          </div>
+                                          <button
+                                            onClick={() => setFilters({
+                                              categories: [],
+                                              types: [],
+                                              minDiscount: 0,
+                                              maxDistance: 10,
+                                              isActive: true,
+                                              hasStock: true,
+                                              businessName: '',
+                                              sortBy: 'popular'
+                                            })}
+                                            className="text-sm text-blue-600 hover:text-blue-800"
+                                          >
+                                            Reset Filters
+                                          </button>
+                                        </div>
+                                      </div>
+                                    )}
+                      </>
           </div>
         </div>
       </div>
@@ -507,31 +499,30 @@ const CouponBrowser: React.FC<CouponBrowserProps> = ({
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
           </div>
         ) : filteredCoupons.length > 0 ? (
-          <motion.div
-            layout
+          <div
             className={`grid gap-6 ${
               viewMode === 'grid' 
                 ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' 
                 : 'grid-cols-1'
             }`}
           >
-            <AnimatePresence>
-              {filteredCoupons.map((coupon) => (
-                <CouponCard
-                  key={coupon.id}
-                  coupon={coupon}
-                  isCollected={collectedCoupons.has(coupon.id)}
-                  onCollect={handleCollectCoupon}
-                  onView={(coupon) => onCouponSelect?.(coupon)}
-                  distance={userLocation ? calculateDistance(
-                    coupon.business_latitude || 0, 
-                    coupon.business_longitude || 0
-                  ) : undefined}
-                  isLoading={loadingCollect.has(coupon.id)}
-                />
-              ))}
-            </AnimatePresence>
-          </motion.div>
+            <>
+                          {filteredCoupons.map((coupon) => (
+                                          <CouponCard
+                                            key={coupon.id}
+                                            coupon={coupon}
+                                            isCollected={collectedCoupons.has(coupon.id)}
+                                            onCollect={handleCollectCoupon}
+                                            onView={(coupon) => onCouponSelect?.(coupon)}
+                                            distance={userLocation ? calculateDistance(
+                                              coupon.business_latitude || 0, 
+                                              coupon.business_longitude || 0
+                                            ) : undefined}
+                                            isLoading={loadingCollect.has(coupon.id)}
+                                          />
+                                        ))}
+                          </>
+          </div>
         ) : (
           <div className="text-center py-12">
             <Gift className="w-16 h-16 text-gray-300 mx-auto mb-4" />

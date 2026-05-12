@@ -32,7 +32,7 @@ export const useOfferProductFavorites = (
     options: UseOfferProductFavoritesOptions = {}
 ) => {
     const { autoLoad = true } = options;
-    const { user } = useAuthStore();
+    const user = useAuthStore((state) => state.user);
 
     const [state, setState] = useState<FavoritesState>({
         offers: [],

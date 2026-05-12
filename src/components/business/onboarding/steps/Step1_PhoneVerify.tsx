@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
     Shield,
     CheckCircle,
@@ -47,10 +46,8 @@ export function Step1_PhoneVerify({
     return (
         <div className="max-w-lg mx-auto">
             {/* Header */}
-            <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-center mb-8"
+            <div
+                className="text-center mb-8 animate-fadeIn"
             >
                 <div className="w-16 h-16 bg-indigo-100 rounded-2xl mx-auto mb-4 flex items-center justify-center">
                     <Shield className="w-8 h-8 text-indigo-600" />
@@ -61,16 +58,13 @@ export function Step1_PhoneVerify({
                 <p className="text-gray-600">
                     We'll send a verification code to confirm you own <strong>{businessName || 'your business'}</strong>
                 </p>
-            </motion.div>
+            </div>
 
             {/* Pre-fill Indicator */}
 
 
             {/* Phone Verification Component */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
+            <div className="animate-fadeIn"
             >
                 <BusinessPhoneVerification
                     phoneNumber={phoneNumber}
@@ -78,101 +72,90 @@ export function Step1_PhoneVerify({
                     onVerified={handleVerified}
                     isVerified={isVerified}
                 />
-            </motion.div>
+            </div>
 
             {/* Success State */}
-            <AnimatePresence>
-                {isVerified && (
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="mt-6 bg-green-50 border border-green-200 rounded-xl p-6 text-center"
-                    >
-                        <div className="w-16 h-16 bg-green-100 rounded-full mx-auto mb-4 flex items-center justify-center">
-                            <CheckCircle className="w-8 h-8 text-green-600" />
-                        </div>
-                        <h3 className="text-lg font-semibold text-green-800 mb-2">
-                            Verification Complete!
-                        </h3>
-                        <p className="text-green-600">
-                            Proceeding to next step...
-                        </p>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            <>
+            {isVerified && (
+                                <div
+                                    className="mt-6 bg-green-50 border border-green-200 rounded-xl p-6 text-center"
+                                >
+                                    <div className="w-16 h-16 bg-green-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+                                        <CheckCircle className="w-8 h-8 text-green-600" />
+                                    </div>
+                                    <h3 className="text-lg font-semibold text-green-800 mb-2">
+                                        Verification Complete!
+                                    </h3>
+                                    <p className="text-green-600">
+                                        Proceeding to next step...
+                                    </p>
+                                </div>
+                            )}
+            </>
 
             {/* Skip Warning Modal */}
-            <AnimatePresence>
-                {showSkipWarning && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-                        onClick={() => setShowSkipWarning(false)}
-                    >
-                        <motion.div
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.9, opacity: 0 }}
-                            className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <div className="w-12 h-12 bg-amber-100 rounded-xl mx-auto mb-4 flex items-center justify-center">
-                                <AlertTriangle className="w-6 h-6 text-amber-600" />
-                            </div>
-                            <h3 className="text-xl font-bold text-gray-900 text-center mb-2">
-                                Skip Verification?
-                            </h3>
-                            <p className="text-gray-600 text-center mb-4">
-                                Unverified businesses have limited features:
-                            </p>
-
-                            <ul className="space-y-2 mb-6">
-                                <li className="flex items-center gap-2 text-sm text-gray-700">
-                                    <span className="w-5 h-5 rounded-full bg-red-100 text-red-500 flex items-center justify-center text-xs">✕</span>
-                                    No "Verified" badge on your profile
-                                </li>
-                                <li className="flex items-center gap-2 text-sm text-gray-700">
-                                    <span className="w-5 h-5 rounded-full bg-red-100 text-red-500 flex items-center justify-center text-xs">✕</span>
-                                    Cannot be featured in promotions
-                                </li>
-                                <li className="flex items-center gap-2 text-sm text-gray-700">
-                                    <span className="w-5 h-5 rounded-full bg-red-100 text-red-500 flex items-center justify-center text-xs">✕</span>
-                                    Requires admin approval for changes
-                                </li>
-                                <li className="flex items-center gap-2 text-sm text-gray-700">
-                                    <span className="w-5 h-5 rounded-full bg-green-100 text-green-500 flex items-center justify-center text-xs">✓</span>
-                                    Can verify later anytime
-                                </li>
-                            </ul>
-
-                            <div className="flex gap-3">
-                                <button
+            <>
+            {showSkipWarning && (
+                                <div
+                                    className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
                                     onClick={() => setShowSkipWarning(false)}
-                                    className="flex-1 px-4 py-3 border border-gray-300 rounded-xl font-medium text-gray-700 hover:bg-gray-50 bg-white"
                                 >
-                                    Go Back
-                                </button>
-                                <button
-                                    onClick={confirmSkip}
-                                    className="flex-1 px-4 py-3 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800"
-                                >
-                                    Skip Anyway
-                                </button>
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                                    <div
+                                        className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl"
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        <div className="w-12 h-12 bg-amber-100 rounded-xl mx-auto mb-4 flex items-center justify-center">
+                                            <AlertTriangle className="w-6 h-6 text-amber-600" />
+                                        </div>
+                                        <h3 className="text-xl font-bold text-gray-900 text-center mb-2">
+                                            Skip Verification?
+                                        </h3>
+                                        <p className="text-gray-600 text-center mb-4">
+                                            Unverified businesses have limited features:
+                                        </p>
+
+                                        <ul className="space-y-2 mb-6">
+                                            <li className="flex items-center gap-2 text-sm text-gray-700">
+                                                <span className="w-5 h-5 rounded-full bg-red-100 text-red-500 flex items-center justify-center text-xs">✕</span>
+                                                No "Verified" badge on your profile
+                                            </li>
+                                            <li className="flex items-center gap-2 text-sm text-gray-700">
+                                                <span className="w-5 h-5 rounded-full bg-red-100 text-red-500 flex items-center justify-center text-xs">✕</span>
+                                                Cannot be featured in promotions
+                                            </li>
+                                            <li className="flex items-center gap-2 text-sm text-gray-700">
+                                                <span className="w-5 h-5 rounded-full bg-red-100 text-red-500 flex items-center justify-center text-xs">✕</span>
+                                                Requires admin approval for changes
+                                            </li>
+                                            <li className="flex items-center gap-2 text-sm text-gray-700">
+                                                <span className="w-5 h-5 rounded-full bg-green-100 text-green-500 flex items-center justify-center text-xs">✓</span>
+                                                Can verify later anytime
+                                            </li>
+                                        </ul>
+
+                                        <div className="flex gap-3">
+                                            <button
+                                                onClick={() => setShowSkipWarning(false)}
+                                                className="flex-1 px-4 py-3 border border-gray-300 rounded-xl font-medium text-gray-700 hover:bg-gray-50 bg-white"
+                                            >
+                                                Go Back
+                                            </button>
+                                            <button
+                                                onClick={confirmSkip}
+                                                className="flex-1 px-4 py-3 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800"
+                                            >
+                                                Skip Anyway
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+            </>
 
             {/* Skip Link */}
             {!isVerified && (
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.5 }}
-                    className="mt-8 text-center"
+                <div
+                    className="mt-8 text-center animate-fadeIn"
                 >
                     <button
                         onClick={handleSkipClick}
@@ -180,7 +163,7 @@ export function Step1_PhoneVerify({
                     >
                         Skip verification for now
                     </button>
-                </motion.div>
+                </div>
             )}
 
 

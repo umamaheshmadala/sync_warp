@@ -273,7 +273,8 @@ class OfflineMediaService {
     const { data, error } = await supabase.storage
       .from(bucket)
       .upload(fileName, fileToUpload, {
-        cacheControl: '3600',
+        cacheControl: '31536000',
+        contentType: file.type || 'application/octet-stream',
         upsert: false
       })
 

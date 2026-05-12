@@ -6,7 +6,9 @@ import { useAuthStore } from '../store/authStore';
 
 const Landing: React.FC = () => {
   const navigate = useNavigate();
-  const { user, initialized, profile } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
+  const initialized = useAuthStore((state) => state.initialized);
+  const profile = useAuthStore((state) => state.profile);
 
   // Redirect to dashboard if user is already logged in
   useEffect(() => {
@@ -48,7 +50,7 @@ const Landing: React.FC = () => {
       <header className="px-4 py-6 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           <div className="flex items-center">
-            <img
+            <img loading="lazy" decoding="async" 
               src="/Logo/Sync Logo Text Transparent SVG.svg"
               alt="Sync"
               className="h-8"

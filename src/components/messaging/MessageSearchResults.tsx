@@ -69,7 +69,7 @@ export function MessageSearchResults({
           )}
         >
           {/* Avatar */}
-          <img
+          <img loading="lazy" decoding="async" 
             src={result.senderAvatar || '/default-avatar.png'}
             alt={result.senderName || 'User'}
             className="w-10 h-10 rounded-full object-cover flex-shrink-0"

@@ -27,7 +27,7 @@ export function ReviewLinkPreview({ preview }: ReviewLinkPreviewProps) {
             {/* Business image */}
             {preview.image && (
                 <div className="h-32 overflow-hidden bg-gray-100">
-                    <img
+                    <img loading="lazy" decoding="async" 
                         src={preview.image}
                         alt="Business"
                         className="w-full h-full object-cover"

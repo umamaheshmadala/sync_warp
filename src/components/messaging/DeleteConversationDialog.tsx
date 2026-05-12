@@ -30,12 +30,12 @@ export function DeleteConversationDialog({
 
       // Show undo toast with countdown
       showUndoToast(conversationId, conversationName, onDeleted)
-      
+
       onDeleted()
       onClose()
     } catch (error: any) {
       console.error('Delete action failed:', error)
-      
+
       // Log detailed error information
       console.error('Error details:', {
         message: error.message,
@@ -44,7 +44,7 @@ export function DeleteConversationDialog({
         hint: error.hint,
         full: error
       })
-      
+
       const errorMessage = error.message || 'Unknown error'
       toast.error(`Failed to delete conversation: ${errorMessage}`, { duration: 3000 })
     } finally {
@@ -55,12 +55,12 @@ export function DeleteConversationDialog({
   return (
     <>
       {/* Backdrop */}
-      <div 
+      <div
         className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
         onClick={onClose}
       >
         {/* Dialog */}
-        <div 
+        <div
           className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl"
           onClick={(e) => e.stopPropagation()}
         >
@@ -81,7 +81,7 @@ export function DeleteConversationDialog({
             <p className="text-gray-600 mb-3">
               Are you sure you want to delete "{conversationName}"?
             </p>
-            
+
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
               <strong>Note:</strong> This will remove the conversation from your list. The other person can still see it. You can undo this action within 10 seconds.
             </div>
@@ -128,25 +128,25 @@ function showUndoToast(
         <span>Conversation deleted</span>
         <button
           onClick={async () => {
-            clearInterval(intervalId)
+            clearTimeout(intervalId)
             try {
               // First, undo the deletion in the database
               await conversationManagementService.undoDeleteConversation(conversationId)
-              
+
               // Then fetch the restored conversation and add it back to store
               console.log('🔄 Fetching restored conversation:', conversationId)
-              
+
               const { data, error } = await supabase
                 .from('conversation_list')
                 .select('*')
                 .eq('conversation_id', conversationId)
                 .single()
-              
+
               if (error) {
                 console.error('❌ Failed to fetch restored conversation:', error)
                 throw new Error(`Failed to fetch conversation: ${error.message}`)
               }
-              
+
               if (data) {
                 console.log('✅ Restored conversation fetched:', data)
                 // Add it back to the store
@@ -155,7 +155,7 @@ function showUndoToast(
                 useMessagingStore.getState().setConversations(updatedConversations)
                 console.log('✅ Conversation added back to store')
               }
-              
+
               toast.dismiss(toastId)
               toast.success('Deletion undone', { duration: 3000 })
             } catch (error: any) {
@@ -177,12 +177,14 @@ function showUndoToast(
     { duration: 5000 }
   )
 
-  // Countdown timer
-  intervalId = setInterval(() => {
+  // Countdown timer with setTimeout
+  const tick = () => {
     countdown--
     if (countdown <= 0) {
-      clearInterval(intervalId)
       toast.dismiss(toastId)
+    } else {
+      intervalId = setTimeout(tick, 1000)
     }
-  }, 1000)
+  }
+  intervalId = setTimeout(tick, 1000)
 }

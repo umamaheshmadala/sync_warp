@@ -3,7 +3,6 @@
 
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useBusinessUrl } from '../../hooks/useBusinessUrl';
 import { Package, Tag, Ticket, Megaphone, TrendingDown, RefreshCw, Filter } from 'lucide-react';
 import { useFollowerNotifications, FollowerNotification } from '../../hooks/useFollowerNotifications';
@@ -124,10 +123,8 @@ const FollowerFeed: React.FC = () => {
 
   // Render notification card
   const renderNotificationCard = (notification: FollowerNotification) => (
-    <motion.div
+    <div
       key={notification.id}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
       className={cn(
         'border rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow',
         getUpdateBgColor(notification.notification_type)
@@ -180,7 +177,7 @@ const FollowerFeed: React.FC = () => {
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 
   // Render time group

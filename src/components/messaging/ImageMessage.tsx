@@ -7,6 +7,7 @@ interface ImageMessageProps {
   thumbnailUrl?: string
   alt?: string
   onImageClick?: () => void
+  onLoad?: () => void
 }
 
 /**
@@ -31,11 +32,12 @@ interface ImageMessageProps {
  * />
  * ```
  */
-export function ImageMessage({ 
-  imageUrl, 
-  thumbnailUrl, 
-  alt = 'Shared image', 
-  onImageClick 
+export function ImageMessage({
+  imageUrl,
+  thumbnailUrl,
+  alt = 'Shared image',
+  onImageClick,
+  onLoad
 }: ImageMessageProps) {
   const [isLoaded, setIsLoaded] = useState(false)
   const [hasError, setHasError] = useState(false)
@@ -59,7 +61,7 @@ export function ImageMessage({
       ) : (
         <>
           {/* Image */}
-          <img
+          <img loading="lazy" decoding="async" 
             src={displayUrl}
             alt={alt}
             className={cn(
@@ -68,7 +70,10 @@ export function ImageMessage({
               onImageClick && 'hover:opacity-90'
             )}
             style={{ maxHeight: '300px' }}
-            onLoad={() => setIsLoaded(true)}
+            onLoad={() => {
+              setIsLoaded(true)
+              onLoad?.()
+            }}
             onError={() => setHasError(true)}
             onClick={onImageClick}
             loading="lazy"

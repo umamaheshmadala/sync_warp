@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MessageCircle, Share2, MoreHorizontal, Loader2, Bell, BellOff, Archive, RotateCcw, AlertTriangle } from 'lucide-react';
+import { MessageCircle, Share2, MoreHorizontal, Loader2, Bell, BellOff, Archive, RotateCcw, AlertTriangle, Flag, Share } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Product } from '../../../types/product';
 import { useAuthStore } from '../../../store/authStore';
@@ -8,17 +8,29 @@ import { useProductComments } from '../../../hooks/useProductComments';
 import { useProductFavorite } from '../../../hooks/useProductFavorite';
 import { useProducts } from '../../../hooks/useProducts';
 import { ProductLikeButton } from '../social/ProductLikeButton';
-import { ProductLikedBy } from '../social/ProductLikedBy';
 import { ProductCommentItem } from '../social/ProductCommentItem';
 import { ProductCommentInput } from '../social/ProductCommentInput';
 import { ProductFavoriteButton } from '../actions/ProductFavoriteButton';
 import { ProductShareButton } from '../../Sharing/ProductShareButton';
+import { FriendsLikeButton } from '../social/FriendsLikeButton';
+import { FriendsLikeSheet } from '../social/FriendsLikeSheet';
+import { ProductLikedBy } from '../social/ProductLikedBy';
 import { ProductTagDisplay } from '../tags/ProductTagDisplay';
 import { ProductDescription } from '../details/ProductDescription';
 import { ProductNotificationToggle } from '../controls/ProductNotificationToggle';
+import { TrendingButton } from '../social/TrendingButton';
 
 import { useProductWizardStore } from '../../../stores/useProductWizardStore';
 import { Edit3, Trash2 } from 'lucide-react';
+import { ShareFriendPickerModal } from '../../Sharing/ShareFriendPickerModal';
+import { useProductStats } from '../../../hooks/useProductStats';
+
+// Utility for formatting counts
+const formatCount = (count: number): string => {
+    if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
+    if (count >= 1000) return `${(count / 1000).toFixed(1)}k`;
+    return count.toString();
+};
 
 interface WebProductDetailsPanelProps {
     product: Product;
@@ -42,7 +54,14 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
     // Comments Logic
     const { comments, loading: commentsLoading, postComment, deleteComment } = useProductComments(product.id);
     // Favorite Logic
-    const { isFavorite, toggleFavorite, isLoading: isFavLoading } = useProductFavorite(product.id);
+    const { isFavorite, toggleFavorite, isLoading: isFavLoading } = useProductFavorite(product.id, false);
+
+    // Realtime Stats
+    const { shareCount, favoriteCount } = useProductStats(product.id, {
+        share_count: product.share_count,
+        favorite_count: product.favorite_count,
+        like_count: product.like_count
+    });
 
     // Edit Logic
     const { openWizard } = useProductWizardStore();
@@ -57,16 +76,21 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [deleteInput, setDeleteInput] = useState('');
     const [isDeleting, setIsDeleting] = useState(false);
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+    const [isFriendsSheetOpen, setIsFriendsSheetOpen] = useState(false);
+    const [showNonOwnerMenu, setShowNonOwnerMenu] = useState(false);
 
-    const { user } = useAuthStore();
+    const user = useAuthStore((state) => state.user);
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
     // Derived Business Info
     const businessName = (product.businesses as any)?.business_name || 'Business Name';
     const businessLogo = (product.businesses as any)?.logo_url;
+    // Check if the business logic isn't overriding anything
+    const displayBusinessName = businessName || product.businesses?.[0]?.business_name || 'Business';
 
-    const handleShare = () => toast.success('Shared (Demo)', { icon: '🔗' });
-    const handleReport = (id: string) => console.log('Report', id); // Mock
+    const handleShare = () => setIsShareModalOpen(true);
+    const handleReport = () => toast('Reporting system coming soon', { icon: '🛡️' });
 
     // Description Truncation
     const description = product.description || '';
@@ -132,7 +156,7 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
     const canDelete = !hasInteractions || deleteInput === 'DELETE';
 
     return (
-        <div className="flex flex-col h-full bg-white border-l border-gray-100 relative" onClick={() => setShowMenu(false)}>
+        <div className="flex flex-col h-full bg-white border-l border-gray-100 relative" onClick={() => { setShowMenu(false); setShowNonOwnerMenu(false); }}>
             {/* Delete Confirmation Overlay */}
             {showDeleteConfirm && (
                 <div className="absolute inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
@@ -191,7 +215,7 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                 <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden">
                         {businessLogo ? (
-                            <img src={businessLogo} alt={businessName} className="w-full h-full object-cover" />
+                            <img loading="lazy" decoding="async" src={businessLogo} alt={businessName} className="w-full h-full object-cover" />
                         ) : (
                             <div className="w-full h-full flex items-center justify-center text-xs font-bold text-gray-500">
                                 {businessName.charAt(0)}
@@ -223,15 +247,17 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
 
                         {/* Dropdown Menu */}
                         {showMenu && (
-                            <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-100 z-50 overflow-hidden py-1">
+                            <div className="absolute right-0 top-full mt-1 w-52 bg-white rounded-lg shadow-xl border border-gray-100 z-50 overflow-hidden py-1.5 ring-1 ring-black ring-opacity-5">
                                 <button
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         handleEditProduct();
                                     }}
-                                    className="w-full px-4 py-2.5 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 transition-colors"
+                                    className="w-full px-4 py-2.5 text-left text-sm font-medium text-gray-900 hover:bg-blue-50 flex items-center gap-3 transition-colors group"
                                 >
-                                    <Edit3 className="w-4 h-4" />
+                                    <div className="p-1.5 rounded-md bg-blue-50 text-blue-600 group-hover:bg-blue-100">
+                                        <Edit3 className="w-4 h-4" />
+                                    </div>
                                     Edit Product
                                 </button>
 
@@ -241,9 +267,11 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                                             e.stopPropagation();
                                             handleUnarchive();
                                         }}
-                                        className="w-full px-4 py-2.5 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 transition-colors"
+                                        className="w-full px-4 py-2.5 text-left text-sm font-medium text-gray-900 hover:bg-blue-50 flex items-center gap-3 transition-colors group"
                                     >
-                                        <RotateCcw className="w-4 h-4" />
+                                        <div className="p-1.5 rounded-md bg-blue-50 text-blue-600 group-hover:bg-blue-100">
+                                            <RotateCcw className="w-4 h-4" />
+                                        </div>
                                         Unarchive
                                     </button>
                                 ) : (
@@ -252,14 +280,32 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                                             e.stopPropagation();
                                             handleArchive();
                                         }}
-                                        className="w-full px-4 py-2.5 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 transition-colors"
+                                        className="w-full px-4 py-2.5 text-left text-sm font-medium text-gray-900 hover:bg-amber-50 flex items-center gap-3 transition-colors group"
                                     >
-                                        <Archive className="w-4 h-4" />
+                                        <div className="p-1.5 rounded-md bg-amber-50 text-amber-600 group-hover:bg-amber-100">
+                                            <Archive className="w-4 h-4" />
+                                        </div>
                                         Archive
                                     </button>
                                 )}
 
-                                <div className="h-px bg-gray-100 dark:bg-gray-700 my-1" />
+                                <div className="h-px bg-gray-100 my-1" />
+
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsShareModalOpen(true);
+                                        setShowMenu(false);
+                                    }}
+                                    className="w-full px-4 py-2.5 text-left text-sm font-medium text-gray-900 hover:bg-green-50 flex items-center gap-3 transition-colors group"
+                                >
+                                    <div className="p-1.5 rounded-md bg-green-50 text-green-600 group-hover:bg-green-100">
+                                        <Share className="w-4 h-4" />
+                                    </div>
+                                    Share
+                                </button>
+
+                                <div className="h-px bg-gray-100 my-1" />
 
                                 <button
                                     onClick={(e) => {
@@ -267,9 +313,11 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                                         setShowMenu(false);
                                         setShowDeleteConfirm(true);
                                     }}
-                                    className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors"
+                                    className="w-full px-4 py-2.5 text-left text-sm font-medium text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors group"
                                 >
-                                    <Trash2 className="w-4 h-4" />
+                                    <div className="p-1.5 rounded-md bg-red-50 text-red-600 group-hover:bg-red-100">
+                                        <Trash2 className="w-4 h-4" />
+                                    </div>
                                     Delete Product
                                 </button>
                             </div>
@@ -277,9 +325,49 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                     </div>
                 )}
                 {!isOwner && product.status !== 'draft' && (
-                    <button className="p-2 hover:bg-gray-100 rounded-full">
-                        <MoreHorizontal className="w-5 h-5 text-gray-600" />
-                    </button>
+                    <div className="relative">
+                        <button
+                            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setShowNonOwnerMenu(!showNonOwnerMenu);
+                            }}
+                        >
+                            <MoreHorizontal className="w-5 h-5 text-gray-600" />
+                        </button>
+
+                        {showNonOwnerMenu && (
+                            <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-xl border border-gray-100 z-50 overflow-hidden py-1.5 ring-1 ring-black ring-opacity-5">
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleShare();
+                                        setShowNonOwnerMenu(false);
+                                    }}
+                                    className="w-full px-4 py-2.5 text-left text-sm font-medium text-gray-900 hover:bg-gray-50 flex items-center gap-3 transition-colors group"
+                                >
+                                    <div className="p-1.5 rounded-md bg-green-50 text-green-600 group-hover:bg-green-100">
+                                        <Share className="w-4 h-4" />
+                                    </div>
+                                    Share Product
+                                </button>
+
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleReport();
+                                        setShowNonOwnerMenu(false);
+                                    }}
+                                    className="w-full px-4 py-2.5 text-left text-sm font-medium text-gray-900 hover:bg-gray-50 flex items-center gap-3 transition-colors group"
+                                >
+                                    <div className="p-1.5 rounded-md bg-red-50 text-red-600 group-hover:bg-red-100">
+                                        <Flag className="w-4 h-4" />
+                                    </div>
+                                    Report Product
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 )}
             </div>
 
@@ -358,6 +446,9 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                 {/* Comments List - Hidden for Drafts */}
                 {product.status !== 'draft' && (
                     <div className="space-y-4 pb-4">
+                        <h3 className="font-semibold text-gray-900 border-b pb-2 mb-4">
+                            {comments.length} {comments.length === 1 ? 'Comment' : 'Comments'}
+                        </h3>
                         {commentsLoading && comments.length === 0 ? (
                             <div className="flex justify-center py-8">
                                 <Loader2 className="w-6 h-6 animate-spin text-gray-300" />
@@ -390,16 +481,35 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
             {product.status !== 'draft' && (
                 <div className={`border-t border-gray-100 bg-white p-4 pb-3 ${product.status === 'archived' ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
                     {/* Actions Row */}
-                    <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-4">
+                    <div className="flex items-center justify-between mb-3 w-full px-1">
+                        {/* 1. Like Button */}
+                        <div className="flex items-center gap-1.5 min-w-[40px]">
                             <ProductLikeButton
                                 isLiked={isLiked}
                                 onToggle={toggleLike}
                                 size={24}
                             />
-                            <button className="group" onClick={() => document.getElementById('web-comment-input')?.focus()}>
-                                <MessageCircle className="w-6 h-6 text-gray-900 group-hover:text-blue-500 transition-colors" />
-                            </button>
+                            {likeCount > 0 && <span className="text-sm font-medium text-gray-900">{formatCount(likeCount)}</span>}
+                        </div>
+                        
+                        {/* 2. Friends Like Button */}
+                        <div className="flex items-center gap-1.5 min-w-[40px]">
+                            <FriendsLikeButton
+                                onClick={() => setIsFriendsSheetOpen(true)}
+                                size={24}
+                            />
+                            {likedByFriends.length > 0 && <span className="text-sm font-medium text-gray-900">{formatCount(likedByFriends.length)}</span>}
+                        </div>
+
+                        {/* 3. Trending Button */}
+                        <TrendingButton
+                            productId={product.id}
+                            businessId={product.business_id}
+                            variant="web-action-bar"
+                        />
+
+                        {/* 4. Share Button */}
+                        <div className="flex items-center gap-1.5 min-w-[40px]">
                             <ProductShareButton
                                 productId={product.id}
                                 productName={product.name}
@@ -411,14 +521,18 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                                 variant="icon"
                                 className="text-gray-900 hover:text-green-500 transition-colors bg-transparent shadow-none"
                             />
+                            {shareCount > 0 && <span className="text-sm font-medium text-gray-900">{formatCount(shareCount)}</span>}
                         </div>
-                        {/* Favorite Button */}
-                        <ProductFavoriteButton
-                            isFavorite={isFavorite}
-                            onToggle={toggleFavorite}
-                            isLoading={isFavLoading}
-                            size={24}
-                        />
+                        {/* 5. Favorite Button */}
+                        <div className="flex items-center gap-1.5 min-w-[40px]">
+                            <ProductFavoriteButton
+                                isFavorite={isFavorite}
+                                onToggle={toggleFavorite}
+                                isLoading={isFavLoading}
+                                size={24}
+                            />
+                            {favoriteCount > 0 && <span className="text-sm font-medium text-gray-900">{formatCount(favoriteCount)}</span>}
+                        </div>
                     </div>
 
                     {/* Liked By */}
@@ -426,6 +540,7 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                         <ProductLikedBy
                             friends={likedByFriends}
                             totalLikes={likeCount}
+                            onClick={() => setIsFriendsSheetOpen(true)}
                         />
                     </div>
 
@@ -443,6 +558,25 @@ export const WebProductDetailsPanel: React.FC<WebProductDetailsPanelProps> = ({
                     </div>
                 </div>
             )}
-        </div >
+
+            <ShareFriendPickerModal
+                isOpen={isShareModalOpen}
+                onClose={() => setIsShareModalOpen(false)}
+                entityType="product"
+                entityId={product.id}
+                entityData={{
+                    title: product.name,
+                    description: product.description?.slice(0, 100) || undefined,
+                    imageUrl: product.image_urls?.[0] || product.image_url,
+                    url: `${window.location.origin}/product/${product.id}`
+                }}
+            />
+
+            <FriendsLikeSheet
+                isOpen={isFriendsSheetOpen}
+                onOpenChange={setIsFriendsSheetOpen}
+                friends={likedByFriends}
+            />
+        </div>
     );
 };

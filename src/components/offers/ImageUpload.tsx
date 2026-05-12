@@ -42,7 +42,8 @@ export function ImageUpload({ value, onChange, businessId }: ImageUploadProps) {
       const { data, error: uploadError } = await supabase.storage
         .from('offer-images')
         .upload(fileName, file, {
-          cacheControl: '3600',
+          cacheControl: '31536000',
+          contentType: file.type || 'image/jpeg',
           upsert: false,
         });
 
@@ -82,7 +83,7 @@ export function ImageUpload({ value, onChange, businessId }: ImageUploadProps) {
       {value ? (
         // Image preview
         <div className="relative inline-block">
-          <img
+          <img loading="lazy" decoding="async" 
             src={value}
             alt="Offer icon"
             className="w-32 h-32 rounded-lg object-cover border-2 border-gray-200"

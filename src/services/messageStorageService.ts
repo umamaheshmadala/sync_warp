@@ -149,7 +149,8 @@ export const uploadMessageAttachment = async (
       const { data, error } = await supabase.storage
         .from(BUCKET_NAME)
         .upload(path, file, {
-          cacheControl: '3600',
+          cacheControl: '31536000',
+          contentType: file.type || 'application/octet-stream',
           upsert: false // Prevent accidental overwrites
         });
 

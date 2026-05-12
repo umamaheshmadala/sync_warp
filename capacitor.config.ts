@@ -26,13 +26,15 @@ const getServerConfig = () => {
     iosScheme: 'https' as const,
   };
 
-  if (isDevelopment) {
-    return {
-      ...baseConfig,
-      hostname: 'localhost',
-      cleartext: true, // Allow HTTP in development
-    };
-  }
+  // Development server config (currently disabled — using local bundle)
+  // if (isDevelopment) {
+  //   return {
+  //     ...baseConfig,
+  //     hostname: 'localhost',
+  //     cleartext: true, // Allow HTTP in development
+  //   };
+  // }
+
 
   if (isStaging) {
     return {
@@ -61,22 +63,24 @@ const config: CapacitorConfig = {
   server: getServerConfig(),
   plugins: {
     Keyboard: {
-      resize: 'native',
-      resizeOnFullScreen: true,
+      resize: 'none',
     },
     SplashScreen: {
-      launchShowDuration: 10000,
+      launchShowDuration: 3000,
       showSpinner: false,
-      launchAutoHide: false,
+      launchAutoHide: true,
       backgroundColor: "#ffffffff",
-      androidScaleType: "CENTER_CROP",
+      androidScaleType: "CENTER_INSIDE",
       splashFullScreen: true,
       splashImmersive: true
     },
     StatusBar: {
       overlay: true,
-      style: "DARK",
+      style: "LIGHT",
       backgroundColor: "#ffffffff"
+    },
+    CapacitorHttp: {
+      enabled: true,
     }
   }
 };

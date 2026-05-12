@@ -3,12 +3,14 @@ import React, { useRef, useState } from 'react'
 import { Video, Loader2 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { useVideoUpload } from '../../hooks/useVideoUpload'
-import { useSendMessage } from '../../hooks/useSendMessage'
-import { useMessagingStore } from '../../store/messagingStore'
+import { messagingService } from '../../services/messagingService'
+import { messageCacheManager } from '../../utils/messageCacheManager'
 import { useAuthStore } from '../../store/authStore'
 import { mediaUploadService } from '../../services/mediaUploadService'
 import { supabase } from '../../lib/supabase'
+import { Capacitor } from '@capacitor/core'
 import type { Message } from '../../types/messaging'
+import { VideoPreviewModal } from './VideoPreviewModal'
 
 interface Props {
   conversationId: string
@@ -17,46 +19,121 @@ interface Props {
   variant?: 'icon' | 'menu'  // 'icon' = small icon button, 'menu' = full menu item
 }
 
-export function VideoUploadButton({ 
-  conversationId, 
-  onUploadStart, 
+export function VideoUploadButton({
+  conversationId,
+  onUploadStart,
   onUploadComplete,
   variant = 'icon'
 }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const cancelledRef = useRef<boolean>(false)
   const { uploadVideo, isUploading, progress } = useVideoUpload()
-  const { sendMessage } = useSendMessage()
-  const { addOptimisticMessage, removeMessage, updateMessageProgress } = useMessagingStore()
+  // const { sendMessage } = useSendMessage() // Removed to avoid double optimistic message
+  const addOptimisticMessage = messageCacheManager.addOptimisticMessage;
+  const replaceOptimisticMessage = messageCacheManager.replaceOptimisticMessage;
+  const removeMessage = messageCacheManager.removeMessage;
+  const updateMessageProgress = messageCacheManager.updateMessageProgress;
+  const updateMessage = messageCacheManager.updateMessage;
   const currentUserId = useAuthStore(state => state.user?.id)
   const [currentTempId, setCurrentTempId] = useState<string>('')
+
+  // Preview Loop State
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [nativePath, setNativePath] = useState<string | undefined>(undefined)
+  const [showPreview, setShowPreview] = useState(false)
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
+    // Open preview modal instead of uploading immediately
+    setSelectedFile(file)
+    setNativePath(undefined)
+    setShowPreview(true)
+
+    // Reset input
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const handleNativePick = async () => {
+    try {
+      const result = await mediaUploadService.pickVideo()
+      if (!result) return
+
+      const { path, duration } = result
+      if (!path) return
+
+      // Open preview modal
+      setSelectedFile(null)
+      setNativePath(path)
+      setShowPreview(true)
+
+    } catch (error) {
+      console.error('❌ Native pick failed:', error)
+      toast.error('Failed to select video')
+    }
+  }
+
+  const handleSendFromPreview = async (caption: string, thumbnailBlob?: Blob) => {
+    setShowPreview(false)
+
     const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     setCurrentTempId(tempId)
     cancelledRef.current = false
+
     let blobUrl = ''
     let thumbnailBlobUrl = ''
 
     try {
-      blobUrl = URL.createObjectURL(file)
-      
-      // Generate thumbnail immediately for optimistic UI
-      const thumbnailBlob = await mediaUploadService.generateVideoThumbnail(file)
-      thumbnailBlobUrl = URL.createObjectURL(thumbnailBlob)
+      // 1. Generate Optimistic Preview
+      if (thumbnailBlob) {
+        thumbnailBlobUrl = URL.createObjectURL(thumbnailBlob)
+      }
 
-      // Create optimistic message
+      if (selectedFile) {
+        blobUrl = URL.createObjectURL(selectedFile)
+        // Only generate if we didn't get one from preview (e.g. if capture failed)
+        if (!thumbnailBlobUrl) {
+          const generatedThumb = await mediaUploadService.generateVideoThumbnail(selectedFile)
+          thumbnailBlobUrl = URL.createObjectURL(generatedThumb)
+        }
+      } else {
+        // Native path - use converted src for preview
+        if (nativePath) {
+          // We need to import Capacitor dynamically or just use the global one if available, 
+          // but we already imported it at the top of the file
+          blobUrl = Capacitor.convertFileSrc(nativePath)
+        }
+      }
+
+      // 1. Get dimensions for optimistic message
+      let width: number | undefined
+      let height: number | undefined
+      let duration: number | undefined
+
+      try {
+        if (selectedFile) {
+          const meta = await mediaUploadService.getVideoMetadata(selectedFile)
+          width = meta.width
+          height = meta.height
+          duration = meta.duration
+        }
+      } catch (e) {
+        console.warn('Failed to get video metadata for optimistic message', e)
+      }
+
+      // 2. Create Optimistic Message
       const optimisticMessage: Message = {
         id: tempId,
         conversation_id: conversationId,
         sender_id: currentUserId || 'unknown',
-        content: '',
+        content: caption || '', // Use caption!
         type: 'video',
-        media_urls: [blobUrl],
+        media_urls: blobUrl ? [blobUrl] : [], // Empty if native path for now
         thumbnail_url: thumbnailBlobUrl,
+        media_width: width,
+        media_height: height,
+        media_duration: duration,
         is_edited: false,
         is_deleted: false,
         created_at: new Date().toISOString(),
@@ -70,99 +147,96 @@ export function VideoUploadButton({
       addOptimisticMessage(conversationId, optimisticMessage)
       onUploadStart?.()
 
-      // Upload video
-      const { url, thumbnailUrl, duration } = await uploadVideo(
-        file,
+      // 3. Upload
+      const uploadResult = await uploadVideo(
+        selectedFile,
         conversationId,
         (uploadProgress) => {
           if (cancelledRef.current) return
-          
-          // Check if message was cancelled externally
-          const currentMessages = useMessagingStore.getState().messages.get(conversationId) || []
-          const currentMsg = currentMessages.find(m => m._tempId === tempId)
-          
-          if (!currentMsg || currentMsg._failed) {
-            console.log('⏹️ External cancellation detected during progress update')
-            cancelledRef.current = true
-            return
-          }
-
           updateMessageProgress(conversationId, tempId, uploadProgress)
-        }
+        },
+        nativePath
       )
 
-      // Check if cancelled after upload
-      const currentMessages = useMessagingStore.getState().messages.get(conversationId) || []
-      const finalMsg = currentMessages.find(m => m._tempId === tempId)
-      
-      if (cancelledRef.current || !finalMsg || finalMsg._failed) {
-        console.log('⏹️ Upload cancelled, cleaning up files')
-        await mediaUploadService.deleteImage(url)
-        await mediaUploadService.deleteImage(thumbnailUrl)
-        return
-      }
+      const { url, thumbnailUrl: uploadedThumbUrl } = uploadResult
+      // Use dimensions from upload result if available (might be more accurate after processing)
+      const finalWidth = uploadResult.width || width
+      const finalHeight = uploadResult.height || height
 
-      // Get public URLs
+      // 4. Get Public URLs
       const { data: { publicUrl } } = supabase.storage
         .from('message-attachments')
         .getPublicUrl(url)
 
       const { data: { publicUrl: thumbPublicUrl } } = supabase.storage
         .from('message-attachments')
-        .getPublicUrl(thumbnailUrl)
+        .getPublicUrl(uploadedThumbUrl)
 
-      console.log('🔗 Public URLs:', { publicUrl, thumbPublicUrl })
-
-      // Send message
-      console.log('📤 Sending message with mediaUrls:', [publicUrl])
-      await sendMessage({
-        conversationId,
-        content: '',
-        type: 'video',
-        mediaUrls: [publicUrl],
-        thumbnailUrl: thumbPublicUrl
+      // UPDATE OPTIMISTIC MESSAGE: Set public URL so store can detecting duplication
+      updateMessage(conversationId, tempId, {
+        media_urls: [publicUrl],
+        thumbnail_url: thumbPublicUrl
       })
 
-      // Remove optimistic message
-      removeMessage(conversationId, tempId)
+      // 5. Send Real Message directly (bypass useSendMessage to avoid duplicate optimistic msg)
+      const realMessageId = await messagingService.sendMessage({
+        conversationId,
+        content: caption,
+        type: 'video',
+        mediaUrls: [publicUrl],
+        thumbnailUrl: thumbPublicUrl,
+        mediaWidth: finalWidth,
+        mediaHeight: finalHeight
+      })
+
+      // 6. Replace Optimistic Message with Real One
+      if (realMessageId) {
+        const confirmedMessage: Message = {
+          ...optimisticMessage,
+          id: realMessageId,
+          media_urls: [publicUrl],
+          thumbnail_url: thumbPublicUrl,
+          _optimistic: false,
+          _tempId: undefined,
+          status: 'sent' as const,
+          created_at: new Date().toISOString()
+        }
+
+        replaceOptimisticMessage(conversationId, tempId, confirmedMessage)
+      } else {
+        throw new Error('Failed to get real message ID')
+      }
+
       onUploadComplete?.()
 
     } catch (error) {
       console.error('❌ Video upload failed:', error)
-      
-      // Mark as failed
-      const currentMessages = useMessagingStore.getState().messages.get(conversationId) || []
-      const failedMsg = currentMessages.find(m => m._tempId === tempId)
-      
-      if (failedMsg) {
-        useMessagingStore.getState().updateMessage(conversationId, tempId, {
-          _failed: true,
-          _uploadProgress: 0
-        })
-      }
+      // Mark failed...
+      messageCacheManager.updateMessage(conversationId, tempId, {
+        _failed: true,
+        _uploadProgress: 0
+      })
     } finally {
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ''
-      }
-      
-      // Cleanup blob URLs (but keep them if failed for retry)
-      const currentMessages = useMessagingStore.getState().messages.get(conversationId) || []
-      const finalMsg = currentMessages.find(m => m._tempId === tempId)
-      
-      if (!finalMsg?._failed) {
-        if (blobUrl) URL.revokeObjectURL(blobUrl)
-        if (thumbnailBlobUrl) URL.revokeObjectURL(thumbnailBlobUrl)
-      }
+      if (blobUrl) URL.revokeObjectURL(blobUrl)
+      if (thumbnailBlobUrl) URL.revokeObjectURL(thumbnailBlobUrl)
+      setSelectedFile(null)
+      setNativePath(undefined)
     }
   }
 
-  // Menu variant - full width menu item with icon and text
-  if (variant === 'menu') {
-    return (
-      <>
+  const handleClick = () => {
+    if (Capacitor.isNativePlatform()) {
+      handleNativePick()
+    } else {
+      fileInputRef.current?.click()
+    }
+  }
+
+  return (
+    <>
+      {variant === 'menu' ? (
         <button
-          onClick={() => fileInputRef.current?.click()}
+          onClick={handleClick}
           disabled={isUploading}
           className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-gray-50 transition-colors disabled:opacity-50"
         >
@@ -175,33 +249,20 @@ export function VideoUploadButton({
           </div>
           <span className="text-sm font-medium text-gray-700">Video</span>
         </button>
-
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="video/mp4,video/quicktime,video/webm"
-          onChange={handleFileSelect}
-          className="hidden"
-        />
-      </>
-    )
-  }
-
-  // Icon variant (default) - small icon button
-  return (
-    <>
-      <button
-        onClick={() => fileInputRef.current?.click()}
-        disabled={isUploading}
-        className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        aria-label="Upload video"
-      >
-        {isUploading ? (
-          <Loader2 className="w-5 h-5 animate-spin text-primary" />
-        ) : (
-          <Video className="w-5 h-5 text-gray-600" />
-        )}
-      </button>
+      ) : (
+        <button
+          onClick={handleClick}
+          disabled={isUploading}
+          className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          aria-label="Upload video"
+        >
+          {isUploading ? (
+            <Loader2 className="w-5 h-5 animate-spin text-primary" />
+          ) : (
+            <Video className="w-5 h-5 text-gray-600" />
+          )}
+        </button>
+      )}
 
       <input
         ref={fileInputRef}
@@ -210,6 +271,20 @@ export function VideoUploadButton({
         onChange={handleFileSelect}
         className="hidden"
       />
+
+      {/* Preview Modal */}
+      {showPreview && (
+        <VideoPreviewModal
+          file={selectedFile}
+          videoPath={nativePath}
+          onClose={() => {
+            setShowPreview(false)
+            setSelectedFile(null)
+            setNativePath(undefined)
+          }}
+          onSend={handleSendFromPreview}
+        />
+      )}
     </>
   )
 }

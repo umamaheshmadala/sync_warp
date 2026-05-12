@@ -4,7 +4,6 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Heart, Search as SearchIcon, Package, AlertCircle, RefreshCw, X, ShoppingBag, ChevronDown } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { useFavoriteProducts } from '../../hooks/useFavoriteProducts';
 import { FavoriteProductButton } from '../products/FavoriteProductButton';
 import { cn } from '../../lib/utils';
@@ -190,17 +189,15 @@ const UnifiedFavoritesPage: React.FC = () => {
         ) : (
           <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filteredProducts.map((product) => (
-              <motion.div
+              <div
                 key={product.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-all overflow-hidden group cursor-pointer"
+                className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-all overflow-hidden group cursor-pointer animate-fadeIn"
                 onClick={() => navigate(`${getBusinessUrl(product.business_id, product.business_name)}/product/${product.id}`)}
               >
                 {/* Product Image */}
                 <div className="relative h-48 bg-gray-100">
                   {product.image_urls && product.image_urls.length > 0 ? (
-                    <img
+                    <img loading="lazy" decoding="async" 
                       src={product.image_urls[0]}
                       alt={product.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
@@ -258,7 +255,7 @@ const UnifiedFavoritesPage: React.FC = () => {
                     )}
                   </div>
                 </div>
-              </motion.div>
+              </div>
             ))}
           </div>
         )}

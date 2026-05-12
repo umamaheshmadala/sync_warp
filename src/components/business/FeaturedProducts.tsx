@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   Star,
   Package,
@@ -10,9 +9,19 @@ import {
 } from 'lucide-react';
 import { Product, CURRENCIES } from '../../types/product';
 import { useProducts } from '../../hooks/useProducts';
-import ProductView from './ProductView';
-import ProductForm from './ProductForm';
-import { useProductWizardStore } from '../../stores/useProductWizardStore'; // Added
+import { WebProductModal } from '../products/web/WebProductModal';
+import {
+  MobileProductModal,
+  MobileProductHeader,
+  MobileProductCarousel,
+  MobileProductActions,
+  MobileProductDetails,
+  MobileProductComments,
+  StickyCommentInput
+} from '../products/mobile';
+import { useMediaQuery } from '../../hooks/use-media-query';
+// ProductForm removed — editing now goes through the 3-step ProductCreationWizard
+import { useProductWizardStore } from '../../stores/useProductWizardStore';
 import { useNavigate } from 'react-router-dom';
 import { ProductCard as CustomerProductCard } from '../products/ProductCard';
 import BusinessProductCard from './ProductCard';
@@ -36,12 +45,11 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
 }) => {
   const navigate = useNavigate();
   const { getBusinessUrl } = useBusinessUrl();
-  const { products, loading, fetchProducts, refreshProducts, deleteProduct } = useProducts(businessId);
+  const { products, loading, fetchProducts, refreshProducts, deleteProduct, archiveProduct, unarchiveProduct } = useProducts(businessId);
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const { openWizard } = useProductWizardStore();
+  const isDesktop = useMediaQuery('(min-width: 768px)');
 
   // Determine if add button should be shown
   const shouldShowAddButton = isOwner && (showAddButton ?? viewMode === 'full');
@@ -87,31 +95,10 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
 
   const handleEditProduct = (product: Product) => {
     setSelectedProduct(null); // Close product view modal
-    setEditingProduct(product); // Open edit form modal
+    openWizard(businessId, undefined, product); // Open the 3-step wizard
   };
 
-  const handleEditFormClose = () => {
-    setEditingProduct(null);
-  };
-
-  const handleEditFormSuccess = async () => {
-    setEditingProduct(null);
-    await refreshProducts(); // Refresh products to show updates
-  };
-
-  const handleAddFormSuccess = async () => {
-    setIsAddModalOpen(false);
-    await refreshProducts();
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (selectedProduct) {
-      await deleteProduct(selectedProduct.id);
-      setDeleteModalOpen(false);
-      setSelectedProduct(null);
-      await refreshProducts();
-    }
-  };
+  const handleCloseModal = () => setSelectedProduct(null);
 
   if (loading && featuredProducts.length === 0) {
     return (
@@ -176,96 +163,41 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
         )}
       </div>
 
-      {/* Product View Modal */}
-      <AnimatePresence>
+      {/* Product View Modal - ALWAYS Use Mobile View (Standard for App) */}
+      <MobileProductModal
+        isOpen={!!selectedProduct}
+        onClose={handleCloseModal}
+        stickyFooter={selectedProduct ? <StickyCommentInput productId={selectedProduct.id} /> : undefined}
+      >
         {selectedProduct && (
-          <ProductView
-            product={selectedProduct}
-            isOwner={isOwner}
-            isModal={true}
-            onClose={() => setSelectedProduct(null)}
-            onEdit={isOwner ? () => handleEditProduct(selectedProduct) : undefined}
-          />
+          <>
+            <MobileProductHeader
+              product={selectedProduct}
+              onClose={handleCloseModal}
+              onEdit={isOwner ? () => handleEditProduct(selectedProduct) : undefined}
+              onDelete={isOwner ? async () => { await deleteProduct(selectedProduct.id); handleCloseModal(); } : undefined}
+              onArchive={isOwner ? async () => { await archiveProduct(selectedProduct.id); handleCloseModal(); } : undefined}
+            />
+            <MobileProductCarousel
+              images={selectedProduct.images || []}
+              productName={selectedProduct.name}
+            />
+            <MobileProductActions
+              product={selectedProduct}
+              onComment={() => {
+                document.getElementById('comment-input')?.focus();
+              }}
+            />
+            <MobileProductDetails product={selectedProduct} />
+            <MobileProductComments
+              productId={selectedProduct.id}
+              initialCount={selectedProduct.comment_count || 0}
+              isOwner={isOwner}
+              hideInput
+            />
+          </>
         )}
-      </AnimatePresence>
-
-
-
-      {/* Product Edit Form Modal */}
-      <AnimatePresence>
-        {editingProduct && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-            onClick={handleEditFormClose}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <ProductForm
-                businessId={businessId}
-                product={editingProduct}
-                onClose={handleEditFormClose}
-                onSuccess={handleEditFormSuccess}
-              />
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Delete Confirmation Modal */}
-      <AnimatePresence>
-        {deleteModalOpen && selectedProduct && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[60]"
-            onClick={() => setDeleteModalOpen(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white rounded-lg p-6 max-w-sm w-full shadow-xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Delete Product</h3>
-              <p className="text-sm text-gray-500 mb-6">
-                Are you sure you want to delete "{selectedProduct.name}"? This action cannot be undone.
-              </p>
-              <div className="flex justify-end space-x-3">
-                <button
-                  onClick={() => setDeleteModalOpen(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleDeleteConfirm}
-                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
-                >
-                  Delete
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Add Product Modal */}
-      {/* Add Product Modal - Removed for Wizard */}
-      {/* <AnimatePresence>
-        {isAddModalOpen && (
-           // ...
-        )}
-      </AnimatePresence> */}
+      </MobileProductModal>
     </>
   );
 };

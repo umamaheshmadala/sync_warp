@@ -7,7 +7,7 @@ import { Share2 } from 'lucide-react';
 import { useUnifiedShare } from '@/hooks/useUnifiedShare';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { ShareModal } from './ShareModal';
+import { ShareFriendPickerModal } from './ShareFriendPickerModal';
 
 export interface ProductShareButtonProps {
   /** Product ID */
@@ -167,16 +167,18 @@ export function ProductShareButton({
           <Share2 className="w-4 h-4" />
         </button>
 
-        <ShareModal
+        <ShareFriendPickerModal
           isOpen={isModalOpen}
           onClose={handleModalClose}
           entityType="product"
           entityId={productId}
-          title={productName}
-          description={description}
-          imageUrl={imageUrl}
-          url={url}
-          onShareSuccess={handleShareSuccess}
+          entityData={{
+            title: productName,
+            description,
+            imageUrl,
+            url
+          }}
+          onSuccess={handleShareSuccess}
         />
       </>
     );
@@ -200,16 +202,18 @@ export function ProductShareButton({
         )}
       </Button>
 
-      <ShareModal
+      <ShareFriendPickerModal
         isOpen={isModalOpen}
         onClose={handleModalClose}
         entityType="product"
         entityId={productId}
-        title={productName}
-        description={description}
-        imageUrl={imageUrl}
-        url={url}
-        onShareSuccess={handleShareSuccess}
+        entityData={{
+          title: productName,
+          description,
+          imageUrl,
+          url
+        }}
+        onSuccess={handleShareSuccess}
       />
     </>
   );

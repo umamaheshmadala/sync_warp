@@ -72,7 +72,7 @@ export const ProductDetailsStep: React.FC<ProductDetailsStepProps> = ({
                 <div className="flex gap-2 overflow-x-auto pb-2">
                     {images.map((img, idx) => (
                         <div key={img.id} className="relative flex-shrink-0 w-16 h-20 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
-                            <img src={img.previewUrl} alt={`Preview ${idx}`} className="w-full h-full object-cover" />
+                            <img loading="lazy" decoding="async" src={img.previewUrl} alt={`Preview ${idx}`} className="w-full h-full object-cover" />
                             <div className="absolute top-0 right-0 bg-black/50 text-white text-[10px] px-1">
                                 {idx + 1}
                             </div>

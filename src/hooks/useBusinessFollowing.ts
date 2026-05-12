@@ -57,7 +57,7 @@ interface UseBusinessFollowingReturn {
 }
 
 export function useBusinessFollowing(): UseBusinessFollowingReturn {
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const queryClient = useQueryClient();
 
   // Query key

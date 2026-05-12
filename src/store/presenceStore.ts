@@ -14,6 +14,12 @@ export const usePresenceStore = create<PresenceState>((set, get) => {
     let channel: any = null;
     let heartbeatInterval: any = null;
     let appStateListener: any = null;
+    let visibilityHandler: any = null;
+    let unloadHandler: any = null;
+
+    // STORY 16.6: Track local state to minimize WAL DB updates
+    let isCurrentlyOnline = false;
+    let visibilityDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
     return {
         onlineUsers: new Map(),
@@ -92,14 +98,17 @@ export const usePresenceStore = create<PresenceState>((set, get) => {
                     platform: Capacitor.getPlatform(),
                 });
 
-                // Update DB for persistence
-                await supabase
-                    .from('profiles')
-                    .update({
-                        is_online: true,
-                        last_active: new Date().toISOString()
-                    })
-                    .eq('id', uid);
+                // STORY 16.6: Only update DB for persistence on actual transition to online
+                if (!isCurrentlyOnline) {
+                    isCurrentlyOnline = true;
+                    await supabase
+                        .from('profiles')
+                        .update({
+                            is_online: true,
+                            last_active: new Date().toISOString()
+                        })
+                        .eq('id', uid);
+                }
             };
 
             // Helper to untrack
@@ -108,54 +117,98 @@ export const usePresenceStore = create<PresenceState>((set, get) => {
                 console.log('[PresenceStore] Untracking');
                 await channel.untrack();
 
-                await supabase
-                    .from('profiles')
-                    .update({
-                        is_online: false,
-                        last_active: new Date().toISOString()
-                    })
-                    .eq('id', uid);
+                // STORY 16.6: Only update DB for persistence on actual transition to offline
+                if (isCurrentlyOnline) {
+                    isCurrentlyOnline = false;
+                    await supabase
+                        .from('profiles')
+                        .update({
+                            is_online: false,
+                            last_active: new Date().toISOString()
+                        })
+                        .eq('id', uid);
+                }
             };
 
-            // Heartbeat (30s)
-            heartbeatInterval = setInterval(() => {
-                if (document.visibilityState === 'visible') {
-                    trackPresence(userId);
+            // Heartbeat (120s) with recursive setTimeout
+            const startHeartbeat = () => {
+                if (heartbeatInterval) return; // Prevent multiple loops
+                const tick = () => {
+                    if (document.visibilityState === 'visible') {
+                        trackPresence(userId);
+                    }
+                    heartbeatInterval = setTimeout(tick, 120000);
+                };
+                heartbeatInterval = setTimeout(tick, 120000);
+            };
+
+            const stopHeartbeat = () => {
+                if (heartbeatInterval) {
+                    clearTimeout(heartbeatInterval);
+                    heartbeatInterval = null;
                 }
-            }, 30000);
+            };
+
+            startHeartbeat();
 
             // Web Visibility
-            document.addEventListener('visibilitychange', () => {
-                if (document.hidden) {
-                    untrackPresence(userId);
-                } else {
-                    trackPresence(userId);
-                }
-            });
+            if (!visibilityHandler) {
+                visibilityHandler = () => {
+                    if (visibilityDebounceTimer) clearTimeout(visibilityDebounceTimer);
+
+                    visibilityDebounceTimer = setTimeout(() => {
+                        if (document.hidden) {
+                            untrackPresence(userId);
+                        } else {
+                            trackPresence(userId);
+                        }
+                    }, 2000); // 2 second debounce — ignore rapid tab switches
+                };
+                document.addEventListener('visibilitychange', visibilityHandler);
+            }
 
             // Mobile App State
-            if (Capacitor.isNativePlatform()) {
-                appStateListener = App.addListener('appStateChange', async ({ isActive }) => {
+            if (Capacitor.isNativePlatform() && !appStateListener) {
+                App.addListener('appStateChange', async ({ isActive }) => {
                     if (isActive) {
                         trackPresence(userId);
+                        startHeartbeat(); // Resume heartbeat
                     } else {
                         untrackPresence(userId);
+                        stopHeartbeat(); // Pause heartbeat in background
                     }
-                });
+                }).then(listener => appStateListener = listener);
             }
 
             // Browser Unload
-            window.addEventListener('beforeunload', () => {
-                untrackPresence(userId);
-            });
+            if (!unloadHandler) {
+                unloadHandler = () => {
+                    untrackPresence(userId);
+                };
+                window.addEventListener('beforeunload', unloadHandler);
+            }
 
             set({ isInitialized: true });
         },
 
         cleanup: async () => {
             console.log('[PresenceStore] Cleaning up');
-            if (heartbeatInterval) clearInterval(heartbeatInterval);
-            if (appStateListener) appStateListener.remove();
+
+            // STORY 16.6: Clean up state trackers
+            isCurrentlyOnline = false;
+            if (visibilityDebounceTimer) clearTimeout(visibilityDebounceTimer);
+
+            if (heartbeatInterval) clearTimeout(heartbeatInterval);
+            if (appStateListener && appStateListener.remove) appStateListener.remove();
+
+            if (visibilityHandler) {
+                document.removeEventListener('visibilitychange', visibilityHandler);
+                visibilityHandler = null;
+            }
+            if (unloadHandler) {
+                window.removeEventListener('beforeunload', unloadHandler);
+                unloadHandler = null;
+            }
 
             if (channel) {
                 await channel.untrack();

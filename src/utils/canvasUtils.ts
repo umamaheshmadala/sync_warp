@@ -1,12 +1,36 @@
 import { Area } from 'react-easy-crop';
 
+/**
+ * Loads an image safely on both web and Android WebView.
+ * We fetch the image as a blob first so the canvas never sees a
+ * cross-origin URL — this avoids the "canvas tainted" security error on
+ * Android WebView where Supabase CDN images don't send CORS headers.
+ */
 export const createImage = (url: string): Promise<HTMLImageElement> =>
-    new Promise((resolve, reject) => {
-        const image = new Image();
-        image.addEventListener('load', () => resolve(image));
-        image.addEventListener('error', (error) => reject(error));
-        image.setAttribute('crossOrigin', 'anonymous'); // needed to avoid cross-origin issues on CodeSandbox
-        image.src = url;
+    new Promise(async (resolve, reject) => {
+        try {
+            // For blob/data URLs skip the fetch step — they're already local
+            let objectUrl = url;
+            if (!url.startsWith('blob:') && !url.startsWith('data:')) {
+                const response = await fetch(url, { mode: 'cors' });
+                if (!response.ok) throw new Error(`Image fetch failed: ${response.status}`);
+                const blob = await response.blob();
+                objectUrl = URL.createObjectURL(blob);
+            }
+            const image = new Image();
+            image.addEventListener('load', () => {
+                if (objectUrl !== url) URL.revokeObjectURL(objectUrl);
+                resolve(image);
+            });
+            image.addEventListener('error', reject);
+            image.src = objectUrl;
+        } catch (err) {
+            // Fallback: try loading directly (works on web even if CORS-tainted)
+            const image = new Image();
+            image.addEventListener('load', () => resolve(image));
+            image.addEventListener('error', reject);
+            image.src = url;
+        }
     });
 
 export function getRadianAngle(degreeValue: number) {

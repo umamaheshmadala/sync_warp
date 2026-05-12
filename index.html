@@ -1,32 +1,52 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/logo.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    
-    <!-- Mobile Web App Capable -->
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Sync App" />
-    
-    <!-- Theme Color -->
-    <meta name="theme-color" content="#6366f1" />
-    <meta name="msapplication-TileColor" content="#6366f1" />
-    
-    <!-- Disable Auto-Detection -->
-    <meta name="format-detection" content="telephone=no" />
-    <meta name="format-detection" content="date=no" />
-    <meta name="format-detection" content="address=no" />
-    <meta name="format-detection" content="email=no" />
-    
-    <!-- PWA / Android Specific -->
-    <meta name="mobile-web-app-capable" content="yes" />
-    <title>SynC - Connect, Collaborate, Create</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="description"
+    content="SynC connects you with local businesses. Discover offers, check in, message business owners, and earn loyalty rewards — all in one app." />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+  <!-- Mobile Web App Capable -->
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Sync App" />
+
+  <!-- Theme Color -->
+  <meta name="theme-color" content="#6366f1" />
+  <meta name="msapplication-TileColor" content="#6366f1" />
+
+  <!-- Disable Auto-Detection -->
+  <meta name="format-detection" content="telephone=yes" />
+  <meta name="format-detection" content="date=no" />
+  <meta name="format-detection" content="address=no" />
+  <meta name="format-detection" content="email=no" />
+
+  <!-- PWA / Android Specific -->
+  <title>SynC - Connect, Collaborate, Create</title>
+  <!-- Prevent Dark Mode FOUC (Flash of Unstyled Content) -->
+  <script>
+    try {
+      const themeState = localStorage.getItem('sync-theme');
+      let mode = 'system';
+      if (themeState) {
+        const parsed = JSON.parse(themeState);
+        if (parsed?.state?.mode) mode = parsed.state.mode;
+      }
+      const isDark = mode === 'dark' || (mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+        const meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute('content', '#1f2937');
+      }
+    } catch (e) { }
+  </script>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
 </html>
